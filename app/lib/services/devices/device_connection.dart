@@ -16,6 +16,8 @@ import 'package:omi/services/devices/transports/device_transport.dart';
 import 'package:omi/services/devices/transports/ble_transport.dart';
 import 'package:omi/services/devices/transports/watch_transport.dart';
 import 'package:omi/services/devices/transports/frame_transport.dart';
+import 'package:omi/services/devices/transports/note_ble_transport.dart';
+import 'package:omi/services/devices/note_connection.dart';
 import 'package:omi/services/devices/discovery/device_locator.dart';
 
 class DeviceConnectionFactory {
@@ -25,6 +27,12 @@ class DeviceConnectionFactory {
     // Create transport based on device locator
     final locator = device.locator;
     if (locator == null) return null;
+
+    // Note device uses flutter_reactive_ble, special handling
+    if (device.type == DeviceType.aiNote) {
+      transport = NoteBleTransport(device);
+      return NoteDeviceConnection(device, transport as NoteBleTransport);
+    }
 
     switch (locator.kind) {
       case TransportKind.bluetooth:
@@ -62,6 +70,9 @@ class DeviceConnectionFactory {
         return AppleWatchDeviceConnection(device, transport);
       case DeviceType.fieldy:
         return FieldyDeviceConnection(device, transport);
+      case DeviceType.aiNote:
+        // Already handled above
+        return null;
     }
   }
 }

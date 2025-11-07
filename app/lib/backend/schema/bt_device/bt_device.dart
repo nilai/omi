@@ -185,6 +185,7 @@ enum DeviceType {
   xor,
   bee,
   fieldy,
+  aiNote,  // AI Note device with new BLE protocol
 }
 
 Map<String, DeviceType> cachedDevicesMap = {};

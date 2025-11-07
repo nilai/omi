@@ -43,6 +43,8 @@ import 'package:omi/providers/speech_profile_provider.dart';
 import 'package:omi/providers/sync_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/providers/user_provider.dart';
+import 'package:omi/providers/note_device_provider.dart';
+import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/services/notifications/action_item_notification_handler.dart';
@@ -291,6 +293,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => UserProvider()),
           ChangeNotifierProvider(create: (context) => ActionItemsProvider()),
           ChangeNotifierProvider(create: (context) => SyncProvider()),
+          // Note 设备相关 Providers
+          ChangeNotifierProvider(create: (context) => NoteDeviceProvider()),
+          ChangeNotifierProxyProvider<NoteDeviceProvider, NoteOtaProvider>(
+            create: (context) => NoteOtaProvider(context.read<NoteDeviceProvider>()),
+            update: (BuildContext context, deviceProvider, NoteOtaProvider? previous) =>
+                previous ?? NoteOtaProvider(deviceProvider),
+          ),
         ],
         builder: (context, child) {
           return WithForegroundTask(
