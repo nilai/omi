@@ -523,8 +523,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                             ),
                                           ),
                                         ),
-                                        // Center space for record button - only when no OMI device is connected
-                                        if (!isOmiDeviceConnected) const SizedBox(width: 80),
+                                        // Center space removed - phone recording disabled
+                                        // if (!isOmiDeviceConnected) const SizedBox(width: 80),
                                         // Memories tab
                                         Expanded(
                                           child: InkWell(
@@ -591,8 +591,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                     ),
                                   ),
                                 ),
-                                // Central Record Button - Only show when no OMI device is connected
-                                if (!isOmiDeviceConnected)
+                                // Central Record Button - Disabled for now
+                                // TODO: Re-enable by changing condition to: if (!isOmiDeviceConnected)
+                                if (false) // Disabled: Hide phone recording button
                                   Positioned(
                                     left: MediaQuery.of(context).size.width / 2 - 40,
                                     bottom: 40, // Position it to protrude above the taller navbar (90px height)
