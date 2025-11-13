@@ -26,6 +26,8 @@ abstract class Env {
   static String? get googleClientId => _instance.googleClientId;
 
   static String? get googleClientSecret => _instance.googleClientSecret;
+
+  static String? get summaryApiBaseUrl => _instance.summaryApiBaseUrl;
 }
 
 abstract class EnvFields {
@@ -48,4 +50,6 @@ abstract class EnvFields {
   String? get googleClientId;
 
   String? get googleClientSecret;
+
+  String? get summaryApiBaseUrl;
 }

@@ -41,6 +41,7 @@ import 'package:omi/providers/message_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/providers/people_provider.dart';
 import 'package:omi/providers/speech_profile_provider.dart';
+import 'package:omi/providers/summary_provider.dart';
 import 'package:omi/providers/sync_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/providers/user_provider.dart';
@@ -294,6 +295,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => UserProvider()),
           ChangeNotifierProvider(create: (context) => ActionItemsProvider()),
           ChangeNotifierProvider(create: (context) => AudioRecordProvider()),
+          ChangeNotifierProvider(create: (context) => SummaryProvider()),
           ChangeNotifierProvider(create: (context) => SyncProvider()),
           // Note 设备相关 Providers
           ChangeNotifierProvider(create: (context) => NoteDeviceProvider()),

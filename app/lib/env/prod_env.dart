@@ -47,4 +47,8 @@ final class ProdEnv implements EnvFields {
   @override
   @EnviedField(varName: 'GOOGLE_CLIENT_SECRET', obfuscate: true)
   final String? googleClientSecret = _ProdEnv.googleClientSecret;
+
+  @override
+  @EnviedField(varName: 'SUMMARY_API_BASE_URL', obfuscate: true)
+  final String? summaryApiBaseUrl = _ProdEnv.summaryApiBaseUrl;
 }
