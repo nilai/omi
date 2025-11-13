@@ -27,6 +27,7 @@ import 'package:omi/pages/payments/payment_method_provider.dart';
 import 'package:omi/pages/persona/persona_provider.dart';
 import 'package:omi/providers/action_items_provider.dart';
 import 'package:omi/providers/app_provider.dart';
+import 'package:omi/providers/audio_record_provider.dart';
 import 'package:omi/providers/auth_provider.dart';
 import 'package:omi/providers/capture_provider.dart';
 import 'package:omi/providers/connectivity_provider.dart';
@@ -292,6 +293,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => MemoriesProvider()),
           ChangeNotifierProvider(create: (context) => UserProvider()),
           ChangeNotifierProvider(create: (context) => ActionItemsProvider()),
+          ChangeNotifierProvider(create: (context) => AudioRecordProvider()),
           ChangeNotifierProvider(create: (context) => SyncProvider()),
           // Note 设备相关 Providers
           ChangeNotifierProvider(create: (context) => NoteDeviceProvider()),

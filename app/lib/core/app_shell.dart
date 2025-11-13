@@ -6,6 +6,7 @@ import 'package:omi/mobile/mobile_app.dart';
 import 'package:omi/desktop/desktop_app.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/pages/apps/app_detail/app_detail.dart';
+import 'package:omi/pages/audio_record/page.dart';
 import 'package:omi/providers/app_provider.dart';
 import 'package:omi/providers/auth_provider.dart';
 import 'package:omi/providers/home_provider.dart';
@@ -51,6 +52,11 @@ class _AppShellState extends State<AppShell> {
           debugPrint('App not found: ${uri.pathSegments[1]}');
           AppSnackbar.showSnackbarError('Oops! Looks like the app you are looking for is not available.');
         }
+      }
+    } else if (uri.pathSegments.first == 'audio-records') {
+      if (mounted) {
+        PlatformManager.instance.mixpanel.track('Audio Record Page Opened From DeepLink');
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AudioRecordPage()));
       }
     } else {
       debugPrint('Unknown link: $uri');

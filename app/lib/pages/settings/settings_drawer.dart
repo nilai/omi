@@ -23,6 +23,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'device_settings.dart';
 import '../conversations/sync_page.dart';
+import '../audio_record/page.dart';
 
 enum SettingsMode {
   no_device,
@@ -298,6 +299,19 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const DeviceSettings(),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 1, color: Color(0xFF3C3C43)),
+              _buildSettingsItem(
+                title: 'Audio Upload',
+                icon: const FaIcon(FontAwesomeIcons.fileAudio, color: Color(0xFF8E8E93), size: 20),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const AudioRecordPage(),
                     ),
                   );
                 },
