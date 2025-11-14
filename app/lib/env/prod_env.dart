@@ -21,6 +21,10 @@ final class ProdEnv implements EnvFields {
   final String? apiBaseUrl = _ProdEnv.apiBaseUrl;
 
   @override
+  @EnviedField(varName: 'NOTE_BASE_URL', obfuscate: true)
+  final String? noteBaseUrl = _ProdEnv.noteBaseUrl;
+
+  @override
   @EnviedField(varName: 'GROWTHBOOK_API_KEY', obfuscate: true)
   final String? growthbookApiKey = _ProdEnv.growthbookApiKey;
 
@@ -47,8 +51,4 @@ final class ProdEnv implements EnvFields {
   @override
   @EnviedField(varName: 'GOOGLE_CLIENT_SECRET', obfuscate: true)
   final String? googleClientSecret = _ProdEnv.googleClientSecret;
-
-  @override
-  @EnviedField(varName: 'SUMMARY_API_BASE_URL', obfuscate: true)
-  final String? summaryApiBaseUrl = _ProdEnv.summaryApiBaseUrl;
 }

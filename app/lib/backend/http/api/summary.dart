@@ -9,7 +9,7 @@ import 'package:omi/env/env.dart';
 /// POST /v3/summary/generate
 Future<SummaryResponse?> generateSummary(String audioRecordId) async {
   var response = await makeApiCall(
-    url: '${Env.summaryApiBaseUrl}/v3/summary/generate',
+    url: '${Env.noteBaseUrl}v3/summary/generate',
     headers: {},
     method: 'POST',
     body: json.encode({
@@ -31,7 +31,7 @@ Future<SummaryResponse?> generateSummary(String audioRecordId) async {
 /// GET /v3/summary/result
 Future<SummaryResult?> getSummaryResult(String audioRecordId) async {
   var response = await makeApiCall(
-    url: '${Env.summaryApiBaseUrl}/v3/summary/result?audio_record_id=$audioRecordId',
+    url: '${Env.noteBaseUrl}v3/summary/result?audio_record_id=$audioRecordId',
     headers: {},
     method: 'GET',
     body: '',

@@ -21,6 +21,10 @@ final class DevEnv implements EnvFields {
   final String? apiBaseUrl = _DevEnv.apiBaseUrl;
 
   @override
+  @EnviedField(varName: 'NOTE_BASE_URL', obfuscate: true)
+  final String? noteBaseUrl = _DevEnv.noteBaseUrl;
+
+  @override
   @EnviedField(varName: 'GROWTHBOOK_API_KEY', obfuscate: true)
   final String? growthbookApiKey = _DevEnv.growthbookApiKey;
 
@@ -47,8 +51,4 @@ final class DevEnv implements EnvFields {
   @override
   @EnviedField(varName: 'GOOGLE_CLIENT_SECRET', obfuscate: true)
   final String? googleClientSecret = _DevEnv.googleClientSecret;
-
-  @override
-  @EnviedField(varName: 'SUMMARY_API_BASE_URL', obfuscate: true)
-  final String? summaryApiBaseUrl = _DevEnv.summaryApiBaseUrl;
 }

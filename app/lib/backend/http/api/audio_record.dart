@@ -27,11 +27,17 @@ String getAudioMimeType(String filename) {
 ///
 /// 返回包含上传URL和文件URI的 [PresignedUrlResponse]，失败返回 null
 Future<PresignedUrlResponse?> getPresignedUrl(String contentType) async {
+  // 将参数编码为 URL 查询参数
+  final encodedType = Uri.encodeComponent(contentType);
+  final fullUrl = '${Env.noteBaseUrl}v3/get_presigned_url?content_type=$encodedType';
+
+  debugPrint('🔵 [getPresignedUrl] Request URL: $fullUrl');
+
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}v3/get_presigned_url',
+    url: fullUrl,
     headers: {'Content-Type': 'application/json'},
     method: 'GET',
-    body: jsonEncode({'content_type': contentType}),
+    body: '', // GET 请求不应有 body
   );
 
   if (response == null) return null;
@@ -97,8 +103,11 @@ Future<AudioRecord?> createAudioRecord(
   String audioUri,
   int recordTs,
 ) async {
+  final fullUrl = '${Env.noteBaseUrl}v3/create_record';
+  debugPrint('🟢 [createAudioRecord] Request URL: $fullUrl');
+
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}v3/create_record',
+    url: fullUrl,
     headers: {'Content-Type': 'application/json'},
     method: 'POST',
     body: jsonEncode({

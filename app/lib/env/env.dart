@@ -13,6 +13,8 @@ abstract class Env {
 
   static String? get apiBaseUrl => _instance.apiBaseUrl;
 
+  static String? get noteBaseUrl => _instance.noteBaseUrl;
+
   static String? get growthbookApiKey => _instance.growthbookApiKey;
 
   static String? get googleMapsApiKey => _instance.googleMapsApiKey;
@@ -26,8 +28,6 @@ abstract class Env {
   static String? get googleClientId => _instance.googleClientId;
 
   static String? get googleClientSecret => _instance.googleClientSecret;
-
-  static String? get summaryApiBaseUrl => _instance.summaryApiBaseUrl;
 }
 
 abstract class EnvFields {
@@ -36,6 +36,8 @@ abstract class EnvFields {
   String? get mixpanelProjectToken;
 
   String? get apiBaseUrl;
+
+  String? get noteBaseUrl;
 
   String? get growthbookApiKey;
 
@@ -50,6 +52,4 @@ abstract class EnvFields {
   String? get googleClientId;
 
   String? get googleClientSecret;
-
-  String? get summaryApiBaseUrl;
 }

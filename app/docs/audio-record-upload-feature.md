@@ -182,16 +182,12 @@ Future<PresignedUrlResponse?> getPresignedUrl(String contentType)
 
 **HTTP 请求**：
 ```
-GET /v3/get_presigned_url
-Content-Type: application/json
+GET /v3/get_presigned_url?content_type=audio/m4a
 ```
 
-**请求参数**：
-```json
-{
-  "content_type": "audio/m4a"  // 音频文件的MIME类型
-}
-```
+**查询参数**：
+- `content_type`: 音频文件的MIME类型（如 `audio/m4a`, `audio/wav`, `audio/mpeg`, `audio/aac`）
+  - 注意：参数值会自动进行 URL 编码，如 `audio/m4a` 编码为 `audio%2Fm4a`
 
 **响应示例**：
 ```json
