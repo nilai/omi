@@ -115,6 +115,7 @@ class AudioUploadWidget extends StatelessWidget {
             icon: const Icon(Icons.upload_file),
             label: const Text('选择文件'),
             style: ElevatedButton.styleFrom(
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(
                 horizontal: 32,
                 vertical: 16,
