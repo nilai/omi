@@ -28,6 +28,8 @@ abstract class Env {
   static String? get googleClientId => _instance.googleClientId;
 
   static String? get googleClientSecret => _instance.googleClientSecret;
+
+  static bool get useWebAuth => _instance.useWebAuth;
 }
 
 abstract class EnvFields {
@@ -52,4 +54,6 @@ abstract class EnvFields {
   String? get googleClientId;
 
   String? get googleClientSecret;
+
+  bool get useWebAuth;
 }
