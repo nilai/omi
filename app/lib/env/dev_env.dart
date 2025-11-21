@@ -53,5 +53,5 @@ final class DevEnv implements EnvFields {
   final String? googleClientSecret = _DevEnv.googleClientSecret;
 
   @override
-  final bool useWebAuth = true;
+  final bool useWebAuth = false;
 }

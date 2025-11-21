@@ -3,5 +3,5 @@
 #include "Custom.xcconfig"
 
 ASSET_PREFIX=prod
-BUNDLE_NAME=Omi
-BUNDLE_DISPLAY_NAME=Omi
+BUNDLE_NAME=MemoPin
+BUNDLE_DISPLAY_NAME=MemoPin
