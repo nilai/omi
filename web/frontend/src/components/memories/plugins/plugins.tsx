@@ -11,19 +11,18 @@ interface PluginsProps {
 export default function Plugins({ apps }: PluginsProps) {
   return (
     <div className="h-auto">
-      <h3 className="px-4 text-xl font-semibold md:px-12 md:text-2xl">App Summary</h3>
-      <div className="mt-3 flex flex-col gap-8">
+      <div className="flex flex-col gap-10">
         {apps.map((app, index) => {
           return (
             <div key={index}>
-              <ErrorBoundary errorComponent={ErrorIdentifyPlugin}>
-                <IdentifyPlugin pluginId={app.app_id} />
-              </ErrorBoundary>
-              <div className="bg-bg-color px-4 md:px-12">
-                <Markdown className="prose text-white prose-headings:text-gray-200 prose-p:m-0 prose-p:mt-3 last:prose-p:mt-8 last:prose-p:rounded-lg last:prose-p:bg-zinc-900 last:prose-p:p-2 last:prose-p:px-4 last:prose-p:text-zinc-200 prose-strong:text-white prose-ul:text-gray-300 prose-li:text-gray-300 md:prose-p:text-lg md:last:prose-p:text-sm">
+              <div className="mb-6 md:mb-8">
+                <Markdown className="prose prose-base max-w-none font-system-ui text-zinc-300 prose-headings:text-zinc-100 prose-headings:font-medium prose-headings:text-base prose-p:leading-relaxed prose-p:text-zinc-300 prose-strong:text-zinc-100 prose-ul:text-zinc-300 prose-li:text-zinc-300 prose-li:marker:text-zinc-500 prose-h1:text-base prose-h2:text-base prose-h3:text-base prose-h4:text-base prose-h5:text-base prose-h6:text-base md:prose-lg md:prose-h1:text-base md:prose-h2:text-base md:prose-h3:text-base md:prose-h4:text-base md:prose-h5:text-base md:prose-h6:text-base">
                   {app.content}
                 </Markdown>
               </div>
+              <ErrorBoundary errorComponent={ErrorIdentifyPlugin}>
+                <IdentifyPlugin pluginId={app.app_id} />
+              </ErrorBoundary>
             </div>
           );
         })}

@@ -87,11 +87,12 @@ class AuthenticationProvider extends BaseProvider {
   }
 
   Future<void> onAppleSignIn(Function() onSignIn) async {
+    final useWebAuth = Env.useWebAuth;
     if (!loading) {
       setLoadingState(true);
       try {
         UserCredential? credential;
-        if (PlatformService.isMobile) {
+        if (PlatformService.isMobile && !useWebAuth) {
           credential = await AuthService.instance.signInWithAppleMobile();
         } else {
           credential = await AuthService.instance.authenticateWithProvider('apple');
