@@ -140,39 +140,95 @@ Future<http.Response> _performRequest(
 ) async {
   final client = ApiClient._client;
 
+  // 记录请求开始时间
+  final stopwatch = Stopwatch()..start();
+
+  // 记录请求详情
+  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  debugPrint('🌐 HTTP REQUEST');
+  debugPrint('Method: $method');
+  debugPrint('URL: $url');
+  debugPrint('Headers: ${_sanitizeHeaders(headers)}');
+  if (body.isNotEmpty) {
+    debugPrint('Body: $body');
+  }
+  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  http.Response response;
+
   switch (method) {
     case 'POST':
       headers['Content-Type'] = 'application/json';
-      return await client.post(Uri.parse(url), headers: headers, body: body).timeout(
+      response = await client.post(Uri.parse(url), headers: headers, body: body).timeout(
             ApiClient.requestTimeoutWrite,
             onTimeout: () => throw TimeoutException('Request timeout'),
           );
+      break;
     case 'GET':
-      return await client.get(Uri.parse(url), headers: headers).timeout(
+      response = await client.get(Uri.parse(url), headers: headers).timeout(
             ApiClient.requestTimeoutRead,
             onTimeout: () => throw TimeoutException('Request timeout'),
           );
+      break;
     case 'DELETE':
       headers['Content-Type'] = 'application/json';
-      return await client.delete(Uri.parse(url), headers: headers, body: body).timeout(
+      response = await client.delete(Uri.parse(url), headers: headers, body: body).timeout(
             ApiClient.requestTimeoutWrite,
             onTimeout: () => throw TimeoutException('Request timeout'),
           );
+      break;
     case 'PATCH':
       headers['Content-Type'] = 'application/json';
-      return await client.patch(Uri.parse(url), headers: headers, body: body).timeout(
+      response = await client.patch(Uri.parse(url), headers: headers, body: body).timeout(
             ApiClient.requestTimeoutWrite,
             onTimeout: () => throw TimeoutException('Request timeout'),
           );
+      break;
     case 'PUT':
       headers['Content-Type'] = 'application/json';
-      return await client.put(Uri.parse(url), headers: headers, body: body).timeout(
+      response = await client.put(Uri.parse(url), headers: headers, body: body).timeout(
             ApiClient.requestTimeoutWrite,
             onTimeout: () => throw TimeoutException('Request timeout'),
           );
+      break;
     default:
       throw Exception('Unsupported HTTP method: $method');
   }
+
+  stopwatch.stop();
+
+  // 记录响应详情
+  final statusIcon = response.statusCode >= 200 && response.statusCode < 300 ? '✅' : '❌';
+  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  debugPrint('$statusIcon HTTP RESPONSE');
+  debugPrint('Method: $method');
+  debugPrint('URL: $url');
+  debugPrint('Status: ${response.statusCode}');
+  debugPrint('Duration: ${stopwatch.elapsedMilliseconds}ms');
+  debugPrint('Response Body: ${_truncateResponse(response.body)}');
+  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+  return response;
+}
+
+/// 隐藏敏感的 header 信息
+String _sanitizeHeaders(Map<String, String> headers) {
+  final sanitized = Map<String, String>.from(headers);
+  if (sanitized.containsKey('Authorization')) {
+    final auth = sanitized['Authorization']!;
+    if (auth.startsWith('Bearer ') && auth.length > 20) {
+      sanitized['Authorization'] = 'Bearer ${auth.substring(7, 17)}...';
+    }
+  }
+  return sanitized.toString();
+}
+
+/// 截断过长的响应内容
+String _truncateResponse(String body, {int maxLength = 1000}) {
+  if (body.length <= maxLength) {
+    return body;
+  }
+  return '${body.substring(0, maxLength)}... (truncated ${body.length - maxLength} chars)';
 }
 
 Future<http.Response> makeMultipartApiCall({
@@ -221,6 +277,16 @@ Stream<String> makeStreamingApiCall({
   String method = 'POST',
 }) async* {
   try {
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('🌊 STREAMING REQUEST');
+    debugPrint('Method: $method');
+    debugPrint('URL: $url');
+    debugPrint('Headers: ${_sanitizeHeaders(headers)}');
+    if (body.isNotEmpty) {
+      debugPrint('Body: $body');
+    }
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     var request = http.Request(method, Uri.parse(url));
 
     final builtHeaders = await buildHeaders(
@@ -238,8 +304,12 @@ Stream<String> makeStreamingApiCall({
 
     if (streamedResponse.statusCode != 200) {
       Logger.error('Streaming request failed: ${streamedResponse.statusCode}');
+      debugPrint('❌ STREAMING RESPONSE: ${streamedResponse.statusCode}');
       return;
     }
+
+    debugPrint('✅ STREAMING RESPONSE: ${streamedResponse.statusCode} - Started receiving data...');
+    int chunkCount = 0;
 
     var buffers = <String>[];
     await for (var data in streamedResponse.stream.transform(utf8.decoder)) {
@@ -258,14 +328,20 @@ Stream<String> makeStreamingApiCall({
           buffers.clear();
         }
 
+        chunkCount++;
+        debugPrint('📦 Chunk #$chunkCount: ${_truncateResponse(line, maxLength: 200)}');
         yield line;
       }
     }
 
     // Flush remaining buffers
     if (buffers.isNotEmpty) {
+      chunkCount++;
+      debugPrint('📦 Chunk #$chunkCount (final): ${_truncateResponse(buffers.join(), maxLength: 200)}');
       yield buffers.join();
     }
+
+    debugPrint('🏁 STREAMING COMPLETE: Received $chunkCount chunks');
   } catch (e, stackTrace) {
     Logger.error('Streaming request error: $e');
     PlatformManager.instance.crashReporter.reportCrash(e, stackTrace, userAttributes: {'url': url, 'method': method});
