@@ -597,7 +597,8 @@ class BtDevice {
         isFieldyDevice(result) ||
         isFriendPendantDevice(result) ||
         isOmiDevice(result) ||
-        isFrameDevice(result);
+        isFrameDevice(result) ||
+        isAiNoteDevice(result);
   }
 
   static bool isBeeDevice(ScanResult result) {
@@ -687,6 +688,22 @@ class BtDevice {
     return device.servicesList.any((s) => s.uuid == Guid(frameServiceUuid));
   }
 
+  static bool isAiNoteDevice(ScanResult result) {
+    final name = result.device.platformName.toUpperCase();
+    // Check by name prefix or by Service UUID in advertisement data
+    return name.startsWith('AI_PEN') ||
+        name.startsWith('AI_NOTE') ||
+        result.advertisementData.serviceUuids
+            .any((uuid) => uuid.toString().toLowerCase() == aiNoteServiceUuid.toLowerCase());
+  }
+
+  static bool isAiNoteDeviceFromDevice(BluetoothDevice device) {
+    final name = device.platformName.toUpperCase();
+    return name.startsWith('AI_PEN') ||
+        name.startsWith('AI_NOTE') ||
+        device.servicesList.any((s) => s.uuid.toString().toLowerCase() == aiNoteServiceUuid.toLowerCase());
+  }
+
   // from ScanResult
   static fromScanResult(ScanResult result) {
     DeviceType? deviceType;
@@ -703,6 +720,8 @@ class BtDevice {
       deviceType = DeviceType.omi;
     } else if (isFrameDevice(result)) {
       deviceType = DeviceType.frame;
+    } else if (isAiNoteDevice(result)) {
+      deviceType = DeviceType.aiNote;
     }
     if (deviceType != null) {
       cachedDevicesMap[result.device.remoteId.toString()] = deviceType;
