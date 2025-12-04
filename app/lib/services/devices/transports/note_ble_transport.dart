@@ -7,6 +7,13 @@ import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'device_transport.dart';
 
+/// MTU 配置常量
+const int _kNoteMtuSize = 517;
+/// 连接稳定等待时间 (ms)
+const int _kConnectionStabilizeDelayMs = 200;
+/// 服务发现超时时间 (秒)
+const int _kServiceDiscoveryTimeoutSec = 10;
+
 /// Note 设备 BLE 传输层
 ///
 /// 负责:
@@ -37,7 +44,13 @@ class NoteBleTransport implements DeviceTransport {
   // 当前连接状态
   DeviceTransportState _currentState = DeviceTransportState.disconnected;
 
+  // 当前协商的 MTU 值
+  int _negotiatedMtu = 23; // 默认 BLE MTU
+
   NoteBleTransport(this.device);
+
+  /// 获取当前协商的 MTU 值
+  int get negotiatedMtu => _negotiatedMtu;
 
   @override
   String get deviceId => device.id;
@@ -80,9 +93,23 @@ class NoteBleTransport implements DeviceTransport {
         print('[NoteBleTransport] 连接状态变化: ${state.connectionState}');
 
         if (state.connectionState == DeviceConnectionState.connected) {
+          print('[NoteBleTransport] 设备连接成功');
+
+          // #5: 连接稳定等待
+          await Future.delayed(const Duration(milliseconds: _kConnectionStabilizeDelayMs));
+          print('[NoteBleTransport] 连接稳定等待完成');
+
+          // #1: MTU 交换
+          await _exchangeMtu();
+
+          // #3 & #8: 服务发现和验证
+          await _discoverAndValidateServices();
+
+          // 订阅特征
+          await _subscribeCharacteristics();
+
           _updateState(DeviceTransportState.connected);
-          print('[NoteBleTransport] 设备连接成功,开始订阅特征');
-          await _discoverAndSubscribe();
+          print('[NoteBleTransport] 连接流程完成');
         } else if (state.connectionState == DeviceConnectionState.disconnected) {
           _updateState(DeviceTransportState.disconnected);
           if (state.failure != null) {
@@ -92,13 +119,50 @@ class NoteBleTransport implements DeviceTransport {
       },
       onError: (error) {
         print('[NoteBleTransport] 连接错误: $error');
-        _updateState(DeviceTransportState.disconnected);
+        _handleBleError(error);
       },
     );
   }
 
-  /// 发现服务并订阅所有特征
-  Future<void> _discoverAndSubscribe() async {
+  /// #1: MTU 交换
+  Future<void> _exchangeMtu() async {
+    try {
+      _negotiatedMtu = await _ble.requestMtu(deviceId: device.id, mtu: _kNoteMtuSize);
+      print('[NoteBleTransport] MTU 协商成功: $_negotiatedMtu');
+    } catch (e) {
+      print('[NoteBleTransport] MTU 协商失败: $e, 使用默认值');
+      // MTU 协商失败不中断连接，使用默认值
+      _negotiatedMtu = 23;
+    }
+  }
+
+  /// #3 & #8: 服务发现和验证
+  Future<void> _discoverAndValidateServices() async {
+    try {
+      // 显式发现服务（带超时）
+      await _ble
+          .discoverAllServices(device.id)
+          .timeout(const Duration(seconds: _kServiceDiscoveryTimeoutSec));
+
+      // 获取已发现的服务列表
+      final discoveredServices = await _ble.getDiscoveredServices(device.id);
+      print('[NoteBleTransport] 发现 ${discoveredServices.length} 个服务');
+
+      // 验证 Note 服务是否存在
+      final hasNoteService = discoveredServices.any((s) => s.id == NoteUUIDs.service);
+      if (!hasNoteService) {
+        throw Exception('设备不支持 Note 服务 (UUID: ${NoteUUIDs.service})');
+      }
+      print('[NoteBleTransport] Note 服务验证通过');
+    } catch (e) {
+      print('[NoteBleTransport] 服务发现/验证失败: $e');
+      await disconnect();
+      rethrow;
+    }
+  }
+
+  /// 订阅所有特征
+  Future<void> _subscribeCharacteristics() async {
     try {
       // 订阅音频数据特征
       final audioChar = QualifiedCharacteristic(
@@ -108,7 +172,7 @@ class NoteBleTransport implements DeviceTransport {
       );
       _audioSubscription = _ble.subscribeToCharacteristic(audioChar).listen(
             (data) => _audioDataController.add(data),
-            onError: (error) => print('[NoteBleTransport] 音频订阅错误: $error'),
+            onError: (error) => _handleSubscriptionError('音频', error),
           );
 
       // 订阅响应特征
@@ -119,7 +183,7 @@ class NoteBleTransport implements DeviceTransport {
       );
       _responseSubscription = _ble.subscribeToCharacteristic(responseChar).listen(
             (data) => _responseDataController.add(data),
-            onError: (error) => print('[NoteBleTransport] 响应订阅错误: $error'),
+            onError: (error) => _handleSubscriptionError('响应', error),
           );
 
       // 订阅文件数据特征
@@ -130,7 +194,7 @@ class NoteBleTransport implements DeviceTransport {
       );
       _fileSubscription = _ble.subscribeToCharacteristic(fileChar).listen(
             (data) => _fileDataController.add(data),
-            onError: (error) => print('[NoteBleTransport] 文件订阅错误: $error'),
+            onError: (error) => _handleSubscriptionError('文件', error),
           );
 
       // 订阅日志数据特征
@@ -141,13 +205,32 @@ class NoteBleTransport implements DeviceTransport {
       );
       _logSubscription = _ble.subscribeToCharacteristic(logChar).listen(
             (data) => _logDataController.add(data),
-            onError: (error) => print('[NoteBleTransport] 日志订阅错误: $error'),
+            onError: (error) => _handleSubscriptionError('日志', error),
           );
 
       print('[NoteBleTransport] 所有特征订阅完成');
     } catch (e) {
       print('[NoteBleTransport] 订阅特征失败: $e');
       rethrow;
+    }
+  }
+
+  /// #6: 处理订阅错误
+  void _handleSubscriptionError(String name, dynamic error) {
+    print('[NoteBleTransport] $name订阅错误: $error');
+    _handleBleError(error);
+  }
+
+  /// #6: 统一处理 BLE 错误
+  void _handleBleError(dynamic error) {
+    // 检查是否为断开连接异常
+    if (error.toString().contains('Disconnected') ||
+        error.toString().contains('disconnected')) {
+      print('[NoteBleTransport] 检测到设备断开连接');
+      _updateState(DeviceTransportState.disconnected);
+      _cancelAllSubscriptions();
+    } else {
+      _updateState(DeviceTransportState.disconnected);
     }
   }
 
@@ -161,6 +244,15 @@ class NoteBleTransport implements DeviceTransport {
     print('[NoteBleTransport] 断开连接');
 
     await _cancelAllSubscriptions();
+
+    // #4: 清理 GATT 缓存
+    try {
+      await _ble.clearGattCache(device.id);
+      print('[NoteBleTransport] GATT 缓存已清理');
+    } catch (e) {
+      print('[NoteBleTransport] 清理 GATT 缓存失败: $e');
+    }
+
     _updateState(DeviceTransportState.disconnected);
   }
 

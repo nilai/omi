@@ -10,6 +10,7 @@ import 'package:omi/services/devices.dart';
 import 'package:omi/services/devices/device_connection.dart';
 import 'package:omi/services/devices/models.dart';
 import 'package:omi/services/devices/transports/note_ble_transport.dart';
+import 'package:omi/services/devices/transports/device_transport.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'package:omi/services/devices/note_storage_manager.dart';
 
@@ -35,19 +36,127 @@ class NoteDeviceConnection extends DeviceConnection {
   /// 连接初始化标志
   bool _isInitialized = false;
 
+  // ============ #2: 分包拼接相关 ============
+
+  /// 分包数据缓存
+  List<int> _packetCache = [];
+
+  /// 分包超时定时器
+  Timer? _packetTimeoutTimer;
+
+  /// 分包超时时间 (毫秒)
+  static const int _kPacketTimeoutMs = 50;
+
+  /// 分包继续标识 (0x0d 表示后续还有数据)
+  static const int _kPacketContinueFlag = 0x0d;
+
+  // ============ #7: 自动重连相关 ============
+
+  /// 自动重连间隔 (秒)
+  static const int _kAutoReconnectIntervalSec = 5;
+
+  /// 是否启用自动重连
+  bool _autoReconnectEnabled = false;
+
+  /// 连接状态回调
+  void Function(String deviceId, DeviceConnectionState state)? _connectionStateCallback;
+
   NoteDeviceConnection(BtDevice device, this._transport)
       : super(device, _transport) {
     _setupResponseListener();
+    _setupConnectionStateListener();
+  }
+
+  /// 设置连接状态监听器（用于自动重连）
+  void _setupConnectionStateListener() {
+    _transport.connectionStateStream.listen((state) {
+      if (state == DeviceTransportState.disconnected && _autoReconnectEnabled) {
+        print('[NoteConnection] 连接断开，启动自动重连');
+        _startAutoReconnect();
+      }
+    });
   }
 
   /// 设置响应监听器
   void _setupResponseListener() {
     _transport.responseStream.listen((response) {
-      if (_responseCompleter != null && !_responseCompleter!.isCompleted) {
-        _responseCompleter!.complete(response);
-      }
-      _handleResponse(response);
+      _handleIncomingPacket(response);
     });
+  }
+
+  /// #2: 处理接收到的数据包（支持分包拼接）
+  void _handleIncomingPacket(List<int> packet) {
+    if (packet.isEmpty) return;
+
+    final hexString = packet.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ');
+    print('[NoteConnection] 收到数据包: $hexString');
+
+    // 检查是否为分包数据 (命令 0x03 文件列表)
+    // 格式: 0x03 0x0d ... 表示后续还有数据
+    if (packet.length >= 2 && packet[0] == 0x03 && packet[1] == _kPacketContinueFlag) {
+      // 这是一个中间包，需要缓存
+      _cancelPacketTimeout();
+
+      if (_packetCache.isEmpty) {
+        // 第一个中间包，保留命令字节
+        _packetCache.add(packet[0]);
+      }
+      // 添加数据部分（跳过命令字节和分包标识）
+      _packetCache.addAll(packet.sublist(2));
+
+      // 设置超时等待下一包
+      _startPacketTimeout();
+      print('[NoteConnection] 分包数据缓存中，当前长度: ${_packetCache.length}');
+    } else {
+      // 这是最后一包或完整包
+      _cancelPacketTimeout();
+
+      List<int> finalData;
+      if (_packetCache.isNotEmpty) {
+        // 有缓存数据，拼接最后一包
+        if (packet.length >= 2 && packet[0] == 0x03) {
+          // 最后一包也是 0x03 命令，跳过命令字节
+          _packetCache.addAll(packet.sublist(1));
+        } else {
+          _packetCache.addAll(packet);
+        }
+        finalData = List<int>.from(_packetCache);
+        _packetCache.clear();
+        print('[NoteConnection] 分包拼接完成，总长度: ${finalData.length}');
+      } else {
+        // 没有缓存，这是完整的单包数据
+        finalData = packet;
+      }
+
+      // 完成响应
+      if (_responseCompleter != null && !_responseCompleter!.isCompleted) {
+        _responseCompleter!.complete(finalData);
+      }
+      _handleResponse(finalData);
+    }
+  }
+
+  /// #2: 开始分包超时计时
+  void _startPacketTimeout() {
+    _packetTimeoutTimer = Timer(Duration(milliseconds: _kPacketTimeoutMs), () {
+      // 超时后，将已缓存的数据作为最终数据返回
+      if (_packetCache.isNotEmpty) {
+        print('[NoteConnection] 分包超时，返回已缓存数据，长度: ${_packetCache.length}');
+        final finalData = List<int>.from(_packetCache);
+        _packetCache.clear();
+
+        if (_responseCompleter != null && !_responseCompleter!.isCompleted) {
+          _responseCompleter!.complete(finalData);
+        }
+        _handleResponse(finalData);
+      }
+    });
+  }
+
+  /// #2: 取消分包超时计时
+  void _cancelPacketTimeout() {
+    _packetTimeoutTimer?.cancel();
+    _packetTimeoutTimer = null;
   }
 
   @override
@@ -55,6 +164,12 @@ class NoteDeviceConnection extends DeviceConnection {
     void Function(String deviceId, DeviceConnectionState state)? onConnectionStateChanged,
   }) async {
     print('[NoteConnection] 开始连接设备: ${device.name}');
+
+    // 保存回调供自动重连使用
+    _connectionStateCallback = onConnectionStateChanged;
+
+    // 停止自动重连定时器（如果正在运行）
+    _stopAutoReconnect();
 
     // 调用父类连接方法
     await super.connect(onConnectionStateChanged: onConnectionStateChanged);
@@ -64,6 +179,58 @@ class NoteDeviceConnection extends DeviceConnection {
       await _initialize();
       _isInitialized = true;
     }
+
+    // 连接成功后启用自动重连
+    _autoReconnectEnabled = true;
+  }
+
+  // ============ #7: 自动重连方法 ============
+
+  /// 启动自动重连
+  void _startAutoReconnect() async {
+    // 检查是否已绑定设备
+    final isBound = await _storage.isDeviceBound();
+    if (!isBound) {
+      print('[NoteConnection] 设备未绑定，不启动自动重连');
+      return;
+    }
+
+    _stopAutoReconnect();
+    print('[NoteConnection] 启动自动重连定时器 (${_kAutoReconnectIntervalSec}秒间隔)');
+
+    _autoReconnectTimer = Timer.periodic(
+      Duration(seconds: _kAutoReconnectIntervalSec),
+      (timer) async {
+        if (!_autoReconnectEnabled) {
+          timer.cancel();
+          return;
+        }
+
+        print('[NoteConnection] 尝试自动重连...');
+        try {
+          await connect(onConnectionStateChanged: _connectionStateCallback);
+          print('[NoteConnection] 自动重连成功');
+          timer.cancel();
+        } catch (e) {
+          print('[NoteConnection] 自动重连失败: $e, 将继续重试');
+        }
+      },
+    );
+  }
+
+  /// 停止自动重连
+  void _stopAutoReconnect() {
+    _autoReconnectTimer?.cancel();
+    _autoReconnectTimer = null;
+  }
+
+  /// 启用/禁用自动重连
+  void setAutoReconnectEnabled(bool enabled) {
+    _autoReconnectEnabled = enabled;
+    if (!enabled) {
+      _stopAutoReconnect();
+    }
+    print('[NoteConnection] 自动重连已${enabled ? "启用" : "禁用"}');
   }
 
   /// 连接初始化流程
@@ -600,7 +767,11 @@ class NoteDeviceConnection extends DeviceConnection {
   @override
   Future<void> disconnect() async {
     print('[NoteConnection] 断开连接');
-    _autoReconnectTimer?.cancel();
+    // 主动断开时禁用自动重连
+    _autoReconnectEnabled = false;
+    _stopAutoReconnect();
+    _cancelPacketTimeout();
+    _packetCache.clear();
     _isInitialized = false;
     await super.disconnect();
   }
@@ -608,6 +779,8 @@ class NoteDeviceConnection extends DeviceConnection {
   /// 释放资源
   void dispose() {
     _autoReconnectTimer?.cancel();
+    _cancelPacketTimeout();
+    _packetCache.clear();
     _transport.dispose();
   }
 
