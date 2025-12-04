@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'device_transport.dart';
@@ -79,6 +80,12 @@ class NoteBleTransport implements DeviceTransport {
     if (_currentState == DeviceTransportState.connected) {
       print('[NoteBleTransport] 设备已连接,跳过连接');
       return;
+    }
+
+    // 停止 flutter_blue_plus 的扫描，避免库冲突
+    if (fbp.FlutterBluePlus.isScanningNow) {
+      await fbp.FlutterBluePlus.stopScan();
+      print('[NoteBleTransport] 已停止 flutter_blue_plus 扫描');
     }
 
     await _connectionSubscription?.cancel();
@@ -250,7 +257,8 @@ class NoteBleTransport implements DeviceTransport {
   /// #6: 处理订阅错误
   void _handleSubscriptionError(String name, dynamic error) {
     print('[NoteBleTransport] $name订阅错误: $error');
-    _handleBleError(error);
+    // 只记录错误，不断开连接
+    // 部分特征可能不存在（取决于设备固件版本），这不应该影响整体连接
   }
 
   /// #6: 统一处理 BLE 错误
