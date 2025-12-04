@@ -47,6 +47,9 @@ class NoteBleTransport implements DeviceTransport {
   // 当前协商的 MTU 值
   int _negotiatedMtu = 23; // 默认 BLE MTU
 
+  // 连接完成器 - 用于等待连接流程完成
+  Completer<void>? _connectionCompleter;
+
   NoteBleTransport(this.device);
 
   /// 获取当前协商的 MTU 值
@@ -81,6 +84,9 @@ class NoteBleTransport implements DeviceTransport {
     await _connectionSubscription?.cancel();
     _updateState(DeviceTransportState.connecting);
 
+    // 创建连接完成器
+    _connectionCompleter = Completer<void>();
+
     print('[NoteBleTransport] 开始连接设备: ${device.name} (${device.id})');
 
     _connectionSubscription = _ble
@@ -93,33 +99,59 @@ class NoteBleTransport implements DeviceTransport {
         print('[NoteBleTransport] 连接状态变化: ${state.connectionState}');
 
         if (state.connectionState == DeviceConnectionState.connected) {
-          print('[NoteBleTransport] 设备连接成功');
+          try {
+            print('[NoteBleTransport] 设备连接成功');
 
-          // #5: 连接稳定等待
-          await Future.delayed(const Duration(milliseconds: _kConnectionStabilizeDelayMs));
-          print('[NoteBleTransport] 连接稳定等待完成');
+            // #5: 连接稳定等待
+            await Future.delayed(const Duration(milliseconds: _kConnectionStabilizeDelayMs));
+            print('[NoteBleTransport] 连接稳定等待完成');
 
-          // #1: MTU 交换
-          await _exchangeMtu();
+            // #1: MTU 交换
+            await _exchangeMtu();
 
-          // #3 & #8: 服务发现和验证
-          await _discoverAndValidateServices();
+            // #3 & #8: 服务发现和验证
+            await _discoverAndValidateServices();
 
-          // 订阅特征
-          await _subscribeCharacteristics();
+            // 订阅特征
+            await _subscribeCharacteristics();
 
-          _updateState(DeviceTransportState.connected);
-          print('[NoteBleTransport] 连接流程完成');
+            _updateState(DeviceTransportState.connected);
+            print('[NoteBleTransport] 连接流程完成');
+
+            // 通知连接完成
+            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+              _connectionCompleter!.complete();
+            }
+          } catch (e) {
+            print('[NoteBleTransport] 连接初始化失败: $e');
+            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+              _connectionCompleter!.completeError(e);
+            }
+          }
         } else if (state.connectionState == DeviceConnectionState.disconnected) {
           _updateState(DeviceTransportState.disconnected);
           if (state.failure != null) {
             print('[NoteBleTransport] 连接失败: ${state.failure}');
+            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+              _connectionCompleter!.completeError(state.failure!);
+            }
           }
         }
       },
       onError: (error) {
         print('[NoteBleTransport] 连接错误: $error');
         _handleBleError(error);
+        if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+          _connectionCompleter!.completeError(error);
+        }
+      },
+    );
+
+    // 等待连接完成（带超时）
+    await _connectionCompleter!.future.timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        throw Exception('连接超时: 设备未能在15秒内完成连接');
       },
     );
   }
