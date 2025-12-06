@@ -8,25 +8,25 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 /// Characteristic UUIDs: e2c1a301~e2c1a306
 class NoteUUIDs {
   /// BLE Service UUID
-  static final service = Uuid.parse("e49a3001-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final service = Uuid.parse("78563400-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// 音频实时数据特征 (设备→APP)
-  static final audioData = Uuid.parse("e49a3001-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final audioData = Uuid.parse("78563401-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// 命令下行特征 (APP→设备)
-  static final command = Uuid.parse("e49a3002-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final command = Uuid.parse("78563402-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// 设备响应/通知特征 (设备→APP)
-  static final response = Uuid.parse("e49a3003-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final response = Uuid.parse("78563403-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// OTA 文件下载特征 (APP→设备)
-  static final otaFile = Uuid.parse("e49a3004-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final otaFile = Uuid.parse("78563404-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// 录音文件/数据流特征 (设备→APP)
-  static final recordFile = Uuid.parse("e49a3005-f69a-11e8-8eb2-f2801f1b9fd1");
+  static final recordFile = Uuid.parse("78563405-ecf0-89b1-c845-2b9e631f4d7a");
 
   /// 日志文件/数据流特征 (设备→APP)
-  static final logFile = Uuid.parse("e2c1a306-7f4b-5e9d-bc23-1a2f3e4d5c6b");
+  static final logFile = Uuid.parse("78563406-ecf0-89b1-c845-2b9e631f4d7a");
 }
 
 /// Note 设备命令定义
