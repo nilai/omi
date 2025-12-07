@@ -1,0 +1,451 @@
+// 有几个约定
+// 1. 所有接口都需要传一下user_id，放在header中
+// 2. 服务端接口返回值都会包括base_resp结构。code为0的时候代表成功返回；如果是返回1XXXX，代表请求参数错误等客户端错误；如果是返回2XXXX，代表服务端错误
+// 3. logid可以在日志中打印，方便查问题。
+
+// 命名空间定义
+namespace py summora
+
+struct BaseResp {
+    1: i32 code,
+    2: string message,
+    3: string logid,
+}
+
+enum MemoryType {
+  SUMMARY = 1,
+  ONLY_RECORD = 2,
+  INSIGHT = 3,
+  AI_EXPERT = 4,
+}
+
+struct MemoryStruct {
+    1: string id,
+    2: i64 create_at,
+    3: string title,
+    4: MemoryType type,
+    5: string label, // 会议纪要、今日运势之类的
+    6: string content,
+    7: i32 duration, // 单位是s
+    7: SummaryMemoryStruct SummaryContent,
+    8: OnlyRecordMemoryStruct OnlyRecordContent,
+    9: InsightMemoryStruct InsightContent,
+    10: AiExpertMemoryStruct AiExpertContent,
+}
+
+struct AiExpertMemoryStruct {
+    1: string content, // markdwon格式
+}
+
+struct InsightMemoryStruct {
+    1: string content, // markdwon格式
+}
+
+struct OnlyRecordMemoryStruct {
+    1: string record_file, // 本地保存的文件名
+}
+
+struct SummaryMemoryStruct {
+    1: list<SpeakerStruct> participants,
+    2: string record_url, // 录音地址
+    3: string summary, // markdown格式
+    4: list<SummaryConversationStruct> transcript,
+    5: list<TodoStruct> todos,
+}
+
+struct SummaryConversationStruct {
+    1: string id,
+    2: SpeakerStruct speaker,
+    3: string content,
+    4: string time,
+}
+
+struct SpeakerStruct {
+    1: string id,
+    2: string name,
+    3: string avatar,
+    4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
+}
+
+struct TodoStruct {
+    1: string id,
+    2: string title,
+    3: SpeakerStruct owner,
+    4: string priority,
+    5: string deadline,
+}
+
+struct MemoStruct {
+    1: string id,
+    2: string title,
+    3: string content,
+    4: list<string> tags,
+    5: i64 create_at,
+    6: i64 relate_memory_id, // 如果没有关联的记忆，则为0
+}
+
+struct ExpertStruct {
+    1: string id,
+    2: string name,
+    3: string avatar,
+    4: string about,
+    5: list<string> capabilities,
+    6: string prompt,
+    7: string chat_personality,
+}
+
+struct TemplateStruct {
+    1: string id,
+    2: string title,
+    3: string description,
+    4: string content,
+}
+
+struct UserAISettings {
+    1: string appellation, // AI如何称呼您
+    2: string profession, // 职业
+    3: string ai_personality, // AI人格
+    4: string response_style,
+    5: string custom_prompt,
+}
+
+struct UserStruct {
+    1: string user_name,
+    2: string email,
+    3: string avatar,
+    4: string phone,
+    5: string brithday,
+    6: UserAISettings ai_settings,
+}
+
+///// 
+
+struct GetMemoryListResponse {
+    1: list<MemoryStruct> memorys,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetMemoryListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetMemoryDaysRequest {
+    1: string month, // 如2025-11、2025-01
+}
+
+struct GetMemoryDaysResponse {
+    1: list<string> days; // 返回有记录的日期列表, [2025-11-10, 2025-11-11, 2025-11-15]
+    255: BaseResp base_resp,
+}
+
+struct GetMemoryDetailResponse {
+    1: MemoryStruct memory,
+    255: BaseResp base_resp,
+}
+
+struct GetMemoryDetailRequest {
+    1: string memory_id,
+}
+
+struct CreateRecordRequest {
+    1: string record_file,
+    2: i64 create_at,
+    3: i32 duration, // 单位是s
+}
+
+struct CreateRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetUploadRecordUrlRequest {
+    1: string content_type,
+}
+
+struct GetUploadRecordUrlResponse {
+    1: string upload_url,
+    2: string uri,
+    255: BaseResp base_resp,
+}
+
+struct SummaryRecordRequest {
+    1: string memory_id,
+    2: string record_url,
+    3: i64 record_memo_at,  // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
+}
+
+struct SummaryRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct ShareMemoryRequest {
+    1: string memory_id,
+}
+
+struct ShareMemoryResponse {
+    1: string id,
+    2: string share_code,
+    3: string share_url,
+    4: string short_url,
+    5: i64 expires_at,
+    6: i64 create_at,
+    255: BaseResp base_resp,
+}
+
+struct DeleteMemoryRequest {
+    1: string memory_id
+}
+
+struct DeleteMemoryResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetMemoListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetMemoListResponse {
+    1: list<MemoStruct> memos,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetMemoDetailRequest {
+    1: string memo_id,
+}
+
+struct GetMemoDetailResponse {
+    1: MemoStruct memo,
+    255: BaseResp base_resp,
+}
+
+struct CreateMemoWithRecordRequest {
+    1: string record_url, // 针对没开启录音情况下的memo创建
+    2: i64 create_at,
+}
+
+struct CreateMemoWithRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct CreateMemoWithTextRequest {
+    1: string content,
+    2: i64 create_at,
+}
+
+struct CreateMemoWithTextResponse {
+    255: BaseResp base_resp,
+}
+
+struct DeleteMemoRequest {
+    1: string memo_id,
+}
+
+struct DeleteMemoResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetTodoListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetTodoListResponse {
+    1: list<TodoStruct> todos,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct CreateTodoRequest {
+    1: string title,
+    2: string owner_id,
+    3: string priority,
+    4: string deadline,
+}
+
+struct CreateTodoResponse {
+    255: BaseResp base_resp,
+}
+
+struct DoneTodoRequest {
+    1: string todo_id,
+}
+
+struct DoneTodoResponse {
+    255: BaseResp base_resp,
+}
+
+struct ChatRequest {
+    1: string expert_id, // 专家模型ID, 不用的话，为空字符串
+    2: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
+    3: string template_id, // 对应的模板id，不用的话，为空字符串
+    4: string speaker_id, // 对应人物的id，没有的话，为空字符串。针对AI分析助手的场景
+}
+
+struct ChatResponse {
+    // streaming 接口
+}
+
+struct AddSpeakerRequest {
+    1: string audio_url,
+    2: string name,
+    3: string avatar, // 可以为空
+}
+
+struct AddSpeakerResponse {
+    255: BaseResp base_resp,
+}
+
+struct MarkSpeakerRequest {
+    1: string memory_id,
+    2: string template_speaker_name, // 在记忆的对话的临时名字
+    3: string name, // 设置的名字
+    4: string avatar, // 可以为空
+}
+
+struct MarkSpeakerResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetSpeakerListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetSpeakerListResponse {
+    1: list<SpeakerStruct> speakers,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct SpeakerWithDetailStruct {
+    1: SpeakerStruct speaker,
+    2: string summary,
+}
+
+struct GetSpeakerListWithDetailRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetSpeakerListWithDetailResponse {
+    1: list<SpeakerWithDetailStruct> speakers,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetSpeakerDetailRequest {
+    1: string speaker_id,
+}
+
+struct GetSpeakerDetailResponse {
+    1: SpeakerStruct speaker,
+    2: list<MemoryStruct> memorys,
+    3: i32 memory_total,
+    255: BaseResp base_resp,
+}
+
+struct GetExpertListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct ExpertMergeUserStruct {
+    1: ExpertStruct expert,
+    2: bool is_add,
+}
+
+struct GetExpertListResponse {
+    1: list<ExpertMergeUserStruct> experts,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetExpertDetailRequest {
+    1: string expert_id,
+}
+
+struct GetExpertDetailResponse {
+    1: ExpertMergeUserStruct expert,
+    255: BaseResp base_resp,
+}
+
+struct GetTemplateListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetTemplateListResponse {
+    1: list<TemplateStruct> templates,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetTemplateDetailRequest {
+    1: string template_id,
+}
+
+struct GetTemplateDetailResponse {
+    1: TemplateStruct template,
+    255: BaseResp base_resp,
+}
+
+struct GetUserProfileResponse {
+    1: UserStruct user,
+    255: BaseResp base_resp,
+}
+
+struct GetUserProfileRequest {
+}
+
+service AppService {
+    // 记忆相关接口
+    GetMemoryListResponse GetMemoryList(1: GetMemoryListRequest req)
+    GetMemoryDaysResponse GetMemoryDays(1: GetMemoryDaysRequest req)
+    GetMemoryDetailResponse GetMemoryDetail(1: GetMemoryDetailRequest req)
+    GetInsightListResponse GetInsightList(1: GetInsightListRequest req)
+    // 主要用于创建录音记录
+    CreateRecordResponse CreateRecord(1: CreateRecordRequest req)
+    // 获取到上传地址，直接put录音文件到这个地址
+    GetUploadRecordUrlResponse GetUploadRecordUrl(1: GetUploadRecordUrlRequest req)
+    SummaryRecordResponse SummaryRecord(1: SummaryRecordRequest req)
+    ShareMemoryResponse ShareMemory(1: ShareMemoryRequest req)
+    DeleteMemoryResponse DeleteMemory(1: DeleteMemoryRequest req)
+
+    // memo相关接口
+    GetMemoListResponse GetMemoList(1: GetMemoListRequest req)
+    GetMemoDetailResponse GetMemoDetail(1: GetMemoDetailRequest req)
+    CreateMemoWithRecordResponse CreateMemoWithRecord(1: CreateMemoWithRecordRequest req)
+    CreateMemoWithTextResponse CreateMemoWithText(1: CreateMemoWithTextRequest req)
+    DeleteMemoResponse DeleteMemo(1: DeleteMemoRequest req)
+
+    // TODO list相关接口
+    GetTodoListResponse GetTodoList(1: GetTodoListRequest req)
+    CreateTodoResponse CreateTodo(1: CreateTodoRequest req)
+    DoneTodoResponse DoneTodo(1: DoneTodoRequest req)
+
+    // chat相关接口
+    ChatResponse Chat(1: ChatRequest req)
+
+    // 说话人 &  记忆仓库相关接口
+    // 输入声纹，主动添加speaker
+    AddSpeakerResponse AddSpeaker(1: AddSpeakerRequest req)
+    // 在某个记忆中标记某个说话人为xxx
+    MarkSpeakerResponse MarkSpeaker(1: MarkSpeakerRequest req)
+    GetSpeakerListResponse GetSpeakerList(1: GetSpeakerListRequest req)
+    GetSpeakerListWithDetailResponse GetSpeakerListWithDetail(1: GetSpeakerListWithDetailRequest req)
+    GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
+
+    // 专家模型列表
+    GetExpertListResponse GetExpertList(1: GetExpertListRequest req)
+    GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
+
+    // 模板相关接口
+    GetTemplateListResponse GetTemplateList(1: GetTemplateListRequest req)
+    GetTemplateDetailResponse GetTemplateDetail(1: GetTemplateDetailRequest req)
+
+    // 其他接口
+    GetUserProfileResponse GetUserProfile(1: GetUserProfileRequest req)
+}
