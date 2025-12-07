@@ -1,4 +1,5 @@
 // 有几个约定
+// 服务端域名为：memopin.ai
 // 1. 所有接口都需要传一下user_id，放在header中
 // 2. 服务端接口返回值都会包括base_resp结构。code为0的时候代表成功返回；如果是返回1XXXX，代表请求参数错误等客户端错误；如果是返回2XXXX，代表服务端错误
 // 3. logid可以在日志中打印，方便查问题。
@@ -402,50 +403,79 @@ struct GetUserProfileRequest {
 
 service AppService {
     // 记忆相关接口
+    // GET /api/v1/memory/get_list
     GetMemoryListResponse GetMemoryList(1: GetMemoryListRequest req)
+    // GET /api/v1/memory/get_days
     GetMemoryDaysResponse GetMemoryDays(1: GetMemoryDaysRequest req)
+    // GET /api/v1/memory/get_detail
     GetMemoryDetailResponse GetMemoryDetail(1: GetMemoryDetailRequest req)
+    // GET /api/v1/memory/get_insight_list
     GetInsightListResponse GetInsightList(1: GetInsightListRequest req)
+
     // 主要用于创建录音记录
+    // POST /api/v1/memory/create_record
     CreateRecordResponse CreateRecord(1: CreateRecordRequest req)
     // 获取到上传地址，直接put录音文件到这个地址
+    // GET /api/v1/memory/get_upload_record_url
     GetUploadRecordUrlResponse GetUploadRecordUrl(1: GetUploadRecordUrlRequest req)
+    // POST /api/v1/memory/summary_record
     SummaryRecordResponse SummaryRecord(1: SummaryRecordRequest req)
+    // GET /api/v1/memory/share
     ShareMemoryResponse ShareMemory(1: ShareMemoryRequest req)
+    // POST /api/v1/memory/delete
     DeleteMemoryResponse DeleteMemory(1: DeleteMemoryRequest req)
 
     // memo相关接口
+    // GET /api/v1/memo/get_list
     GetMemoListResponse GetMemoList(1: GetMemoListRequest req)
+    // GET /api/v1/memo/get_detail
     GetMemoDetailResponse GetMemoDetail(1: GetMemoDetailRequest req)
+    // POST /api/v1/memo/create_with_record
     CreateMemoWithRecordResponse CreateMemoWithRecord(1: CreateMemoWithRecordRequest req)
+    // POST /api/v1/memo/create_with_text
     CreateMemoWithTextResponse CreateMemoWithText(1: CreateMemoWithTextRequest req)
+    // POST /api/v1/memo/delete
     DeleteMemoResponse DeleteMemo(1: DeleteMemoRequest req)
 
     // TODO list相关接口
+    // GET /api/v1/todo/get_list
     GetTodoListResponse GetTodoList(1: GetTodoListRequest req)
+    // POST /api/v1/todo/create
     CreateTodoResponse CreateTodo(1: CreateTodoRequest req)
+    // POST /api/v1/todo/done
     DoneTodoResponse DoneTodo(1: DoneTodoRequest req)
 
     // chat相关接口
+    // POST /api/v1/chat
     ChatResponse Chat(1: ChatRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
+    // POST /api/v1/spearker/add
     AddSpeakerResponse AddSpeaker(1: AddSpeakerRequest req)
     // 在某个记忆中标记某个说话人为xxx
+    // POST /api/v1/spearker/mark
     MarkSpeakerResponse MarkSpeaker(1: MarkSpeakerRequest req)
+    // GET /api/v1/spearker/get_list
     GetSpeakerListResponse GetSpeakerList(1: GetSpeakerListRequest req)
+    // GET /api/v1/spearker/get_list_with_detail
     GetSpeakerListWithDetailResponse GetSpeakerListWithDetail(1: GetSpeakerListWithDetailRequest req)
+    // GET /api/v1/spearker/get_detail
     GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
 
     // 专家模型列表
+    // GET /api/v1/expert/get_list
     GetExpertListResponse GetExpertList(1: GetExpertListRequest req)
+    // GET /api/v1/expert/get_detail
     GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
 
     // 模板相关接口
+    // GET /api/v1/template/get_list
     GetTemplateListResponse GetTemplateList(1: GetTemplateListRequest req)
+    // GET /api/v1/template/get_detail
     GetTemplateDetailResponse GetTemplateDetail(1: GetTemplateDetailRequest req)
 
     // 其他接口
+    // GET /api/v1/user/get_profile
     GetUserProfileResponse GetUserProfile(1: GetUserProfileRequest req)
 }
