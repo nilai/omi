@@ -1,29 +1,19 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intercom_flutter/intercom_flutter.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/app.dart';
 import 'package:omi/desktop/pages/onboarding/desktop_onboarding_wrapper.dart';
 import 'package:omi/desktop/pages/settings/desktop_about_page.dart';
 import 'package:omi/desktop/pages/settings/desktop_developer_page.dart';
-import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/pages/settings/device_settings.dart';
 import 'package:omi/desktop/pages/settings/desktop_profile_page.dart';
-import 'package:omi/services/auth_service.dart';
-import 'package:omi/providers/sync_provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:omi/pages/settings/usage_page.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/models/subscription.dart';
-import 'package:omi/providers/usage_provider.dart';
-import 'apps/desktop_apps_page.dart';
-import 'apps/desktop_add_app_page.dart';
-import 'conversations/desktop_conversations_page.dart';
-import 'chat/desktop_chat_page.dart';
-import 'memories/desktop_memories_page.dart';
-import 'actions/desktop_actions_page.dart';
+import 'package:omi/pages/settings/device_settings.dart';
+import 'package:omi/pages/settings/usage_page.dart';
 import 'package:omi/providers/app_provider.dart';
 import 'package:omi/providers/capture_provider.dart';
 import 'package:omi/providers/connectivity_provider.dart';
@@ -31,21 +21,29 @@ import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
+import 'package:omi/providers/sync_provider.dart';
+import 'package:omi/providers/usage_provider.dart';
+import 'package:omi/services/auth_service.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/audio/foreground.dart';
 import 'package:omi/utils/other/temp.dart';
+import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:omi/utils/responsive/responsive_helper.dart';
-import 'package:omi/utils/enums.dart';
 import 'package:omi/widgets/upgrade_alert.dart';
 import 'package:provider/provider.dart';
 import 'package:upgrader/upgrader.dart';
-import 'package:omi/utils/platform/platform_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
-import 'package:intercom_flutter/intercom_flutter.dart';
+
 import '../../pages/conversations/sync_page.dart';
-import 'home/widgets/battery_info_widget.dart';
+import 'actions/desktop_actions_page.dart';
+import 'apps/desktop_add_app_page.dart';
+import 'apps/desktop_apps_page.dart';
+import 'chat/desktop_chat_page.dart';
+import 'conversations/desktop_conversations_page.dart';
+import 'memories/desktop_memories_page.dart';
 
 enum MacWindowButtonType { close, minimize, maximize }
 

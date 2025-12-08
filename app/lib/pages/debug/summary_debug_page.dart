@@ -87,9 +87,8 @@ class _SummaryDebugPageState extends State<SummaryDebugPage> {
                   // 开始按钮
                   if (provider.status == SummaryTaskStatus.idle)
                     ElevatedButton.icon(
-                      onPressed: _audioRecordIdController.text.isEmpty
-                          ? null
-                          : () => _startSummaryTask(context, provider),
+                      onPressed:
+                          _audioRecordIdController.text.isEmpty ? null : () => _startSummaryTask(context, provider),
                       icon: const Icon(Icons.play_arrow),
                       label: const Text('开始转写'),
                       style: ElevatedButton.styleFrom(
@@ -116,8 +115,7 @@ class _SummaryDebugPageState extends State<SummaryDebugPage> {
                     ),
 
                   // 重置按钮
-                  if (provider.status != SummaryTaskStatus.idle &&
-                      provider.status != SummaryTaskStatus.polling)
+                  if (provider.status != SummaryTaskStatus.idle && provider.status != SummaryTaskStatus.polling)
                     ElevatedButton.icon(
                       onPressed: () => _reset(context, provider),
                       icon: const Icon(Icons.refresh),
@@ -287,7 +285,7 @@ class _SummaryDebugPageState extends State<SummaryDebugPage> {
           LinearProgressIndicator(
             value: provider.pollingCount / provider.maxPollingCount,
             backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+            valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
           ),
           const SizedBox(height: 8),
           Text(

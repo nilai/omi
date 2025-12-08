@@ -1,16 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/schema.dart';
 import 'package:omi/providers/action_items_provider.dart';
-import 'package:omi/utils/responsive/responsive_helper.dart';
-import 'package:omi/backend/preferences.dart';
-import 'package:provider/provider.dart';
 import 'package:omi/ui/atoms/omi_button.dart';
 import 'package:omi/ui/atoms/omi_checkbox.dart';
 import 'package:omi/ui/atoms/omi_icon_button.dart';
 import 'package:omi/ui/molecules/omi_confirm_dialog.dart';
+import 'package:omi/utils/responsive/responsive_helper.dart';
+import 'package:provider/provider.dart';
 
 class DesktopActionItemFormDialog extends StatefulWidget {
   final ActionItemWithMetadata? actionItem;
@@ -353,7 +352,7 @@ class _DesktopActionItemFormDialogState extends State<DesktopActionItemFormDialo
           ),
           decoration: InputDecoration(
             hintText: 'Enter action item description...',
-            hintStyle: TextStyle(
+            hintStyle: const TextStyle(
               color: ResponsiveHelper.textTertiary,
               fontSize: 16,
             ),

@@ -141,7 +141,6 @@ class TaskIntegrationsPage extends StatefulWidget {
 }
 
 class _TaskIntegrationsPageState extends State<TaskIntegrationsPage> with WidgetsBindingObserver {
-
   @override
   void initState() {
     super.initState();
@@ -595,25 +594,25 @@ class _TaskIntegrationsPageState extends State<TaskIntegrationsPage> with Widget
                 ),
               )
             else
-              // Radio button for connected services
-              if (isSelected)
-                const FaIcon(
-                  FontAwesomeIcons.solidCircleCheck,
-                  color: Colors.green,
-                  size: 24,
-                )
-              else
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: const Color(0xFF3C3C43),
-                      width: 2,
-                    ),
+            // Radio button for connected services
+            if (isSelected)
+              const FaIcon(
+                FontAwesomeIcons.solidCircleCheck,
+                color: Colors.green,
+                size: 24,
+              )
+            else
+              Container(
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFF3C3C43),
+                    width: 2,
                   ),
                 ),
+              ),
           ],
         ),
       ),
@@ -691,10 +690,10 @@ class _TaskIntegrationsPageState extends State<TaskIntegrationsPage> with Widget
                       size: 20,
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
+                    const Expanded(
                       child: Text(
                         'Tasks can be exported to one app at a time.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Color(0xFF8E8E93),
                           fontSize: 14,
                           fontWeight: FontWeight.w400,

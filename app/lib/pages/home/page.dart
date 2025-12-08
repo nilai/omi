@@ -702,9 +702,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFFB8860B).withValues(alpha: 0.5),
-                      Color(0xFFCD853F).withValues(alpha: 0.5),
-                      Color(0xFFB8860B).withValues(alpha: 0.5),
+                      const Color(0xFFB8860B).withValues(alpha: 0.5),
+                      const Color(0xFFCD853F).withValues(alpha: 0.5),
+                      const Color(0xFFB8860B).withValues(alpha: 0.5),
                     ],
                   ),
                   shape: BoxShape.circle,

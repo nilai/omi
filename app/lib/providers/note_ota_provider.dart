@@ -1,5 +1,6 @@
 /// Note 设备 OTA 升级状态管理 Provider
 /// 负责 OTA 升级流程的状态管理和进度跟踪
+library;
 
 import 'package:flutter/foundation.dart';
 import '../services/devices/note_ota_service.dart';
@@ -228,7 +229,7 @@ class NoteOtaProvider extends BaseProvider {
       print('[NoteOtaProvider] $moduleName 模块升级成功');
 
       // 等待设备完成升级
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
     } catch (e) {
       print('[NoteOtaProvider] 升级 $moduleName 模块失败: $e');
       rethrow;

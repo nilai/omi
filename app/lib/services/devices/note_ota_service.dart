@@ -1,5 +1,6 @@
 /// Note 设备 OTA 升级服务
 /// 负责固件版本检查、下载、传输和升级触发
+library;
 
 import 'dart:io';
 import 'dart:convert';
@@ -175,9 +176,7 @@ class NoteOtaService {
       final prepareCmd = [0xF6, 0x01, module.value, ...md5Bytes];
       final prepareResponse = await _connection.sendCommandWithResponse(prepareCmd);
 
-      if (prepareResponse.isEmpty ||
-          prepareResponse[0] != 0xF6 ||
-          prepareResponse[1] != 0x01) {
+      if (prepareResponse.isEmpty || prepareResponse[0] != 0xF6 || prepareResponse[1] != 0x01) {
         print('[NoteOta] OTA 准备失败: 响应异常');
         return false;
       }
@@ -204,7 +203,7 @@ class NoteOtaService {
         }
 
         // 避免发送过快导致设备缓冲区溢出
-        await Future.delayed(Duration(milliseconds: 10));
+        await Future.delayed(const Duration(milliseconds: 10));
       }
 
       print('[NoteOta] 固件传输完成');
@@ -213,9 +212,7 @@ class NoteOtaService {
       final finishCmd = [0xF6, 0x02];
       final finishResponse = await _connection.sendCommandWithResponse(finishCmd);
 
-      if (finishResponse.isEmpty ||
-          finishResponse[0] != 0xF6 ||
-          finishResponse[1] != 0x02) {
+      if (finishResponse.isEmpty || finishResponse[0] != 0xF6 || finishResponse[1] != 0x02) {
         print('[NoteOta] OTA 完成确认失败: 响应异常');
         return false;
       }
@@ -251,10 +248,7 @@ class NoteOtaService {
         // 8711 模块升级需要等待响应
         final response = await _connection.sendCommandWithResponse(command);
 
-        final success = response.isNotEmpty &&
-            response[0] == 0xE6 &&
-            response[1] == 0x03 &&
-            response[2] == 0x01;
+        final success = response.isNotEmpty && response[0] == 0xE6 && response[1] == 0x03 && response[2] == 0x01;
 
         if (success) {
           print('[NoteOta] 8711 模块升级已触发');
@@ -267,7 +261,7 @@ class NoteOtaService {
         // 3085 模块升级后设备会重启,不等待响应
         await _connection.sendCommandWithResponse(
           command,
-          timeout: Duration(seconds: 2),
+          timeout: const Duration(seconds: 2),
         );
         print('[NoteOta] 3085 模块升级已触发 (设备即将重启)');
         return true;

@@ -1,5 +1,6 @@
 /// Note 设备数据模型
 /// 包含设备信息、存储状态、文件信息等
+library;
 
 class NoteDevice {
   final String id;

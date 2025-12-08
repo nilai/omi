@@ -1,5 +1,6 @@
 /// Note BLE 传输层
 /// 使用 flutter_reactive_ble 实现的 BLE 通信层
+library;
 
 import 'dart:async';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
@@ -10,8 +11,10 @@ import 'device_transport.dart';
 
 /// MTU 配置常量
 const int _kNoteMtuSize = 517;
+
 /// 连接稳定等待时间 (ms)
 const int _kConnectionStabilizeDelayMs = 200;
+
 /// 服务发现超时时间 (秒)
 const int _kServiceDiscoveryTimeoutSec = 10;
 
@@ -60,8 +63,7 @@ class NoteBleTransport implements DeviceTransport {
   String get deviceId => device.id;
 
   @override
-  Stream<DeviceTransportState> get connectionStateStream =>
-      _connectionStateController.stream;
+  Stream<DeviceTransportState> get connectionStateStream => _connectionStateController.stream;
 
   /// 音频数据流 (设备→APP)
   Stream<List<int>> get audioStream => _audioDataController.stream;
@@ -179,9 +181,7 @@ class NoteBleTransport implements DeviceTransport {
   Future<void> _discoverAndValidateServices() async {
     try {
       // 显式发现服务（带超时）
-      await _ble
-          .discoverAllServices(device.id)
-          .timeout(const Duration(seconds: _kServiceDiscoveryTimeoutSec));
+      await _ble.discoverAllServices(device.id).timeout(const Duration(seconds: _kServiceDiscoveryTimeoutSec));
 
       // 获取已发现的服务列表
       final discoveredServices = await _ble.getDiscoveredServices(device.id);
@@ -264,8 +264,7 @@ class NoteBleTransport implements DeviceTransport {
   /// #6: 统一处理 BLE 错误
   void _handleBleError(dynamic error) {
     // 检查是否为断开连接异常
-    if (error.toString().contains('Disconnected') ||
-        error.toString().contains('disconnected')) {
+    if (error.toString().contains('Disconnected') || error.toString().contains('disconnected')) {
       print('[NoteBleTransport] 检测到设备断开连接');
       _updateState(DeviceTransportState.disconnected);
       _cancelAllSubscriptions();
@@ -328,8 +327,7 @@ class NoteBleTransport implements DeviceTransport {
   }
 
   @override
-  Stream<List<int>> getCharacteristicStream(
-      String serviceUuid, String characteristicUuid) {
+  Stream<List<int>> getCharacteristicStream(String serviceUuid, String characteristicUuid) {
     // 根据特征 UUID 返回对应的流
     final uuid = characteristicUuid.toLowerCase();
 
@@ -344,12 +342,11 @@ class NoteBleTransport implements DeviceTransport {
     }
 
     // 不支持的特征,返回空流
-    return Stream<List<int>>.empty();
+    return const Stream<List<int>>.empty();
   }
 
   @override
-  Future<List<int>> readCharacteristic(
-      String serviceUuid, String characteristicUuid) async {
+  Future<List<int>> readCharacteristic(String serviceUuid, String characteristicUuid) async {
     // flutter_reactive_ble 主要通过订阅来读取数据
     // 这里可以实现一个简单的读取逻辑
     final char = QualifiedCharacteristic(
@@ -367,8 +364,7 @@ class NoteBleTransport implements DeviceTransport {
   }
 
   @override
-  Future<void> writeCharacteristic(
-      String serviceUuid, String characteristicUuid, List<int> data) async {
+  Future<void> writeCharacteristic(String serviceUuid, String characteristicUuid, List<int> data) async {
     final char = QualifiedCharacteristic(
       serviceId: Uuid.parse(serviceUuid),
       characteristicId: Uuid.parse(characteristicUuid),

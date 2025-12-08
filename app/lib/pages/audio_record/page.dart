@@ -59,7 +59,7 @@ class _AudioRecordPageState extends State<AudioRecordPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.check_circle,
                         color: Colors.green,
                         size: 20,

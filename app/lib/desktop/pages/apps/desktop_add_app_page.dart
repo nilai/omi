@@ -612,8 +612,8 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
           scrollDirection: Axis.horizontal,
           itemCount: provider.thumbnailUrls.length + 1,
           itemBuilder: (context, index) {
-            final width = 120.0;
-            final height = width * 1.5; // 2:3 ratio
+            const width = 120.0;
+            const height = width * 1.5; // 2:3 ratio
 
             if (index == provider.thumbnailUrls.length) {
               return GestureDetector(

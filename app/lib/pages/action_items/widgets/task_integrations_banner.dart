@@ -118,7 +118,7 @@ class TaskIntegrationsBanner extends StatelessWidget {
   }
 
   Widget _buildOverlappingLogo(String path, double size) {
-    return Container(
+    return SizedBox(
       width: size,
       height: size,
       child: ClipRRect(

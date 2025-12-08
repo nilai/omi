@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/utils/responsive/responsive_helper.dart';
-import 'package:omi/backend/schema/bt_device/bt_device.dart';
+import 'package:provider/provider.dart';
 
 /// Desktop battery info widget with premium minimal design
 class DesktopBatteryInfoWidget extends StatelessWidget {
@@ -123,7 +123,7 @@ class DesktopBatteryInfoWidget extends StatelessWidget {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: ResponsiveHelper.successColor,
                   shape: BoxShape.circle,
                 ),

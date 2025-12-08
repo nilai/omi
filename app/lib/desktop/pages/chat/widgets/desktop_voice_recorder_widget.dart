@@ -1,16 +1,15 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:omi/backend/http/api/messages.dart';
 import 'package:omi/services/services.dart';
+import 'package:omi/ui/atoms/omi_icon_button.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/file.dart';
 import 'package:omi/utils/responsive/responsive_helper.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:omi/ui/atoms/omi_icon_button.dart';
 
 enum RecordingState {
   notRecording,
