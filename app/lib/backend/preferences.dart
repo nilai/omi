@@ -165,7 +165,8 @@ class SharedPreferencesUtil {
 
   set transcriptionModel(String value) => saveString('transcriptionModel3', value);
 
-  bool get onboardingCompleted => getBool('onboardingCompleted') ?? false;
+  // bool get onboardingCompleted => getBool('onboardingCompleted') ?? false;
+  bool get onboardingCompleted => true;
 
   set onboardingCompleted(bool value) => saveBool('onboardingCompleted', value);
 
