@@ -1,12 +1,12 @@
-import 'dart:math';
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class WaveformPainter extends CustomPainter {
   final bool isPlaying;
   final List<double>? waveformData;
   final double playbackProgress;
-
+g
   const WaveformPainter({
     required this.isPlaying,
     this.waveformData,
