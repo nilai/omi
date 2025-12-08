@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/note_ble_debug_provider.dart';
-import 'package:omi/providers/note_device_provider.dart';
 import 'package:omi/services/devices/note_commands.dart';
+import 'package:omi/services/devices/note_connection.dart';
+import 'package:omi/services/services.dart';
 import 'widgets/command_button.dart';
 import 'widgets/command_category_section.dart';
 import 'widgets/ble_log_drawer.dart';
@@ -23,11 +25,19 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Get connection from NoteDeviceProvider and set it
-      final noteProvider = context.read<NoteDeviceProvider>();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Get connection from DeviceProvider via ServiceManager
+      final deviceProvider = context.read<DeviceProvider>();
       final debugProvider = context.read<NoteBleDebugProvider>();
-      debugProvider.setConnection(noteProvider.connection);
+
+      if (deviceProvider.connectedDevice != null) {
+        final connection = await ServiceManager.instance()
+            .device
+            .ensureConnection(deviceProvider.connectedDevice!.id);
+        if (connection is NoteDeviceConnection) {
+          debugProvider.setConnection(connection);
+        }
+      }
     });
   }
 
