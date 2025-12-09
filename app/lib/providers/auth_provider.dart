@@ -55,8 +55,8 @@ class AuthenticationProvider extends BaseProvider {
     });
   }
 
-  // bool isSignedIn() => _auth.currentUser != null && !_auth.currentUser!.isAnonymous;
-  bool isSignedIn() => true;
+  bool isSignedIn() => _auth.currentUser != null && !_auth.currentUser!.isAnonymous;
+  // bool isSignedIn() => true;
 
   void setLoading(bool value) {
     _loading = value;
