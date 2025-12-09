@@ -280,6 +280,102 @@ class $AssetsImagesGen {
   AssetGenImage get recordingGreenCircleIcon =>
       const AssetGenImage('assets/images/recording_green_circle_icon.png');
 
+  /// File path: assets/images/setting_about.png
+  AssetGenImage get settingAbout =>
+      const AssetGenImage('assets/images/setting_about.png');
+
+  /// File path: assets/images/setting_aiperfect.png
+  AssetGenImage get settingAiperfect =>
+      const AssetGenImage('assets/images/setting_aiperfect.png');
+
+  /// File path: assets/images/setting_calendar.png
+  AssetGenImage get settingCalendar =>
+      const AssetGenImage('assets/images/setting_calendar.png');
+
+  /// File path: assets/images/setting_camera.png
+  AssetGenImage get settingCamera =>
+      const AssetGenImage('assets/images/setting_camera.png');
+
+  /// File path: assets/images/setting_check.png
+  AssetGenImage get settingCheck =>
+      const AssetGenImage('assets/images/setting_check.png');
+
+  /// File path: assets/images/setting_download.png
+  AssetGenImage get settingDownload =>
+      const AssetGenImage('assets/images/setting_download.png');
+
+  /// File path: assets/images/setting_feedback.png
+  AssetGenImage get settingFeedback =>
+      const AssetGenImage('assets/images/setting_feedback.png');
+
+  /// File path: assets/images/setting_help.png
+  AssetGenImage get settingHelp =>
+      const AssetGenImage('assets/images/setting_help.png');
+
+  /// File path: assets/images/setting_integrated.png
+  AssetGenImage get settingIntegrated =>
+      const AssetGenImage('assets/images/setting_integrated.png');
+
+  /// File path: assets/images/setting_language.png
+  AssetGenImage get settingLanguage =>
+      const AssetGenImage('assets/images/setting_language.png');
+
+  /// File path: assets/images/setting_memopin.png
+  AssetGenImage get settingMemopin =>
+      const AssetGenImage('assets/images/setting_memopin.png');
+
+  /// File path: assets/images/setting_notification.png
+  AssetGenImage get settingNotification =>
+      const AssetGenImage('assets/images/setting_notification.png');
+
+  /// File path: assets/images/setting_notion.png
+  AssetGenImage get settingNotion =>
+      const AssetGenImage('assets/images/setting_notion.png');
+
+  /// File path: assets/images/setting_privicy.png
+  AssetGenImage get settingPrivicy =>
+      const AssetGenImage('assets/images/setting_privicy.png');
+
+  /// File path: assets/images/setting_referral.png
+  AssetGenImage get settingReferral =>
+      const AssetGenImage('assets/images/setting_referral.png');
+
+  /// File path: assets/images/setting_right_arrow_1.png
+  AssetGenImage get settingRightArrow1 =>
+      const AssetGenImage('assets/images/setting_right_arrow_1.png');
+
+  /// File path: assets/images/setting_right_arrow_2.png
+  AssetGenImage get settingRightArrow2 =>
+      const AssetGenImage('assets/images/setting_right_arrow_2.png');
+
+  /// File path: assets/images/setting_service.png
+  AssetGenImage get settingService =>
+      const AssetGenImage('assets/images/setting_service.png');
+
+  /// File path: assets/images/setting_set.png
+  AssetGenImage get settingSet =>
+      const AssetGenImage('assets/images/setting_set.png');
+
+  /// File path: assets/images/setting_subscription.png
+  AssetGenImage get settingSubscription =>
+      const AssetGenImage('assets/images/setting_subscription.png');
+
+  /// File path: assets/images/setting_template.png
+  AssetGenImage get settingTemplate =>
+      const AssetGenImage('assets/images/setting_template.png');
+
+  /// File path: assets/images/setting_user.png
+  AssetGenImage get settingUser =>
+      const AssetGenImage('assets/images/setting_user.png');
+
+  /// File path: assets/images/setting_voice_time.png
+  AssetGenImage get settingVoiceTime =>
+      const AssetGenImage('assets/images/setting_voice_time.png');
+
+  /// File path: assets/images/setting_voiceprint.png
+  AssetGenImage get settingVoiceprint =>
+      const AssetGenImage('assets/images/setting_voiceprint.png');
+
   /// File path: assets/images/slack_logo.png
   AssetGenImage get slackLogo =>
       const AssetGenImage('assets/images/slack_logo.png');
@@ -384,6 +480,30 @@ class $AssetsImagesGen {
     onboarding,
     plaudNotePin,
     recordingGreenCircleIcon,
+    settingAbout,
+    settingAiperfect,
+    settingCalendar,
+    settingCamera,
+    settingCheck,
+    settingDownload,
+    settingFeedback,
+    settingHelp,
+    settingIntegrated,
+    settingLanguage,
+    settingMemopin,
+    settingNotification,
+    settingNotion,
+    settingPrivicy,
+    settingReferral,
+    settingRightArrow1,
+    settingRightArrow2,
+    settingService,
+    settingSet,
+    settingSubscription,
+    settingTemplate,
+    settingUser,
+    settingVoiceTime,
+    settingVoiceprint,
     slackLogo,
     speaker0Icon,
     speaker1Icon,
