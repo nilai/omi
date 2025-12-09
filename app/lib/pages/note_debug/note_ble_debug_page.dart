@@ -8,6 +8,7 @@ import 'package:omi/services/services.dart';
 import 'widgets/command_button.dart';
 import 'widgets/command_category_section.dart';
 import 'widgets/ble_log_drawer.dart';
+import 'note_file_list_page.dart';
 
 /// BLE Debug Page for Note devices
 /// Allows sending protocol commands and viewing hex data logs
@@ -179,12 +180,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
           title: 'File Management',
           icon: Icons.folder,
           children: [
-            CommandButton(
-              title: 'Get File List',
-              hexCode: '0x03',
-              onPressed: provider.isConnected ? provider.sendGetFileList : null,
-              isLoading: provider.isExecuting,
-            ),
+            _buildFileManagerButton(provider),
           ],
         ),
 
@@ -416,6 +412,65 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
                 : null,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFileManagerButton(NoteBleDebugProvider provider) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: const Color(0xFF2A2A2E),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: provider.isConnected
+              ? () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const NoteFileListPage(),
+                    ),
+                  );
+                }
+              : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'File Manager',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'View, download, and delete files',
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: provider.isConnected
+                      ? Colors.white54
+                      : Colors.grey.shade700,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
