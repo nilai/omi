@@ -31,3 +31,37 @@ Map<String, dynamic> _$MPGetExpertDetailRequestToJson(
     <String, dynamic>{
       'expert_id': instance.expertId,
     };
+
+MPGetExpertListResponse _$MPGetExpertListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetExpertListResponse(
+      experts: (json['experts'] as List<dynamic>)
+          .map((e) =>
+              MPExpertMergeUserStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetExpertListResponseToJson(
+        MPGetExpertListResponse instance) =>
+    <String, dynamic>{
+      'experts': instance.experts,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetExpertDetailResponse _$MPGetExpertDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetExpertDetailResponse(
+      expert: MPExpertMergeUserStruct.fromJson(
+          json['expert'] as Map<String, dynamic>),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetExpertDetailResponseToJson(
+        MPGetExpertDetailResponse instance) =>
+    <String, dynamic>{
+      'expert': instance.expert,
+      'base_resp': instance.baseResp,
+    };

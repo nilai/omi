@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'mp_data_model.dart';
 
 part 'mp_memo.g.dart';
 
@@ -92,5 +93,99 @@ class MPDeleteMemoRequest {
       _$MPDeleteMemoRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoRequestToJson(this);
+}
+
+// ========== Response Classes ==========
+
+// Get Memo List Response
+@JsonSerializable()
+class MPGetMemoListResponse {
+  @JsonKey(name: 'memos')
+  final List<MPMemoStruct> memos;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoListResponse({
+    required this.memos,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoListResponseToJson(this);
+}
+
+// Get Memo Detail Response
+@JsonSerializable()
+class MPGetMemoDetailResponse {
+  @JsonKey(name: 'memo')
+  final MPMemoStruct memo;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoDetailResponse({
+    required this.memo,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoDetailResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoDetailResponseToJson(this);
+}
+
+// Create Memo With Record Response
+@JsonSerializable()
+class MPCreateMemoWithRecordResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateMemoWithRecordResponse({
+    required this.baseResp,
+  });
+
+  factory MPCreateMemoWithRecordResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPCreateMemoWithRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateMemoWithRecordResponseToJson(this);
+}
+
+// Create Memo With Text Response
+@JsonSerializable()
+class MPCreateMemoWithTextResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateMemoWithTextResponse({
+    required this.baseResp,
+  });
+
+  factory MPCreateMemoWithTextResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPCreateMemoWithTextResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateMemoWithTextResponseToJson(this);
+}
+
+// Delete Memo Response
+@JsonSerializable()
+class MPDeleteMemoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteMemoResponse({
+    required this.baseResp,
+  });
+
+  factory MPDeleteMemoResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPDeleteMemoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteMemoResponseToJson(this);
 }
 

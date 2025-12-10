@@ -125,3 +125,143 @@ Map<String, dynamic> _$MPDeleteMemoryRequestToJson(
     <String, dynamic>{
       'memory_id': instance.memoryId,
     };
+
+MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetMemoryListResponse(
+      memorys: (json['memorys'] as List<dynamic>)
+          .map((e) => MPMemoryStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetMemoryListResponseToJson(
+        MPGetMemoryListResponse instance) =>
+    <String, dynamic>{
+      'memorys': instance.memorys,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetMemoryDaysResponse _$MPGetMemoryDaysResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetMemoryDaysResponse(
+      days: (json['days'] as List<dynamic>).map((e) => e as String).toList(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetMemoryDaysResponseToJson(
+        MPGetMemoryDaysResponse instance) =>
+    <String, dynamic>{
+      'days': instance.days,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetMemoryDetailResponse _$MPGetMemoryDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetMemoryDetailResponse(
+      memory: MPMemoryStruct.fromJson(json['memory'] as Map<String, dynamic>),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetMemoryDetailResponseToJson(
+        MPGetMemoryDetailResponse instance) =>
+    <String, dynamic>{
+      'memory': instance.memory,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetInsightListResponse _$MPGetInsightListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetInsightListResponse(
+      memorys: (json['memorys'] as List<dynamic>)
+          .map((e) => MPMemoryStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetInsightListResponseToJson(
+        MPGetInsightListResponse instance) =>
+    <String, dynamic>{
+      'memorys': instance.memorys,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPCreateRecordResponse _$MPCreateRecordResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateRecordResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPCreateRecordResponseToJson(
+        MPCreateRecordResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPGetUploadRecordUrlResponse _$MPGetUploadRecordUrlResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetUploadRecordUrlResponse(
+      uploadUrl: json['upload_url'] as String,
+      uri: json['uri'] as String,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetUploadRecordUrlResponseToJson(
+        MPGetUploadRecordUrlResponse instance) =>
+    <String, dynamic>{
+      'upload_url': instance.uploadUrl,
+      'uri': instance.uri,
+      'base_resp': instance.baseResp,
+    };
+
+MPSummaryRecordResponse _$MPSummaryRecordResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPSummaryRecordResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPSummaryRecordResponseToJson(
+        MPSummaryRecordResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPShareMemoryResponse(
+      id: json['id'] as String,
+      shareCode: json['share_code'] as String,
+      shareUrl: json['share_url'] as String,
+      shortUrl: json['short_url'] as String,
+      expiresAt: (json['expires_at'] as num).toInt(),
+      createAt: (json['create_at'] as num).toInt(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPShareMemoryResponseToJson(
+        MPShareMemoryResponse instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'share_code': instance.shareCode,
+      'share_url': instance.shareUrl,
+      'short_url': instance.shortUrl,
+      'expires_at': instance.expiresAt,
+      'create_at': instance.createAt,
+      'base_resp': instance.baseResp,
+    };
+
+MPDeleteMemoryResponse _$MPDeleteMemoryResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPDeleteMemoryResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPDeleteMemoryResponseToJson(
+        MPDeleteMemoryResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };

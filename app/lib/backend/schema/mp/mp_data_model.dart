@@ -1,0 +1,463 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'mp_data_model.g.dart';
+
+// Base Response
+@JsonSerializable()
+class MPBaseResp {
+  @JsonKey(name: 'code')
+  final int code;
+
+  @JsonKey(name: 'message')
+  final String message;
+
+  @JsonKey(name: 'logid')
+  final String logid;
+
+  MPBaseResp({
+    required this.code,
+    required this.message,
+    required this.logid,
+  });
+
+  factory MPBaseResp.fromJson(Map<String, dynamic> json) => _$MPBaseRespFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPBaseRespToJson(this);
+}
+
+// MemoryType Enum
+enum MPMemoryType {
+  @JsonValue(1)
+  summary,
+
+  @JsonValue(2)
+  onlyRecord,
+
+  @JsonValue(3)
+  insight,
+
+  @JsonValue(4)
+  aiExpert,
+}
+
+// Speaker Struct
+@JsonSerializable()
+class MPSpeakerStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'name')
+  final String name;
+
+  @JsonKey(name: 'avatar')
+  final String avatar;
+
+  @JsonKey(name: 'is_temporary')
+  final bool isTemporary;
+
+  MPSpeakerStruct({
+    required this.id,
+    required this.name,
+    required this.avatar,
+    required this.isTemporary,
+  });
+
+  factory MPSpeakerStruct.fromJson(Map<String, dynamic> json) => _$MPSpeakerStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSpeakerStructToJson(this);
+}
+
+// Todo Struct
+@JsonSerializable()
+class MPTodoStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'owner')
+  final MPSpeakerStruct owner;
+
+  @JsonKey(name: 'priority')
+  final String priority;
+
+  @JsonKey(name: 'deadline')
+  final String deadline;
+
+  MPTodoStruct({
+    required this.id,
+    required this.title,
+    required this.owner,
+    required this.priority,
+    required this.deadline,
+  });
+
+  factory MPTodoStruct.fromJson(Map<String, dynamic> json) => _$MPTodoStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPTodoStructToJson(this);
+}
+
+// Summary Conversation Struct
+@JsonSerializable()
+class MPSummaryConversationStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'speaker')
+  final MPSpeakerStruct speaker;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'time')
+  final String time;
+
+  MPSummaryConversationStruct({
+    required this.id,
+    required this.speaker,
+    required this.content,
+    required this.time,
+  });
+
+  factory MPSummaryConversationStruct.fromJson(Map<String, dynamic> json) =>
+      _$MPSummaryConversationStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSummaryConversationStructToJson(this);
+}
+
+// Summary Memory Struct
+@JsonSerializable()
+class MPSummaryMemoryStruct {
+  @JsonKey(name: 'participants')
+  final List<MPSpeakerStruct> participants;
+
+  @JsonKey(name: 'record_url')
+  final String recordUrl;
+
+  @JsonKey(name: 'summary')
+  final String summary;
+
+  @JsonKey(name: 'transcript')
+  final List<MPSummaryConversationStruct> transcript;
+
+  @JsonKey(name: 'todos')
+  final List<MPTodoStruct> todos;
+
+  MPSummaryMemoryStruct({
+    required this.participants,
+    required this.recordUrl,
+    required this.summary,
+    required this.transcript,
+    required this.todos,
+  });
+
+  factory MPSummaryMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPSummaryMemoryStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSummaryMemoryStructToJson(this);
+}
+
+// Only Record Memory Struct
+@JsonSerializable()
+class MPOnlyRecordMemoryStruct {
+  @JsonKey(name: 'record_file')
+  final String recordFile;
+
+  MPOnlyRecordMemoryStruct({
+    required this.recordFile,
+  });
+
+  factory MPOnlyRecordMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPOnlyRecordMemoryStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPOnlyRecordMemoryStructToJson(this);
+}
+
+// Insight Memory Struct
+@JsonSerializable()
+class MPInsightMemoryStruct {
+  @JsonKey(name: 'content')
+  final String content;
+
+  MPInsightMemoryStruct({
+    required this.content,
+  });
+
+  factory MPInsightMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPInsightMemoryStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPInsightMemoryStructToJson(this);
+}
+
+// AI Expert Memory Struct
+@JsonSerializable()
+class MPAiExpertMemoryStruct {
+  @JsonKey(name: 'content')
+  final String content;
+
+  MPAiExpertMemoryStruct({
+    required this.content,
+  });
+
+  factory MPAiExpertMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPAiExpertMemoryStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAiExpertMemoryStructToJson(this);
+}
+
+// Memory Struct
+@JsonSerializable()
+class MPMemoryStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'type')
+  final MPMemoryType type;
+
+  @JsonKey(name: 'label')
+  final String label;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'duration')
+  final int duration;
+
+  @JsonKey(name: 'SummaryContent')
+  final MPSummaryMemoryStruct? summaryContent;
+
+  @JsonKey(name: 'OnlyRecordContent')
+  final MPOnlyRecordMemoryStruct? onlyRecordContent;
+
+  @JsonKey(name: 'InsightContent')
+  final MPInsightMemoryStruct? insightContent;
+
+  @JsonKey(name: 'AiExpertContent')
+  final MPAiExpertMemoryStruct? aiExpertContent;
+
+  MPMemoryStruct({
+    required this.id,
+    required this.createAt,
+    required this.title,
+    required this.type,
+    required this.label,
+    required this.content,
+    required this.duration,
+    this.summaryContent,
+    this.onlyRecordContent,
+    this.insightContent,
+    this.aiExpertContent,
+  });
+
+  factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemoryStructToJson(this);
+}
+
+// Memo Struct
+@JsonSerializable()
+class MPMemoStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'tags')
+  final List<String> tags;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'relate_memory_id')
+  final int relateMemoryId;
+
+  MPMemoStruct({
+    required this.id,
+    required this.title,
+    required this.content,
+    required this.tags,
+    required this.createAt,
+    required this.relateMemoryId,
+  });
+
+  factory MPMemoStruct.fromJson(Map<String, dynamic> json) => _$MPMemoStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemoStructToJson(this);
+}
+
+// Expert Struct
+@JsonSerializable()
+class MPExpertStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'name')
+  final String name;
+
+  @JsonKey(name: 'avatar')
+  final String avatar;
+
+  @JsonKey(name: 'about')
+  final String about;
+
+  @JsonKey(name: 'capabilities')
+  final List<String> capabilities;
+
+  @JsonKey(name: 'prompt')
+  final String prompt;
+
+  @JsonKey(name: 'chat_personality')
+  final String chatPersonality;
+
+  MPExpertStruct({
+    required this.id,
+    required this.name,
+    required this.avatar,
+    required this.about,
+    required this.capabilities,
+    required this.prompt,
+    required this.chatPersonality,
+  });
+
+  factory MPExpertStruct.fromJson(Map<String, dynamic> json) => _$MPExpertStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPExpertStructToJson(this);
+}
+
+// Template Struct
+@JsonSerializable()
+class MPTemplateStruct {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'description')
+  final String description;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  MPTemplateStruct({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.content,
+  });
+
+  factory MPTemplateStruct.fromJson(Map<String, dynamic> json) => _$MPTemplateStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPTemplateStructToJson(this);
+}
+
+// User AI Settings
+@JsonSerializable()
+class MPUserAISettings {
+  @JsonKey(name: 'appellation')
+  final String appellation;
+
+  @JsonKey(name: 'profession')
+  final String profession;
+
+  @JsonKey(name: 'ai_personality')
+  final String aiPersonality;
+
+  @JsonKey(name: 'response_style')
+  final String responseStyle;
+
+  @JsonKey(name: 'custom_prompt')
+  final String customPrompt;
+
+  MPUserAISettings({
+    required this.appellation,
+    required this.profession,
+    required this.aiPersonality,
+    required this.responseStyle,
+    required this.customPrompt,
+  });
+
+  factory MPUserAISettings.fromJson(Map<String, dynamic> json) => _$MPUserAISettingsFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUserAISettingsToJson(this);
+}
+
+// User Struct
+@JsonSerializable()
+class MPUserStruct {
+  @JsonKey(name: 'user_name')
+  final String userName;
+
+  @JsonKey(name: 'email')
+  final String email;
+
+  @JsonKey(name: 'avatar')
+  final String avatar;
+
+  @JsonKey(name: 'phone')
+  final String phone;
+
+  @JsonKey(name: 'brithday')
+  final String birthday;
+
+  @JsonKey(name: 'ai_settings')
+  final MPUserAISettings aiSettings;
+
+  MPUserStruct({
+    required this.userName,
+    required this.email,
+    required this.avatar,
+    required this.phone,
+    required this.birthday,
+    required this.aiSettings,
+  });
+
+  factory MPUserStruct.fromJson(Map<String, dynamic> json) => _$MPUserStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUserStructToJson(this);
+}
+
+// Speaker With Detail Struct
+@JsonSerializable()
+class MPSpeakerWithDetailStruct {
+  @JsonKey(name: 'speaker')
+  final MPSpeakerStruct speaker;
+
+  @JsonKey(name: 'summary')
+  final String summary;
+
+  MPSpeakerWithDetailStruct({
+    required this.speaker,
+    required this.summary,
+  });
+
+  factory MPSpeakerWithDetailStruct.fromJson(Map<String, dynamic> json) => _$MPSpeakerWithDetailStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSpeakerWithDetailStructToJson(this);
+}
+
+// Expert Merge User Struct
+@JsonSerializable()
+class MPExpertMergeUserStruct {
+  @JsonKey(name: 'expert')
+  final MPExpertStruct expert;
+
+  @JsonKey(name: 'is_add')
+  final bool isAdd;
+
+  MPExpertMergeUserStruct({
+    required this.expert,
+    required this.isAdd,
+  });
+
+  factory MPExpertMergeUserStruct.fromJson(Map<String, dynamic> json) => _$MPExpertMergeUserStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPExpertMergeUserStructToJson(this);
+}

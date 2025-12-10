@@ -46,3 +46,43 @@ Map<String, dynamic> _$MPDoneTodoRequestToJson(MPDoneTodoRequest instance) =>
     <String, dynamic>{
       'todo_id': instance.todoId,
     };
+
+MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetTodoListResponse(
+      todos: (json['todos'] as List<dynamic>)
+          .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetTodoListResponseToJson(
+        MPGetTodoListResponse instance) =>
+    <String, dynamic>{
+      'todos': instance.todos,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPCreateTodoResponse _$MPCreateTodoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateTodoResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPCreateTodoResponseToJson(
+        MPCreateTodoResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPDoneTodoResponse _$MPDoneTodoResponseFromJson(Map<String, dynamic> json) =>
+    MPDoneTodoResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPDoneTodoResponseToJson(MPDoneTodoResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };

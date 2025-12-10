@@ -78,3 +78,85 @@ Map<String, dynamic> _$MPGetSpeakerDetailRequestToJson(
     <String, dynamic>{
       'speaker_id': instance.speakerId,
     };
+
+MPAddSpeakerResponse _$MPAddSpeakerResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPAddSpeakerResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPAddSpeakerResponseToJson(
+        MPAddSpeakerResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPMarkSpeakerResponse _$MPMarkSpeakerResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPMarkSpeakerResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPMarkSpeakerResponseToJson(
+        MPMarkSpeakerResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPGetSpeakerListResponse _$MPGetSpeakerListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSpeakerListResponse(
+      speakers: (json['speakers'] as List<dynamic>)
+          .map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetSpeakerListResponseToJson(
+        MPGetSpeakerListResponse instance) =>
+    <String, dynamic>{
+      'speakers': instance.speakers,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetSpeakerListWithDetailResponse _$MPGetSpeakerListWithDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSpeakerListWithDetailResponse(
+      speakers: (json['speakers'] as List<dynamic>)
+          .map((e) =>
+              MPSpeakerWithDetailStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetSpeakerListWithDetailResponseToJson(
+        MPGetSpeakerListWithDetailResponse instance) =>
+    <String, dynamic>{
+      'speakers': instance.speakers,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetSpeakerDetailResponse _$MPGetSpeakerDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSpeakerDetailResponse(
+      speaker:
+          MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
+      memorys: (json['memorys'] as List<dynamic>)
+          .map((e) => MPMemoryStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      memoryTotal: (json['memory_total'] as num).toInt(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetSpeakerDetailResponseToJson(
+        MPGetSpeakerDetailResponse instance) =>
+    <String, dynamic>{
+      'speaker': instance.speaker,
+      'memorys': instance.memorys,
+      'memory_total': instance.memoryTotal,
+      'base_resp': instance.baseResp,
+    };

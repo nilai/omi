@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
 
@@ -64,5 +65,63 @@ class MPDoneTodoRequest {
       _$MPDoneTodoRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDoneTodoRequestToJson(this);
+}
+
+// ========== Response Classes ==========
+
+// Get Todo List Response
+@JsonSerializable()
+class MPGetTodoListResponse {
+  @JsonKey(name: 'todos')
+  final List<MPTodoStruct> todos;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetTodoListResponse({
+    required this.todos,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetTodoListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetTodoListResponseToJson(this);
+}
+
+// Create Todo Response
+@JsonSerializable()
+class MPCreateTodoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateTodoResponse({
+    required this.baseResp,
+  });
+
+  factory MPCreateTodoResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPCreateTodoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateTodoResponseToJson(this);
+}
+
+// Done Todo Response
+@JsonSerializable()
+class MPDoneTodoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDoneTodoResponse({
+    required this.baseResp,
+  });
+
+  factory MPDoneTodoResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPDoneTodoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDoneTodoResponseToJson(this);
 }
 

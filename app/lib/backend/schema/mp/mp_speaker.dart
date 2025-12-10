@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'mp_data_model.dart';
+
 part 'mp_speaker.g.dart';
 
 // Add Speaker Request
@@ -104,4 +106,110 @@ class MPGetSpeakerDetailRequest {
   factory MPGetSpeakerDetailRequest.fromJson(Map<String, dynamic> json) => _$MPGetSpeakerDetailRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetSpeakerDetailRequestToJson(this);
+}
+
+// ========== Response Classes ==========
+
+// Add Speaker Response
+@JsonSerializable()
+class MPAddSpeakerResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPAddSpeakerResponse({
+    required this.baseResp,
+  });
+
+  factory MPAddSpeakerResponse.fromJson(Map<String, dynamic> json) => _$MPAddSpeakerResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAddSpeakerResponseToJson(this);
+}
+
+// Mark Speaker Response
+@JsonSerializable()
+class MPMarkSpeakerResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPMarkSpeakerResponse({
+    required this.baseResp,
+  });
+
+  factory MPMarkSpeakerResponse.fromJson(Map<String, dynamic> json) => _$MPMarkSpeakerResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMarkSpeakerResponseToJson(this);
+}
+
+// Get Speaker List Response
+@JsonSerializable()
+class MPGetSpeakerListResponse {
+  @JsonKey(name: 'speakers')
+  final List<MPSpeakerStruct> speakers;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSpeakerListResponse({
+    required this.speakers,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetSpeakerListResponse.fromJson(Map<String, dynamic> json) => _$MPGetSpeakerListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSpeakerListResponseToJson(this);
+}
+
+// Get Speaker List With Detail Response
+@JsonSerializable()
+class MPGetSpeakerListWithDetailResponse {
+  @JsonKey(name: 'speakers')
+  final List<MPSpeakerWithDetailStruct> speakers;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSpeakerListWithDetailResponse({
+    required this.speakers,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetSpeakerListWithDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetSpeakerListWithDetailResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSpeakerListWithDetailResponseToJson(this);
+}
+
+// Get Speaker Detail Response
+@JsonSerializable()
+class MPGetSpeakerDetailResponse {
+  @JsonKey(name: 'speaker')
+  final MPSpeakerStruct speaker;
+
+  @JsonKey(name: 'memorys')
+  final List<MPMemoryStruct> memorys;
+
+  @JsonKey(name: 'memory_total')
+  final int memoryTotal;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSpeakerDetailResponse({
+    required this.speaker,
+    required this.memorys,
+    required this.memoryTotal,
+    required this.baseResp,
+  });
+
+  factory MPGetSpeakerDetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetSpeakerDetailResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSpeakerDetailResponseToJson(this);
 }

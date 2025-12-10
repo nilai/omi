@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import 'mp_data_model.dart';
+
 part 'mp_chat.g.dart';
 
 // Chat Request
@@ -24,9 +26,24 @@ class MPChatRequest {
     required this.speakerId,
   });
 
-  factory MPChatRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPChatRequestFromJson(json);
+  factory MPChatRequest.fromJson(Map<String, dynamic> json) => _$MPChatRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPChatRequestToJson(this);
 }
 
+// ========== Response Classes ==========
+
+// Chat Response (streaming接口，暂时为空结构)
+@JsonSerializable()
+class MPChatResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp? baseResp;
+
+  MPChatResponse({
+    this.baseResp,
+  });
+
+  factory MPChatResponse.fromJson(Map<String, dynamic> json) => _$MPChatResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPChatResponseToJson(this);
+}

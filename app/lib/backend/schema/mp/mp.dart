@@ -1,5 +1,6 @@
-// Export all MP request classes
+// Export all MP request and response classes
 export 'mp_chat.dart';
+export 'mp_data_model.dart';
 export 'mp_expert.dart';
 export 'mp_memo.dart';
 export 'mp_memory.dart';

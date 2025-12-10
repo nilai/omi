@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'mp_data_model.dart';
 
 part 'mp_expert.g.dart';
 
@@ -36,5 +37,51 @@ class MPGetExpertDetailRequest {
       _$MPGetExpertDetailRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetExpertDetailRequestToJson(this);
+}
+
+// ========== Response Classes ==========
+
+// Get Expert List Response
+@JsonSerializable()
+class MPGetExpertListResponse {
+  @JsonKey(name: 'experts')
+  final List<MPExpertMergeUserStruct> experts;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetExpertListResponse({
+    required this.experts,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetExpertListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetExpertListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetExpertListResponseToJson(this);
+}
+
+// Get Expert Detail Response
+@JsonSerializable()
+class MPGetExpertDetailResponse {
+  @JsonKey(name: 'expert')
+  final MPExpertMergeUserStruct expert;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetExpertDetailResponse({
+    required this.expert,
+    required this.baseResp,
+  });
+
+  factory MPGetExpertDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetExpertDetailResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetExpertDetailResponseToJson(this);
 }
 

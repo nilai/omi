@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'mp_data_model.dart';
 
 part 'mp_memory.g.dart';
 
@@ -168,5 +169,207 @@ class MPDeleteMemoryRequest {
       _$MPDeleteMemoryRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoryRequestToJson(this);
+}
+
+// ========== Response Classes ==========
+
+// Get Memory List Response
+@JsonSerializable()
+class MPGetMemoryListResponse {
+  @JsonKey(name: 'memorys')
+  final List<MPMemoryStruct> memorys;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoryListResponse({
+    required this.memorys,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoryListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryListResponseToJson(this);
+}
+
+// Get Memory Days Response
+@JsonSerializable()
+class MPGetMemoryDaysResponse {
+  @JsonKey(name: 'days')
+  final List<String> days; // 返回有记录的日期列表, [2025-11-10, 2025-11-11, 2025-11-15]
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoryDaysResponse({
+    required this.days,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoryDaysResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryDaysResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryDaysResponseToJson(this);
+}
+
+// Get Memory Detail Response
+@JsonSerializable()
+class MPGetMemoryDetailResponse {
+  @JsonKey(name: 'memory')
+  final MPMemoryStruct memory;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoryDetailResponse({
+    required this.memory,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoryDetailResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryDetailResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryDetailResponseToJson(this);
+}
+
+// Get Insight List Response
+@JsonSerializable()
+class MPGetInsightListResponse {
+  @JsonKey(name: 'memorys')
+  final List<MPMemoryStruct> memorys;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetInsightListResponse({
+    required this.memorys,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetInsightListResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetInsightListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetInsightListResponseToJson(this);
+}
+
+// Create Record Response
+@JsonSerializable()
+class MPCreateRecordResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateRecordResponse({
+    required this.baseResp,
+  });
+
+  factory MPCreateRecordResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPCreateRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateRecordResponseToJson(this);
+}
+
+// Get Upload Record Url Response
+@JsonSerializable()
+class MPGetUploadRecordUrlResponse {
+  @JsonKey(name: 'upload_url')
+  final String uploadUrl;
+
+  @JsonKey(name: 'uri')
+  final String uri;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetUploadRecordUrlResponse({
+    required this.uploadUrl,
+    required this.uri,
+    required this.baseResp,
+  });
+
+  factory MPGetUploadRecordUrlResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetUploadRecordUrlResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetUploadRecordUrlResponseToJson(this);
+}
+
+// Summary Record Response
+@JsonSerializable()
+class MPSummaryRecordResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPSummaryRecordResponse({
+    required this.baseResp,
+  });
+
+  factory MPSummaryRecordResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPSummaryRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSummaryRecordResponseToJson(this);
+}
+
+// Share Memory Response
+@JsonSerializable()
+class MPShareMemoryResponse {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'share_code')
+  final String shareCode;
+
+  @JsonKey(name: 'share_url')
+  final String shareUrl;
+
+  @JsonKey(name: 'short_url')
+  final String shortUrl;
+
+  @JsonKey(name: 'expires_at')
+  final int expiresAt;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPShareMemoryResponse({
+    required this.id,
+    required this.shareCode,
+    required this.shareUrl,
+    required this.shortUrl,
+    required this.expiresAt,
+    required this.createAt,
+    required this.baseResp,
+  });
+
+  factory MPShareMemoryResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
+}
+
+// Delete Memory Response
+@JsonSerializable()
+class MPDeleteMemoryResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteMemoryResponse({
+    required this.baseResp,
+  });
+
+  factory MPDeleteMemoryResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPDeleteMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteMemoryResponseToJson(this);
 }
 

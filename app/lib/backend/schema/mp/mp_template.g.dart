@@ -31,3 +31,36 @@ Map<String, dynamic> _$MPGetTemplateDetailRequestToJson(
     <String, dynamic>{
       'template_id': instance.templateId,
     };
+
+MPGetTemplateListResponse _$MPGetTemplateListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetTemplateListResponse(
+      templates: (json['templates'] as List<dynamic>)
+          .map((e) => MPTemplateStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetTemplateListResponseToJson(
+        MPGetTemplateListResponse instance) =>
+    <String, dynamic>{
+      'templates': instance.templates,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetTemplateDetailResponse _$MPGetTemplateDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetTemplateDetailResponse(
+      template:
+          MPTemplateStruct.fromJson(json['template'] as Map<String, dynamic>),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetTemplateDetailResponseToJson(
+        MPGetTemplateDetailResponse instance) =>
+    <String, dynamic>{
+      'template': instance.template,
+      'base_resp': instance.baseResp,
+    };

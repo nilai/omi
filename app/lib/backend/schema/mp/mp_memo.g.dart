@@ -70,3 +70,71 @@ Map<String, dynamic> _$MPDeleteMemoRequestToJson(
     <String, dynamic>{
       'memo_id': instance.memoId,
     };
+
+MPGetMemoListResponse _$MPGetMemoListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetMemoListResponse(
+      memos: (json['memos'] as List<dynamic>)
+          .map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetMemoListResponseToJson(
+        MPGetMemoListResponse instance) =>
+    <String, dynamic>{
+      'memos': instance.memos,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetMemoDetailResponse _$MPGetMemoDetailResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetMemoDetailResponse(
+      memo: MPMemoStruct.fromJson(json['memo'] as Map<String, dynamic>),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetMemoDetailResponseToJson(
+        MPGetMemoDetailResponse instance) =>
+    <String, dynamic>{
+      'memo': instance.memo,
+      'base_resp': instance.baseResp,
+    };
+
+MPCreateMemoWithRecordResponse _$MPCreateMemoWithRecordResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateMemoWithRecordResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPCreateMemoWithRecordResponseToJson(
+        MPCreateMemoWithRecordResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPCreateMemoWithTextResponse _$MPCreateMemoWithTextResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateMemoWithTextResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPCreateMemoWithTextResponseToJson(
+        MPCreateMemoWithTextResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPDeleteMemoResponse _$MPDeleteMemoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPDeleteMemoResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPDeleteMemoResponseToJson(
+        MPDeleteMemoResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };

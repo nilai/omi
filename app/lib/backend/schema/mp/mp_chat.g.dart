@@ -21,3 +21,15 @@ Map<String, dynamic> _$MPChatRequestToJson(MPChatRequest instance) =>
       'template_id': instance.templateId,
       'speaker_id': instance.speakerId,
     };
+
+MPChatResponse _$MPChatResponseFromJson(Map<String, dynamic> json) =>
+    MPChatResponse(
+      baseResp: json['base_resp'] == null
+          ? null
+          : MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPChatResponseToJson(MPChatResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
