@@ -92,14 +92,13 @@ struct ExpertStruct {
     4: string about,
     5: list<string> capabilities,
     6: string prompt,
-    7: string chat_personality,
 }
 
 struct TemplateStruct {
     1: string id,
     2: string title,
-    3: string description,
-    4: string content,
+    3: string icon,
+    4: string prompt,
 }
 
 struct UserAISettings {
@@ -384,14 +383,27 @@ struct GetExpertDetailResponse {
     255: BaseResp base_resp,
 }
 
+struct CreateExpertRequest {
+    1: string name,
+    2: string avatar,
+    3: string about,
+    4: list<string> capabilities,
+    5: string prompt,
+}
+
+struct CreateExpertResponse {
+    255: BaseResp base_resp,
+}
+
 struct GetTemplateListRequest {
     1: i32 page_size,
     2: string cursor,
 }
 
 struct GetTemplateListResponse {
-    1: list<TemplateStruct> templates,
-    2: bool has_more,
+    1: list<TemplateStruct> recommend_templates,
+    2: list<TemplateStruct> custom_templates,
+    3: map<string, TemplateStruct> templates,
     255: BaseResp base_resp,
 }
 
@@ -404,12 +416,46 @@ struct GetTemplateDetailResponse {
     255: BaseResp base_resp,
 }
 
+struct CreateTemplateRequest {
+    1: string title,
+    2: string icon,
+    3: string prompt,
+}
+
+struct CreateTemplateResponse {
+    255: BaseResp base_resp,
+}
+
 struct GetUserProfileResponse {
     1: UserStruct user,
     255: BaseResp base_resp,
 }
 
 struct GetUserProfileRequest {
+}
+
+struct UpdateUserProfileRequest {
+    1: string user_name, // 为空则不更新
+    2: string email,
+    3: string avatar,
+    4: string phone,
+    5: string brithday,
+}
+
+struct UpdateUserProfileResponse {
+    255: BaseResp base_resp,
+}
+
+struct UpdateUserAiSettingRequest {
+    1: string appellation, // AI如何称呼您
+    2: string profession, // 职业
+    3: string ai_personality, // AI人格
+    4: string response_style,
+    5: string custom_prompt,
+}
+
+struct UpdateUserAiSettingResponse {
+    255: BaseResp base_resp,
 }
 
 service AppService {
@@ -479,14 +525,22 @@ service AppService {
     GetExpertListResponse GetExpertList(1: GetExpertListRequest req)
     // GET /api/v1/expert/get_detail
     GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
+    // POST /api/v1/expert/create
+    CreateExpertResponse CreateExpert(1: CreateExpertRequest req)
 
     // 模板相关接口
     // GET /api/v1/template/get_list
     GetTemplateListResponse GetTemplateList(1: GetTemplateListRequest req)
     // GET /api/v1/template/get_detail
     GetTemplateDetailResponse GetTemplateDetail(1: GetTemplateDetailRequest req)
+    // POST /api/v1/template/create
+    CreateTemplateResponse CreateTemplate(1: CreateTemplateRequest req)
 
     // 其他接口
     // GET /api/v1/user/get_profile
     GetUserProfileResponse GetUserProfile(1: GetUserProfileRequest req)
+    // POST /api/v1/user/update_profile
+    UpdateUserProfileResponse UpdateUserProfile(1: UpdateUserProfileRequest req)
+    // POST /api/v1/user/update_ai_setting
+    UpdateUserAiSettingResponse UpdateUserAiSetting(1: UpdateUserAiSettingRequest req)
 }
