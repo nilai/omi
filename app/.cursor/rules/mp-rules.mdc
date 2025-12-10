@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+flutter: 3.35.3 
+dart: 3.9.2
+
+新建文件前缀：mp_
+新建类名前缀：MP
