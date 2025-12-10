@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/env/env.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/utils/logger.dart';
-import 'package:http/http.dart' as http;
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:path/path.dart';
 
@@ -19,6 +20,51 @@ class ApiClient {
 
   static void dispose() {
     _client.close();
+  }
+}
+
+class ApiTools {
+  // 单例实例
+  static ApiTools? _instance;
+
+  // 私有构造函数
+  ApiTools._();
+
+  // 获取单例实例
+  static ApiTools get instance {
+    _instance ??= ApiTools._();
+    return _instance!;
+  }
+
+  // DeviceInfoPlugin 实例
+  final DeviceInfoPlugin _deviceInfoPlugin = DeviceInfoPlugin();
+
+  // uuid 缓存
+  String? _uuid;
+
+  // 获取 uuid（懒加载）
+  Future<String> get uuid async {
+    if (_uuid != null) {
+      return _uuid!;
+    }
+
+    try {
+      if (Platform.isAndroid) {
+        final androidInfo = await _deviceInfoPlugin.androidInfo;
+        _uuid = androidInfo.id;
+      } else if (Platform.isIOS) {
+        final iosInfo = await _deviceInfoPlugin.iosInfo;
+        _uuid = iosInfo.identifierForVendor;
+      } else {
+        _uuid = 'unknown';
+      }
+
+      return _uuid ?? 'unknown';
+    } catch (e) {
+      Logger.error('Failed to get device UUID: $e');
+      _uuid = 'unknown';
+      return _uuid!;
+    }
   }
 }
 
@@ -51,10 +97,12 @@ Future<Map<String, String>> buildHeaders({
   required bool requireAuthCheck,
   Map<String, String> fromHeaders = const {},
 }) async {
+  final uuid = await ApiTools.instance.uuid;
   final headers = <String, String>{
     'X-Request-Start-Time': (DateTime.now().millisecondsSinceEpoch / 1000).toString(),
     'X-App-Platform': PlatformManager.instance.platform,
     'X-App-Version': PlatformManager.instance.appVersion,
+    'X-Device-UUID': uuid,
     ...fromHeaders,
   };
 
