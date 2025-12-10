@@ -13,8 +13,9 @@ abstract class Env {
 
   // static String? get apiBaseUrl => 'https://omi-backend.ngrok.app/';
 
-  // static String? get apiBaseUrl => _instance.apiBaseUrl;
-  static String? get apiBaseUrl => 'https://memopin.ai/';
+  // static String? get apiBaseUrl => _instance.apiBaseUrl; // omi
+
+  static String? get apiBaseUrl => 'https://memopin.ai/'; // mp
 
   static String? get noteBaseUrl => _instance.noteBaseUrl;
 
