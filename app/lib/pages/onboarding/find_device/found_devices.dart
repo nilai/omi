@@ -1,4 +1,5 @@
-import 'package:collection/collection.dart';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
@@ -10,6 +11,7 @@ import 'package:omi/widgets/apple_watch_setup_bottom_sheet.dart';
 import 'package:omi/widgets/confirmation_dialog.dart';
 import 'package:omi/services/devices/apple_watch_connection.dart';
 import 'package:omi/services/services.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/gen/flutter_communicator.g.dart';
 import 'package:omi/utils/device.dart';
 import 'package:provider/provider.dart';
@@ -204,150 +206,389 @@ class _FoundDevicesState extends State<FoundDevices> {
           }
         },
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            !provider.isConnected
-                ? Text(
-                    provider.deviceList.isEmpty
-                        ? 'Searching for devices...'
-                        : '${provider.deviceList.length} ${provider.deviceList.length == 1 ? "DEVICE" : "DEVICES"} FOUND NEARBY',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                      color: Color(0x66FFFFFF),
-                    ),
-                  )
-                : const Text(
-                    'PAIRING SUCCESSFUL',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w400,
-                      fontSize: 12,
-                      color: Color(0x66FFFFFF),
-                    ),
-                  ),
-            if (provider.deviceList.isNotEmpty) const SizedBox(height: 16),
-            if (!provider.isConnected) ..._devicesList(provider),
-            if (provider.isConnected)
-              Text(
-                '${provider.deviceName} (${BtDevice.shortId(provider.deviceId)})',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 18,
-                  color: Color(0xCCFFFFFF),
-                ),
-              ),
-            if (provider.isConnected)
-              Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  child: Text(
-                    '🔋 ${provider.batteryPercentage.toString()}%',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 18,
-                      color: provider.batteryPercentage <= 25
-                          ? Colors.red
-                          : provider.batteryPercentage > 25 && provider.batteryPercentage <= 50
-                              ? Colors.orange
-                              : Colors.green,
-                    ),
-                  ))
+            Expanded(
+              child: provider.isConnected
+                  ? _buildConnected(provider)
+                  : provider.deviceList.isEmpty
+                      ? _buildSearching(context)
+                      : _buildFoundList(provider),
+            ),
           ],
         ),
       );
     });
   }
 
-  _devicesList(OnboardingProvider provider) {
-    return (provider.deviceList.mapIndexed(
-      (index, device) {
-        bool isConnecting = provider.connectingToDeviceId == device.id;
-
-        return GestureDetector(
-          onTap: !provider.isClicked
-              ? () async {
-                  if (device.type == DeviceType.appleWatch) {
-                    await _handleAppleWatchOnboarding(device, provider);
-                  } else {
-                    // Handle other devices
-                    await provider.handleTap(
-                      device: device,
-                      isFromOnboarding: widget.isFromOnboarding,
-                      goNext: widget.goNext,
-                    );
-
-                    // Show firmware warning after successful connection
-                    if (provider.isConnected) {
-                      await _showFirmwareWarningIfNeeded(device);
-                    }
-                  }
-                }
-              : null,
-          child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+  Widget _buildSearching(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 24),
+          Center(
+            child: Assets.images.omiWithRope.image(
+              width: 188,
+              height: 188,
+              fit: BoxFit.contain,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Center(
+            child: Container(
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                color: const Color(0x144361EE),
+                borderRadius: BorderRadius.circular(22),
               ),
-              child: Row(
-                children: [
-                  // Device icon
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Image.asset(
-                      DeviceUtils.getDeviceImagePath(
-                        deviceType: device.type,
-                        modelNumber: device.modelNumber,
-                        deviceName: device.name,
-                      ),
-                      width: 32,
-                      height: 32,
+              child: const Icon(
+                Icons.bluetooth,
+                color: Color(0xFF4361EE),
+                size: 28,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Center(
+            child: MPAnimatedDotsText(
+              baseText: '正在搜索设备',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1D1D1F),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Center(
+            child: Text(
+              '请确保设备已开启并在附近',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0x991D1D1F),
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          _buildTipsCard(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipsCard(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.info_outline, color: Color(0xFF4361EE)),
+              SizedBox(width: 8),
+              Text(
+                '连接提示',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1D1D1F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _MPTipRow(index: 1, text: '确保设备电量充足'),
+          const SizedBox(height: 8),
+          const _MPTipRow(index: 2, text: '将设备靠近手机'),
+          const SizedBox(height: 8),
+          const _MPTipRow(index: 3, text: '首次连接需要在设备上确认配对'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFoundList(OnboardingProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '发现附近的设备',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF1D1D1F),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${provider.deviceList.length} 个设备可用',
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w400,
+            color: Color(0x991D1D1F),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListView.separated(
+            itemCount: provider.deviceList.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final device = provider.deviceList[index];
+              final isConnecting = provider.connectingToDeviceId == device.id;
+              return GestureDetector(
+                onTap: !provider.isClicked
+                    ? () async {
+                        if (device.type == DeviceType.appleWatch) {
+                          await _handleAppleWatchOnboarding(device, provider);
+                        } else {
+                          await provider.handleTap(
+                            device: device,
+                            isFromOnboarding: widget.isFromOnboarding,
+                            goNext: widget.goNext,
+                          );
+
+                          if (provider.isConnected) {
+                            await _showFirmwareWarningIfNeeded(device);
+                          }
+                        }
+                      }
+                    : null,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0x1A4361EE),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  // Device name and info
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Stack(
-                        children: [
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '${device.name} (${device.getShortId()})',
-                              textAlign: TextAlign.left,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0x0F4361EE),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Image.asset(
+                            DeviceUtils.getDeviceImagePath(
+                              deviceType: device.type,
+                              modelNumber: device.modelNumber,
+                              deviceName: device.name,
+                            ),
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              device.name,
                               style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 18,
-                                color: Colors.black,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1D1D1F),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'ID: ${device.getShortId()}',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0x991D1D1F),
                               ),
                             ),
-                          ),
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 16.0),
-                              child: isConnecting
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                          )
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      if (isConnecting)
+                        const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(Color(0xFF4361EE)),
+                          ),
+                        )
+                      else
+                        const Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF1D1D1F),
+                        ),
+                    ],
                   ),
-                ],
-              )),
-        );
-      },
-    ).toList());
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConnected(OnboardingProvider provider) {
+    final battery = provider.batteryPercentage;
+    final batteryColor = battery <= 25
+        ? Colors.red
+        : battery > 25 && battery <= 50
+            ? Colors.orange
+            : Colors.green;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(
+          Icons.check_circle,
+          color: Color(0xFF4BB543),
+          size: 44,
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          '配对成功',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1D1D1F),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '${provider.deviceName} (${BtDevice.shortId(provider.deviceId)})',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 16,
+            color: Color(0xCC1D1D1F),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          '电量 $battery%',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+            color: batteryColor,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class MPAnimatedDotsText extends StatefulWidget {
+  final String baseText;
+  final TextStyle style;
+
+  const MPAnimatedDotsText({super.key, required this.baseText, required this.style});
+
+  @override
+  State<MPAnimatedDotsText> createState() => _MPAnimatedDotsTextState();
+}
+
+class _MPAnimatedDotsTextState extends State<MPAnimatedDotsText> {
+  static const int _maxDots = 3;
+  static const Duration _tick = Duration(milliseconds: 500);
+
+  late Timer _timer;
+  int _dotCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(_tick, (_) {
+      if (!mounted) return;
+      setState(() {
+        _dotCount = (_dotCount + 1) % (_maxDots + 1);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '${widget.baseText}${'.' * _dotCount}',
+      style: widget.style,
+    );
+  }
+}
+
+class _MPTipRow extends StatelessWidget {
+  final int index;
+  final String text;
+
+  const _MPTipRow({required this.index, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(
+            color: const Color(0x0F4361EE),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            '$index',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF4361EE),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF1D1D1F),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
