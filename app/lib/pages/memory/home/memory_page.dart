@@ -25,10 +25,17 @@ class MemoryPage extends StatefulWidget {
 }
 
 class _MemoryPageState extends State<MemoryPage> {
+  // AI-generated START - 滚动控制器
+  final ScrollController _scrollController = ScrollController();
+  // AI-generated END - _scrollController
+
   // AI-generated START - 初始化方法
   @override
   void initState() {
     super.initState();
+    // AI-generated START - 添加滚动监听
+    _scrollController.addListener(_onScroll);
+    // AI-generated END - 添加滚动监听
     // AI-generated START - 初始化记忆数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -40,6 +47,33 @@ class _MemoryPageState extends State<MemoryPage> {
     // AI-generated END - 初始化记忆数据
   }
   // AI-generated END - 初始化方法
+
+  // AI-generated START - 清理资源
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+  // AI-generated END - 清理资源
+
+  // AI-generated START - 滚动监听方法
+  void _onScroll() {
+    final provider = Provider.of<MemoryProvider>(context, listen: false);
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      if (!provider.isFetching && provider.hasMore) {
+        provider.loadMoreMemories();
+      }
+    }
+  }
+  // AI-generated END - _onScroll
+
+  // AI-generated START - 下拉刷新方法
+  Future<void> _onRefresh() async {
+    final provider = Provider.of<MemoryProvider>(context, listen: false);
+    await provider.loadMemories();
+  }
+  // AI-generated END - _onRefresh
 
   // AI-generated START - 构建方法
   @override
@@ -118,29 +152,42 @@ class _MemoryPageState extends State<MemoryPage> {
 
     return Column(
       children: [
-        // AI-generated START - 记忆列表
+        // AI-generated START - 记忆列表（带下拉刷新和上拉加载）
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            itemCount: provider.filteredMemories.length,
-            itemBuilder: (context, index) {
-              final memory = provider.filteredMemories[index];
-              return MemoryConversationCard(
-                name: memory.name,
-                timestamp: _formatTimestamp(memory.createdAt),
-                description: memory.description,
-                conversationCount: memory.conversationCount,
-                avatarBackgroundColor: memory.avatarBackgroundColor,
-                avatarBadge: const Icon(
-                  Icons.volume_up,
-                  color: Colors.white,
-                  size: 12.0,
-                ),
-                onTap: () {
-                  // TODO: 导航到记忆详情页面
-                },
-              );
-            },
+          child: RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              itemCount: provider.filteredMemories.length + (provider.hasMore && provider.isFetching ? 1 : 0),
+              itemBuilder: (context, index) {
+                // 显示加载更多指示器
+                if (index == provider.filteredMemories.length) {
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+                final memory = provider.filteredMemories[index];
+                return MemoryConversationCard(
+                  name: memory.name,
+                  timestamp: _formatTimestamp(memory.createdAt),
+                  description: memory.description,
+                  conversationCount: memory.conversationCount,
+                  avatarBackgroundColor: memory.avatarBackgroundColor,
+                  avatarBadge: const Icon(
+                    Icons.volume_up,
+                    color: Colors.white,
+                    size: 12.0,
+                  ),
+                  onTap: () {
+                    // TODO: 导航到记忆详情页面
+                  },
+                );
+              },
+            ),
           ),
         ),
         // AI-generated END - 记忆列表

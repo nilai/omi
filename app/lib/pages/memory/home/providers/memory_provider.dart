@@ -52,6 +52,14 @@ class MemoryProvider with ChangeNotifier {
   bool _isLoading = false;
   // AI-generated END - _isLoading
 
+  // AI-generated START - 是否正在获取更多数据
+  bool _isFetching = false;
+  // AI-generated END - _isFetching
+
+  // AI-generated START - 是否还有更多数据
+  bool _hasMore = true;
+  // AI-generated END - _hasMore
+
   // AI-generated START - 错误信息
   String? _error;
   // AI-generated END - _error
@@ -67,6 +75,14 @@ class MemoryProvider with ChangeNotifier {
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
   // AI-generated END - isLoading
+
+  // AI-generated START - 获取是否正在获取更多数据
+  bool get isFetching => _isFetching;
+  // AI-generated END - isFetching
+
+  // AI-generated START - 获取是否还有更多数据
+  bool get hasMore => _hasMore;
+  // AI-generated END - hasMore
 
   // AI-generated START - 获取错误信息
   String? get error => _error;
@@ -95,6 +111,13 @@ class MemoryProvider with ChangeNotifier {
   }
   // AI-generated END - setLoading
 
+  // AI-generated START - 设置获取状态
+  void setFetching(bool fetching) {
+    _isFetching = fetching;
+    notifyListeners();
+  }
+  // AI-generated END - setFetching
+
   // AI-generated START - 设置错误信息
   void setError(String? errorMessage) {
     _error = errorMessage;
@@ -113,6 +136,7 @@ class MemoryProvider with ChangeNotifier {
   Future<void> loadMemories() async {
     setLoading(true);
     setError(null);
+    _hasMore = true; // 重置 hasMore 状态
     try {
       // TODO: 从API或本地存储加载记忆数据
       // final memories = await memoryService.fetchMemories();
@@ -171,6 +195,8 @@ class MemoryProvider with ChangeNotifier {
         ),
       ];
       // AI-generated END - 默认测试数据
+      // 模拟：如果数据少于某个数量，则认为没有更多数据
+      _hasMore = _memories.length >= 6; // 这里可以根据实际API响应调整
       notifyListeners();
     } catch (e) {
       setError(e.toString());
@@ -179,6 +205,45 @@ class MemoryProvider with ChangeNotifier {
     }
   }
   // AI-generated END - loadMemories
+
+  // AI-generated START - 加载更多人物记忆
+  Future<void> loadMoreMemories() async {
+    if (_isFetching || !_hasMore) return;
+
+    setFetching(true);
+
+    try {
+      // TODO: 从API加载更多记忆数据
+      // final response = await memoryService.fetchMemories(offset: _memories.length, limit: 20);
+      // _memories.addAll(response.memories);
+      // _hasMore = response.hasMore;
+      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
+
+      // AI-generated START - 模拟加载更多数据
+      final now = DateTime.now();
+      final moreMemories = [
+        CharacterMemoryItem(
+          id: '${_memories.length + 1}',
+          name: '叶新${_memories.length + 1}',
+          description: '新增的记忆数据，用于测试上拉加载功能',
+          createdAt: now.subtract(const Duration(days: 20)),
+          conversationCount: 2,
+          avatarBackgroundColor: Colors.grey.shade300,
+        ),
+      ];
+      _memories.addAll(moreMemories);
+      // 模拟：如果已加载超过10条，则认为没有更多数据
+      _hasMore = _memories.length < 10;
+      // AI-generated END - 模拟加载更多数据
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading more memories: $e');
+    } finally {
+      setFetching(false);
+    }
+  }
+  // AI-generated END - loadMoreMemories
 
   // AI-generated START - 添加人物记忆
   void addMemory(CharacterMemoryItem memory) {
