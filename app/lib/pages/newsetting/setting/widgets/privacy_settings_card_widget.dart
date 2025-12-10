@@ -1,5 +1,7 @@
 // AI-generated START - 隐私设置卡片组件，显示隐私设置选项列表
 import 'package:flutter/material.dart';
+import 'package:omi/backend/preferences.dart';
+import 'package:omi/pages/newsetting/setting/widgets/audio_retention_dialog.dart';
 
 /// 隐私设置项信息数据模型
 class PrivacySettingItem {
@@ -39,7 +41,7 @@ class PrivacySettingItem {
 
 /// 隐私设置卡片组件
 /// 显示隐私设置选项列表，标题和设置项列表分开，便于扩展
-class PrivacySettingsCardWidget extends StatelessWidget {
+class PrivacySettingsCardWidget extends StatefulWidget {
   // AI-generated START - 卡片标题
   final String? title;
   // AI-generated END - title
@@ -54,8 +56,25 @@ class PrivacySettingsCardWidget extends StatelessWidget {
     this.items = const [],
   });
 
+  @override
+  State<PrivacySettingsCardWidget> createState() => _PrivacySettingsCardWidgetState();
+}
+
+class _PrivacySettingsCardWidgetState extends State<PrivacySettingsCardWidget> {
+  // AI-generated START - 音频保留时间当前值
+  String _audioRetentionValue = '1 month';
+  // AI-generated END - _audioRetentionValue
+
+  @override
+  void initState() {
+    super.initState();
+    // AI-generated START - 从 SharedPreferences 读取音频保留时间设置
+    _audioRetentionValue = SharedPreferencesUtil().audioRetentionPeriod;
+    // AI-generated END - 从 SharedPreferences 读取音频保留时间设置
+  }
+
   // AI-generated START - 获取默认隐私设置项列表
-  static List<PrivacySettingItem> getDefaultItems({BuildContext? context}) {
+  List<PrivacySettingItem> _getDefaultItems() {
     return [
       PrivacySettingItem(
         title: '隐私政策',
@@ -63,14 +82,12 @@ class PrivacySettingsCardWidget extends StatelessWidget {
         iconBackgroundColor: const Color(0xFF8B5CF6), // 紫色
         onTap: () {
           // AI-generated START - 默认点击事件处理
-          if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('打开隐私政策'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('打开隐私政策'),
+              duration: Duration(seconds: 1),
+            ),
+          );
           // AI-generated END - 默认点击事件处理
         },
       ),
@@ -80,34 +97,43 @@ class PrivacySettingsCardWidget extends StatelessWidget {
         iconBackgroundColor: const Color(0xFF64B5F6), // 浅蓝色
         onTap: () {
           // AI-generated START - 默认点击事件处理
-          if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('打开服务条款'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('打开服务条款'),
+              duration: Duration(seconds: 1),
+            ),
+          );
           // AI-generated END - 默认点击事件处理
         },
       ),
       PrivacySettingItem(
         title: '音频保留时间',
-        currentValue: '1 month',
+        currentValue: _audioRetentionValue,
         showDropdown: true,
         icon: Icons.access_time_outlined,
         iconBackgroundColor: const Color(0xFF4CAF50), // 绿色
         onTap: () {
-          // AI-generated START - 默认点击事件处理
-          if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('选择音频保留时间'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          }
-          // AI-generated END - 默认点击事件处理
+          // AI-generated START - 打开音频保留时间选择弹窗
+          AudioRetentionDialog.show(
+            context,
+            currentValue: _audioRetentionValue,
+            onRetentionSelected: (value) {
+              // AI-generated START - 更新音频保留时间设置
+              setState(() {
+                _audioRetentionValue = value;
+              });
+              // 保存选中的音频保留时间设置到 SharedPreferences
+              SharedPreferencesUtil().audioRetentionPeriod = value;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('音频保留时间已设置为: $value'),
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+              // AI-generated END - 更新音频保留时间设置
+            },
+          );
+          // AI-generated END - 打开音频保留时间选择弹窗
         },
       ),
     ];
@@ -116,7 +142,7 @@ class PrivacySettingsCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemsList = items.isEmpty ? PrivacySettingsCardWidget.getDefaultItems(context: context) : items;
+    final itemsList = widget.items.isEmpty ? _getDefaultItems() : widget.items;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -135,11 +161,11 @@ class PrivacySettingsCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // AI-generated START - 标题区域（独立）
-          if (title != null)
+          if (widget.title != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
               child: Text(
-                title!,
+                widget.title!,
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 18.0,
@@ -237,4 +263,3 @@ class PrivacySettingsCardWidget extends StatelessWidget {
   }
 }
 // AI-generated END - privacy_settings_card_widget.dart
-

@@ -216,6 +216,11 @@ class SharedPreferencesUtil {
 
   set hasSetPrimaryLanguage(bool value) => saveBool('hasSetPrimaryLanguage', value);
 
+  // Audio retention period
+  String get audioRetentionPeriod => getString('audioRetentionPeriod') ?? '1 month';
+
+  set audioRetentionPeriod(String value) => saveString('audioRetentionPeriod', value);
+
   int get currentStorageBytes => getInt('currentStorageBytes') ?? 0;
 
   set currentStorageBytes(int value) => saveInt('currentStorageBytes', value);

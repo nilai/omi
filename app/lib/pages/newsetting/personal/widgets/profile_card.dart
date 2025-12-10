@@ -20,7 +20,6 @@ class ProfileCard extends StatelessWidget {
     final displayName = personalProvider.name;
     final displayEmail = personalProvider.email;
     final displayAvatarUrl = personalProvider.avatarUrl;
-    final displayAvatarSize = personalProvider.avatarSize;
 
     return Container(
       width: double.infinity,
@@ -34,7 +33,7 @@ class ProfileCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 圆形头像
-          _buildAvatar(displayAvatarUrl, displayAvatarSize),
+          _buildAvatar(displayAvatarUrl, 80),
           const SizedBox(height: 16.0),
           // 姓名
           _buildName(displayName),

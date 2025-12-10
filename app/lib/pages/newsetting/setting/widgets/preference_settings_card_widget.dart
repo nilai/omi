@@ -1,5 +1,8 @@
 // AI-generated START - 偏好设置卡片组件，显示偏好设置选项列表
 import 'package:flutter/material.dart';
+import 'package:omi/pages/newsetting/setting/widgets/primary_language_dialog.dart';
+import 'package:omi/providers/home_provider.dart';
+import 'package:provider/provider.dart';
 
 /// 偏好设置项信息数据模型
 class PreferenceSettingItem {
@@ -81,28 +84,37 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
       PreferenceSettingItem(
         title: '转写语言偏好',
         description: null,
-        currentValue: 'Chinese (Mandarin, Simplified)',
+        currentValue: context != null ? _getCurrentLanguageName(context) : 'Chinese (Mandarin, Simplified)',
         icon: Icons.language_outlined,
         iconGradientColors: const [
           Color(0xFF64B5F6), // 浅蓝色
           Color(0xFF8B5CF6), // 紫色
         ],
         onTap: () {
-          // AI-generated START - 默认点击事件处理
+          // AI-generated START - 打开主要语言选择弹窗
           if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('打开转写语言偏好设置'),
-                duration: Duration(seconds: 1),
-              ),
-            );
+            PrimaryLanguageDialog.show(context);
           }
-          // AI-generated END - 默认点击事件处理
+          // AI-generated END - 打开主要语言选择弹窗
         },
       ),
     ];
   }
   // AI-generated END - getDefaultItems
+
+  // AI-generated START - 获取当前语言名称
+  static String _getCurrentLanguageName(BuildContext context) {
+    try {
+      final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+      if (homeProvider.userPrimaryLanguage.isNotEmpty) {
+        return homeProvider.getLanguageName(homeProvider.userPrimaryLanguage);
+      }
+    } catch (e) {
+      // 如果获取失败，返回默认值
+    }
+    return 'Chinese (Mandarin, Simplified)';
+  }
+  // AI-generated END - _getCurrentLanguageName
 
   @override
   Widget build(BuildContext context) {

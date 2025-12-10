@@ -38,7 +38,7 @@ class _PersonalPageState extends State<PersonalPage> {
       // 获取 PersonalProvider 实例，用于后续数据加载
       final provider = Provider.of<PersonalProvider>(context, listen: false);
       // 可以在这里加载用户数据
-      provider.updateProfile();
+      provider.loadUserProfile();
     });
     // AI-generated END - 初始化个人中心数据
   }

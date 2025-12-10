@@ -23,6 +23,9 @@ import 'package:omi/firebase_options_prod.dart' as prod;
 import 'package:omi/flavors.dart';
 import 'package:omi/pages/apps/providers/add_app_provider.dart';
 import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+import 'package:omi/pages/memo_todo/memo/providers/memo_provider.dart';
+import 'package:omi/pages/memo_todo/todo/providers/todo_provider.dart';
+import 'package:omi/pages/newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/payments/payment_method_provider.dart';
 import 'package:omi/pages/persona/persona_provider.dart';
 import 'package:omi/providers/action_items_provider.dart';
@@ -38,16 +41,16 @@ import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/mcp_provider.dart';
 import 'package:omi/providers/memories_provider.dart';
 import 'package:omi/providers/message_provider.dart';
+import 'package:omi/providers/note_device_provider.dart';
+import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
-import 'package:omi/providers/task_integration_provider.dart';
 import 'package:omi/providers/people_provider.dart';
 import 'package:omi/providers/speech_profile_provider.dart';
 import 'package:omi/providers/summary_provider.dart';
 import 'package:omi/providers/sync_provider.dart';
+import 'package:omi/providers/task_integration_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/providers/user_provider.dart';
-import 'package:omi/providers/note_device_provider.dart';
-import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/services/notifications/action_item_notification_handler.dart';
@@ -310,6 +313,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 previous ?? NoteOtaProvider(deviceProvider),
           ),
           ChangeNotifierProvider(create: (context) => TaskIntegrationProvider()),
+          ChangeNotifierProvider(create: (context) => SettingsProvider()),
+          ChangeNotifierProvider(create: (context) => MemoProvider()),
+          ChangeNotifierProvider(create: (context) => TodoProvider()),
         ],
         builder: (context, child) {
           return WithForegroundTask(
