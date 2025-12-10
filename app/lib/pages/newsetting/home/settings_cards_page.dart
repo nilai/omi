@@ -1,5 +1,6 @@
 // AI-generated START - 设置卡片展示页面，从上到下显示所有设置相关的卡片组件
 import 'package:flutter/material.dart';
+import 'package:omi/pages/memory/home/memory_page.dart';
 import 'package:omi/pages/newsetting/home/widgets/app_integration_card_widget.dart';
 import 'package:omi/pages/newsetting/home/widgets/expert_feedback_card_widget.dart';
 import 'package:omi/pages/newsetting/home/widgets/memory_warehouse_card_widget.dart';
@@ -9,6 +10,7 @@ import 'package:omi/pages/newsetting/home/widgets/settings_top_bar.dart';
 import 'package:omi/pages/newsetting/home/widgets/subscription_plan_card_widget.dart';
 import 'package:omi/pages/newsetting/home/widgets/template_selection_card_widget.dart';
 import 'package:omi/pages/newsetting/home/widgets/voiceprint_recognition_card_widget.dart';
+import 'package:omi/pages/newsetting/personal/personal_page.dart';
 import 'package:omi/pages/newsetting/setting/setting_page.dart';
 
 /// 设置卡片展示页面
@@ -35,10 +37,13 @@ class SettingsCardsPage extends StatelessWidget {
           // AI-generated END - 打开设置页面
         },
         onUserTap: () {
-          // 处理用户图标点击
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('打开用户资料')),
+          // AI-generated START - 打开个人主页
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const PersonalPage(),
+            ),
           );
+          // AI-generated END - 打开个人主页
         },
       ),
       body: SingleChildScrollView(
@@ -102,10 +107,13 @@ class SettingsCardsPage extends StatelessWidget {
             // AI-generated START - 记忆仓库卡片
             MemoryWarehouseCardWidget(
               onTap: () {
-                // 处理记忆仓库卡片点击
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('打开记忆仓库页面')),
+                // AI-generated START - 打开记忆仓库页面
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const MemoryPage(),
+                  ),
                 );
+                // AI-generated END - 打开记忆仓库页面
               },
               friendAvatars: const [
                 'https://via.placeholder.com/48',

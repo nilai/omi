@@ -1,0 +1,214 @@
+// AI-generated START - 记忆中心状态管理Provider
+import 'package:flutter/material.dart';
+
+/// 人物记忆数据模型
+class CharacterMemoryItem {
+  // AI-generated START - 构造函数
+  const CharacterMemoryItem({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.createdAt,
+    required this.conversationCount,
+    this.avatarUrl,
+    this.avatarBackgroundColor,
+    this.updatedAt,
+  });
+  // AI-generated END - 构造函数
+
+  /// 记忆ID
+  final String id;
+
+  /// 人物姓名
+  final String name;
+
+  /// 记忆描述
+  final String description;
+
+  /// 创建时间
+  final DateTime createdAt;
+
+  /// 更新时间
+  final DateTime? updatedAt;
+
+  /// 对话次数
+  final int conversationCount;
+
+  /// 头像URL
+  final String? avatarUrl;
+
+  /// 头像背景颜色
+  final Color? avatarBackgroundColor;
+}
+
+/// 记忆中心状态管理Provider
+/// 管理用户人物记忆数据
+class MemoryProvider with ChangeNotifier {
+  // AI-generated START - 人物记忆列表
+  List<CharacterMemoryItem> _memories = [];
+  // AI-generated END - _memories
+
+  // AI-generated START - 是否正在加载
+  bool _isLoading = false;
+  // AI-generated END - _isLoading
+
+  // AI-generated START - 错误信息
+  String? _error;
+  // AI-generated END - _error
+
+  // AI-generated START - 搜索关键词
+  String _searchQuery = '';
+  // AI-generated END - _searchQuery
+
+  // AI-generated START - 获取人物记忆列表
+  List<CharacterMemoryItem> get memories => _memories;
+  // AI-generated END - memories
+
+  // AI-generated START - 获取是否正在加载
+  bool get isLoading => _isLoading;
+  // AI-generated END - isLoading
+
+  // AI-generated START - 获取错误信息
+  String? get error => _error;
+  // AI-generated END - error
+
+  // AI-generated START - 获取搜索关键词
+  String get searchQuery => _searchQuery;
+  // AI-generated END - searchQuery
+
+  // AI-generated START - 获取过滤后的人物记忆列表
+  List<CharacterMemoryItem> get filteredMemories {
+    if (_searchQuery.isEmpty) {
+      return _memories;
+    }
+    return _memories.where((memory) {
+      return memory.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          memory.description.toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+  }
+  // AI-generated END - filteredMemories
+
+  // AI-generated START - 设置加载状态
+  void setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
+  }
+  // AI-generated END - setLoading
+
+  // AI-generated START - 设置错误信息
+  void setError(String? errorMessage) {
+    _error = errorMessage;
+    notifyListeners();
+  }
+  // AI-generated END - setError
+
+  // AI-generated START - 设置搜索关键词
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+  // AI-generated END - setSearchQuery
+
+  // AI-generated START - 加载人物记忆列表
+  Future<void> loadMemories() async {
+    setLoading(true);
+    setError(null);
+    try {
+      // TODO: 从API或本地存储加载记忆数据
+      // final memories = await memoryService.fetchMemories();
+      // _memories = memories;
+      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
+      // AI-generated START - 默认测试数据
+      final now = DateTime.now();
+      _memories = [
+        CharacterMemoryItem(
+          id: '1',
+          name: '叶成功',
+          description: '讨论了创业项目的融资计划,分享了市场调研数据和商业模式优化建议',
+          createdAt: now.subtract(const Duration(days: 2)),
+          conversationCount: 5,
+          avatarBackgroundColor: Colors.amber,
+        ),
+        CharacterMemoryItem(
+          id: '2',
+          name: '叶天命',
+          description: '聊了关于职业发展的规划,探讨了技术转型和个人成长路径',
+          createdAt: now.subtract(const Duration(days: 5)),
+          conversationCount: 4,
+          avatarBackgroundColor: Colors.grey.shade300,
+        ),
+        CharacterMemoryItem(
+          id: '3',
+          name: '叶无敌',
+          description: '交流了健身计划和生活方式改变,分享了运动心得和饮食建议',
+          createdAt: now.subtract(const Duration(days: 7)),
+          conversationCount: 6,
+          avatarBackgroundColor: Colors.grey.shade400,
+        ),
+        CharacterMemoryItem(
+          id: '4',
+          name: '叶疯狂',
+          description: '讨论了旅行计划和冒险经历,分享了各地美食和文化体验',
+          createdAt: now.subtract(const Duration(days: 7)),
+          conversationCount: 5,
+          avatarBackgroundColor: Colors.grey.shade300,
+        ),
+        CharacterMemoryItem(
+          id: '5',
+          name: '叶智慧',
+          description: '探讨了读书心得和知识管理方法,交流了学习技巧和思维模式',
+          createdAt: now.subtract(const Duration(days: 14)),
+          conversationCount: 3,
+          avatarBackgroundColor: Colors.grey.shade300,
+        ),
+        CharacterMemoryItem(
+          id: '6',
+          name: '叶勇敢',
+          description: '聊了关于挑战自我的经历,分享了克服困难的方法和心态调整',
+          createdAt: now.subtract(const Duration(days: 14)),
+          conversationCount: 3,
+          avatarBackgroundColor: Colors.grey.shade400,
+        ),
+      ];
+      // AI-generated END - 默认测试数据
+      notifyListeners();
+    } catch (e) {
+      setError(e.toString());
+    } finally {
+      setLoading(false);
+    }
+  }
+  // AI-generated END - loadMemories
+
+  // AI-generated START - 添加人物记忆
+  void addMemory(CharacterMemoryItem memory) {
+    _memories.insert(0, memory);
+    notifyListeners();
+  }
+  // AI-generated END - addMemory
+
+  // AI-generated START - 更新人物记忆
+  void updateMemory(String id, CharacterMemoryItem updatedMemory) {
+    final index = _memories.indexWhere((m) => m.id == id);
+    if (index != -1) {
+      _memories[index] = updatedMemory;
+      notifyListeners();
+    }
+  }
+  // AI-generated END - updateMemory
+
+  // AI-generated START - 删除记忆
+  void deleteMemory(String id) {
+    _memories.removeWhere((m) => m.id == id);
+    notifyListeners();
+  }
+  // AI-generated END - deleteMemory
+
+  // AI-generated START - 清空记忆列表
+  void clearMemories() {
+    _memories.clear();
+    notifyListeners();
+  }
+  // AI-generated END - clearMemories
+}
+// AI-generated END - memory_provider.dart
