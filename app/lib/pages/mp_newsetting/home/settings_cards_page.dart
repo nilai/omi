@@ -21,19 +21,38 @@ class SettingsCardsPage extends StatefulWidget {
   const SettingsCardsPage({super.key});
 
   @override
-  State<SettingsCardsPage> createState() => _SettingsCardsPageState();
+  State<SettingsCardsPage> createState() => SettingsCardsPageState();
 }
 
-class _SettingsCardsPageState extends State<SettingsCardsPage> {
+class SettingsCardsPageState extends State<SettingsCardsPage> {
+  late ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     // AI-generated START - 初始化时加载用户资料
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final provider = Provider.of<SettingsProvider>(context, listen: false);
+      Provider.of<SettingsProvider>(context, listen: false);
     });
     // AI-generated END - 初始化时加载用户资料
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
@@ -67,6 +86,7 @@ class _SettingsCardsPageState extends State<SettingsCardsPage> {
             },
           ),
           body: SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               children: [
                 const SizedBox(height: 8.0),

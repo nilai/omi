@@ -75,6 +75,18 @@ class _TodoPageState extends State<TodoPage> {
   }
   // AI-generated END - _onRefresh
 
+  // AI-generated START - 滚动到顶部
+  void scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+  // AI-generated END - scrollToTop
+
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {

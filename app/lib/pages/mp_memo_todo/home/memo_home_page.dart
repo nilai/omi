@@ -19,14 +19,35 @@ class MemoHomePage extends StatefulWidget {
 
   // AI-generated START - 创建状态
   @override
-  State<MemoHomePage> createState() => _MemoHomePageState();
+  State<MemoHomePage> createState() => MemoHomePageState();
   // AI-generated END - 创建状态
 }
 
-class _MemoHomePageState extends State<MemoHomePage> {
+class MemoHomePageState extends State<MemoHomePage> {
   // AI-generated START - 当前选中的类型
   MemoTodoType _selectedType = MemoTodoType.memo;
   // AI-generated END - _selectedType
+
+  // AI-generated START - 子页面的 GlobalKey
+  final GlobalKey _memoPageKey = GlobalKey();
+  final GlobalKey _todoPageKey = GlobalKey();
+  // AI-generated END - 子页面的 GlobalKey
+
+  // AI-generated START - 滚动到顶部
+  void scrollToTop() {
+    if (_selectedType == MemoTodoType.memo) {
+      final memoState = _memoPageKey.currentState;
+      if (memoState != null) {
+        (memoState as dynamic).scrollToTop();
+      }
+    } else {
+      final todoState = _todoPageKey.currentState;
+      if (todoState != null) {
+        (todoState as dynamic).scrollToTop();
+      }
+    }
+  }
+  // AI-generated END - scrollToTop
 
   // AI-generated START - 构建方法
   @override
@@ -55,9 +76,9 @@ class _MemoHomePageState extends State<MemoHomePage> {
           Expanded(
             child: IndexedStack(
               index: _selectedType == MemoTodoType.memo ? 0 : 1,
-              children: const [
-                MemoPage(),
-                TodoPage(),
+              children: [
+                MemoPage(key: _memoPageKey),
+                TodoPage(key: _todoPageKey),
               ],
             ),
           ),

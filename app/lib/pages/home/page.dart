@@ -1,29 +1,27 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-
-import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/backend/http/api/users.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/app.dart';
 import 'package:omi/backend/schema/geolocation.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/main.dart';
-import 'package:omi/pages/action_items/action_items_page.dart';
 import 'package:omi/pages/apps/app_detail/app_detail.dart';
-import 'package:omi/pages/apps/page.dart';
 import 'package:omi/pages/chat/page.dart';
+import 'package:omi/pages/conversation_capturing/page.dart';
 import 'package:omi/pages/conversations/conversations_page.dart';
 import 'package:omi/pages/memories/page.dart';
+import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
+import 'package:omi/pages/mp_newsetting/home/settings_cards_page.dart';
+import 'package:omi/pages/referral/referral_page.dart';
 import 'package:omi/pages/settings/data_privacy_page.dart';
 import 'package:omi/pages/settings/settings_drawer.dart';
-import 'package:omi/pages/referral/referral_page.dart';
 import 'package:omi/providers/app_provider.dart';
 import 'package:omi/providers/capture_provider.dart';
-import 'package:omi/providers/connectivity_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/home_provider.dart';
@@ -31,14 +29,11 @@ import 'package:omi/providers/message_provider.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/audio/foreground.dart';
+import 'package:omi/utils/enums.dart';
+import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:omi/widgets/upgrade_alert.dart';
 import 'package:provider/provider.dart';
-import 'package:upgrader/upgrader.dart';
-import 'package:omi/utils/platform/platform_manager.dart';
-import 'package:omi/utils/enums.dart';
-
-import 'package:omi/pages/conversation_capturing/page.dart';
 
 import 'widgets/battery_info_widget.dart';
 import 'widgets/mp_home_tab_item_widget.dart';
@@ -91,9 +86,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   bool scriptsInProgress = false;
 
   final GlobalKey<State<ConversationsPage>> _conversationsPageKey = GlobalKey<State<ConversationsPage>>();
-  final GlobalKey<State<ActionItemsPage>> _actionItemsPageKey = GlobalKey<State<ActionItemsPage>>();
+  final GlobalKey<State<MemoHomePage>> _actionItemsPageKey = GlobalKey<State<MemoHomePage>>();
   final GlobalKey<State<MemoriesPage>> _memoriesPageKey = GlobalKey<State<MemoriesPage>>();
-  final GlobalKey<AppsPageState> _appsPageKey = GlobalKey<AppsPageState>();
+  final GlobalKey<SettingsCardsPageState> _settingsCardsPageKey = GlobalKey<SettingsCardsPageState>();
   late final List<Widget> _pages;
 
   void _initiateApps() {
@@ -122,9 +117,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
         }
         break;
       case 3:
-        final appsState = _appsPageKey.currentState;
-        if (appsState != null) {
-          appsState.scrollToTop();
+        final settingsCardsState = _settingsCardsPageKey.currentState;
+        if (settingsCardsState != null) {
+          settingsCardsState.scrollToTop();
         }
         break;
     }
@@ -179,9 +174,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   void initState() {
     _pages = [
       ConversationsPage(key: _conversationsPageKey),
-      ActionItemsPage(key: _actionItemsPageKey),
+      MemoHomePage(key: _actionItemsPageKey),
       MemoriesPage(key: _memoriesPageKey),
-      AppsPage(key: _appsPageKey),
+      SettingsCardsPage(key: _settingsCardsPageKey),
     ];
     SharedPreferencesUtil().onboardingCompleted = true;
 
@@ -329,119 +324,115 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   @override
   Widget build(BuildContext context) {
     return Consumer<HomeProvider>(
-          builder: (context, homeProvider, _) {
-            return Scaffold(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
-              body: DefaultTabController(
-                length: 4,
-                initialIndex: homeProvider.selectedIndex,
-                child: GestureDetector(
-                  onTap: () {
-                    primaryFocus?.unfocus();
-                    // context.read<HomeProvider>().memoryFieldFocusNode.unfocus();
-                    // context.read<HomeProvider>().chatFieldFocusNode.unfocus();
-                  },
-                  child: Consumer2<HomeProvider, DeviceProvider>(
-                        builder: (context, home, _, child) {
-                          // if (home.isChatFieldFocused ||
-                          //     home.isConvoSearchFieldFocused ||
-                          //     home.isAppsSearchFieldFocused ||
-                          //     home.isMemoriesSearchFieldFocused) {
-                          //   return const SizedBox.shrink();
-                          // } else {
-                          //   ;
-                          // }
-                          Widget buildTabItem({
-                              required int index,
-                              required String label,
-                              required String normalAsset,
-                              required String selectedAsset,
-                              required String analyticsName,
-                            }) {
-                              final isActive = home.selectedIndex == index;
-                              return Expanded(
-                                flex: 1,
-                                child: MPHomeTabItemWidget(
-                                  assetPath: isActive ? selectedAsset : normalAsset,
-                                  label: label,
-                                  iconSize: 24,
-                                  spacing: 6,
-                                  isActive: isActive,
-                                  useTint: false,
-                                  onTap: () {
-                                    HapticFeedback.mediumImpact();
-                                    MixpanelManager().bottomNavigationTabClicked(analyticsName);
-                                    primaryFocus?.unfocus();
-                                    if (isActive) {
-                                      _scrollToTop(index);
-                                      return;
-                                    }
-                                    home.setIndex(index);
-                                  },
-                                ),
-                              );
-                            } 
-
-                            return Stack(
-                              children: [
-                                // Bottom Navigation Bar
-                                Align(
-                                  alignment: Alignment.bottomCenter,
-                                  child: Container(
-                                    width: double.infinity,
-                                    height: 90,
-                                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                                    decoration: const BoxDecoration(
-                                      // color: Color.fromARGB(255, 15, 15, 15),
-                                      color: Colors.white
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        buildTabItem(
-                                          index: 0,
-                                          label: '记忆',
-                                          normalAsset: Assets.images.tabMemoryNormal.path,
-                                          selectedAsset: Assets.images.tabMemorySelect.path,
-                                          analyticsName: 'Home',
-                                        ),
-                                        
-                                        buildTabItem(
-                                          index: 1,
-                                          label: '灵感',
-                                          normalAsset: Assets.images.tabMemoNormal.path,
-                                          selectedAsset: Assets.images.tabMemoSelect.path,
-                                          analyticsName: 'Action Items',
-                                        ),
-                                        
-                                        buildTabItem(
-                                          index: 2,
-                                          label: 'AI助理',
-                                          normalAsset: Assets.images.tabAiNormal.path,
-                                          selectedAsset: Assets.images.tabAiSelect.path,
-                                          analyticsName: 'Memories',
-                                        ),
-                                        
-                                        buildTabItem(
-                                          index: 3,
-                                          label: '任务',
-                                          normalAsset: Assets.images.tabSetNormal.path,
-                                          selectedAsset: Assets.images.tabSetSelect.path,
-                                          analyticsName: 'Apps',
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
+      builder: (context, homeProvider, _) {
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
+          body: DefaultTabController(
+            length: 4,
+            initialIndex: homeProvider.selectedIndex,
+            child: GestureDetector(
+              onTap: () {
+                primaryFocus?.unfocus();
+                // context.read<HomeProvider>().memoryFieldFocusNode.unfocus();
+                // context.read<HomeProvider>().chatFieldFocusNode.unfocus();
+              },
+              child: Consumer2<HomeProvider, DeviceProvider>(
+                builder: (context, home, _, child) {
+                  // if (home.isChatFieldFocused ||
+                  //     home.isConvoSearchFieldFocused ||
+                  //     home.isAppsSearchFieldFocused ||
+                  //     home.isMemoriesSearchFieldFocused) {
+                  //   return const SizedBox.shrink();
+                  // } else {
+                  //   ;
+                  // }
+                  Widget buildTabItem({
+                    required int index,
+                    required String label,
+                    required String normalAsset,
+                    required String selectedAsset,
+                    required String analyticsName,
+                  }) {
+                    final isActive = home.selectedIndex == index;
+                    return Expanded(
+                      flex: 1,
+                      child: MPHomeTabItemWidget(
+                        assetPath: isActive ? selectedAsset : normalAsset,
+                        label: label,
+                        iconSize: 24,
+                        spacing: 6,
+                        isActive: isActive,
+                        useTint: false,
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          MixpanelManager().bottomNavigationTabClicked(analyticsName);
+                          primaryFocus?.unfocus();
+                          if (isActive) {
+                            _scrollToTop(index);
+                            return;
+                          }
+                          home.setIndex(index);
                         },
                       ),
-                ),
+                    );
+                  }
+
+                  return Stack(
+                    children: [
+                      // Bottom Navigation Bar
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Container(
+                          width: double.infinity,
+                          height: 90,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: const BoxDecoration(
+                              // color: Color.fromARGB(255, 15, 15, 15),
+                              color: Colors.white),
+                          child: Row(
+                            children: [
+                              buildTabItem(
+                                index: 0,
+                                label: '记忆',
+                                normalAsset: Assets.images.tabMemoryNormal.path,
+                                selectedAsset: Assets.images.tabMemorySelect.path,
+                                analyticsName: 'Home',
+                              ),
+                              buildTabItem(
+                                index: 1,
+                                label: '灵感',
+                                normalAsset: Assets.images.tabMemoNormal.path,
+                                selectedAsset: Assets.images.tabMemoSelect.path,
+                                analyticsName: 'Action Items',
+                              ),
+                              buildTabItem(
+                                index: 2,
+                                label: 'AI助理',
+                                normalAsset: Assets.images.tabAiNormal.path,
+                                selectedAsset: Assets.images.tabAiSelect.path,
+                                analyticsName: 'Memories',
+                              ),
+                              buildTabItem(
+                                index: 3,
+                                label: '任务',
+                                normalAsset: Assets.images.tabSetNormal.path,
+                                selectedAsset: Assets.images.tabSetSelect.path,
+                                analyticsName: 'Apps',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ),
         );
+      },
+    );
     // return MyUpgradeAlert(
     //   upgrader: _upgrader,
     //   dialogStyle: Platform.isIOS ? UpgradeDialogStyle.cupertino : UpgradeDialogStyle.material,

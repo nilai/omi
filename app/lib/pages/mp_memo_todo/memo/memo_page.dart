@@ -1,6 +1,5 @@
 // AI-generated START - Memo 页面
 import 'package:flutter/material.dart';
-import 'package:omi/pages/mp_memo_todo/home/widgets/memo_todo_switch_card.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/search_tasks_card.dart';
 import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/memo/widgets/memo_task_card.dart';
@@ -29,10 +28,6 @@ class _MemoPageState extends State<MemoPage> {
   // AI-generated START - 滚动控制器
   final ScrollController _scrollController = ScrollController();
   // AI-generated END - _scrollController
-
-  // AI-generated START - 当前选中的类型
-  final MemoTodoType _selectedType = MemoTodoType.memo;
-  // AI-generated END - _selectedType
 
   // AI-generated START - 初始化方法
   @override
@@ -79,6 +74,18 @@ class _MemoPageState extends State<MemoPage> {
     await provider.loadMemos();
   }
   // AI-generated END - _onRefresh
+
+  // AI-generated START - 滚动到顶部
+  void scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+  // AI-generated END - scrollToTop
 
   // AI-generated START - 构建方法
   @override
