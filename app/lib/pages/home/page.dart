@@ -11,9 +11,11 @@ import 'package:omi/backend/schema/geolocation.dart';
 import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/main.dart';
 import 'package:omi/pages/apps/app_detail/app_detail.dart';
+import 'package:omi/pages/chat/mp_chat.dart';
 import 'package:omi/pages/chat/page.dart';
 import 'package:omi/pages/conversation_capturing/page.dart';
 import 'package:omi/pages/conversations/conversations_page.dart';
+import 'package:omi/pages/home/mp_page.dart';
 import 'package:omi/pages/memories/page.dart';
 import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
 import 'package:omi/pages/mp_newsetting/home/settings_cards_page.dart';
@@ -86,9 +88,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   bool scriptsInProgress = false;
 
   // 四个tab页面
-  final GlobalKey<State<ConversationsPage>> _conversationsPageKey = GlobalKey<State<ConversationsPage>>();
+  final GlobalKey<State<MPPage>> _mpPageKey = GlobalKey<State<MPPage>>();
   final GlobalKey<State<MemoHomePage>> _actionItemsPageKey = GlobalKey<State<MemoHomePage>>();
-  final GlobalKey<State<MemoriesPage>> _memoriesPageKey = GlobalKey<State<MemoriesPage>>();
+  final GlobalKey<State<MPChatPage>> _mpChatPageKey = GlobalKey<State<MPChatPage>>();
   final GlobalKey<SettingsCardsPageState> _settingsCardsPageKey = GlobalKey<SettingsCardsPageState>();
   late final List<Widget> _pages;
 
@@ -101,9 +103,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   void _selectedTab(int pageIndex) {
     switch (pageIndex) {
       case 0:
-        final conversationsState = _conversationsPageKey.currentState;
-        if (conversationsState != null) {
-          (conversationsState as dynamic).scrollToTop();
+        final mpPageState = _mpPageKey.currentState;
+        if (mpPageState != null) {
+          (mpPageState as dynamic).scrollToTop();
         }
         break;
       case 1:
@@ -113,9 +115,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
         }
         break;
       case 2:
-        final memoriesState = _memoriesPageKey.currentState;
-        if (memoriesState != null) {
-          (memoriesState as dynamic).scrollToTop();
+        final mpChatState = _mpChatPageKey.currentState;
+        if (mpChatState != null) {
+          (mpChatState as dynamic).scrollToTop();
         }
         break;
       case 3:
@@ -175,9 +177,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   @override
   void initState() {
     _pages = [
-      ConversationsPage(key: _conversationsPageKey),
+      ConversationsPage(key: _mpPageKey),
       MemoHomePage(key: _actionItemsPageKey),
-      MemoriesPage(key: _memoriesPageKey),
+      MemoriesPage(key: _mpPageKey),
       SettingsCardsPage(key: _settingsCardsPageKey),
     ];
     SharedPreferencesUtil().onboardingCompleted = true;
