@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/backend/http/api/users.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/app.dart';
@@ -40,6 +41,7 @@ import 'package:omi/utils/enums.dart';
 import 'package:omi/pages/conversation_capturing/page.dart';
 
 import 'widgets/battery_info_widget.dart';
+import 'widgets/mp_home_tab_item_widget.dart';
 
 class HomePageWrapper extends StatefulWidget {
   final String? navigateToRoute;
@@ -340,29 +342,46 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                     // context.read<HomeProvider>().memoryFieldFocusNode.unfocus();
                     // context.read<HomeProvider>().chatFieldFocusNode.unfocus();
                   },
-                  child: Stack(
-                    children: [
-                      Column(
-                        children: [
-                          Expanded(
-                            child: IndexedStack(
-                              index: context.watch<HomeProvider>().selectedIndex,
-                              children: _pages,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Consumer2<HomeProvider, DeviceProvider>(
-                        builder: (context, home, deviceProvider, child) {
-                          if (home.isChatFieldFocused ||
-                              home.isConvoSearchFieldFocused ||
-                              home.isAppsSearchFieldFocused ||
-                              home.isMemoriesSearchFieldFocused) {
-                            return const SizedBox.shrink();
-                          } else {
-                            // Check if OMI device is connected
-                            bool isOmiDeviceConnected =
-                                deviceProvider.isConnected && deviceProvider.connectedDevice != null;
+                  child: Consumer2<HomeProvider, DeviceProvider>(
+                        builder: (context, home, _, child) {
+                          // if (home.isChatFieldFocused ||
+                          //     home.isConvoSearchFieldFocused ||
+                          //     home.isAppsSearchFieldFocused ||
+                          //     home.isMemoriesSearchFieldFocused) {
+                          //   return const SizedBox.shrink();
+                          // } else {
+                          //   ;
+                          // }
+                          Widget buildTabItem({
+                              required int index,
+                              required String label,
+                              required String normalAsset,
+                              required String selectedAsset,
+                              required String analyticsName,
+                            }) {
+                              final isActive = home.selectedIndex == index;
+                              return Expanded(
+                                flex: 2,
+                                child: MPHomeTabItemWidget(
+                                  assetPath: isActive ? selectedAsset : normalAsset,
+                                  label: label,
+                                  iconSize: 24,
+                                  spacing: 6,
+                                  isActive: isActive,
+                                  useTint: false,
+                                  onTap: () {
+                                    HapticFeedback.mediumImpact();
+                                    MixpanelManager().bottomNavigationTabClicked(analyticsName);
+                                    primaryFocus?.unfocus();
+                                    if (isActive) {
+                                      _scrollToTop(index);
+                                      return;
+                                    }
+                                    home.setIndex(index);
+                                  },
+                                ),
+                              );
+                            } 
 
                             return Stack(
                               children: [
@@ -374,147 +393,52 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                     height: 90,
                                     padding: const EdgeInsets.symmetric(horizontal: 20),
                                     decoration: const BoxDecoration(
-                                      color: Color.fromARGB(255, 15, 15, 15),
+                                      // color: Color.fromARGB(255, 15, 15, 15),
+                                      color: Colors.white
                                     ),
                                     child: Row(
                                       children: [
-                                        // Home tab
-                                        Expanded(
-                                          child: InkWell(
-                                            onTap: () {
-                                              HapticFeedback.mediumImpact();
-                                              MixpanelManager().bottomNavigationTabClicked('Home');
-                                              primaryFocus?.unfocus();
-                                              if (home.selectedIndex == 0) {
-                                                _scrollToTop(0);
-                                                return;
-                                              }
-                                              home.setIndex(0);
-                                            },
-                                            child: SizedBox(
-                                              height: 90,
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(bottom: 15),
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      FontAwesomeIcons.house,
-                                                      color: home.selectedIndex == 0 ? Colors.white : Colors.grey,
-                                                      size: 24,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        const Spacer(flex: 1),
+                                        buildTabItem(
+                                          index: 0,
+                                          label: '记忆',
+                                          normalAsset: Assets.images.tabMemoryNormal.path,
+                                          selectedAsset: Assets.images.tabMemorySelect.path,
+                                          analyticsName: 'Home',
                                         ),
-                                        // Action Items tab
-                                        Expanded(
-                                          child: InkWell(
-                                            onTap: () {
-                                              HapticFeedback.mediumImpact();
-                                              MixpanelManager().bottomNavigationTabClicked('Action Items');
-                                              primaryFocus?.unfocus();
-                                              if (home.selectedIndex == 1) {
-                                                _scrollToTop(1);
-                                                return;
-                                              }
-                                              home.setIndex(1);
-                                            },
-                                            child: SizedBox(
-                                              height: 90,
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(bottom: 15),
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      FontAwesomeIcons.listCheck,
-                                                      color: home.selectedIndex == 1 ? Colors.white : Colors.grey,
-                                                      size: 24,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        const Spacer(flex: 2),
+                                        buildTabItem(
+                                          index: 1,
+                                          label: '灵感',
+                                          normalAsset: Assets.images.tabMemoNormal.path,
+                                          selectedAsset: Assets.images.tabMemoSelect.path,
+                                          analyticsName: 'Action Items',
                                         ),
-                                        // Center space for record button - only when no OMI device is connected
-                                        if (!isOmiDeviceConnected) const SizedBox(width: 80),
-                                        // Memories tab
-                                        Expanded(
-                                          child: InkWell(
-                                            onTap: () {
-                                              HapticFeedback.mediumImpact();
-                                              MixpanelManager().bottomNavigationTabClicked('Memories');
-                                              primaryFocus?.unfocus();
-                                              if (home.selectedIndex == 2) {
-                                                _scrollToTop(2);
-                                                return;
-                                              }
-                                              home.setIndex(2);
-                                            },
-                                            child: SizedBox(
-                                              height: 90,
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(bottom: 15),
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      FontAwesomeIcons.brain,
-                                                      color: home.selectedIndex == 2 ? Colors.white : Colors.grey,
-                                                      size: 24,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        const Spacer(flex: 2),
+                                        buildTabItem(
+                                          index: 2,
+                                          label: 'AI助理',
+                                          normalAsset: Assets.images.tabAiNormal.path,
+                                          selectedAsset: Assets.images.tabAiSelect.path,
+                                          analyticsName: 'Memories',
                                         ),
-                                        // Apps tab
-                                        Expanded(
-                                          child: InkWell(
-                                            onTap: () {
-                                              HapticFeedback.mediumImpact();
-                                              MixpanelManager().bottomNavigationTabClicked('Apps');
-                                              primaryFocus?.unfocus();
-                                              if (home.selectedIndex == 3) {
-                                                _scrollToTop(3);
-                                                return;
-                                              }
-                                              home.setIndex(3);
-                                            },
-                                            child: SizedBox(
-                                              height: 90,
-                                              child: Padding(
-                                                padding: const EdgeInsets.only(bottom: 15),
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      FontAwesomeIcons.puzzlePiece,
-                                                      color: home.selectedIndex == 3 ? Colors.white : Colors.grey,
-                                                      size: 24,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                                        const Spacer(flex: 2),
+                                        buildTabItem(
+                                          index: 3,
+                                          label: '任务',
+                                          normalAsset: Assets.images.tabSetNormal.path,
+                                          selectedAsset: Assets.images.tabSetSelect.path,
+                                          analyticsName: 'Apps',
                                         ),
+                                        const Spacer(flex: 1),
                                       ],
                                     ),
                                   ),
                                 ),
                               ],
                             );
-                          }
                         },
                       ),
-                    ],
-                  ),
                 ),
               ),
             );

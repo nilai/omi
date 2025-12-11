@@ -209,6 +209,26 @@ class $AssetsImagesGen {
   AssetGenImage get logoTransparentV2 =>
       const AssetGenImage('assets/images/logo_transparent_v2.png');
 
+  /// File path: assets/images/mp_memo_add.png
+  AssetGenImage get mpMemoAdd =>
+      const AssetGenImage('assets/images/mp_memo_add.png');
+
+  /// File path: assets/images/mp_memo_edit.png
+  AssetGenImage get mpMemoEdit =>
+      const AssetGenImage('assets/images/mp_memo_edit.png');
+
+  /// File path: assets/images/mp_memo_search.png
+  AssetGenImage get mpMemoSearch =>
+      const AssetGenImage('assets/images/mp_memo_search.png');
+
+  /// File path: assets/images/mp_todo_cancendar.png
+  AssetGenImage get mpTodoCancendar =>
+      const AssetGenImage('assets/images/mp_todo_cancendar.png');
+
+  /// File path: assets/images/mp_todo_edit.png
+  AssetGenImage get mpTodoEdit =>
+      const AssetGenImage('assets/images/mp_todo_edit.png');
+
   /// File path: assets/images/new_background.png
   AssetGenImage get newBackground =>
       const AssetGenImage('assets/images/new_background.png');
@@ -401,6 +421,38 @@ class $AssetsImagesGen {
   /// File path: assets/images/stripe_logo.svg
   String get stripeLogo => 'assets/images/stripe_logo.svg';
 
+  /// File path: assets/images/tab_ai_normal.png
+  AssetGenImage get tabAiNormal =>
+      const AssetGenImage('assets/images/tab_ai_normal.png');
+
+  /// File path: assets/images/tab_ai_select.png
+  AssetGenImage get tabAiSelect =>
+      const AssetGenImage('assets/images/tab_ai_select.png');
+
+  /// File path: assets/images/tab_memo_normal.png
+  AssetGenImage get tabMemoNormal =>
+      const AssetGenImage('assets/images/tab_memo_normal.png');
+
+  /// File path: assets/images/tab_memo_select.png
+  AssetGenImage get tabMemoSelect =>
+      const AssetGenImage('assets/images/tab_memo_select.png');
+
+  /// File path: assets/images/tab_memory_normal.png
+  AssetGenImage get tabMemoryNormal =>
+      const AssetGenImage('assets/images/tab_memory_normal.png');
+
+  /// File path: assets/images/tab_memory_select.png
+  AssetGenImage get tabMemorySelect =>
+      const AssetGenImage('assets/images/tab_memory_select.png');
+
+  /// File path: assets/images/tab_set_normal.png
+  AssetGenImage get tabSetNormal =>
+      const AssetGenImage('assets/images/tab_set_normal.png');
+
+  /// File path: assets/images/tab_set_select.png
+  AssetGenImage get tabSetSelect =>
+      const AssetGenImage('assets/images/tab_set_select.png');
+
   /// File path: assets/images/telegram_logo.png
   AssetGenImage get telegramLogo =>
       const AssetGenImage('assets/images/telegram_logo.png');
@@ -462,6 +514,11 @@ class $AssetsImagesGen {
     linkedinLogo,
     logoTransparent,
     logoTransparentV2,
+    mpMemoAdd,
+    mpMemoEdit,
+    mpMemoSearch,
+    mpTodoCancendar,
+    mpTodoEdit,
     newBackground,
     notionLogo,
     omiDevkitWithoutRope,
@@ -511,6 +568,14 @@ class $AssetsImagesGen {
     splashIcon,
     stars,
     stripeLogo,
+    tabAiNormal,
+    tabAiSelect,
+    tabMemoNormal,
+    tabMemoSelect,
+    tabMemoryNormal,
+    tabMemorySelect,
+    tabSetNormal,
+    tabSetSelect,
     telegramLogo,
     whatsappLogo,
     xLogo,
