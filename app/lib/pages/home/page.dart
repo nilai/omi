@@ -80,6 +80,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   ForegroundUtil foregroundUtil = ForegroundUtil();
   List<Widget> screens = [Container(), const SizedBox(), const SizedBox(), const SizedBox()];
 
+  // 升级提示
   final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
   bool scriptsInProgress = false;
 
