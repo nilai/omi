@@ -90,6 +90,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
   bool scriptsInProgress = false;
 
+  // 四个tab页面
   final GlobalKey<State<ConversationsPage>> _conversationsPageKey = GlobalKey<State<ConversationsPage>>();
   final GlobalKey<State<ActionItemsPage>> _actionItemsPageKey = GlobalKey<State<ActionItemsPage>>();
   final GlobalKey<State<MemoriesPage>> _memoriesPageKey = GlobalKey<State<MemoriesPage>>();
@@ -101,7 +102,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     context.read<AppProvider>().getPopularApps();
   }
 
-  void _scrollToTop(int pageIndex) {
+  // 跳转到tab制定页面
+  void _selectedTab(int pageIndex) {
     switch (pageIndex) {
       case 0:
         final conversationsState = _conversationsPageKey.currentState;
@@ -374,7 +376,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                     MixpanelManager().bottomNavigationTabClicked(analyticsName);
                                     primaryFocus?.unfocus();
                                     if (isActive) {
-                                      _scrollToTop(index);
+                                      _selectedTab(index);
                                       return;
                                     }
                                     home.setIndex(index);
@@ -586,7 +588,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                           MixpanelManager().bottomNavigationTabClicked('Home');
     //                                           primaryFocus?.unfocus();
     //                                           if (home.selectedIndex == 0) {
-    //                                             _scrollToTop(0);
+    //                                             _selectedTab(0);
     //                                             return;
     //                                           }
     //                                           home.setIndex(0);
@@ -617,7 +619,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                           MixpanelManager().bottomNavigationTabClicked('Action Items');
     //                                           primaryFocus?.unfocus();
     //                                           if (home.selectedIndex == 1) {
-    //                                             _scrollToTop(1);
+    //                                             _selectedTab(1);
     //                                             return;
     //                                           }
     //                                           home.setIndex(1);
@@ -650,7 +652,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                           MixpanelManager().bottomNavigationTabClicked('Memories');
     //                                           primaryFocus?.unfocus();
     //                                           if (home.selectedIndex == 2) {
-    //                                             _scrollToTop(2);
+    //                                             _selectedTab(2);
     //                                             return;
     //                                           }
     //                                           home.setIndex(2);
@@ -681,7 +683,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                           MixpanelManager().bottomNavigationTabClicked('Apps');
     //                                           primaryFocus?.unfocus();
     //                                           if (home.selectedIndex == 3) {
-    //                                             _scrollToTop(3);
+    //                                             _selectedTab(3);
     //                                             return;
     //                                           }
     //                                           home.setIndex(3);
@@ -767,36 +769,36 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     // );
   }
 
-  Future<void> _handleRecordButtonPress(BuildContext context, CaptureProvider captureProvider) async {
-    var recordingState = captureProvider.recordingState;
+  // Future<void> _handleRecordButtonPress(BuildContext context, CaptureProvider captureProvider) async {
+  //   var recordingState = captureProvider.recordingState;
 
-    if (recordingState == RecordingState.record) {
-      // Stop recording and summarize conversation
-      await captureProvider.stopStreamRecording();
-      captureProvider.forceProcessingCurrentConversation();
-      MixpanelManager().phoneMicRecordingStopped();
-    } else if (recordingState == RecordingState.initialising) {
-      // Already initializing, do nothing
-      debugPrint('initialising, have to wait');
-    } else {
-      // Start recording directly without dialog
-      await captureProvider.streamRecording();
-      MixpanelManager().phoneMicRecordingStarted();
+  //   if (recordingState == RecordingState.record) {
+  //     // Stop recording and summarize conversation
+  //     await captureProvider.stopStreamRecording();
+  //     captureProvider.forceProcessingCurrentConversation();
+  //     MixpanelManager().phoneMicRecordingStopped();
+  //   } else if (recordingState == RecordingState.initialising) {
+  //     // Already initializing, do nothing
+  //     debugPrint('initialising, have to wait');
+  //   } else {
+  //     // Start recording directly without dialog
+  //     await captureProvider.streamRecording();
+  //     MixpanelManager().phoneMicRecordingStarted();
 
-      // Navigate to conversation capturing page
-      if (context.mounted) {
-        var topConvoId = (captureProvider.conversationProvider?.conversations ?? []).isNotEmpty
-            ? captureProvider.conversationProvider!.conversations.first.id
-            : null;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ConversationCapturingPage(topConversationId: topConvoId),
-          ),
-        );
-      }
-    }
-  }
+  //     // Navigate to conversation capturing page
+  //     if (context.mounted) {
+  //       var topConvoId = (captureProvider.conversationProvider?.conversations ?? []).isNotEmpty
+  //           ? captureProvider.conversationProvider!.conversations.first.id
+  //           : null;
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => ConversationCapturingPage(topConversationId: topConvoId),
+  //         ),
+  //       );
+  //     }
+  //   }
+  // }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
