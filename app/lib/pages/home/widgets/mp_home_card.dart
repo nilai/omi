@@ -43,10 +43,10 @@ class MPHomeCard extends StatefulWidget {
   final VoidCallback? onViewDetail;
 
   @override
-  State<MPHomeCard> createState() => _TaskReminderCardState();
+  State<MPHomeCard> createState() => _MPHomeCardState();
 }
 
-class _TaskReminderCardState extends State<MPHomeCard> {
+class _MPHomeCardState extends State<MPHomeCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -172,3 +172,4 @@ class _TaskReminderCardState extends State<MPHomeCard> {
     );
   }
 }
+
