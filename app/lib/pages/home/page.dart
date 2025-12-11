@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
@@ -12,7 +10,6 @@ import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/main.dart';
 import 'package:omi/pages/apps/app_detail/app_detail.dart';
 import 'package:omi/pages/chat/page.dart';
-import 'package:omi/pages/conversation_capturing/page.dart';
 import 'package:omi/pages/conversations/conversations_page.dart';
 import 'package:omi/pages/memories/page.dart';
 import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
@@ -29,7 +26,6 @@ import 'package:omi/providers/message_provider.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/audio/foreground.dart';
-import 'package:omi/utils/enums.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:omi/widgets/upgrade_alert.dart';
@@ -390,9 +386,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                           height: 90,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           decoration: const BoxDecoration(
-                            // color: Color.fromARGB(255, 15, 15, 15),
-                            color: Colors.white
-                          ),
+                              // color: Color.fromARGB(255, 15, 15, 15),
+                              color: Colors.white),
                           child: Row(
                             children: [
                               buildTabItem(
@@ -402,7 +397,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                 selectedAsset: Assets.images.tabMemorySelect.path,
                                 analyticsName: 'Home',
                               ),
-                              
                               buildTabItem(
                                 index: 1,
                                 label: '灵感',
@@ -410,7 +404,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                 selectedAsset: Assets.images.tabMemoSelect.path,
                                 analyticsName: 'Action Items',
                               ),
-                              
                               buildTabItem(
                                 index: 2,
                                 label: 'AI助理',
@@ -418,7 +411,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                 selectedAsset: Assets.images.tabAiSelect.path,
                                 analyticsName: 'Memories',
                               ),
-                              
                               buildTabItem(
                                 index: 3,
                                 label: '任务',
