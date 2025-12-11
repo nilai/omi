@@ -1,6 +1,7 @@
 // AI-generated START - 设置卡片展示页面，从上到下显示所有设置相关的卡片组件
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_apps_integration/apps_integration_page.dart';
+import 'package:omi/pages/mp_expert_feedback/mp_expert_list_page.dart';
 import 'package:omi/pages/mp_memory/home/memory_page.dart';
 import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/app_integration_card_widget.dart';
@@ -137,16 +138,22 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
                 // AI-generated START - 专家反馈卡片
                 ExpertFeedbackCardWidget(
                   onTap: () {
-                    // 处理专家反馈卡片点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('打开专家反馈页面')),
+                    // AI-generated START - 打开专家列表页面
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const MPExpertListPage(),
+                      ),
                     );
+                    // AI-generated END - 打开专家列表页面
                   },
                   onExpertTap: (expert) {
-                    // 处理专家头像点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('选择专家: ${expert.role}')),
+                    // AI-generated START - 打开专家列表页面
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const MPExpertListPage(),
+                      ),
                     );
+                    // AI-generated END - 打开专家列表页面
                   },
                 ),
                 // AI-generated END - 专家反馈卡片
