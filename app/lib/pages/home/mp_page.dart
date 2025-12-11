@@ -4,13 +4,32 @@ import 'package:provider/provider.dart';
 
 import 'widgets/mp_home_upload_widget.dart';
 
-class MPPage extends StatelessWidget {
+class MPPage extends StatefulWidget {
   const MPPage({super.key});
 
   @override
+  State<MPPage> createState() => _MPPageState();
+}
+
+class _MPPageState extends State<MPPage> {
+  late final MPHomePageProvider _provider;
+
+  @override
+  void initState() {
+    super.initState();
+    _provider = MPHomePageProvider();
+  }
+
+  @override
+  void dispose() {
+    _provider.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => MPHomePageProvider(),
+    return ChangeNotifierProvider.value(
+      value: _provider,
       child: const MPPageContent(),
     );
   }
