@@ -361,7 +361,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                             }) {
                               final isActive = home.selectedIndex == index;
                               return Expanded(
-                                flex: 2,
+                                flex: 1,
                                 child: MPHomeTabItemWidget(
                                   assetPath: isActive ? selectedAsset : normalAsset,
                                   label: label,
@@ -398,7 +398,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                     ),
                                     child: Row(
                                       children: [
-                                        const Spacer(flex: 1),
                                         buildTabItem(
                                           index: 0,
                                           label: '记忆',
@@ -406,7 +405,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                           selectedAsset: Assets.images.tabMemorySelect.path,
                                           analyticsName: 'Home',
                                         ),
-                                        const Spacer(flex: 2),
+                                        
                                         buildTabItem(
                                           index: 1,
                                           label: '灵感',
@@ -414,7 +413,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                           selectedAsset: Assets.images.tabMemoSelect.path,
                                           analyticsName: 'Action Items',
                                         ),
-                                        const Spacer(flex: 2),
+                                        
                                         buildTabItem(
                                           index: 2,
                                           label: 'AI助理',
@@ -422,7 +421,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                           selectedAsset: Assets.images.tabAiSelect.path,
                                           analyticsName: 'Memories',
                                         ),
-                                        const Spacer(flex: 2),
+                                        
                                         buildTabItem(
                                           index: 3,
                                           label: '任务',
@@ -430,7 +429,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                                           selectedAsset: Assets.images.tabSetSelect.path,
                                           analyticsName: 'Apps',
                                         ),
-                                        const Spacer(flex: 1),
                                       ],
                                     ),
                                   ),
