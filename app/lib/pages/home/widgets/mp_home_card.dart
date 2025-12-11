@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// 任务提醒卡片，支持多处自定义以适配不同业务数据。
-class TaskReminderCard extends StatefulWidget {
-  const TaskReminderCard({
+class MPHomeCard extends StatefulWidget {
+  const MPHomeCard({
     super.key,
     required this.dateText,
     required this.headerText,
@@ -43,10 +43,10 @@ class TaskReminderCard extends StatefulWidget {
   final VoidCallback? onViewDetail;
 
   @override
-  State<TaskReminderCard> createState() => _TaskReminderCardState();
+  State<MPHomeCard> createState() => _TaskReminderCardState();
 }
 
-class _TaskReminderCardState extends State<TaskReminderCard> {
+class _TaskReminderCardState extends State<MPHomeCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -172,4 +172,3 @@ class _TaskReminderCardState extends State<TaskReminderCard> {
     );
   }
 }
-

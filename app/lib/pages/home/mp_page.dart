@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:provider/provider.dart';
 
-import 'widgets/mp_home_card.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatelessWidget {
