@@ -1,5 +1,6 @@
 // AI-generated START - 设置卡片展示页面，从上到下显示所有设置相关的卡片组件
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_apps_integration/apps_integration_page.dart';
 import 'package:omi/pages/mp_memory/home/memory_page.dart';
 import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/app_integration_card_widget.dart';
@@ -13,6 +14,8 @@ import 'package:omi/pages/mp_newsetting/home/widgets/template_selection_card_wid
 import 'package:omi/pages/mp_newsetting/home/widgets/voiceprint_recognition_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/personal/personal_page.dart';
 import 'package:omi/pages/mp_newsetting/setting/setting_page.dart';
+import 'package:omi/pages/mp_newsetting/voice_recognition/voice_recognition_page.dart';
+import 'package:omi/pages/mp_template _selection/template_selection_page.dart';
 import 'package:provider/provider.dart';
 
 /// 设置卡片展示页面
@@ -31,12 +34,13 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    // AI-generated START - 初始化时加载用户资料
+    // AI-generated START - 初始化时加载用户资料和 speaker 列表
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Provider.of<SettingsProvider>(context, listen: false);
+      final provider = Provider.of<SettingsProvider>(context, listen: false);
+      provider.loadSpeakerList();
     });
-    // AI-generated END - 初始化时加载用户资料
+    // AI-generated END - 初始化时加载用户资料和 speaker 列表
   }
 
   @override
@@ -119,10 +123,13 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
                 // AI-generated START - 模板选择卡片
                 TemplateSelectionCardWidget(
                   onTap: () {
-                    // 处理模板选择卡片点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('打开模板选择页面')),
+                    // AI-generated START - 打开模板选择页面
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const TemplateSelectionPage(),
+                      ),
                     );
+                    // AI-generated END - 打开模板选择页面
                   },
                 ),
                 // AI-generated END - 模板选择卡片
@@ -155,24 +162,20 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
                     );
                     // AI-generated END - 打开记忆仓库页面
                   },
-                  friendAvatars: const [
-                    'https://via.placeholder.com/48',
-                    'https://via.placeholder.com/48',
-                    'https://via.placeholder.com/48',
-                    'https://via.placeholder.com/48',
-                    'https://via.placeholder.com/48',
-                    'https://via.placeholder.com/48',
-                  ],
+                  friendAvatars: settingsProvider.friendAvatars,
                 ),
                 // AI-generated END - 记忆仓库卡片
 
                 // AI-generated START - 声纹识别卡片
                 VoiceprintRecognitionCardWidget(
                   onTap: () {
-                    // 处理声纹识别卡片点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('打开声纹识别页面')),
+                    // AI-generated START - 打开声纹识别页面
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const VoiceRecognitionPage(),
+                      ),
                     );
+                    // AI-generated END - 打开声纹识别页面
                   },
                 ),
                 // AI-generated END - 声纹识别卡片
@@ -180,10 +183,13 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
                 // AI-generated START - App集成卡片
                 AppIntegrationCardWidget(
                   onTap: () {
-                    // 处理App集成卡片点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('打开App集成页面')),
+                    // AI-generated START - 打开App集成页面
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AppsIntegrationPage(),
+                      ),
                     );
+                    // AI-generated END - 打开App集成页面
                   },
                 ),
                 // AI-generated END - App集成卡片
