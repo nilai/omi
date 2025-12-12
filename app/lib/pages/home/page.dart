@@ -381,6 +381,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
                   return Stack(
                     children: [
+                      // Pages
+                      Column(
+                        children: [
+                          Expanded(
+                            child: IndexedStack(
+                              index: home.selectedIndex,
+                              children: _pages,
+                            ),
+                          ),
+                        ],
+                      ),
                       // Bottom Navigation Bar
                       Align(
                         alignment: Alignment.bottomCenter,
