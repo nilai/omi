@@ -42,6 +42,9 @@ class NoteBleDebugProvider extends BaseProvider {
   /// Storage info
   NoteStorageInfo? _storageInfo;
 
+  /// Recording state (null = unknown, true = recording, false = not recording)
+  bool? _isRecording;
+
   // ============ Getters ============
 
   /// Get log entries (unmodifiable)
@@ -67,6 +70,9 @@ class NoteBleDebugProvider extends BaseProvider {
 
   /// Storage info
   NoteStorageInfo? get storageInfo => _storageInfo;
+
+  /// Recording state (null = unknown)
+  bool? get isRecording => _isRecording;
 
   // ============ Connection Management ============
 
@@ -165,14 +171,62 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Recording Commands ============
 
-  /// Send start recording command (0x01)
+  /// Send start recording command (0x01) and track state
   Future<void> sendStartRecording() async {
-    await executeCommand([NoteCommands.startRecording], 'Start Recording');
+    if (_connection == null) {
+      _lastError = 'Device not connected';
+      notifyListeners();
+      return;
+    }
+
+    _isExecuting = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      _addLogEntry(BleLogDirection.sent, [NoteCommands.startRecording], name: 'Start Recording');
+      final success = await _connection!.startRecording();
+      if (success) {
+        _isRecording = true;
+        print('[NoteBleDebugProvider] Recording started');
+      } else {
+        // Device is already recording
+        _isRecording = true;
+        print('[NoteBleDebugProvider] Device already recording');
+      }
+    } catch (e) {
+      _lastError = e.toString();
+    } finally {
+      _isExecuting = false;
+      notifyListeners();
+    }
   }
 
-  /// Send stop recording command (0x02)
+  /// Send stop recording command (0x02) and track state
   Future<void> sendStopRecording() async {
-    await executeCommand([NoteCommands.stopRecording], 'Stop Recording');
+    if (_connection == null) {
+      _lastError = 'Device not connected';
+      notifyListeners();
+      return;
+    }
+
+    _isExecuting = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      _addLogEntry(BleLogDirection.sent, [NoteCommands.stopRecording], name: 'Stop Recording');
+      final result = await _connection!.stopRecording();
+      if (result['success'] == true) {
+        _isRecording = false;
+        print('[NoteBleDebugProvider] Recording stopped');
+      }
+    } catch (e) {
+      _lastError = e.toString();
+    } finally {
+      _isExecuting = false;
+      notifyListeners();
+    }
   }
 
   /// Send set recording mode command (0x0D + mode)

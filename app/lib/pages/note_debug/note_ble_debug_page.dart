@@ -133,6 +133,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
           title: 'Recording',
           icon: Icons.mic,
           children: [
+            _buildRecordingStatus(provider),
             CommandButton(
               title: 'Start Recording',
               hexCode: '0x01',
@@ -348,6 +349,77 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
               style: TextStyle(color: Colors.red.shade300, fontSize: 14),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordingStatus(NoteBleDebugProvider provider) {
+    final isRecording = provider.isRecording;
+    final statusText = isRecording == null
+        ? 'Unknown'
+        : isRecording
+            ? 'Recording'
+            : 'Idle';
+    final statusColor = isRecording == null
+        ? Colors.grey
+        : isRecording
+            ? Colors.red
+            : Colors.green;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: statusColor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          // Animated recording indicator
+          if (isRecording == true)
+            Container(
+              width: 12,
+              height: 12,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withValues(alpha: 0.5),
+                    blurRadius: 6,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              width: 10,
+              height: 10,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: statusColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          Text(
+            'Status: $statusText',
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          if (isRecording == true)
+            const Icon(
+              Icons.fiber_manual_record,
+              color: Colors.red,
+              size: 16,
+            ),
         ],
       ),
     );
