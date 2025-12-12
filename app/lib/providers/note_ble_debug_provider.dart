@@ -2,6 +2,7 @@
 // Manages BLE debug state: log entries, drawer visibility, command execution
 
 import 'dart:async';
+import 'package:omi/backend/schema/bt_device/note_device.dart';
 import 'package:omi/pages/note_debug/models/ble_log_entry.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'package:omi/services/devices/note_connection.dart';
@@ -30,6 +31,17 @@ class NoteBleDebugProvider extends BaseProvider {
   /// Whether a command is being executed
   bool _isExecuting = false;
 
+  // ============ Device Status ============
+
+  /// Battery level (0-100, -1 = unknown)
+  int _batteryLevel = -1;
+
+  /// Firmware version string
+  String? _firmwareVersion;
+
+  /// Storage info
+  NoteStorageInfo? _storageInfo;
+
   // ============ Getters ============
 
   /// Get log entries (unmodifiable)
@@ -46,6 +58,15 @@ class NoteBleDebugProvider extends BaseProvider {
 
   /// Whether connected to a device
   bool get isConnected => _connection != null;
+
+  /// Battery level (0-100, -1 = unknown)
+  int get batteryLevel => _batteryLevel;
+
+  /// Firmware version
+  String? get firmwareVersion => _firmwareVersion;
+
+  /// Storage info
+  NoteStorageInfo? get storageInfo => _storageInfo;
 
   // ============ Connection Management ============
 
@@ -164,19 +185,76 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Device Info Commands ============
 
-  /// Send query battery command (0xE1)
+  /// Send query battery command (0xE1) and save result
   Future<void> sendQueryBattery() async {
-    await executeCommand([NoteCommands.queryBattery], 'Query Battery');
+    if (_connection == null) {
+      _lastError = 'Device not connected';
+      notifyListeners();
+      return;
+    }
+
+    _isExecuting = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      _addLogEntry(BleLogDirection.sent, [NoteCommands.queryBattery], name: 'Query Battery');
+      _batteryLevel = await _connection!.performRetrieveBatteryLevel();
+      print('[NoteBleDebugProvider] Battery level: $_batteryLevel%');
+    } catch (e) {
+      _lastError = e.toString();
+    } finally {
+      _isExecuting = false;
+      notifyListeners();
+    }
   }
 
-  /// Send query version command (0xE3)
+  /// Send query version command (0xE3) and save result
   Future<void> sendQueryVersion() async {
-    await executeCommand([NoteCommands.queryVersion], 'Query Version');
+    if (_connection == null) {
+      _lastError = 'Device not connected';
+      notifyListeners();
+      return;
+    }
+
+    _isExecuting = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      _addLogEntry(BleLogDirection.sent, [NoteCommands.queryVersion], name: 'Query Version');
+      _firmwareVersion = await _connection!.queryFirmwareVersion();
+      print('[NoteBleDebugProvider] Firmware version: $_firmwareVersion');
+    } catch (e) {
+      _lastError = e.toString();
+    } finally {
+      _isExecuting = false;
+      notifyListeners();
+    }
   }
 
-  /// Send query storage command (0xE8)
+  /// Send query storage command (0xE8) and save result
   Future<void> sendQueryStorage() async {
-    await executeCommand([NoteCommands.queryStorage], 'Query Storage');
+    if (_connection == null) {
+      _lastError = 'Device not connected';
+      notifyListeners();
+      return;
+    }
+
+    _isExecuting = true;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      _addLogEntry(BleLogDirection.sent, [NoteCommands.queryStorage], name: 'Query Storage');
+      _storageInfo = await _connection!.queryStorage();
+      print('[NoteBleDebugProvider] Storage: ${_storageInfo!.usedKB}/${_storageInfo!.totalKB} KB');
+    } catch (e) {
+      _lastError = e.toString();
+    } finally {
+      _isExecuting = false;
+      notifyListeners();
+    }
   }
 
   // ============ File Management Commands ============

@@ -159,18 +159,23 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
               hexCode: '0xE1',
               onPressed: provider.isConnected ? provider.sendQueryBattery : null,
               isLoading: provider.isExecuting,
+              statusValue: provider.batteryLevel >= 0 ? '${provider.batteryLevel}%' : null,
             ),
             CommandButton(
               title: 'Query Version',
               hexCode: '0xE3',
               onPressed: provider.isConnected ? provider.sendQueryVersion : null,
               isLoading: provider.isExecuting,
+              statusValue: provider.firmwareVersion,
             ),
             CommandButton(
               title: 'Query Storage',
               hexCode: '0xE8',
               onPressed: provider.isConnected ? provider.sendQueryStorage : null,
               isLoading: provider.isExecuting,
+              statusValue: provider.storageInfo != null
+                  ? '${(provider.storageInfo!.usedKB / 1024).toStringAsFixed(1)}/${(provider.storageInfo!.totalKB / 1024).toStringAsFixed(0)} MB'
+                  : null,
             ),
           ],
         ),

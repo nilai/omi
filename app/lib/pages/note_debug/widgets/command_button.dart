@@ -7,6 +7,7 @@ class CommandButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool isDangerous;
+  final String? statusValue;
 
   const CommandButton({
     super.key,
@@ -15,6 +16,7 @@ class CommandButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.isDangerous = false,
+    this.statusValue,
   });
 
   @override
@@ -57,6 +59,25 @@ class CommandButton extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (statusValue != null) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusValue!,
+                      style: const TextStyle(
+                        color: Colors.green,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 if (isLoading)
                   const SizedBox(
                     width: 20,
