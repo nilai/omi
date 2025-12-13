@@ -48,6 +48,7 @@ struct OnlyRecordMemoryStruct {
 
 struct SummaryMemoryStruct {
     1: list<SpeakerStruct> participants,
+    2: i32: participants_cnt,
     2: string record_url, // 录音地址
     3: string summary, // markdown格式
     4: list<SummaryConversationStruct> transcript,
@@ -334,6 +335,8 @@ struct GetSpeakerListResponse {
 struct SpeakerWithDetailStruct {
     1: SpeakerStruct speaker,
     2: string summary,
+    3: i64 last_memory_at,
+    4: i32: memory_total
 }
 
 struct GetSpeakerListWithDetailRequest {
