@@ -23,6 +23,7 @@ import 'package:omi/firebase_options_prod.dart' as prod;
 import 'package:omi/flavors.dart';
 import 'package:omi/pages/apps/providers/add_app_provider.dart';
 import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+import 'package:omi/pages/mp_canlendar/providers/calendar_provider.dart';
 import 'package:omi/pages/mp_expert_feedback/providers/mp_expert_provider.dart';
 import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
@@ -318,6 +319,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => MemoProvider()),
           ChangeNotifierProvider(create: (context) => TodoProvider()),
           ChangeNotifierProvider(create: (context) => MPExpertProvider()),
+          ChangeNotifierProvider(create: (context) => CalendarProvider()),
         ],
         builder: (context, child) {
           return WithForegroundTask(
