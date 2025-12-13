@@ -80,6 +80,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   ForegroundUtil foregroundUtil = ForegroundUtil();
   List<Widget> screens = [Container(), const SizedBox(), const SizedBox(), const SizedBox()];
 
+  // Tab controller for manual control
+  late TabController _tabController;
+
   // 升级提示
   // final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
   bool scriptsInProgress = false;
@@ -179,6 +182,23 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
       MPChatPage(key: _mpChatPageKey),
       SettingsCardsPage(key: _settingsCardsPageKey),
     ];
+
+    // Initialize TabController
+    final homeProvider = context.read<HomeProvider>();
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: homeProvider.selectedIndex,
+    );
+
+    // Listen to tab changes (for swipe gestures)
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // Index changed due to swipe or animation complete
+        homeProvider.setIndex(_tabController.index);
+      }
+    });
+
     SharedPreferencesUtil().onboardingCompleted = true;
 
     // Navigate uri
@@ -325,73 +345,89 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, _) {
-        return DefaultTabController(
-          length: 4,
-          initialIndex: homeProvider.selectedIndex,
-          child: Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.primary,
-            body: GestureDetector(
-              onTap: () {
-                primaryFocus?.unfocus();
-              },
-              child: TabBarView(children: _pages),
-            ),
-            bottomNavigationBar: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              width: double.infinity,
-              color: Colors.white,
-              child: TabBar(
-                onTap: (index) {
-                  HapticFeedback.mediumImpact();
-                  final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
-                  MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
-                  primaryFocus?.unfocus();
-                  // Update provider index
-                  context.read<HomeProvider>().setIndex(index);
-                  // Scroll to top if already selected
-                  // if (homeProvider.selectedIndex == index) {
-                  //   _selectedTab(index);
-                  // }
-                },
-                indicator: const BoxDecoration(), // Remove default indicator
-                dividerColor: Colors.transparent,
-                labelPadding: EdgeInsets.zero,
-                tabs: [
-                  _buildCustomTab(
-                    index: 0,
-                    label: '记忆',
-                    normalAsset: Assets.images.tabMemoryNormal.path,
-                    selectedAsset: Assets.images.tabMemorySelect.path,
-                    homeProvider: homeProvider,
-                  ),
-                  _buildCustomTab(
-                    index: 1,
-                    label: '灵感',
-                    normalAsset: Assets.images.tabMemoNormal.path,
-                    selectedAsset: Assets.images.tabMemoSelect.path,
-                    homeProvider: homeProvider,
-                  ),
-                  _buildCustomTab(
-                    index: 2,
-                    label: 'AI助理',
-                    normalAsset: Assets.images.tabAiNormal.path,
-                    selectedAsset: Assets.images.tabAiSelect.path,
-                    homeProvider: homeProvider,
-                  ),
-                  _buildCustomTab(
-                    index: 3,
-                    label: '任务',
-                    normalAsset: Assets.images.tabSetNormal.path,
-                    selectedAsset: Assets.images.tabSetSelect.path,
-                    homeProvider: homeProvider,
-                  ),
-                ],
-              ),
+   return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          body: GestureDetector(
+            onTap: () {
+              primaryFocus?.unfocus();
+            },
+            child: TabBarView(
+              controller: _tabController,
+              children: _pages,
             ),
           ),
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            width: double.infinity,
+            color: Colors.white,
+            child: Consumer<HomeProvider>(
+      builder: (context, homeProvider, _) {
+        // Sync TabController with HomeProvider when tab is tapped
+        // if (_tabController.index != homeProvider.selectedIndex) {
+        //   _tabController.animateTo(homeProvider.selectedIndex);
+        // }
+
+        return TabBar(
+              controller: _tabController,
+              onTap: (index) {
+                HapticFeedback.mediumImpact();
+                final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
+                MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
+                primaryFocus?.unfocus();
+                // Update provider index
+                homeProvider.setIndex(index);
+                // Scroll to top if already selected
+                // if (homeProvider.selectedIndex == index) {
+                //   _selectedTab(index);
+                // }
+              },
+              indicator: const BoxDecoration(), // Remove default indicator
+              dividerColor: Colors.transparent,
+              labelPadding: EdgeInsets.zero,
+              tabs: [
+                _buildCustomTab(
+                  index: 0,
+                  label: '记忆',
+                  normalAsset: Assets.images.tabMemoryNormal.path,
+                  selectedAsset: Assets.images.tabMemorySelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 1,
+                  label: '灵感',
+                  normalAsset: Assets.images.tabMemoNormal.path,
+                  selectedAsset: Assets.images.tabMemoSelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 2,
+                  label: 'AI助理',
+                  normalAsset: Assets.images.tabAiNormal.path,
+                  selectedAsset: Assets.images.tabAiSelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 3,
+                  label: '任务',
+                  normalAsset: Assets.images.tabSetNormal.path,
+                  selectedAsset: Assets.images.tabSetSelect.path,
+                  homeProvider: homeProvider,
+                ),
+              ],
+            );
+      },
+    ),
+          ),
         );
+
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, _) {
+        // Sync TabController with HomeProvider when tab is tapped
+        if (_tabController.index != homeProvider.selectedIndex) {
+          _tabController.animateTo(homeProvider.selectedIndex);
+        }
+
+        ;
       },
     );
     // return MyUpgradeAlert(
@@ -943,6 +979,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
   @override
   void dispose() {
+    _tabController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     ForegroundUtil.stopForegroundTask();
     super.dispose();
