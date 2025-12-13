@@ -50,7 +50,7 @@ String countryFlagFromCode(String countryCode) {
 }
 
 
-SystemUiOverlayStyle systemUiOverlayStyle(BuildContext context) {
+SystemUiOverlayStyle getSystemUiOverlayStyle(BuildContext context) {
   return SystemUiOverlayStyle(
         statusBarColor: Theme.of(context).colorScheme.primary,
         statusBarIconBrightness: Brightness.light,

@@ -785,175 +785,175 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      systemOverlayStyle: SystemUiOverlayStyle(
-        statusBarColor: Theme.of(context).colorScheme.primary,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-      ),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const BatteryInfoWidget(),
-          const SizedBox.shrink(),
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFB8860B).withValues(alpha: 0.5),
-                      const Color(0xFFCD853F).withValues(alpha: 0.5),
-                      const Color(0xFFB8860B).withValues(alpha: 0.5),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.15),
-                      blurRadius: 6,
-                      spreadRadius: 0.5,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    FontAwesomeIcons.gift,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    MixpanelManager().pageOpened('Referral Program');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReferralPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1F1F25),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    FontAwesomeIcons.gear,
-                    size: 16,
-                    color: Colors.white70,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    MixpanelManager().pageOpened('Settings');
-                    String language = SharedPreferencesUtil().userPrimaryLanguage;
-                    bool hasSpeech = SharedPreferencesUtil().hasSpeakerProfile;
-                    String transcriptModel = SharedPreferencesUtil().transcriptionModel;
-                    SettingsDrawer.show(context);
-                    if (language != SharedPreferencesUtil().userPrimaryLanguage ||
-                        hasSpeech != SharedPreferencesUtil().hasSpeakerProfile ||
-                        transcriptModel != SharedPreferencesUtil().transcriptionModel) {
-                      if (context.mounted) {
-                        context.read<CaptureProvider>().onRecordProfileSettingChanged();
-                      }
-                    }
-                  },
-                ),
-              ),
-              // Chat Button - Only show on home page (index 0)
-              Consumer<HomeProvider>(
-                builder: (context, provider, child) {
-                  if (provider.selectedIndex == 0) {
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        MixpanelManager().bottomNavigationTabClicked('Chat');
-                        // Navigate to chat page
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChatPage(isPivotBottom: false),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 36,
-                        margin: const EdgeInsets.only(left: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                              Colors.purpleAccent.withValues(alpha: 0.2),
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                              Colors.purpleAccent.withValues(alpha: 0.2),
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.all(0.5),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(17.5),
-                            border: Border.all(
-                              color: Colors.pink.withValues(alpha: 0.3),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.solidComment,
-                                size: 14,
-                                color: Colors.white70,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Chat',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
-      elevation: 0,
-      centerTitle: true,
-    );
-  }
+  // PreferredSizeWidget _buildAppBar(BuildContext context) {
+  //   return AppBar(
+  //     automaticallyImplyLeading: false,
+  //     backgroundColor: Theme.of(context).colorScheme.primary,
+  //     systemOverlayStyle: SystemUiOverlayStyle(
+  //       statusBarColor: Theme.of(context).colorScheme.primary,
+  //       statusBarIconBrightness: Brightness.light,
+  //       statusBarBrightness: Brightness.dark,
+  //     ),
+  //     title: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         const BatteryInfoWidget(),
+  //         const SizedBox.shrink(),
+  //         Row(
+  //           children: [
+  //             Container(
+  //               width: 36,
+  //               height: 36,
+  //               decoration: BoxDecoration(
+  //                 gradient: LinearGradient(
+  //                   begin: Alignment.topLeft,
+  //                   end: Alignment.bottomRight,
+  //                   colors: [
+  //                     const Color(0xFFB8860B).withValues(alpha: 0.5),
+  //                     const Color(0xFFCD853F).withValues(alpha: 0.5),
+  //                     const Color(0xFFB8860B).withValues(alpha: 0.5),
+  //                   ],
+  //                 ),
+  //                 shape: BoxShape.circle,
+  //                 boxShadow: [
+  //                   BoxShadow(
+  //                     color: Colors.amber.withOpacity(0.15),
+  //                     blurRadius: 6,
+  //                     spreadRadius: 0.5,
+  //                   ),
+  //                 ],
+  //               ),
+  //               child: IconButton(
+  //                 padding: EdgeInsets.zero,
+  //                 icon: const Icon(
+  //                   FontAwesomeIcons.gift,
+  //                   size: 16,
+  //                   color: Colors.white,
+  //                 ),
+  //                 onPressed: () {
+  //                   HapticFeedback.mediumImpact();
+  //                   MixpanelManager().pageOpened('Referral Program');
+  //                   Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                       builder: (context) => const ReferralPage(),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //             const SizedBox(width: 8),
+  //             Container(
+  //               width: 36,
+  //               height: 36,
+  //               decoration: const BoxDecoration(
+  //                 color: Color(0xFF1F1F25),
+  //                 shape: BoxShape.circle,
+  //               ),
+  //               child: IconButton(
+  //                 padding: EdgeInsets.zero,
+  //                 icon: const Icon(
+  //                   FontAwesomeIcons.gear,
+  //                   size: 16,
+  //                   color: Colors.white70,
+  //                 ),
+  //                 onPressed: () {
+  //                   HapticFeedback.mediumImpact();
+  //                   MixpanelManager().pageOpened('Settings');
+  //                   String language = SharedPreferencesUtil().userPrimaryLanguage;
+  //                   bool hasSpeech = SharedPreferencesUtil().hasSpeakerProfile;
+  //                   String transcriptModel = SharedPreferencesUtil().transcriptionModel;
+  //                   SettingsDrawer.show(context);
+  //                   if (language != SharedPreferencesUtil().userPrimaryLanguage ||
+  //                       hasSpeech != SharedPreferencesUtil().hasSpeakerProfile ||
+  //                       transcriptModel != SharedPreferencesUtil().transcriptionModel) {
+  //                     if (context.mounted) {
+  //                       context.read<CaptureProvider>().onRecordProfileSettingChanged();
+  //                     }
+  //                   }
+  //                 },
+  //               ),
+  //             ),
+  //             // Chat Button - Only show on home page (index 0)
+  //             Consumer<HomeProvider>(
+  //               builder: (context, provider, child) {
+  //                 if (provider.selectedIndex == 0) {
+  //                   return GestureDetector(
+  //                     onTap: () {
+  //                       HapticFeedback.mediumImpact();
+  //                       MixpanelManager().bottomNavigationTabClicked('Chat');
+  //                       // Navigate to chat page
+  //                       Navigator.push(
+  //                         context,
+  //                         MaterialPageRoute(
+  //                           builder: (context) => const ChatPage(isPivotBottom: false),
+  //                         ),
+  //                       );
+  //                     },
+  //                     child: Container(
+  //                       height: 36,
+  //                       margin: const EdgeInsets.only(left: 8),
+  //                       decoration: BoxDecoration(
+  //                         borderRadius: BorderRadius.circular(18),
+  //                         gradient: LinearGradient(
+  //                           colors: [
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                             Colors.purpleAccent.withValues(alpha: 0.2),
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                             Colors.purpleAccent.withValues(alpha: 0.2),
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                           ],
+  //                           begin: Alignment.topLeft,
+  //                           end: Alignment.bottomRight,
+  //                         ),
+  //                       ),
+  //                       child: Container(
+  //                         margin: const EdgeInsets.all(0.5),
+  //                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //                         decoration: BoxDecoration(
+  //                           color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                           borderRadius: BorderRadius.circular(17.5),
+  //                           border: Border.all(
+  //                             color: Colors.pink.withValues(alpha: 0.3),
+  //                             width: 0.5,
+  //                           ),
+  //                         ),
+  //                         child: const Row(
+  //                           mainAxisSize: MainAxisSize.min,
+  //                           children: [
+  //                             Icon(
+  //                               FontAwesomeIcons.solidComment,
+  //                               size: 14,
+  //                               color: Colors.white70,
+  //                             ),
+  //                             SizedBox(width: 6),
+  //                             Text(
+  //                               'Chat',
+  //                               style: TextStyle(
+  //                                 color: Colors.white70,
+  //                                 fontSize: 14,
+  //                                 fontWeight: FontWeight.w500,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   );
+  //                 } else {
+  //                   return const SizedBox.shrink();
+  //                 }
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //     elevation: 0,
+  //     centerTitle: true,
+  //   );
+  // }
 
   @override
   void dispose() {

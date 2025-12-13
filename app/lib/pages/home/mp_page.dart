@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:provider/provider.dart';
 
+import '../../utils/other/temp.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
@@ -67,12 +68,13 @@ class _MPPageContentState extends State<MPPageContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
-      body: SafeArea(
-        child: Consumer<MPHomePageProvider>(
-          builder: (context, provider, _) {
-            return Column(
+    return Consumer<MPHomePageProvider>(
+      builder: (context, provider, _) {
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          appBar: _buildAppBar(context, provider),
+          body: SafeArea(
+            child: Column(
               children: [
                 _buildHeader(context, provider),
                 Padding(
@@ -181,11 +183,91 @@ class _MPPageContentState extends State<MPPageContent> {
                   ),
                 ),
               ],
-            );
-          },
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
+  }
+  
+
+  AppBar _buildAppBar(BuildContext context, MPHomePageProvider provider) {
+    return AppBar(
+      automaticallyImplyLeading: false,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      systemOverlayStyle: getSystemUiOverlayStyle(context),
+      title: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+            // Left circular icon button
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFE0E0E0),
+              ),
+              child: const Icon(
+                Icons.circle,
+                color: Color(0xFF757575),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Centered date selector
+            Expanded(
+              child: Center(
+                child: InkWell(
+                  onTap: () => _showDatePicker(context, provider),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          provider.selectedDate,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111111),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Color(0xFF111111),
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Search icon
+            IconButton(
+              icon: const Icon(Icons.search, color: Color(0xFF111111)),
+              onPressed: provider.onSearchTap,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 16),
+            // Add icon
+            IconButton(
+              icon: const Icon(Icons.add, color: Color(0xFF111111)),
+              onPressed: provider.onAddTap,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+            ),
+          ],
+      ),
+      elevation: 0,
+      centerTitle: true,
+    );
+     
   }
 
   Widget _buildHeader(BuildContext context, MPHomePageProvider provider) {
@@ -326,6 +408,11 @@ class _MPPageContentState extends State<MPPageContent> {
     );
   }
 
+  Future<void> _showDatePicker(BuildContext context, MPHomePageProvider provider) async {
+    // TODO: Implement date picker dialog
+    debugPrint('Date picker tapped');
+  }
+
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
     final controller = TextEditingController(text: provider.recordCount.toString());
     await showDialog<void>(
@@ -389,6 +476,7 @@ class MPMemoryItem {
 
 class MPHomePageProvider extends ChangeNotifier {
   String title = 'MemoPin 传输管理器';
+  String selectedDate = 'Dec 8';
   String uploadTitle = '正在从 MemoPin 传输录音至 APP...';
   int uploadedCount = 1;
   int totalCount = 1;
