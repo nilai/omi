@@ -331,7 +331,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
           initialIndex: homeProvider.selectedIndex,
           child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.primary,
-            // appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
+            appBar: _buildAppBar(context),
             body: GestureDetector(
               onTap: () {
                 primaryFocus?.unfocus();
@@ -788,7 +788,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Theme.of(context).colorScheme.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
