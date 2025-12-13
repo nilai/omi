@@ -102,7 +102,7 @@ Future<Map<String, String>> buildHeaders({
     'X-Request-Start-Time': (DateTime.now().millisecondsSinceEpoch / 1000).toString(),
     'X-App-Platform': PlatformManager.instance.platform,
     'X-App-Version': PlatformManager.instance.appVersion,
-    'user_id': uuid,
+    'X-User-ID': uuid,
     ...fromHeaders,
   };
 

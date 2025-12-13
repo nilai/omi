@@ -6,6 +6,7 @@ import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
+import '../onboarding/find_device/page.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
@@ -207,17 +208,28 @@ class _MPPageContentState extends State<MPPageContent> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
             // Left circular icon button
-            Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color:  Color(0xFFE0E0E0),
-              ),
-              child: const Icon(
-                Icons.circle,
-                color: Color(0xFF757575),
-                size: 20,
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FindDevicesPage(isFromOnboarding: false, goNext: () {}, onSkip: () {}, includeSkip: false,)),
+                );
+                
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:  Color(0xFFE0E0E0),
+                ),
+                child: const Icon(
+                  Icons.circle,
+                  color: Color(0xFF757575),
+                  size: 20,
+                ),
               ),
             ),
             const SizedBox(width: 16),
