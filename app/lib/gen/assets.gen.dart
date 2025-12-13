@@ -253,6 +253,30 @@ class $AssetsImagesGen {
   AssetGenImage get mpMemoSearch =>
       const AssetGenImage('assets/images/mp_memo_search.png');
 
+  /// File path: assets/images/mp_memory_add.png
+  AssetGenImage get mpMemoryAdd =>
+      const AssetGenImage('assets/images/mp_memory_add.png');
+
+  /// File path: assets/images/mp_memory_detail_add_memory.png
+  AssetGenImage get mpMemoryDetailAddMemory =>
+      const AssetGenImage('assets/images/mp_memory_detail_add_memory.png');
+
+  /// File path: assets/images/mp_memory_detail_history.png
+  AssetGenImage get mpMemoryDetailHistory =>
+      const AssetGenImage('assets/images/mp_memory_detail_history.png');
+
+  /// File path: assets/images/mp_memory_detail_people.png
+  AssetGenImage get mpMemoryDetailPeople =>
+      const AssetGenImage('assets/images/mp_memory_detail_people.png');
+
+  /// File path: assets/images/mp_memory_detail_radio.png
+  AssetGenImage get mpMemoryDetailRadio =>
+      const AssetGenImage('assets/images/mp_memory_detail_radio.png');
+
+  /// File path: assets/images/mp_memory_detail_time.png
+  AssetGenImage get mpMemoryDetailTime =>
+      const AssetGenImage('assets/images/mp_memory_detail_time.png');
+
   /// File path: assets/images/mp_start_recording_icon.png
   AssetGenImage get mpStartRecordingIcon =>
       const AssetGenImage('assets/images/mp_start_recording_icon.png');
@@ -561,6 +585,12 @@ class $AssetsImagesGen {
     mpMemoAdd,
     mpMemoEdit,
     mpMemoSearch,
+    mpMemoryAdd,
+    mpMemoryDetailAddMemory,
+    mpMemoryDetailHistory,
+    mpMemoryDetailPeople,
+    mpMemoryDetailRadio,
+    mpMemoryDetailTime,
     mpStartRecordingIcon,
     mpTodoCancendar,
     mpTodoEdit,

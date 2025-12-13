@@ -1,8 +1,12 @@
 // AI-generated START - 记忆中心页面
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
+import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_memory/home/widgets/add_character_memory_card.dart';
 import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
+import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆中心页面
@@ -81,8 +85,9 @@ class _MemoryPageState extends State<MemoryPage> {
     return Consumer<MemoryProvider>(
       builder: (context, memoryProvider, child) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.title),
+          backgroundColor: const Color(0xFFF9FAFB),
+          appBar: MPCommonAppBar(
+            title: widget.title,
           ),
           body: _buildBody(memoryProvider),
         );
@@ -93,60 +98,19 @@ class _MemoryPageState extends State<MemoryPage> {
 
   // AI-generated START - 构建页面主体
   Widget _buildBody(MemoryProvider provider) {
+    // 加载中状态
     if (provider.isLoading && provider.memories.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(),
+      return const MPThreeStateWidget(
+        state: MPThreeStateType.loading,
       );
     }
 
+    // 加载失败状态
     if (provider.error != null && provider.memories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadMemories(),
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (provider.filteredMemories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.memory_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.searchQuery.isEmpty ? '暂无记忆' : '未找到相关记忆',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+      return MPThreeStateWidget(
+        state: MPThreeStateType.error,
+        errorMessage: provider.error,
+        onRetry: () => provider.loadMemories(),
       );
     }
 
@@ -159,10 +123,10 @@ class _MemoryPageState extends State<MemoryPage> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(vertical: 8.0),
-              itemCount: provider.filteredMemories.length + (provider.hasMore && provider.isFetching ? 1 : 0),
+              itemCount: provider.memories.length + (provider.hasMore && provider.isFetching ? 1 : 0),
               itemBuilder: (context, index) {
                 // 显示加载更多指示器
-                if (index == provider.filteredMemories.length) {
+                if (index == provider.memories.length) {
                   return const Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Center(
@@ -170,20 +134,19 @@ class _MemoryPageState extends State<MemoryPage> {
                     ),
                   );
                 }
-                final memory = provider.filteredMemories[index];
+                final memory = provider.memories[index];
                 return MemoryConversationCard(
                   name: memory.name,
-                  timestamp: _formatTimestamp(memory.createdAt),
-                  description: memory.description,
+                  timestamp: MPTimestampUtils.timestampToRelativeDateString(memory.createdAt ?? 0),
+                  description: memory.description ?? '',
                   conversationCount: memory.conversationCount,
-                  avatarBackgroundColor: memory.avatarBackgroundColor,
-                  avatarBadge: const Icon(
-                    Icons.volume_up,
-                    color: Colors.white,
-                    size: 12.0,
-                  ),
                   onTap: () {
-                    // TODO: 导航到记忆详情页面
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MemoryDetailPage(memoryId: memory.id),
+                      ),
+                    );
                   },
                 );
               },
@@ -208,30 +171,7 @@ class _MemoryPageState extends State<MemoryPage> {
       ],
     );
   }
-  // AI-generated END - _buildBody
 
-  // AI-generated START - 格式化时间戳
-  String _formatTimestamp(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inDays == 0) {
-      return '今天';
-    } else if (difference.inDays == 1) {
-      return '昨天';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays}天前';
-    } else if (difference.inDays < 14) {
-      return '1周前';
-    } else if (difference.inDays < 21) {
-      return '2周前';
-    } else if (difference.inDays < 30) {
-      return '3周前';
-    } else {
-      final weeks = (difference.inDays / 7).floor();
-      return '$weeks周前';
-    }
-  }
   // AI-generated END - _formatTimestamp
 }
 // AI-generated END - memory_page.dart

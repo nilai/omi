@@ -1,5 +1,8 @@
 // AI-generated START - 记忆详情状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/backend/schema/mp/mp_speaker.dart';
+import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 
 /// 对话摘要数据模型
@@ -95,61 +98,58 @@ class MemoryDetailProvider with ChangeNotifier {
     setLoading(true);
     setError(null);
     try {
-      // TODO: 从API或本地存储加载记忆详情和对话摘要
-      // final memoryDetail = await memoryService.fetchMemoryDetail(memoryId);
-      // final summaries = await memoryService.fetchConversationSummaries(memoryId);
-      // _memoryItem = memoryDetail;
-      // _conversationSummaries = summaries;
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
+      // 调用 getSpeakerDetail 接口
+      final response = await getSpeakerDetail(
+        MPGetSpeakerDetailRequest(
+          speakerId: memoryId,
+        ),
+      );
 
-      // AI-generated START - 默认测试数据
-      _conversationSummaries = [
-        const ConversationSummary(
-          id: '1',
-          title: '耳机与AI硬件市场需求与产品设计',
-          summary: '讨论了AI硬件市场的需求分析和产品设计方案,确定了以用户体验为核心的差异化策略',
-          date: '2025-07-22',
-          durationSeconds: 2529, // 42分9秒
-          participantCount: 4,
-        ),
-        const ConversationSummary(
-          id: '2',
-          title: '创业项目融资计划讨论',
-          summary: '分享了市场调研数据和商业模式优化建议,探讨了融资策略和投资人沟通要点',
-          date: '2025-07-20',
-          durationSeconds: 2118, // 35分18秒
-          participantCount: 3,
-        ),
-        const ConversationSummary(
-          id: '3',
-          title: '产品迭代方向交流',
-          summary: '讨论了产品功能优先级,用户反馈分析,以及下一版本的核心改进方向',
-          date: '2025-07-18',
-          durationSeconds: 1722, // 28分42秒
-          participantCount: 2,
-        ),
-        const ConversationSummary(
-          id: '4',
-          title: '团队协作与项目管理',
-          summary: '交流了团队协作中遇到的问题,优化了项目管理流程,明确了各成员职责',
-          date: '2025-07-15',
-          durationSeconds: 1915, // 31分55秒
-          participantCount: 5,
-        ),
-        const ConversationSummary(
-          id: '5',
-          title: '市场推广策略研讨',
-          summary: '分析了目标用户群体,制定了市场推广计划,讨论了品牌定位和传播策略',
-          date: '2025-07-12',
-          durationSeconds: 1530, // 25分30秒
-          participantCount: 3,
-        ),
-      ];
-      // AI-generated END - 默认测试数据
+      if (response != null && response.baseResp.code == 0) {
+        // 将 speaker 信息转换为 CharacterMemoryItem
+        final speaker = response.speaker;
+        _memoryItem = CharacterMemoryItem(
+          id: speaker.id,
+          name: speaker.name,
+          conversationCount: response.memoryTotal,
+          avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
+        );
 
-      notifyListeners();
+        // 将 memorys 列表转换为 ConversationSummary 列表
+        _conversationSummaries = response.memorys.map((memory) {
+          // 从 createAt 时间戳转换为日期字符串
+          final dateStr = MPTimestampUtils.timestampToRelativeDateString(memory.createAt);
+
+          // 获取参与人数（从 summaryContent 中获取，如果没有则默认为 0）
+          int participantCount = 0;
+          if (memory.summaryContent != null) {
+            participantCount = memory.summaryContent!.participants.length;
+          }
+
+          // 获取摘要内容（优先使用 summaryContent.summary，否则使用 content）
+          String summaryText = memory.content;
+          if (memory.summaryContent != null && memory.summaryContent!.summary.isNotEmpty) {
+            summaryText = memory.summaryContent!.summary;
+          }
+
+          return ConversationSummary(
+            id: memory.id,
+            title: memory.title,
+            summary: summaryText,
+            date: dateStr,
+            durationSeconds: memory.duration,
+            participantCount: participantCount,
+          );
+        }).toList();
+
+        notifyListeners();
+      } else {
+        debugPrint('Error loading memory detail: ${response?.baseResp.message ?? "Unknown error"}');
+        setError(response?.baseResp.message ?? '加载失败');
+      }
     } catch (e) {
-      setError(e.toString());
+      debugPrint('Error loading memory detail: $e');
+      setError('加载失败: $e');
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,13 @@
 // AI-generated START - 记忆详情页面
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/conversation_detail_page.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_memory/memory_detail/providers/memory_detail_provider.dart';
 import 'package:omi/pages/mp_memory/memory_detail/widgets/character_info_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/widgets/conversation_summary_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆详情页面
@@ -60,8 +63,8 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
         final memoryItem = detailProvider.memoryItem;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(memoryItem != null ? '与${memoryItem.name}的对话' : '记忆详情'),
+          appBar: MPCommonAppBar(
+            title: memoryItem != null ? '与${memoryItem.name}的对话' : '记忆详情',
           ),
           body: _buildBody(detailProvider, memoryItem),
           floatingActionButton: FloatingActionButton(
@@ -73,25 +76,9 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
             },
             backgroundColor: Colors.transparent,
             elevation: 0,
-            child: Container(
-              width: double.infinity,
-              height: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF8B5CF6), // 紫色
-                    Color(0xFF3B82F6), // 蓝色
-                  ],
-                ),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.mic,
-                color: Colors.white,
-                size: 28.0,
-              ),
+            child: Assets.images.mpMemoryDetailAddMemory.image(
+              width: 56.0,
+              height: 56.0,
             ),
           ),
         );
@@ -109,30 +96,10 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
     }
 
     if (provider.error != null && provider.conversationSummaries.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadMemoryDetail(widget.memoryId),
-              child: const Text('重试'),
-            ),
-          ],
-        ),
+      return MPThreeStateWidget(
+        state: MPThreeStateType.error,
+        errorMessage: provider.error,
+        onRetry: () => provider.loadMemoryDetail(widget.memoryId),
       );
     }
 
@@ -144,7 +111,6 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
             name: memoryItem.name,
             conversationCount: memoryItem.conversationCount,
             avatarUrl: memoryItem.avatarUrl,
-            avatarBackgroundColor: memoryItem.avatarBackgroundColor,
           ),
         // AI-generated END - 人物信息卡片
 

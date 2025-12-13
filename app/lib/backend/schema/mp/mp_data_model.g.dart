@@ -86,12 +86,14 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
       todos: (json['todos'] as List<dynamic>)
           .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
+      participants_cnt: (json['participants_cnt'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MPSummaryMemoryStructToJson(
         MPSummaryMemoryStruct instance) =>
     <String, dynamic>{
       'participants': instance.participants,
+      'participants_cnt': instance.participants_cnt,
       'record_url': instance.recordUrl,
       'summary': instance.summary,
       'transcript': instance.transcript,
@@ -286,6 +288,8 @@ MPSpeakerWithDetailStruct _$MPSpeakerWithDetailStructFromJson(
       speaker:
           MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
       summary: json['summary'] as String,
+      last_memory_at: (json['last_memory_at'] as num).toInt(),
+      memory_total: (json['memory_total'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MPSpeakerWithDetailStructToJson(
@@ -293,6 +297,8 @@ Map<String, dynamic> _$MPSpeakerWithDetailStructToJson(
     <String, dynamic>{
       'speaker': instance.speaker,
       'summary': instance.summary,
+      'last_memory_at': instance.last_memory_at,
+      'memory_total': instance.memory_total,
     };
 
 MPExpertMergeUserStruct _$MPExpertMergeUserStructFromJson(

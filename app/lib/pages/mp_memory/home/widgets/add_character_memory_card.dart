@@ -63,10 +63,11 @@ class AddCharacterMemoryCard extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
-                    child: const Icon(
-                      Icons.person_add,
+                    child: Image.asset(
+                      'assets/images/mp_memory_add.png',
+                      width: 24.0,
+                      height: 24.0,
                       color: Colors.white,
-                      size: 24.0,
                     ),
                   ),
                   // AI-generated END - 左侧：图标
