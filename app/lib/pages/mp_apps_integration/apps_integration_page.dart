@@ -4,6 +4,7 @@ import 'package:omi/pages/mp_apps_integration/providers/apps_integration_provide
 import 'package:omi/pages/mp_apps_integration/widgets/automation_workflow_card.dart';
 import 'package:omi/pages/mp_apps_integration/widgets/category_tabs_card.dart';
 import 'package:omi/pages/mp_apps_integration/widgets/help_guide_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 应用集成页面
@@ -18,7 +19,6 @@ class AppsIntegrationPage extends StatefulWidget {
 
   /// 页面标题
   final String title;
-
   // AI-generated START - 创建状态
   @override
   State<AppsIntegrationPage> createState() => _AppsIntegrationPageState();
@@ -34,8 +34,8 @@ class _AppsIntegrationPageState extends State<AppsIntegrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
+      appBar: MPCommonAppBar(
+        title: widget.title,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -88,19 +88,22 @@ class _AppsIntegrationPageState extends State<AppsIntegrationPage> {
 
   // AI-generated START - 构建应用集成列表
   Widget _buildIntegrationList(BuildContext context) {
-    // 使用 Provider 获取应用集成列表
-    final provider = Provider.of<AppsIntegrationProvider>(context);
-    final integrations = provider.integrations;
+    // 使用 Consumer 获取应用集成列表
+    return Consumer<AppsIntegrationProvider>(
+      builder: (context, provider, child) {
+        final integrations = provider.integrations;
 
-    if (integrations.isEmpty) {
-      return const SizedBox.shrink();
-    }
+        if (integrations.isEmpty) {
+          return const SizedBox.shrink();
+        }
 
-    // 显示所有应用集成卡片
-    return Column(
-      children: integrations.map((integration) {
-        return integration.toCard();
-      }).toList(),
+        // 显示所有应用集成卡片
+        return Column(
+          children: integrations.map((integration) {
+            return integration.toCard();
+          }).toList(),
+        );
+      },
     );
   }
   // AI-generated END - 构建应用集成列表

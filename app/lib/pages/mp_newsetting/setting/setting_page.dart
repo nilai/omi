@@ -1,5 +1,6 @@
 // AI-generated START - 设置页面，整合所有设置相关的卡片组件
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_newsetting/setting/widgets/device_settings_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/setting/widgets/notification_settings_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/setting/widgets/preference_settings_card_widget.dart';
@@ -14,24 +15,8 @@ class SettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        title: const Text(
-          'Setting',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 20.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
+      appBar: MPCommonAppBar(
+        title: 'Setting',
       ),
       body: const SingleChildScrollView(
         child: Column(

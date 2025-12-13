@@ -1,8 +1,10 @@
 // AI-generated START - 记忆中心页面
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_widgets/mp_skeleton_widget.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_memory/home/widgets/add_character_memory_card.dart';
 import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆中心页面
@@ -81,8 +83,9 @@ class _MemoryPageState extends State<MemoryPage> {
     return Consumer<MemoryProvider>(
       builder: (context, memoryProvider, child) {
         return Scaffold(
-          appBar: AppBar(
-            title: Text(widget.title),
+          backgroundColor: const Color(0xFFF9FAFB),
+          appBar: MPCommonAppBar(
+            title: widget.title,
           ),
           body: _buildBody(memoryProvider),
         );
@@ -100,29 +103,9 @@ class _MemoryPageState extends State<MemoryPage> {
     }
 
     if (provider.error != null && provider.memories.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadMemories(),
-              child: const Text('重试'),
-            ),
-          ],
+      return const Center(
+        child: MPSkeletonWidget(
+          height: 100.0,
         ),
       );
     }

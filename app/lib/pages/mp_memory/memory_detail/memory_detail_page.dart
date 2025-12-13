@@ -5,6 +5,7 @@ import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_memory/memory_detail/providers/memory_detail_provider.dart';
 import 'package:omi/pages/mp_memory/memory_detail/widgets/character_info_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/widgets/conversation_summary_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆详情页面
@@ -60,8 +61,8 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
         final memoryItem = detailProvider.memoryItem;
 
         return Scaffold(
-          appBar: AppBar(
-            title: Text(memoryItem != null ? '与${memoryItem.name}的对话' : '记忆详情'),
+          appBar: MPCommonAppBar(
+            title: memoryItem != null ? '与${memoryItem.name}的对话' : '记忆详情',
           ),
           body: _buildBody(detailProvider, memoryItem),
           floatingActionButton: FloatingActionButton(

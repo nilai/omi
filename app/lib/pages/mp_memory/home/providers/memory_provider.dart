@@ -145,66 +145,42 @@ class MemoryProvider with ChangeNotifier {
     _hasMore = true; // 重置 hasMore 状态
     _cursor = ''; // 重置 cursor
     try {
-      // TODO: 从API或本地存储加载记忆数据
-      // final memories = await memoryService.fetchMemories();
-      // _memories = memories;
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
-      // AI-generated START - 默认测试数据
-      final now = DateTime.now();
-      _memories = [
-        CharacterMemoryItem(
-          id: '1',
-          name: '叶成功',
-          description: '讨论了创业项目的融资计划,分享了市场调研数据和商业模式优化建议',
-          createdAt: now.subtract(const Duration(days: 2)),
-          conversationCount: 5,
-          avatarBackgroundColor: Colors.amber,
+      // 调用 getSpeakerListWithDetail 接口
+      final response = await getSpeakerListWithDetail(
+        MPGetSpeakerListWithDetailRequest(
+          pageSize: 20,
+          cursor: _cursor,
         ),
-        CharacterMemoryItem(
-          id: '2',
-          name: '叶天命',
-          description: '聊了关于职业发展的规划,探讨了技术转型和个人成长路径',
-          createdAt: now.subtract(const Duration(days: 5)),
-          conversationCount: 4,
-          avatarBackgroundColor: Colors.grey.shade300,
-        ),
-        CharacterMemoryItem(
-          id: '3',
-          name: '叶无敌',
-          description: '交流了健身计划和生活方式改变,分享了运动心得和饮食建议',
-          createdAt: now.subtract(const Duration(days: 7)),
-          conversationCount: 6,
-          avatarBackgroundColor: Colors.grey.shade400,
-        ),
-        CharacterMemoryItem(
-          id: '4',
-          name: '叶疯狂',
-          description: '讨论了旅行计划和冒险经历,分享了各地美食和文化体验',
-          createdAt: now.subtract(const Duration(days: 7)),
-          conversationCount: 5,
-          avatarBackgroundColor: Colors.grey.shade300,
-        ),
-        CharacterMemoryItem(
-          id: '5',
-          name: '叶智慧',
-          description: '探讨了读书心得和知识管理方法,交流了学习技巧和思维模式',
-          createdAt: now.subtract(const Duration(days: 14)),
-          conversationCount: 3,
-          avatarBackgroundColor: Colors.grey.shade300,
-        ),
-        CharacterMemoryItem(
-          id: '6',
-          name: '叶勇敢',
-          description: '聊了关于挑战自我的经历,分享了克服困难的方法和心态调整',
-          createdAt: now.subtract(const Duration(days: 14)),
-          conversationCount: 3,
-          avatarBackgroundColor: Colors.grey.shade400,
-        ),
-      ];
-      // AI-generated END - 默认测试数据
-      // 模拟：如果数据少于某个数量，则认为没有更多数据
-      _hasMore = _memories.length >= 6; // 这里可以根据实际API响应调整
-      notifyListeners();
+      );
+
+      if (response != null && response.baseResp.code == 0) {
+        // 将 API 响应转换为 CharacterMemoryItem
+        _memories = response.speakers.map((speakerWithDetail) {
+          final speaker = speakerWithDetail.speaker;
+          return CharacterMemoryItem(
+            id: speaker.id,
+            name: speaker.name,
+            description: speakerWithDetail.summary,
+            createdAt: DateTime.now(), // API 可能没有返回创建时间，使用当前时间
+            conversationCount: 0, // API 可能没有返回对话次数，使用默认值
+            avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
+            avatarBackgroundColor: _getColorFromString(speaker.id),
+          );
+        }).toList();
+
+        _hasMore = response.hasMore;
+
+        // 更新 cursor（如果 API 返回了新的 cursor，需要从响应中获取）
+        // 这里假设使用最后一个 speaker 的 id 作为 cursor
+        if (_memories.isNotEmpty) {
+          _cursor = _memories.last.id;
+        }
+
+        notifyListeners();
+      } else {
+        debugPrint('Error loading memories: ${response?.baseResp.message ?? "Unknown error"}');
+        setError(response?.baseResp.message ?? '加载失败');
+      }
     } catch (e) {
       setError(e.toString());
     } finally {
