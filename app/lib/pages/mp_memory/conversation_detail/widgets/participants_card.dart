@@ -8,7 +8,6 @@ class Participant {
     required this.id,
     required this.name,
     this.avatarUrl,
-    this.avatarBackgroundColor,
   });
   // AI-generated END - 构造函数
 
@@ -20,9 +19,6 @@ class Participant {
 
   /// 头像URL
   final String? avatarUrl;
-
-  /// 头像背景颜色
-  final Color? avatarBackgroundColor;
 }
 
 /// 参与者卡片组件
@@ -110,7 +106,7 @@ class ParticipantsCard extends StatelessWidget {
           // AI-generated START - 头像
           CircleAvatar(
             radius: 16.0,
-            backgroundColor: participant.avatarBackgroundColor ?? Colors.grey.shade300,
+            backgroundColor: Colors.grey.shade300,
             backgroundImage: participant.avatarUrl != null ? NetworkImage(participant.avatarUrl!) : null,
             child: participant.avatarUrl == null
                 ? Text(
@@ -144,4 +140,3 @@ class ParticipantsCard extends StatelessWidget {
   // AI-generated END - _buildParticipantChip
 }
 // AI-generated END - participants_card.dart
-

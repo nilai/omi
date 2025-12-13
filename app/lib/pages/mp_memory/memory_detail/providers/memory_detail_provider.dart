@@ -1,6 +1,7 @@
 // AI-generated START - 记忆详情状态管理Provider
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/backend/schema/mp/mp_speaker.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
@@ -48,6 +49,10 @@ class MemoryDetailProvider with ChangeNotifier {
   List<ConversationSummary> _conversationSummaries = [];
   // AI-generated END - _conversationSummaries
 
+  // AI-generated START - 原始记忆数据列表
+  List<MPMemoryStruct> _memories = [];
+  // AI-generated END - _memories
+
   // AI-generated START - 是否正在加载
   bool _isLoading = false;
   // AI-generated END - _isLoading
@@ -63,6 +68,16 @@ class MemoryDetailProvider with ChangeNotifier {
   // AI-generated START - 获取对话摘要列表
   List<ConversationSummary> get conversationSummaries => _conversationSummaries;
   // AI-generated END - conversationSummaries
+
+  // AI-generated START - 根据ID获取记忆数据
+  MPMemoryStruct? getMemoryById(String id) {
+    try {
+      return _memories.firstWhere((memory) => memory.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+  // AI-generated END - getMemoryById
 
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
@@ -114,6 +129,9 @@ class MemoryDetailProvider with ChangeNotifier {
           conversationCount: response.memoryTotal,
           avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
         );
+
+        // 保存原始记忆数据
+        _memories = response.memorys;
 
         // 将 memorys 列表转换为 ConversationSummary 列表
         _conversationSummaries = response.memorys.map((memory) {

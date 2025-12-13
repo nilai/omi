@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/env/env.dart';
 import 'package:omi/services/auth_service.dart';
@@ -18,34 +16,10 @@ class ApiClient {
   static const Duration requestTimeoutRead = Duration(seconds: 30);
   static const Duration requestTimeoutWrite = Duration(seconds: 300);
 
-  static http.Client? _client;
-
-  static http.Client get _httpClient {
-    _client ??= _createHttpClient();
-    return _client!;
-  }
-
-  /// 创建自定义 HttpClient，处理 SSL 证书验证问题
-  static http.Client _createHttpClient() {
-    if (kDebugMode) {
-      // 开发环境：允许证书验证失败（仅用于调试）
-      final httpClient = HttpClient()
-        ..badCertificateCallback = (X509Certificate cert, String host, int port) {
-          // 在开发环境中，允许所有证书（仅用于调试）
-          // 生产环境应该移除此回调或进行严格的证书验证
-          debugPrint('⚠️ SSL Certificate verification bypassed for $host:$port (DEBUG MODE ONLY)');
-          return true;
-        };
-      return IOClient(httpClient);
-    } else {
-      // 生产环境：使用默认的严格证书验证
-      return http.Client();
-    }
-  }
+  static final _client = http.Client();
 
   static void dispose() {
-    _client?.close();
-    _client = null;
+    _client.close();
   }
 }
 
@@ -212,7 +186,7 @@ Future<http.Response> _performRequest(
   String body,
   String method,
 ) async {
-  final client = ApiClient._httpClient;
+  final client = ApiClient._client;
 
   // 记录请求开始时间
   final stopwatch = Stopwatch()..start();
@@ -335,7 +309,7 @@ Future<http.Response> makeMultipartApiCall({
       request.files.add(multipartFile);
     }
 
-    var streamedResponse = await ApiClient._httpClient.send(request);
+    var streamedResponse = await ApiClient._client.send(request);
     return await http.Response.fromStream(streamedResponse);
   } catch (e, stackTrace) {
     debugPrint('Multipart HTTP request failed: $e, $stackTrace');
@@ -374,7 +348,7 @@ Stream<String> makeStreamingApiCall({
       request.body = body;
     }
 
-    var streamedResponse = await ApiClient._httpClient.send(request);
+    var streamedResponse = await ApiClient._client.send(request);
 
     if (streamedResponse.statusCode != 200) {
       Logger.error('Streaming request failed: ${streamedResponse.statusCode}');

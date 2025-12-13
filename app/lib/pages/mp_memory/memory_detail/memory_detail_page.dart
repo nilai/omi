@@ -150,14 +150,16 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                       participantCount: summary.participantCount,
                       onTap: () {
                         // AI-generated START - 导航到对话详情页面
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ConversationDetailPage(
-                              conversationId: summary.id,
-                              title: summary.title,
+                        final memory = provider.getMemoryById(summary.id);
+                        if (memory != null) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ConversationDetailPage(
+                                memory: memory,
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        }
                         // AI-generated END - 导航到对话详情页面
                       },
                     );

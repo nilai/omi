@@ -1,5 +1,6 @@
 // AI-generated START - 对话详情页面
 import 'package:flutter/material.dart';
+import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/providers/conversation_detail_provider.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/action_buttons_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/audio_player_card.dart';
@@ -16,16 +17,12 @@ class ConversationDetailPage extends StatefulWidget {
   // AI-generated START - 构造函数
   const ConversationDetailPage({
     super.key,
-    required this.conversationId,
-    this.title,
+    required this.memory,
   });
   // AI-generated END - 构造函数
 
-  /// 对话ID
-  final String conversationId;
-
-  /// 对话标题（可选）
-  final String? title;
+  /// 记忆数据
+  final MPMemoryStruct memory;
 
   // AI-generated START - 创建状态
   @override
@@ -47,13 +44,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       if (!mounted) return;
       final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
 
-      // 如果传入了title，直接设置
-      if (widget.title != null) {
-        provider.setConversationInfo(widget.conversationId, widget.title);
-      }
-
-      // 加载对话详情
-      provider.loadConversationDetail(widget.conversationId);
+      // 从 MPMemoryStruct 初始化数据
+      provider.initializeFromMemory(widget.memory);
     });
     // AI-generated END - 初始化对话详情数据
   }
@@ -100,46 +92,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   // AI-generated START - 构建页面主体
   Widget _buildBody(ConversationDetailProvider provider) {
-    if (provider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    if (provider.error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadConversationDetail(widget.conversationId),
-              child: const Text('重试'),
-            ),
-          ],
-        ),
-      );
-    }
-
     return SingleChildScrollView(
       child: Column(
         children: [
           // AI-generated START - 对话头部卡片
           ConversationHeaderCard(
-            title: provider.title ?? widget.title ?? '对话详情',
+            title: provider.title ?? widget.memory.title,
             summaryTime: '2025-07-22 15:21:54',
           ),
           // AI-generated END - 对话头部卡片

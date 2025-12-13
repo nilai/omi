@@ -84,4 +84,3 @@ Future<MPGetSpeakerDetailResponse?> getSpeakerDetail(MPGetSpeakerDetailRequest r
   }
   return null;
 }
-
