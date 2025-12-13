@@ -5,6 +5,10 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+<<<<<<< HEAD
+=======
+import 'package:http/io_client.dart' as http_io;
+>>>>>>> af385606aa945c6a95cd4881d44f376d979be9ee
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/env/env.dart';
 import 'package:omi/services/auth_service.dart';
@@ -16,7 +20,24 @@ class ApiClient {
   static const Duration requestTimeoutRead = Duration(seconds: 30);
   static const Duration requestTimeoutWrite = Duration(seconds: 300);
 
+<<<<<<< HEAD
   static final _client = http.Client();
+=======
+  
+  static final _client = _createClient();
+
+  static http.Client _createClient() {
+    // Only bypass certificate verification in debug mode
+    if (const bool.fromEnvironment('dart.vm.product') == false) {
+      // Development mode - bypass SSL verification
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      return http_io.IOClient(client);
+    }
+    // Production mode - use default client with proper SSL verification
+    return http.Client();
+  }
+>>>>>>> af385606aa945c6a95cd4881d44f376d979be9ee
 
   static void dispose() {
     _client.close();
