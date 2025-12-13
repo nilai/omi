@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:omi/providers/device_provider.dart';
@@ -207,21 +208,38 @@ class _NoteFileListPageState extends State<NoteFileListPage> {
                         final file = provider.files[index];
                         final isThisFileDownloading =
                             provider.downloadingFileName == file.name;
+                        final isThisFileConverting =
+                            provider.convertingFileName == file.name;
 
-                        return FileListItem(
-                          file: file,
-                          isDownloading: isThisFileDownloading,
-                          downloadProgress: isThisFileDownloading
-                              ? provider.downloadProgress
-                              : 0.0,
-                          downloadedBytes: isThisFileDownloading
-                              ? provider.downloadedBytes
-                              : 0,
-                          isOperating: provider.isOperating,
-                          onDownload: () => provider.downloadFile(file),
-                          onDelete: isThisFileDownloading
-                              ? () => provider.cancelDownload()
-                              : () => _confirmDelete(provider, file),
+                        return FutureBuilder<_FileDownloadStatus>(
+                          future: _checkFileDownloadStatus(provider, file.name),
+                          builder: (context, snapshot) {
+                            final status = snapshot.data ?? _FileDownloadStatus(false, false);
+
+                            return FileListItem(
+                              file: file,
+                              isDownloading: isThisFileDownloading,
+                              downloadProgress: isThisFileDownloading
+                                  ? provider.downloadProgress
+                                  : 0.0,
+                              downloadedBytes: isThisFileDownloading
+                                  ? provider.downloadedBytes
+                                  : 0,
+                              isOperating: provider.isOperating || provider.isConverting,
+                              onDownload: () => _downloadFile(provider, file),
+                              onDelete: isThisFileDownloading
+                                  ? () => provider.cancelDownload()
+                                  : () => _confirmDelete(provider, file),
+                              // Conversion parameters
+                              isDownloaded: status.isDownloaded,
+                              isConverting: isThisFileConverting,
+                              conversionProgress: isThisFileConverting
+                                  ? provider.conversionProgress
+                                  : 0.0,
+                              hasMp3: status.hasMp3,
+                              onConvert: () => _convertToMp3(provider, file.name),
+                            );
+                          },
                         );
                       },
                     ),
@@ -331,4 +349,82 @@ class _NoteFileListPageState extends State<NoteFileListPage> {
       provider.deleteFile(file);
     }
   }
+
+  /// Check if a file has been downloaded locally and if MP3 exists
+  Future<_FileDownloadStatus> _checkFileDownloadStatus(
+    NoteFileListProvider provider,
+    String fileName,
+  ) async {
+    final downloadPath = await provider.getDownloadPath();
+    final opusFilePath = '$downloadPath/$fileName';
+    final mp3FilePath = _getMp3Path(opusFilePath);
+
+    final isDownloaded = File(opusFilePath).existsSync();
+    final hasMp3 = File(mp3FilePath).existsSync();
+
+    return _FileDownloadStatus(isDownloaded, hasMp3);
+  }
+
+  /// Get MP3 path from opus file path
+  String _getMp3Path(String opusFilePath) {
+    final lastDot = opusFilePath.lastIndexOf('.');
+    if (lastDot > 0) {
+      return '${opusFilePath.substring(0, lastDot)}.mp3';
+    }
+    return '$opusFilePath.mp3';
+  }
+
+  /// Download file and show toast on completion
+  Future<void> _downloadFile(
+    NoteFileListProvider provider,
+    dynamic file,
+  ) async {
+    await provider.downloadFile(file);
+
+    // Wait for download to complete by monitoring the provider state
+    // The actual completion notification is handled by the provider
+  }
+
+  /// Convert downloaded file to MP3
+  Future<void> _convertToMp3(
+    NoteFileListProvider provider,
+    String fileName,
+  ) async {
+    final downloadPath = await provider.getDownloadPath();
+    final opusFilePath = '$downloadPath/$fileName';
+
+    if (!File(opusFilePath).existsSync()) {
+      _showSnackBar('File not found. Please download first.');
+      return;
+    }
+
+    await provider.convertToMp3(opusFilePath);
+
+    // Show success toast
+    if (provider.lastConvertedMp3Path != null && provider.lastError == null) {
+      _showSnackBar('Conversion completed!');
+    } else if (provider.lastError != null) {
+      _showSnackBar('Conversion failed: ${provider.lastError}');
+    }
+  }
+
+  /// Show a snackbar message
+  void _showSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+}
+
+/// Helper class to track file download status
+class _FileDownloadStatus {
+  final bool isDownloaded;
+  final bool hasMp3;
+
+  _FileDownloadStatus(this.isDownloaded, this.hasMp3);
 }

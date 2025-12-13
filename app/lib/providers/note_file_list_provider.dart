@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:omi/backend/schema/bt_device/note_device.dart';
 import 'package:omi/pages/note_debug/models/ble_log_entry.dart';
 import 'package:omi/services/devices/note_connection.dart';
+import 'package:omi/utils/audio_converter_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'base_provider.dart';
 
@@ -72,6 +73,23 @@ class NoteFileListProvider extends BaseProvider {
   /// Current download file path
   String? _currentFilePath;
 
+  // ============ MP3 Conversion State ============
+
+  /// Audio converter utility instance
+  final AudioConverterUtils _audioConverter = AudioConverterUtils();
+
+  /// Whether currently converting a file
+  bool _isConverting = false;
+
+  /// Currently converting file name
+  String? _convertingFileName;
+
+  /// Conversion progress (0.0 - 1.0)
+  double _conversionProgress = 0.0;
+
+  /// Last converted MP3 file path
+  String? _lastConvertedMp3Path;
+
   // ============ Getters ============
 
   /// Get file list (unmodifiable)
@@ -96,6 +114,18 @@ class NoteFileListProvider extends BaseProvider {
 
   /// Last downloaded file path
   String? get lastDownloadedFilePath => _lastDownloadedFilePath;
+
+  /// Whether currently converting
+  bool get isConverting => _isConverting;
+
+  /// Converting file name
+  String? get convertingFileName => _convertingFileName;
+
+  /// Conversion progress (0.0 - 1.0)
+  double get conversionProgress => _conversionProgress;
+
+  /// Last converted MP3 file path
+  String? get lastConvertedMp3Path => _lastConvertedMp3Path;
 
   /// Get log entries (unmodifiable)
   List<BleLogEntry> get logEntries => List.unmodifiable(_logEntries);
@@ -487,6 +517,98 @@ class NoteFileListProvider extends BaseProvider {
       _isOperating = false;
       notifyListeners();
     }
+  }
+
+  // ============ MP3 Conversion ============
+
+  /// Convert downloaded opus file to MP3
+  /// [opusFilePath] - Path to the opus file to convert
+  /// Uses default 16000 Hz sample rate and 1 channel (mono)
+  Future<void> convertToMp3(String opusFilePath) async {
+    if (_isConverting) {
+      _lastError = 'Another conversion is in progress';
+      notifyListeners();
+      return;
+    }
+
+    final file = File(opusFilePath);
+    if (!file.existsSync()) {
+      _lastError = 'File not found: $opusFilePath';
+      notifyListeners();
+      return;
+    }
+
+    _isConverting = true;
+    _convertingFileName = opusFilePath.split('/').last;
+    _conversionProgress = 0.0;
+    _lastConvertedMp3Path = null;
+    _lastError = null;
+    notifyListeners();
+
+    try {
+      print('[NoteFileListProvider] Starting conversion: $_convertingFileName');
+
+      final mp3Path = await _audioConverter.convertOpusToMp3(
+        opusFilePath: opusFilePath,
+        sampleRate: 16000,
+        channels: 1,  // Note device uses mono
+        onProgress: (progress) {
+          _conversionProgress = progress;
+          notifyListeners();
+        },
+      );
+
+      _lastConvertedMp3Path = mp3Path;
+      print('[NoteFileListProvider] Conversion completed: $mp3Path');
+
+      // Add success log entry
+      _addLogEntry(
+        BleLogDirection.received,
+        [],
+        name: 'MP3 conversion completed: ${mp3Path.split('/').last}',
+      );
+    } catch (e) {
+      _lastError = 'Conversion failed: $e';
+      print('[NoteFileListProvider] Conversion error: $e');
+    } finally {
+      _isConverting = false;
+      _convertingFileName = null;
+      notifyListeners();
+    }
+  }
+
+  /// Convert the last downloaded file to MP3
+  Future<void> convertLastDownloadedToMp3() async {
+    if (_lastDownloadedFilePath == null) {
+      _lastError = 'No downloaded file available';
+      notifyListeners();
+      return;
+    }
+    await convertToMp3(_lastDownloadedFilePath!);
+  }
+
+  /// Check if a file has already been converted to MP3
+  Future<bool> hasConvertedMp3(String opusFilePath) async {
+    final mp3Path = _getExpectedMp3Path(opusFilePath);
+    return File(mp3Path).existsSync();
+  }
+
+  /// Get the expected MP3 path for an opus file
+  String _getExpectedMp3Path(String opusFilePath) {
+    final lastDot = opusFilePath.lastIndexOf('.');
+    if (lastDot > 0) {
+      return '${opusFilePath.substring(0, lastDot)}.mp3';
+    }
+    return '$opusFilePath.mp3';
+  }
+
+  /// Get MP3 path if already converted, null otherwise
+  Future<String?> getConvertedMp3Path(String opusFilePath) async {
+    final mp3Path = _getExpectedMp3Path(opusFilePath);
+    if (File(mp3Path).existsSync()) {
+      return mp3Path;
+    }
+    return null;
   }
 
   // ============ Lifecycle ============

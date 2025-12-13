@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/backend/schema/bt_device/note_device.dart';
 
-/// A list item widget for displaying file info with download/delete actions
+/// A list item widget for displaying file info with download/delete/convert actions
 class FileListItem extends StatelessWidget {
   final NoteFileInfo file;
   final bool isDownloading;
@@ -10,6 +10,21 @@ class FileListItem extends StatelessWidget {
   final bool isOperating;
   final VoidCallback? onDownload;
   final VoidCallback? onDelete;
+
+  /// Whether the file has been downloaded locally
+  final bool isDownloaded;
+
+  /// Whether currently converting to MP3
+  final bool isConverting;
+
+  /// Conversion progress (0.0 - 1.0)
+  final double conversionProgress;
+
+  /// Whether MP3 file already exists
+  final bool hasMp3;
+
+  /// Callback when convert button is pressed
+  final VoidCallback? onConvert;
 
   const FileListItem({
     super.key,
@@ -20,6 +35,11 @@ class FileListItem extends StatelessWidget {
     this.isOperating = false,
     this.onDownload,
     this.onDelete,
+    this.isDownloaded = false,
+    this.isConverting = false,
+    this.conversionProgress = 0.0,
+    this.hasMp3 = false,
+    this.onConvert,
   });
 
   @override
@@ -108,8 +128,52 @@ class FileListItem extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Action buttons (hidden when downloading)
-                if (!isDownloading) ...[
+                // Action buttons (hidden when downloading or converting)
+                if (!isDownloading && !isConverting) ...[
+                  // Convert to MP3 button (only shown if downloaded and not already converted)
+                  if (isDownloaded && !hasMp3)
+                    IconButton(
+                      onPressed: isOperating ? null : onConvert,
+                      icon: Icon(
+                        Icons.transform,
+                        color: isOperating
+                            ? Colors.grey.shade700
+                            : Colors.green,
+                        size: 22,
+                      ),
+                      tooltip: 'Convert to MP3',
+                    ),
+                  // MP3 indicator (show if already converted)
+                  if (isDownloaded && hasMp3)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.green,
+                            size: 14,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'MP3',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   // Download button
                   IconButton(
                     onPressed: isOperating ? null : onDownload,
@@ -189,6 +253,52 @@ class FileListItem extends StatelessWidget {
                       size: 20,
                     ),
                     tooltip: 'Cancel',
+                  ),
+                ],
+              ),
+            ],
+            // Conversion progress bar (only when converting)
+            if (isConverting) ...[
+              const SizedBox(height: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.transform,
+                        color: Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Converting to MP3...',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${(conversionProgress * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: conversionProgress,
+                      backgroundColor: Colors.grey[800],
+                      color: Colors.green,
+                      minHeight: 6,
+                    ),
                   ),
                 ],
               ),
