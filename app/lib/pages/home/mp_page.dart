@@ -3,6 +3,8 @@ import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../utils/other/temp.dart';
+import '../mp_canlendar/widgets/calendar_popup.dart';
+import '../mp_popup/mp_center_popup.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
@@ -273,147 +275,16 @@ class _MPPageContentState extends State<MPPageContent> {
      
   }
 
-  Widget _buildHeader(BuildContext context, MPHomePageProvider provider) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: provider.onLeftWidgetTap,
-            borderRadius: BorderRadius.circular(18),
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color.fromARGB(18, 0, 0, 0),
-                    blurRadius: 10,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.drag_handle, color: Color(0xFF4A4A4A), size: 18),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => _showEditTitleDialog(context, provider),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color.fromARGB(18, 0, 0, 0),
-                      blurRadius: 12,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        provider.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF111111),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    const Icon(Icons.edit, size: 16, color: Color(0xFF6F6F6F)),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          _buildIconButton(
-            icon: Icons.search,
-            onTap: provider.onSearchTap,
-          ),
-          const SizedBox(width: 10),
-          _buildIconButton(
-            icon: Icons.add,
-            onTap: provider.onAddTap,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIconButton({required IconData icon, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: const [
-            BoxShadow(
-              color: Color.fromARGB(18, 0, 0, 0),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: const Color(0xFF4A4A4A), size: 18),
-      ),
-    );
-  }
-
-  Future<void> _showEditTitleDialog(BuildContext context, MPHomePageProvider provider) async {
-    final controller = TextEditingController(text: provider.title);
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('修改标题'),
-          content: TextField(
-            controller: controller,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: '请输入新的标题',
-            ),
-            onSubmitted: (value) {
-              provider.updateTitle(value);
-              Navigator.of(context).pop();
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                provider.updateTitle(controller.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('保存'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _showDatePicker(BuildContext context, MPHomePageProvider provider) async {
-    // TODO: Implement date picker dialog
-    debugPrint('Date picker tapped');
+    MPCenterPopup.show(
+                  context: context,
+                  contentWidget: CalendarPopup(
+                    onDateSelected: (date) {
+                      print(date);
+                    },
+                 
+                  ),
+                );
   }
 
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
