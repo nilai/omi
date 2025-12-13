@@ -348,7 +348,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                   // Custom Bottom TabBar
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                     ),
