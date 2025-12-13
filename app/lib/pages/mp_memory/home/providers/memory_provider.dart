@@ -1,5 +1,7 @@
 // AI-generated START - 记忆中心状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/backend/schema/mp/mp_speaker.dart';
 
 /// 人物记忆数据模型
 class CharacterMemoryItem {
@@ -67,6 +69,10 @@ class MemoryProvider with ChangeNotifier {
   // AI-generated START - 搜索关键词
   String _searchQuery = '';
   // AI-generated END - _searchQuery
+
+  // AI-generated START - 分页游标
+  String _cursor = '';
+  // AI-generated END - _cursor
 
   // AI-generated START - 获取人物记忆列表
   List<CharacterMemoryItem> get memories => _memories;
@@ -137,6 +143,7 @@ class MemoryProvider with ChangeNotifier {
     setLoading(true);
     setError(null);
     _hasMore = true; // 重置 hasMore 状态
+    _cursor = ''; // 重置 cursor
     try {
       // TODO: 从API或本地存储加载记忆数据
       // final memories = await memoryService.fetchMemories();
@@ -213,37 +220,67 @@ class MemoryProvider with ChangeNotifier {
     setFetching(true);
 
     try {
-      // TODO: 从API加载更多记忆数据
-      // final response = await memoryService.fetchMemories(offset: _memories.length, limit: 20);
-      // _memories.addAll(response.memories);
-      // _hasMore = response.hasMore;
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
-
-      // AI-generated START - 模拟加载更多数据
-      final now = DateTime.now();
-      final moreMemories = [
-        CharacterMemoryItem(
-          id: '${_memories.length + 1}',
-          name: '叶新${_memories.length + 1}',
-          description: '新增的记忆数据，用于测试上拉加载功能',
-          createdAt: now.subtract(const Duration(days: 20)),
-          conversationCount: 2,
-          avatarBackgroundColor: Colors.grey.shade300,
+      // 调用 getSpeakerListWithDetail 接口
+      final response = await getSpeakerListWithDetail(
+        MPGetSpeakerListWithDetailRequest(
+          pageSize: 20,
+          cursor: _cursor,
         ),
-      ];
-      _memories.addAll(moreMemories);
-      // 模拟：如果已加载超过10条，则认为没有更多数据
-      _hasMore = _memories.length < 10;
-      // AI-generated END - 模拟加载更多数据
+      );
 
-      notifyListeners();
+      if (response != null && response.baseResp.code == 0) {
+        // 将 API 响应转换为 CharacterMemoryItem
+        final newMemories = response.speakers.map((speakerWithDetail) {
+          final speaker = speakerWithDetail.speaker;
+          return CharacterMemoryItem(
+            id: speaker.id,
+            name: speaker.name,
+            description: speakerWithDetail.summary,
+            createdAt: DateTime.now(), // API 可能没有返回创建时间，使用当前时间
+            conversationCount: 0, // API 可能没有返回对话次数，使用默认值
+            avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
+            avatarBackgroundColor: _getColorFromString(speaker.id),
+          );
+        }).toList();
+
+        _memories.addAll(newMemories);
+        _hasMore = response.hasMore;
+
+        // 更新 cursor（如果 API 返回了新的 cursor，需要从响应中获取）
+        // 这里假设使用最后一个 speaker 的 id 作为 cursor
+        if (newMemories.isNotEmpty) {
+          _cursor = newMemories.last.id;
+        }
+
+        notifyListeners();
+      } else {
+        debugPrint('Error loading more memories: ${response?.baseResp.message ?? "Unknown error"}');
+        setError(response?.baseResp.message ?? '加载失败');
+      }
     } catch (e) {
       debugPrint('Error loading more memories: $e');
+      setError('加载失败: $e');
     } finally {
       setFetching(false);
     }
   }
   // AI-generated END - loadMoreMemories
+
+  // AI-generated START - 根据字符串生成颜色
+  /// 根据字符串生成颜色，用于头像背景
+  Color _getColorFromString(String str) {
+    final colors = [
+      Colors.amber,
+      Colors.grey.shade300,
+      Colors.grey.shade400,
+      Colors.blue.shade100,
+      Colors.green.shade100,
+      Colors.purple.shade100,
+    ];
+    final index = str.hashCode % colors.length;
+    return colors[index.abs()];
+  }
+  // AI-generated END - _getColorFromString
 
   // AI-generated START - 添加人物记忆
   void addMemory(CharacterMemoryItem memory) {
