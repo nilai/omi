@@ -27,7 +27,7 @@ class PrivacyApi {
   static Future<Map<String, dynamic>> getUserProfile() async {
     try {
       final response = await makeApiCall(
-        url: '${Env.apiBaseUrl}v1/users/profile',
+        url: '${Env.apiBaseUrl}api/v1/user/get_profile',
         method: 'GET',
         headers: {},
         body: '',

@@ -80,8 +80,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   ForegroundUtil foregroundUtil = ForegroundUtil();
   List<Widget> screens = [Container(), const SizedBox(), const SizedBox(), const SizedBox()];
 
+  // Tab controller for manual control
+  late TabController _tabController;
+
   // 升级提示
-  final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
+  // final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
   bool scriptsInProgress = false;
 
   // 四个tab页面
@@ -91,40 +94,40 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   final GlobalKey<SettingsCardsPageState> _settingsCardsPageKey = GlobalKey<SettingsCardsPageState>();
   late final List<Widget> _pages;
 
-  void _initiateApps() {
-    context.read<AppProvider>().getApps();
-    context.read<AppProvider>().getPopularApps();
-  }
+  // void _initiateApps() {
+  //   context.read<AppProvider>().getApps();
+  //   context.read<AppProvider>().getPopularApps();
+  // }
 
   // 跳转到tab制定页面
-  void _selectedTab(int pageIndex) {
-    switch (pageIndex) {
-      case 0:
-        final mpPageState = _mpPageKey.currentState;
-        if (mpPageState != null) {
-          (mpPageState as dynamic).scrollToTop();
-        }
-        break;
-      case 1:
-        final actionItemsState = _actionItemsPageKey.currentState;
-        if (actionItemsState != null) {
-          (actionItemsState as dynamic).scrollToTop();
-        }
-        break;
-      case 2:
-        final mpChatState = _mpChatPageKey.currentState;
-        if (mpChatState != null) {
-          (mpChatState as dynamic).scrollToTop();
-        }
-        break;
-      case 3:
-        final settingsCardsState = _settingsCardsPageKey.currentState;
-        if (settingsCardsState != null) {
-          settingsCardsState.scrollToTop();
-        }
-        break;
-    }
-  }
+  // void _selectedTab(int pageIndex) {
+  //   switch (pageIndex) {
+  //     case 0:
+  //       final mpPageState = _mpPageKey.currentState;
+  //       if (mpPageState != null) {
+  //         (mpPageState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 1:
+  //       final actionItemsState = _actionItemsPageKey.currentState;
+  //       if (actionItemsState != null) {
+  //         (actionItemsState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 2:
+  //       final mpChatState = _mpChatPageKey.currentState;
+  //       if (mpChatState != null) {
+  //         (mpChatState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 3:
+  //       final settingsCardsState = _settingsCardsPageKey.currentState;
+  //       if (settingsCardsState != null) {
+  //         settingsCardsState.scrollToTop();
+  //       }
+  //       break;
+  //   }
+  // }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -174,134 +177,152 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   @override
   void initState() {
     _pages = [
-      ConversationsPage(key: _mpPageKey),
+      MPPage(key: _mpPageKey),
       MemoHomePage(key: _actionItemsPageKey),
-      MemoriesPage(key: _mpPageKey),
+      MPChatPage(key: _mpChatPageKey),
       SettingsCardsPage(key: _settingsCardsPageKey),
     ];
+
+    // Initialize TabController
+    final homeProvider = context.read<HomeProvider>();
+    _tabController = TabController(
+      length: 4,
+      vsync: this,
+      initialIndex: homeProvider.selectedIndex,
+    );
+
+    // Listen to tab changes (for swipe gestures)
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        // Index changed due to swipe or animation complete
+        homeProvider.setIndex(_tabController.index);
+      }
+    });
+
     SharedPreferencesUtil().onboardingCompleted = true;
 
     // Navigate uri
-    Uri? navigateToUri;
-    var pageAlias = "home";
-    var homePageIdx = 0;
-    String? detailPageId;
+    // Uri? navigateToUri;
+    // var pageAlias = "home";
+    // var homePageIdx = 0;
+    // String? detailPageId;
 
-    if (widget.navigateToRoute != null && widget.navigateToRoute!.isNotEmpty) {
-      navigateToUri = Uri.tryParse("http://localhost.com${widget.navigateToRoute!}");
-      debugPrint("initState ${navigateToUri?.pathSegments.join("...")}");
-      var segments = navigateToUri?.pathSegments ?? [];
-      if (segments.isNotEmpty) {
-        pageAlias = segments[0];
-      }
-      if (segments.length > 1) {
-        detailPageId = segments[1];
-      }
+    // if (widget.navigateToRoute != null && widget.navigateToRoute!.isNotEmpty) {
+    //   navigateToUri = Uri.tryParse("http://localhost.com${widget.navigateToRoute!}");
+    //   debugPrint("initState ${navigateToUri?.pathSegments.join("...")}");
+    //   var segments = navigateToUri?.pathSegments ?? [];
+    //   if (segments.isNotEmpty) {
+    //     pageAlias = segments[0];
+    //   }
+    //   if (segments.length > 1) {
+    //     detailPageId = segments[1];
+    //   }
 
-      switch (pageAlias) {
-        case "memories":
-          homePageIdx = 2;
-          break;
-        case "apps":
-          homePageIdx = 3;
-          break;
-      }
-    }
+    //   switch (pageAlias) {
+    //     case "memories":
+    //       homePageIdx = 2;
+    //       break;
+    //     case "apps":
+    //       homePageIdx = 3;
+    //       break;
+    //   }
+    // }
 
     // Home controller
-    context.read<HomeProvider>().selectedIndex = homePageIdx;
+    // context.read<HomeProvider>().selectedIndex = homePageIdx;
+    context.read<HomeProvider>().selectedIndex = 0;
     WidgetsBinding.instance.addObserver(this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _initiateApps();
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //   _initiateApps();
 
-      // ForegroundUtil.requestPermissions();
-      if (!PlatformService.isDesktop) {
-        await ForegroundUtil.initializeForegroundService();
-        await ForegroundUtil.startForegroundTask();
-      }
-      if (mounted) {
-        await Provider.of<HomeProvider>(context, listen: false).setUserPeople();
-      }
-      if (mounted) {
-        await Provider.of<CaptureProvider>(context, listen: false)
-            .streamDeviceRecording(device: Provider.of<DeviceProvider>(context, listen: false).connectedDevice);
-      }
+    //   // ForegroundUtil.requestPermissions();
+    //   if (!PlatformService.isDesktop) {
+    //     await ForegroundUtil.initializeForegroundService();
+    //     await ForegroundUtil.startForegroundTask();
+    //   }
+    //   if (mounted) {
+    //     await Provider.of<HomeProvider>(context, listen: false).setUserPeople();
+    //   }
+    //   if (mounted) {
+    //     await Provider.of<CaptureProvider>(context, listen: false)
+    //         .streamDeviceRecording(device: Provider.of<DeviceProvider>(context, listen: false).connectedDevice);
+    //   }
 
-      // Navigate
-      switch (pageAlias) {
-        case "apps":
-          if (detailPageId != null && detailPageId.isNotEmpty) {
-            var app = await context.read<AppProvider>().getAppFromId(detailPageId);
-            if (app != null && mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AppDetailPage(app: app),
-                ),
-              );
-            }
-          }
-          break;
-        case "chat":
-          print('inside chat alias $detailPageId');
-          if (detailPageId != null && detailPageId.isNotEmpty) {
-            var appId = detailPageId != "omi" ? detailPageId : ''; // omi ~ no select
-            if (mounted) {
-              var appProvider = Provider.of<AppProvider>(context, listen: false);
-              var messageProvider = Provider.of<MessageProvider>(context, listen: false);
-              App? selectedApp;
-              if (appId.isNotEmpty) {
-                selectedApp = await appProvider.getAppFromId(appId);
-              }
-              appProvider.setSelectedChatAppId(appId);
-              await messageProvider.refreshMessages();
-              if (messageProvider.messages.isEmpty) {
-                messageProvider.sendInitialAppMessage(selectedApp);
-              }
-            }
-          } else {
-            if (mounted) {
-              await Provider.of<MessageProvider>(context, listen: false).refreshMessages();
-            }
-          }
-          // Navigate to chat page directly since it's no longer in the tab bar
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatPage(isPivotBottom: false),
-                ),
-              );
-            }
-          });
-          break;
-        case "settings":
-          // Use context from the current widget instead of navigator key for bottom sheet
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              SettingsDrawer.show(context);
-            }
-          });
-          if (detailPageId == 'data-privacy') {
-            MyApp.navigatorKey.currentState?.push(
-              MaterialPageRoute(
-                builder: (context) => const DataPrivacyPage(),
-              ),
-            );
-          }
-          break;
-        case "facts":
-          MyApp.navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (context) => const MemoriesPage(),
-            ),
-          );
-          break;
-        default:
-      }
-    });
+    //   // Navigate
+    //   switch (pageAlias) {
+    //     case "apps":
+    //       if (detailPageId != null && detailPageId.isNotEmpty) {
+    //         var app = await context.read<AppProvider>().getAppFromId(detailPageId);
+    //         if (app != null && mounted) {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(
+    //               builder: (context) => AppDetailPage(app: app),
+    //             ),
+    //           );
+    //         }
+    //       }
+    //       break;
+    //     case "chat":
+    //       print('inside chat alias $detailPageId');
+    //       if (detailPageId != null && detailPageId.isNotEmpty) {
+    //         var appId = detailPageId != "omi" ? detailPageId : ''; // omi ~ no select
+    //         if (mounted) {
+    //           var appProvider = Provider.of<AppProvider>(context, listen: false);
+    //           var messageProvider = Provider.of<MessageProvider>(context, listen: false);
+    //           App? selectedApp;
+    //           if (appId.isNotEmpty) {
+    //             selectedApp = await appProvider.getAppFromId(appId);
+    //           }
+    //           appProvider.setSelectedChatAppId(appId);
+    //           await messageProvider.refreshMessages();
+    //           if (messageProvider.messages.isEmpty) {
+    //             messageProvider.sendInitialAppMessage(selectedApp);
+    //           }
+    //         }
+    //       } else {
+    //         if (mounted) {
+    //           await Provider.of<MessageProvider>(context, listen: false).refreshMessages();
+    //         }
+    //       }
+    //       // Navigate to chat page directly since it's no longer in the tab bar
+    //       WidgetsBinding.instance.addPostFrameCallback((_) {
+    //         if (mounted) {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(
+    //               builder: (context) => const ChatPage(isPivotBottom: false),
+    //             ),
+    //           );
+    //         }
+    //       });
+    //       break;
+    //     case "settings":
+    //       // Use context from the current widget instead of navigator key for bottom sheet
+    //       WidgetsBinding.instance.addPostFrameCallback((_) {
+    //         if (mounted) {
+    //           SettingsDrawer.show(context);
+    //         }
+    //       });
+    //       if (detailPageId == 'data-privacy') {
+    //         MyApp.navigatorKey.currentState?.push(
+    //           MaterialPageRoute(
+    //             builder: (context) => const DataPrivacyPage(),
+    //           ),
+    //         );
+    //       }
+    //       break;
+    //     case "facts":
+    //       MyApp.navigatorKey.currentState?.push(
+    //         MaterialPageRoute(
+    //           builder: (context) => const MemoriesPage(),
+    //         ),
+    //       );
+    //       break;
+    //     default:
+    //   }
+    // });
 
     _listenToMessagesFromNotification();
     super.initState();
@@ -324,122 +345,89 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, _) {
-        return Scaffold(
+   return Scaffold(
           backgroundColor: Theme.of(context).colorScheme.primary,
-          appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
-          body: DefaultTabController(
-            length: 4,
-            initialIndex: homeProvider.selectedIndex,
-            child: GestureDetector(
-              onTap: () {
-                primaryFocus?.unfocus();
-                // context.read<HomeProvider>().memoryFieldFocusNode.unfocus();
-                // context.read<HomeProvider>().chatFieldFocusNode.unfocus();
-              },
-              child: Consumer2<HomeProvider, DeviceProvider>(
-                builder: (context, home, _, child) {
-                  // if (home.isChatFieldFocused ||
-                  //     home.isConvoSearchFieldFocused ||
-                  //     home.isAppsSearchFieldFocused ||
-                  //     home.isMemoriesSearchFieldFocused) {
-                  //   return const SizedBox.shrink();
-                  // } else {
-                  //   ;
-                  // }
-                  Widget buildTabItem({
-                    required int index,
-                    required String label,
-                    required String normalAsset,
-                    required String selectedAsset,
-                    required String analyticsName,
-                  }) {
-                    final isActive = home.selectedIndex == index;
-                    return Expanded(
-                      flex: 1,
-                      child: MPHomeTabItemWidget(
-                        assetPath: isActive ? selectedAsset : normalAsset,
-                        label: label,
-                        iconSize: 24,
-                        spacing: 6,
-                        isActive: isActive,
-                        useTint: false,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          MixpanelManager().bottomNavigationTabClicked(analyticsName);
-                          primaryFocus?.unfocus();
-                          if (isActive) {
-                            _selectedTab(index);
-                            return;
-                          }
-                          home.setIndex(index);
-                        },
-                      ),
-                    );
-                  }
-
-                  return Stack(
-                    children: [
-                      // Pages
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 90), // Reserve space for bottom nav
-                        child: IndexedStack(
-                          index: home.selectedIndex,
-                          children: _pages,
-                        ),
-                      ),
-                      // Bottom Navigation Bar
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: double.infinity,
-                          height: 90,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                              // color: Color.fromARGB(255, 15, 15, 15),
-                              color: Colors.white),
-                          child: Row(
-                            children: [
-                              buildTabItem(
-                                index: 0,
-                                label: '记忆',
-                                normalAsset: Assets.images.tabMemoryNormal.path,
-                                selectedAsset: Assets.images.tabMemorySelect.path,
-                                analyticsName: 'Home',
-                              ),
-                              buildTabItem(
-                                index: 1,
-                                label: '灵感',
-                                normalAsset: Assets.images.tabMemoNormal.path,
-                                selectedAsset: Assets.images.tabMemoSelect.path,
-                                analyticsName: 'Action Items',
-                              ),
-                              buildTabItem(
-                                index: 2,
-                                label: 'AI助理',
-                                normalAsset: Assets.images.tabAiNormal.path,
-                                selectedAsset: Assets.images.tabAiSelect.path,
-                                analyticsName: 'Memories',
-                              ),
-                              buildTabItem(
-                                index: 3,
-                                label: '任务',
-                                normalAsset: Assets.images.tabSetNormal.path,
-                                selectedAsset: Assets.images.tabSetSelect.path,
-                                analyticsName: 'Apps',
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
+          body: GestureDetector(
+            onTap: () {
+              primaryFocus?.unfocus();
+            },
+            child: TabBarView(
+              controller: _tabController,
+              children: _pages,
             ),
           ),
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            width: double.infinity,
+            color: Colors.white,
+            child: Consumer<HomeProvider>(
+      builder: (context, homeProvider, _) {
+        // Sync TabController with HomeProvider when tab is tapped
+        // if (_tabController.index != homeProvider.selectedIndex) {
+        //   _tabController.animateTo(homeProvider.selectedIndex);
+        // }
+
+        return TabBar(
+              controller: _tabController,
+              onTap: (index) {
+                HapticFeedback.mediumImpact();
+                final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
+                MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
+                primaryFocus?.unfocus();
+                // Update provider index
+                homeProvider.setIndex(index);
+                // Scroll to top if already selected
+                // if (homeProvider.selectedIndex == index) {
+                //   _selectedTab(index);
+                // }
+              },
+              indicator: const BoxDecoration(), // Remove default indicator
+              dividerColor: Colors.transparent,
+              labelPadding: EdgeInsets.zero,
+              tabs: [
+                _buildCustomTab(
+                  index: 0,
+                  label: '记忆',
+                  normalAsset: Assets.images.tabMemoryNormal.path,
+                  selectedAsset: Assets.images.tabMemorySelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 1,
+                  label: '灵感',
+                  normalAsset: Assets.images.tabMemoNormal.path,
+                  selectedAsset: Assets.images.tabMemoSelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 2,
+                  label: 'AI助理',
+                  normalAsset: Assets.images.tabAiNormal.path,
+                  selectedAsset: Assets.images.tabAiSelect.path,
+                  homeProvider: homeProvider,
+                ),
+                _buildCustomTab(
+                  index: 3,
+                  label: '任务',
+                  normalAsset: Assets.images.tabSetNormal.path,
+                  selectedAsset: Assets.images.tabSetSelect.path,
+                  homeProvider: homeProvider,
+                ),
+              ],
+            );
+      },
+    ),
+          ),
         );
+
+    return Consumer<HomeProvider>(
+      builder: (context, homeProvider, _) {
+        // Sync TabController with HomeProvider when tab is tapped
+        if (_tabController.index != homeProvider.selectedIndex) {
+          _tabController.animateTo(homeProvider.selectedIndex);
+        }
+
+        ;
       },
     );
     // return MyUpgradeAlert(
@@ -798,173 +786,200 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   //   }
   // }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      automaticallyImplyLeading: false,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const BatteryInfoWidget(),
-          const SizedBox.shrink(),
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFB8860B).withValues(alpha: 0.5),
-                      const Color(0xFFCD853F).withValues(alpha: 0.5),
-                      const Color(0xFFB8860B).withValues(alpha: 0.5),
-                    ],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.15),
-                      blurRadius: 6,
-                      spreadRadius: 0.5,
-                    ),
-                  ],
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    FontAwesomeIcons.gift,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    MixpanelManager().pageOpened('Referral Program');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ReferralPage(),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                width: 36,
-                height: 36,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1F1F25),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  icon: const Icon(
-                    FontAwesomeIcons.gear,
-                    size: 16,
-                    color: Colors.white70,
-                  ),
-                  onPressed: () {
-                    HapticFeedback.mediumImpact();
-                    MixpanelManager().pageOpened('Settings');
-                    String language = SharedPreferencesUtil().userPrimaryLanguage;
-                    bool hasSpeech = SharedPreferencesUtil().hasSpeakerProfile;
-                    String transcriptModel = SharedPreferencesUtil().transcriptionModel;
-                    SettingsDrawer.show(context);
-                    if (language != SharedPreferencesUtil().userPrimaryLanguage ||
-                        hasSpeech != SharedPreferencesUtil().hasSpeakerProfile ||
-                        transcriptModel != SharedPreferencesUtil().transcriptionModel) {
-                      if (context.mounted) {
-                        context.read<CaptureProvider>().onRecordProfileSettingChanged();
-                      }
-                    }
-                  },
-                ),
-              ),
-              // Chat Button - Only show on home page (index 0)
-              Consumer<HomeProvider>(
-                builder: (context, provider, child) {
-                  if (provider.selectedIndex == 0) {
-                    return GestureDetector(
-                      onTap: () {
-                        HapticFeedback.mediumImpact();
-                        MixpanelManager().bottomNavigationTabClicked('Chat');
-                        // Navigate to chat page
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChatPage(isPivotBottom: false),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        height: 36,
-                        margin: const EdgeInsets.only(left: 8),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                              Colors.purpleAccent.withValues(alpha: 0.2),
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                              Colors.purpleAccent.withValues(alpha: 0.2),
-                              Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Container(
-                          margin: const EdgeInsets.all(0.5),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(17.5),
-                            border: Border.all(
-                              color: Colors.pink.withValues(alpha: 0.3),
-                              width: 0.5,
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                FontAwesomeIcons.solidComment,
-                                size: 14,
-                                color: Colors.white70,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'Chat',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  } else {
-                    return const SizedBox.shrink();
-                  }
-                },
-              ),
-            ],
-          ),
-        ],
+  Widget _buildCustomTab({
+    required int index,
+    required String label,
+    required String normalAsset,
+    required String selectedAsset,
+    required HomeProvider homeProvider,
+  }) {
+    final isActive = homeProvider.selectedIndex == index;
+    return Tab(
+      child: MPHomeTabItemWidget(
+        assetPath: isActive ? selectedAsset : normalAsset,
+        label: label,
+        iconSize: 24,
+        spacing: 6,
+        isActive: isActive,
+        useTint: false,
+        onTap: null, // TabBar handles tap
       ),
-      elevation: 0,
-      centerTitle: true,
     );
   }
 
+  // PreferredSizeWidget _buildAppBar(BuildContext context) {
+  //   return AppBar(
+  //     automaticallyImplyLeading: false,
+  //     backgroundColor: Theme.of(context).colorScheme.primary,
+  //     systemOverlayStyle: SystemUiOverlayStyle(
+  //       statusBarColor: Theme.of(context).colorScheme.primary,
+  //       statusBarIconBrightness: Brightness.light,
+  //       statusBarBrightness: Brightness.dark,
+  //     ),
+  //     title: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         const BatteryInfoWidget(),
+  //         const SizedBox.shrink(),
+  //         Row(
+  //           children: [
+  //             Container(
+  //               width: 36,
+  //               height: 36,
+  //               decoration: BoxDecoration(
+  //                 gradient: LinearGradient(
+  //                   begin: Alignment.topLeft,
+  //                   end: Alignment.bottomRight,
+  //                   colors: [
+  //                     const Color(0xFFB8860B).withValues(alpha: 0.5),
+  //                     const Color(0xFFCD853F).withValues(alpha: 0.5),
+  //                     const Color(0xFFB8860B).withValues(alpha: 0.5),
+  //                   ],
+  //                 ),
+  //                 shape: BoxShape.circle,
+  //                 boxShadow: [
+  //                   BoxShadow(
+  //                     color: Colors.amber.withOpacity(0.15),
+  //                     blurRadius: 6,
+  //                     spreadRadius: 0.5,
+  //                   ),
+  //                 ],
+  //               ),
+  //               child: IconButton(
+  //                 padding: EdgeInsets.zero,
+  //                 icon: const Icon(
+  //                   FontAwesomeIcons.gift,
+  //                   size: 16,
+  //                   color: Colors.white,
+  //                 ),
+  //                 onPressed: () {
+  //                   HapticFeedback.mediumImpact();
+  //                   MixpanelManager().pageOpened('Referral Program');
+  //                   Navigator.push(
+  //                     context,
+  //                     MaterialPageRoute(
+  //                       builder: (context) => const ReferralPage(),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //             const SizedBox(width: 8),
+  //             Container(
+  //               width: 36,
+  //               height: 36,
+  //               decoration: const BoxDecoration(
+  //                 color: Color(0xFF1F1F25),
+  //                 shape: BoxShape.circle,
+  //               ),
+  //               child: IconButton(
+  //                 padding: EdgeInsets.zero,
+  //                 icon: const Icon(
+  //                   FontAwesomeIcons.gear,
+  //                   size: 16,
+  //                   color: Colors.white70,
+  //                 ),
+  //                 onPressed: () {
+  //                   HapticFeedback.mediumImpact();
+  //                   MixpanelManager().pageOpened('Settings');
+  //                   String language = SharedPreferencesUtil().userPrimaryLanguage;
+  //                   bool hasSpeech = SharedPreferencesUtil().hasSpeakerProfile;
+  //                   String transcriptModel = SharedPreferencesUtil().transcriptionModel;
+  //                   SettingsDrawer.show(context);
+  //                   if (language != SharedPreferencesUtil().userPrimaryLanguage ||
+  //                       hasSpeech != SharedPreferencesUtil().hasSpeakerProfile ||
+  //                       transcriptModel != SharedPreferencesUtil().transcriptionModel) {
+  //                     if (context.mounted) {
+  //                       context.read<CaptureProvider>().onRecordProfileSettingChanged();
+  //                     }
+  //                   }
+  //                 },
+  //               ),
+  //             ),
+  //             // Chat Button - Only show on home page (index 0)
+  //             Consumer<HomeProvider>(
+  //               builder: (context, provider, child) {
+  //                 if (provider.selectedIndex == 0) {
+  //                   return GestureDetector(
+  //                     onTap: () {
+  //                       HapticFeedback.mediumImpact();
+  //                       MixpanelManager().bottomNavigationTabClicked('Chat');
+  //                       // Navigate to chat page
+  //                       Navigator.push(
+  //                         context,
+  //                         MaterialPageRoute(
+  //                           builder: (context) => const ChatPage(isPivotBottom: false),
+  //                         ),
+  //                       );
+  //                     },
+  //                     child: Container(
+  //                       height: 36,
+  //                       margin: const EdgeInsets.only(left: 8),
+  //                       decoration: BoxDecoration(
+  //                         borderRadius: BorderRadius.circular(18),
+  //                         gradient: LinearGradient(
+  //                           colors: [
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                             Colors.purpleAccent.withValues(alpha: 0.2),
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                             Colors.purpleAccent.withValues(alpha: 0.2),
+  //                             Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                           ],
+  //                           begin: Alignment.topLeft,
+  //                           end: Alignment.bottomRight,
+  //                         ),
+  //                       ),
+  //                       child: Container(
+  //                         margin: const EdgeInsets.all(0.5),
+  //                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+  //                         decoration: BoxDecoration(
+  //                           color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
+  //                           borderRadius: BorderRadius.circular(17.5),
+  //                           border: Border.all(
+  //                             color: Colors.pink.withValues(alpha: 0.3),
+  //                             width: 0.5,
+  //                           ),
+  //                         ),
+  //                         child: const Row(
+  //                           mainAxisSize: MainAxisSize.min,
+  //                           children: [
+  //                             Icon(
+  //                               FontAwesomeIcons.solidComment,
+  //                               size: 14,
+  //                               color: Colors.white70,
+  //                             ),
+  //                             SizedBox(width: 6),
+  //                             Text(
+  //                               'Chat',
+  //                               style: TextStyle(
+  //                                 color: Colors.white70,
+  //                                 fontSize: 14,
+  //                                 fontWeight: FontWeight.w500,
+  //                               ),
+  //                             ),
+  //                           ],
+  //                         ),
+  //                       ),
+  //                     ),
+  //                   );
+  //                 } else {
+  //                   return const SizedBox.shrink();
+  //                 }
+  //               },
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //     elevation: 0,
+  //     centerTitle: true,
+  //   );
+  // }
+
   @override
   void dispose() {
+    _tabController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     ForegroundUtil.stopForegroundTask();
     super.dispose();

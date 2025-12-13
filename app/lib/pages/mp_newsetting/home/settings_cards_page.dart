@@ -28,8 +28,11 @@ class SettingsCardsPage extends StatefulWidget {
   State<SettingsCardsPage> createState() => SettingsCardsPageState();
 }
 
-class SettingsCardsPageState extends State<SettingsCardsPage> {
+class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -62,6 +65,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Important! Call super.build
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
         return Scaffold(
