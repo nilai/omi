@@ -331,74 +331,60 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
           initialIndex: homeProvider.selectedIndex,
           child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.primary,
-            // appBar: _buildAppBar(context),
             body: GestureDetector(
               onTap: () {
                 primaryFocus?.unfocus();
               },
-              child: Column(
-                children: [
-                  // TabBarView for pages
-                  Expanded(
-                    child: TabBarView(
-                      physics: const NeverScrollableScrollPhysics(), // Disable swipe
-                      children: _pages,
-                    ),
+              child: TabBarView(children: _pages),
+            ),
+            bottomNavigationBar: Container(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              width: double.infinity,
+              color: Colors.white,
+              child: TabBar(
+                onTap: (index) {
+                  HapticFeedback.mediumImpact();
+                  final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
+                  MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
+                  primaryFocus?.unfocus();
+                  // Update provider index
+                  context.read<HomeProvider>().setIndex(index);
+                  // Scroll to top if already selected
+                  if (homeProvider.selectedIndex == index) {
+                    _selectedTab(index);
+                  }
+                },
+                indicator: const BoxDecoration(), // Remove default indicator
+                dividerColor: Colors.transparent,
+                labelPadding: EdgeInsets.zero,
+                tabs: [
+                  _buildCustomTab(
+                    index: 0,
+                    label: '记忆',
+                    normalAsset: Assets.images.tabMemoryNormal.path,
+                    selectedAsset: Assets.images.tabMemorySelect.path,
+                    homeProvider: homeProvider,
                   ),
-                  // Custom Bottom TabBar
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                    ),
-                    child: TabBar(
-                      onTap: (index) {
-                        HapticFeedback.mediumImpact();
-                        final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
-                        MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
-                        primaryFocus?.unfocus();
-                        // Update provider index
-                        context.read<HomeProvider>().setIndex(index);
-                        // Scroll to top if already selected
-                        if (homeProvider.selectedIndex == index) {
-                          _selectedTab(index);
-                        }
-                      },
-                      indicator: const BoxDecoration(), // Remove default indicator
-                      dividerColor: Colors.transparent,
-                      labelPadding: EdgeInsets.zero,
-                      tabs: [
-                        _buildCustomTab(
-                          index: 0,
-                          label: '记忆',
-                          normalAsset: Assets.images.tabMemoryNormal.path,
-                          selectedAsset: Assets.images.tabMemorySelect.path,
-                          homeProvider: homeProvider,
-                        ),
-                        _buildCustomTab(
-                          index: 1,
-                          label: '灵感',
-                          normalAsset: Assets.images.tabMemoNormal.path,
-                          selectedAsset: Assets.images.tabMemoSelect.path,
-                          homeProvider: homeProvider,
-                        ),
-                        _buildCustomTab(
-                          index: 2,
-                          label: 'AI助理',
-                          normalAsset: Assets.images.tabAiNormal.path,
-                          selectedAsset: Assets.images.tabAiSelect.path,
-                          homeProvider: homeProvider,
-                        ),
-                        _buildCustomTab(
-                          index: 3,
-                          label: '任务',
-                          normalAsset: Assets.images.tabSetNormal.path,
-                          selectedAsset: Assets.images.tabSetSelect.path,
-                          homeProvider: homeProvider,
-                        ),
-                      ],
-                    ),
+                  _buildCustomTab(
+                    index: 1,
+                    label: '灵感',
+                    normalAsset: Assets.images.tabMemoNormal.path,
+                    selectedAsset: Assets.images.tabMemoSelect.path,
+                    homeProvider: homeProvider,
+                  ),
+                  _buildCustomTab(
+                    index: 2,
+                    label: 'AI助理',
+                    normalAsset: Assets.images.tabAiNormal.path,
+                    selectedAsset: Assets.images.tabAiSelect.path,
+                    homeProvider: homeProvider,
+                  ),
+                  _buildCustomTab(
+                    index: 3,
+                    label: '任务',
+                    normalAsset: Assets.images.tabSetNormal.path,
+                    selectedAsset: Assets.images.tabSetSelect.path,
+                    homeProvider: homeProvider,
                   ),
                 ],
               ),
