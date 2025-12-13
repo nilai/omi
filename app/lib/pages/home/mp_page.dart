@@ -80,7 +80,6 @@ class _MPPageContentState extends State<MPPageContent> {
           body: SafeArea(
             child: Column(
               children: [
-                _buildHeader(context, provider),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: MPHomeUploadWidget(
