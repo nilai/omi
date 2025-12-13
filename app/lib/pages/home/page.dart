@@ -326,116 +326,82 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   Widget build(BuildContext context) {
     return Consumer<HomeProvider>(
       builder: (context, homeProvider, _) {
-        return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
-          body: DefaultTabController(
-            length: 4,
-            initialIndex: homeProvider.selectedIndex,
-            child: GestureDetector(
+        return DefaultTabController(
+          length: 4,
+          initialIndex: homeProvider.selectedIndex,
+          child: Scaffold(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            appBar: homeProvider.selectedIndex == 5 ? null : _buildAppBar(context),
+            body: GestureDetector(
               onTap: () {
                 primaryFocus?.unfocus();
-                // context.read<HomeProvider>().memoryFieldFocusNode.unfocus();
-                // context.read<HomeProvider>().chatFieldFocusNode.unfocus();
               },
-              child: Consumer2<HomeProvider, DeviceProvider>(
-                builder: (context, home, _, child) {
-                  // if (home.isChatFieldFocused ||
-                  //     home.isConvoSearchFieldFocused ||
-                  //     home.isAppsSearchFieldFocused ||
-                  //     home.isMemoriesSearchFieldFocused) {
-                  //   return const SizedBox.shrink();
-                  // } else {
-                  //   ;
-                  // }
-                  Widget buildTabItem({
-                    required int index,
-                    required String label,
-                    required String normalAsset,
-                    required String selectedAsset,
-                    required String analyticsName,
-                  }) {
-                    final isActive = home.selectedIndex == index;
-                    return Expanded(
-                      flex: 1,
-                      child: MPHomeTabItemWidget(
-                        assetPath: isActive ? selectedAsset : normalAsset,
-                        label: label,
-                        iconSize: 24,
-                        spacing: 6,
-                        isActive: isActive,
-                        useTint: false,
-                        onTap: () {
-                          HapticFeedback.mediumImpact();
-                          MixpanelManager().bottomNavigationTabClicked(analyticsName);
-                          primaryFocus?.unfocus();
-                          if (isActive) {
-                            _selectedTab(index);
-                            return;
-                          }
-                          home.setIndex(index);
-                        },
-                      ),
-                    );
-                  }
-
-                  return Stack(
-                    children: [
-                      // Pages
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 90), // Reserve space for bottom nav
-                        child: IndexedStack(
-                          index: home.selectedIndex,
-                          children: _pages,
+              child: Column(
+                children: [
+                  // TabBarView for pages
+                  Expanded(
+                    child: TabBarView(
+                      physics: const NeverScrollableScrollPhysics(), // Disable swipe
+                      children: _pages,
+                    ),
+                  ),
+                  // Custom Bottom TabBar
+                  Container(
+                    width: double.infinity,
+                    height: 90,
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                    ),
+                    child: TabBar(
+                      onTap: (index) {
+                        HapticFeedback.mediumImpact();
+                        final analyticsNames = ['Home', 'Action Items', 'Memories', 'Apps'];
+                        MixpanelManager().bottomNavigationTabClicked(analyticsNames[index]);
+                        primaryFocus?.unfocus();
+                        // Update provider index
+                        context.read<HomeProvider>().setIndex(index);
+                        // Scroll to top if already selected
+                        if (homeProvider.selectedIndex == index) {
+                          _selectedTab(index);
+                        }
+                      },
+                      indicator: const BoxDecoration(), // Remove default indicator
+                      dividerColor: Colors.transparent,
+                      labelPadding: EdgeInsets.zero,
+                      tabs: [
+                        _buildCustomTab(
+                          index: 0,
+                          label: '记忆',
+                          normalAsset: Assets.images.tabMemoryNormal.path,
+                          selectedAsset: Assets.images.tabMemorySelect.path,
+                          homeProvider: homeProvider,
                         ),
-                      ),
-                      // Bottom Navigation Bar
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: double.infinity,
-                          height: 90,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          decoration: const BoxDecoration(
-                              // color: Color.fromARGB(255, 15, 15, 15),
-                              color: Colors.white),
-                          child: Row(
-                            children: [
-                              buildTabItem(
-                                index: 0,
-                                label: '记忆',
-                                normalAsset: Assets.images.tabMemoryNormal.path,
-                                selectedAsset: Assets.images.tabMemorySelect.path,
-                                analyticsName: 'Home',
-                              ),
-                              buildTabItem(
-                                index: 1,
-                                label: '灵感',
-                                normalAsset: Assets.images.tabMemoNormal.path,
-                                selectedAsset: Assets.images.tabMemoSelect.path,
-                                analyticsName: 'Action Items',
-                              ),
-                              buildTabItem(
-                                index: 2,
-                                label: 'AI助理',
-                                normalAsset: Assets.images.tabAiNormal.path,
-                                selectedAsset: Assets.images.tabAiSelect.path,
-                                analyticsName: 'Memories',
-                              ),
-                              buildTabItem(
-                                index: 3,
-                                label: '任务',
-                                normalAsset: Assets.images.tabSetNormal.path,
-                                selectedAsset: Assets.images.tabSetSelect.path,
-                                analyticsName: 'Apps',
-                              ),
-                            ],
-                          ),
+                        _buildCustomTab(
+                          index: 1,
+                          label: '灵感',
+                          normalAsset: Assets.images.tabMemoNormal.path,
+                          selectedAsset: Assets.images.tabMemoSelect.path,
+                          homeProvider: homeProvider,
                         ),
-                      ),
-                    ],
-                  );
-                },
+                        _buildCustomTab(
+                          index: 2,
+                          label: 'AI助理',
+                          normalAsset: Assets.images.tabAiNormal.path,
+                          selectedAsset: Assets.images.tabAiSelect.path,
+                          homeProvider: homeProvider,
+                        ),
+                        _buildCustomTab(
+                          index: 3,
+                          label: '任务',
+                          normalAsset: Assets.images.tabSetNormal.path,
+                          selectedAsset: Assets.images.tabSetSelect.path,
+                          homeProvider: homeProvider,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -797,6 +763,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   //     }
   //   }
   // }
+
+  Widget _buildCustomTab({
+    required int index,
+    required String label,
+    required String normalAsset,
+    required String selectedAsset,
+    required HomeProvider homeProvider,
+  }) {
+    final isActive = homeProvider.selectedIndex == index;
+    return Tab(
+      child: MPHomeTabItemWidget(
+        assetPath: isActive ? selectedAsset : normalAsset,
+        label: label,
+        iconSize: 24,
+        spacing: 6,
+        isActive: isActive,
+        useTint: false,
+        onTap: null, // TabBar handles tap
+      ),
+    );
+  }
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
