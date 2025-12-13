@@ -334,7 +334,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               theme: ThemeData(
                   useMaterial3: false,
                   colorScheme: const ColorScheme.dark(
-                    primary: Colors.black,
+                    // primary: Colors.black,
+                    primary: Color(0xFFF9FAFB),
                     secondary: Colors.deepPurple,
                     surface: Colors.black38,
                   ),
