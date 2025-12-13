@@ -50,32 +50,29 @@ class MPHomeTabItemWidget extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: iconSize,
-              height: iconSize,
-              child: Image.asset(
-                assetPath,
-                fit: BoxFit.contain,
-                color: iconColor,
-                colorBlendMode: useTint ? BlendMode.srcIn : null,
-              ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: iconSize,
+            height: iconSize,
+            child: Image.asset(
+              assetPath,
+              fit: BoxFit.contain,
+              color: iconColor,
+              colorBlendMode: useTint ? BlendMode.srcIn : null,
             ),
-            SizedBox(height: spacing),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: textColor,
-              ),
+          ),
+          SizedBox(height: spacing),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: textColor,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
