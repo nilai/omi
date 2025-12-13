@@ -331,7 +331,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
           initialIndex: homeProvider.selectedIndex,
           child: Scaffold(
             backgroundColor: Theme.of(context).colorScheme.primary,
-            appBar: _buildAppBar(context),
+            // appBar: _buildAppBar(context),
             body: GestureDetector(
               onTap: () {
                 primaryFocus?.unfocus();
