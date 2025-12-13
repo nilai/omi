@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/mp_center_popup.dart';
+import '../mp_popup/record_audio_option_card.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
@@ -209,9 +210,9 @@ class _MPPageContentState extends State<MPPageContent> {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFE0E0E0),
+                color:  Color(0xFFE0E0E0),
               ),
               child: const Icon(
                 Icons.circle,
@@ -263,7 +264,7 @@ class _MPPageContentState extends State<MPPageContent> {
             // Add icon
             IconButton(
               icon: const Icon(Icons.add, color: Color(0xFF111111)),
-              onPressed: provider.onAddTap,
+              onPressed: () => _showAddRecordDialog(context, provider),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
@@ -285,6 +286,14 @@ class _MPPageContentState extends State<MPPageContent> {
                  
                   ),
                 );
+  }
+
+  Future<void> _showAddRecordDialog(BuildContext context, MPHomePageProvider provider) async {
+    RecordAudioOptionCard.show(context: context, onImportAudio: () {
+      
+    },onStartRecording: () {
+      
+    },);
   }
 
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
@@ -409,9 +418,6 @@ class MPHomePageProvider extends ChangeNotifier {
     debugPrint('Search tapped');
   }
 
-  void onAddTap() {
-    debugPrint('Add tapped');
-  }
 
   void onCardMore(MPMemoryItem item) {
     debugPrint('More tapped for ${item.headerText}');
