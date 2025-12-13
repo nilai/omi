@@ -132,6 +132,9 @@ class MPSummaryMemoryStruct {
   @JsonKey(name: 'participants')
   final List<MPSpeakerStruct> participants;
 
+  @JsonKey(name: 'participants_cnt')
+  final int participants_cnt;
+
   @JsonKey(name: 'record_url')
   final String recordUrl;
 
@@ -150,6 +153,7 @@ class MPSummaryMemoryStruct {
     required this.summary,
     required this.transcript,
     required this.todos,
+    required this.participants_cnt,
   });
 
   factory MPSummaryMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPSummaryMemoryStructFromJson(json);
@@ -433,9 +437,17 @@ class MPSpeakerWithDetailStruct {
   @JsonKey(name: 'summary')
   final String summary;
 
+  @JsonKey(name: 'last_memory_at')
+  final int last_memory_at;
+
+  @JsonKey(name: 'memory_total')
+  final int memory_total;
+
   MPSpeakerWithDetailStruct({
     required this.speaker,
     required this.summary,
+    required this.last_memory_at,
+    required this.memory_total,
   });
 
   factory MPSpeakerWithDetailStruct.fromJson(Map<String, dynamic> json) => _$MPSpeakerWithDetailStructFromJson(json);

@@ -1,5 +1,6 @@
 // AI-generated START - 对话摘要卡片组件，显示对话的标题、摘要和详细信息
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 对话摘要卡片组件
 /// 显示对话标题、摘要内容、日期、时长和参与人数等信息
@@ -76,18 +77,9 @@ class ConversationSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8.0),
                 // AI-generated START - 音频图标
-                Container(
+                Assets.images.mpMemoryDetailRadio.image(
                   width: 32.0,
                   height: 32.0,
-                  decoration: BoxDecoration(
-                    color: Colors.lightBlue.shade100,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.volume_up,
-                    color: Colors.white,
-                    size: 18.0,
-                  ),
                 ),
                 // AI-generated END - 音频图标
               ],
@@ -117,10 +109,9 @@ class ConversationSummaryCard extends StatelessWidget {
                 // AI-generated START - 日期
                 Row(
                   children: [
-                    Icon(
-                      Icons.calendar_today,
-                      size: 16.0,
-                      color: Colors.grey.shade600,
+                    Assets.images.mpMemoryDetailTime.image(
+                      width: 16.0,
+                      height: 16.0,
                     ),
                     const SizedBox(width: 4.0),
                     Text(
@@ -139,10 +130,9 @@ class ConversationSummaryCard extends StatelessWidget {
                 // AI-generated START - 时长
                 Row(
                   children: [
-                    Icon(
-                      Icons.access_time,
-                      size: 16.0,
-                      color: Colors.grey.shade600,
+                    Assets.images.mpMemoryDetailHistory.image(
+                      width: 16.0,
+                      height: 16.0,
                     ),
                     const SizedBox(width: 4.0),
                     Text(
@@ -161,10 +151,9 @@ class ConversationSummaryCard extends StatelessWidget {
                 // AI-generated START - 参与人数
                 Row(
                   children: [
-                    Icon(
-                      Icons.people_outline,
-                      size: 16.0,
-                      color: Colors.grey.shade600,
+                    Assets.images.mpMemoryDetailPeople.image(
+                      width: 16.0,
+                      height: 16.0,
                     ),
                     const SizedBox(width: 4.0),
                     Text(
@@ -181,10 +170,9 @@ class ConversationSummaryCard extends StatelessWidget {
                 const Spacer(),
 
                 // AI-generated START - 右箭头
-                Icon(
-                  Icons.chevron_right,
-                  color: Colors.grey.shade400,
-                  size: 20.0,
+                Assets.images.settingRightArrow1.image(
+                  width: 20.0,
+                  height: 20.0,
                 ),
                 // AI-generated END - 右箭头
               ],
@@ -201,14 +189,13 @@ class ConversationSummaryCard extends StatelessWidget {
     final minutes = seconds ~/ 60;
     final remainingSeconds = seconds % 60;
     if (minutes > 0 && remainingSeconds > 0) {
-      return '${minutes}分${remainingSeconds}秒';
+      return '$minutes分$remainingSeconds秒';
     } else if (minutes > 0) {
-      return '${minutes}分钟';
+      return '$minutes分钟';
     } else {
-      return '${remainingSeconds}秒';
+      return '$remainingSeconds秒';
     }
   }
   // AI-generated END - _formatDuration
 }
 // AI-generated END - conversation_summary_card.dart
-

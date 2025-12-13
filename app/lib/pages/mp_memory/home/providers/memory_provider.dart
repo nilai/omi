@@ -9,11 +9,10 @@ class CharacterMemoryItem {
   const CharacterMemoryItem({
     required this.id,
     required this.name,
-    required this.description,
-    required this.createdAt,
+    this.description,
+    this.createdAt,
     required this.conversationCount,
     this.avatarUrl,
-    this.avatarBackgroundColor,
     this.updatedAt,
   });
   // AI-generated END - 构造函数
@@ -25,22 +24,19 @@ class CharacterMemoryItem {
   final String name;
 
   /// 记忆描述
-  final String description;
+  final String? description;
 
   /// 创建时间
-  final DateTime createdAt;
+  final int? createdAt;
 
   /// 更新时间
-  final DateTime? updatedAt;
+  final int? updatedAt;
 
   /// 对话次数
   final int conversationCount;
 
   /// 头像URL
   final String? avatarUrl;
-
-  /// 头像背景颜色
-  final Color? avatarBackgroundColor;
 }
 
 /// 记忆中心状态管理Provider
@@ -98,18 +94,6 @@ class MemoryProvider with ChangeNotifier {
   String get searchQuery => _searchQuery;
   // AI-generated END - searchQuery
 
-  // AI-generated START - 获取过滤后的人物记忆列表
-  List<CharacterMemoryItem> get filteredMemories {
-    if (_searchQuery.isEmpty) {
-      return _memories;
-    }
-    return _memories.where((memory) {
-      return memory.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          memory.description.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-  }
-  // AI-generated END - filteredMemories
-
   // AI-generated START - 设置加载状态
   void setLoading(bool loading) {
     _isLoading = loading;
@@ -161,10 +145,9 @@ class MemoryProvider with ChangeNotifier {
             id: speaker.id,
             name: speaker.name,
             description: speakerWithDetail.summary,
-            createdAt: DateTime.now(), // API 可能没有返回创建时间，使用当前时间
-            conversationCount: 0, // API 可能没有返回对话次数，使用默认值
+            createdAt: speakerWithDetail.last_memory_at,
+            conversationCount: speakerWithDetail.memory_total,
             avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
-            avatarBackgroundColor: _getColorFromString(speaker.id),
           );
         }).toList();
 
@@ -212,10 +195,9 @@ class MemoryProvider with ChangeNotifier {
             id: speaker.id,
             name: speaker.name,
             description: speakerWithDetail.summary,
-            createdAt: DateTime.now(), // API 可能没有返回创建时间，使用当前时间
-            conversationCount: 0, // API 可能没有返回对话次数，使用默认值
+            createdAt: speakerWithDetail.last_memory_at, // API 可能没有返回创建时间，使用当前时间
+            conversationCount: speakerWithDetail.memory_total, // API 可能没有返回对话次数，使用默认值
             avatarUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
-            avatarBackgroundColor: _getColorFromString(speaker.id),
           );
         }).toList();
 
@@ -241,22 +223,6 @@ class MemoryProvider with ChangeNotifier {
     }
   }
   // AI-generated END - loadMoreMemories
-
-  // AI-generated START - 根据字符串生成颜色
-  /// 根据字符串生成颜色，用于头像背景
-  Color _getColorFromString(String str) {
-    final colors = [
-      Colors.amber,
-      Colors.grey.shade300,
-      Colors.grey.shade400,
-      Colors.blue.shade100,
-      Colors.green.shade100,
-      Colors.purple.shade100,
-    ];
-    final index = str.hashCode % colors.length;
-    return colors[index.abs()];
-  }
-  // AI-generated END - _getColorFromString
 
   // AI-generated START - 添加人物记忆
   void addMemory(CharacterMemoryItem memory) {

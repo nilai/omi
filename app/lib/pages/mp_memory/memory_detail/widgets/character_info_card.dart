@@ -1,5 +1,6 @@
 // AI-generated START - 人物信息卡片组件，显示人物基本信息和对话次数
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 人物信息卡片组件
 /// 显示人物头像、姓名和对话次数
@@ -114,10 +115,9 @@ class CharacterInfoCard extends StatelessWidget {
 
             // AI-generated START - 右侧：箭头（可选）
             if (onTap != null)
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade400,
-                size: 24.0,
+              Assets.images.settingRightArrow1.image(
+                width: 24.0,
+                height: 24.0,
               ),
             // AI-generated END - 右侧：箭头
           ],
