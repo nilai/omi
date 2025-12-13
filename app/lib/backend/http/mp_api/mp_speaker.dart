@@ -5,10 +5,10 @@ import 'package:omi/backend/http/shared.dart';
 import 'package:omi/backend/schema/mp/mp_speaker.dart';
 import 'package:omi/env/env.dart';
 
-// POST /api/v1/spearker/add
+// POST /api/v1/speaker/add
 Future<MPAddSpeakerResponse?> addSpeaker(MPAddSpeakerRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/spearker/add',
+    url: '${Env.apiBaseUrl}api/v1/speaker/add',
     headers: {},
     method: 'POST',
     body: jsonEncode(req.toJson()),
@@ -21,10 +21,10 @@ Future<MPAddSpeakerResponse?> addSpeaker(MPAddSpeakerRequest req) async {
   return null;
 }
 
-// POST /api/v1/spearker/mark
+// POST /api/v1/speaker/mark
 Future<MPMarkSpeakerResponse?> markSpeaker(MPMarkSpeakerRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/spearker/mark',
+    url: '${Env.apiBaseUrl}api/v1/speaker/mark',
     headers: {},
     method: 'POST',
     body: jsonEncode(req.toJson()),
@@ -37,10 +37,10 @@ Future<MPMarkSpeakerResponse?> markSpeaker(MPMarkSpeakerRequest req) async {
   return null;
 }
 
-// GET /api/v1/spearker/get_list
+// GET /api/v1/speaker/get_list
 Future<MPGetSpeakerListResponse?> getSpeakerList(MPGetSpeakerListRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/spearker/get_list?page_size=${req.pageSize}&cursor=${req.cursor}',
+    url: '${Env.apiBaseUrl}api/v1/speaker/get_list?page_size=${req.pageSize}&cursor=${req.cursor}',
     headers: {},
     method: 'GET',
     body: '',
@@ -53,10 +53,10 @@ Future<MPGetSpeakerListResponse?> getSpeakerList(MPGetSpeakerListRequest req) as
   return null;
 }
 
-// GET /api/v1/spearker/get_list_with_detail
+// GET /api/v1/speaker/get_list_with_detail
 Future<MPGetSpeakerListWithDetailResponse?> getSpeakerListWithDetail(MPGetSpeakerListWithDetailRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/spearker/get_list_with_detail?page_size=${req.pageSize}&cursor=${req.cursor}',
+    url: '${Env.apiBaseUrl}api/v1/speaker/get_list_with_detail?page_size=${req.pageSize}&cursor=${req.cursor}',
     headers: {},
     method: 'GET',
     body: '',
@@ -69,10 +69,10 @@ Future<MPGetSpeakerListWithDetailResponse?> getSpeakerListWithDetail(MPGetSpeake
   return null;
 }
 
-// GET /api/v1/spearker/get_detail
+// GET /api/v1/speaker/get_detail
 Future<MPGetSpeakerDetailResponse?> getSpeakerDetail(MPGetSpeakerDetailRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/spearker/get_detail?speaker_id=${req.speakerId}',
+    url: '${Env.apiBaseUrl}api/v1/speaker/get_detail?speaker_id=${req.speakerId}',
     headers: {},
     method: 'GET',
     body: '',
