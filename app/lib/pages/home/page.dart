@@ -97,34 +97,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   }
 
   // 跳转到tab制定页面
-  void _selectedTab(int pageIndex) {
-    switch (pageIndex) {
-      case 0:
-        final mpPageState = _mpPageKey.currentState;
-        if (mpPageState != null) {
-          (mpPageState as dynamic).scrollToTop();
-        }
-        break;
-      case 1:
-        final actionItemsState = _actionItemsPageKey.currentState;
-        if (actionItemsState != null) {
-          (actionItemsState as dynamic).scrollToTop();
-        }
-        break;
-      case 2:
-        final mpChatState = _mpChatPageKey.currentState;
-        if (mpChatState != null) {
-          (mpChatState as dynamic).scrollToTop();
-        }
-        break;
-      case 3:
-        final settingsCardsState = _settingsCardsPageKey.currentState;
-        if (settingsCardsState != null) {
-          settingsCardsState.scrollToTop();
-        }
-        break;
-    }
-  }
+  // void _selectedTab(int pageIndex) {
+  //   switch (pageIndex) {
+  //     case 0:
+  //       final mpPageState = _mpPageKey.currentState;
+  //       if (mpPageState != null) {
+  //         (mpPageState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 1:
+  //       final actionItemsState = _actionItemsPageKey.currentState;
+  //       if (actionItemsState != null) {
+  //         (actionItemsState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 2:
+  //       final mpChatState = _mpChatPageKey.currentState;
+  //       if (mpChatState != null) {
+  //         (mpChatState as dynamic).scrollToTop();
+  //       }
+  //       break;
+  //     case 3:
+  //       final settingsCardsState = _settingsCardsPageKey.currentState;
+  //       if (settingsCardsState != null) {
+  //         settingsCardsState.scrollToTop();
+  //       }
+  //       break;
+  //   }
+  // }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -174,134 +174,135 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   @override
   void initState() {
     _pages = [
-      ConversationsPage(key: _mpPageKey),
+      MPPage(key: _mpPageKey),
       MemoHomePage(key: _actionItemsPageKey),
-      MemoriesPage(key: _mpPageKey),
+      MPChatPage(key: _mpPageKey),
       SettingsCardsPage(key: _settingsCardsPageKey),
     ];
     SharedPreferencesUtil().onboardingCompleted = true;
 
     // Navigate uri
-    Uri? navigateToUri;
-    var pageAlias = "home";
-    var homePageIdx = 0;
-    String? detailPageId;
+    // Uri? navigateToUri;
+    // var pageAlias = "home";
+    // var homePageIdx = 0;
+    // String? detailPageId;
 
-    if (widget.navigateToRoute != null && widget.navigateToRoute!.isNotEmpty) {
-      navigateToUri = Uri.tryParse("http://localhost.com${widget.navigateToRoute!}");
-      debugPrint("initState ${navigateToUri?.pathSegments.join("...")}");
-      var segments = navigateToUri?.pathSegments ?? [];
-      if (segments.isNotEmpty) {
-        pageAlias = segments[0];
-      }
-      if (segments.length > 1) {
-        detailPageId = segments[1];
-      }
+    // if (widget.navigateToRoute != null && widget.navigateToRoute!.isNotEmpty) {
+    //   navigateToUri = Uri.tryParse("http://localhost.com${widget.navigateToRoute!}");
+    //   debugPrint("initState ${navigateToUri?.pathSegments.join("...")}");
+    //   var segments = navigateToUri?.pathSegments ?? [];
+    //   if (segments.isNotEmpty) {
+    //     pageAlias = segments[0];
+    //   }
+    //   if (segments.length > 1) {
+    //     detailPageId = segments[1];
+    //   }
 
-      switch (pageAlias) {
-        case "memories":
-          homePageIdx = 2;
-          break;
-        case "apps":
-          homePageIdx = 3;
-          break;
-      }
-    }
+    //   switch (pageAlias) {
+    //     case "memories":
+    //       homePageIdx = 2;
+    //       break;
+    //     case "apps":
+    //       homePageIdx = 3;
+    //       break;
+    //   }
+    // }
 
     // Home controller
-    context.read<HomeProvider>().selectedIndex = homePageIdx;
+    // context.read<HomeProvider>().selectedIndex = homePageIdx;
+    context.read<HomeProvider>().selectedIndex = 0;
     WidgetsBinding.instance.addObserver(this);
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _initiateApps();
+    // WidgetsBinding.instance.addPostFrameCallback((_) async {
+    //   _initiateApps();
 
-      // ForegroundUtil.requestPermissions();
-      if (!PlatformService.isDesktop) {
-        await ForegroundUtil.initializeForegroundService();
-        await ForegroundUtil.startForegroundTask();
-      }
-      if (mounted) {
-        await Provider.of<HomeProvider>(context, listen: false).setUserPeople();
-      }
-      if (mounted) {
-        await Provider.of<CaptureProvider>(context, listen: false)
-            .streamDeviceRecording(device: Provider.of<DeviceProvider>(context, listen: false).connectedDevice);
-      }
+    //   // ForegroundUtil.requestPermissions();
+    //   if (!PlatformService.isDesktop) {
+    //     await ForegroundUtil.initializeForegroundService();
+    //     await ForegroundUtil.startForegroundTask();
+    //   }
+    //   if (mounted) {
+    //     await Provider.of<HomeProvider>(context, listen: false).setUserPeople();
+    //   }
+    //   if (mounted) {
+    //     await Provider.of<CaptureProvider>(context, listen: false)
+    //         .streamDeviceRecording(device: Provider.of<DeviceProvider>(context, listen: false).connectedDevice);
+    //   }
 
-      // Navigate
-      switch (pageAlias) {
-        case "apps":
-          if (detailPageId != null && detailPageId.isNotEmpty) {
-            var app = await context.read<AppProvider>().getAppFromId(detailPageId);
-            if (app != null && mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AppDetailPage(app: app),
-                ),
-              );
-            }
-          }
-          break;
-        case "chat":
-          print('inside chat alias $detailPageId');
-          if (detailPageId != null && detailPageId.isNotEmpty) {
-            var appId = detailPageId != "omi" ? detailPageId : ''; // omi ~ no select
-            if (mounted) {
-              var appProvider = Provider.of<AppProvider>(context, listen: false);
-              var messageProvider = Provider.of<MessageProvider>(context, listen: false);
-              App? selectedApp;
-              if (appId.isNotEmpty) {
-                selectedApp = await appProvider.getAppFromId(appId);
-              }
-              appProvider.setSelectedChatAppId(appId);
-              await messageProvider.refreshMessages();
-              if (messageProvider.messages.isEmpty) {
-                messageProvider.sendInitialAppMessage(selectedApp);
-              }
-            }
-          } else {
-            if (mounted) {
-              await Provider.of<MessageProvider>(context, listen: false).refreshMessages();
-            }
-          }
-          // Navigate to chat page directly since it's no longer in the tab bar
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatPage(isPivotBottom: false),
-                ),
-              );
-            }
-          });
-          break;
-        case "settings":
-          // Use context from the current widget instead of navigator key for bottom sheet
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              SettingsDrawer.show(context);
-            }
-          });
-          if (detailPageId == 'data-privacy') {
-            MyApp.navigatorKey.currentState?.push(
-              MaterialPageRoute(
-                builder: (context) => const DataPrivacyPage(),
-              ),
-            );
-          }
-          break;
-        case "facts":
-          MyApp.navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (context) => const MemoriesPage(),
-            ),
-          );
-          break;
-        default:
-      }
-    });
+    //   // Navigate
+    //   switch (pageAlias) {
+    //     case "apps":
+    //       if (detailPageId != null && detailPageId.isNotEmpty) {
+    //         var app = await context.read<AppProvider>().getAppFromId(detailPageId);
+    //         if (app != null && mounted) {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(
+    //               builder: (context) => AppDetailPage(app: app),
+    //             ),
+    //           );
+    //         }
+    //       }
+    //       break;
+    //     case "chat":
+    //       print('inside chat alias $detailPageId');
+    //       if (detailPageId != null && detailPageId.isNotEmpty) {
+    //         var appId = detailPageId != "omi" ? detailPageId : ''; // omi ~ no select
+    //         if (mounted) {
+    //           var appProvider = Provider.of<AppProvider>(context, listen: false);
+    //           var messageProvider = Provider.of<MessageProvider>(context, listen: false);
+    //           App? selectedApp;
+    //           if (appId.isNotEmpty) {
+    //             selectedApp = await appProvider.getAppFromId(appId);
+    //           }
+    //           appProvider.setSelectedChatAppId(appId);
+    //           await messageProvider.refreshMessages();
+    //           if (messageProvider.messages.isEmpty) {
+    //             messageProvider.sendInitialAppMessage(selectedApp);
+    //           }
+    //         }
+    //       } else {
+    //         if (mounted) {
+    //           await Provider.of<MessageProvider>(context, listen: false).refreshMessages();
+    //         }
+    //       }
+    //       // Navigate to chat page directly since it's no longer in the tab bar
+    //       WidgetsBinding.instance.addPostFrameCallback((_) {
+    //         if (mounted) {
+    //           Navigator.push(
+    //             context,
+    //             MaterialPageRoute(
+    //               builder: (context) => const ChatPage(isPivotBottom: false),
+    //             ),
+    //           );
+    //         }
+    //       });
+    //       break;
+    //     case "settings":
+    //       // Use context from the current widget instead of navigator key for bottom sheet
+    //       WidgetsBinding.instance.addPostFrameCallback((_) {
+    //         if (mounted) {
+    //           SettingsDrawer.show(context);
+    //         }
+    //       });
+    //       if (detailPageId == 'data-privacy') {
+    //         MyApp.navigatorKey.currentState?.push(
+    //           MaterialPageRoute(
+    //             builder: (context) => const DataPrivacyPage(),
+    //           ),
+    //         );
+    //       }
+    //       break;
+    //     case "facts":
+    //       MyApp.navigatorKey.currentState?.push(
+    //         MaterialPageRoute(
+    //           builder: (context) => const MemoriesPage(),
+    //         ),
+    //       );
+    //       break;
+    //     default:
+    //   }
+    // });
 
     _listenToMessagesFromNotification();
     super.initState();
@@ -350,9 +351,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                   // Update provider index
                   context.read<HomeProvider>().setIndex(index);
                   // Scroll to top if already selected
-                  if (homeProvider.selectedIndex == index) {
-                    _selectedTab(index);
-                  }
+                  // if (homeProvider.selectedIndex == index) {
+                  //   _selectedTab(index);
+                  // }
                 },
                 indicator: const BoxDecoration(), // Remove default indicator
                 dividerColor: Colors.transparent,
