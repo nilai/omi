@@ -23,10 +23,13 @@ class MemoHomePage extends StatefulWidget {
   // AI-generated END - 创建状态
 }
 
-class MemoHomePageState extends State<MemoHomePage> {
+class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClientMixin {
   // AI-generated START - 当前选中的类型
   MemoTodoType _selectedType = MemoTodoType.memo;
   // AI-generated END - _selectedType
+
+  @override
+  bool get wantKeepAlive => true;
 
   // AI-generated START - 子页面的 GlobalKey
   final GlobalKey _memoPageKey = GlobalKey();
@@ -52,6 +55,7 @@ class MemoHomePageState extends State<MemoHomePage> {
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Important! Call super.build
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),

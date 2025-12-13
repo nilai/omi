@@ -81,7 +81,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   List<Widget> screens = [Container(), const SizedBox(), const SizedBox(), const SizedBox()];
 
   // 升级提示
-  final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
+  // final _upgrader = MyUpgrader(debugLogging: false, debugDisplayOnce: false);
   bool scriptsInProgress = false;
 
   // 四个tab页面
@@ -91,10 +91,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   final GlobalKey<SettingsCardsPageState> _settingsCardsPageKey = GlobalKey<SettingsCardsPageState>();
   late final List<Widget> _pages;
 
-  void _initiateApps() {
-    context.read<AppProvider>().getApps();
-    context.read<AppProvider>().getPopularApps();
-  }
+  // void _initiateApps() {
+  //   context.read<AppProvider>().getApps();
+  //   context.read<AppProvider>().getPopularApps();
+  // }
 
   // 跳转到tab制定页面
   // void _selectedTab(int pageIndex) {
@@ -176,7 +176,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     _pages = [
       MPPage(key: _mpPageKey),
       MemoHomePage(key: _actionItemsPageKey),
-      MPChatPage(key: _mpPageKey),
+      MPChatPage(key: _mpChatPageKey),
       SettingsCardsPage(key: _settingsCardsPageKey),
     ];
     SharedPreferencesUtil().onboardingCompleted = true;

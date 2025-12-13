@@ -12,8 +12,11 @@ class MPPage extends StatefulWidget {
   State<MPPage> createState() => _MPPageState();
 }
 
-class _MPPageState extends State<MPPage> {
+class _MPPageState extends State<MPPage> with AutomaticKeepAliveClientMixin {
   late final MPHomePageProvider _provider;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -29,6 +32,7 @@ class _MPPageState extends State<MPPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Important! Call super.build
     return ChangeNotifierProvider.value(
       value: _provider,
       child: const MPPageContent(),
