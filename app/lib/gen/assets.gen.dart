@@ -175,6 +175,10 @@ class $AssetsImagesGen {
   /// File path: assets/images/ic_setting_persona.svg
   String get icSettingPersona => 'assets/images/ic_setting_persona.svg';
 
+  /// File path: assets/images/icon_more_deletemp_.png
+  AssetGenImage get iconMoreDeletemp =>
+      const AssetGenImage('assets/images/icon_more_deletemp_.png');
+
   /// File path: assets/images/imessage_logo.svg
   String get imessageLogo => 'assets/images/imessage_logo.svg';
 
@@ -209,6 +213,34 @@ class $AssetsImagesGen {
   AssetGenImage get logoTransparentV2 =>
       const AssetGenImage('assets/images/logo_transparent_v2.png');
 
+  /// File path: assets/images/mp_icon_more_add_tag.png
+  AssetGenImage get mpIconMoreAddTag =>
+      const AssetGenImage('assets/images/mp_icon_more_add_tag.png');
+
+  /// File path: assets/images/mp_icon_more_copy_summary.png
+  AssetGenImage get mpIconMoreCopySummary =>
+      const AssetGenImage('assets/images/mp_icon_more_copy_summary.png');
+
+  /// File path: assets/images/mp_icon_more_copy_transcript.png
+  AssetGenImage get mpIconMoreCopyTranscript =>
+      const AssetGenImage('assets/images/mp_icon_more_copy_transcript.png');
+
+  /// File path: assets/images/mp_icon_more_regenerate.png
+  AssetGenImage get mpIconMoreRegenerate =>
+      const AssetGenImage('assets/images/mp_icon_more_regenerate.png');
+
+  /// File path: assets/images/mp_icon_more_rename.png
+  AssetGenImage get mpIconMoreRename =>
+      const AssetGenImage('assets/images/mp_icon_more_rename.png');
+
+  /// File path: assets/images/mp_import_audio_close.png
+  AssetGenImage get mpImportAudioClose =>
+      const AssetGenImage('assets/images/mp_import_audio_close.png');
+
+  /// File path: assets/images/mp_import_audio_icon.png
+  AssetGenImage get mpImportAudioIcon =>
+      const AssetGenImage('assets/images/mp_import_audio_icon.png');
+
   /// File path: assets/images/mp_memo_add.png
   AssetGenImage get mpMemoAdd =>
       const AssetGenImage('assets/images/mp_memo_add.png');
@@ -220,6 +252,10 @@ class $AssetsImagesGen {
   /// File path: assets/images/mp_memo_search.png
   AssetGenImage get mpMemoSearch =>
       const AssetGenImage('assets/images/mp_memo_search.png');
+
+  /// File path: assets/images/mp_start_recording_icon.png
+  AssetGenImage get mpStartRecordingIcon =>
+      const AssetGenImage('assets/images/mp_start_recording_icon.png');
 
   /// File path: assets/images/mp_todo_cancendar.png
   AssetGenImage get mpTodoCancendar =>
@@ -505,6 +541,7 @@ class $AssetsImagesGen {
     icDollar,
     icPersonaProfile,
     icSettingPersona,
+    iconMoreDeletemp,
     imessageLogo,
     instagramLogo,
     instruction1,
@@ -514,9 +551,17 @@ class $AssetsImagesGen {
     linkedinLogo,
     logoTransparent,
     logoTransparentV2,
+    mpIconMoreAddTag,
+    mpIconMoreCopySummary,
+    mpIconMoreCopyTranscript,
+    mpIconMoreRegenerate,
+    mpIconMoreRename,
+    mpImportAudioClose,
+    mpImportAudioIcon,
     mpMemoAdd,
     mpMemoEdit,
     mpMemoSearch,
+    mpStartRecordingIcon,
     mpTodoCancendar,
     mpTodoEdit,
     newBackground,
