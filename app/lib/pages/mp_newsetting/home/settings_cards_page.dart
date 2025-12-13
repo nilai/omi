@@ -1,8 +1,11 @@
 // AI-generated START - 设置卡片展示页面，从上到下显示所有设置相关的卡片组件
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_apps_integration/apps_integration_page.dart';
+import 'package:omi/pages/mp_apps_integration/providers/apps_integration_provider.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_expert_list_page.dart';
+import 'package:omi/pages/mp_expert_feedback/providers/mp_expert_provider.dart';
 import 'package:omi/pages/mp_memory/home/memory_page.dart';
+import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/app_integration_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/expert_feedback_card_widget.dart';
@@ -14,8 +17,11 @@ import 'package:omi/pages/mp_newsetting/home/widgets/subscription_plan_card_widg
 import 'package:omi/pages/mp_newsetting/home/widgets/template_selection_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/voiceprint_recognition_card_widget.dart';
 import 'package:omi/pages/mp_newsetting/personal/personal_page.dart';
+import 'package:omi/pages/mp_newsetting/personal/providers/personal_provider.dart';
 import 'package:omi/pages/mp_newsetting/setting/setting_page.dart';
+import 'package:omi/pages/mp_newsetting/voice_recognition/providers/voice_recognition_provider.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/voice_recognition_page.dart';
+import 'package:omi/pages/mp_template _selection/providers/template_selection_provider.dart';
 import 'package:omi/pages/mp_template _selection/template_selection_page.dart';
 import 'package:provider/provider.dart';
 
@@ -88,7 +94,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
               // AI-generated START - 打开个人主页
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const PersonalPage(),
+                  builder: (context) => ChangeNotifierProvider<PersonalProvider>(
+                    create: (_) => PersonalProvider(),
+                    child: const PersonalPage(),
+                  ),
                 ),
               );
               // AI-generated END - 打开个人主页
@@ -131,7 +140,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开模板选择页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const TemplateSelectionPage(),
+                        builder: (context) => ChangeNotifierProvider<TemplateSelectionProvider>(
+                          create: (_) => TemplateSelectionProvider(),
+                          child: const TemplateSelectionPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开模板选择页面
@@ -145,7 +157,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开专家列表页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MPExpertListPage(),
+                        builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
+                          create: (_) => MPExpertProvider(),
+                          child: const MPExpertListPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开专家列表页面
@@ -154,7 +169,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开专家列表页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MPExpertListPage(),
+                        builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
+                          create: (_) => MPExpertProvider(),
+                          child: const MPExpertListPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开专家列表页面
@@ -168,7 +186,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开记忆仓库页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const MemoryPage(),
+                        builder: (context) => ChangeNotifierProvider<MemoryProvider>(
+                          create: (_) => MemoryProvider(),
+                          child: const MemoryPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开记忆仓库页面
@@ -183,7 +204,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开声纹识别页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const VoiceRecognitionPage(),
+                        builder: (context) => ChangeNotifierProvider<VoiceRecognitionProvider>(
+                          create: (_) => VoiceRecognitionProvider(),
+                          child: const VoiceRecognitionPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开声纹识别页面
@@ -197,7 +221,10 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                     // AI-generated START - 打开App集成页面
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => const AppsIntegrationPage(),
+                        builder: (context) => ChangeNotifierProvider<AppsIntegrationProvider>(
+                          create: (_) => AppsIntegrationProvider(),
+                          child: const AppsIntegrationPage(),
+                        ),
                       ),
                     );
                     // AI-generated END - 打开App集成页面

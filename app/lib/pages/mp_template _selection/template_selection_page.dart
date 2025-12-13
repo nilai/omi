@@ -35,7 +35,9 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(widget.title),
         actions: [
           IconButton(
