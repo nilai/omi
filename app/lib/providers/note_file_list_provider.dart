@@ -63,6 +63,15 @@ class NoteFileListProvider extends BaseProvider {
   /// Download directory name
   static const String _downloadDirName = 'NoteDownloads';
 
+  /// Write buffer size (32KB)
+  static const int _writeBufferSize = 32 * 1024;
+
+  /// Current download file IOSink for incremental writing
+  IOSink? _fileSink;
+
+  /// Current download file path
+  String? _currentFilePath;
+
   // ============ Getters ============
 
   /// Get file list (unmodifiable)
@@ -238,6 +247,7 @@ class NoteFileListProvider extends BaseProvider {
   // ============ File Download ============
 
   /// Download a file from device and save to storage
+  /// Uses incremental writing to avoid memory issues with large files
   Future<void> downloadFile(NoteFileInfo file) async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -261,6 +271,16 @@ class NoteFileListProvider extends BaseProvider {
     notifyListeners();
 
     try {
+      // Create download directory and file
+      final downloadPath = await getDownloadPath();
+      _currentFilePath = '$downloadPath/${file.name}';
+      final outputFile = File(_currentFilePath!);
+      _fileSink = outputFile.openWrite();
+      print('[NoteFileListProvider] Opened file for writing: $_currentFilePath');
+
+      // Setup completion listener to detect 0x04 0x02 signal
+      _setupCompletionListener();
+
       // Setup file data listener
       _fileDataSubscription?.cancel();
       _fileDataSubscription = await _connection!.getFileDataListener(
@@ -281,6 +301,9 @@ class NoteFileListProvider extends BaseProvider {
       print('[NoteFileListProvider] Started downloading: ${file.name}');
     } catch (e) {
       _lastError = e.toString();
+      await _fileSink?.close();
+      _fileSink = null;
+      _currentFilePath = null;
       _downloadingFileName = null;
       _fileDataBuffer.clear();
       _isOperating = false;
@@ -291,8 +314,9 @@ class NoteFileListProvider extends BaseProvider {
   }
 
   /// Handle received file data
+  /// Writes data incrementally to file when buffer is full
   void _onFileDataReceived(List<int> data) {
-    if (_downloadingFileName == null) return;
+    if (_downloadingFileName == null || _fileSink == null) return;
 
     // Add data to buffer
     _fileDataBuffer.addAll(data);
@@ -302,18 +326,47 @@ class NoteFileListProvider extends BaseProvider {
     _addLogEntry(
       BleLogDirection.received,
       data.length > 64 ? data.sublist(0, 64) : data,
-      name: 'File Data: ${data.length} bytes',
+      name: 'File Data: ${data.length} bytes (total: $_downloadedBytes)',
     );
 
-    notifyListeners();
-
-    // Check if download completed (based on estimated size)
-    if (_downloadedBytes >= _estimatedTotalBytes) {
-      _completeDownload();
+    // Flush buffer to file when full
+    if (_fileDataBuffer.length >= _writeBufferSize) {
+      _flushBuffer();
     }
+
+    notifyListeners();
+  }
+
+  /// Flush buffer data to file
+  void _flushBuffer() {
+    if (_fileDataBuffer.isEmpty || _fileSink == null) return;
+
+    _fileSink!.add(Uint8List.fromList(_fileDataBuffer));
+    print('[NoteFileListProvider] Flushed ${_fileDataBuffer.length} bytes to file');
+    _fileDataBuffer.clear();
+  }
+
+  /// Setup completion listener to detect 0x04 0x02 signal from responseStream
+  void _setupCompletionListener() {
+    _responseSubscription?.cancel();
+    if (_connection == null) return;
+
+    _responseSubscription = _connection!.bleTransport.responseStream.listen(
+      (data) {
+        // Log the response
+        _addLogEntry(BleLogDirection.received, data);
+
+        // Detect file upload completion signal: 0x04 0x02
+        if (data.length >= 2 && data[0] == 0x04 && data[1] == 0x02) {
+          print('[NoteFileListProvider] Received file transfer completion signal');
+          _completeDownload();
+        }
+      },
+    );
   }
 
   /// Complete the download and save file
+  /// Flushes remaining buffer and closes the file sink
   Future<void> _completeDownload() async {
     final fileName = _downloadingFileName;
     if (fileName == null) return;
@@ -321,50 +374,79 @@ class NoteFileListProvider extends BaseProvider {
     print('[NoteFileListProvider] Download completed: $fileName, '
         'received $_downloadedBytes bytes');
 
+    // Cancel subscriptions
     _fileDataSubscription?.cancel();
     _fileDataSubscription = null;
+    _responseSubscription?.cancel();
+    _responseSubscription = null;
 
     try {
-      // Save file to storage
-      final downloadPath = await getDownloadPath();
-      final filePath = '$downloadPath/$fileName';
-      final file = File(filePath);
+      // Flush remaining buffer data
+      _flushBuffer();
 
-      // Write buffer to file
-      await file.writeAsBytes(Uint8List.fromList(_fileDataBuffer));
+      // Close file sink
+      await _fileSink?.flush();
+      await _fileSink?.close();
 
-      _lastDownloadedFilePath = filePath;
-      print('[NoteFileListProvider] File saved to: $filePath');
+      _lastDownloadedFilePath = _currentFilePath;
+      print('[NoteFileListProvider] File saved to: $_currentFilePath');
 
       // Add success log entry
       _addLogEntry(
         BleLogDirection.received,
         [],
-        name: 'File saved: $filePath',
+        name: 'File saved: $_currentFilePath ($_downloadedBytes bytes)',
       );
     } catch (e) {
       _lastError = 'Failed to save file: $e';
       print('[NoteFileListProvider] Error saving file: $e');
     } finally {
-      _downloadingFileName = null;
-      _fileDataBuffer.clear();
-      _isOperating = false;
-      notifyListeners();
+      _cleanupDownloadState();
     }
   }
 
+  /// Clean up download state
+  void _cleanupDownloadState() {
+    _downloadingFileName = null;
+    _fileDataBuffer.clear();
+    _fileSink = null;
+    _currentFilePath = null;
+    _isOperating = false;
+    notifyListeners();
+  }
+
   /// Cancel current download
-  void cancelDownload() {
+  /// Closes file sink and deletes the incomplete file
+  Future<void> cancelDownload() async {
     if (_downloadingFileName != null) {
       print('[NoteFileListProvider] Download cancelled: $_downloadingFileName');
+
+      // Cancel subscriptions
       _fileDataSubscription?.cancel();
       _fileDataSubscription = null;
-      _downloadingFileName = null;
+      _responseSubscription?.cancel();
+      _responseSubscription = null;
+
+      // Close file sink
+      await _fileSink?.close();
+
+      // Delete incomplete file
+      if (_currentFilePath != null) {
+        try {
+          final file = File(_currentFilePath!);
+          if (await file.exists()) {
+            await file.delete();
+            print('[NoteFileListProvider] Deleted incomplete file: $_currentFilePath');
+          }
+        } catch (e) {
+          print('[NoteFileListProvider] Error deleting incomplete file: $e');
+        }
+      }
+
+      // Clean up state
       _downloadedBytes = 0;
       _estimatedTotalBytes = 0;
-      _fileDataBuffer.clear();
-      _isOperating = false;
-      notifyListeners();
+      _cleanupDownloadState();
     }
   }
 
@@ -413,6 +495,7 @@ class NoteFileListProvider extends BaseProvider {
   void dispose() {
     _responseSubscription?.cancel();
     _fileDataSubscription?.cancel();
+    _fileSink?.close();
     super.dispose();
   }
 }
