@@ -9,6 +9,7 @@ import 'package:omi/widgets/dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../mp_custom_utils/mp_toast_utils.dart';
 import 'found_devices.dart';
 
 class FindDevicesPage extends StatefulWidget {
@@ -105,7 +106,10 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                       ),
                       IconButton(
                         visualDensity: VisualDensity.compact,
-                        onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                        // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                        onPressed: () {
+                          MPToastUtils.showFeatureComingSoon();
+                        },
                         icon: const Icon(
                           Icons.settings_outlined,
                           color: Color(0xFF1D1D1F),
@@ -124,7 +128,10 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                   if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
                     const SizedBox(height: 16),
                     TextButton(
-                      onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                      // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                      onPressed: () {
+                        MPToastUtils.showFeatureComingSoon();
+                      },
                       child: const Text(
                         '遇到问题？联系支持',
                         style: TextStyle(
