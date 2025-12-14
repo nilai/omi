@@ -9,20 +9,10 @@ class MPToastUtils {
   ///
   /// [context] - BuildContext，如果为 null 则使用全局 navigatorKey
   static void showFeatureComingSoon({BuildContext? context}) {
-    final scaffoldMessenger = context != null
-        ? ScaffoldMessenger.of(context)
-        : ScaffoldMessenger.of(MyApp.navigatorKey.currentState!.context);
-
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: const Text('功能待完善，敬请期待'),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        margin: const EdgeInsets.all(16.0),
-      ),
+    _showCenterToast(
+      context: context,
+      message: '功能待完善，敬请期待',
+      duration: const Duration(seconds: 2),
     );
   }
 
@@ -36,21 +26,64 @@ class MPToastUtils {
     BuildContext? context,
     Duration? duration,
   }) {
-    final scaffoldMessenger = context != null
-        ? ScaffoldMessenger.of(context)
-        : ScaffoldMessenger.of(MyApp.navigatorKey.currentState!.context);
+    _showCenterToast(
+      context: context,
+      message: message,
+      duration: duration ?? const Duration(seconds: 2),
+    );
+  }
 
-    scaffoldMessenger.showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: duration ?? const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
+  /// 在页面中间显示 Toast
+  ///
+  /// [context] - BuildContext，如果为 null 则使用全局 navigatorKey
+  /// [message] - 要显示的消息内容
+  /// [duration] - 显示时长
+  static void _showCenterToast({
+    BuildContext? context,
+    required String message,
+    required Duration duration,
+  }) {
+    final overlay = context != null ? Overlay.of(context) : MyApp.navigatorKey.currentState!.overlay;
+
+    if (overlay == null) return;
+
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Center(
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            decoration: BoxDecoration(
+              color: Colors.black87,
+              borderRadius: BorderRadius.circular(12.0),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 12.0,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
         ),
-        margin: const EdgeInsets.all(16.0),
       ),
     );
+
+    overlay.insert(overlayEntry);
+
+    // 自动移除
+    Future.delayed(duration, () {
+      overlayEntry.remove();
+    });
   }
 }
 // AI-generated END - MPToastUtils
