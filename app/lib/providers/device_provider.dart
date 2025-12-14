@@ -17,46 +17,55 @@ import 'package:omi/utils/other/debouncer.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/widgets/confirmation_dialog.dart';
 
+/// 设备提供者类
+/// 负责管理蓝牙设备的连接、断开、固件更新等核心功能
 class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption {
   CaptureProvider? captureProvider;
 
-  bool isConnecting = false;
-  bool isConnected = false;
-  bool isDeviceStorageSupport = false;
-  BtDevice? connectedDevice;
-  BtDevice? pairedDevice;
-  StreamSubscription<List<int>>? _bleBatteryLevelListener;
-  int batteryLevel = -1;
-  bool _hasLowBatteryAlerted = false;
-  Timer? _reconnectionTimer;
-  DateTime? _reconnectAt;
-  final int _connectionCheckSeconds = 15; // 10s periods, 5s for each scan
+  bool isConnecting = false; // 是否正在连接中
+  bool isConnected = false; // 是否已连接
+  bool isDeviceStorageSupport = false; // 设备是否支持存储功能
+  BtDevice? connectedDevice; // 当前连接的设备
+  BtDevice? pairedDevice; // 已配对的设备
+  StreamSubscription<List<int>>? _bleBatteryLevelListener; // 电池电量监听器
+  int batteryLevel = -1; // 电池电量 (-1 表示未知)
+  bool _hasLowBatteryAlerted = false; // 是否已发送低电量警告
+  Timer? _reconnectionTimer; // 重连定时器
+  DateTime? _reconnectAt; // 下次重连时间
+  final int _connectionCheckSeconds = 15; // 连接检查间隔（秒）
 
-  bool _havingNewFirmware = false;
+  bool _havingNewFirmware = false; // 是否有新固件
   bool get havingNewFirmware => _havingNewFirmware && pairedDevice != null && isConnected;
 
-  // Track firmware update state to prevent showing dialog during updates
+  // 追踪固件更新状态，防止更新期间显示对话框
   bool _isFirmwareUpdateInProgress = false;
   bool get isFirmwareUpdateInProgress => _isFirmwareUpdateInProgress;
 
-  // Current and latest firmware versions for UI display
+  // 当前和最新固件版本（用于 UI 显示）
   String get currentFirmwareVersion => pairedDevice?.firmwareRevision ?? 'Unknown';
   String _latestFirmwareVersion = '';
   String get latestFirmwareVersion => _latestFirmwareVersion;
 
-  Timer? _disconnectNotificationTimer;
-  final Debouncer _disconnectDebouncer = Debouncer(delay: const Duration(milliseconds: 500));
-  final Debouncer _connectDebouncer = Debouncer(delay: const Duration(milliseconds: 100));
+  Timer? _disconnectNotificationTimer; // 断开连接通知定时器
+  final Debouncer _disconnectDebouncer = Debouncer(delay: const Duration(milliseconds: 500)); // 断开连接防抖
+  final Debouncer _connectDebouncer = Debouncer(delay: const Duration(milliseconds: 100)); // 连接防抖
 
+  /// 构造函数
+  /// 订阅设备服务，监听设备状态变化
   DeviceProvider() {
     ServiceManager.instance().device.subscribe(this, this);
   }
 
+  /// 设置依赖的提供者
+  /// @param provider 录音提供者实例
   void setProviders(CaptureProvider provider) {
     captureProvider = provider;
     notifyListeners();
   }
 
+  /// 设置已连接的设备
+  /// 同时更新配对设备信息并获取设备详细信息
+  /// @param device 蓝牙设备对象，null 表示无设备
   void setConnectedDevice(BtDevice? device) async {
     connectedDevice = device;
     pairedDevice = device;
@@ -65,6 +74,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
+  /// 获取设备详细信息
+  /// 包括固件版本等信息，并保存到本地存储
   Future getDeviceInfo() async {
     if (connectedDevice != null) {
       if (pairedDevice?.firmwareRevision != null && pairedDevice?.firmwareRevision != 'Unknown') {
@@ -83,7 +94,10 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
-  // TODO: thinh, use connection directly
+  /// 断开蓝牙设备连接
+  /// @param btDevice 要断开的蓝牙设备
+  /// @return 断开连接的 Future
+  // TODO: thinh, 直接使用 connection
   Future _bleDisconnectDevice(BtDevice btDevice) async {
     var connection = await ServiceManager.instance().device.ensureConnection(btDevice.id);
     if (connection == null) {
@@ -92,6 +106,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return await connection.disconnect();
   }
 
+  /// 获取设备电池电量
+  /// @param deviceId 设备 ID
+  /// @return 电池电量百分比，-1 表示获取失败
   Future<int> _retrieveBatteryLevel(String deviceId) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -100,6 +117,11 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return connection.retrieveBatteryLevel();
   }
 
+  /// 获取电池电量监听器
+  /// 监听设备电池电量变化，实时更新
+  /// @param deviceId 设备 ID
+  /// @param onBatteryLevelChange 电量变化回调函数
+  /// @return 电量监听订阅对象
   Future<StreamSubscription<List<int>>?> _getBleBatteryLevelListener(
     String deviceId, {
     void Function(int)? onBatteryLevelChange,
@@ -113,6 +135,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     }
   }
 
+  /// 获取设备存储文件列表
+  /// @param deviceId 设备 ID
+  /// @return 存储文件 ID 列表
   Future<List<int>> _getStorageList(String deviceId) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -121,6 +146,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return connection.getStorageList();
   }
 
+  /// 获取已连接的设备
+  /// 从本地存储读取设备 ID 并尝试获取连接
+  /// @return 已连接的设备对象，null 表示无连接
   Future<BtDevice?> _getConnectedDevice() async {
     var deviceId = SharedPreferencesUtil().btDevice.id;
     if (deviceId.isEmpty) {
@@ -130,6 +158,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return connection?.device;
   }
 
+  /// 初始化电池电量监听器
+  /// 监听设备电量变化，低于 20% 时发送通知
   initiateBleBatteryListener() async {
     if (connectedDevice == null) {
       return;
@@ -154,6 +184,10 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
+  /// 定期尝试连接设备
+  /// 每隔一定时间扫描并连接设备，直到连接成功
+  /// @param printer 调试信息标识
+  /// @param boundDeviceOnly 是否仅连接已绑定的设备
   Future periodicConnect(String printer, {bool boundDeviceOnly = false}) async {
     _reconnectionTimer?.cancel();
     scan(t) async {
@@ -180,6 +214,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     scan(_reconnectionTimer);
   }
 
+  /// 扫描并连接设备
+  /// 先尝试直接重连已配对设备，失败后进行扫描
+  /// @return 连接的设备对象，null 表示连接失败
   Future<BtDevice?> _scanConnectDevice() async {
     var device = await _getConnectedDevice();
     if (device != null) {
@@ -214,6 +251,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return null;
   }
 
+  /// 扫描并连接到设备
+  /// 主要的设备连接入口方法
   Future scanAndConnectToDevice() async {
     updateConnectingStatus(true);
     if (isConnected) {
@@ -248,11 +287,16 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
+  /// 更新连接状态
+  /// @param value true 表示正在连接，false 表示未连接
   void updateConnectingStatus(bool value) {
     isConnecting = value;
     notifyListeners();
   }
 
+  /// 设置设备连接状态
+  /// 连接成功时取消重连定时器
+  /// @param value true 表示已连接，false 表示未连接
   void setIsConnected(bool value) {
     isConnected = value;
     if (isConnected) {
@@ -261,6 +305,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
+  /// 释放资源
+  /// 取消所有监听器和定时器，清理资源
   @override
   void dispose() {
     _bleBatteryLevelListener?.cancel();
@@ -271,6 +317,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     super.dispose();
   }
 
+  /// 设备断开连接时的回调
+  /// 清理设备状态，显示断开通知，启动重连机制
   void onDeviceDisconnected() async {
     Logger.debug('onDisconnected inside: $connectedDevice');
     _havingNewFirmware = false;
@@ -300,6 +348,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     });
   }
 
+  /// 检查是否需要更新固件
+  /// 比较当前固件版本和最新版本
+  /// @return (消息, 是否需要更新, 最新版本号)
   Future<(String, bool, String)> shouldUpdateFirmware() async {
     if (pairedDevice == null || connectedDevice == null) {
       return ('No paired device is connected', false, '');
@@ -317,6 +368,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
         currentFirmware: device.firmwareRevision, latestFirmwareDetails: latestFirmwareDetails);
   }
 
+  /// 设备连接成功时的回调
+  /// 更新设备状态，初始化电量监听，检查固件更新
+  /// @param device 连接的设备对象
   void _onDeviceConnected(BtDevice device) async {
     Logger.debug('_onConnected inside: $connectedDevice');
     _disconnectNotificationTimer?.cancel();
@@ -356,6 +410,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     _checkFirmwareUpdates();
   }
 
+  /// 处理设备连接事件
+  /// 确保连接并调用连接回调
+  /// @param deviceId 设备 ID
   void _handleDeviceConnected(String deviceId) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -364,6 +421,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     _onDeviceConnected(connection.device);
   }
 
+  /// 检查固件更新
+  /// 设备连接后自动检查，有更新时显示对话框
   void _checkFirmwareUpdates() async {
     if (_isFirmwareUpdateInProgress) {
       return;
@@ -383,6 +442,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     }
   }
 
+  /// 检查固件更新（带重试机制）
+  /// 最多重试 3 次，每次间隔 3 秒
+  /// @return 是否有可用更新
   Future checkFirmwareUpdates() async {
     int retryCount = 0;
     const maxRetries = 3;
@@ -412,6 +474,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     return;
   }
 
+  /// 显示固件更新对话框
+  /// 询问用户是否立即更新固件
+  /// @param context 上下文对象
   void showFirmwareUpdateDialog(BuildContext context) {
     if (!_havingNewFirmware || !SharedPreferencesUtil().showFirmwareUpdateDialog || _isFirmwareUpdateInProgress) {
       return;
@@ -441,6 +506,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     );
   }
 
+  /// 设置设备是否支持存储功能
+  /// 通过获取存储列表判断设备是否支持存储
   Future setisDeviceStorageSupport() async {
     if (connectedDevice == null) {
       isDeviceStorageSupport = false;
@@ -451,6 +518,10 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     notifyListeners();
   }
 
+  /// 设备连接状态变化回调
+  /// 处理连接和断开事件，使用防抖避免频繁触发
+  /// @param deviceId 设备 ID
+  /// @param state 连接状态
   @override
   void onDeviceConnectionStateChanged(String deviceId, DeviceConnectionState state) async {
     Logger.debug("provider > device connection state changed...$deviceId...$state...${connectedDevice?.id}");
@@ -472,12 +543,18 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     }
   }
 
+  /// 设备列表变化回调（未实现）
+  /// @param devices 设备列表
   @override
   void onDevices(List<BtDevice> devices) async {}
 
+  /// 设备服务状态变化回调（未实现）
+  /// @param status 服务状态
   @override
   void onStatusChanged(DeviceServiceStatus status) {}
 
+  /// 准备 DFU（设备固件更新）
+  /// 断开设备连接并设置 30 秒后重连
   prepareDFU() {
     if (connectedDevice == null) {
       return;
@@ -486,13 +563,16 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     _reconnectAt = DateTime.now().add(const Duration(seconds: 30));
   }
 
-  // Reset firmware update state when update completes or fails
+  /// 重置固件更新状态
+  /// 在更新完成或失败时调用
   void resetFirmwareUpdateState() {
     _isFirmwareUpdateInProgress = false;
     notifyListeners();
   }
 
-  // Set firmware update state when starting an update
+  /// 设置固件更新进行中状态
+  /// 开始更新时调用
+  /// @param inProgress true 表示正在更新，false 表示更新结束
   void setFirmwareUpdateInProgress(bool inProgress) {
     _isFirmwareUpdateInProgress = inProgress;
     notifyListeners();
