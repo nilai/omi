@@ -192,6 +192,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     _reconnectionTimer?.cancel();
     scan(t) async {
       debugPrint("Period connect seconds: $_connectionCheckSeconds, triggered timer at ${DateTime.now()}");
+      updateConnectingStatus(true);
       if (_reconnectAt != null && _reconnectAt!.isAfter(DateTime.now())) {
         return;
       }
@@ -263,7 +264,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       }
 
       setIsConnected(true);
-      updateConnectingStatus(false);
+      // updateConnectingStatus(false);
+      updateConnectingStatus(true);
       notifyListeners();
       return;
     }
@@ -282,7 +284,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       }
       Logger.debug('device is not null $cDevice');
     }
-    updateConnectingStatus(false);
+    // updateConnectingStatus(false);
+    updateConnectingStatus(true);
 
     notifyListeners();
   }
