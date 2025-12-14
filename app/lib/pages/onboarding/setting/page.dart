@@ -174,8 +174,12 @@ class MemoPinSettingPage extends StatelessWidget {
 
   /// 构建固件更新卡片
   Widget _buildFirmwareUpdateCard(BuildContext context, DeviceProvider deviceProvider) {
-    final hasUpdate = deviceProvider.havingNewFirmware;
-    final latestVersion = deviceProvider.latestFirmwareVersion;
+    // For testing, always show the card
+    // final hasUpdate = deviceProvider.havingNewFirmware;
+    final hasUpdate = true; // Always show for testing
+    final latestVersion = deviceProvider.latestFirmwareVersion.isNotEmpty 
+        ? deviceProvider.latestFirmwareVersion 
+        : '1.1.20'; // Default version for testing
     
     if (!hasUpdate) {
       return const SizedBox.shrink();
