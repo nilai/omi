@@ -44,13 +44,14 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
   void initState() {
     super.initState();
     _scrollController = ScrollController();
-    // AI-generated START - 初始化时加载用户资料和 speaker 列表
+    // AI-generated START - 初始化时加载用户资料、speaker 列表和专家列表
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final provider = Provider.of<SettingsProvider>(context, listen: false);
       provider.loadSpeakerList();
+      provider.loadExpertList();
     });
-    // AI-generated END - 初始化时加载用户资料和 speaker 列表
+    // AI-generated END - 初始化时加载用户资料、speaker 列表和专家列表
   }
 
   @override
@@ -152,30 +153,35 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                 // AI-generated END - 模板选择卡片
 
                 // AI-generated START - 专家反馈卡片
-                ExpertFeedbackCardWidget(
-                  onTap: () {
-                    // AI-generated START - 打开专家列表页面
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
-                          create: (_) => MPExpertProvider(),
-                          child: const MPExpertListPage(),
-                        ),
-                      ),
+                Consumer<SettingsProvider>(
+                  builder: (context, settingsProvider, child) {
+                    return ExpertFeedbackCardWidget(
+                      experts: settingsProvider.experts,
+                      onTap: () {
+                        // AI-generated START - 打开专家列表页面
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
+                              create: (_) => MPExpertProvider(),
+                              child: const MPExpertListPage(),
+                            ),
+                          ),
+                        );
+                        // AI-generated END - 打开专家列表页面
+                      },
+                      onExpertTap: (expert) {
+                        // AI-generated START - 打开专家列表页面
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
+                              create: (_) => MPExpertProvider(),
+                              child: const MPExpertListPage(),
+                            ),
+                          ),
+                        );
+                        // AI-generated END - 打开专家列表页面
+                      },
                     );
-                    // AI-generated END - 打开专家列表页面
-                  },
-                  onExpertTap: (expert) {
-                    // AI-generated START - 打开专家列表页面
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => ChangeNotifierProvider<MPExpertProvider>(
-                          create: (_) => MPExpertProvider(),
-                          child: const MPExpertListPage(),
-                        ),
-                      ),
-                    );
-                    // AI-generated END - 打开专家列表页面
                   },
                 ),
                 // AI-generated END - 专家反馈卡片

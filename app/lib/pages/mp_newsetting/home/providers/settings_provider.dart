@@ -1,10 +1,13 @@
 // AI-generated START - 设置页面状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_expert.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/backend/schema/mp/mp_expert.dart';
 import 'package:omi/backend/schema/mp/mp_speaker.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/expert_feedback_card_widget.dart';
 
 /// 设置页面状态管理Provider
-/// 管理用户资料数据和 speaker 列表
+/// 管理用户资料数据、speaker 列表和专家列表
 class SettingsProvider with ChangeNotifier {
   // AI-generated START - 是否正在加载
   final bool _isLoading = false;
@@ -22,6 +25,14 @@ class SettingsProvider with ChangeNotifier {
   bool _isLoadingSpeakers = false;
   // AI-generated END - _isLoadingSpeakers
 
+  // AI-generated START - 专家列表
+  List<ExpertInfo> _experts = [];
+  // AI-generated END - _experts
+
+  // AI-generated START - 是否正在加载专家列表
+  bool _isLoadingExperts = false;
+  // AI-generated END - _isLoadingExperts
+
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
   // AI-generated END - isLoading
@@ -37,6 +48,14 @@ class SettingsProvider with ChangeNotifier {
   // AI-generated START - 获取是否正在加载 speaker 列表
   bool get isLoadingSpeakers => _isLoadingSpeakers;
   // AI-generated END - isLoadingSpeakers
+
+  // AI-generated START - 获取专家列表
+  List<ExpertInfo> get experts => _experts;
+  // AI-generated END - experts
+
+  // AI-generated START - 获取是否正在加载专家列表
+  bool get isLoadingExperts => _isLoadingExperts;
+  // AI-generated END - isLoadingExperts
 
   // AI-generated START - 从接口加载 speaker 列表
   Future<void> loadSpeakerList() async {
@@ -66,5 +85,64 @@ class SettingsProvider with ChangeNotifier {
     }
   }
   // AI-generated END - 从接口加载 speaker 列表
+
+  // AI-generated START - 从接口加载专家列表
+  Future<void> loadExpertList() async {
+    if (_isLoadingExperts) return;
+
+    _isLoadingExperts = true;
+    notifyListeners();
+
+    try {
+      final request = MPGetExpertListRequest(
+        pageSize: 10, // 获取前10个专家
+        cursor: '', // 从第一页开始
+      );
+      final response = await getExpertList(request);
+
+      if (response != null && response.experts.isNotEmpty) {
+        // 将 API 返回的专家数据转换为 ExpertInfo
+        _experts = response.experts.map((expertMerge) {
+          final expert = expertMerge.expert;
+          // 根据专家名称或 capabilities 生成边框颜色
+          final borderColor = _getBorderColorForExpert(expert.name);
+          return ExpertInfo(
+            name: expert.name,
+            role: expert.name,
+            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            borderColor: borderColor,
+          );
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint('Failed to load expert list: $e');
+      _error = 'Failed to load expert list: $e';
+    } finally {
+      _isLoadingExperts = false;
+      notifyListeners();
+    }
+  }
+  // AI-generated END - 从接口加载专家列表
+
+  // AI-generated START - 根据专家名称获取边框颜色
+  Color _getBorderColorForExpert(String name) {
+    // 根据专家名称或类型返回不同的颜色
+    final nameLower = name.toLowerCase();
+    if (nameLower.contains('商业') || nameLower.contains('business')) {
+      return const Color(0xFF60A5FA); // 浅蓝色
+    } else if (nameLower.contains('技术') || nameLower.contains('tech')) {
+      return const Color(0xFFA78BFA); // 浅紫色
+    } else if (nameLower.contains('营销') || nameLower.contains('marketing')) {
+      return const Color(0xFF34D399); // 浅绿色
+    } else if (nameLower.contains('财务') || nameLower.contains('finance')) {
+      return const Color(0xFFFB923C); // 浅橙色
+    } else if (nameLower.contains('法律') || nameLower.contains('legal')) {
+      return const Color(0xFFF472B6); // 浅粉色
+    } else {
+      // 默认颜色，可以根据需要调整
+      return const Color(0xFF60A5FA); // 浅蓝色
+    }
+  }
+  // AI-generated END - _getBorderColorForExpert
 }
 // AI-generated END - settings_provider.dart

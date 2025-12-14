@@ -2,17 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/my_voice_card.dart';
 
-/// 声音项操作类型枚举
-enum VoiceItemActionType {
-  // AI-generated START - 编辑
-  edit,
-  // AI-generated END - 编辑
-
-  // AI-generated START - 删除
-  delete,
-  // AI-generated END - 删除
-}
-
 /// 声音项卡片组件
 /// 显示单个用户录制的语音信息
 class VoiceItemCard extends StatelessWidget {
@@ -227,4 +216,6 @@ class VoiceItemCard extends StatelessWidget {
   }
   // AI-generated END - 构建操作图标
 }
+
+enum VoiceItemActionType { edit, delete }
 // AI-generated END - voice_item_card.dart

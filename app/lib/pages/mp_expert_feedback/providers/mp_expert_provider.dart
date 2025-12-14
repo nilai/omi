@@ -1,5 +1,7 @@
 // AI-generated START - 专家列表状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_expert.dart';
+import 'package:omi/backend/schema/mp/mp_expert.dart';
 import 'package:omi/pages/mp_expert_feedback/widgets/mp_expert_card.dart';
 
 /// 专家列表状态管理Provider
@@ -36,6 +38,10 @@ class MPExpertProvider with ChangeNotifier {
   // AI-generated START - 已添加的专家ID集合
   final Set<String> _addedExpertIds = {};
   // AI-generated END - _addedExpertIds
+
+  // AI-generated START - 分页游标
+  String _cursor = '';
+  // AI-generated END - _cursor
 
   // AI-generated START - 获取专家列表
   List<MPExpertCardData> get experts => _experts;
@@ -137,45 +143,45 @@ class MPExpertProvider with ChangeNotifier {
     setLoading(true);
     setError(null);
     _hasMore = true; // 重置 hasMore 状态
+    _cursor = ''; // 重置游标
     try {
-      // TODO: 从API加载专家数据
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
-      // AI-generated START - 默认测试数据
-      _experts = [
-        const MPExpertCardData(
-          id: '1',
-          name: '商业战略顾问',
-          description: '擅长商业模式设计、战略规划和市场分析，帮助企业制定增长策略',
-          isHot: true,
-          isAdded: false,
-        ),
-        const MPExpertCardData(
-          id: '2',
-          name: 'Steve Jobs',
-          description: '苹果创始人',
-          isHot: true,
-          isAdded: true,
-        ),
-        const MPExpertCardData(
-          id: '3',
-          name: '五行算命大师',
-          description: '根据个人八字、时间和地点的五行关系，提供每日运势指南和具体调整建议',
-          isHot: false,
-          isAdded: true,
-        ),
-      ];
-      // AI-generated END - 默认测试数据
-      // 同步已添加状态
-      _addedExpertIds.clear();
-      for (var expert in _experts) {
-        if (expert.isAdded) {
-          _addedExpertIds.add(expert.id);
+      final request = MPGetExpertListRequest(
+        pageSize: 20, // 每页加载20个专家
+        cursor: _cursor,
+      );
+      final response = await getExpertList(request);
+
+      if (response != null && response.experts.isNotEmpty) {
+        // 将 API 返回的专家数据转换为 MPExpertCardData
+        _experts = response.experts.map((expertMerge) {
+          final expert = expertMerge.expert;
+          return MPExpertCardData(
+            id: expert.id,
+            name: expert.name,
+            description: expert.about,
+            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            isHot: false, // 可以根据需要设置热门标识
+            isAdded: expertMerge.isAdd,
+          );
+        }).toList();
+
+        // 同步已添加状态
+        _addedExpertIds.clear();
+        for (var expert in _experts) {
+          if (expert.isAdded) {
+            _addedExpertIds.add(expert.id);
+          }
         }
+
+        // 根据 API 响应设置是否有更多数据
+        _hasMore = response.hasMore;
+      } else {
+        _experts = [];
+        _hasMore = false;
       }
-      // 模拟：如果数据少于某个数量，则认为没有更多数据
-      _hasMore = _experts.length >= 3; // 这里可以根据实际API响应调整
       notifyListeners();
     } catch (e) {
+      debugPrint('Error loading experts: $e');
       setError(e.toString());
     } finally {
       setLoading(false);
@@ -190,23 +196,46 @@ class MPExpertProvider with ChangeNotifier {
     setFetching(true);
 
     try {
-      // TODO: 从API加载更多专家数据
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
+      // 使用当前游标加载下一页数据
+      final request = MPGetExpertListRequest(
+        pageSize: 20, // 每页加载20个专家
+        cursor: _cursor,
+      );
+      final response = await getExpertList(request);
 
-      // AI-generated START - 模拟加载更多数据
-      final moreExperts = [
-        MPExpertCardData(
-          id: '${_experts.length + 1}',
-          name: '新增专家${_experts.length + 1}',
-          description: '新增的专家数据，用于测试上拉加载功能',
-          isHot: false,
-          isAdded: false,
-        ),
-      ];
-      _experts.addAll(moreExperts);
-      // 模拟：如果已加载超过10条，则认为没有更多数据
-      _hasMore = _experts.length < 10;
-      // AI-generated END - 模拟加载更多数据
+      if (response != null && response.experts.isNotEmpty) {
+        // 将 API 返回的专家数据转换为 MPExpertCardData
+        final moreExperts = response.experts.map((expertMerge) {
+          final expert = expertMerge.expert;
+          return MPExpertCardData(
+            id: expert.id,
+            name: expert.name,
+            description: expert.about,
+            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            isHot: false, // 可以根据需要设置热门标识
+            isAdded: expertMerge.isAdd,
+          );
+        }).toList();
+
+        _experts.addAll(moreExperts);
+
+        // 同步已添加状态
+        for (var expert in moreExperts) {
+          if (expert.isAdded) {
+            _addedExpertIds.add(expert.id);
+          }
+        }
+
+        // 根据 API 响应设置是否有更多数据
+        _hasMore = response.hasMore;
+        // 更新游标（这里假设 API 返回的最后一个专家的 ID 作为下一个游标）
+        // 如果 API 有返回 cursor，应该使用返回的 cursor
+        if (moreExperts.isNotEmpty) {
+          _cursor = moreExperts.last.id;
+        }
+      } else {
+        _hasMore = false;
+      }
 
       notifyListeners();
     } catch (e) {

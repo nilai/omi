@@ -40,11 +40,11 @@ class SavedVoicesCard extends StatelessWidget {
 
   // AI-generated START - 构建标题
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
       child: Text(
         '已保存的声音',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18.0,
           fontWeight: FontWeight.w600,
           color: Color(0xFF212121),
