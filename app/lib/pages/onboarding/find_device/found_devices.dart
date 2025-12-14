@@ -293,10 +293,10 @@ class _FoundDevicesState extends State<FoundDevices> {
           ),
         ],
       ),
-      child: Column(
+      child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+           Row(
             children: [
               Icon(Icons.info_outline, color: Color(0xFF4361EE)),
               SizedBox(width: 8),
@@ -310,12 +310,12 @@ class _FoundDevicesState extends State<FoundDevices> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const _MPTipRow(index: 1, text: '确保设备电量充足'),
-          const SizedBox(height: 8),
-          const _MPTipRow(index: 2, text: '将设备靠近手机'),
-          const SizedBox(height: 8),
-          const _MPTipRow(index: 3, text: '首次连接需要在设备上确认配对'),
+           SizedBox(height: 12),
+           _MPTipRow(index: 1, text: '确保设备电量充足'),
+            SizedBox(height: 8),
+             _MPTipRow(index: 2, text: '将设备靠近手机'),
+           SizedBox(height: 8),
+           _MPTipRow(index: 3, text: '首次连接需要在设备上确认配对'),
         ],
       ),
     );
