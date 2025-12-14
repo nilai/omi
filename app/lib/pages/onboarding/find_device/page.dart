@@ -47,6 +47,7 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
     super.dispose();
   }
 
+  // 开始扫描
   Future<void> _scanDevices() async {
     _provider?.scanDevices(
       onShowDialog: () {
