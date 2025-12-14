@@ -61,7 +61,7 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
               },
               () {},
               'Enable Bluetooth',
-              'Omi needs Bluetooth to connect to your wearable. Please enable Bluetooth and try again.',
+              'MemoPin needs Bluetooth to connect to your wearable. Please enable Bluetooth and try again.',
               singleButton: true,
             ),
           );
