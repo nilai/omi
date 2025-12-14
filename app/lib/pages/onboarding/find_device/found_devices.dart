@@ -209,11 +209,12 @@ class _FoundDevicesState extends State<FoundDevices> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: provider.isConnected
-                  ? _buildConnected(provider)
-                  : provider.deviceList.isEmpty
-                      ? _buildSearching(context)
-                      : _buildFoundList(provider),
+              // child: provider.isConnected
+              //     ? _buildConnected(provider)
+              //     : provider.deviceList.isEmpty
+              //         ? _buildSearching(context)
+              //         : _buildFoundList(provider),
+              child: _buildConnected(provider),
             ),
           ],
         ),
@@ -459,46 +460,294 @@ class _FoundDevicesState extends State<FoundDevices> {
 
   Widget _buildConnected(OnboardingProvider provider) {
     final battery = provider.batteryPercentage;
-    final batteryColor = battery <= 25
-        ? Colors.red
-        : battery > 25 && battery <= 50
-            ? Colors.orange
-            : Colors.green;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 24),
+          // 设备图片
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF5F5F7),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: Center(
+              child: Container(
+                width: 160,
+                height: 160,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF4A4A4A),
+                      Color(0xFF2C2C2C),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(80),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: const Color(0xFFE5E5EA),
+                        width: 4,
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // 状态指示器行
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatusBadge(
+                icon: Icons.battery_charging_full,
+                text: '$battery%',
+                color: const Color(0xFF34C759),
+              ),
+              const SizedBox(width: 16),
+              _buildStatusBadge(
+                icon: Icons.bluetooth_connected,
+                text: '',
+                color: const Color(0xFF007AFF),
+              ),
+              const SizedBox(width: 16),
+              _buildStatusBadge(
+                icon: Icons.signal_cellular_alt,
+                text: '',
+                color: const Color(0xFF34C759),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                'v1.1.11',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF1D1D1F),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // 固件更新提示
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE5E5EA),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9500),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_upward,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Update available',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1D1D1F),
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pendant firmware 1.1.20',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0x991D1D1F),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  color: Color(0x991D1D1F),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // 设备信息卡片
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE5E5EA),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildInfoRow('名称', 'MemoPin'),
+                const Divider(height: 24, color: Color(0xFFE5E5EA)),
+                _buildInfoRow(
+                  '序列号',
+                  provider.deviceId.length >= 4
+                      ? 'MP202400${provider.deviceId.substring(provider.deviceId.length - 4)}'
+                      : 'MP202400${provider.deviceId}',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Data Sync 部分
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFE5E5EA),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Data Sync',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1D1D1F),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F5F7),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.mail_outline,
+                        color: Color(0xFF1D1D1F),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Data ready for upload',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF1D1D1F),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Text(
+                      '0 KB',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0x991D1D1F),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge({
+    required IconData icon,
+    required String text,
+    required Color color,
+  }) {
+    return Row(
       children: [
-        const Icon(
-          Icons.check_circle,
-          color: Color(0xFF4BB543),
-          size: 44,
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          '配对成功',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1D1D1F),
+        Icon(icon, size: 16, color: color),
+        if (text.isNotEmpty) ...[
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
+        ],
+      ],
+    );
+  }
+
+  /// 构建信息行组件
+  /// 显示标签和值的水平布局
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
         Text(
-          '${provider.deviceName} (${BtDevice.shortId(provider.deviceId)})',
-          textAlign: TextAlign.center,
+          label,
           style: const TextStyle(
-            fontWeight: FontWeight.w500,
-            fontSize: 16,
-            color: Color(0xCC1D1D1F),
+            fontSize: 15,
+            fontWeight: FontWeight.w400,
+            color: Color(0x991D1D1F),
           ),
         ),
-        const SizedBox(height: 6),
         Text(
-          '电量 $battery%',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
+          value,
+          style: const TextStyle(
             fontSize: 15,
-            color: batteryColor,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1D1D1F),
           ),
         ),
       ],
