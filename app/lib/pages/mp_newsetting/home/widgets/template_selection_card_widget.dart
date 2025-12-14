@@ -49,7 +49,7 @@ class TemplateSelectionCardWidget extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
               // AI-generated START - 左侧：模板图标
@@ -63,7 +63,7 @@ class TemplateSelectionCardWidget extends StatelessWidget {
               ),
               // AI-generated END - 左侧：模板图标
 
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 12.0),
 
               // AI-generated START - 中间：标题和描述
               Expanded(
@@ -79,7 +79,7 @@ class TemplateSelectionCardWidget extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 6.0),
+                    const SizedBox(height: 4.0),
                     Text(
                       description ?? '选择AI总结模板，定制你的内容风格',
                       style: TextStyle(
@@ -96,10 +96,10 @@ class TemplateSelectionCardWidget extends StatelessWidget {
               const SizedBox(width: 12.0),
 
               // AI-generated START - 右侧：箭头图标
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
-                size: 20.0,
+              Assets.images.mpRightArrowWhite.image(
+                width: 21.0,
+                height: 20.0,
+                fit: BoxFit.contain,
               ),
               // AI-generated END - 右侧：箭头图标
             ],

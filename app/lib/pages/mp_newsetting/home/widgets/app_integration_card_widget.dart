@@ -107,36 +107,18 @@ class AppIntegrationCardWidget extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
               // AI-generated START - 左侧：主图标
-              Container(
-                width: 56.0,
-                height: 56.0,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                    colors: [
-                      Color(0xFF10B981), // 深绿色
-                      Color(0xFF34D399), // 浅绿色
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.0),
-                  child: Assets.images.settingIntegrated.image(
-                    fit: BoxFit.cover,
-                    width: 56.0,
-                    height: 56.0,
-                  ),
-                ),
+              Assets.images.settingIntegrated.image(
+                fit: BoxFit.cover,
+                width: 32.0,
+                height: 32.0,
               ),
               // AI-generated END - 左侧：主图标
 
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 8.0),
 
               // AI-generated START - 中间：标题和应用图标列表
               Expanded(
@@ -148,21 +130,21 @@ class AppIntegrationCardWidget extends StatelessWidget {
                       title ?? 'App集成',
                       style: const TextStyle(
                         color: Colors.black87,
-                        fontSize: 18.0,
+                        fontSize: 14.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 12.0),
+                    const SizedBox(height: 4.0),
                     Row(
                       children: [
                         ...visibleApps.map((app) {
                           return Container(
                             margin: const EdgeInsets.only(right: 8.0),
-                            width: 32.0,
-                            height: 32.0,
+                            width: 16.0,
+                            height: 16.0,
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              borderRadius: BorderRadius.circular(8.0),
+                              borderRadius: BorderRadius.circular(4.0),
                             ),
                             child: app.icon ??
                                 Center(
@@ -170,12 +152,12 @@ class AppIntegrationCardWidget extends StatelessWidget {
                                       ? Icon(
                                           _getAppIcon(app.name),
                                           color: app.iconColor,
-                                          size: 20.0,
+                                          size: 16.0,
                                         )
                                       : Icon(
                                           Icons.apps,
                                           color: Colors.grey.shade400,
-                                          size: 20.0,
+                                          size: 16.0,
                                         ),
                                 ),
                           );
@@ -187,7 +169,7 @@ class AppIntegrationCardWidget extends StatelessWidget {
                               '+更多',
                               style: TextStyle(
                                 color: Colors.grey.shade600,
-                                fontSize: 14.0,
+                                fontSize: 12.0,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -197,17 +179,17 @@ class AppIntegrationCardWidget extends StatelessWidget {
                   ],
                 ),
               ),
-              // AI-generated END - 中间：标题和应用图标列表
+              //  中间：标题和应用图标列表
 
               const SizedBox(width: 12.0),
 
-              // AI-generated START - 右侧：箭头图标
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade400,
-                size: 24.0,
-              ),
-              // AI-generated END - 右侧：箭头图标
+              // 在代码中使用
+              Assets.images.settingRightArrow1.image(
+                width: 19.0,
+                height: 18.0,
+                fit: BoxFit.contain,
+              )
+              // 右侧：箭头图标
             ],
           ),
         ),

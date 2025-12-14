@@ -10,11 +10,19 @@ class SavedVoicesCard extends StatelessWidget {
   const SavedVoicesCard({
     super.key,
     required this.items,
+    this.onTap,
+    this.onActionTap,
   });
   // AI-generated END - 构造函数
 
   /// 声音数据项列表
   final List<MyVoiceItem> items;
+
+  /// 点击回调
+  final Function(String)? onTap;
+
+  /// 按钮点击回调
+  final Function(String)? onActionTap;
 
   // AI-generated START - 构建方法
   @override
@@ -29,10 +37,19 @@ class SavedVoicesCard extends StatelessWidget {
         // 标题（在外面，没有圆角）
         _buildHeader(),
         // 显示多个 item，每个 item 都是独立的圆角卡片，默认使用删除操作
-        ...items.map((item) => VoiceItemCard(
-              item: item,
-              actionType: item.actionType ?? VoiceItemActionType.delete, // 默认使用删除操作
-            )),
+        ...items.asMap().entries.map((entry) {
+          final item = entry.value;
+          return VoiceItemCard(
+            item: item,
+            // 默认使用删除操作
+            onTap: () {
+              onTap?.call(item.id);
+            },
+            onActionTap: () {
+              onActionTap?.call(item.id);
+            },
+          );
+        }),
       ],
     );
   }

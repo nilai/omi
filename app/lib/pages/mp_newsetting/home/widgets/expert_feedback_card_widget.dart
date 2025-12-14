@@ -1,5 +1,6 @@
 // AI-generated START - 专家反馈卡片组件，显示专家列表和选择入口
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 专家信息数据模型
 class ExpertInfo {
@@ -96,7 +97,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
     final expertList = experts.isEmpty ? ExpertFeedbackCardWidget.getDefaultExperts() : experts;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
@@ -106,7 +107,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -114,7 +115,8 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
             GestureDetector(
               onTap: onTap,
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -128,7 +130,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 6.0),
+                        const SizedBox(height: 2.0),
                         Text(
                           subtitle ?? '选择不同领域的AI专家进行沟通',
                           style: TextStyle(
@@ -141,21 +143,21 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12.0),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey.shade400,
-                    size: 24.0,
+                  Assets.images.settingRightArrow2.image(
+                    width: 21.0,
+                    height: 20.0,
+                    fit: BoxFit.contain,
                   ),
                 ],
               ),
             ),
             // AI-generated END - 顶部：标题和导航箭头
 
-            const SizedBox(height: 20.0),
+            const SizedBox(height: 12.0),
 
             // AI-generated START - 专家头像列表
             SizedBox(
-              height: 90.0,
+              height: 76.0,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: expertList.length,
@@ -170,13 +172,13 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
                       child: Column(
                         children: [
                           Container(
-                            width: 60.0,
-                            height: 60.0,
+                            width: 56.0,
+                            height: 56.0,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
                                 color: expert.borderColor,
-                                width: 3.0,
+                                width: 2.0,
                               ),
                             ),
                             child: ClipOval(
@@ -191,7 +193,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
                                   : _buildDefaultAvatar(expert),
                             ),
                           ),
-                          const SizedBox(height: 8.0),
+                          const SizedBox(height: 4.0),
                           SizedBox(
                             width: 70.0,
                             child: Text(
@@ -200,7 +202,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
                               style: TextStyle(
                                 color: Colors.grey.shade700,
                                 fontSize: 12.0,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.normal,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -236,4 +238,3 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
   // AI-generated END - _buildDefaultAvatar
 }
 // AI-generated END - expert_feedback_card_widget.dart
-

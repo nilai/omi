@@ -33,6 +33,10 @@ class VoiceprintRecognitionCardWidget extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: const Color(0xFFE0E7FF),
+            width: 1.0,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.grey.withValues(alpha: 0.1),
@@ -42,20 +46,20 @@ class VoiceprintRecognitionCardWidget extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
               // AI-generated START - 左侧：声纹图标
               ClipOval(
                 child: Assets.images.settingVoiceprint.image(
                   fit: BoxFit.cover,
-                  width: 56.0,
-                  height: 56.0,
+                  width: 32.0,
+                  height: 32.0,
                 ),
               ),
               // AI-generated END - 左侧：声纹图标
 
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 8.0),
 
               // AI-generated START - 中间：标题和描述
               Expanded(
@@ -67,16 +71,16 @@ class VoiceprintRecognitionCardWidget extends StatelessWidget {
                       title ?? '声纹识别',
                       style: const TextStyle(
                         color: Colors.black87,
-                        fontSize: 18.0,
+                        fontSize: 14.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 6.0),
+                    const SizedBox(height: 4.0),
                     Text(
                       description ?? '管理已保存的声音,提升识别准确度',
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 14.0,
+                        fontSize: 12.0,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -88,10 +92,10 @@ class VoiceprintRecognitionCardWidget extends StatelessWidget {
               const SizedBox(width: 12.0),
 
               // AI-generated START - 右侧：箭头图标
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey.shade400,
-                size: 24.0,
+              Assets.images.settingRightArrow1.image(
+                width: 19.0,
+                height: 18.0,
+                fit: BoxFit.contain,
               ),
               // AI-generated END - 右侧：箭头图标
             ],

@@ -1,5 +1,7 @@
 // AI-generated START - 通知设置卡片组件，显示通知设置选项列表
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_custom_widgets/mp_custom_switch.dart';
 
 /// 通知设置项信息数据模型
 class NotificationSettingItem {
@@ -12,12 +14,8 @@ class NotificationSettingItem {
   // AI-generated END - description
 
   // AI-generated START - 图标
-  final IconData icon;
+  final AssetGenImage icon;
   // AI-generated END - icon
-
-  // AI-generated START - 图标背景颜色
-  final Color iconBackgroundColor;
-  // AI-generated END - iconBackgroundColor
 
   // AI-generated START - 开关状态
   final bool value;
@@ -31,7 +29,6 @@ class NotificationSettingItem {
     required this.title,
     this.description,
     required this.icon,
-    required this.iconBackgroundColor,
     required this.value,
     this.onChanged,
   });
@@ -60,8 +57,7 @@ class NotificationSettingsCardWidget extends StatelessWidget {
       NotificationSettingItem(
         title: '推送通知',
         description: '接收应用推送消息',
-        icon: Icons.notifications_outlined,
-        iconBackgroundColor: const Color(0xFF64B5F6), // 浅蓝色
+        icon: Assets.images.mpSettingNotification,
         value: true,
         onChanged: (bool newValue) {
           // AI-generated START - 默认开关变化事件处理
@@ -105,12 +101,12 @@ class NotificationSettingsCardWidget extends StatelessWidget {
           // AI-generated START - 标题区域（独立）
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
               child: Text(
                 title!,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 18.0,
+                  fontSize: 14.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -124,7 +120,7 @@ class NotificationSettingsCardWidget extends StatelessWidget {
             final isLast = index == itemsList.length - 1;
 
             return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
               decoration: BoxDecoration(
                 border: isLast
                     ? null
@@ -138,22 +134,15 @@ class NotificationSettingsCardWidget extends StatelessWidget {
               child: Row(
                 children: [
                   // AI-generated START - 左侧：图标
-                  Container(
-                    width: 40.0,
-                    height: 40.0,
-                    decoration: BoxDecoration(
-                      color: item.iconBackgroundColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      item.icon,
-                      color: Colors.white,
-                      size: 20.0,
-                    ),
+                  item.icon.image(
+                    fit: BoxFit.cover,
+                    width: 32.0,
+                    height: 32.0,
                   ),
+
                   // AI-generated END - 左侧：图标
 
-                  const SizedBox(width: 16.0),
+                  const SizedBox(width: 8.0),
 
                   // AI-generated START - 中间：标题和描述
                   Expanded(
@@ -165,17 +154,17 @@ class NotificationSettingsCardWidget extends StatelessWidget {
                           item.title,
                           style: const TextStyle(
                             color: Colors.black87,
-                            fontSize: 16.0,
+                            fontSize: 14.0,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         if (item.description != null) ...[
-                          const SizedBox(height: 4.0),
+                          const SizedBox(height: 2.0),
                           Text(
                             item.description!,
                             style: TextStyle(
                               color: Colors.grey.shade600,
-                              fontSize: 14.0,
+                              fontSize: 12.0,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -188,16 +177,17 @@ class NotificationSettingsCardWidget extends StatelessWidget {
                   const SizedBox(width: 12.0),
 
                   // AI-generated START - 右侧：开关
-                  Switch(
+                  MPCustomSwitch(
                     value: item.value,
                     onChanged: item.onChanged,
-                    activeThumbColor: Colors.blue,
+                    showDashedBorder: false, // 可以根据需要设置为 true 显示虚线边框
                   ),
                   // AI-generated END - 右侧：开关
                 ],
               ),
             );
           }),
+          const SizedBox(height: 12.0),
           // AI-generated END - 设置项列表区域
         ],
       ),

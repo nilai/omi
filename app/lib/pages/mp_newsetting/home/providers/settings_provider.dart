@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_expert.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/mp/mp_expert.dart';
 import 'package:omi/backend/schema/mp/mp_speaker.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/expert_feedback_card_widget.dart';
@@ -33,6 +34,14 @@ class SettingsProvider with ChangeNotifier {
   bool _isLoadingExperts = false;
   // AI-generated END - _isLoadingExperts
 
+  // AI-generated START - 转写模式：true = 确认后转写，false = 立即转写
+  bool _transcriptionConfirmMode = false;
+  // AI-generated END - _transcriptionConfirmMode
+
+  // AI-generated START - 音频保留时间
+  String _audioRetentionPeriod = '1 month';
+  // AI-generated END - _audioRetentionPeriod
+
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
   // AI-generated END - isLoading
@@ -56,6 +65,52 @@ class SettingsProvider with ChangeNotifier {
   // AI-generated START - 获取是否正在加载专家列表
   bool get isLoadingExperts => _isLoadingExperts;
   // AI-generated END - isLoadingExperts
+
+  // AI-generated START - 获取转写模式
+  bool get transcriptionConfirmMode => _transcriptionConfirmMode;
+  // AI-generated END - transcriptionConfirmMode
+
+  // AI-generated START - 获取音频保留时间
+  String get audioRetentionPeriod => _audioRetentionPeriod;
+  // AI-generated END - audioRetentionPeriod
+
+  // AI-generated START - 设置转写模式
+  void setTranscriptionConfirmMode(bool confirmMode) {
+    _transcriptionConfirmMode = confirmMode;
+    notifyListeners();
+  }
+  // AI-generated END - setTranscriptionConfirmMode
+
+  // 保存转写模式到服务器
+  //TODO liyan: 保存转写模式到服务器
+  Future<bool> saveTranscriptionMode(bool confirmMode) async {
+    // try {
+    //   final success = await setTranscriptionMode(confirmMode: confirmMode);
+    //   if (success) {
+    //     _transcriptionConfirmMode = confirmMode;
+    //     notifyListeners();
+    //   }
+    //   return success;
+    // } catch (e) {
+    //   debugPrint('Failed to save transcription mode: $e');
+    return false;
+    // }
+  }
+  // AI-generated END - saveTranscriptionMode
+
+  // AI-generated START - 设置音频保留时间
+  void setAudioRetentionPeriod(String period) {
+    _audioRetentionPeriod = period;
+    SharedPreferencesUtil().audioRetentionPeriod = period;
+    notifyListeners();
+  }
+  // AI-generated END - setAudioRetentionPeriod
+
+  // AI-generated START - 初始化音频保留时间（从 SharedPreferences 加载）
+  void initAudioRetentionPeriod() {
+    _audioRetentionPeriod = SharedPreferencesUtil().audioRetentionPeriod;
+  }
+  // AI-generated END - initAudioRetentionPeriod
 
   // AI-generated START - 从接口加载 speaker 列表
   Future<void> loadSpeakerList() async {

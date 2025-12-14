@@ -8,6 +8,7 @@ import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/my_voice_card.
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/record_voiceprint_card.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/saved_voices_card.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/voiceprint_info_card.dart';
+import 'package:omi/pages/mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 import 'package:provider/provider.dart';
 
 /// 声纹识别页面
@@ -80,6 +81,20 @@ class VoiceRecognitionPage extends StatelessWidget {
     // 我的声音卡片（支持多个item，标题在卡片内部）
     return MyVoiceCard(
       items: displayItems,
+      onTap: (id) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id),
+          ),
+        );
+      },
+      onActionTap: (id) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id),
+          ),
+        );
+      },
     );
   }
   // AI-generated END - 构建我的声音部分
@@ -98,6 +113,20 @@ class VoiceRecognitionPage extends StatelessWidget {
     // 已保存的声音卡片（支持多个item，默认使用删除操作）
     return SavedVoicesCard(
       items: savedVoicesList,
+      onTap: (id) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id, isEditMode: true),
+          ),
+        );
+      },
+      onActionTap: (id) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id, isEditMode: true),
+          ),
+        );
+      },
     );
   }
   // AI-generated END - 构建已保存的声音部分

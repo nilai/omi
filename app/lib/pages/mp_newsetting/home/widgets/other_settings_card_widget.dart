@@ -86,7 +86,7 @@ class OtherSettingsCardWidget extends StatelessWidget {
     final settingsList = settings.isEmpty ? OtherSettingsCardWidget.getDefaultSettings() : settings;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.only(left: 12.0, right: 12.0, top: 8.0, bottom: 8.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
@@ -104,12 +104,12 @@ class OtherSettingsCardWidget extends StatelessWidget {
           // AI-generated START - 标题
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 12.0),
               child: Text(
                 title!,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 18.0,
+                  fontSize: 16.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -125,7 +125,7 @@ class OtherSettingsCardWidget extends StatelessWidget {
             return GestureDetector(
               onTap: setting.onTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   border: isLast
                       ? null
@@ -150,8 +150,8 @@ class OtherSettingsCardWidget extends StatelessWidget {
                           ? ClipOval(
                               child: setting.iconImage!.image(
                                 fit: BoxFit.cover,
-                                width: 40.0,
-                                height: 40.0,
+                                width: 32.0,
+                                height: 32.0,
                               ),
                             )
                           : Icon(
@@ -162,7 +162,7 @@ class OtherSettingsCardWidget extends StatelessWidget {
                     ),
                     // AI-generated END - 左侧：图标
 
-                    const SizedBox(width: 16.0),
+                    const SizedBox(width: 8.0),
 
                     // AI-generated START - 中间：标题
                     Expanded(
@@ -170,18 +170,18 @@ class OtherSettingsCardWidget extends StatelessWidget {
                         setting.title,
                         style: TextStyle(
                           color: Colors.grey.shade800,
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.w400,
+                          fontSize: 14.0,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                     // AI-generated END - 中间：标题
 
                     // AI-generated START - 右侧：箭头
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey.shade400,
-                      size: 20.0,
+                    Assets.images.settingRightArrow1.image(
+                      width: 19.0,
+                      height: 18.0,
+                      fit: BoxFit.contain,
                     ),
                     // AI-generated END - 右侧：箭头
                   ],
@@ -189,6 +189,7 @@ class OtherSettingsCardWidget extends StatelessWidget {
               ),
             );
           }),
+          const SizedBox(height: 12.0),
           // AI-generated END - 设置项列表
         ],
       ),

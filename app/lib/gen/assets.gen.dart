@@ -289,6 +289,30 @@ class $AssetsImagesGen {
   AssetGenImage get mpMyVoiceEdit =>
       const AssetGenImage('assets/images/mp_my_voice_edit.png');
 
+  /// File path: assets/images/mp_right_arrow_white.png
+  AssetGenImage get mpRightArrowWhite =>
+      const AssetGenImage('assets/images/mp_right_arrow_white.png');
+
+  /// File path: assets/images/mp_setting_notification.png
+  AssetGenImage get mpSettingNotification =>
+      const AssetGenImage('assets/images/mp_setting_notification.png');
+
+  /// File path: assets/images/mp_setting_privicy.png
+  AssetGenImage get mpSettingPrivicy =>
+      const AssetGenImage('assets/images/mp_setting_privicy.png');
+
+  /// File path: assets/images/mp_setting_service.png
+  AssetGenImage get mpSettingService =>
+      const AssetGenImage('assets/images/mp_setting_service.png');
+
+  /// File path: assets/images/mp_setting_voice.png
+  AssetGenImage get mpSettingVoice =>
+      const AssetGenImage('assets/images/mp_setting_voice.png');
+
+  /// File path: assets/images/mp_setting_voice_time.png
+  AssetGenImage get mpSettingVoiceTime =>
+      const AssetGenImage('assets/images/mp_setting_voice_time.png');
+
   /// File path: assets/images/mp_start_recording_icon.png
   AssetGenImage get mpStartRecordingIcon =>
       const AssetGenImage('assets/images/mp_start_recording_icon.png');
@@ -301,9 +325,17 @@ class $AssetsImagesGen {
   AssetGenImage get mpTodoEdit =>
       const AssetGenImage('assets/images/mp_todo_edit.png');
 
+  /// File path: assets/images/mp_transcription_check.png
+  AssetGenImage get mpTranscriptionCheck =>
+      const AssetGenImage('assets/images/mp_transcription_check.png');
+
   /// File path: assets/images/mp_voice_add_mark.png
   AssetGenImage get mpVoiceAddMark =>
       const AssetGenImage('assets/images/mp_voice_add_mark.png');
+
+  /// File path: assets/images/mp_voice_dialog_close.png
+  AssetGenImage get mpVoiceDialogClose =>
+      const AssetGenImage('assets/images/mp_voice_dialog_close.png');
 
   /// File path: assets/images/mp_voice_help.png
   AssetGenImage get mpVoiceHelp =>
@@ -312,6 +344,14 @@ class $AssetsImagesGen {
   /// File path: assets/images/mp_voice_new.png
   AssetGenImage get mpVoiceNew =>
       const AssetGenImage('assets/images/mp_voice_new.png');
+
+  /// File path: assets/images/mp_voice_tip_icon.png
+  AssetGenImage get mpVoiceTipIcon =>
+      const AssetGenImage('assets/images/mp_voice_tip_icon.png');
+
+  /// File path: assets/images/mp_voice_waiting_add.png
+  AssetGenImage get mpVoiceWaitingAdd =>
+      const AssetGenImage('assets/images/mp_voice_waiting_add.png');
 
   /// File path: assets/images/new_background.png
   AssetGenImage get newBackground =>
@@ -618,12 +658,22 @@ class $AssetsImagesGen {
     mpMyVoice,
     mpMyVoiceDelete,
     mpMyVoiceEdit,
+    mpRightArrowWhite,
+    mpSettingNotification,
+    mpSettingPrivicy,
+    mpSettingService,
+    mpSettingVoice,
+    mpSettingVoiceTime,
     mpStartRecordingIcon,
     mpTodoCancendar,
     mpTodoEdit,
+    mpTranscriptionCheck,
     mpVoiceAddMark,
+    mpVoiceDialogClose,
     mpVoiceHelp,
     mpVoiceNew,
+    mpVoiceTipIcon,
+    mpVoiceWaitingAdd,
     newBackground,
     notionLogo,
     omiDevkitWithoutRope,

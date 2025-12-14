@@ -2,7 +2,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/my_voice_card.dart';
-import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/voice_item_card.dart';
 
 /// 声纹识别状态管理Provider
 /// 管理声音列表数据
@@ -33,58 +32,27 @@ class VoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 加载模拟数据
   void _loadMockData() {
     _voiceList = [
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '0',
         title: '我的声音',
         duration: '120秒',
         date: '2024-01-20',
         icon: 'assets/images/voice_icon1.png', // 优先显示本地图片
         imageUrl: 'assets/images/voice_icon1_backup.png', // icon 存在时不会使用
-        onTap: () {
-          debugPrint('点击了声音1');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除声音1');
-          }
-          if (type == VoiceItemActionType.edit) {
-            debugPrint('编辑声音1');
-          }
-        },
       ),
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '1',
         title: '工作录音',
         duration: '90秒',
         date: '2024-01-21',
         icon: 'assets/images/work_voice_icon.png', // 使用本地图片
-        onTap: () {
-          debugPrint('点击了声音2');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除声音2');
-          }
-          if (type == VoiceItemActionType.edit) {
-            debugPrint('编辑声音2');
-          }
-        },
       ),
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '2',
         title: '会议记录',
         duration: '150秒',
         date: '2024-01-22',
         imageUrl: 'https://example.com/voice_icon.png', // 没有 icon 时使用网络图片
-        actionType: VoiceItemActionType.delete, // 使用删除操作
-        onTap: () {
-          debugPrint('点击了声音3');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除声音3');
-          }
-          if (type == VoiceItemActionType.edit) {
-            debugPrint('编辑声音3');
-          }
-        },
       ),
     ];
     notifyListeners();
@@ -119,95 +87,33 @@ class VoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 加载已保存的声音模拟数据
   void _loadSavedVoicesData() {
     _savedVoicesList = [
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '3',
         title: '叶成功',
         duration: '95秒',
         date: '2024-01-15',
         imageUrl: 'assets/images/ye_chenggong.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶成功');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶成功');
-          }
-        },
       ),
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '4',
         title: '叶天命',
         duration: '110秒',
         date: '2024-01-14',
         imageUrl: 'assets/images/ye_tianming.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶天命');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶天命');
-          }
-        },
       ),
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '5',
         title: '叶无敌',
         duration: '105秒',
         date: '2024-01-12',
         imageUrl: 'assets/images/ye_wudi.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶无敌');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶无敌');
-          }
-        },
       ),
-      MyVoiceItem(
+      const MyVoiceItem(
+        id: '6',
         title: '叶疯狂',
         duration: '98秒',
         date: '2024-01-10',
         imageUrl: 'assets/images/ye_fengkuang.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶疯狂');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶疯狂');
-          }
-        },
-      ),
-      MyVoiceItem(
-        title: '叶智慧',
-        duration: '115秒',
-        date: '2024-01-08',
-        imageUrl: 'assets/images/ye_zhihui.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶智慧');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶智慧');
-          }
-        },
-      ),
-      MyVoiceItem(
-        title: '叶勇敢',
-        duration: '92秒',
-        date: '2024-01-05',
-        imageUrl: 'assets/images/ye_yonggan.png',
-        actionType: VoiceItemActionType.delete,
-        onTap: () {
-          debugPrint('点击了叶勇敢');
-        },
-        onActionTap: (type) {
-          if (type == VoiceItemActionType.delete) {
-            debugPrint('删除叶勇敢');
-          }
-        },
       ),
     ];
     notifyListeners();

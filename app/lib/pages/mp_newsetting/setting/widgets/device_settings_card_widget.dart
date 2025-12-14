@@ -112,12 +112,12 @@ class DeviceSettingsCardWidget extends StatelessWidget {
           // AI-generated START - 标题区域（独立）
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
               child: Text(
                 title!,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 18.0,
+                  fontSize: 14.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -133,7 +133,7 @@ class DeviceSettingsCardWidget extends StatelessWidget {
             return GestureDetector(
               onTap: item.onTap,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
                 decoration: BoxDecoration(
                   border: isLast
                       ? null
@@ -147,33 +147,17 @@ class DeviceSettingsCardWidget extends StatelessWidget {
                 child: Row(
                   children: [
                     // AI-generated START - 左侧：图标
-                    Container(
-                      width: 40.0,
-                      height: 40.0,
-                      decoration: BoxDecoration(
-                        gradient: item.iconGradientColors != null
-                            ? LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: item.iconGradientColors!,
-                              )
-                            : null,
-                        color: item.iconGradientColors == null ? Colors.grey.shade300 : null,
-                        shape: BoxShape.circle,
-                      ),
-                      child: item.iconImage != null
-                          ? ClipOval(
-                              child: item.iconImage!.image(
-                                fit: BoxFit.cover,
-                                width: 40.0,
-                                height: 40.0,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
+                    item.iconImage != null
+                        ? ClipOval(
+                            child: item.iconImage!.image(
+                              fit: BoxFit.cover,
+                              width: 32.0,
+                              height: 32.0,
+                            ),
+                          )
+                        : const SizedBox.shrink(),
                     // AI-generated END - 左侧：图标
-
-                    const SizedBox(width: 16.0),
+                    const SizedBox(width: 8.0),
 
                     // AI-generated START - 中间：标题和描述
                     Expanded(
@@ -185,17 +169,17 @@ class DeviceSettingsCardWidget extends StatelessWidget {
                             item.title,
                             style: const TextStyle(
                               color: Colors.black87,
-                              fontSize: 16.0,
+                              fontSize: 14.0,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           if (item.description != null) ...[
-                            const SizedBox(height: 4.0),
+                            const SizedBox(height: 2.0),
                             Text(
                               item.description!,
                               style: TextStyle(
                                 color: Colors.grey.shade600,
-                                fontSize: 14.0,
+                                fontSize: 12.0,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
@@ -208,17 +192,14 @@ class DeviceSettingsCardWidget extends StatelessWidget {
                     const SizedBox(width: 12.0),
 
                     // AI-generated START - 右侧：箭头
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey.shade400,
-                      size: 20.0,
-                    ),
+                    Image.asset(Assets.images.settingRightArrow1.path, width: 19.0, height: 18.0, fit: BoxFit.cover),
                     // AI-generated END - 右侧：箭头
                   ],
                 ),
               ),
             );
           }),
+          const SizedBox(height: 12.0),
           // AI-generated END - 设置项列表区域
         ],
       ),

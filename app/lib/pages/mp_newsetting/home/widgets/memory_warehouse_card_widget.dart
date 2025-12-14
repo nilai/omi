@@ -1,5 +1,6 @@
 // AI-generated START - 记忆仓库卡片组件，显示沟通记录入口和朋友头像列表
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 记忆仓库卡片组件
 /// 显示记忆仓库入口，包含标题、描述和重叠的朋友头像列表
@@ -43,12 +44,12 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
+          gradient: const LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFFFFE5E5).withValues(alpha: 0.8), // 浅粉色
-              Colors.white,
+              Color(0xFFFFF7ED), // 浅粉色
+              Color(0xFFFAF5FF),
             ],
           ),
           borderRadius: BorderRadius.circular(16.0),
@@ -65,13 +66,13 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // AI-generated START - 顶部：标题和导航箭头
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: Column(
@@ -85,7 +86,7 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 6.0),
+                        const SizedBox(height: 2.0),
                         Text(
                           subtitle ?? '查看与朋友的沟通记录',
                           style: TextStyle(
@@ -98,20 +99,20 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12.0),
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey.shade400,
-                    size: 24.0,
+                  Assets.images.settingRightArrow2.image(
+                    width: 21.0,
+                    height: 20.0,
+                    fit: BoxFit.contain,
                   ),
                 ],
               ),
               // AI-generated END - 顶部：标题和导航箭头
 
-              const SizedBox(height: 20.0),
+              const SizedBox(height: 12.0),
 
               // AI-generated START - 底部：重叠的头像列表
               SizedBox(
-                height: 48.0,
+                height: 40.0,
                 child: Stack(
                   children: [
                     ...visibleAvatars.asMap().entries.map((entry) {
@@ -157,8 +158,8 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                             ),
                           ),
                           child: Container(
-                            width: 48.0,
-                            height: 48.0,
+                            width: 40.0,
+                            height: 40.0,
                             decoration: const BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: LinearGradient(
@@ -175,7 +176,7 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                                 '+$remainingCount',
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14.0,
+                                  fontSize: 12.0,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),

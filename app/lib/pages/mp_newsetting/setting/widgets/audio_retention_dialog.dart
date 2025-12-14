@@ -33,9 +33,15 @@ class AudioRetentionDialog {
       orElse: () => AudioRetentionPeriod.oneMonth,
     );
 
-    await showDialog(
+    await showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(16.0),
+        ),
+      ),
       builder: (dialogContext) {
         return _AudioRetentionDialogContent(
           selectedPeriod: selectedPeriod,
@@ -82,15 +88,14 @@ class _AudioRetentionDialogContentState extends State<_AudioRetentionDialogConte
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16.0),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(16.0),
         ),
+      ),
+      child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -100,18 +105,10 @@ class _AudioRetentionDialogContentState extends State<_AudioRetentionDialogConte
 
               return InkWell(
                 onTap: () => _selectPeriod(period),
-                borderRadius: BorderRadius.vertical(
-                  top: period == AudioRetentionPeriod.values.first ? const Radius.circular(16.0) : Radius.zero,
-                  bottom: period == AudioRetentionPeriod.values.last ? const Radius.circular(16.0) : Radius.zero,
-                ),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                   decoration: BoxDecoration(
                     color: isSelected ? const Color(0xFF8B5CF6).withValues(alpha: 0.1) : Colors.transparent,
-                    borderRadius: BorderRadius.vertical(
-                      top: period == AudioRetentionPeriod.values.first ? const Radius.circular(16.0) : Radius.zero,
-                      bottom: period == AudioRetentionPeriod.values.last ? const Radius.circular(16.0) : Radius.zero,
-                    ),
                   ),
                   child: Row(
                     children: [
@@ -137,6 +134,7 @@ class _AudioRetentionDialogContentState extends State<_AudioRetentionDialogConte
               );
             }),
             // AI-generated END - 选项列表
+            SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
           ],
         ),
       ),

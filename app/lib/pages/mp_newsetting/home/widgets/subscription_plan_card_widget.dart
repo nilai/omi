@@ -41,15 +41,17 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
     // AI-generated END - progress
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF8B5CF6), // 浅紫色
-            Color(0xFF6D28D9), // 深紫色
+            Color(0xFF9333EA), // 紫色
+            Color(0xFF7E22CE), // 中间深紫色
+            Color(0xFF000000), // 黑色
           ],
+          stops: [0.0, 0.6, 1.0], // 控制每个颜色的位置，黑色占最后50%
         ),
         borderRadius: BorderRadius.circular(20.0),
         boxShadow: [
@@ -61,7 +63,7 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0, top: 12.0, bottom: 0.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -77,8 +79,8 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12.0),
                       child: Assets.images.settingSubscription.image(
                         fit: BoxFit.cover,
-                        width: 48.0,
-                        height: 48.0,
+                        width: 28.0,
+                        height: 28.0,
                       ),
                     ),
                     const SizedBox(width: 12.0),
@@ -89,16 +91,16 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
                           'MemoAI',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 20.0,
+                            fontSize: 12.0,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         Text(
                           planName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.w500,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            fontSize: 10.0,
+                            fontWeight: FontWeight.normal,
                           ),
                         ),
                       ],
@@ -111,29 +113,28 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
+                    Text(
                       '剩余',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 10.0,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
-                    const SizedBox(height: 4.0),
                     Text(
                       '$remainingMinutes',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 32.0,
+                        fontSize: 16.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Text(
+                    Text(
                       '分钟',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14.0,
-                        fontWeight: FontWeight.w500,
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 10.0,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
                   ],
@@ -143,63 +144,63 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
             ),
             // AI-generated END - 顶部区域
 
-            const SizedBox(height: 20.0),
+            const SizedBox(height: 4.0),
 
             // AI-generated START - 中间区域：总时间和进度条
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  '$totalMinutes 分钟',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 12.0),
                 Row(
                   children: [
                     Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8.0),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.purple.shade300.withValues(alpha: 0.3),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color(0xFFFFA500), // 橙色/黄色
-                          ),
-                          minHeight: 8.0,
+                      child: Text(
+                        '$totalMinutes 分钟',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                     if (showUnlimited) ...[
                       const SizedBox(width: 12.0),
-                      const Text(
+                      Text(
                         '∞',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20.0,
-                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12.0,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                       const SizedBox(width: 4.0),
-                      const Text(
+                      Text(
                         'Unlimited',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w500,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 10.0,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                     ],
                   ],
                 ),
+                const SizedBox(height: 4.0),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: Colors.purple.shade300.withValues(alpha: 0.3),
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Color(0xFFFFA500), // 橙色/黄色
+                    ),
+                    minHeight: 4.0,
+                  ),
+                ),
               ],
             ),
             // AI-generated END - 中间区域
 
-            const SizedBox(height: 12.0),
+            const SizedBox(height: 4.0),
 
             // AI-generated START - 底部：试用按钮
             SizedBox(
@@ -209,7 +210,7 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF6D28D9),
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12.0),
                   ),
@@ -218,13 +219,16 @@ class SubscriptionPlanCardWidget extends StatelessWidget {
                 child: const Text(
                   '7天无限免费试用',
                   style: TextStyle(
-                    fontSize: 16.0,
+                    fontSize: 12.0,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
             ),
             // AI-generated END - 底部：试用按钮
+            const SizedBox(
+              height: 6.0,
+            )
           ],
         ),
       ),

@@ -44,7 +44,7 @@ class ReferralCardWidget extends StatelessWidget {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
           child: Row(
             children: [
               // AI-generated START - 左侧：礼物图标
@@ -52,8 +52,8 @@ class ReferralCardWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.0),
                 child: Assets.images.settingReferral.image(
                   fit: BoxFit.cover,
-                  width: 56.0,
-                  height: 56.0,
+                  width: 32.0,
+                  height: 32.0,
                 ),
               ),
               // AI-generated END - 左侧：礼物图标
@@ -69,7 +69,7 @@ class ReferralCardWidget extends StatelessWidget {
                       title ?? '推荐 MemoAI 给朋友',
                       style: const TextStyle(
                         color: Colors.black87,
-                        fontSize: 16.0,
+                        fontSize: 14.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -78,7 +78,7 @@ class ReferralCardWidget extends StatelessWidget {
                       description ?? '邀请好友,双方都能获得奖励',
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 13.0,
+                        fontSize: 12.0,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -90,18 +90,18 @@ class ReferralCardWidget extends StatelessWidget {
               // AI-generated START - 右侧：通知点和箭头
               Stack(
                 children: [
-                  Icon(
-                    Icons.chevron_right,
-                    color: Colors.grey.shade400,
-                    size: 24.0,
+                  Assets.images.settingRightArrow1.image(
+                    width: 19.0,
+                    height: 18.0,
+                    fit: BoxFit.contain,
                   ),
                   if (showNotification)
                     Positioned(
                       right: 0,
                       top: 0,
                       child: Container(
-                        width: 8.0,
-                        height: 8.0,
+                        width: 6.0,
+                        height: 6.0,
                         decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,

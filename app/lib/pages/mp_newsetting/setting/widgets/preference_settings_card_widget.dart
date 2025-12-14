@@ -1,6 +1,9 @@
 // AI-generated START - 偏好设置卡片组件，显示偏好设置选项列表
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/mp_newsetting/setting/widgets/primary_language_dialog.dart';
+import 'package:omi/pages/mp_newsetting/setting/widgets/transcription_mode_dialog.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -19,12 +22,8 @@ class PreferenceSettingItem {
   // AI-generated END - currentValue
 
   // AI-generated START - 图标
-  final IconData icon;
+  final String? icon;
   // AI-generated END - icon
-
-  // AI-generated START - 图标背景颜色（用于渐变）
-  final List<Color> iconGradientColors;
-  // AI-generated END - iconGradientColors
 
   // AI-generated START - 点击回调
   final VoidCallback? onTap;
@@ -35,7 +34,6 @@ class PreferenceSettingItem {
     this.description,
     this.currentValue,
     required this.icon,
-    required this.iconGradientColors,
     this.onTap,
   });
 }
@@ -63,11 +61,7 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
       PreferenceSettingItem(
         title: 'AI偏好',
         description: '自定义AI助手的行为和风格',
-        icon: Icons.psychology_outlined,
-        iconGradientColors: const [
-          Color(0xFF8B5CF6), // 紫色
-          Color(0xFF6D28D9), // 深紫色
-        ],
+        icon: Assets.images.settingAiperfect.path,
         onTap: () {
           // AI-generated START - 默认点击事件处理
           if (context != null) {
@@ -84,18 +78,27 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
       PreferenceSettingItem(
         title: '转写语言偏好',
         description: null,
+        icon: Assets.images.settingLanguage.path,
         currentValue: context != null ? _getCurrentLanguageName(context) : 'Chinese (Mandarin, Simplified)',
-        icon: Icons.language_outlined,
-        iconGradientColors: const [
-          Color(0xFF64B5F6), // 浅蓝色
-          Color(0xFF8B5CF6), // 紫色
-        ],
         onTap: () {
           // AI-generated START - 打开主要语言选择弹窗
           if (context != null) {
             PrimaryLanguageDialog.show(context);
           }
           // AI-generated END - 打开主要语言选择弹窗
+        },
+      ),
+      PreferenceSettingItem(
+        title: '录音后转写',
+        description: null,
+        currentValue: context != null ? _getTranscriptionModeText(context) : '默认立即转写',
+        icon: Assets.images.mpSettingVoice.path,
+        onTap: () {
+          // AI-generated START - 打开转写模式选择弹窗
+          if (context != null) {
+            TranscriptionModeDialog.show(context);
+          }
+          // AI-generated END - 打开转写模式选择弹窗
         },
       ),
     ];
@@ -115,6 +118,19 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
     return 'Chinese (Mandarin, Simplified)';
   }
   // AI-generated END - _getCurrentLanguageName
+
+  // AI-generated START - 获取转写模式文本
+  static String _getTranscriptionModeText(BuildContext context) {
+    try {
+      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      // 根据后台返回的转写模式显示不同的文本
+      return settingsProvider.transcriptionConfirmMode ? '确认后转写' : '默认立即转写';
+    } catch (e) {
+      // 如果获取失败，返回默认值
+      return '默认立即转写';
+    }
+  }
+  // AI-generated END - _getTranscriptionModeText
 
   @override
   Widget build(BuildContext context) {
@@ -139,12 +155,12 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
           // AI-generated START - 标题区域（独立）
           if (title != null)
             Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 20.0, 20.0, 16.0),
+              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
               child: Text(
                 title!,
                 style: const TextStyle(
                   color: Colors.black87,
-                  fontSize: 18.0,
+                  fontSize: 14.0,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -159,101 +175,91 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
 
             return GestureDetector(
               onTap: item.onTap,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                decoration: BoxDecoration(
-                  border: isLast
-                      ? null
-                      : Border(
-                          bottom: BorderSide(
-                            color: Colors.grey.shade200,
-                            width: 1.0,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+                    child: Row(
+                      children: [
+                        // AI-generated START - 左侧：图标
+                        Image.asset(item.icon!, fit: BoxFit.cover, width: 32.0, height: 32.0),
+                        // AI-generated END - 左侧：图标
+
+                        const SizedBox(width: 8.0),
+
+                        // AI-generated START - 中间：标题和描述
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item.title,
+                                style: const TextStyle(
+                                  color: Colors.black87,
+                                  fontSize: 14.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              if (item.description != null) ...[
+                                const SizedBox(height: 2.0),
+                                Text(
+                                  item.description!,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                              if (item.currentValue != null) ...[
+                                const SizedBox(height: 2.0),
+                                Text(
+                                  item.currentValue!,
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 12.0,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                ),
-                child: Row(
-                  children: [
-                    // AI-generated START - 左侧：图标
+                        // AI-generated END - 中间：标题和描述
+
+                        const SizedBox(width: 12.0),
+
+                        // AI-generated START - 右侧：箭头图标
+                        Assets.images.settingRightArrow1.image(
+                          width: 19.0,
+                          height: 18.0,
+                          fit: BoxFit.contain,
+                        ),
+                        // AI-generated END - 右侧：箭头图标
+                      ],
+                    ),
+                  ),
+
+                  // AI-generated START - 底部边框（带左右边距）
+                  if (!isLast)
                     Container(
-                      width: 40.0,
-                      height: 40.0,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: item.iconGradientColors,
-                        ),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        item.icon,
-                        color: Colors.white,
-                        size: 20.0,
-                      ),
+                      margin: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
+                      height: 1.0,
+                      color: Colors.grey.shade200,
                     ),
-                    // AI-generated END - 左侧：图标
-
-                    const SizedBox(width: 16.0),
-
-                    // AI-generated START - 中间：标题、描述和当前值
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            item.title,
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          if (item.description != null) ...[
-                            const SizedBox(height: 4.0),
-                            Text(
-                              item.description!,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                          if (item.currentValue != null && item.description == null) ...[
-                            const SizedBox(height: 4.0),
-                            Text(
-                              item.currentValue!,
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 14.0,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    // AI-generated END - 中间：标题、描述和当前值
-
-                    const SizedBox(width: 12.0),
-
-                    // AI-generated START - 右侧：箭头
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey.shade400,
-                      size: 20.0,
-                    ),
-                    // AI-generated END - 右侧：箭头
-                  ],
-                ),
+                  // AI-generated END - 底部边框
+                ],
               ),
             );
           }),
           // AI-generated END - 设置项列表区域
+          const SizedBox(height: 12.0),
         ],
       ),
     );
   }
+  // AI-generated END - build
 }
 // AI-generated END - preference_settings_card_widget.dart
