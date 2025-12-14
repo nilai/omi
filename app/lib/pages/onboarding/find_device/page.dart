@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../mp_custom_utils/mp_toast_utils.dart';
+import '../setting/page.dart';
 import 'found_devices.dart';
 
 class FindDevicesPage extends StatefulWidget {
@@ -108,7 +109,11 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                         visualDensity: VisualDensity.compact,
                         // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
                         onPressed: () {
-                          MPToastUtils.showFeatureComingSoon();
+                          Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const MemoPinSettingPage(),
+                    ),
+                  );
                         },
                         icon: const Icon(
                           Icons.settings_outlined,
