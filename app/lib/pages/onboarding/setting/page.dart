@@ -51,7 +51,7 @@ class MemoPinSettingPage extends StatelessWidget {
                 _buildDataSyncCard(),
                 const SizedBox(height: 16),
                 // 蓝牙调试
-                _buildBluetoothDebugCard(context),
+                _buildMicrophoneGainCard(),
                 const SizedBox(height: 24),
               ],
             ),
@@ -350,8 +350,8 @@ class MemoPinSettingPage extends StatelessWidget {
     );
   }
 
-  /// 构建蓝牙调试卡片
-  Widget _buildBluetoothDebugCard(BuildContext context) {
+  /// 构建麦克风增益卡片
+  Widget _buildMicrophoneGainCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -368,7 +368,7 @@ class MemoPinSettingPage extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.all(16),
             child: Text(
-              '蓝牙调试',
+              '麦克风增益',
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
@@ -376,17 +376,13 @@ class MemoPinSettingPage extends StatelessWidget {
               ),
             ),
           ),
+          // 增益调节行
           GestureDetector(
             onTap: () {
               // TODO: 实现增益调节功能
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: Color(0xFFE5E5EA), width: 1),
-                ),
-              ),
               child: Row(
                 children: [
                   Container(
@@ -397,7 +393,7 @@ class MemoPinSettingPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Icon(
-                      Icons.tune,
+                      Icons.mic,
                       color: Color(0xFF007AFF),
                       size: 18,
                     ),
@@ -413,6 +409,7 @@ class MemoPinSettingPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
                   const Icon(
                     Icons.chevron_right,
                     color: Color(0x991D1D1F),
