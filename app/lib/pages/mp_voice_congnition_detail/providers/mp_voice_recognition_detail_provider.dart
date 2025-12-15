@@ -3,6 +3,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../services/mp_audio_upload.dart';
+
 /// 声纹详情状态管理Provider
 /// 管理声纹详情页面的状态，包括音频播放、保存、删除等
 class MPVoiceRecognitionDetailProvider with ChangeNotifier {
@@ -118,6 +120,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   void saveVoice(String name) {
     // TODO: 实现保存声纹的逻辑
     debugPrint('Saving voice: $name, voiceId: $voiceId');
+
+    // MPAudioUploadService().uploadMPAudioBytes(audioBytes, contentType);
   }
   // AI-generated END - saveVoice
 
