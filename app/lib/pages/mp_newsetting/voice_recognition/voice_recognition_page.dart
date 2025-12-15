@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_add_voive_recognition/mp_add_voice_recognition_page.dart';
 import 'package:omi/pages/mp_add_voive_recognition/providers/mp_add_voice_recognition_provider.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/providers/voice_recognition_provider.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/widgets/my_voice_card.dart';
@@ -28,7 +29,7 @@ class VoiceRecognitionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: MPConstUtils.backgroundColorGrey,
       appBar: MPCommonAppBar(
         title: title,
       ),
@@ -37,7 +38,6 @@ class VoiceRecognitionPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const VoiceprintInfoCard(),
-            const SizedBox(height: 8.0),
             // 我的声音部分
             _buildMyVoiceSection(context),
             const SizedBox(height: 8.0),
@@ -70,13 +70,7 @@ class VoiceRecognitionPage extends StatelessWidget {
     final voiceProvider = Provider.of<VoiceRecognitionProvider>(context);
     final voiceList = voiceProvider.voiceList;
 
-    // 如果没有声音数据，不显示
-    if (voiceList.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    // 只显示前两个 item
-    final displayItems = voiceList.take(2).toList();
+    final displayItems = voiceList.toList();
 
     // 我的声音卡片（支持多个item，标题在卡片内部）
     return MyVoiceCard(

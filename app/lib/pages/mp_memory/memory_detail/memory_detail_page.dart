@@ -152,13 +152,13 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                         // AI-generated START - 导航到对话详情页面
                         final memory = provider.getMemoryById(summary.id);
                         if (memory != null) {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => ConversationDetailPage(
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ConversationDetailPage(
                                 memory: memory,
-                              ),
                             ),
-                          );
+                          ),
+                        );
                         }
                         // AI-generated END - 导航到对话详情页面
                       },

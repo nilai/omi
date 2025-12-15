@@ -160,7 +160,7 @@ class MemoryDetailProvider with ChangeNotifier {
           );
         }).toList();
 
-        notifyListeners();
+      notifyListeners();
       } else {
         debugPrint('Error loading memory detail: ${response?.baseResp.message ?? "Unknown error"}');
         setError(response?.baseResp.message ?? '加载失败');

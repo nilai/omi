@@ -7,6 +7,8 @@ import 'package:omi/pages/mp_memory/home/widgets/add_character_memory_card.dart'
 import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import 'package:omi/pages/mp_newsetting/voice_recognition/providers/voice_recognition_provider.dart';
+import 'package:omi/pages/mp_newsetting/voice_recognition/voice_recognition_page.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆中心页面
@@ -158,10 +160,17 @@ class _MemoryPageState extends State<MemoryPage> {
         // AI-generated START - 新增人物记忆卡片
         AddCharacterMemoryCard(
           onTap: () {
-            // TODO: 打开新增人物记忆页面
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('打开新增人物记忆')),
+            // AI-generated START - 打开声纹识别页面
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ChangeNotifierProvider<VoiceRecognitionProvider>(
+                  create: (_) => VoiceRecognitionProvider(),
+                  child: const VoiceRecognitionPage(),
+                ),
+              ),
             );
+            // AI-generated END - 打开声纹识别页面
           },
           description: '人物记忆与保存的人物声纹相关,您可以选择录制或者标记新的声纹',
         ),

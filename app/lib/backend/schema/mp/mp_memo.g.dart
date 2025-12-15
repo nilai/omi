@@ -71,6 +71,18 @@ Map<String, dynamic> _$MPDeleteMemoRequestToJson(
       'memo_id': instance.memoId,
     };
 
+MPUpdateMemoAIRequest _$MPUpdateMemoAIRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateMemoAIRequest(
+      rightNowTranscribe: json['right_now_transcribe'] as bool?,
+    );
+
+Map<String, dynamic> _$MPUpdateMemoAIRequestToJson(
+        MPUpdateMemoAIRequest instance) =>
+    <String, dynamic>{
+      'right_now_transcribe': instance.rightNowTranscribe,
+    };
+
 MPGetMemoListResponse _$MPGetMemoListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetMemoListResponse(
@@ -135,6 +147,18 @@ MPDeleteMemoResponse _$MPDeleteMemoResponseFromJson(
 
 Map<String, dynamic> _$MPDeleteMemoResponseToJson(
         MPDeleteMemoResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPUpdateMemoAIResponse _$MPUpdateMemoAIResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateMemoAIResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPUpdateMemoAIResponseToJson(
+        MPUpdateMemoAIResponse instance) =>
     <String, dynamic>{
       'base_resp': instance.baseResp,
     };

@@ -99,7 +99,7 @@ class MyVoiceCard extends StatelessWidget {
       child: Text(
         '我的声音',
         style: TextStyle(
-          fontSize: 18.0,
+          fontSize: 16.0,
           fontWeight: FontWeight.w600,
           color: Color(0xFF212121),
         ),
@@ -111,7 +111,7 @@ class MyVoiceCard extends StatelessWidget {
   // AI-generated START - 构建空状态卡片
   Widget _buildEmptyStateCard() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
@@ -132,16 +132,16 @@ class MyVoiceCard extends StatelessWidget {
         onTap: onEmptyStateTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(12.0),
           child: Row(
             children: [
               // 左侧图标
               Assets.images.mpVoiceWaitingAdd.image(
-                width: 60.0,
-                height: 60.0,
+                width: 56.0,
+                height: 56.0,
                 fit: BoxFit.contain,
               ),
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 12.0),
               // 中间文本信息
               const Expanded(
                 child: Column(
@@ -155,11 +155,11 @@ class MyVoiceCard extends StatelessWidget {
                         color: Color(0xFF212121),
                       ),
                     ),
-                    SizedBox(height: 4.0),
+                    SizedBox(height: 2.0),
                     Text(
                       '等待录制',
                       style: TextStyle(
-                        fontSize: 14.0,
+                        fontSize: 12.0,
                         color: Colors.grey,
                       ),
                     ),
@@ -168,8 +168,8 @@ class MyVoiceCard extends StatelessWidget {
               ),
               // 右侧箭头图标
               Assets.images.settingRightArrow1.image(
-                width: 20.0,
-                height: 20.0,
+                width: 19.0,
+                height: 18.0,
               ),
             ],
           ),

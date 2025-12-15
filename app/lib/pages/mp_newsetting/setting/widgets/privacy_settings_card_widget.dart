@@ -78,21 +78,15 @@ class _PrivacySettingsCardWidgetState extends State<PrivacySettingsCardWidget> {
         icon: Assets.images.mpSettingPrivicy.path,
         onTap: () {
           //打开隐私政策
-          MPToastUtils.showFeatureComingSoon();
+          MPToastUtils.showFeatureComingSoon(message: '隐私政策');
         },
       ),
       PrivacySettingItem(
         title: '服务条款',
         icon: Assets.images.mpSettingService.path,
         onTap: () {
-          // AI-generated START - 默认点击事件处理
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('打开服务条款'),
-              duration: Duration(seconds: 1),
-            ),
-          );
-          // AI-generated END - 默认点击事件处理
+          //打开服务条款
+          MPToastUtils.showFeatureComingSoon(message: '服务条款');
         },
       ),
       PrivacySettingItem(

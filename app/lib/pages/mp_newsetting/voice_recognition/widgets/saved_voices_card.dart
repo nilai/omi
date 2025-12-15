@@ -62,7 +62,7 @@ class SavedVoicesCard extends StatelessWidget {
       child: Text(
         '已保存的声音',
         style: TextStyle(
-          fontSize: 18.0,
+          fontSize: 16.0,
           fontWeight: FontWeight.w600,
           color: Color(0xFF212121),
         ),
