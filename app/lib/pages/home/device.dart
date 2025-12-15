@@ -12,6 +12,7 @@ import 'package:omi/widgets/device_widget.dart';
 import 'package:provider/provider.dart';
 
 import '../conversations/sync_page.dart';
+import '../note_debug/note_ble_debug_page.dart';
 import 'firmware_update.dart';
 
 class ConnectedDevice extends StatefulWidget {
@@ -295,6 +296,19 @@ class _ConnectedDeviceState extends State<ConnectedDevice> {
                                     );
                                   },
                                 ),
+                              // BLE Debug for AI Note devices
+                              _buildSectionRow(
+                                'BLE Debug',
+                                'Send raw commands to device',
+                                hasArrow: true,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const NoteBleDebugPage(),
+                                    ),
+                                  );
+                                },
+                              ),
                               _buildSectionRow(
                                 'Issues charging the device?',
                                 'Tap to see the guide',

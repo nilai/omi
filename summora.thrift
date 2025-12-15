@@ -28,10 +28,10 @@ struct MemoryStruct {
     5: string label, // 会议纪要、今日运势之类的
     6: string content,
     7: i32 duration, // 单位是s
-    7: SummaryMemoryStruct SummaryContent,
-    8: OnlyRecordMemoryStruct OnlyRecordContent,
-    9: InsightMemoryStruct InsightContent,
-    10: AiExpertMemoryStruct AiExpertContent,
+    7: SummaryMemoryStruct summary_content,
+    8: OnlyRecordMemoryStruct only_record_content,
+    9: InsightMemoryStruct insight_content,
+    10: AiExpertMemoryStruct ai_expert_content,
 }
 
 struct AiExpertMemoryStruct {
@@ -148,6 +148,17 @@ struct GetMemoryDetailResponse {
 
 struct GetMemoryDetailRequest {
     1: string memory_id,
+}
+
+struct GetInsightListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetInsightListResponse {
+    1: list<MemoryStruct> insights,
+    2: bool has_more,
+    255: BaseResp base_resp,
 }
 
 struct CreateRecordRequest {
@@ -451,16 +462,16 @@ service AppService {
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
-    // POST /api/v1/spearker/add
+    // POST /api/v1/speaker/add
     AddSpeakerResponse AddSpeaker(1: AddSpeakerRequest req)
     // 在某个记忆中标记某个说话人为xxx
-    // POST /api/v1/spearker/mark
+    // POST /api/v1/speaker/mark
     MarkSpeakerResponse MarkSpeaker(1: MarkSpeakerRequest req)
-    // GET /api/v1/spearker/get_list
+    // GET /api/v1/speaker/get_list
     GetSpeakerListResponse GetSpeakerList(1: GetSpeakerListRequest req)
-    // GET /api/v1/spearker/get_list_with_detail
+    // GET /api/v1/speaker/get_list_with_detail
     GetSpeakerListWithDetailResponse GetSpeakerListWithDetail(1: GetSpeakerListWithDetailRequest req)
-    // GET /api/v1/spearker/get_detail
+    // GET /api/v1/speaker/get_detail
     GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
 
     // 专家模型列表
