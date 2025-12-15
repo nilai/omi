@@ -50,7 +50,7 @@ class _MicGainPageState extends State<MicGainPage> {
               width: double.infinity,
               alignment: Alignment.center,
               child: Text(
-                '$_gainValue',
+                '$_gainValue dB',
                 style: const TextStyle(
                   fontSize: 48,
                   fontWeight: FontWeight.w700,
@@ -59,6 +59,58 @@ class _MicGainPageState extends State<MicGainPage> {
               ),
             ),
             const SizedBox(height: 30),
+            // 颜色区域和刻度线
+            Container(
+              height: 24,
+              margin: const EdgeInsets.only(left: 60, right: 60),
+              child: Stack(
+                children: [
+                  // 颜色区域
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF34C759), // 绿色
+                          Color(0xFFFFCC00), // 黄色
+                          Color(0xFFFF3B30), // 红色
+                        ],
+                        stops: [0.0, 0.5, 1.0],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
+                    ),
+                  ),
+                  // 刻度线和数值
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: List.generate(7, (index) {
+                      final value = index * 5;
+                      return Column(
+                        children: [
+                          Container(
+                            width: 1,
+                            height: 8,
+                            color: const Color(0xFF2C2C2E),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '$value',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ],
+                      );
+                    }),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
             // 滑块区域
             // 减号 滑块 加号
             Row(
@@ -94,16 +146,17 @@ class _MicGainPageState extends State<MicGainPage> {
                       activeTrackColor: const Color(0xFF007AFF),
                       inactiveTrackColor: const Color(0xFF2C2C2E),
                       thumbColor: Colors.white,
-                      overlayColor: const Color(0xFF007AFF).withOpacity(0.2),
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-                      trackHeight: 4,
+                      overlayColor: const Color(0xFF007AFF).withValues(alpha: 0.2),
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
+                      trackHeight: 6,
+                      trackShape: const RoundedRectSliderTrackShape(),
                     ),
                     child: Slider(
                       value: _gainValue.toDouble(),
                       min: _minGain.toDouble(),
                       max: _maxGain.toDouble(),
-                      divisions: _maxGain - _minGain, // 整数步进
+                      divisions: 6, // 0-30共6个刻度，每5一个
                       onChanged: (value) {
                         setState(() {
                           _gainValue = value.toInt();
@@ -138,29 +191,7 @@ class _MicGainPageState extends State<MicGainPage> {
                 ),
               ],
             ),
-            // 0 ~ 30 区间
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '$_minGain',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF8E8E93),
-                  ),
-                ),
-                Text(
-                  '$_maxGain',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400,
-                    color: Color(0xFF8E8E93),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             // 噪音、安静描述
             const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -183,10 +214,10 @@ class _MicGainPageState extends State<MicGainPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             // 说明文字
             const Text(
-              '调整麦克风的灵敏度以获得最佳录音效果。在嘈杂环境中建议降低灵敏度，在安静环境中可以适当提高。',
+              '调整麦克风增益以控制录音音量。建议根据环境噪音调整，过高可能导致声音失真。',
               style: TextStyle(
                 fontSize: 14,
                 color: Color(0xFF8E8E93),

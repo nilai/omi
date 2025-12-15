@@ -30,6 +30,7 @@ import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/audio/foreground.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/platform/platform_service.dart';
+import 'package:omi/utils/upload/mp_upload_client.dart';
 import 'package:omi/widgets/upgrade_alert.dart';
 import 'package:provider/provider.dart';
 
@@ -94,10 +95,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
   final GlobalKey<SettingsCardsPageState> _settingsCardsPageKey = GlobalKey<SettingsCardsPageState>();
   late final List<Widget> _pages;
 
-  // void _initiateApps() {
-  //   context.read<AppProvider>().getApps();
-  //   context.read<AppProvider>().getPopularApps();
-  // }
+  void _initiateApps() {
+    // context.read<AppProvider>().getApps();
+    // context.read<AppProvider>().getPopularApps();
+    MpUploadClient().getUploadUrl('audio');
+  }
 
   // 跳转到tab制定页面
   // void _selectedTab(int pageIndex) {
@@ -232,6 +234,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     // context.read<HomeProvider>().selectedIndex = homePageIdx;
     context.read<HomeProvider>().selectedIndex = 0;
     WidgetsBinding.instance.addObserver(this);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _initiateApps();
+    });
 
     // WidgetsBinding.instance.addPostFrameCallback((_) async {
     //   _initiateApps();

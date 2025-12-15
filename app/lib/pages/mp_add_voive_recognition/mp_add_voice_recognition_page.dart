@@ -78,7 +78,7 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
   /// 构建说明文字
   Widget _buildInstructionText() {
     return Text(
-      '请您至少连续平静的说一段录音时间在90秒以上,我们将用于识别您的声音',
+      '请您至少连续平静的说一段录音时间在${MPAddVoiceRecognitionProvider.maxRecordingDuration}s秒以上,我们将用于识别您的声音',
       textAlign: TextAlign.center,
       style: TextStyle(
         fontSize: 16.0,
@@ -151,7 +151,7 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                provider.stopRecording();
+                provider.stopRecording(context);
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),

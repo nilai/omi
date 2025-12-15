@@ -242,6 +242,12 @@ PODS:
   - PromisesObjC (2.4.0)
   - PromisesSwift (2.4.0):
     - PromisesObjC (= 2.4.0)
+  - Protobuf (3.29.5)
+  - reactive_ble_mobile (0.0.1):
+    - Flutter
+    - FlutterMacOS
+    - Protobuf (~> 3.5)
+    - SwiftProtobuf (~> 1.0)
   - RecaptchaInterop (101.0.0)
   - SDWebImage (5.21.2):
     - SDWebImage/Core (= 5.21.2)
@@ -305,6 +311,7 @@ DEPENDENCIES:
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - reactive_ble_mobile (from `.symlinks/plugins/reactive_ble_mobile/darwin`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
@@ -344,6 +351,7 @@ SPEC REPOS:
     - nanopb
     - PromisesObjC
     - PromisesSwift
+    - Protobuf
     - RecaptchaInterop
     - SDWebImage
     - SwiftCBOR
@@ -422,6 +430,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  reactive_ble_mobile:
+    :path: ".symlinks/plugins/reactive_ble_mobile/darwin"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -481,7 +491,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   GTMAppAuth: 99fb010047ba3973b7026e45393f51f27ab965ae
   GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
-  image_picker_ios: 7fe1ff8e34c1790d6fff70a32484959f563a928a
+  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   in_app_review: 7dd1ea365263f834b8464673f9df72c80c17c937
   integration_test: 4a889634ef21a45d28d50d622cf412dc6d9f586e
   Intercom: b636b0e27ab832827abdf6573c57a80cf090ff5a
@@ -498,22 +508,24 @@ SPEC CHECKSUMS:
   nordic_dfu: e4fb6f461f4a290b28ea4b1dfb69071665cdfa3e
   opus_flutter_ios: f16ed3599997ced564ad44509e87003159a86def
   package_info_plus: af8e2ca6888548050f16fa2f1938db7b5a5df499
-  path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   PromisesSwift: 9d77319bbe72ebf6d872900551f7eeba9bce2851
+  Protobuf: 164aea2ae380c3951abdc3e195220c01d17400e0
+  reactive_ble_mobile: ea97709e18fa6f0b0592909725d7ae7e1c595b64
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   SDWebImage: 9f177d83116802728e122410fb25ad88f5c7608a
   share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
-  shared_preferences_foundation: 9e1978ff2562383bd5676f64ec4e9aa8fa06a6f7
+  shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
   sign_in_with_apple: c5dcc141574c8c54d5ac99dd2163c0c72ad22418
   sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   SwiftCBOR: ce5354ec8b660da2d6fc754462881119dbe1f963
   SwiftProtobuf: e02f51c8c2df5845657aee2d4de9d61bf50ef788
   SwiftyGif: 706c60cf65fa2bc5ee0313beece843c8eb8194d4
-  url_launcher_ios: 694010445543906933d732453a59da0a173ae33d
-  video_player_avfoundation: 2cef49524dd1f16c5300b9cd6efd9611ce03639b
-  webview_flutter_wkwebview: 1821ceac936eba6f7984d89a9f3bcb4dea99ebb2
+  url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
+  video_player_avfoundation: dd410b52df6d2466a42d28550e33e4146928280a
+  webview_flutter_wkwebview: 8ebf4fded22593026f7dbff1fbff31ea98573c8d
   ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
 PODFILE CHECKSUM: 0ff3dedbc65a62aff6be5119a19cb4fd9e15742d
