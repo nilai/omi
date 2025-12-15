@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// import 'package:flutter/services.dart'; // Uncomment if adding haptic feedback
 
 /// 麦克风增益调节页面
 /// 实现可拖拽滑块和加减按钮控制增益值
@@ -21,12 +22,12 @@ class _MicGainPageState extends State<MicGainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: const Color(0xFF000000),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFF000000),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1D1D1F)),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -34,30 +35,151 @@ class _MicGainPageState extends State<MicGainPage> {
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1D1D1F),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 40),
-            // 设备图片
-            _buildDeviceImage(),
-            const SizedBox(height: 40),
-            // 增益值显示
-            _buildGainDisplay(),
-            const SizedBox(height: 40),
-            // 滑块控制
-            _buildSliderControl(),
-            const SizedBox(height: 30),
-            // 加减按钮控制
-            _buildButtonControls(),
-          ],
-        ),
+      body: Column(
+        children: [
+          // 设备图片区域
+          Container(
+            padding: const EdgeInsets.only(top: 40, bottom: 20),
+            child: _buildDeviceImage(),
+          ),
+          // 描述文字
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              '调整麦克风的灵敏度以获得最佳录音效果',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF8E8E93),
+                height: 1.5,
+              ),
+            ),
+          ),
+          const SizedBox(height: 30),
+          // 滑块控制区域
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 增益值显示
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF007AFF),
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF007AFF).withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$_gainValue',
+                        style: const TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // 滑块标签
+                  const Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '低',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                      Text(
+                        '麦克风增益',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        '高',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // 滑块
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: const Color(0xFF007AFF),
+                      inactiveTrackColor: const Color(0xFF2C2C2E),
+                      thumbColor: Colors.white,
+                      overlayColor: const Color(0xFF007AFF).withOpacity(0.2),
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                      trackHeight: 4,
+                    ),
+                    child: Slider(
+                      value: _gainValue.toDouble(),
+                      min: _minGain.toDouble(),
+                      max: _maxGain.toDouble(),
+                      divisions: _maxGain - _minGain, // 整数步进
+                      onChanged: (value) {
+                        setState(() {
+                          _gainValue = value.toInt();
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  // 范围标签
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$_minGain',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                      Text(
+                        '$_maxGain',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF8E8E93),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40),
+                  // 加减按钮控制
+                  _buildButtonControls(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -65,114 +187,52 @@ class _MicGainPageState extends State<MicGainPage> {
   /// 构建设备图片
   Widget _buildDeviceImage() {
     return Container(
-      width: 200,
-      height: 200,
+      width: 120,
+      height: 120,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(100),
+        color: const Color(0xFF1C1C1E),
+        borderRadius: BorderRadius.circular(60),
+        border: Border.all(
+          color: const Color(0xFF2C2C2E),
+          width: 1,
+        ),
       ),
       child: Center(
-        child: Container(
-          width: 160,
-          height: 160,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF4A4A4A),
-                Color(0xFF2C2C2C),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(80),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Center(
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: const Color(0xFFE5E5EA),
-                  width: 4,
-                ),
-                borderRadius: BorderRadius.circular(30),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建增益值显示
-  Widget _buildGainDisplay() {
-    return Container(
-      width: 100,
-      height: 100,
-      decoration: BoxDecoration(
-        color: const Color(0xFF007AFF),
-        borderRadius: BorderRadius.circular(50),
-      ),
-      child: Center(
-        child: Text(
-          '$_gainValue',
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建滑块控制
-  Widget _buildSliderControl() {
-    return Column(
-      children: [
-        Slider(
-          value: _gainValue.toDouble(),
-          min: _minGain.toDouble(),
-          max: _maxGain.toDouble(),
-          divisions: _maxGain - _minGain, // 整数步进
-          activeColor: const Color(0xFF007AFF),
-          inactiveColor: const Color(0xFFE5E5EA),
-          onChanged: (value) {
-            setState(() {
-              _gainValue = value.toInt();
-            });
-          },
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              '$_minGain',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0x991D1D1F),
+            // Microphone head
+            Container(
+              width: 40,
+              height: 20,
+              decoration: BoxDecoration(
+                color: const Color(0xFF8E8E93),
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-            Text(
-              '$_maxGain',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w400,
-                color: Color(0x991D1D1F),
+            const SizedBox(height: 8),
+            // Microphone body
+            Container(
+              width: 20,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF5A5A5E),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Microphone base
+            Container(
+              width: 30,
+              height: 8,
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A3A3C),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -185,20 +245,22 @@ class _MicGainPageState extends State<MicGainPage> {
         GestureDetector(
           onTap: _decreaseGain,
           child: Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
+              color: const Color(0xFF1C1C1E),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: const Color(0xFFE5E5EA),
+                color: const Color(0xFF2C2C2E),
                 width: 1,
               ),
             ),
-            child: const Icon(
-              Icons.remove,
-              color: Color(0xFF1D1D1F),
-              size: 24,
+            child: const Center(
+              child: Icon(
+                Icons.remove,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
         ),
@@ -207,9 +269,9 @@ class _MicGainPageState extends State<MicGainPage> {
         Text(
           '$_gainValue',
           style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1D1D1F),
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
         const SizedBox(width: 30),
@@ -217,20 +279,22 @@ class _MicGainPageState extends State<MicGainPage> {
         GestureDetector(
           onTap: _increaseGain,
           child: Container(
-            width: 50,
-            height: 50,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
+              color: const Color(0xFF1C1C1E),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
-                color: const Color(0xFFE5E5EA),
+                color: const Color(0xFF2C2C2E),
                 width: 1,
               ),
             ),
-            child: const Icon(
-              Icons.add,
-              color: Color(0xFF1D1D1F),
-              size: 24,
+            child: const Center(
+              child: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
         ),
@@ -245,6 +309,8 @@ class _MicGainPageState extends State<MicGainPage> {
         _gainValue += _stepValue;
       } else {
         _gainValue = _maxGain;
+        // 可以在这里添加震动反馈或其他提示
+        // HapticFeedback.lightImpact();
       }
     });
   }
@@ -256,6 +322,8 @@ class _MicGainPageState extends State<MicGainPage> {
         _gainValue -= _stepValue;
       } else {
         _gainValue = _minGain;
+        // 可以在这里添加震动反馈或其他提示
+        // HapticFeedback.lightImpact();
       }
     });
   }
