@@ -24,23 +24,24 @@ class MPDeleteVoiceDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16.0),
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // 删除图标
             _buildDeleteIcon(),
-            const SizedBox(height: 24.0),
+            const SizedBox(height: 20.0),
             // 标题
             _buildTitle(),
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 10.0),
             // 消息内容
             _buildMessage(),
-            const SizedBox(height: 32.0),
+            const SizedBox(height: 20.0),
             // 操作按钮
             _buildActionButtons(context),
           ],
@@ -51,7 +52,7 @@ class MPDeleteVoiceDialog extends StatelessWidget {
 
   /// 构建删除图标
   Widget _buildDeleteIcon() {
-    return Assets.images.mpMyVoiceDelete.image(width: 64.0, height: 64.0, fit: BoxFit.contain);
+    return Assets.images.mpMyVoiceDelete.image(width: 56.0, height: 56.0, fit: BoxFit.contain);
   }
 
   /// 构建标题
@@ -59,7 +60,7 @@ class MPDeleteVoiceDialog extends StatelessWidget {
     return const Text(
       '删除声纹',
       style: TextStyle(
-        fontSize: 20.0,
+        fontSize: 18.0,
         fontWeight: FontWeight.bold,
         color: Colors.black87,
       ),
@@ -91,15 +92,11 @@ class MPDeleteVoiceDialog extends StatelessWidget {
               onCancel?.call();
             },
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14.0),
-              backgroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              backgroundColor: Color(0xFFF3F4F6),
               foregroundColor: Colors.grey.shade700,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.0),
-                side: BorderSide(
-                  color: Colors.grey.shade300,
-                  width: 1.0,
-                ),
               ),
               elevation: 0,
             ),
@@ -107,7 +104,7 @@ class MPDeleteVoiceDialog extends StatelessWidget {
               '取消',
               style: TextStyle(
                 fontSize: 16.0,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -121,8 +118,8 @@ class MPDeleteVoiceDialog extends StatelessWidget {
               onConfirm?.call();
             },
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14.0),
-              backgroundColor: Colors.red.shade600,
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              backgroundColor: Color(0xFFDC2626),
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.0),
@@ -133,7 +130,7 @@ class MPDeleteVoiceDialog extends StatelessWidget {
               '删除',
               style: TextStyle(
                 fontSize: 16.0,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

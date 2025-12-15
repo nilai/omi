@@ -19,10 +19,10 @@ class SavedVoicesCard extends StatelessWidget {
   final List<MyVoiceItem> items;
 
   /// 点击回调
-  final Function(String)? onTap;
+  final Function(MyVoiceItem)? onTap;
 
   /// 按钮点击回调
-  final Function(String)? onActionTap;
+  final Function(MyVoiceItem)? onActionTap;
 
   // AI-generated START - 构建方法
   @override
@@ -43,10 +43,10 @@ class SavedVoicesCard extends StatelessWidget {
             item: item,
             // 默认使用删除操作
             onTap: () {
-              onTap?.call(item.id);
+              onTap?.call(item);
             },
             onActionTap: () {
-              onActionTap?.call(item.id);
+              onActionTap?.call(item);
             },
           );
         }),

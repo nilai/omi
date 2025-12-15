@@ -75,17 +75,33 @@ class VoiceRecognitionPage extends StatelessWidget {
     // 我的声音卡片（支持多个item，标题在卡片内部）
     return MyVoiceCard(
       items: displayItems,
-      onTap: (id) {
+      onTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id),
+            builder: (context) => MPVoiceRecognitionDetailPage(
+              voiceId: item.id,
+              initialName: item.title,
+            ),
           ),
         );
       },
-      onActionTap: (id) {
+      onActionTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id),
+            builder: (context) => MPVoiceRecognitionDetailPage(
+              voiceId: item.id,
+              initialName: item.title,
+            ),
+          ),
+        );
+      },
+      onEmptyStateTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ChangeNotifierProvider<MPAddVoiceRecognitionProvider>(
+              create: (_) => MPAddVoiceRecognitionProvider(),
+              child: const MPAddVoiceRecognitionPage(),
+            ),
           ),
         );
       },
@@ -107,17 +123,19 @@ class VoiceRecognitionPage extends StatelessWidget {
     // 已保存的声音卡片（支持多个item，默认使用删除操作）
     return SavedVoicesCard(
       items: savedVoicesList,
-      onTap: (id) {
+      onTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id, isEditMode: true),
+            builder: (context) =>
+                MPVoiceRecognitionDetailPage(voiceId: item.id, isEditMode: true, initialName: item.title),
           ),
         );
       },
-      onActionTap: (id) {
+      onActionTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => MPVoiceRecognitionDetailPage(voiceId: id, isEditMode: true),
+            builder: (context) =>
+                MPVoiceRecognitionDetailPage(voiceId: item.id, isEditMode: true, initialName: item.title),
           ),
         );
       },

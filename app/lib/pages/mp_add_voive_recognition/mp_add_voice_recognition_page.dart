@@ -65,7 +65,7 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
       children: [
         // 设备图片
         Image.asset(
-          Assets.images.omiWithoutRope.path,
+          Assets.images.mpVoiceAddMark.path,
           width: 256.0,
           height: 256.0,
           fit: BoxFit.contain,
@@ -94,6 +94,7 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
       children: [
         // 录音状态按钮（录音中时显示红色，未录音时显示紫色）
         SizedBox(
+          height: 56.0,
           width: double.infinity,
           child: ElevatedButton(
             onPressed: provider.isRecording
@@ -102,7 +103,6 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
                     provider.startRecording();
                   },
             style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16.0),
               backgroundColor: provider.isRecording ? Colors.red : const Color(0xFF8B5CF6), // 录音中：红色，未录音：紫色
               disabledBackgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
