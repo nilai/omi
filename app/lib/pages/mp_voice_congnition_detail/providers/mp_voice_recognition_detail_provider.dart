@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../../backend/schema/mp/mp_speaker.dart';
@@ -169,15 +170,21 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
   // AI-generated START - 保存声纹
   void saveVoice(String name) async{
-    // TODO: 实现保存声纹的逻辑
-    debugPrint('Saving voice: $name, voiceId: $voiceId');
-
-    final uri = await MPAudioUploadService().uploadMPAudio(audioFile!) ?? '';
-    if (uri.isEmpty) {
-      debugPrint('保存声纹失败，上传音频文件为空');
+    if (name.isEmpty) {
+      debugPrint('保存声纹失败，姓名为空');
+      MPToastUtils.showMessage('请输入姓名');
       return;
     }
-
+    debugPrint('Saving voice: $name, voiceId: $voiceId');
+    if (audioFile == null) {
+      debugPrint('保存声纹失败，音频文件为空');
+      return;
+    }
+    final uri = await MPAudioUploadService().uploadMPAudio(audioFile!) ?? '';
+    if (uri.isEmpty) {
+      debugPrint('保存声纹失败，返回的uri为空');
+      return;
+    }
     final req = MPAddSpeakerRequest(
       name: name,
       audioUrl: uri,
@@ -206,7 +213,6 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   void dispose() {
     // _playTimer?.cancel();
     // _playTimer = null;
-
     // 同步释放资源
     try {
       if (_audioPlayer != null) {
@@ -220,13 +226,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
         _audioPlayer = null;
       }
 
-      // 删除临时音频文件
-      if (audioFile != null) {
-        if (audioFile!.existsSync()) {
-          audioFile!.deleteSync();
-        }
-        audioFile = null;
-      }
+      // 注意：不要删除audioFile，因为它可能还需要被上传使用
+      // 如果需要清理，应该在上传完成后由调用方处理
     } catch (e) {
       debugPrint('释放资源时出错: $e');
     }
