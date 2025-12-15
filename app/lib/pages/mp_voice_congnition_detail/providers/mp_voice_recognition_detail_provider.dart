@@ -196,6 +196,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     if (res?.baseResp.code == 0) {
       debugPrint('保存声纹成功，声纹ID: ${res?.baseResp.message}');
       successCallback?.call();
+      _deleteAudioFile();
     } else {
       MPToastUtils.showMessage('保存声纹失败');
     }
@@ -208,6 +209,16 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     debugPrint('Deleting voice: $voiceId');
   }
   // AI-generated END - deleteVoice
+
+  // 删除audioFile
+  void _deleteAudioFile() {
+    if (audioFile != null && audioFile!.existsSync()) {
+      audioFile!.delete().catchError((e) {
+        debugPrint('删除音频文件时出错: $e');
+      });
+      audioFile = null;
+    }
+  }
 
   @override
   void dispose() {

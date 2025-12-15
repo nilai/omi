@@ -171,7 +171,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
     }
     final audioFile =  await _saveAudioChunksToFile();
     // 跳转详情页面
-    Navigator.of(context!).push(MaterialPageRoute(
+    Navigator.of(context!).pushReplacement(MaterialPageRoute(
       builder: (context) => MPVoiceRecognitionDetailPage(
         voiceId: null,
         initialName: null,
