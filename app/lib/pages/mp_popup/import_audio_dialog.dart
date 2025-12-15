@@ -21,14 +21,12 @@ class ImportAudioDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.all(0),
-      child: Container(
-        margin: const EdgeInsets.all(0),
+    return Container(
+      color: const Color(0xFFF2F2F7),
+      child: SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
               decoration: const BoxDecoration(
@@ -238,10 +236,9 @@ class ImportAudioDialog extends StatelessWidget {
     VoidCallback? onImportFromOtherApp,
     VoidCallback? onClose,
   }) {
-    return showDialog<T>(
+    return showModalBottomSheet<T>(
       context: context,
-      barrierColor: Colors.black54,
-      barrierDismissible: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return ImportAudioDialog(
           onImportFromFile: onImportFromFile,
@@ -250,6 +247,12 @@ class ImportAudioDialog extends StatelessWidget {
           onClose: onClose ?? () => Navigator.of(context).pop(),
         );
       },
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
     );
   }
 }
