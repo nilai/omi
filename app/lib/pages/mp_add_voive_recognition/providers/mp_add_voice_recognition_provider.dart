@@ -1,11 +1,14 @@
 // AI-generated START - 录制声纹状态管理Provider
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../services/services.dart';
+import '../../../utils/audio/wav_bytes.dart';
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
@@ -158,7 +161,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   // AI-generated END - stopRecording
 
   /// 处理停止录音
-  void _stopRecordDeal() {
+  void _stopRecordDeal() async {
     if (context == null) {
       return;
     }
@@ -166,6 +169,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       Navigator.pop(context!);
       return;
     }
+    final audioFile =  await _saveAudioChunksToFile();
     // 跳转详情页面
     Navigator.of(context!).push(MaterialPageRoute(
       builder: (context) => MPVoiceRecognitionDetailPage(
@@ -173,9 +177,22 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
         initialName: null,
         audioDuration: _recordingDuration,
         isEditMode: true,
-        audioChunks: _audioChunks,
+        audioFile: audioFile,
       ),
     ));
+  }
+
+  /// 保存音频块到文件
+  Future<File> _saveAudioChunksToFile() async {
+    final tempDir = await getTemporaryDirectory();
+    final wavFilePath = '${tempDir.path}/temp_recording.wav';
+    final wavBytes = WavBytes.fromPcm(
+      Uint8List.fromList(_audioChunks.expand((chunk) => chunk).toList()),
+      sampleRate: 16000,
+      numChannels: 1,
+    ).asBytes();
+    await File(wavFilePath).writeAsBytes(wavBytes);
+    return File(wavFilePath);
   }
 
   @override
