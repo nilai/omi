@@ -56,7 +56,7 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
   });
 
   // AI-generated START - 获取默认偏好设置项列表
-  static List<PreferenceSettingItem> getDefaultItems({BuildContext? context}) {
+  static List<PreferenceSettingItem> getDefaultItems({BuildContext? context, SettingsProvider? settingsProvider}) {
     return [
       PreferenceSettingItem(
         title: 'AI偏好',
@@ -91,7 +91,9 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
       PreferenceSettingItem(
         title: '录音后转写',
         description: null,
-        currentValue: context != null ? _getTranscriptionModeText(context) : '默认立即转写',
+        currentValue: settingsProvider != null
+            ? (settingsProvider.transcriptionConfirmMode ? '确认后转写' : '默认立即转写')
+            : (context != null ? _getTranscriptionModeText(context) : '默认立即转写'),
         icon: Assets.images.mpSettingVoice.path,
         onTap: () {
           // AI-generated START - 打开转写模式选择弹窗
@@ -123,9 +125,11 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
   static String _getTranscriptionModeText(BuildContext context) {
     try {
       final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+      debugPrint('_getTranscriptionModeText - transcriptionConfirmMode: ${settingsProvider.transcriptionConfirmMode}');
       // 根据后台返回的转写模式显示不同的文本
       return settingsProvider.transcriptionConfirmMode ? '确认后转写' : '默认立即转写';
     } catch (e) {
+      debugPrint('_getTranscriptionModeText - error: $e');
       // 如果获取失败，返回默认值
       return '默认立即转写';
     }
@@ -134,130 +138,137 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final itemsList = items.isEmpty ? PreferenceSettingsCardWidget.getDefaultItems(context: context) : items;
+    // 使用 Consumer 来监听 SettingsProvider 的变化，动态获取转写模式
+    return Consumer<SettingsProvider>(
+      builder: (context, settingsProvider, child) {
+        final itemsList = items.isEmpty
+            ? PreferenceSettingsCardWidget.getDefaultItems(context: context, settingsProvider: settingsProvider)
+            : items;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // AI-generated START - 标题区域（独立）
-          if (title != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
-              child: Text(
-                title!,
-                style: const TextStyle(
-                  color: Colors.black87,
-                  fontSize: 14.0,
-                  fontWeight: FontWeight.bold,
-                ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                blurRadius: 8.0,
+                offset: const Offset(0, 2),
               ),
-            ),
-          // AI-generated END - 标题区域
-
-          // AI-generated START - 设置项列表区域（独立，便于扩展）
-          ...itemsList.asMap().entries.map((entry) {
-            final index = entry.key;
-            final item = entry.value;
-            final isLast = index == itemsList.length - 1;
-
-            return GestureDetector(
-              onTap: item.onTap,
-              behavior: HitTestBehavior.opaque,
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
-                    child: Row(
-                      children: [
-                        // AI-generated START - 左侧：图标
-                        Image.asset(item.icon!, fit: BoxFit.cover, width: 32.0, height: 32.0),
-                        // AI-generated END - 左侧：图标
-
-                        const SizedBox(width: 8.0),
-
-                        // AI-generated START - 中间：标题和描述
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if (item.description != null) ...[
-                                const SizedBox(height: 2.0),
-                                Text(
-                                  item.description!,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 12.0,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                              if (item.currentValue != null) ...[
-                                const SizedBox(height: 2.0),
-                                Text(
-                                  item.currentValue!,
-                                  style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 12.0,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        // AI-generated END - 中间：标题和描述
-
-                        const SizedBox(width: 12.0),
-
-                        // AI-generated START - 右侧：箭头图标
-                        Assets.images.settingRightArrow1.image(
-                          width: 19.0,
-                          height: 18.0,
-                          fit: BoxFit.contain,
-                        ),
-                        // AI-generated END - 右侧：箭头图标
-                      ],
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI-generated START - 标题区域（独立）
+              if (title != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
+                  child: Text(
+                    title!,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 14.0,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
+                ),
+              // AI-generated END - 标题区域
 
-                  // AI-generated START - 底部边框（带左右边距）
-                  if (!isLast)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
-                      height: 1.0,
-                      color: Colors.grey.shade200,
-                    ),
-                  // AI-generated END - 底部边框
-                ],
-              ),
-            );
-          }),
-          // AI-generated END - 设置项列表区域
-          const SizedBox(height: 12.0),
-        ],
-      ),
+              // AI-generated START - 设置项列表区域（独立，便于扩展）
+              ...itemsList.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final isLast = index == itemsList.length - 1;
+
+                return GestureDetector(
+                  onTap: item.onTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+                        child: Row(
+                          children: [
+                            // AI-generated START - 左侧：图标
+                            Image.asset(item.icon!, fit: BoxFit.cover, width: 32.0, height: 32.0),
+                            // AI-generated END - 左侧：图标
+
+                            const SizedBox(width: 8.0),
+
+                            // AI-generated START - 中间：标题和描述
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    item.title,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 14.0,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  if (item.description != null) ...[
+                                    const SizedBox(height: 2.0),
+                                    Text(
+                                      item.description!,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                  if (item.currentValue != null) ...[
+                                    const SizedBox(height: 2.0),
+                                    Text(
+                                      item.currentValue!,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade500,
+                                        fontSize: 12.0,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            // AI-generated END - 中间：标题和描述
+
+                            const SizedBox(width: 12.0),
+
+                            // AI-generated START - 右侧：箭头图标
+                            Assets.images.settingRightArrow1.image(
+                              width: 19.0,
+                              height: 18.0,
+                              fit: BoxFit.contain,
+                            ),
+                            // AI-generated END - 右侧：箭头图标
+                          ],
+                        ),
+                      ),
+
+                      // AI-generated START - 底部边框（带左右边距）
+                      if (!isLast)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 0.0),
+                          height: 1.0,
+                          color: Colors.grey.shade200,
+                        ),
+                      // AI-generated END - 底部边框
+                    ],
+                  ),
+                );
+              }),
+              // AI-generated END - 设置项列表区域
+              const SizedBox(height: 12.0),
+            ],
+          ),
+        );
+      },
     );
   }
   // AI-generated END - build

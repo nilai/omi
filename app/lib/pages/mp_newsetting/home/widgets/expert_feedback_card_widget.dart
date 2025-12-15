@@ -157,13 +157,14 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
 
             // AI-generated START - 专家头像列表
             SizedBox(
-              height: 76.0,
+              height: 84.0,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
                 itemCount: expertList.length,
                 itemBuilder: (context, index) {
                   final expert = expertList[index];
                   return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
                     onTap: () => onExpertTap?.call(expert),
                     child: Container(
                       margin: EdgeInsets.only(

@@ -45,12 +45,12 @@ class VoiceItemCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
           child: Row(
             children: [
               // 左侧图标
               _buildVoiceIcon(),
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 12.0),
               // 中间文本信息
               Expanded(
                 child: _buildContent(),
@@ -70,16 +70,16 @@ class VoiceItemCard extends StatelessWidget {
     //优先显示 imageUrl（网络图片）
     if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
       return Container(
-        width: 60.0,
-        height: 60.0,
+        width: 56.0,
+        height: 56.0,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
         ),
         child: ClipOval(
             child: Image.network(
           item.imageUrl!,
-          width: 60.0,
-          height: 60.0,
+          width: 56.0,
+          height: 56.0,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return _buildPlaceholder();
@@ -90,16 +90,16 @@ class VoiceItemCard extends StatelessWidget {
     // 如果没有 imageUrl，则显示 icon（本地图片）
     if (item.icon != null && item.icon!.isNotEmpty) {
       return Container(
-        width: 60.0,
-        height: 60.0,
+        width: 56.0,
+        height: 56.0,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
         ),
         child: ClipOval(
           child: Image.asset(
             item.icon!,
-            width: 60.0,
-            height: 60.0,
+            width: 56.0,
+            height: 56.0,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
               return _buildPlaceholder();
@@ -116,8 +116,8 @@ class VoiceItemCard extends StatelessWidget {
   // AI-generated START - 构建占位符
   Widget _buildPlaceholder() {
     return Container(
-      width: 60.0,
-      height: 60.0,
+      width: 56.0,
+      height: 56.0,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.centerLeft,
@@ -148,21 +148,20 @@ class VoiceItemCard extends StatelessWidget {
           item.title,
           style: const TextStyle(
             fontSize: 16.0,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.bold,
             color: Color(0xFF212121),
           ),
         ),
-        const SizedBox(height: 8.0),
+        const SizedBox(height: 2.0),
         // 时长和日期
         Row(
           children: [
             // 时长
-            Icon(
-              Icons.access_time,
-              size: 14.0,
-              color: Colors.grey[600],
+            Assets.images.mpMemoryDetailHistory.image(
+              width: 16.0,
+              height: 16.0,
             ),
-            const SizedBox(width: 4.0),
+            const SizedBox(width: 2.0),
             Text(
               item.duration,
               style: TextStyle(
@@ -170,14 +169,13 @@ class VoiceItemCard extends StatelessWidget {
                 color: Colors.grey[600],
               ),
             ),
-            const SizedBox(width: 16.0),
+            const SizedBox(width: 12.0),
             // 日期
-            Icon(
-              Icons.calendar_today,
-              size: 14.0,
-              color: Colors.grey[600],
+            Assets.images.mpMemoryDetailTime.image(
+              width: 16.0,
+              height: 16.0,
             ),
-            const SizedBox(width: 4.0),
+            const SizedBox(width: 2.0),
             Text(
               item.date,
               style: TextStyle(
@@ -196,7 +194,7 @@ class VoiceItemCard extends StatelessWidget {
   Widget _buildActionIcon() {
     return InkWell(
       onTap: onActionTap,
-      child: Assets.images.settingRightArrow1.image(width: 20.0, height: 20.0),
+      child: Assets.images.settingRightArrow1.image(width: 19.0, height: 18.0),
     );
   }
   // AI-generated END - 构建操作图标

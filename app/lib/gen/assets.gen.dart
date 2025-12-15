@@ -277,6 +277,10 @@ class $AssetsImagesGen {
   AssetGenImage get mpMemoryDetailTime =>
       const AssetGenImage('assets/images/mp_memory_detail_time.png');
 
+  /// File path: assets/images/mp_memory_imessage.png
+  AssetGenImage get mpMemoryImessage =>
+      const AssetGenImage('assets/images/mp_memory_imessage.png');
+
   /// File path: assets/images/mp_my_voice.png
   AssetGenImage get mpMyVoice =>
       const AssetGenImage('assets/images/mp_my_voice.png');
@@ -655,6 +659,7 @@ class $AssetsImagesGen {
     mpMemoryDetailPeople,
     mpMemoryDetailRadio,
     mpMemoryDetailTime,
+    mpMemoryImessage,
     mpMyVoice,
     mpMyVoiceDelete,
     mpMyVoiceEdit,

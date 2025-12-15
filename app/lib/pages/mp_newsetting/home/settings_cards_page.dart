@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_apps_integration/apps_integration_page.dart';
 import 'package:omi/pages/mp_apps_integration/providers/apps_integration_provider.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_expert_list_page.dart';
 import 'package:omi/pages/mp_expert_feedback/providers/mp_expert_provider.dart';
 import 'package:omi/pages/mp_memory/home/memory_page.dart';
@@ -50,6 +51,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
       final provider = Provider.of<SettingsProvider>(context, listen: false);
       provider.loadSpeakerList();
       provider.loadExpertList();
+      provider.loadTranscriptionMode();
     });
     // AI-generated END - 初始化时加载用户资料、speaker 列表和专家列表
   }
@@ -127,9 +129,8 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                 ReferralCardWidget(
                   onTap: () {
                     // 处理推荐卡片点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('打开推荐页面')),
-                    );
+                    //打开推荐页面
+                    MPToastUtils.showFeatureComingSoon(message: '推荐页面');
                   },
                   showNotification: true,
                 ),

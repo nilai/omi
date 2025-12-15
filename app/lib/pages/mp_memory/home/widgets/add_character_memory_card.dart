@@ -1,5 +1,6 @@
 // AI-generated START - 新增人物记忆卡片组件，显示添加人物记忆的入口
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 新增人物记忆卡片组件
 /// 显示添加人物记忆的按钮和描述信息
@@ -28,7 +29,8 @@ class AddCharacterMemoryCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // AI-generated START - 渐变按钮
           GestureDetector(
@@ -55,36 +57,24 @@ class AddCharacterMemoryCard extends StatelessWidget {
                 ],
               ),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // AI-generated START - 左侧：图标
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: Image.asset(
-                      'assets/images/mp_memory_add.png',
-                      width: 24.0,
-                      height: 24.0,
-                      color: Colors.white,
-                    ),
-                  ),
+                  Assets.images.mpMemoryAdd.image(width: 16.0, height: 16.0),
                   // AI-generated END - 左侧：图标
 
                   const SizedBox(width: 12.0),
 
                   // AI-generated START - 中间：按钮文本
-                  Expanded(
-                    child: Text(
-                      buttonText ?? '新增人物记忆',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 16.0,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  Text(
+                    buttonText ?? '新增人物记忆',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
+                  )
                   // AI-generated END - 中间：按钮文本
                 ],
               ),

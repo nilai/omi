@@ -85,3 +85,18 @@ Future<MPDeleteMemoResponse?> deleteMemo(MPDeleteMemoRequest req) async {
   return null;
 }
 
+// POST /api/v1/user/update_ai_setting
+Future<MPUpdateMemoAIResponse?> updateMemoAI(MPUpdateMemoAIRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/user/update_ai_setting',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('updateMemoAI response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPUpdateMemoAIResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

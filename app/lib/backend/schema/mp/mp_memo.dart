@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'mp_data_model.dart';
 
 part 'mp_memo.g.dart';
@@ -17,8 +18,7 @@ class MPGetMemoListRequest {
     required this.cursor,
   });
 
-  factory MPGetMemoListRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoListRequestFromJson(json);
+  factory MPGetMemoListRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoListRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoListRequestToJson(this);
 }
@@ -33,8 +33,7 @@ class MPGetMemoDetailRequest {
     required this.memoId,
   });
 
-  factory MPGetMemoDetailRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoDetailRequestFromJson(json);
+  factory MPGetMemoDetailRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoDetailRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoDetailRequestToJson(this);
 }
@@ -89,10 +88,24 @@ class MPDeleteMemoRequest {
     required this.memoId,
   });
 
-  factory MPDeleteMemoRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPDeleteMemoRequestFromJson(json);
+  factory MPDeleteMemoRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoRequestToJson(this);
+}
+
+// Update Memo AI Request
+@JsonSerializable()
+class MPUpdateMemoAIRequest {
+  @JsonKey(name: 'right_now_transcribe')
+  final bool? rightNowTranscribe;
+
+  MPUpdateMemoAIRequest({
+    this.rightNowTranscribe,
+  });
+
+  factory MPUpdateMemoAIRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoAIRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoAIRequestToJson(this);
 }
 
 // ========== Response Classes ==========
@@ -115,8 +128,7 @@ class MPGetMemoListResponse {
     required this.baseResp,
   });
 
-  factory MPGetMemoListResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoListResponseFromJson(json);
+  factory MPGetMemoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoListResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoListResponseToJson(this);
 }
@@ -135,8 +147,7 @@ class MPGetMemoDetailResponse {
     required this.baseResp,
   });
 
-  factory MPGetMemoDetailResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoDetailResponseFromJson(json);
+  factory MPGetMemoDetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoDetailResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoDetailResponseToJson(this);
 }
@@ -183,9 +194,22 @@ class MPDeleteMemoResponse {
     required this.baseResp,
   });
 
-  factory MPDeleteMemoResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPDeleteMemoResponseFromJson(json);
+  factory MPDeleteMemoResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoResponseToJson(this);
 }
 
+// Update Memo AI Response
+@JsonSerializable()
+class MPUpdateMemoAIResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPUpdateMemoAIResponse({
+    required this.baseResp,
+  });
+
+  factory MPUpdateMemoAIResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoAIResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoAIResponseToJson(this);
+}

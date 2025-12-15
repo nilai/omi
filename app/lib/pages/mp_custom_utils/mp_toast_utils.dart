@@ -8,10 +8,10 @@ class MPToastUtils {
   /// 显示"功能待完善，敬请期待"的提示
   ///
   /// [context] - BuildContext，如果为 null 则使用全局 navigatorKey
-  static void showFeatureComingSoon({BuildContext? context}) {
+  static void showFeatureComingSoon({String? message, BuildContext? context}) {
     _showCenterToast(
       context: context,
-      message: '功能待完善，敬请期待',
+      message: '${message ?? ''}功能待完善，敬请期待',
       duration: const Duration(seconds: 2),
     );
   }

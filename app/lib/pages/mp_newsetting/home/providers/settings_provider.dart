@@ -1,9 +1,12 @@
 // AI-generated START - 设置页面状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/api/privacy.dart';
 import 'package:omi/backend/http/mp_api/mp_expert.dart';
+import 'package:omi/backend/http/mp_api/mp_memo.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/mp/mp_expert.dart';
+import 'package:omi/backend/schema/mp/mp_memo.dart';
 import 'package:omi/backend/schema/mp/mp_speaker.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/expert_feedback_card_widget.dart';
 
@@ -74,27 +77,30 @@ class SettingsProvider with ChangeNotifier {
   String get audioRetentionPeriod => _audioRetentionPeriod;
   // AI-generated END - audioRetentionPeriod
 
-  // AI-generated START - 设置转写模式
-  void setTranscriptionConfirmMode(bool confirmMode) {
-    _transcriptionConfirmMode = confirmMode;
-    notifyListeners();
-  }
-  // AI-generated END - setTranscriptionConfirmMode
-
   // 保存转写模式到服务器
-  //TODO liyan: 保存转写模式到服务器
   Future<bool> saveTranscriptionMode(bool confirmMode) async {
-    // try {
-    //   final success = await setTranscriptionMode(confirmMode: confirmMode);
-    //   if (success) {
-    //     _transcriptionConfirmMode = confirmMode;
-    //     notifyListeners();
-    //   }
-    //   return success;
-    // } catch (e) {
-    //   debugPrint('Failed to save transcription mode: $e');
-    return false;
-    // }
+    try {
+      // confirmMode 和 rightNowTranscribe 是相反的
+      // confirmMode = true (确认后转写) -> rightNowTranscribe = false
+      // confirmMode = false (立即转写) -> rightNowTranscribe = true
+      final rightNowTranscribe = !confirmMode;
+
+      final request = MPUpdateMemoAIRequest(
+        rightNowTranscribe: rightNowTranscribe,
+      );
+
+      final response = await updateMemoAI(request);
+
+      if (response != null) {
+        _transcriptionConfirmMode = confirmMode;
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Failed to save transcription mode: $e');
+      return false;
+    }
   }
   // AI-generated END - saveTranscriptionMode
 
@@ -111,6 +117,35 @@ class SettingsProvider with ChangeNotifier {
     _audioRetentionPeriod = SharedPreferencesUtil().audioRetentionPeriod;
   }
   // AI-generated END - initAudioRetentionPeriod
+
+  // AI-generated START - 从服务器加载转写模式
+  /// 从 getUserProfile API 获取 right_now_transcribe 并更新转写模式
+  /// right_now_transcribe = true 表示立即转写（对应 _transcriptionConfirmMode = false）
+  /// right_now_transcribe = false 表示确认后转写（对应 _transcriptionConfirmMode = true）
+  Future<void> loadTranscriptionMode() async {
+    try {
+      final userProfile = await PrivacyApi.getUserProfile();
+      debugPrint('loadTranscriptionMode - userProfile: $userProfile');
+
+      final rightNowTranscribe = userProfile['right_now_transcribe'] as bool?;
+      debugPrint('loadTranscriptionMode - right_now_transcribe: $rightNowTranscribe');
+
+      if (rightNowTranscribe != null) {
+        // right_now_transcribe 和 _transcriptionConfirmMode 是相反的
+        // right_now_transcribe = true (立即转写) -> _transcriptionConfirmMode = false
+        // right_now_transcribe = false (确认后转写) -> _transcriptionConfirmMode = true
+        _transcriptionConfirmMode = !rightNowTranscribe;
+        debugPrint('loadTranscriptionMode - _transcriptionConfirmMode updated to: $_transcriptionConfirmMode');
+        notifyListeners();
+      } else {
+        debugPrint('loadTranscriptionMode - right_now_transcribe is null, keeping default value');
+      }
+    } catch (e) {
+      debugPrint('Failed to load transcription mode: $e');
+      // 如果加载失败，保持默认值（false = 立即转写）
+    }
+  }
+  // AI-generated END - loadTranscriptionMode
 
   // AI-generated START - 从接口加载 speaker 列表
   Future<void> loadSpeakerList() async {

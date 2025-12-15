@@ -32,28 +32,13 @@ class VoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 加载模拟数据
   void _loadMockData() {
     _voiceList = [
-      const MyVoiceItem(
-        id: '0',
-        title: '我的声音',
-        duration: '120秒',
-        date: '2024-01-20',
-        icon: 'assets/images/voice_icon1.png', // 优先显示本地图片
-        imageUrl: 'assets/images/voice_icon1_backup.png', // icon 存在时不会使用
-      ),
-      const MyVoiceItem(
-        id: '1',
-        title: '工作录音',
-        duration: '90秒',
-        date: '2024-01-21',
-        icon: 'assets/images/work_voice_icon.png', // 使用本地图片
-      ),
-      const MyVoiceItem(
-        id: '2',
-        title: '会议记录',
-        duration: '150秒',
-        date: '2024-01-22',
-        imageUrl: 'https://example.com/voice_icon.png', // 没有 icon 时使用网络图片
-      ),
+      // MyVoiceItem(
+      //   id: '0',
+      //   title: '我的声音',
+      //   duration: '120秒',
+      //   date: '2024-01-20',
+      //   icon: Assets.images.mpMyVoice.path, // 优先显示本地图片
+      // ),
     ];
     notifyListeners();
   }

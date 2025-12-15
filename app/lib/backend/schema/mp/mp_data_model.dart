@@ -414,6 +414,9 @@ class MPUserStruct {
   @JsonKey(name: 'ai_settings')
   final MPUserAISettings aiSettings;
 
+  @JsonKey(name: 'right_now_transcribe')
+  final bool rightNowTranscribe;
+
   MPUserStruct({
     required this.userName,
     required this.email,
@@ -421,6 +424,7 @@ class MPUserStruct {
     required this.phone,
     required this.birthday,
     required this.aiSettings,
+    required this.rightNowTranscribe,
   });
 
   factory MPUserStruct.fromJson(Map<String, dynamic> json) => _$MPUserStructFromJson(json);

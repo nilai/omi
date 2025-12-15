@@ -1,5 +1,6 @@
 // AI-generated START - 记忆对话卡片组件，显示对话记录信息
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 
 /// 记忆对话卡片组件
 /// 显示对话记录，包含头像、姓名、时间、描述和对话次数
@@ -58,13 +59,6 @@ class MemoryConversationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              blurRadius: 8.0,
-              offset: const Offset(0, 2),
-            ),
-          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +135,7 @@ class MemoryConversationCard extends StatelessWidget {
                   ),
                   // AI-generated END - 姓名和时间戳
 
-                  const SizedBox(height: 8.0),
+                  const SizedBox(height: 2.0),
 
                   // AI-generated START - 活动描述
                   Text(
@@ -151,20 +145,19 @@ class MemoryConversationCard extends StatelessWidget {
                       fontSize: 14.0,
                       height: 1.4,
                     ),
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   // AI-generated END - 活动描述
 
-                  const SizedBox(height: 8.0),
+                  const SizedBox(height: 4.0),
 
                   // AI-generated START - 对话次数
                   Row(
                     children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16.0,
-                        color: Colors.grey.shade600,
+                      Assets.images.mpMemoryImessage.image(
+                        width: 16.0,
+                        height: 16.0,
                       ),
                       const SizedBox(width: 4.0),
                       Text(
@@ -198,4 +191,3 @@ class MemoryConversationCard extends StatelessWidget {
   }
 }
 // AI-generated END - memory_conversation_card.dart
-
