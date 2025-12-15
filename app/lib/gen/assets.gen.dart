@@ -333,10 +333,6 @@ class $AssetsImagesGen {
   AssetGenImage get mpVoiceAddMark =>
       const AssetGenImage('assets/images/mp_voice_add_mark.png');
 
-  /// File path: assets/images/mp_voice_blue.png
-  AssetGenImage get mpVoiceBlue =>
-      const AssetGenImage('assets/images/mp_voice_blue.png');
-
   /// File path: assets/images/mp_voice_dialog_close.png
   AssetGenImage get mpVoiceDialogClose =>
       const AssetGenImage('assets/images/mp_voice_dialog_close.png');
@@ -673,7 +669,6 @@ class $AssetsImagesGen {
     mpTodoEdit,
     mpTranscriptionCheck,
     mpVoiceAddMark,
-    mpVoiceBlue,
     mpVoiceDialogClose,
     mpVoiceHelp,
     mpVoiceNew,

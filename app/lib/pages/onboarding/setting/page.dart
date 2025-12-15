@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:omi/providers/device_provider.dart';
 
+import 'mic_page.dart';
+
 /// MemoPin设置页面
 /// 显示设备详细信息、固件更新、数据同步和蓝牙调试等功能
 class MemoPinSettingPage extends StatelessWidget {
@@ -51,7 +53,7 @@ class MemoPinSettingPage extends StatelessWidget {
                 _buildDataSyncCard(),
                 const SizedBox(height: 16),
                 // 蓝牙调试
-                _buildMicrophoneGainCard(),
+                _buildMicrophoneGainCard(context),
                 const SizedBox(height: 24),
               ],
             ),
@@ -351,7 +353,7 @@ class MemoPinSettingPage extends StatelessWidget {
   }
 
   /// 构建麦克风增益卡片
-  Widget _buildMicrophoneGainCard() {
+  Widget _buildMicrophoneGainCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       decoration: BoxDecoration(
@@ -380,6 +382,11 @@ class MemoPinSettingPage extends StatelessWidget {
           GestureDetector(
             onTap: () {
               // TODO: 实现增益调节功能
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MicGainPage(),
+                ),
+              );
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
