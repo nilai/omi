@@ -54,10 +54,10 @@ class MyVoiceCard extends StatelessWidget {
   final List<MyVoiceItem> items;
 
   /// 点击回调
-  final Function(String)? onTap;
+  final Function(MyVoiceItem)? onTap;
 
   /// 按钮点击回调
-  final Function(String)? onActionTap;
+  final Function(MyVoiceItem)? onActionTap;
 
   /// 空状态卡片点击回调（当没有录制声音时）
   final VoidCallback? onEmptyStateTap;
@@ -80,10 +80,10 @@ class MyVoiceCard extends StatelessWidget {
             return VoiceItemCard(
               item: item,
               onTap: () {
-                onTap?.call(item.id);
+                onTap?.call(item);
               },
               onActionTap: () {
-                onActionTap?.call(item.id);
+                onActionTap?.call(item);
               },
             );
           }),

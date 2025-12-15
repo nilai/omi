@@ -1,5 +1,6 @@
 // AI-generated START - 声纹详情页面
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/mp_add_voive_recognition/widgets/mp_delete_voice_dialog.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_voice_congnition_detail/providers/mp_voice_recognition_detail_provider.dart';
@@ -68,16 +69,16 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 24.0),
+                    const SizedBox(height: 2.0),
                     // 名字输入框
                     _buildNameInput(),
-                    const SizedBox(height: 24.0),
+                    const SizedBox(height: 20.0),
                     // 音频文件部分
                     _buildAudioFileSection(provider),
                     const SizedBox(height: 16.0),
                     // 提示信息
                     _buildInfoCard(),
-                    const SizedBox(height: 32.0),
+                    const SizedBox(height: 40.0),
                     // 保存按钮（仅在编辑模式下显示）
                     if (provider.isEditMode) ...[
                       _buildSaveButton(provider),
@@ -106,33 +107,52 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
             color: Colors.white,
             borderRadius: BorderRadius.circular(12.0),
             border: Border.all(
-              color: Colors.grey.shade300,
+              color: const Color(0xFFF3F4F6),
               width: 1.0,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 '名字',
                 style: TextStyle(
-                  fontSize: 14.0,
-                  color: Colors.grey.shade600,
+                  fontSize: 12.0,
+                  color: Color(0xFF6B7280),
                 ),
               ),
               const SizedBox(height: 8.0),
-              TextField(
-                controller: _nameController,
-                readOnly: !provider.isEditMode,
-                enabled: provider.isEditMode,
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(12.0),
                 ),
-                style: TextStyle(
-                  fontSize: 16.0,
-                  color: provider.isEditMode ? Colors.black87 : Colors.grey.shade600,
+                child: TextField(
+                  controller: _nameController,
+                  readOnly: !provider.isEditMode,
+                  enabled: provider.isEditMode,
+                  cursorColor: const Color(0xFF1F2937),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    errorBorder: InputBorder.none,
+                    focusedErrorBorder: InputBorder.none,
+                    isDense: true,
+                    isCollapsed: true,
+                    contentPadding: EdgeInsets.zero,
+                    hintText: '请输入名字',
+                    hintStyle: TextStyle(
+                      fontSize: 16.0,
+                      color: Color(0xFF1F2937),
+                    ),
+                  ),
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: provider.isEditMode ? const Color(0xFF1F2937) : const Color(0xFF6B7280),
+                  ),
                 ),
               ),
             ],
@@ -155,7 +175,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: const Color(0xFFF3F4F6),
           width: 1.0,
         ),
       ),
@@ -166,36 +186,35 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 '音频文件',
                 style: TextStyle(
-                  fontSize: 14.0,
-                  color: Colors.grey.shade600,
+                  fontSize: 12.0,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               Row(
                 children: [
-                  Icon(
-                    Icons.access_time,
-                    size: 16.0,
-                    color: Colors.grey.shade600,
+                  Assets.images.mpMemoryDetailTime.image(
+                    width: 16.0,
+                    height: 16.0,
                   ),
                   const SizedBox(width: 4.0),
                   Text(
                     durationText,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.grey.shade600,
+                    style: const TextStyle(
+                      fontSize: 12.0,
+                      color: Color(0xFF6B7280),
                     ),
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 16.0),
+          // const SizedBox(height: 8.0),
           // 波形图
-          _buildWaveform(provider),
-          const SizedBox(height: 16.0),
+          // _buildWaveform(provider),
           // 播放控制
           _buildPlaybackControls(provider, currentTimeText, durationText),
         ],
@@ -204,22 +223,22 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
   }
 
   /// 构建波形图
-  Widget _buildWaveform(MPVoiceRecognitionDetailProvider provider) {
-    return Container(
-      height: 80.0,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: CustomPaint(
-        painter: _SimpleWaveformPainter(
-          progress: provider.progress,
-          isPlaying: provider.isPlaying,
-        ),
-        size: Size.infinite,
-      ),
-    );
-  }
+  // Widget _buildWaveform(MPVoiceRecognitionDetailProvider provider) {
+  //   return Container(
+  //     height: 80.0,
+  //     decoration: BoxDecoration(
+  //       color: Colors.grey.shade100,
+  //       borderRadius: BorderRadius.circular(8.0),
+  //     ),
+  //     child: CustomPaint(
+  //       painter: _SimpleWaveformPainter(
+  //         progress: provider.progress,
+  //         isPlaying: provider.isPlaying,
+  //       ),
+  //       size: Size.infinite,
+  //     ),
+  //   );
+  // }
 
   /// 构建播放控制
   Widget _buildPlaybackControls(
@@ -227,24 +246,25 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     String currentTimeText,
     String durationText,
   ) {
-    return Row(
-      children: [
-        // 播放按钮
-        GestureDetector(
-          onTap: () {
-            if (provider.isPlaying) {
-              provider.pause();
-            } else {
-              provider.play();
-            }
-          },
-          child: Container(
-            width: 56.0,
-            height: 56.0,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade600,
-              shape: BoxShape.circle,
-            ),
+    return Row(children: [
+      // 播放按钮
+      GestureDetector(
+        onTap: () {
+          if (provider.isPlaying) {
+            provider.pause();
+          } else {
+            provider.play();
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.only(top: 12.0),
+          width: 40.0,
+          height: 40.0,
+          decoration: BoxDecoration(
+            color: Colors.blue.shade600,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
             child: Icon(
               provider.isPlaying ? Icons.pause : Icons.play_arrow,
               color: Colors.white,
@@ -252,47 +272,52 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
             ),
           ),
         ),
-        const SizedBox(width: 16.0),
-        // 时间显示
-        Text(
-          currentTimeText,
-          style: const TextStyle(
-            fontSize: 14.0,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(width: 12.0),
-        // 进度条
-        Expanded(
-          child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 4.0,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
+      ),
+      Expanded(
+        child: Column(
+          children: [
+            SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackHeight: 4.0,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 16.0),
+              ),
+              child: Slider(
+                value: provider.progress,
+                onChanged: (value) {
+                  provider.seekTo(value);
+                },
+                activeColor: Colors.blue.shade600,
+                inactiveColor: const Color(0xFFE5E7EB),
+              ),
             ),
-            child: Slider(
-              value: provider.progress,
-              onChanged: (value) {
-                provider.seekTo(value);
-              },
-              activeColor: Colors.blue.shade600,
-              inactiveColor: Colors.grey.shade300,
-            ),
-          ),
+            Padding(
+                padding: const EdgeInsets.only(left: 8.0, right: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      currentTimeText,
+                      style: const TextStyle(
+                        fontSize: 12.0,
+                        color: Color(0xFF4B5563),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                    Text(
+                      durationText,
+                      style: const TextStyle(
+                        fontSize: 12.0,
+                        color: Color(0xFF4B5563),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ))
+          ],
         ),
-        const SizedBox(width: 12.0),
-        // 总时长
-        Text(
-          durationText,
-          style: const TextStyle(
-            fontSize: 14.0,
-            color: Colors.black87,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
+      ),
+    ]);
   }
 
   /// 构建提示信息卡片
@@ -300,31 +325,19 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     return Container(
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
+        color: const Color(0xFFEEF2FF),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 20.0,
-            height: 20.0,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade600,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.info,
-              size: 14.0,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12.0),
+          Image.asset(Assets.images.mpVoiceHelp.path, width: 28.0, height: 28.0),
+          const SizedBox(width: 8.0),
           Expanded(
             child: Text(
               '这段录音将用于识别对话中的声音。建议录音时长至少90秒,环境安静,声音清晰。',
               style: TextStyle(
-                fontSize: 13.0,
+                fontSize: 12.0,
                 color: Colors.grey.shade800,
                 height: 1.4,
               ),
@@ -345,8 +358,9 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
           Navigator.of(context).pop();
         },
         style: ElevatedButton.styleFrom(
+          elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          backgroundColor: const Color(0xFF8B5CF6), // 紫色
+          backgroundColor: const Color(0xFF4F46E5), // 紫色
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
@@ -355,7 +369,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
           '保存',
           style: TextStyle(
             fontSize: 16.0,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
@@ -372,18 +386,19 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
           _showDeleteConfirmDialog(provider);
         },
         style: ElevatedButton.styleFrom(
+          elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          backgroundColor: Colors.red.shade50,
+          backgroundColor: const Color(0xFFFEF2F2),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12.0),
           ),
         ),
-        child: Text(
+        child: const Text(
           '删除',
           style: TextStyle(
             fontSize: 16.0,
-            fontWeight: FontWeight.w500,
-            color: Colors.red.shade600,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFFDC2626),
           ),
         ),
       ),
