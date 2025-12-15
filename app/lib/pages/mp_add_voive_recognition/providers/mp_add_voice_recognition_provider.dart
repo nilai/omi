@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../services/services.dart';
+import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
 /// 管理声纹录制相关的状态
@@ -49,6 +50,8 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 获取音频可视化级别
   List<double> get audioLevels => _audioLevels;
   // AI-generated END - audioLevels
+
+  BuildContext? context;
 
   // AI-generated START - 开始录音
   Future<void> startRecording() async {
@@ -133,7 +136,8 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
         _isRecording = false;
         _recordingTimer?.cancel();
         _recordingTimer = null;
-        notifyListeners();
+        // notifyListeners();
+        _stopRecordDeal();
       },
       onInitializing: () {
         debugPrint('Initializing');
@@ -143,11 +147,34 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   // AI-generated END - startRecording
 
   // AI-generated START - 停止录音
-  void stopRecording() {
+  void stopRecording(BuildContext context) {
     // 停止录音服务
     ServiceManager.instance().mic.stop();
+
+    this.context = context;
   }
   // AI-generated END - stopRecording
+
+  /// 处理停止录音
+  void _stopRecordDeal() {
+    if (context == null) {
+      return;
+    }
+    if (_recordingDuration < 30) {
+      Navigator.pop(context!);
+      return;
+    }
+    // 跳转详情页面
+    Navigator.of(context!).push(MaterialPageRoute(
+      builder: (context) => MPVoiceRecognitionDetailPage(
+        voiceId: null,
+        initialName: null,
+        audioDuration: _recordingDuration,
+        isEditMode: true,
+        audioChunks: _audioChunks,
+      ),
+    ));
+  }
 
   @override
   void dispose() {

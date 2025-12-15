@@ -1,4 +1,6 @@
 // AI-generated START - 声纹详情页面
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/mp_add_voive_recognition/widgets/mp_delete_voice_dialog.dart';
@@ -15,6 +17,7 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
     this.initialName,
     this.audioDuration,
     this.isEditMode = false,
+    this.audioChunks
   });
 
   /// 是否是编辑模式
@@ -28,6 +31,9 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
 
   /// 音频时长（秒）
   final int? audioDuration;
+
+  /// 音频数据
+  final List<Uint8List>? audioChunks;
 
   @override
   State<MPVoiceRecognitionDetailPage> createState() => _MPVoiceRecognitionDetailPageState();

@@ -151,7 +151,7 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                provider.stopRecording();
+                provider.stopRecording(context);
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
