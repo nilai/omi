@@ -23,18 +23,20 @@ class ImportAudioDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
+      insetPadding: const EdgeInsets.all(0),
       child: Container(
-        margin: EdgeInsets.zero,
+        margin: const EdgeInsets.all(0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             Container(
-              margin: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF2F2F7),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -59,7 +61,7 @@ class ImportAudioDialog extends StatelessWidget {
   /// 构建标题栏
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 16, 16),
+      padding: const EdgeInsets.fromLTRB(20, 20, 16, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -77,7 +79,7 @@ class ImportAudioDialog extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
@@ -110,13 +112,6 @@ class ImportAudioDialog extends StatelessWidget {
           iconColor: Colors.white,
         ),
         
-        // 分割线
-        Container(
-          height: 1,
-          color: const Color(0xFFE5E5EA),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-        ),
-        
         // 从相册导入
         _buildImportOption(
           icon: Icons.photo_library_outlined,
@@ -129,13 +124,6 @@ class ImportAudioDialog extends StatelessWidget {
           },
           iconBackgroundColor: const Color(0xFFAF52DE),
           iconColor: Colors.white,
-        ),
-        
-        // 分割线
-        Container(
-          height: 1,
-          color: const Color(0xFFE5E5EA),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
         ),
         
         // 从其他App导入
@@ -163,49 +151,63 @@ class ImportAudioDialog extends StatelessWidget {
     required Color iconBackgroundColor,
     required Color iconColor,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
         color: Colors.white,
-        child: Row(
-          children: [
-            // 图标
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: iconBackgroundColor,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
-            ),
-            
-            const SizedBox(width: 16),
-            
-            // 文字内容
-            Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 2,
+            spreadRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: Row(
+            children: [
+              // 图标
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: iconColor,
+                  size: 20,
                 ),
               ),
-            ),
-            
-            // 箭头图标
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Color(0xFF8E8E93),
-              size: 16,
-            ),
-          ],
+              
+              const SizedBox(width: 16),
+              
+              // 文字内容
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+              
+              // 箭头图标
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF8E8E93),
+                size: 16,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -239,6 +241,7 @@ class ImportAudioDialog extends StatelessWidget {
     return showDialog<T>(
       context: context,
       barrierColor: Colors.black54,
+      barrierDismissible: true,
       builder: (context) {
         return ImportAudioDialog(
           onImportFromFile: onImportFromFile,
