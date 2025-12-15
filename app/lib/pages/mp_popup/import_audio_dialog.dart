@@ -47,9 +47,6 @@ class ImportAudioDialog extends StatelessWidget {
                   
                   // 底部描述
                   _buildDescription(),
-                  
-                  // 取消按钮
-                  _buildCancelButton(context),
                 ],
               ),
             ),
@@ -103,13 +100,14 @@ class ImportAudioDialog extends StatelessWidget {
         _buildImportOption(
           icon: Icons.insert_drive_file_outlined,
           title: '从文件导入',
-          subtitle: '从本地存储选择音频文件',
           onTap: (){
             if (autoClose) {
               onClose?.call();
             }
             onImportFromFile?.call();
           },
+          iconBackgroundColor: const Color(0xFF007AFF),
+          iconColor: Colors.white,
         ),
         
         // 分割线
@@ -123,13 +121,14 @@ class ImportAudioDialog extends StatelessWidget {
         _buildImportOption(
           icon: Icons.photo_library_outlined,
           title: '从相册导入',
-          subtitle: '从照片库选择音频文件',
           onTap: (){
             if (autoClose) {
               onClose?.call();
             }
             onImportFromAlbum?.call();
           },
+          iconBackgroundColor: const Color(0xFFAF52DE),
+          iconColor: Colors.white,
         ),
         
         // 分割线
@@ -143,13 +142,14 @@ class ImportAudioDialog extends StatelessWidget {
         _buildImportOption(
           icon: Icons.apps_outlined,
           title: '从其他App导入',
-          subtitle: '通过系统分享导入音频',
           onTap: (){
             if (autoClose) {
               onClose?.call();
             }
             onImportFromOtherApp?.call();
           },
+          iconBackgroundColor: const Color(0xFF34C759),
+          iconColor: Colors.white,
         ),
       ],
     );
@@ -159,8 +159,9 @@ class ImportAudioDialog extends StatelessWidget {
   Widget _buildImportOption({
     required IconData icon,
     required String title,
-    required String subtitle,
     VoidCallback? onTap,
+    required Color iconBackgroundColor,
+    required Color iconColor,
   }) {
     return GestureDetector(
       onTap: onTap,
@@ -174,12 +175,12 @@ class ImportAudioDialog extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF2F2F7),
+                color: iconBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFF8E8E93),
+                color: iconColor,
                 size: 20,
               ),
             ),
@@ -188,26 +189,13 @@ class ImportAudioDialog extends StatelessWidget {
             
             // 文字内容
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF8E8E93),
-                    ),
-                  ),
-                ],
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black,
+                ),
               ),
             ),
             
@@ -223,39 +211,14 @@ class ImportAudioDialog extends StatelessWidget {
     );
   }
 
-  /// 构建取消按钮
-  Widget _buildCancelButton(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      child: GestureDetector(
-        onTap: onClose ?? () => Navigator.of(context).pop(),
-        child: Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF2F2F7),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Center(
-            child: Text(
-              '取消',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   /// 构建底部描述
   Widget _buildDescription() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       child: const Text(
-        '请选择一种方式导入您的音频文件',
+        '支持导入单文件时长不超过5小时的音频',
         style: TextStyle(
           fontSize: 14,
           color: Color(0xFF8E8E93),
