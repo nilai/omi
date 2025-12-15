@@ -74,6 +74,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       //   stopRecording();
       // }
       _recordingDuration++;
+      notifyListeners();
     });
     
     // 启动实际录音服务
@@ -81,6 +82,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       onByteReceived: (bytes) {
         if (_isRecording) {
           _audioChunks.add(bytes);
+          debugPrint('-------hjj Recording ${bytes.length} bytes');
           
           // // 根据实际音频级别更新音频可视化
           // if (bytes.isNotEmpty) {
@@ -127,12 +129,12 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
         }
       },
       onRecording: () {
-        debugPrint('Recording started');
+        debugPrint('-------hjj Recording started');
         _isRecording = true;
         notifyListeners();
       },
       onStop: () {
-        debugPrint('Recording stopped');
+        debugPrint('-------hjj Recording stopped');
         _isRecording = false;
         _recordingTimer?.cancel();
         _recordingTimer = null;
@@ -140,7 +142,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
         _stopRecordDeal();
       },
       onInitializing: () {
-        debugPrint('Initializing');
+        debugPrint('-------hjj Initializing');
       },
     );
   }
