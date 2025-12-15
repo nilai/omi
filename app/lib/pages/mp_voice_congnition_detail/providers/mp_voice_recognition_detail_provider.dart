@@ -97,12 +97,11 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     notifyListeners();
 
     if (audioFile != null) {
-      _playAudioFile();
-    }else {
-
+      await _playAudioFile(); // 确保等待播放完成
+    } else {
+      debugPrint('play() 被调用但 audioFile 为空');
+      pause();
     }
-
-   
   }
   // AI-generated END - play
 
@@ -113,21 +112,88 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
      try {
       // 初始化播放器并播放
       _audioPlayer ??= FlutterSoundPlayer();
-      await _audioPlayer!.openPlayer();
+      debugPrint('播放音频文件: ${audioFile?.path}');
+      
+      // 验证文件是否存在
+      if (audioFile == null) {
+        debugPrint('音频文件为空');
+        pause();
+        return;
+      }
+      
+      if (!await audioFile!.exists()) {
+        debugPrint('音频文件不存在: ${audioFile?.path}');
+        pause();
+        return;
+      }
+      
+      // 检查路径格式并转换为URI
+      final path = audioFile?.path ?? '';
+      debugPrint('音频文件路径: $path');
+      debugPrint('文件大小: ${await audioFile!.length()} bytes');
+      
+      // 转换为URI格式
+      final uri = Uri.file(path).toString();
+      debugPrint('转换后的音频URI: $uri');
+      
+      // 确保播放器已打开
+      if (!_audioPlayer!.isOpen()) {
+        await _audioPlayer!.openPlayer();
+        debugPrint('播放器打开成功');
+      } else {
+        debugPrint('播放器已经处于打开状态');
+      }
+      
+      // 停止之前可能正在播放的音频
+      if (_audioPlayer!.isPlaying) {
+        await _audioPlayer!.stopPlayer();
+        debugPrint('停止之前的播放');
+      }
+      
+      // 开始播放 - 使用更明确的参数
+      debugPrint('准备开始播放音频');
+      
+      // 对于本地文件，使用startPlayerFromUri可能更可靠
       await _audioPlayer!.startPlayer(
-        fromURI: audioFile?.path ?? '',
+        fromURI: uri,
         whenFinished: () {
+          debugPrint('音频播放完成');
           pause();
         },
+        codec: Codec.pcm16WAV, // WAV格式文件使用正确的编解码器
       );
-
+      
+      debugPrint('音频播放开始 - startPlayer()调用成功');
+      debugPrint('播放器当前状态: 正在播放=${_audioPlayer!.isPlaying}, 已打开=${_audioPlayer!.isOpen}');
+      
       // 监听播放进度
-      _audioPlayer!.onProgress?.listen((disposition) {
-        _currentTime = disposition.position.inSeconds;
-        notifyListeners();
-      });
-    } catch (e) {
+      if (_audioPlayer!.onProgress != null) {
+        debugPrint('设置播放进度监听');
+        _audioPlayer!.onProgress!.listen((disposition) {
+          _currentTime = disposition.position.inSeconds;
+          debugPrint('播放进度更新: $_currentTime / ${disposition.duration.inSeconds}');
+          notifyListeners();
+        });
+      } else {
+        debugPrint('onProgress 流为 null');
+      }
+      
+    } catch (e, stackTrace) {
       debugPrint('播放音频时出错: $e');
+      debugPrint('错误类型: ${e.runtimeType}');
+      debugPrint('错误堆栈: $stackTrace');
+      
+      // 尝试重置播放器
+      try {
+        if (_audioPlayer != null) {
+          await _audioPlayer!.stopPlayer();
+          await _audioPlayer!.closePlayer();
+          _audioPlayer = null;
+        }
+      } catch (resetError) {
+        debugPrint('重置播放器时出错: $resetError');
+      }
+      
       pause();
     }
   }

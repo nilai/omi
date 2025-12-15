@@ -2,13 +2,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../services/services.dart';
 import '../../../utils/audio/wav_bytes.dart';
+import '../../../backend/schema/bt_device/bt_device.dart';
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
@@ -186,11 +186,17 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   Future<File> _saveAudioChunksToFile() async {
     final tempDir = await getTemporaryDirectory();
     final wavFilePath = '${tempDir.path}/temp_recording.wav';
-    final wavBytes = WavBytes.fromPcm(
-      Uint8List.fromList(_audioChunks.expand((chunk) => chunk).toList()),
-      sampleRate: 16000,
-      numChannels: 1,
-    ).asBytes();
+    
+    // 将 List<Uint8List> 转换为 List<List<int>>
+    List<List<int>> frames = _audioChunks.map((chunk) => chunk.toList()).toList();
+    
+    // 创建 WavBytesUtil 实例处理 PCM 数据
+    WavBytesUtil wavUtil = WavBytesUtil(codec: BleAudioCodec.pcm16, framesPerSecond: 100);
+    
+    // 获取正确的 PCM 样本并转换为 WAV 字节
+    Int16List samples = wavUtil.getPcmSamples(frames);
+    Uint8List wavBytes = WavBytesUtil.getUInt8ListBytes(samples, 16000);
+    
     await File(wavFilePath).writeAsBytes(wavBytes);
     return File(wavFilePath);
   }
