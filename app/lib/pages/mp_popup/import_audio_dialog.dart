@@ -1,3 +1,5 @@
+import 'dart:nativewrappers/_internal/vm/lib/ffi_allocation_patch.dart';
+
 import 'package:flutter/material.dart';
 
 /// 音频导入选项弹窗
@@ -7,6 +9,8 @@ class ImportAudioDialog extends StatelessWidget {
   final VoidCallback? onImportFromAlbum;
   final VoidCallback? onImportFromOtherApp;
   final VoidCallback? onClose;
+  final bool autoClose;
+  
 
   const ImportAudioDialog({
     super.key,
@@ -14,6 +18,7 @@ class ImportAudioDialog extends StatelessWidget {
     this.onImportFromAlbum,
     this.onImportFromOtherApp,
     this.onClose,
+    this.autoClose = true,
   });
 
   @override
@@ -88,7 +93,12 @@ class ImportAudioDialog extends StatelessWidget {
           icon: Icons.insert_drive_file_outlined,
           title: '从文件导入',
           subtitle: '从本地存储选择音频文件',
-          onTap: onImportFromFile,
+          onTap: (){
+            if (autoClose) {
+              onClose?.call();
+            }
+            onImportFromFile?.call();
+          },
         ),
         
         // 分割线
@@ -103,7 +113,12 @@ class ImportAudioDialog extends StatelessWidget {
           icon: Icons.photo_library_outlined,
           title: '从相册导入',
           subtitle: '从照片库选择音频文件',
-          onTap: onImportFromAlbum,
+          onTap: (){
+            if (autoClose) {
+              onClose?.call();
+            }
+            onImportFromAlbum?.call();
+          },
         ),
         
         // 分割线
@@ -118,7 +133,12 @@ class ImportAudioDialog extends StatelessWidget {
           icon: Icons.apps_outlined,
           title: '从其他App导入',
           subtitle: '通过系统分享导入音频',
-          onTap: onImportFromOtherApp,
+          onTap: (){
+            if (autoClose) {
+              onClose?.call();
+            }
+            onImportFromOtherApp?.call();
+          },
         ),
       ],
     );

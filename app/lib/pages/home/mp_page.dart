@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
+import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../onboarding/find_device/page.dart';
@@ -302,7 +303,7 @@ class _MPPageContentState extends State<MPPageContent> {
 
   Future<void> _showAddRecordDialog(BuildContext context, MPHomePageProvider provider) async {
     RecordAudioOptionCard.show(context: context, onImportAudio: () {
-      
+      ImportAudioDialog.show(context: context);
     },onStartRecording: () {
       
     },);
