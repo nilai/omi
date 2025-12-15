@@ -213,6 +213,42 @@ class $AssetsImagesGen {
   AssetGenImage get logoTransparentV2 =>
       const AssetGenImage('assets/images/logo_transparent_v2.png');
 
+  /// File path: assets/images/mp_add_ai_export.png
+  AssetGenImage get mpAddAiExport =>
+      const AssetGenImage('assets/images/mp_add_ai_export.png');
+
+  /// File path: assets/images/mp_add_export_camera.png
+  AssetGenImage get mpAddExportCamera =>
+      const AssetGenImage('assets/images/mp_add_export_camera.png');
+
+  /// File path: assets/images/mp_add_export_chat.png
+  AssetGenImage get mpAddExportChat =>
+      const AssetGenImage('assets/images/mp_add_export_chat.png');
+
+  /// File path: assets/images/mp_add_export_chat_unselect.png
+  AssetGenImage get mpAddExportChatUnselect =>
+      const AssetGenImage('assets/images/mp_add_export_chat_unselect.png');
+
+  /// File path: assets/images/mp_add_export_choose.png
+  AssetGenImage get mpAddExportChoose =>
+      const AssetGenImage('assets/images/mp_add_export_choose.png');
+
+  /// File path: assets/images/mp_add_export_feedback.png
+  AssetGenImage get mpAddExportFeedback =>
+      const AssetGenImage('assets/images/mp_add_export_feedback.png');
+
+  /// File path: assets/images/mp_add_export_feedback_unselect.png
+  AssetGenImage get mpAddExportFeedbackUnselect =>
+      const AssetGenImage('assets/images/mp_add_export_feedback_unselect.png');
+
+  /// File path: assets/images/mp_add_export_robot.png
+  AssetGenImage get mpAddExportRobot =>
+      const AssetGenImage('assets/images/mp_add_export_robot.png');
+
+  /// File path: assets/images/mp_add_export_unchoose.png
+  AssetGenImage get mpAddExportUnchoose =>
+      const AssetGenImage('assets/images/mp_add_export_unchoose.png');
+
   /// File path: assets/images/mp_icon_more_add_tag.png
   AssetGenImage get mpIconMoreAddTag =>
       const AssetGenImage('assets/images/mp_icon_more_add_tag.png');
@@ -292,6 +328,46 @@ class $AssetsImagesGen {
   /// File path: assets/images/mp_my_voice_edit.png
   AssetGenImage get mpMyVoiceEdit =>
       const AssetGenImage('assets/images/mp_my_voice_edit.png');
+
+  /// File path: assets/images/mp_personal_changepassword.png
+  AssetGenImage get mpPersonalChangepassword =>
+      const AssetGenImage('assets/images/mp_personal_changepassword.png');
+
+  /// File path: assets/images/mp_personal_down.png
+  AssetGenImage get mpPersonalDown =>
+      const AssetGenImage('assets/images/mp_personal_down.png');
+
+  /// File path: assets/images/mp_personal_email.png
+  AssetGenImage get mpPersonalEmail =>
+      const AssetGenImage('assets/images/mp_personal_email.png');
+
+  /// File path: assets/images/mp_personal_facebook.png
+  AssetGenImage get mpPersonalFacebook =>
+      const AssetGenImage('assets/images/mp_personal_facebook.png');
+
+  /// File path: assets/images/mp_personal_feedback.png
+  AssetGenImage get mpPersonalFeedback =>
+      const AssetGenImage('assets/images/mp_personal_feedback.png');
+
+  /// File path: assets/images/mp_personal_instagram.png
+  AssetGenImage get mpPersonalInstagram =>
+      const AssetGenImage('assets/images/mp_personal_instagram.png');
+
+  /// File path: assets/images/mp_personal_net.png
+  AssetGenImage get mpPersonalNet =>
+      const AssetGenImage('assets/images/mp_personal_net.png');
+
+  /// File path: assets/images/mp_personal_tiktok.png
+  AssetGenImage get mpPersonalTiktok =>
+      const AssetGenImage('assets/images/mp_personal_tiktok.png');
+
+  /// File path: assets/images/mp_personal_twitter.png
+  AssetGenImage get mpPersonalTwitter =>
+      const AssetGenImage('assets/images/mp_personal_twitter.png');
+
+  /// File path: assets/images/mp_personal_username.png
+  AssetGenImage get mpPersonalUsername =>
+      const AssetGenImage('assets/images/mp_personal_username.png');
 
   /// File path: assets/images/mp_right_arrow_white.png
   AssetGenImage get mpRightArrowWhite =>
@@ -643,6 +719,15 @@ class $AssetsImagesGen {
     linkedinLogo,
     logoTransparent,
     logoTransparentV2,
+    mpAddAiExport,
+    mpAddExportCamera,
+    mpAddExportChat,
+    mpAddExportChatUnselect,
+    mpAddExportChoose,
+    mpAddExportFeedback,
+    mpAddExportFeedbackUnselect,
+    mpAddExportRobot,
+    mpAddExportUnchoose,
     mpIconMoreAddTag,
     mpIconMoreCopySummary,
     mpIconMoreCopyTranscript,
@@ -663,6 +748,16 @@ class $AssetsImagesGen {
     mpMyVoice,
     mpMyVoiceDelete,
     mpMyVoiceEdit,
+    mpPersonalChangepassword,
+    mpPersonalDown,
+    mpPersonalEmail,
+    mpPersonalFacebook,
+    mpPersonalFeedback,
+    mpPersonalInstagram,
+    mpPersonalNet,
+    mpPersonalTiktok,
+    mpPersonalTwitter,
+    mpPersonalUsername,
     mpRightArrowWhite,
     mpSettingNotification,
     mpSettingPrivicy,

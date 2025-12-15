@@ -1,9 +1,14 @@
 // AI-generated START - 专家列表页面
 import 'package:flutter/material.dart';
-import 'package:omi/pages/mp_expert_feedback/providers/mp_expert_provider.dart';
-import 'package:omi/pages/mp_expert_feedback/widgets/expert_category_tabs_card.dart';
-import 'package:omi/pages/mp_expert_feedback/widgets/mp_expert_card.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
+import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
+import 'package:omi/pages/mp_expert_feedback/home/providers/mp_expert_provider.dart';
+import 'package:omi/pages/mp_expert_feedback/home/widgets/expert_category_tabs_card.dart';
+import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_create_expert_card.dart';
+import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_expert_card.dart';
+import 'package:omi/pages/mp_expert_feedback/mp_add_export/mp_add_export_page.dart';
 import 'package:omi/pages/mp_expert_feedback/widgets/search_experts_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
 /// 专家列表页面
@@ -12,7 +17,7 @@ class MPExpertListPage extends StatefulWidget {
   // AI-generated START - 构造函数
   const MPExpertListPage({
     super.key,
-    this.title = '专家列表',
+    this.title = '专家反馈',
   });
   // AI-generated END - 构造函数
 
@@ -106,23 +111,15 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
     return Consumer<MPExpertProvider>(
       builder: (context, expertProvider, child) {
         return Scaffold(
-          backgroundColor: Colors.grey.shade50,
-          appBar: AppBar(
-            title: Text(widget.title),
-            backgroundColor: Colors.white,
-            elevation: 0,
-            iconTheme: const IconThemeData(color: Colors.black87),
-            titleTextStyle: const TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.w600,
-            ),
+          backgroundColor: MPConstUtils.backgroundColorGrey,
+          appBar: MPCommonAppBar(
+            title: widget.title,
           ),
           body: Column(
             children: [
               // AI-generated START - 搜索框
               MPExpertSearchCard(
-                placeholder: '搜索专家...',
+                placeholder: '搜索AI专家...',
                 onSearchChanged: (query) {
                   expertProvider.setSearchQuery(query);
                 },
@@ -144,6 +141,15 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
                 child: _buildBody(expertProvider),
               ),
               // AI-generated END - 专家列表
+              MPCreateExpertCard(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const MPAddExportPage()),
+                  );
+                },
+              ),
+              const SizedBox(height: 16.0),
             ],
           ),
         );
@@ -161,30 +167,10 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
     }
 
     if (provider.error != null && provider.filteredExperts.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadExperts(),
-              child: const Text('重试'),
-            ),
-          ],
-        ),
+      return MPThreeStateWidget(
+        state: MPThreeStateType.error,
+        errorMessage: provider.error!,
+        onRetry: () => provider.loadExperts(),
       );
     }
 
@@ -193,12 +179,6 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
             Text(
               provider.searchQuery.isEmpty ? '暂无专家' : '未找到相关专家',
               style: TextStyle(

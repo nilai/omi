@@ -32,11 +32,11 @@ class UserProfile {
 /// 管理用户个人信息数据
 class PersonalProvider with ChangeNotifier {
   // AI-generated START - 用户姓名
-  String _name = '叶志伟';
+  String _name = '';
   // AI-generated END - 用户姓名
 
   // AI-generated START - 用户邮箱
-  String _email = 'ye.zhiwei@example.com';
+  String _email = '';
   // AI-generated END - 用户邮箱
 
   // AI-generated START - 头像URL
@@ -154,6 +154,7 @@ class PersonalProvider with ChangeNotifier {
           _email = response.user.email;
           _avatarUrl = response.user.avatar.isNotEmpty ? response.user.avatar : null;
           _error = null;
+          notifyListeners();
         } else {
           _error = response.baseResp.message;
         }

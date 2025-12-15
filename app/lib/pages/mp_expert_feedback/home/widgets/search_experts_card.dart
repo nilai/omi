@@ -36,8 +36,7 @@ class _MPExpertSearchCardState extends State<MPExpertSearchCard> {
   @override
   Widget build(BuildContext context) {
     return Column(children: [
-      Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      SizedBox(
         height: 46.0,
         child: TextField(
           controller: _searchController,
