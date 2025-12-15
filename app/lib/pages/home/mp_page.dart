@@ -3,6 +3,7 @@ import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:provider/provider.dart';
 
 import '../../utils/other/temp.dart';
+import '../chat/widgets/voice_recorder_widget.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
@@ -269,7 +270,13 @@ class _MPPageContentState extends State<MPPageContent> {
             // Search icon
             IconButton(
               icon: const Icon(Icons.search, color: Color(0xFF111111)),
-              onPressed: provider.onSearchTap,
+              // onPressed: provider.onSearchTap,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
+                );
+              },
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
