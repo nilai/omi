@@ -169,7 +169,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated END - seekTo
 
   // AI-generated START - 保存声纹
-  void saveVoice(String name) async{
+  void saveVoice(String name, VoidCallback? successCallback) async{
     if (name.isEmpty) {
       debugPrint('保存声纹失败，姓名为空');
       MPToastUtils.showMessage('请输入姓名');
@@ -194,11 +194,11 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     // await MPVoiceRecognitionService().addSpeaker(req);
     final res = await addSpeaker(req);
     if (res?.baseResp.code == 0) {
-      debugPrint('保存声纹成功，声纹ID');
+      debugPrint('保存声纹成功，声纹ID: ${res?.baseResp.message}');
+      successCallback?.call();
     } else {
-      debugPrint('保存声纹失败');
+      MPToastUtils.showMessage('保存声纹失败');
     }
-
   }
   // AI-generated END - saveVoice
 

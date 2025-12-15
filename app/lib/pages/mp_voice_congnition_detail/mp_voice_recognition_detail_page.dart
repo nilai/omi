@@ -362,8 +362,9 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          provider.saveVoice(_nameController.text);
-          Navigator.of(context).pop();
+          provider.saveVoice(_nameController.text, () {
+            Navigator.of(context).pop();
+          });
         },
         style: ElevatedButton.styleFrom(
           elevation: 0,
