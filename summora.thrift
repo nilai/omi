@@ -13,11 +13,63 @@ struct BaseResp {
     3: string logid,
 }
 
+struct SpeakerStruct {
+    1: string id,
+    2: string name,
+    3: string avatar,
+    4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
+    5: bool myself_voice,
+}
+
+struct SpeakerWithDetailStruct {
+    1: SpeakerStruct speaker,
+    2: string summary,
+    3: i64 last_memory_at,
+    4: i32: memory_total
+}
+
+struct TodoStruct {
+    1: string id,
+    2: string title,
+    3: SpeakerStruct owner,
+    4: string priority,
+    5: string deadline,
+    6: i32 status,
+}
+
 enum MemoryType {
   SUMMARY = 1,
   ONLY_RECORD = 2,
   INSIGHT = 3,
   AI_EXPERT = 4,
+}
+
+struct AiExpertMemoryStruct {
+    1: string content, // markdwon格式
+}
+
+struct InsightMemoryStruct {
+    1: string content, // markdwon格式
+}
+
+struct OnlyRecordMemoryStruct {
+    1: string record_file, // 本地保存的文件名
+}
+
+struct SummaryConversationStruct {
+    1: string id,
+    2: SpeakerStruct speaker,
+    3: string content,
+    4: string time,
+}
+
+struct SummaryMemoryStruct {
+    1: list<SpeakerStruct> participants,
+    2: i32: participants_cnt,
+    2: string record_url, // 录音地址
+    3: string summary, // markdown格式
+    4: list<SummaryConversationStruct> transcript,
+    5: list<TodoStruct> todos,
 }
 
 struct MemoryStruct {
@@ -34,48 +86,6 @@ struct MemoryStruct {
     10: AiExpertMemoryStruct ai_expert_content,
 }
 
-struct AiExpertMemoryStruct {
-    1: string content, // markdwon格式
-}
-
-struct InsightMemoryStruct {
-    1: string content, // markdwon格式
-}
-
-struct OnlyRecordMemoryStruct {
-    1: string record_file, // 本地保存的文件名
-}
-
-struct SummaryMemoryStruct {
-    1: list<SpeakerStruct> participants,
-    2: i32: participants_cnt,
-    2: string record_url, // 录音地址
-    3: string summary, // markdown格式
-    4: list<SummaryConversationStruct> transcript,
-    5: list<TodoStruct> todos,
-}
-
-struct SummaryConversationStruct {
-    1: string id,
-    2: SpeakerStruct speaker,
-    3: string content,
-    4: string time,
-}
-
-struct SpeakerStruct {
-    1: string id,
-    2: string name,
-    3: string avatar,
-    4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
-}
-
-struct TodoStruct {
-    1: string id,
-    2: string title,
-    3: SpeakerStruct owner,
-    4: string priority,
-    5: string deadline,
-}
 
 struct MemoStruct {
     1: string id,
@@ -86,20 +96,29 @@ struct MemoStruct {
     6: i64 relate_memory_id, // 如果没有关联的记忆，则为0
 }
 
-struct ExpertStruct {
-    1: string id,
-    2: string name,
-    3: string avatar,
-    4: string about,
-    5: list<string> capabilities,
-    6: string prompt,
-}
-
 struct TemplateStruct {
     1: string id,
     2: string title,
     3: string icon,
+    4: string type,
     4: string prompt,
+}
+
+struct ExpertStruct {
+    1: string id,
+    2: string name,
+    3: string avatar,
+    4: string label,
+    5: string about,
+    6: list<string> capabilities,
+    7: string chat_prompt,
+    8: string feed_prompt,
+    9: string feedback_cron_at,
+}
+
+struct ExpertMergeUserStruct {
+    1: ExpertStruct expert,
+    2: bool is_add,
 }
 
 struct UserAISettings {
@@ -108,6 +127,7 @@ struct UserAISettings {
     3: string ai_personality, // AI人格
     4: string response_style,
     5: string custom_prompt,
+    6: bool right_now_transcribe,
 }
 
 struct UserStruct {
@@ -304,6 +324,7 @@ struct AddSpeakerRequest {
     1: string audio_url,
     2: string name,
     3: string avatar, // 可以为空
+    4: bool myself_voice,
 }
 
 struct AddSpeakerResponse {
@@ -332,13 +353,6 @@ struct GetSpeakerListResponse {
     255: BaseResp base_resp,
 }
 
-struct SpeakerWithDetailStruct {
-    1: SpeakerStruct speaker,
-    2: string summary,
-    3: i64 last_memory_at,
-    4: i32: memory_total
-}
-
 struct GetSpeakerListWithDetailRequest {
     1: i32 page_size,
     2: string cursor,
@@ -362,13 +376,9 @@ struct GetSpeakerDetailResponse {
 }
 
 struct GetExpertListRequest {
-    1: i32 page_size,
-    2: string cursor,
-}
-
-struct ExpertMergeUserStruct {
-    1: ExpertStruct expert,
-    2: bool is_add,
+    1: string type,
+    2: i32 page_size,
+    3: string cursor,
 }
 
 struct GetExpertListResponse {
@@ -390,11 +400,30 @@ struct CreateExpertRequest {
     1: string name,
     2: string avatar,
     3: string about,
-    4: list<string> capabilities,
-    5: string prompt,
+    4: string type,
+    5: list<string> capabilities,
+    6: string chat_prompt,
+    7: string feedback_prompt,
+    8: optional feedback_cron_at,
 }
 
 struct CreateExpertResponse {
+    255: BaseResp base_resp,
+}
+
+struct UserAddExpertRequest {
+    1: string expert_id,
+}
+
+struct UserAddExpertResponse {
+    255: BaseResp base_resp,
+}
+
+struct UserCancelExpertRequest {
+    1: string expert_id,
+}
+
+struct UserCancelExpertResponse {
     255: BaseResp base_resp,
 }
 
@@ -406,7 +435,9 @@ struct GetTemplateListRequest {
 struct GetTemplateListResponse {
     1: list<TemplateStruct> recommend_templates,
     2: list<TemplateStruct> custom_templates,
-    3: map<string, TemplateStruct> templates,
+    3: optional TemplateStruct recent_template,
+    4: map<string, TemplateStruct> templates,
+    5: bool has_more,
     255: BaseResp base_resp,
 }
 
@@ -423,9 +454,18 @@ struct CreateTemplateRequest {
     1: string title,
     2: string icon,
     3: string prompt,
+    4: string type,
 }
 
 struct CreateTemplateResponse {
+    255: BaseResp base_resp,
+}
+
+struct SetTemplateDefaultRequest {
+    1: string template_id,
+}
+
+struct SetTemplateDefaultResponse {
     255: BaseResp base_resp,
 }
 
@@ -438,7 +478,7 @@ struct GetUserProfileRequest {
 }
 
 struct UpdateUserProfileRequest {
-    1: string user_name, // 为空则不更新
+    1: string name, // 为空则不更新
     2: string email,
     3: string avatar,
     4: string phone,
@@ -455,6 +495,7 @@ struct UpdateUserAiSettingRequest {
     3: string ai_personality, // AI人格
     4: string response_style,
     5: string custom_prompt,
+    6: optional bool right_now_transcribe,  // 是否开启录音之后立即转写，为null的话，就表明不更新此字段
 }
 
 struct UpdateUserAiSettingResponse {
@@ -530,6 +571,10 @@ service AppService {
     GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
     // POST /api/v1/expert/create
     CreateExpertResponse CreateExpert(1: CreateExpertRequest req)
+    // POST /api/v1/expert/user_add
+    UserAddExpertResponse UserAddExpert(1: UserAddExpertRequest req)
+    // POST /api/v1/expert/user_cancel
+    UserCancelExpertResponse UserCancelExpert(1: UserCancelExpertRequest req)
 
     // 模板相关接口
     // GET /api/v1/template/get_list
@@ -538,6 +583,12 @@ service AppService {
     GetTemplateDetailResponse GetTemplateDetail(1: GetTemplateDetailRequest req)
     // POST /api/v1/template/create
     CreateTemplateResponse CreateTemplate(1: CreateTemplateRequest req)
+    // POST /api/v1/template/set_default
+    SetTemplateDefaultResponse SetTemplateDefault(1: SetTemplateDefaultRequest req)
+
+
+    // 转录相关接口
+    // 
 
     // 其他接口
     // GET /api/v1/user/get_profile
