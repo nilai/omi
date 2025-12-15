@@ -25,6 +25,9 @@ MPSpeakerStruct _$MPSpeakerStructFromJson(Map<String, dynamic> json) =>
       name: json['name'] as String,
       avatar: json['avatar'] as String,
       isTemporary: json['is_temporary'] as bool,
+      myselfVoice: json['myself_voice'] as bool?,
+      audioUrl: json['audio_url'] as String?,
+      createdAt: (json['created_at'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPSpeakerStructToJson(MPSpeakerStruct instance) =>
@@ -33,6 +36,9 @@ Map<String, dynamic> _$MPSpeakerStructToJson(MPSpeakerStruct instance) =>
       'name': instance.name,
       'avatar': instance.avatar,
       'is_temporary': instance.isTemporary,
+      'myself_voice': instance.myselfVoice,
+      'audio_url': instance.audioUrl,
+      'created_at': instance.createdAt,
     };
 
 MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
@@ -270,7 +276,7 @@ MPUserStruct _$MPUserStructFromJson(Map<String, dynamic> json) => MPUserStruct(
       birthday: json['brithday'] as String,
       aiSettings: MPUserAISettings.fromJson(
           json['ai_settings'] as Map<String, dynamic>),
-      rightNowTranscribe: json['right_now_transcribe'] as bool,
+      rightNowTranscribe: json['right_now_transcribe'] as bool?,
     );
 
 Map<String, dynamic> _$MPUserStructToJson(MPUserStruct instance) =>

@@ -24,7 +24,7 @@ import 'package:omi/flavors.dart';
 import 'package:omi/pages/apps/providers/add_app_provider.dart';
 import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
 import 'package:omi/pages/mp_canlendar/providers/calendar_provider.dart';
-import 'package:omi/pages/mp_expert_feedback/providers/mp_expert_provider.dart';
+import 'package:omi/pages/mp_expert_feedback/home/providers/mp_expert_provider.dart';
 import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
 import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';

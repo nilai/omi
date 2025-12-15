@@ -23,17 +23,14 @@ class DeleteAccountCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32.0, horizontal: 16.0),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF5F5F5), // 浅灰色背景
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // 删除账户按钮
           _buildDeleteButton(),
-          const SizedBox(height: 12.0),
+          const SizedBox(height: 8.0),
           // 警告文字
           _buildWarningText(),
         ],
@@ -50,21 +47,21 @@ class DeleteAccountCard extends StatelessWidget {
         onPressed: onDeleteTap,
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
-          backgroundColor: const Color(0xFFFFEBEE), // 浅红色背景
+          backgroundColor: const Color(0xFFFEF2F2), // 浅红色背景
           side: const BorderSide(
-            color: Color(0xFFE53935), // 红色边框
+            color: Color(0xFFFECACA), // 红色边框
             width: 1.0,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24.0), // 圆角
+            borderRadius: BorderRadius.circular(12.0), // 圆角
           ),
         ),
         child: const Text(
           '删除账户',
           style: TextStyle(
-            fontSize: 16.0,
+            fontSize: 14.0,
             fontWeight: FontWeight.w500,
-            color: Color(0xFFE53935), // 红色文字
+            color: Color(0xFFDC2626), // 红色文字
           ),
         ),
       ),
@@ -77,13 +74,12 @@ class DeleteAccountCard extends StatelessWidget {
     return Text(
       warningText,
       textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 14.0,
-        color: Colors.grey[600],
+      style: const TextStyle(
+        fontSize: 12.0,
+        color: Color(0xFF6B7280),
       ),
     );
   }
   // AI-generated END - 构建警告文字
 }
 // AI-generated END - delete_account_card.dart
-

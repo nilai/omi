@@ -113,6 +113,7 @@ class ExpertFeedbackCardWidget extends StatelessWidget {
           children: [
             // AI-generated START - 顶部：标题和导航箭头
             GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: onTap,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,

@@ -55,11 +55,23 @@ class MPSpeakerStruct {
   @JsonKey(name: 'is_temporary')
   final bool isTemporary;
 
+  @JsonKey(name: 'myself_voice')
+  final bool? myselfVoice;
+
+  @JsonKey(name: 'audio_url')
+  final String? audioUrl;
+
+  @JsonKey(name: 'created_at')
+  final int? createdAt;
+
   MPSpeakerStruct({
     required this.id,
     required this.name,
     required this.avatar,
     required this.isTemporary,
+    this.myselfVoice,
+    this.audioUrl,
+    this.createdAt,
   });
 
   factory MPSpeakerStruct.fromJson(Map<String, dynamic> json) => _$MPSpeakerStructFromJson(json);
@@ -415,7 +427,7 @@ class MPUserStruct {
   final MPUserAISettings aiSettings;
 
   @JsonKey(name: 'right_now_transcribe')
-  final bool rightNowTranscribe;
+  final bool? rightNowTranscribe;
 
   MPUserStruct({
     required this.userName,
@@ -424,7 +436,7 @@ class MPUserStruct {
     required this.phone,
     required this.birthday,
     required this.aiSettings,
-    required this.rightNowTranscribe,
+    this.rightNowTranscribe,
   });
 
   factory MPUserStruct.fromJson(Map<String, dynamic> json) => _$MPUserStructFromJson(json);

@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_expert.dart';
 import 'package:omi/backend/schema/mp/mp_expert.dart';
-import 'package:omi/pages/mp_expert_feedback/widgets/mp_expert_card.dart';
+import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_expert_card.dart';
 
 /// 专家列表状态管理Provider
 /// 管理专家列表数据、搜索、分类筛选和添加状态
