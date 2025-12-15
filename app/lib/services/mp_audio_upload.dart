@@ -2,12 +2,10 @@ import 'dart:io';
  
  import 'package:flutter/material.dart'; 
  import 'package:omi/backend/http/api/audio_record.dart';
-import 'package:omi/backend/http/mp_api/mp_speaker.dart'; 
  import 'package:omi/backend/schema/schema.dart';
 
 import '../backend/http/mp_api/mp_memory.dart';
 import '../backend/schema/mp/mp_memory.dart';
-import '../backend/schema/mp/mp_speaker.dart'; 
  
  /// MP音频上传服务 
  /// 
