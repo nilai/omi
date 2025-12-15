@@ -40,94 +40,56 @@ class _MicGainPageState extends State<MicGainPage> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          // 设备图片区域
-          Container(
-            padding: const EdgeInsets.only(top: 40, bottom: 20),
-            child: _buildDeviceImage(),
-          ),
-          // 描述文字
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40),
-            child: Text(
-              '调整麦克风的灵敏度以获得最佳录音效果',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF8E8E93),
-                height: 1.5,
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 当前滑块值显示
+            Container(
+              width: double.infinity,
+              alignment: Alignment.center,
+              child: Text(
+                '$_gainValue',
+                style: const TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 30),
-          // 滑块控制区域
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 增益值显示
-                  Container(
-                    width: 100,
-                    height: 100,
+            const SizedBox(height: 30),
+            // 滑块区域
+            // 减号 滑块 加号
+            Row(
+              children: [
+                // 减号按钮
+                GestureDetector(
+                  onTap: _decreaseGain,
+                  child: Container(
+                    width: 44,
+                    height: 44,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF007AFF),
-                      borderRadius: BorderRadius.circular(50),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF007AFF).withOpacity(0.3),
-                          blurRadius: 20,
-                          spreadRadius: 5,
-                        ),
-                      ],
+                      color: const Color(0xFF1C1C1E),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: const Color(0xFF2C2C2E),
+                        width: 1,
+                      ),
                     ),
-                    child: Center(
-                      child: Text(
-                        '$_gainValue',
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.remove,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  // 滑块标签
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '低',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                      Text(
-                        '麦克风增益',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                      Text(
-                        '高',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  // 滑块
-                  SliderTheme(
+                ),
+                const SizedBox(width: 16),
+                // 滑块
+                Expanded(
+                  child: SliderTheme(
                     data: SliderTheme.of(context).copyWith(
                       activeTrackColor: const Color(0xFF007AFF),
                       inactiveTrackColor: const Color(0xFF2C2C2E),
@@ -149,85 +111,86 @@ class _MicGainPageState extends State<MicGainPage> {
                       },
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  // 范围标签
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '$_minGain',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF8E8E93),
-                        ),
+                ),
+                const SizedBox(width: 16),
+                // 加号按钮
+                GestureDetector(
+                  onTap: _increaseGain,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1C1C1E),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: const Color(0xFF2C2C2E),
+                        width: 1,
                       ),
-                      Text(
-                        '$_maxGain',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Color(0xFF8E8E93),
-                        ),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                        size: 24,
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 40),
-                  // 加减按钮控制
-                  _buildButtonControls(),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建设备图片
-  Widget _buildDeviceImage() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C1C1E),
-        borderRadius: BorderRadius.circular(60),
-        border: Border.all(
-          color: const Color(0xFF2C2C2E),
-          width: 1,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Microphone head
-            Container(
-              width: 40,
-              height: 20,
-              decoration: BoxDecoration(
-                color: const Color(0xFF8E8E93),
-                borderRadius: BorderRadius.circular(10),
-              ),
+            // 0 ~ 30 区间
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '$_minGain',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                Text(
+                  '$_maxGain',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            // Microphone body
-            Container(
-              width: 20,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF5A5A5E),
-                borderRadius: BorderRadius.circular(10),
-              ),
+            const SizedBox(height: 30),
+            // 噪音、安静描述
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '噪音',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                Text(
+                  '安静',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            // Microphone base
-            Container(
-              width: 30,
-              height: 8,
-              decoration: BoxDecoration(
-                color: const Color(0xFF3A3A3C),
-                borderRadius: BorderRadius.circular(4),
+            const SizedBox(height: 30),
+            // 说明文字
+            const Text(
+              '调整麦克风的灵敏度以获得最佳录音效果。在嘈杂环境中建议降低灵敏度，在安静环境中可以适当提高。',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF8E8E93),
+                height: 1.5,
               ),
             ),
           ],
@@ -236,71 +199,7 @@ class _MicGainPageState extends State<MicGainPage> {
     );
   }
 
-  /// 构建加减按钮控制
-  Widget _buildButtonControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // 减少按钮
-        GestureDetector(
-          onTap: _decreaseGain,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: const Color(0xFF2C2C2E),
-                width: 1,
-              ),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.remove,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 30),
-        // 增益值文本
-        Text(
-          '$_gainValue',
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-        const SizedBox(width: 30),
-        // 增加按钮
-        GestureDetector(
-          onTap: _increaseGain,
-          child: Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1C1C1E),
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: const Color(0xFF2C2C2E),
-                width: 1,
-              ),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.add,
-                color: Colors.white,
-                size: 28,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  
 
   /// 增加增益值
   void _increaseGain() {
