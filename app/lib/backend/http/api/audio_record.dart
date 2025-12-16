@@ -16,7 +16,7 @@ Map<String, String> audioMimeTypes = {
 };
 
 /// 支持的音频文件扩展名列表
-List<String> audioExtensions = audioMimeTypes.keys.toList();
+List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac'];
 
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {

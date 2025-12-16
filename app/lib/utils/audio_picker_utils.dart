@@ -1,20 +1,20 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/api/audio_record.dart';
 import 'package:path_provider/path_provider.dart';
-
-import '../backend/http/api/audio_record.dart';
 
 /// 音频选择工具类
 /// 提供从文件、相册和其他应用选择音频文件的功能
 class AudioPickerUtils {
 
-  /// 从文件选择音频
+  /// 从文件选择音频 - 打开文件浏览器选择音频文件
   static Future<File?> pickAudioFromFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: audioExtensions,
+        dialogTitle: '选择音频文件',
       );
 
       if (result != null && result.files.single.path != null) {
@@ -34,15 +34,15 @@ class AudioPickerUtils {
     return null;
   }
 
-  /// 从相册选择音频
+  /// 从相册选择音频 - 访问设备的媒体库
   static Future<File?> pickAudioFromAlbum() async {
     try {
       if (Platform.isIOS) {
-        // iOS 平台使用 UIDocumentPickerViewController 访问相册
+        // iOS 使用 UIDocumentPickerViewController 访问相册媒体库
         FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: audioExtensions,
+          type: FileType.audio,
           withData: false,
+          dialogTitle: '从相册选择音频',
         );
         
         if (result != null && result.files.single.path != null) {
@@ -57,9 +57,11 @@ class AudioPickerUtils {
           }
         }
       } else {
-        // Android 平台使用 file_picker 从媒体库选择
+        // Android 平台使用 file_picker 访问相册媒体库
         FilePickerResult? result = await FilePicker.platform.pickFiles(
           type: FileType.audio,
+          withData: false,
+          dialogTitle: '从相册选择音频',
         );
         
         if (result != null && result.files.single.path != null) {
@@ -80,15 +82,17 @@ class AudioPickerUtils {
     return null;
   }
 
-  /// 从其他应用选择音频
+  /// 从其他应用选择音频 - 使用系统的文件分享功能
   static Future<File?> pickAudioFromOtherApp(BuildContext context) async {
     try {
       if (Platform.isIOS) {
-        // iOS上使用UIDocumentPickerViewController
-        // 但Flutter没有直接的API，需要使用file_picker的另一种方式
+        // iOS 使用 UIDocumentPickerViewController 打开文档选择器
         FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.audio,
-          allowMultiple: false,
+          type: FileType.custom,
+          allowedExtensions: audioExtensions,
+          withData: false,
+          allowCompression: false,
+          dialogTitle: '从其他应用选择音频',
         );
         
         if (result != null && result.files.single.path != null) {
@@ -103,11 +107,13 @@ class AudioPickerUtils {
           }
         }
       } else {
-        // Android上使用Intent.ACTION_GET_CONTENT
-        // 同样使用file_picker实现
+        // Android 使用 Intent.ACTION_GET_CONTENT
         FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.audio,
-          allowMultiple: false,
+          type: FileType.custom,
+          allowedExtensions: audioExtensions,
+          withData: false,
+          allowCompression: false,
+          dialogTitle: '从其他应用选择音频',
         );
         
         if (result != null && result.files.single.path != null) {
