@@ -40,7 +40,8 @@ class AudioPickerUtils {
       if (Platform.isIOS) {
         // iOS 使用 UIDocumentPickerViewController 访问相册媒体库
         FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.audio,
+          type: FileType.custom,
+          allowedExtensions: audioExtensions,
           withData: false,
           dialogTitle: '从相册选择音频',
         );
@@ -57,9 +58,10 @@ class AudioPickerUtils {
           }
         }
       } else {
-        // Android 平台使用 file_picker 访问相册媒体库
+        // Android 使用 file_picker 访问相册媒体库
         FilePickerResult? result = await FilePicker.platform.pickFiles(
-          type: FileType.audio,
+          type: FileType.custom,
+          allowedExtensions: audioExtensions,
           withData: false,
           dialogTitle: '从相册选择音频',
         );
