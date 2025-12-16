@@ -153,8 +153,7 @@ class AudioRecordService {
 
       // 检查文件扩展名
       final filename = audioFile.path.toLowerCase();
-      final supportedExtensions = ['.m4a', '.wav', '.mp3', '.aac'];
-      final hasValidExtension = supportedExtensions.any((ext) => filename.endsWith(ext));
+      final hasValidExtension = audioExtensions.any((ext) => filename.endsWith(ext));
       if (!hasValidExtension) {
         debugPrint('AudioRecordService: unsupported file format');
         return false;

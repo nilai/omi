@@ -8,17 +8,20 @@ import 'package:omi/env/env.dart';
 import 'package:http/http.dart' as http;
 
 /// 音频文件扩展名到MIME类型的映射
-Map<String, String> _audioMimeTypes = {
+Map<String, String> audioMimeTypes = {
   '.m4a': 'audio/m4a',
   '.wav': 'audio/wav',
   '.mp3': 'audio/mpeg',
   '.aac': 'audio/aac',
 };
 
+/// 支持的音频文件扩展名列表
+List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac'];
+
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {
   final extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
-  return _audioMimeTypes[extension] ?? 'audio/wav';
+  return audioMimeTypes[extension] ?? 'audio/wav';
 }
 
 /// 获取预签名上传URL
