@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image/image.dart';
+
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
