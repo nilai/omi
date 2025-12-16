@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/shared.dart';
@@ -39,33 +38,14 @@ Future<MPGetExpertDetailResponse?> getExpertDetail(MPGetExpertDetailRequest req)
 }
 
 // POST /api/v1/expert/create
-Future<MPCreateExpertResponse?> createExpert(
-  MPCreateExpertRequest req, {
-  File? avatarFile,
-}) async {
+Future<MPCreateExpertResponse?> createExpert(MPCreateExpertRequest req) async {
   try {
-    var response;
-    if (avatarFile != null) {
-      // 如果有头像文件，使用 multipart 上传
-      response = await makeMultipartApiCall(
-        url: '${Env.apiBaseUrl}api/v1/expert/create',
-        files: [avatarFile],
-        fileFieldName: 'avatar',
-        fields: {
-          'expert_data': jsonEncode(req.toJson()),
-        },
-        method: 'POST',
-      );
-    } else {
-      // 如果没有头像文件，使用普通 POST
-      response = await makeApiCall(
-        url: '${Env.apiBaseUrl}api/v1/expert/create',
-        headers: {'Content-Type': 'application/json'},
-        method: 'POST',
-        body: jsonEncode(req.toJson()),
-      );
-    }
-
+    var response = await makeApiCall(
+      url: '${Env.apiBaseUrl}api/v1/expert/create',
+      headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      body: jsonEncode(req.toJson()),
+    );
     if (response == null) return null;
     debugPrint('createExpert response: ${response.body}');
 

@@ -4,6 +4,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_expert.dart';
 import 'package:omi/backend/schema/mp/mp_expert.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
+import 'package:omi/services/mp_image_upload.dart';
 
 /// 专家技能类型枚举
 enum MPExpertSkillType {
@@ -70,10 +72,6 @@ class MPAddExportProvider with ChangeNotifier {
   bool _isSubmitting = false;
   // AI-generated END - _isSubmitting
 
-  // AI-generated START - 错误信息
-  String? _error;
-  // AI-generated END - _error
-
   // AI-generated START - 获取专家名称
   String get name => _name;
   // AI-generated END - name
@@ -138,14 +136,9 @@ class MPAddExportProvider with ChangeNotifier {
   bool get isSubmitting => _isSubmitting;
   // AI-generated END - isSubmitting
 
-  // AI-generated START - 获取错误信息
-  String? get error => _error;
-  // AI-generated END - error
-
   // AI-generated START - 更新专家名称
   void updateName(String name) {
     _name = name;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateName
@@ -153,7 +146,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家头像URL
   void updateAvatar(String avatar) {
     _avatar = avatar;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateAvatar
@@ -161,7 +153,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家头像文件
   void updateAvatarFile(File? file) {
     _avatarFile = file;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateAvatarFile
@@ -169,7 +160,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家简介
   void updateAbout(String about) {
     _about = about;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateAbout
@@ -177,7 +167,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家能力列表
   void updateCapabilities(List<String> capabilities) {
     _capabilities = capabilities;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateCapabilities
@@ -186,7 +175,6 @@ class MPAddExportProvider with ChangeNotifier {
   void addCapability(String capability) {
     if (capability.isNotEmpty && !_capabilities.contains(capability)) {
       _capabilities.add(capability);
-      _error = null;
       notifyListeners();
     }
   }
@@ -195,7 +183,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 移除能力
   void removeCapability(String capability) {
     _capabilities.remove(capability);
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - removeCapability
@@ -203,7 +190,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家提示词
   void updatePrompt(String prompt) {
     _prompt = prompt;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updatePrompt
@@ -211,7 +197,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新聊天 Prompt
   void updateChatPrompt(String chatPrompt) {
     _chatPrompt = chatPrompt;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateChatPrompt
@@ -219,7 +204,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新反馈 Prompt
   void updateFeedbackPrompt(String feedbackPrompt) {
     _feedbackPrompt = feedbackPrompt;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateFeedbackPrompt
@@ -227,7 +211,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新聊天个性
   void updateChatPersonality(String chatPersonality) {
     _chatPersonality = chatPersonality;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateChatPersonality
@@ -239,7 +222,6 @@ class MPAddExportProvider with ChangeNotifier {
     } else {
       _selectedSkills.add(skill);
     }
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - toggleSkill
@@ -251,7 +233,6 @@ class MPAddExportProvider with ChangeNotifier {
     } else {
       _selectedSkills = {skill};
     }
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateSelectedSkill
@@ -259,7 +240,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新专家类别
   void updateCategory(String category) {
     _type = category;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateCategory
@@ -267,7 +247,6 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新提供反馈时间
   void updateFeedbackTime(TimeOfDay? time) {
     _feedbackTime = time;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateFeedbackTime
@@ -275,40 +254,41 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated START - 更新自动发送
   void updateAutoSend(bool autoSend) {
     _autoSend = autoSend;
-    _error = null;
     notifyListeners();
   }
   // AI-generated END - updateAutoSend
 
   // AI-generated START - 验证表单
-  bool validateForm() {
+  Future<bool> validateForm() async {
+    if (_avatarFile == null) {
+      MPToastUtils.showMessage('请上传专家头像');
+      return false;
+    }
+    _avatar = await submitImage(_avatarFile!) ?? '';
+    if (_avatar.isEmpty) {
+      MPToastUtils.showMessage('专家头像上传失败，请稍后重试');
+      return false;
+    }
     if (_name.isEmpty) {
-      _error = '请输入专家名称';
-      notifyListeners();
+      MPToastUtils.showMessage('请输入专家名称');
       return false;
     }
     if (_about.isEmpty) {
-      _error = '请输入专家简介';
-      notifyListeners();
+      MPToastUtils.showMessage('请输入专家简介');
       return false;
     }
     if (_selectedSkills.isEmpty) {
-      _error = '请至少选择一项专家技能';
-      notifyListeners();
+      MPToastUtils.showMessage('请至少选择一项专家技能');
       return false;
     }
     if (_selectedSkills.contains(MPExpertSkillType.chat) && _chatPrompt.isEmpty) {
-      _error = '请输入专家沟通技能描述';
-      notifyListeners();
+      MPToastUtils.showMessage('请输入专家沟通技能描述');
       return false;
     }
     if (_selectedSkills.contains(MPExpertSkillType.feedback) && _feedbackPrompt.isEmpty) {
-      _error = '请输入专家反馈技能描述';
-      notifyListeners();
+      MPToastUtils.showMessage('请输入专家反馈技能描述');
       return false;
     }
-    _error = null;
-    notifyListeners();
     return true;
   }
   // AI-generated END - validateForm
@@ -333,14 +313,63 @@ class MPAddExportProvider with ChangeNotifier {
   }
   // AI-generated END - _formatFeedbackTime
 
+  // AI-generated START - 提交图片
+  /// 提交图片文件
+  ///
+  /// [imageFile] 要上传的图片文件
+  /// [onProgress] 可选的进度回调，参数为当前步骤和总步骤数
+  /// [successCallback] 成功回调
+  ///
+  /// 返回上传后的URI，失败返回null
+  Future<String?> submitImage(
+    File imageFile, {
+    Function(int current, int total)? onProgress,
+    VoidCallback? successCallback,
+  }) async {
+    try {
+      // 检查图片文件是否存在
+      if (!await imageFile.exists()) {
+        MPToastUtils.showMessage('图片文件不存在');
+        notifyListeners();
+        return null;
+      }
+
+      _isSubmitting = true;
+      notifyListeners();
+
+      // 上传图片到S3
+      final uri = await MPImageUploadService().uploadMPImage(
+        imageFile,
+        onProgress: onProgress,
+      );
+
+      if (uri == null || uri.isEmpty) {
+        MPToastUtils.showMessage('图片上传失败，请稍后重试');
+        _isSubmitting = false;
+        notifyListeners();
+        return null;
+      }
+
+      _isSubmitting = false;
+      notifyListeners();
+      successCallback?.call();
+      return uri;
+    } catch (e) {
+      MPToastUtils.showMessage('提交图片失败: $e');
+      _isSubmitting = false;
+      notifyListeners();
+      return null;
+    }
+  }
+  // AI-generated END - submitImage
+
   // AI-generated START - 提交表单
   Future<bool> submitForm() async {
-    if (!validateForm()) {
+    if (!(await validateForm())) {
       return false;
     }
 
     _isSubmitting = true;
-    _error = null;
     notifyListeners();
 
     try {
@@ -360,11 +389,10 @@ class MPAddExportProvider with ChangeNotifier {
       // 调用创建专家的 API
       final response = await createExpert(
         request,
-        avatarFile: _avatarFile,
       );
 
       if (response == null) {
-        _error = '创建失败，请稍后重试';
+        MPToastUtils.showMessage('创建失败，请稍后重试');
         _isSubmitting = false;
         notifyListeners();
         return false;
@@ -372,7 +400,7 @@ class MPAddExportProvider with ChangeNotifier {
 
       // 检查响应状态
       if (response.baseResp.code != 0) {
-        _error = response.baseResp.message.isNotEmpty ? response.baseResp.message : '创建失败，请稍后重试';
+        MPToastUtils.showMessage(response.baseResp.message.isNotEmpty ? response.baseResp.message : '创建失败，请稍后重试');
         _isSubmitting = false;
         notifyListeners();
         return false;
@@ -382,7 +410,7 @@ class MPAddExportProvider with ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _error = '提交失败: $e';
+      MPToastUtils.showMessage('提交失败: $e');
       _isSubmitting = false;
       notifyListeners();
       return false;
@@ -405,7 +433,6 @@ class MPAddExportProvider with ChangeNotifier {
     _type = '';
     _feedbackTime = null;
     _autoSend = false;
-    _error = null;
     _isSubmitting = false;
     notifyListeners();
   }

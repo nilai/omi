@@ -106,26 +106,6 @@ class _MPAddExportPageState extends State<MPAddExportPage> {
                     ],
                     // AI-generated END - 根据技能类型显示不同的 Prompt 卡片
 
-                    // AI-generated START - 错误提示
-                    if (provider.error != null)
-                      Container(
-                        padding: const EdgeInsets.all(12.0),
-                        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8.0),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Text(
-                          provider.error!,
-                          style: TextStyle(
-                            color: Colors.red.shade700,
-                            fontSize: 14.0,
-                          ),
-                        ),
-                      ),
-                    // AI-generated END - 错误提示
-
                     // AI-generated START - 提交按钮
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
@@ -161,13 +141,6 @@ class _MPAddExportPageState extends State<MPAddExportPage> {
                       ),
                     );
                     Navigator.of(context).pop(true);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(provider.error ?? '创建失败'),
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
                   }
                 }
               },
