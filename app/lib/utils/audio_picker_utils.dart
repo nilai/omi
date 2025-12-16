@@ -12,8 +12,8 @@ class AudioPickerUtils {
   static Future<File?> pickAudioFromFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.audio,
-        // allowedExtensions: audioExtensions,
+        type: FileType.custom,
+        allowedExtensions: audioExtensions,
         dialogTitle: '选择音频文件',
       );
 
