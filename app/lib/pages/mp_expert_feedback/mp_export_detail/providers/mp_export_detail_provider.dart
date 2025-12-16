@@ -62,7 +62,7 @@ class MPExportDetailProvider with ChangeNotifier {
   // AI-generated START - 获取选中的技能类型集合
   Set<MPExpertSkillType> get selectedSkills {
     if (_expert == null) return {};
-    final capabilities = _expert!.capabilities;
+    final capabilities = _expert!.capabilities ?? [];
     final skills = <MPExpertSkillType>{};
     if (capabilities.contains('chat')) {
       skills.add(MPExpertSkillType.chat);
@@ -143,9 +143,9 @@ class MPExportDetailProvider with ChangeNotifier {
       // 假设有一个 updateExpert 的API，或者需要调用专门的更新反馈时间的API
       final request = MPCreateExpertRequest(
         name: _expert!.name,
-        avatar: _expert!.avatar,
-        about: _expert!.about,
-        capabilities: _expert!.capabilities,
+        avatar: _expert!.avatar ?? '',
+        about: _expert!.about ?? '',
+        capabilities: _expert!.capabilities ?? [],
         type: 'business', // 默认类别，实际应该从专家数据中获取
         chatPrompt: null, // 详情页不更新这些
         feedbackPrompt: null,

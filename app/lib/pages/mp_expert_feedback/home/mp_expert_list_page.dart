@@ -143,11 +143,16 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
               ),
               // AI-generated END - 专家列表
               MPCreateExpertCard(
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  final result = await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const MPAddExportPage()),
                   );
+                  // 如果创建成功（返回 true），刷新专家列表
+                  if (result == true && mounted) {
+                    final provider = Provider.of<MPExpertProvider>(context, listen: false);
+                    await provider.loadExperts();
+                  }
                 },
               ),
               const SizedBox(height: 16.0),

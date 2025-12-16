@@ -318,28 +318,28 @@ class MPExpertStruct {
   final String name;
 
   @JsonKey(name: 'avatar')
-  final String avatar;
+  final String? avatar;
 
   @JsonKey(name: 'about')
-  final String about;
+  final String? about;
 
   @JsonKey(name: 'capabilities')
-  final List<String> capabilities;
+  final List<String>? capabilities;
 
   @JsonKey(name: 'prompt')
-  final String prompt;
+  final String? prompt;
 
   @JsonKey(name: 'chat_personality')
-  final String chatPersonality;
+  final String? chatPersonality;
 
   MPExpertStruct({
     required this.id,
     required this.name,
-    required this.avatar,
-    required this.about,
-    required this.capabilities,
-    required this.prompt,
-    required this.chatPersonality,
+    this.avatar,
+    this.about,
+    this.capabilities,
+    this.prompt,
+    this.chatPersonality,
   });
 
   factory MPExpertStruct.fromJson(Map<String, dynamic> json) => _$MPExpertStructFromJson(json);

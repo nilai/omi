@@ -211,8 +211,8 @@ class MPExpertCategoryCard extends StatelessWidget {
                             )
                           : null,
                       onTap: () {
-                        provider.updateCategory(category.id);
-                        onCategoryChanged?.call(category.id);
+                        provider.updateCategory(category.name);
+                        onCategoryChanged?.call(category.name);
                         Navigator.of(context).pop();
                       },
                     );

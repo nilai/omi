@@ -99,7 +99,7 @@ Map<String, dynamic> _$MPGetExpertDetailResponseToJson(
 MPCreateExpertResponse _$MPCreateExpertResponseFromJson(
         Map<String, dynamic> json) =>
     MPCreateExpertResponse(
-      expertId: json['expert_id'] as String,
+      expertId: json['expert_id'] as String?,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 

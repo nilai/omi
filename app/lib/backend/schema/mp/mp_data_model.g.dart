@@ -214,13 +214,13 @@ MPExpertStruct _$MPExpertStructFromJson(Map<String, dynamic> json) =>
     MPExpertStruct(
       id: json['id'] as String,
       name: json['name'] as String,
-      avatar: json['avatar'] as String,
-      about: json['about'] as String,
-      capabilities: (json['capabilities'] as List<dynamic>)
-          .map((e) => e as String)
+      avatar: json['avatar'] as String?,
+      about: json['about'] as String?,
+      capabilities: (json['capabilities'] as List<dynamic>?)
+          ?.map((e) => e as String)
           .toList(),
-      prompt: json['prompt'] as String,
-      chatPersonality: json['chat_personality'] as String,
+      prompt: json['prompt'] as String?,
+      chatPersonality: json['chat_personality'] as String?,
     );
 
 Map<String, dynamic> _$MPExpertStructToJson(MPExpertStruct instance) =>

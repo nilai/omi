@@ -41,7 +41,7 @@ class MPExpertDetailPromptCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.0),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8.0,
             offset: const Offset(0, 2),
           ),
@@ -64,6 +64,7 @@ class MPExpertDetailPromptCard extends StatelessWidget {
 
           // AI-generated START - Prompt 内容（只读）
           Container(
+            width: double.infinity,
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
               color: const Color(0xFFF9FAFB),
@@ -77,7 +78,7 @@ class MPExpertDetailPromptCard extends StatelessWidget {
               prompt.isNotEmpty ? prompt : '暂无描述',
               style: TextStyle(
                 fontSize: 14.0,
-                color: prompt.isNotEmpty ? const Color(0xFF212121) : Colors.grey.shade400,
+                color: prompt.isNotEmpty ? const Color(0xFF374151) : Colors.grey.shade400,
                 height: 1.5,
               ),
             ),
@@ -90,4 +91,3 @@ class MPExpertDetailPromptCard extends StatelessWidget {
   // AI-generated END - 构建方法
 }
 // AI-generated END - mp_expert_detail_prompt_card.dart
-

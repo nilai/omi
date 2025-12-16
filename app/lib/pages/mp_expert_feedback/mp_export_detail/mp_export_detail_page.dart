@@ -34,23 +34,18 @@ class MPExportDetailPage extends StatefulWidget {
 }
 
 class _MPExportDetailPageState extends State<MPExportDetailPage> {
-  // AI-generated START - 初始化方法
-  @override
-  void initState() {
-    super.initState();
-    // 加载专家详情
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<MPExportDetailProvider>(context, listen: false);
-      provider.loadExpertDetail();
-    });
-  }
-  // AI-generated END - 初始化方法
-
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => MPExportDetailProvider(expertId: widget.expertId),
+      create: (_) {
+        final provider = MPExportDetailProvider(expertId: widget.expertId);
+        // 在 Provider 创建后立即加载数据
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          provider.loadExpertDetail();
+        });
+        return provider;
+      },
       child: Consumer<MPExportDetailProvider>(
         builder: (context, provider, child) {
           if (provider.isLoading) {
@@ -84,25 +79,25 @@ class _MPExportDetailPageState extends State<MPExportDetailPage> {
                   // AI-generated START - 专家头像和名字卡片（只读）
                   MPExpertDetailAvatarNameCard(
                     name: provider.expert!.name,
-                    avatar: provider.expert!.avatar,
+                    avatar: provider.expert!.avatar ?? '',
                   ),
                   // AI-generated END - 专家头像和名字卡片
 
                   // AI-generated START - 专家介绍卡片（只读）
                   MPExpertDetailIntroductionCard(
-                    about: provider.expert!.about,
+                    about: provider.expert!.about ?? '',
                   ),
                   // AI-generated END - 专家介绍卡片
 
                   // AI-generated START - 专家技能卡片（只读）
                   MPExpertDetailSkillsCard(
-                    capabilities: provider.expert!.capabilities,
+                    capabilities: provider.expert!.capabilities ?? [],
                   ),
                   // AI-generated END - 专家技能卡片
 
                   // AI-generated START - 专家类别卡片（只读）
                   MPExpertDetailCategoryCard(
-                    type: provider.expert!.capabilities.isNotEmpty ? 'business' : 'business',
+                    type: (provider.expert!.capabilities?.isNotEmpty ?? false) ? 'business' : 'business',
                   ),
                   // AI-generated END - 专家类别卡片
 
@@ -110,13 +105,13 @@ class _MPExportDetailPageState extends State<MPExportDetailPage> {
                   if (provider.selectedSkills.contains(MPExpertSkillType.chat))
                     MPExpertDetailPromptCard(
                       skillType: MPExpertSkillType.chat,
-                      prompt: provider.expert!.prompt,
+                      prompt: provider.expert!.prompt ?? '',
                     ),
 
                   if (provider.selectedSkills.contains(MPExpertSkillType.feedback)) ...[
                     MPExpertDetailPromptCard(
                       skillType: MPExpertSkillType.feedback,
-                      prompt: provider.expert!.prompt,
+                      prompt: provider.expert!.prompt ?? '',
                     ),
                     // AI-generated START - 反馈时间卡片（可编辑）
                     const MPExpertDetailFeedbackTimeCard(),

@@ -199,7 +199,7 @@ class SettingsProvider with ChangeNotifier {
           return ExpertInfo(
             name: expert.name,
             role: expert.name,
-            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            avatarUrl: (expert.avatar != null && expert.avatar!.isNotEmpty) ? expert.avatar : null,
             borderColor: borderColor,
           );
         }).toList();

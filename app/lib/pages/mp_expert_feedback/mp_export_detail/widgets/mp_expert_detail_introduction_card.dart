@@ -47,12 +47,24 @@ class MPExpertDetailIntroductionCard extends StatelessWidget {
           // AI-generated END - 标题
 
           // AI-generated START - 介绍内容
-          Text(
-            about.isNotEmpty ? about : '暂无介绍',
-            style: TextStyle(
-              fontSize: 14.0,
-              color: about.isNotEmpty ? const Color(0xFF212121) : Colors.grey.shade400,
-              height: 1.5,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(
+                color: const Color(0xFFE5E7EB),
+                width: 1.0,
+              ),
+            ),
+            child: Text(
+              about.isNotEmpty ? about : '暂无介绍',
+              style: TextStyle(
+                fontSize: 14.0,
+                color: about.isNotEmpty ? const Color(0xFF374151) : Colors.grey.shade400,
+                height: 1.5,
+              ),
             ),
           ),
           // AI-generated END - 介绍内容
@@ -63,4 +75,3 @@ class MPExpertDetailIntroductionCard extends StatelessWidget {
   // AI-generated END - 构建方法
 }
 // AI-generated END - mp_expert_detail_introduction_card.dart
-

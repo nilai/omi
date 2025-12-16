@@ -133,13 +133,13 @@ class MPGetExpertDetailResponse {
 @JsonSerializable()
 class MPCreateExpertResponse {
   @JsonKey(name: 'expert_id')
-  final String expertId;
+  final String? expertId;
 
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
   MPCreateExpertResponse({
-    required this.expertId,
+    this.expertId,
     required this.baseResp,
   });
 

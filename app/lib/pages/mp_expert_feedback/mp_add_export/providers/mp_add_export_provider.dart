@@ -379,11 +379,11 @@ class MPAddExportProvider with ChangeNotifier {
         avatar: _avatar,
         about: _about,
         capabilities: _skillsToStringList(),
-        type: _type.isNotEmpty ? _type : 'business', // 默认类别
-        chatPrompt: _selectedSkills.contains(MPExpertSkillType.chat) ? _chatPrompt : null,
-        feedbackPrompt: _selectedSkills.contains(MPExpertSkillType.feedback) ? _feedbackPrompt : null,
-        feedbackCronAt: _selectedSkills.contains(MPExpertSkillType.feedback) ? _formatFeedbackTime() : null,
-        autoSend: _selectedSkills.contains(MPExpertSkillType.feedback) ? _autoSend : null,
+        type: _type.isNotEmpty ? _type : '商业', // 默认类别
+        chatPrompt: _selectedSkills.contains(MPExpertSkillType.chat) ? _chatPrompt : '',
+        feedbackPrompt: _selectedSkills.contains(MPExpertSkillType.feedback) ? _feedbackPrompt : '',
+        feedbackCronAt: _selectedSkills.contains(MPExpertSkillType.feedback) ? _formatFeedbackTime() : '',
+        autoSend: _selectedSkills.contains(MPExpertSkillType.feedback) ? _autoSend : false,
       );
 
       // 调用创建专家的 API

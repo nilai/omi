@@ -158,8 +158,8 @@ class MPExpertProvider with ChangeNotifier {
           return MPExpertCardData(
             id: expert.id,
             name: expert.name,
-            description: expert.about,
-            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            description: expert.about ?? '',
+            avatarUrl: (expert.avatar != null && expert.avatar!.isNotEmpty) ? expert.avatar : null,
             isHot: false, // 可以根据需要设置热门标识
             isAdded: expertMerge.isAdd,
           );
@@ -210,8 +210,8 @@ class MPExpertProvider with ChangeNotifier {
           return MPExpertCardData(
             id: expert.id,
             name: expert.name,
-            description: expert.about,
-            avatarUrl: expert.avatar.isNotEmpty ? expert.avatar : null,
+            description: expert.about ?? '',
+            avatarUrl: (expert.avatar != null && expert.avatar!.isNotEmpty) ? expert.avatar : null,
             isHot: false, // 可以根据需要设置热门标识
             isAdded: expertMerge.isAdd,
           );
