@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image/image.dart';
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
 
+import '../../backend/http/mp_api/mp_memory.dart';
+import '../../backend/schema/mp/mp_memory.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../chat/widgets/voice_recorder_widget.dart';
@@ -322,23 +327,39 @@ class _MPPageContentState extends State<MPPageContent> {
     ImportAudioDialog.show(context: context, onImportFromFile: () async {
       final file = await AudioPickerUtils.pickAudioFromFile();
       debugPrint('pickAudioFromFile file: $file');
-      if (file != null) {
-        // 处理选中的文件
-        MPAudioUploadService().uploadMPAudio(file);
-      }
+      await _uploadAudioFile(file);
     }, onImportFromAlbum: () async{
       final file = await AudioPickerUtils.pickAudioFromAlbum();
       debugPrint('pickAudioFromAlbum file: $file');
-      if (file != null) {
-        // 处理选中的文件
-      }
+      await _uploadAudioFile(file);
     }, onImportFromOtherApp: () async {
       final file = await AudioPickerUtils.pickAudioFromOtherApp(context);
       debugPrint('pickAudioFromOtherApp file: $file');
-      if (file != null) {
-        // 处理选中的文件
-      }
+      await _uploadAudioFile(file);
     },);
+  }
+
+  Future<void> _uploadAudioFile(File? file) async {
+    // 保存 uri 到本地数据库或其他存储方式
+    if (file != null) {
+      final uri = await MPAudioUploadService().uploadMPAudio(file);
+      if (uri != null) {
+        // 保存 uri 到本地数据库或其他存储方式
+// Future<MPCreateRecordResponse?> createRecord(MPCreateRecordRequest req)
+
+        final req = MPCreateRecordRequest(
+          recordFile: uri,
+          createAt: DateTime.now().millisecondsSinceEpoch,
+          duration: 0,
+        );
+        final res = await createRecord(req);
+        if (res != null) {
+          // 保存 res 到本地数据库或其他存储方式
+          // 刷新页面
+          
+        }
+      }
+    }
   }
 
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
