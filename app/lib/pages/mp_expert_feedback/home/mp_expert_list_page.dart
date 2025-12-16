@@ -7,6 +7,7 @@ import 'package:omi/pages/mp_expert_feedback/home/widgets/expert_category_tabs_c
 import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_create_expert_card.dart';
 import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_expert_card.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_add_export/mp_add_export_page.dart';
+import 'package:omi/pages/mp_expert_feedback/mp_export_detail/mp_export_detail_page.dart';
 import 'package:omi/pages/mp_expert_feedback/widgets/search_experts_card.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
@@ -214,11 +215,9 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
             expert: expert,
             onAddTap: isAdded ? null : () => _handleAddExpert(expert.id),
             onCardTap: () {
-              // TODO: 导航到专家详情页面
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('查看专家详情: ${expert.name}'),
-                ),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MPExportDetailPage(expertId: expert.id)),
               );
             },
           );
