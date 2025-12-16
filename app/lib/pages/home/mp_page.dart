@@ -310,8 +310,18 @@ class _MPPageContentState extends State<MPPageContent> {
 
   Future<void> _showAddRecordDialog(BuildContext context, MPHomePageProvider provider) async {
     RecordAudioOptionCard.show(context: context, onImportAudio: () {
-      ImportAudioDialog.show(context: context);
+      _showImportAudioDialog(context);
     },onStartRecording: () {
+      
+    },);
+  }
+
+  void _showImportAudioDialog(BuildContext context) {
+    ImportAudioDialog.show(context: context, onImportFromFile: () {
+      
+    }, onImportFromAlbum: () {
+      
+    }, onImportFromOtherApp: () {
       
     },);
   }
