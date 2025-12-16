@@ -17,20 +17,20 @@ class ApiClient {
   static const Duration requestTimeoutRead = Duration(seconds: 30);
   static const Duration requestTimeoutWrite = Duration(seconds: 300);
 
-  // static final _client = _createClient();
-  static final _client = http.Client();
+  static final _client = _createClient();
+  // static final _client = http.Client();
 
-  // static http.Client _createClient() {
-  //   // Only bypass certificate verification in debug mode
-  //   if (const bool.fromEnvironment('dart.vm.product') == false) {
-  //     // Development mode - bypass SSL verification
-  //     final client = HttpClient();
-  //     client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  //     return http_io.IOClient(client);
-  //   }
-  //   // Production mode - use default client with proper SSL verification
-  //   return http.Client();
-  // }
+  static http.Client _createClient() {
+    // Only bypass certificate verification in debug mode
+    if (const bool.fromEnvironment('dart.vm.product') == false) {
+      // Development mode - bypass SSL verification
+      final client = HttpClient();
+      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      return http_io.IOClient(client);
+    }
+    // Production mode - use default client with proper SSL verification
+    return http.Client();
+  }
 
   static void dispose() {
     _client.close();
