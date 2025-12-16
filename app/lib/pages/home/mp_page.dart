@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
+import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
 
+import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../chat/widgets/voice_recorder_widget.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -317,12 +319,25 @@ class _MPPageContentState extends State<MPPageContent> {
   }
 
   void _showImportAudioDialog(BuildContext context) {
-    ImportAudioDialog.show(context: context, onImportFromFile: () {
-      
-    }, onImportFromAlbum: () {
-      
-    }, onImportFromOtherApp: () {
-      
+    ImportAudioDialog.show(context: context, onImportFromFile: () async {
+      final file = await AudioPickerUtils.pickAudioFromFile();
+      debugPrint('pickAudioFromFile file: $file');
+      if (file != null) {
+        // 处理选中的文件
+        MPAudioUploadService().uploadMPAudio(file);
+      }
+    }, onImportFromAlbum: () async{
+      final file = await AudioPickerUtils.pickAudioFromAlbum();
+      debugPrint('pickAudioFromAlbum file: $file');
+      if (file != null) {
+        // 处理选中的文件
+      }
+    }, onImportFromOtherApp: () async {
+      final file = await AudioPickerUtils.pickAudioFromOtherApp(context);
+      debugPrint('pickAudioFromOtherApp file: $file');
+      if (file != null) {
+        // 处理选中的文件
+      }
     },);
   }
 
