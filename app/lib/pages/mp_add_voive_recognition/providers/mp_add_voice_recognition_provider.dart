@@ -1,11 +1,14 @@
 // AI-generated START - 录制声纹状态管理Provider
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
-import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../../services/services.dart';
+import '../../../utils/audio/wav_bytes.dart';
+import '../../../backend/schema/bt_device/bt_device.dart';
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
@@ -158,7 +161,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   // AI-generated END - stopRecording
 
   /// 处理停止录音
-  void _stopRecordDeal() {
+  void _stopRecordDeal() async {
     if (context == null) {
       return;
     }
@@ -166,16 +169,36 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       Navigator.pop(context!);
       return;
     }
+    final audioFile =  await _saveAudioChunksToFile();
     // 跳转详情页面
-    Navigator.of(context!).push(MaterialPageRoute(
+    Navigator.of(context!).pushReplacement(MaterialPageRoute(
       builder: (context) => MPVoiceRecognitionDetailPage(
         voiceId: null,
         initialName: null,
         audioDuration: _recordingDuration,
         isEditMode: true,
-        audioChunks: _audioChunks,
+        audioFile: audioFile,
       ),
     ));
+  }
+
+  /// 保存音频块到文件
+  Future<File> _saveAudioChunksToFile() async {
+    final tempDir = await getTemporaryDirectory();
+    final wavFilePath = '${tempDir.path}/temp_recording.wav';
+    
+    // 将 List<Uint8List> 转换为 List<List<int>>
+    List<List<int>> frames = _audioChunks.map((chunk) => chunk.toList()).toList();
+    
+    // 创建 WavBytesUtil 实例处理 PCM 数据
+    WavBytesUtil wavUtil = WavBytesUtil(codec: BleAudioCodec.pcm16, framesPerSecond: 100);
+    
+    // 获取正确的 PCM 样本并转换为 WAV 字节
+    Int16List samples = wavUtil.getPcmSamples(frames);
+    Uint8List wavBytes = WavBytesUtil.getUInt8ListBytes(samples, 16000);
+    
+    await File(wavFilePath).writeAsBytes(wavBytes);
+    return File(wavFilePath);
   }
 
   @override

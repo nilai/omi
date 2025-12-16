@@ -1,4 +1,5 @@
 // AI-generated START - 声纹详情页面
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -17,7 +18,7 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
     this.initialName,
     this.audioDuration,
     this.isEditMode = false,
-    this.audioChunks
+    this.audioFile
   });
 
   /// 是否是编辑模式
@@ -33,7 +34,7 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
   final int? audioDuration;
 
   /// 音频数据
-  final List<Uint8List>? audioChunks;
+  final File? audioFile;
 
   @override
   State<MPVoiceRecognitionDetailPage> createState() => _MPVoiceRecognitionDetailPageState();
@@ -61,6 +62,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
         voiceId: widget.voiceId,
         audioDuration: widget.audioDuration ?? 95, // 默认95秒
         isEditMode: widget.isEditMode,
+        audioFile: widget.audioFile,
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -255,11 +257,11 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     return Row(children: [
       // 播放按钮
       GestureDetector(
-        onTap: () {
+        onTap: () async {
           if (provider.isPlaying) {
-            provider.pause();
+            await provider.pause();
           } else {
-            provider.play();
+            await provider.play();
           }
         },
         child: Container(
@@ -360,8 +362,9 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
       width: double.infinity,
       child: ElevatedButton(
         onPressed: () {
-          provider.saveVoice(_nameController.text);
-          Navigator.of(context).pop();
+          provider.saveVoice(_nameController.text, () {
+            Navigator.of(context).pop();
+          });
         },
         style: ElevatedButton.styleFrom(
           elevation: 0,

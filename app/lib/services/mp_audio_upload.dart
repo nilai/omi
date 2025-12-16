@@ -12,7 +12,6 @@ import '../backend/schema/mp/mp_memory.dart';
 /// 负责处理MP音频文件的完整上传流程：
 /// 1. 获取预签名URL
 /// 2. 上传文件到S3
-/// 3. 创建录音记录
 class MPAudioUploadService {
   /// 最大重试次数（用于网络错误）
   static const int _maxRetries = 3;
