@@ -17,6 +17,10 @@ class MPExportDetailProvider with ChangeNotifier {
   MPExpertStruct? _expert;
   // AI-generated END - _expert
 
+  // AI-generated START - 是否已添加
+  bool _isAdded = false;
+  // AI-generated END - _isAdded
+
   // AI-generated START - 是否正在加载
   bool _isLoading = false;
   // AI-generated END - _isLoading
@@ -42,6 +46,10 @@ class MPExportDetailProvider with ChangeNotifier {
   // AI-generated START - 获取专家数据
   MPExpertStruct? get expert => _expert;
   // AI-generated END - expert
+
+  // AI-generated START - 获取是否已添加
+  bool get isAdded => _isAdded;
+  // AI-generated END - isAdded
 
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
@@ -85,12 +93,24 @@ class MPExportDetailProvider with ChangeNotifier {
 
       if (response != null && response.baseResp.code == 0) {
         _expert = response.expert.expert;
+        _isAdded = response.expert.isAdd; // 保存是否已添加状态
 
         // 解析反馈时间（如果有）
-        // 注意：这里需要根据实际API返回的数据结构来解析
-        // 假设 feedback_cron_at 格式为 "HH:mm"
-        // 这里暂时不解析，因为 MPExpertStruct 中没有这个字段
-        // 如果需要，可能需要从其他地方获取或使用扩展字段
+        if (_expert?.feedbackCronAt != null && _expert!.feedbackCronAt!.isNotEmpty) {
+          final timeStr = _expert!.feedbackCronAt!;
+          final parts = timeStr.split(':');
+          if (parts.length == 2) {
+            try {
+              final hour = int.parse(parts[0]);
+              final minute = int.parse(parts[1]);
+              _feedbackTime = TimeOfDay(hour: hour, minute: minute);
+            } catch (e) {
+              debugPrint('解析反馈时间失败: $e');
+            }
+          }
+        }
+        // autoSend 从专家数据中获取，如果不存在则使用默认值 false
+        // 注意：MPExpertStruct 可能不包含 autoSend 字段，需要根据实际 API 响应调整
 
         notifyListeners();
       } else {
@@ -146,9 +166,9 @@ class MPExportDetailProvider with ChangeNotifier {
         avatar: _expert!.avatar ?? '',
         about: _expert!.about ?? '',
         capabilities: _expert!.capabilities ?? [],
-        type: 'business', // 默认类别，实际应该从专家数据中获取
-        chatPrompt: null, // 详情页不更新这些
-        feedbackPrompt: null,
+        type: _expert!.label ?? '', // 默认类别，实际应该从专家数据中获取
+        chatPrompt: _expert!.chatPrompt ?? '', // 详情页不更新这些
+        feedbackPrompt: _expert!.feedPrompt ?? '',
         feedbackCronAt: _formatFeedbackTime(),
         autoSend: _autoSend,
       );
@@ -184,5 +204,65 @@ class MPExportDetailProvider with ChangeNotifier {
     }
   }
   // AI-generated END - saveFeedbackTime
+
+  // AI-generated START - 添加专家
+  Future<bool> addExpert() async {
+    _isSubmitting = true;
+    notifyListeners();
+
+    try {
+      final request = UserAddExpertRequest(expertId: expertId);
+      final response = await userAddExpert(request);
+
+      if (response != null && response.baseResp.code == 0) {
+        _isAdded = true;
+        _isSubmitting = false;
+        notifyListeners();
+        MPToastUtils.showMessage('已添加专家');
+        return true;
+      } else {
+        MPToastUtils.showMessage(response?.baseResp.message ?? '添加失败，请稍后重试');
+        _isSubmitting = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('添加失败: $e');
+      _isSubmitting = false;
+      notifyListeners();
+      return false;
+    }
+  }
+  // AI-generated END - addExpert
+
+  // AI-generated START - 移除专家
+  Future<bool> removeExpert() async {
+    _isSubmitting = true;
+    notifyListeners();
+
+    try {
+      final request = UserCancelExpertRequest(expertId: expertId);
+      final response = await userCancelExpert(request);
+
+      if (response != null && response.baseResp.code == 0) {
+        _isAdded = false;
+        _isSubmitting = false;
+        notifyListeners();
+        MPToastUtils.showMessage('已取消添加');
+        return true;
+      } else {
+        MPToastUtils.showMessage(response?.baseResp.message ?? '取消添加失败，请稍后重试');
+        _isSubmitting = false;
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('取消添加失败: $e');
+      _isSubmitting = false;
+      notifyListeners();
+      return false;
+    }
+  }
+  // AI-generated END - removeExpert
 }
 // AI-generated END - mp_export_detail_provider.dart

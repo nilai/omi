@@ -81,6 +81,7 @@ class VoiceRecognitionPage extends StatelessWidget {
             builder: (context) => MPVoiceRecognitionDetailPage(
               voiceId: item.id,
               initialName: item.title,
+              isMyselfVoice: true,
             ),
           ),
         );
@@ -91,6 +92,7 @@ class VoiceRecognitionPage extends StatelessWidget {
             builder: (context) => MPVoiceRecognitionDetailPage(
               voiceId: item.id,
               initialName: item.title,
+              isMyselfVoice: true,
             ),
           ),
         );
@@ -126,16 +128,16 @@ class VoiceRecognitionPage extends StatelessWidget {
       onTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) =>
-                MPVoiceRecognitionDetailPage(voiceId: item.id, isEditMode: true, initialName: item.title),
+            builder: (context) => MPVoiceRecognitionDetailPage(
+                voiceId: item.id, isEditMode: true, initialName: item.title, isMyselfVoice: false),
           ),
         );
       },
       onActionTap: (item) {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) =>
-                MPVoiceRecognitionDetailPage(voiceId: item.id, isEditMode: true, initialName: item.title),
+            builder: (context) => MPVoiceRecognitionDetailPage(
+                voiceId: item.id, isEditMode: true, initialName: item.title, isMyselfVoice: false),
           ),
         );
       },

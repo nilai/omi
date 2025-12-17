@@ -60,3 +60,51 @@ Future<MPCreateExpertResponse?> createExpert(MPCreateExpertRequest req) async {
     return null;
   }
 }
+
+// POST /api/v1/expert/user_add
+Future<UserAddExpertResponse?> userAddExpert(UserAddExpertRequest req) async {
+  try {
+    var response = await makeApiCall(
+      url: '${Env.apiBaseUrl}api/v1/expert/user_add',
+      headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      body: jsonEncode(req.toJson()),
+    );
+    if (response == null) return null;
+    debugPrint('userAddExpert response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return UserAddExpertResponse.fromJson(jsonDecode(response.body));
+    } else {
+      debugPrint('userAddExpert error ${response.statusCode}: ${response.body}');
+      return null;
+    }
+  } catch (e) {
+    debugPrint('userAddExpert exception: $e');
+    return null;
+  }
+}
+
+// POST /api/v1/expert/user_cancel
+Future<UserCancelExpertResponse?> userCancelExpert(UserCancelExpertRequest req) async {
+  try {
+    var response = await makeApiCall(
+      url: '${Env.apiBaseUrl}api/v1/expert/user_cancel',
+      headers: {'Content-Type': 'application/json'},
+      method: 'POST',
+      body: jsonEncode(req.toJson()),
+    );
+    if (response == null) return null;
+    debugPrint('userCancelExpert response: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return UserCancelExpertResponse.fromJson(jsonDecode(response.body));
+    } else {
+      debugPrint('userCancelExpert error ${response.statusCode}: ${response.body}');
+      return null;
+    }
+  } catch (e) {
+    debugPrint('userCancelExpert exception: $e');
+    return null;
+  }
+}

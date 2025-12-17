@@ -1,6 +1,5 @@
 // AI-generated START - 声纹详情页面
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
@@ -12,14 +11,14 @@ import 'package:provider/provider.dart';
 /// 声纹详情页面
 /// 用于查看和编辑声纹信息
 class MPVoiceRecognitionDetailPage extends StatefulWidget {
-  const MPVoiceRecognitionDetailPage({
-    super.key,
-    this.voiceId,
-    this.initialName,
-    this.audioDuration,
-    this.isEditMode = false,
-    this.audioFile
-  });
+  const MPVoiceRecognitionDetailPage(
+      {super.key,
+      this.voiceId,
+      this.initialName,
+      this.audioDuration,
+      this.isEditMode = false,
+      this.audioFile,
+      this.isMyselfVoice = false});
 
   /// 是否是编辑模式
   final bool isEditMode;
@@ -35,6 +34,9 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
 
   /// 音频数据
   final File? audioFile;
+
+  /// 是否是自己的声音
+  final bool isMyselfVoice;
 
   @override
   State<MPVoiceRecognitionDetailPage> createState() => _MPVoiceRecognitionDetailPageState();
@@ -63,6 +65,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
         audioDuration: widget.audioDuration ?? 95, // 默认95秒
         isEditMode: widget.isEditMode,
         audioFile: widget.audioFile,
+        isMyselfVoice: widget.isMyselfVoice,
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -138,8 +141,8 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
                 ),
                 child: TextField(
                   controller: _nameController,
-                  readOnly: !provider.isEditMode,
-                  enabled: provider.isEditMode,
+                  readOnly: !provider.isEditMode || widget.isMyselfVoice, // 如果是我的声音，只能查看
+                  enabled: provider.isEditMode && !widget.isMyselfVoice, // 如果是我的声音，禁用输入
                   cursorColor: const Color(0xFF1F2937),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
@@ -159,7 +162,9 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
                   ),
                   style: TextStyle(
                     fontSize: 16.0,
-                    color: provider.isEditMode ? const Color(0xFF1F2937) : const Color(0xFF6B7280),
+                    color: (provider.isEditMode && !widget.isMyselfVoice)
+                        ? const Color(0xFF1F2937)
+                        : const Color(0xFF6B7280),
                   ),
                 ),
               ),
@@ -343,7 +348,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
           const SizedBox(width: 8.0),
           Expanded(
             child: Text(
-              '这段录音将用于识别对话中的声音。建议录音时长至少90秒,环境安静,声音清晰。',
+              '这段录音将用于识别对话中的声音。建议录音时长至少30秒,环境安静,声音清晰。',
               style: TextStyle(
                 fontSize: 12.0,
                 color: Colors.grey.shade800,

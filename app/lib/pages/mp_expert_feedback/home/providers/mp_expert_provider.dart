@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_expert.dart';
 import 'package:omi/backend/schema/mp/mp_expert.dart';
+import 'package:omi/pages/mp_expert_feedback/home/widgets/expert_category_tabs_card.dart';
 import 'package:omi/pages/mp_expert_feedback/home/widgets/mp_expert_card.dart';
 
 /// 专家列表状态管理Provider
@@ -145,9 +146,11 @@ class MPExpertProvider with ChangeNotifier {
     _hasMore = true; // 重置 hasMore 状态
     _cursor = ''; // 重置游标
     try {
+      final type = ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex].label;
       final request = MPGetExpertListRequest(
         pageSize: 20, // 每页加载20个专家
         cursor: _cursor,
+        type: type,
       );
       final response = await getExpertList(request);
 
@@ -251,23 +254,28 @@ class MPExpertProvider with ChangeNotifier {
     if (_addedExpertIds.contains(expertId)) return;
 
     try {
-      // TODO: 调用API添加专家
-      await Future.delayed(const Duration(milliseconds: 300)); // 模拟网络请求
+      // 调用API添加专家
+      final request = UserAddExpertRequest(expertId: expertId);
+      final response = await userAddExpert(request);
 
-      _addedExpertIds.add(expertId);
-      // 更新专家数据
-      final index = _experts.indexWhere((e) => e.id == expertId);
-      if (index != -1) {
-        _experts[index] = MPExpertCardData(
-          id: _experts[index].id,
-          name: _experts[index].name,
-          description: _experts[index].description,
-          avatarUrl: _experts[index].avatarUrl,
-          isHot: _experts[index].isHot,
-          isAdded: true,
-        );
+      if (response != null && response.baseResp.code == 0) {
+        _addedExpertIds.add(expertId);
+        // 更新专家数据
+        final index = _experts.indexWhere((e) => e.id == expertId);
+        if (index != -1) {
+          _experts[index] = MPExpertCardData(
+            id: _experts[index].id,
+            name: _experts[index].name,
+            description: _experts[index].description,
+            avatarUrl: _experts[index].avatarUrl,
+            isHot: _experts[index].isHot,
+            isAdded: true,
+          );
+        }
+        notifyListeners();
+      } else {
+        throw Exception(response?.baseResp.message ?? '添加专家失败');
       }
-      notifyListeners();
     } catch (e) {
       debugPrint('Error adding expert: $e');
       rethrow;
@@ -280,23 +288,28 @@ class MPExpertProvider with ChangeNotifier {
     if (!_addedExpertIds.contains(expertId)) return;
 
     try {
-      // TODO: 调用API移除专家
-      await Future.delayed(const Duration(milliseconds: 300)); // 模拟网络请求
+      // 调用API移除专家
+      final request = UserCancelExpertRequest(expertId: expertId);
+      final response = await userCancelExpert(request);
 
-      _addedExpertIds.remove(expertId);
-      // 更新专家数据
-      final index = _experts.indexWhere((e) => e.id == expertId);
-      if (index != -1) {
-        _experts[index] = MPExpertCardData(
-          id: _experts[index].id,
-          name: _experts[index].name,
-          description: _experts[index].description,
-          avatarUrl: _experts[index].avatarUrl,
-          isHot: _experts[index].isHot,
-          isAdded: false,
-        );
+      if (response != null && response.baseResp.code == 0) {
+        _addedExpertIds.remove(expertId);
+        // 更新专家数据
+        final index = _experts.indexWhere((e) => e.id == expertId);
+        if (index != -1) {
+          _experts[index] = MPExpertCardData(
+            id: _experts[index].id,
+            name: _experts[index].name,
+            description: _experts[index].description,
+            avatarUrl: _experts[index].avatarUrl,
+            isHot: _experts[index].isHot,
+            isAdded: false,
+          );
+        }
+        notifyListeners();
+      } else {
+        throw Exception(response?.baseResp.message ?? '取消添加专家失败');
       }
-      notifyListeners();
     } catch (e) {
       debugPrint('Error removing expert: $e');
       rethrow;

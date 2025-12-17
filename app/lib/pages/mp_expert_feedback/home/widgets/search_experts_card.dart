@@ -57,8 +57,8 @@ class _MPExpertSearchCardState extends State<MPExpertSearchCard> {
               padding: const EdgeInsets.all(12.0),
               child: Image.asset(
                 'assets/images/mp_memo_search.png',
-                width: 18.0,
-                height: 18.0,
+                width: 14.0,
+                height: 14.0,
                 fit: BoxFit.contain,
               ),
             ),

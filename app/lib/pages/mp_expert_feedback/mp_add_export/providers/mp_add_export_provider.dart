@@ -61,7 +61,7 @@ class MPAddExportProvider with ChangeNotifier {
   // AI-generated END - _category
 
   // AI-generated START - 提供反馈时间
-  TimeOfDay? _feedbackTime;
+  TimeOfDay? _feedbackTime = const TimeOfDay(hour: 9, minute: 0); // 默认值：09:00
   // AI-generated END - _feedbackTime
 
   // AI-generated START - 自动发送
@@ -431,7 +431,7 @@ class MPAddExportProvider with ChangeNotifier {
     _chatPersonality = '';
     _selectedSkills.clear();
     _type = '';
-    _feedbackTime = null;
+    _feedbackTime = const TimeOfDay(hour: 9, minute: 0); // 重置为默认值
     _autoSend = false;
     _isSubmitting = false;
     notifyListeners();
