@@ -13,9 +13,13 @@ class MPGetExpertListRequest {
   @JsonKey(name: 'cursor')
   final String cursor;
 
+  @JsonKey(name: 'type')
+  final String? type;
+
   MPGetExpertListRequest({
     required this.pageSize,
     required this.cursor,
+    this.type,
   });
 
   factory MPGetExpertListRequest.fromJson(Map<String, dynamic> json) => _$MPGetExpertListRequestFromJson(json);
@@ -146,4 +150,64 @@ class MPCreateExpertResponse {
   factory MPCreateExpertResponse.fromJson(Map<String, dynamic> json) => _$MPCreateExpertResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateExpertResponseToJson(this);
+}
+
+// User Add Expert Request
+@JsonSerializable()
+class UserAddExpertRequest {
+  @JsonKey(name: 'expert_id')
+  final String expertId;
+
+  UserAddExpertRequest({
+    required this.expertId,
+  });
+
+  factory UserAddExpertRequest.fromJson(Map<String, dynamic> json) => _$UserAddExpertRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserAddExpertRequestToJson(this);
+}
+
+// User Add Expert Response
+@JsonSerializable()
+class UserAddExpertResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  UserAddExpertResponse({
+    required this.baseResp,
+  });
+
+  factory UserAddExpertResponse.fromJson(Map<String, dynamic> json) => _$UserAddExpertResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserAddExpertResponseToJson(this);
+}
+
+// User Cancel Expert Request
+@JsonSerializable()
+class UserCancelExpertRequest {
+  @JsonKey(name: 'expert_id')
+  final String expertId;
+
+  UserCancelExpertRequest({
+    required this.expertId,
+  });
+
+  factory UserCancelExpertRequest.fromJson(Map<String, dynamic> json) => _$UserCancelExpertRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserCancelExpertRequestToJson(this);
+}
+
+// User Cancel Expert Response
+@JsonSerializable()
+class UserCancelExpertResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  UserCancelExpertResponse({
+    required this.baseResp,
+  });
+
+  factory UserCancelExpertResponse.fromJson(Map<String, dynamic> json) => _$UserCancelExpertResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserCancelExpertResponseToJson(this);
 }

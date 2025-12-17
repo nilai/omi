@@ -106,6 +106,32 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
   }
   // AI-generated END - _handleAddExpert
 
+  // AI-generated START - 处理移除专家
+  Future<void> _handleRemoveExpert(String expertId) async {
+    final provider = Provider.of<MPExpertProvider>(context, listen: false);
+    try {
+      await provider.removeExpert(expertId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('已取消添加'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('取消添加失败: $e'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
+  }
+  // AI-generated END - _handleRemoveExpert
+
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {
@@ -118,6 +144,7 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
           ),
           body: Column(
             children: [
+              const SizedBox(height: 12.0),
               // AI-generated START - 搜索框
               MPExpertSearchCard(
                 placeholder: '搜索AI专家...',
@@ -126,7 +153,7 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
                 },
               ),
               // AI-generated END - 搜索框
-
+              const SizedBox(height: 12.0),
               // AI-generated START - 分类标签栏
               ExpertCategoryTabsCard(
                 categories: ExpertCategoryTabsCard.getDefaultCategories(),
@@ -219,6 +246,7 @@ class _MPExpertListPageState extends State<MPExpertListPage> {
           return MPExpertCard(
             expert: expert,
             onAddTap: isAdded ? null : () => _handleAddExpert(expert.id),
+            onRemoveTap: isAdded ? () => _handleRemoveExpert(expert.id) : null,
             onCardTap: () {
               Navigator.push(
                 context,

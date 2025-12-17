@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_add_export/providers/mp_add_export_provider.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_export_detail/providers/mp_export_detail_provider.dart';
+import 'package:omi/pages/mp_expert_feedback/mp_export_detail/widgets/mp_expert_detail_action_card.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_export_detail/widgets/mp_expert_detail_avatar_name_card.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_export_detail/widgets/mp_expert_detail_category_card.dart';
 import 'package:omi/pages/mp_expert_feedback/mp_export_detail/widgets/mp_expert_detail_feedback_time_card.dart';
@@ -105,13 +106,13 @@ class _MPExportDetailPageState extends State<MPExportDetailPage> {
                   if (provider.selectedSkills.contains(MPExpertSkillType.chat))
                     MPExpertDetailPromptCard(
                       skillType: MPExpertSkillType.chat,
-                      prompt: provider.expert!.prompt ?? '',
+                      prompt: provider.expert!.chatPrompt ?? '',
                     ),
 
                   if (provider.selectedSkills.contains(MPExpertSkillType.feedback)) ...[
                     MPExpertDetailPromptCard(
                       skillType: MPExpertSkillType.feedback,
-                      prompt: provider.expert!.prompt ?? '',
+                      prompt: provider.expert!.feedPrompt ?? '',
                     ),
                     // AI-generated START - 反馈时间卡片（可编辑）
                     const MPExpertDetailFeedbackTimeCard(),
@@ -119,12 +120,9 @@ class _MPExportDetailPageState extends State<MPExportDetailPage> {
                   ],
                   // AI-generated END - 根据技能类型显示不同的 Prompt 卡片
 
-                  // AI-generated START - 保存按钮
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                    child: _buildSaveButton(provider),
-                  ),
-                  // AI-generated END - 保存按钮
+                  // AI-generated START - 操作按钮卡片（添加/取消添加/保存）
+                  const MPExpertDetailActionCard(),
+                  // AI-generated END - 操作按钮卡片
                 ],
               ),
             ),
@@ -134,48 +132,5 @@ class _MPExportDetailPageState extends State<MPExportDetailPage> {
     );
   }
   // AI-generated END - 构建方法
-
-  // AI-generated START - 构建保存按钮
-  Widget _buildSaveButton(MPExportDetailProvider provider) {
-    return SizedBox(
-      height: 56.0,
-      child: ElevatedButton(
-        onPressed: provider.isSubmitting
-            ? null
-            : () async {
-                final success = await provider.saveFeedbackTime();
-                if (mounted && success) {
-                  Navigator.of(context).pop(true);
-                }
-              },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2563EB),
-          disabledBackgroundColor: Colors.grey.shade300,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.0),
-          ),
-          elevation: 0,
-        ),
-        child: provider.isSubmitting
-            ? const SizedBox(
-                width: 20.0,
-                height: 20.0,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.0,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : const Text(
-                '保存',
-                style: TextStyle(
-                  fontSize: 16.0,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-  // AI-generated END - _buildSaveButton
 }
 // AI-generated END - mp_export_detail_page.dart

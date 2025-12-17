@@ -1,18 +1,14 @@
 // AI-generated START - 声纹详情状态管理Provider
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../backend/schema/mp/mp_speaker.dart';
 import '../../../services/mp_audio_upload.dart';
-import '../../../utils/audio/wav_bytes.dart';
 
 /// 声纹详情状态管理Provider
 /// 管理声纹详情页面的状态，包括音频播放、保存、删除等
@@ -20,6 +16,10 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated START - 声纹ID
   final String? voiceId;
   // AI-generated END - voiceId
+
+  // AI-generated START - 是否是自己的声音
+  final bool isMyselfVoice;
+  // AI-generated END - isMyselfVoice
 
   // AI-generated START - 是否正在播放
   bool _isPlaying = false;
@@ -55,6 +55,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     required int audioDuration,
     this.audioFile,
     bool isEditMode = false,
+    this.isMyselfVoice = false,
   })  : _totalDuration = audioDuration,
         _isEditMode = isEditMode;
   // AI-generated END - 构造函数
@@ -91,8 +92,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
   // AI-generated START - 播放音频
   Future<void> play() async {
-    if (_isPlaying) return; 
-    
+    if (_isPlaying) return;
+
     _isPlaying = true;
     notifyListeners();
 
@@ -109,33 +110,33 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   bool get isAudioFileLoaded => audioFile != null;
 
   Future<void> _playAudioFile() async {
-     try {
+    try {
       // 初始化播放器并播放
       _audioPlayer ??= FlutterSoundPlayer();
       debugPrint('播放音频文件: ${audioFile?.path}');
-      
+
       // 验证文件是否存在
       if (audioFile == null) {
         debugPrint('音频文件为空');
         pause();
         return;
       }
-      
+
       if (!await audioFile!.exists()) {
         debugPrint('音频文件不存在: ${audioFile?.path}');
         pause();
         return;
       }
-      
+
       // 检查路径格式并转换为URI
       final path = audioFile?.path ?? '';
       debugPrint('音频文件路径: $path');
       debugPrint('文件大小: ${await audioFile!.length()} bytes');
-      
+
       // 转换为URI格式
       final uri = Uri.file(path).toString();
       debugPrint('转换后的音频URI: $uri');
-      
+
       // 确保播放器已打开
       if (!_audioPlayer!.isOpen()) {
         await _audioPlayer!.openPlayer();
@@ -143,16 +144,16 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       } else {
         debugPrint('播放器已经处于打开状态');
       }
-      
+
       // 停止之前可能正在播放的音频
       if (_audioPlayer!.isPlaying) {
         await _audioPlayer!.stopPlayer();
         debugPrint('停止之前的播放');
       }
-      
+
       // 开始播放 - 使用更明确的参数
       debugPrint('准备开始播放音频');
-      
+
       // 对于本地文件，使用startPlayerFromUri可能更可靠
       await _audioPlayer!.startPlayer(
         fromURI: uri,
@@ -162,10 +163,10 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
         },
         codec: Codec.pcm16WAV, // WAV格式文件使用正确的编解码器
       );
-      
+
       debugPrint('音频播放开始 - startPlayer()调用成功');
       debugPrint('播放器当前状态: 正在播放=${_audioPlayer!.isPlaying}, 已打开=${_audioPlayer!.isOpen}');
-      
+
       // 监听播放进度
       if (_audioPlayer!.onProgress != null) {
         debugPrint('设置播放进度监听');
@@ -177,12 +178,11 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       } else {
         debugPrint('onProgress 流为 null');
       }
-      
     } catch (e, stackTrace) {
       debugPrint('播放音频时出错: $e');
       debugPrint('错误类型: ${e.runtimeType}');
       debugPrint('错误堆栈: $stackTrace');
-      
+
       // 尝试重置播放器
       try {
         if (_audioPlayer != null) {
@@ -193,7 +193,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       } catch (resetError) {
         debugPrint('重置播放器时出错: $resetError');
       }
-      
+
       pause();
     }
   }
@@ -235,7 +235,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated END - seekTo
 
   // AI-generated START - 保存声纹
-  void saveVoice(String name, VoidCallback? successCallback) async{
+  void saveVoice(String name, VoidCallback? successCallback) async {
     if (name.isEmpty) {
       debugPrint('保存声纹失败，姓名为空');
       MPToastUtils.showMessage('请输入姓名');
@@ -255,6 +255,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       name: name,
       audioUrl: uri,
       avatar: '',
+      myselfVoice: isMyselfVoice,
     );
 
     // await MPVoiceRecognitionService().addSpeaker(req);
@@ -281,6 +282,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     if (audioFile != null && audioFile!.existsSync()) {
       audioFile!.delete().catchError((e) {
         debugPrint('删除音频文件时出错: $e');
+        return audioFile!;
       });
       audioFile = null;
     }

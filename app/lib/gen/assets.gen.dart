@@ -249,6 +249,14 @@ class $AssetsImagesGen {
   AssetGenImage get mpAddExportUnchoose =>
       const AssetGenImage('assets/images/mp_add_export_unchoose.png');
 
+  /// File path: assets/images/mp_feedback_detail_add.png
+  AssetGenImage get mpFeedbackDetailAdd =>
+      const AssetGenImage('assets/images/mp_feedback_detail_add.png');
+
+  /// File path: assets/images/mp_feedback_detail_added.png
+  AssetGenImage get mpFeedbackDetailAdded =>
+      const AssetGenImage('assets/images/mp_feedback_detail_added.png');
+
   /// File path: assets/images/mp_icon_more_add_tag.png
   AssetGenImage get mpIconMoreAddTag =>
       const AssetGenImage('assets/images/mp_icon_more_add_tag.png');
@@ -728,6 +736,8 @@ class $AssetsImagesGen {
     mpAddExportFeedbackUnselect,
     mpAddExportRobot,
     mpAddExportUnchoose,
+    mpFeedbackDetailAdd,
+    mpFeedbackDetailAdded,
     mpIconMoreAddTag,
     mpIconMoreCopySummary,
     mpIconMoreCopyTranscript,

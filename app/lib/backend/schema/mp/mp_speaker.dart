@@ -16,10 +16,14 @@ class MPAddSpeakerRequest {
   @JsonKey(name: 'avatar')
   final String avatar; // 可以为空
 
+  @JsonKey(name: 'myself_voice')
+  final bool? myselfVoice;
+
   MPAddSpeakerRequest({
     required this.audioUrl,
     required this.name,
     required this.avatar,
+    this.myselfVoice,
   });
 
   factory MPAddSpeakerRequest.fromJson(Map<String, dynamic> json) => _$MPAddSpeakerRequestFromJson(json);
