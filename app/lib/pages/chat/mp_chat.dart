@@ -31,6 +31,7 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'widgets/message_action_menu.dart';
+import 'widgets/mp_chat_appbar.dart';
 
 class MPChatPage extends StatefulWidget {
   final bool isPivotBottom;
@@ -130,7 +131,11 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         return Scaffold(
           key: scaffoldKey,
           backgroundColor: Theme.of(context).colorScheme.primary,
-          appBar: _buildAppBar(context, provider),
+          // appBar: _buildAppBar(context, provider),
+          appBar: MPChatAppBar(
+            onLeftIconTap: () => (),
+            onMenuTap: () => (),
+          ),
           body: GestureDetector(
             onTap: () {
               FocusScope.of(context).unfocus();
@@ -739,12 +744,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         icon: const Icon(Icons.arrow_back, color: Colors.white),
         onPressed: () => Navigator.of(context).pop(),
       ),
-      title: Consumer<AppProvider>(
-        builder: (context, appProvider, child) {
-          return _buildAppSelection(context, appProvider);
-        },
-      ),
-      centerTitle: true,
       actions: const [],
       bottom: provider.isLoadingMessages
           ? PreferredSize(
