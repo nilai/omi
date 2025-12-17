@@ -346,13 +346,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                     ),
                   ),
                   child: Consumer<HomeProvider>(builder: (context, home, child) {
-                    bool shouldShowSendButton(MessageProvider p) {
-                      return !p.sendingMessage && !_showVoiceRecorder;
-                    }
-
-                    bool shouldShowVoiceRecorderButton() {
-                      return !_showVoiceRecorder;
-                    }
+                    
 
                     return Column(
                       children: [
@@ -412,7 +406,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                                 ),
                                               ),
                                       ),
-                                      if (shouldShowVoiceRecorderButton())
+                                      if (_shouldShowVoiceRecorderButton())
                                         textController.text.isNotEmpty
                                             ? GestureDetector(
                                                 onTap: () {
@@ -459,7 +453,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                   ),
                                 ),
                               ),
-                              !shouldShowSendButton(provider)
+                              !_shouldShowSendButton(provider)
                                   ? const SizedBox.shrink()
                                   : ValueListenableBuilder<TextEditingValue>(
                                       valueListenable: textController,
@@ -508,6 +502,14 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       },
     );
   }
+
+  bool _shouldShowSendButton(MessageProvider p) {
+                      return !p.sendingMessage && !_showVoiceRecorder;
+                    }
+
+                    bool _shouldShowVoiceRecorderButton() {
+                      return !_showVoiceRecorder;
+                    }
 
   _sendMessageUtil(String text) {
     textFieldFocusNode.unfocus();
