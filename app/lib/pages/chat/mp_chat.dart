@@ -147,35 +147,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             child: Column(
               children: [
                 Expanded(
-                  child: provider.isLoadingMessages && !provider.hasCachedMessages
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              provider.firstTimeLoadingText,
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        )
-                      : provider.isClearingChat
-                          ? const Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CircularProgressIndicator(
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  "Deleting your messages from Omi's memory...",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                              ],
-                            )
-                          : (provider.messages.isEmpty)
+                  child: provider.messages.isEmpty
                               ? Center(
                                   child: Padding(
                                     padding: const EdgeInsets.only(bottom: 32.0),
@@ -346,8 +318,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                     ),
                   ),
                   child: Consumer<HomeProvider>(builder: (context, home, child) {
-                    
-
                     return Column(
                       children: [
                         Consumer<MessageProvider>(builder: (context, provider, child) {
