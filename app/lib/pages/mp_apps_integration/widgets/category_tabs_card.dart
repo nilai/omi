@@ -74,16 +74,16 @@ class CategoryTabsCard extends StatelessWidget {
         },
         borderRadius: BorderRadius.circular(20.0),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           decoration: BoxDecoration(
             color: isSelected
-                ? const Color(0xFF4CAF50) // 绿色背景（激活状态）
+                ? const Color(0xFF16A34A) // 绿色背景（激活状态）
                 : Colors.white, // 白色背景（未激活状态）
             borderRadius: BorderRadius.circular(20.0),
             border: isSelected
                 ? null
                 : Border.all(
-                    color: Colors.grey[300]!,
+                    color: const Color(0xFFE5E7EB),
                     width: 1.0,
                   ),
           ),
@@ -92,20 +92,16 @@ class CategoryTabsCard extends StatelessWidget {
             children: [
               Icon(
                 category.icon,
-                color: isSelected
-                    ? Colors.white
-                    : Colors.grey[600],
-                size: 18.0,
+                color: isSelected ? Colors.white : const Color(0xFF4B5563),
+                size: 14.0,
               ),
-              const SizedBox(width: 6.0),
+              const SizedBox(width: 4.0),
               Text(
                 category.label,
                 style: TextStyle(
                   fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected
-                      ? Colors.white
-                      : Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? Colors.white : const Color(0xFF4B5563),
                 ),
               ),
             ],
@@ -117,4 +113,3 @@ class CategoryTabsCard extends StatelessWidget {
   // AI-generated END - 构建分类按钮
 }
 // AI-generated END - category_tabs_card.dart
-

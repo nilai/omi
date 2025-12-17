@@ -44,22 +44,27 @@ class AutomationWorkflowCard extends StatelessWidget {
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
           colors: [
-            Color(0xFF4CAF50), // 浅绿色
-            Color(0xFF388E3C), // 深绿色
+            Color(0xFF22C55E), // 浅绿色
+            Color(0xFF0D9488), // 深绿色
           ],
         ),
-        borderRadius: BorderRadius.circular(12.0),
+        borderRadius: BorderRadius.circular(16.0),
       ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12.0),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 顶部：图标和文字
               _buildHeader(),
+              const SizedBox(height: 16.0),
+              Container(
+                height: 1.0,
+                color: Colors.white.withAlpha(8),
+              ),
               const SizedBox(height: 24.0),
               // 底部：统计数据
               _buildStats(),
@@ -77,8 +82,8 @@ class AutomationWorkflowCard extends StatelessWidget {
       children: [
         // 左侧图标
         Container(
-          width: 56.0,
-          height: 56.0,
+          width: 48.0,
+          height: 48.0,
           decoration: BoxDecoration(
             color: const Color(0xFF66BB6A), // 浅绿色背景
             borderRadius: BorderRadius.circular(12.0),
@@ -98,7 +103,7 @@ class AutomationWorkflowCard extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 18.0,
+                  fontSize: 20,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
                 ),
@@ -108,7 +113,7 @@ class AutomationWorkflowCard extends StatelessWidget {
                 subtitle,
                 style: TextStyle(
                   fontSize: 14.0,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 8),
                 ),
               ),
             ],
@@ -160,12 +165,12 @@ class AutomationWorkflowCard extends StatelessWidget {
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 4.0),
+        const SizedBox(height: 2.0),
         Text(
           label,
           style: TextStyle(
             fontSize: 12.0,
-            color: Colors.white.withOpacity(0.9),
+            color: Colors.white.withAlpha(8),
           ),
         ),
       ],
@@ -174,4 +179,3 @@ class AutomationWorkflowCard extends StatelessWidget {
   // AI-generated END - 构建单个统计项
 }
 // AI-generated END - automation_workflow_card.dart
-

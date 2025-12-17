@@ -28,39 +28,44 @@ class MemoTodoSwitchCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4.0),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Row(
-        children: [
-          // AI-generated START - Memo 按钮
-          Expanded(
-            child: _buildSwitchButton(
-              label: 'Memo',
-              isSelected: selectedType == MemoTodoType.memo,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onTypeChanged?.call(MemoTodoType.memo);
-              },
+      color: Colors.white,
+      padding: const EdgeInsets.all(12),
+      child: Container(
+        height: 44.0,
+        padding: const EdgeInsets.only(left: 4.0, right: 4.0),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F4F6),
+          borderRadius: BorderRadius.circular(22.0),
+        ),
+        child: Row(
+          children: [
+            // AI-generated START - Memo 按钮
+            Expanded(
+              child: _buildSwitchButton(
+                label: 'Memo',
+                isSelected: selectedType == MemoTodoType.memo,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onTypeChanged?.call(MemoTodoType.memo);
+                },
+              ),
             ),
-          ),
-          // AI-generated END - Memo 按钮
+            // AI-generated END - Memo 按钮
 
-          // AI-generated START - Todo 按钮
-          Expanded(
-            child: _buildSwitchButton(
-              label: 'Todo',
-              isSelected: selectedType == MemoTodoType.todo,
-              onTap: () {
-                HapticFeedback.selectionClick();
-                onTypeChanged?.call(MemoTodoType.todo);
-              },
+            // AI-generated START - Todo 按钮
+            Expanded(
+              child: _buildSwitchButton(
+                label: 'Todo',
+                isSelected: selectedType == MemoTodoType.todo,
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onTypeChanged?.call(MemoTodoType.todo);
+                },
+              ),
             ),
-          ),
-          // AI-generated END - Todo 按钮
-        ],
+            // AI-generated END - Todo 按钮
+          ],
+        ),
       ),
     );
   }
@@ -74,10 +79,11 @@ class MemoTodoSwitchCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        height: 36.0,
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0),
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8.0),
+          borderRadius: BorderRadius.circular(18.0),
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -93,10 +99,10 @@ class MemoTodoSwitchCard extends StatelessWidget {
             label,
             style: TextStyle(
               color: isSelected
-                  ? const Color(0xFF007AFF) // 蓝色
-                  : Colors.grey.shade700, // 深灰色
-              fontSize: 16.0,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ? const Color(0xFF2563EB) // 蓝色
+                  : const Color(0xFF4B5563), // 深灰色
+              fontSize: 14.0,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

@@ -4,6 +4,7 @@ import 'package:omi/pages/mp_apps_integration/providers/apps_integration_provide
 import 'package:omi/pages/mp_apps_integration/widgets/automation_workflow_card.dart';
 import 'package:omi/pages/mp_apps_integration/widgets/category_tabs_card.dart';
 import 'package:omi/pages/mp_apps_integration/widgets/help_guide_card.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -13,7 +14,7 @@ class AppsIntegrationPage extends StatefulWidget {
   // AI-generated START - 构造函数
   const AppsIntegrationPage({
     super.key,
-    this.title = '应用集成',
+    this.title = 'App集成',
   });
   // AI-generated END - 构造函数
 
@@ -34,6 +35,7 @@ class _AppsIntegrationPageState extends State<AppsIntegrationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: MPConstUtils.backgroundColorGrey,
       appBar: MPCommonAppBar(
         title: widget.title,
       ),
@@ -41,12 +43,13 @@ class _AppsIntegrationPageState extends State<AppsIntegrationPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 16.0),
             // 自动化工作流卡片
             const AutomationWorkflowCard(),
             const SizedBox(height: 8.0),
             // 分类标签栏
             _buildCategoryTabs(),
-            const SizedBox(height: 8.0),
+            const SizedBox(height: 12.0),
             // 应用集成列表
             _buildIntegrationList(context),
             const SizedBox(height: 8.0),

@@ -1,8 +1,10 @@
 // AI-generated START - Memo/Todo 主页面
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/memo_todo_switch_card.dart';
 import 'package:omi/pages/mp_memo_todo/memo/memo_page.dart';
 import 'package:omi/pages/mp_memo_todo/todo/todo_page.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 
 /// Memo/Todo 主页面
 /// 顶部显示切换卡片，根据选择显示 Memo 或 Todo 页面
@@ -57,22 +59,21 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
   Widget build(BuildContext context) {
     super.build(context); // Important! Call super.build
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
+      backgroundColor: MPConstUtils.backgroundColorGrey,
+      appBar: MPCommonAppBar(
+        title: widget.title,
+        showBackButton: false,
       ),
       body: Column(
         children: [
           // AI-generated START - 固定的切换卡片
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: MemoTodoSwitchCard(
-              selectedType: _selectedType,
-              onTypeChanged: (type) {
-                setState(() {
-                  _selectedType = type;
-                });
-              },
-            ),
+          MemoTodoSwitchCard(
+            selectedType: _selectedType,
+            onTypeChanged: (type) {
+              setState(() {
+                _selectedType = type;
+              });
+            },
           ),
           // AI-generated END - 固定的切换卡片
 

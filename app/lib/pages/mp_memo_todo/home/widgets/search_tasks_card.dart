@@ -36,48 +36,48 @@ class _SearchTasksCardState extends State<SearchTasksCard> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
       child: TextField(
         controller: _searchController,
         onChanged: (value) {
           widget.onSearchChanged?.call(value);
         },
         style: const TextStyle(
-          color: Colors.black87,
-          fontSize: 16.0,
+          color: Color(0xFF374151),
+          fontSize: 14.0,
         ),
         decoration: InputDecoration(
           hintText: widget.placeholder ?? 'Search Tasks',
           hintStyle: TextStyle(
-            color: Colors.grey.shade500,
-            fontSize: 16.0,
+            color: Color(0xFF374151),
+            fontSize: 14.0,
           ),
           prefixIcon: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.all(8.0),
             child: Image.asset(
               'assets/images/mp_memo_search.png',
-              width: 20.0,
-              height: 20.0,
+              width: 14.0,
+              height: 14.0,
               fit: BoxFit.contain,
             ),
           ),
           filled: true,
-          fillColor: Colors.grey.shade200,
+          fillColor: Color(0xFFF3F4F6),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12.0),
+            borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16.0,
-            vertical: 14.0,
+            vertical: 10.0,
           ),
         ),
       ),

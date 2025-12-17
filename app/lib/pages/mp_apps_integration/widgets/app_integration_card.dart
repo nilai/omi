@@ -62,37 +62,57 @@ class AppIntegrationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.0),
+          border: Border.all(
+            color: const Color(0xFFF3F4F6),
+            width: 1.0,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 头部：图标、名称和连接状态
-          _buildHeader(),
-          const SizedBox(height: 12.0),
-          // 描述文字
-          _buildDescription(),
-          const SizedBox(height: 12.0),
-          // 功能标签
-          if (features.isNotEmpty) _buildFeatures(),
-          const SizedBox(height: 16.0),
-          // 操作按钮
-          _buildActions(),
-        ],
-      ),
-    );
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(width: 12.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 头部：图标、名称和连接状态
+                  Row(
+                    children: [
+                      // 应用名称
+                      Expanded(
+                        child: Text(
+                          appName,
+                          style: const TextStyle(
+                            fontSize: 16.0,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1F2937),
+                          ),
+                        ),
+                      ),
+                      // 连接状态标签
+                      if (isConnected) _buildConnectedTag(),
+                    ],
+                  ),
+                  // 描述文字
+                  _buildDescription(),
+                  const SizedBox(height: 8.0),
+                  // 功能标签
+                  if (features.isNotEmpty) _buildFeatures(),
+                  const SizedBox(height: 8.0),
+                  // 操作按钮
+                  _buildActions(),
+                ],
+              ),
+            ),
+          ],
+        ));
   }
   // AI-generated END - 构建方法
 
@@ -114,20 +134,6 @@ class AppIntegrationCard extends StatelessWidget {
             size: 24.0,
           ),
         ),
-        const SizedBox(width: 12.0),
-        // 应用名称
-        Expanded(
-          child: Text(
-            appName,
-            style: const TextStyle(
-              fontSize: 18.0,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF212121),
-            ),
-          ),
-        ),
-        // 连接状态标签
-        if (isConnected) _buildConnectedTag(),
       ],
     );
   }
@@ -136,26 +142,26 @@ class AppIntegrationCard extends StatelessWidget {
   // AI-generated START - 构建连接状态标签
   Widget _buildConnectedTag() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: const Color(0xFF81C784), // 浅绿色
-        borderRadius: BorderRadius.circular(12.0),
+        color: const Color(0xFFF0FDF4), // 浅绿色
+        borderRadius: BorderRadius.circular(20.0),
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
+          Icon(
             Icons.check,
-            color: Colors.white,
-            size: 14.0,
+            color: Color(0xFF16A34A),
+            size: 12.0,
           ),
-          const SizedBox(width: 4.0),
-          const Text(
+          SizedBox(width: 2.0),
+          Text(
             '已连接',
             style: TextStyle(
               fontSize: 12.0,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+              color: Color(0xFF16A34A),
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],
@@ -168,9 +174,9 @@ class AppIntegrationCard extends StatelessWidget {
   Widget _buildDescription() {
     return Text(
       description,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 14.0,
-        color: Colors.grey[700],
+        color: Color(0xFF4B5563),
       ),
     );
   }
@@ -179,20 +185,20 @@ class AppIntegrationCard extends StatelessWidget {
   // AI-generated START - 构建功能标签
   Widget _buildFeatures() {
     return Wrap(
-      spacing: 8.0,
-      runSpacing: 8.0,
+      spacing: 6.0,
+      runSpacing: 6.0,
       children: features.map((feature) {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
-            borderRadius: BorderRadius.circular(6.0),
+            color: const Color(0xFFF9FAFB),
+            borderRadius: BorderRadius.circular(20.0),
           ),
           child: Text(
             feature.label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12.0,
-              color: Colors.grey[700],
+              color: Color(0xFF6B7280),
             ),
           ),
         );
@@ -211,47 +217,47 @@ class AppIntegrationCard extends StatelessWidget {
             onPressed: onViewDetails,
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
-              side: BorderSide(color: Colors.grey[300]!),
+              side: const BorderSide(color: Color(0xFFE5E7EB), width: 1.0),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(12.0),
               ),
             ),
             child: const Text(
-              '查看详情',
+              '管理连接',
               style: TextStyle(
                 fontSize: 14.0,
-                color: Color(0xFF212121),
+                color: Color(0xFF374151),
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12.0),
+
+        const SizedBox(width: 8.0),
         // 连接/断开连接按钮
         Expanded(
-          child: ElevatedButton(
+          child: OutlinedButton(
             onPressed: isConnected ? onDisconnect : onConnect,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
-              backgroundColor: isConnected
-                  ? Colors.white
-                  : const Color(0xFF4CAF50), // 绿色（连接）或白色（断开）
+              backgroundColor: isConnected ? Colors.white : const Color(0xFF4CAF50), // 绿色（连接）或白色（断开）
               side: BorderSide(
                 color: isConnected
-                    ? const Color(0xFFE57373) // 浅红色边框
-                    : const Color(0xFF4CAF50), // 绿色边框
+                    ? const Color(0xFFFECACA) // 浅红色边框
+                    : const Color(0xFF16A34A), // 绿色边框
                 width: 1.0,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
+                borderRadius: BorderRadius.circular(12.0),
               ),
             ),
             child: Text(
               isConnected ? '断开连接' : '立即连接',
               style: TextStyle(
                 fontSize: 14.0,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: isConnected
-                    ? const Color(0xFFE57373) // 浅红色文字
+                    ? const Color(0xFFDC2626) // 浅红色文字
                     : Colors.white, // 白色文字
               ),
             ),
@@ -263,4 +269,3 @@ class AppIntegrationCard extends StatelessWidget {
   // AI-generated END - 构建操作按钮
 }
 // AI-generated END - app_integration_card.dart
-

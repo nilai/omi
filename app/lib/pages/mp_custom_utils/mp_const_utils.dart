@@ -6,8 +6,7 @@ import 'package:flutter/material.dart';
 class MPConstUtils {
   // AI-generated START - 背景色常量
   /// 背景色：浅灰色
-  static const Color backgroundColorGrey = Color(0xFFF5F5F5); // Colors.grey.shade100 对应的颜色值
+  static const Color backgroundColorGrey = Color(0xFFF9FAFB); // Colors.grey.shade100 对应的颜色值
   // AI-generated END - backgroundColorGrey
 }
 // AI-generated END - mp_const_utils.dart
-
