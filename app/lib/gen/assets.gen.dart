@@ -692,6 +692,9 @@ class $AssetsImagesGen {
   AssetGenImage get youtubeLogo =>
       const AssetGenImage('assets/images/youtube_logo.png');
 
+  AssetGenImage get mpChatNoMsgTopIcon =>
+      const AssetGenImage('assets/images/mp_chat_no_msg_top_icon.png');
+
   /// List of all assets
   List<dynamic> get values => [
     a1,
