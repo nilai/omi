@@ -48,11 +48,8 @@ enum MPChatPageType {
 }
 
 class MPChatPage extends StatefulWidget {
-  final bool isPivotBottom;
-
   const MPChatPage({
     super.key,
-    this.isPivotBottom = false,
   });
 
   @override
@@ -69,7 +66,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   bool _showVoiceRecorder = false;
 
   var prefs = SharedPreferencesUtil();
-  late List<App> apps;
 
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -78,7 +74,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   @override
   void initState() {
-    apps = prefs.appsList;
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();
     textController.addListener(() {
