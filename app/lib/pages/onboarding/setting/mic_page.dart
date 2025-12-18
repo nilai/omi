@@ -1,5 +1,46 @@
 import 'package:flutter/material.dart';
 
+/// 自定义滑块轨道形状，让thumb能够完全覆盖轨道两端
+class _FullWidthSliderTrackShape extends SliderTrackShape with BaseSliderTrackShape {
+  const _FullWidthSliderTrackShape();
+
+  @override
+  void paint(
+    PaintingContext context,
+    Offset offset, {
+    required RenderBox parentBox,
+    required SliderThemeData sliderTheme,
+    required Animation<double> enableAnimation,
+    required TextDirection textDirection,
+    required Offset thumbCenter,
+    Offset? secondaryOffset,
+    bool isDiscrete = false,
+    bool isEnabled = false,
+    double additionalActiveTrackHeight = 2,
+  }) {
+    // 不绘制任何内容，因为轨道是透明的
+  }
+
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    // 返回整个可用宽度，从0开始到整个宽度，让thumb能够完全覆盖轨道
+    final trackHeight = sliderTheme.trackHeight ?? 0;
+    final trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
+    return Rect.fromLTWH(
+      0,
+      trackTop,
+      parentBox.size.width,
+      trackHeight,
+    );
+  }
+}
+
 /// 麦克风增益调节页面
 class MicGainPage extends StatefulWidget {
   const MicGainPage({super.key});
@@ -162,6 +203,7 @@ class _MicGainPageState extends State<MicGainPage> {
                       thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
                       overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
                       trackHeight: 0,
+                      trackShape: const _FullWidthSliderTrackShape(),
                     ),
                     child: Slider(
                       value: _gainValue.toDouble(),
