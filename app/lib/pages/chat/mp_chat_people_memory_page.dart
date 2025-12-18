@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/chat/providers/mp_chat_people_memory_provider.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
-import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
 import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
 import 'package:provider/provider.dart';
@@ -25,8 +25,7 @@ class MPChatPeopleMemoryPage extends StatefulWidget {
   State<MPChatPeopleMemoryPage> createState() => _MPChatPeopleMemoryPageState();
 }
 
-class _MPChatPeopleMemoryPageState extends State<MPChatPeopleMemoryPage>
-    with SingleTickerProviderStateMixin {
+class _MPChatPeopleMemoryPageState extends State<MPChatPeopleMemoryPage> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -77,7 +76,7 @@ class _MPChatPeopleMemoryPageState extends State<MPChatPeopleMemoryPage>
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => MemoryProvider(),
+      create: (_) => MPChatPeopleMemoryProvider(),
       child: GestureDetector(
         onTap: () => _closeDialog(),
         child: Container(
@@ -147,7 +146,7 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
     // 初始化数据加载
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final provider = Provider.of<MemoryProvider>(context, listen: false);
+      final provider = Provider.of<MPChatPeopleMemoryProvider>(context, listen: false);
       if (provider.memories.isEmpty && !provider.isLoading) {
         provider.loadMemories();
       }
@@ -161,9 +160,8 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
   }
 
   void _onScroll() {
-    final provider = Provider.of<MemoryProvider>(context, listen: false);
-    if (widget.scrollController.position.pixels >=
-        widget.scrollController.position.maxScrollExtent - 200) {
+    final provider = Provider.of<MPChatPeopleMemoryProvider>(context, listen: false);
+    if (widget.scrollController.position.pixels >= widget.scrollController.position.maxScrollExtent - 200) {
       if (!provider.isFetching && provider.hasMore) {
         provider.loadMoreMemories();
       }
@@ -224,7 +222,7 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
 
   /// 构建记忆列表
   Widget _buildMemoryList(BuildContext context) {
-    return Consumer<MemoryProvider>(
+    return Consumer<MPChatPeopleMemoryProvider>(
       builder: (context, provider, child) {
         // 加载中状态
         if (provider.isLoading && provider.memories.isEmpty) {
@@ -267,8 +265,7 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
           child: ListView.builder(
             controller: widget.scrollController,
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            itemCount: provider.memories.length +
-                (provider.hasMore && provider.isFetching ? 1 : 0),
+            itemCount: provider.memories.length + (provider.hasMore && provider.isFetching ? 1 : 0),
             itemBuilder: (context, index) {
               // 显示加载更多指示器
               if (index == provider.memories.length) {
@@ -296,7 +293,6 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
                     MaterialPageRoute(
                       builder: (context) => MemoryDetailPage(
                         memoryId: memory.id,
-                        memoryItem: memory,
                       ),
                     ),
                   );
@@ -309,4 +305,3 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
     );
   }
 }
-
