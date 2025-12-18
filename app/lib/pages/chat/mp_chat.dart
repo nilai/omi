@@ -1,11 +1,8 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:pull_down_button/pull_down_button.dart';
 import 'package:omi/backend/http/api/messages.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/app.dart';
@@ -16,12 +13,10 @@ import 'package:omi/pages/chat/select_text_screen.dart';
 import 'package:omi/pages/chat/widgets/ai_message.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
-import 'package:omi/pages/home/page.dart';
 import 'package:omi/providers/connectivity_provider.dart';
-import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
+import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
-import 'package:omi/providers/app_provider.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/other/temp.dart';
@@ -32,6 +27,7 @@ import 'package:share_plus/share_plus.dart';
 
 import 'widgets/message_action_menu.dart';
 import 'widgets/mp_chat_appbar.dart';
+import 'widgets/mp_chat_suggestion_cards.dart';
 
 // 聊天页面类型。不同类型调用url接口入参不同。
 enum MPChatPageType {
@@ -469,6 +465,17 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         const Text(
           'How can I help you?',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+        ),
+        const SizedBox(
+          height: 24,
+        ),
+        MPChatSuggestionCards(
+          onTodayTap: () {
+            _sendMessageUtil('今天我应该怎么做？');
+          },
+          onYesterdayTap: () {
+            _sendMessageUtil('我昨天做了什么？');
+          },
         ),
         const Spacer(),
         const Text(
