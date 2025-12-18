@@ -1,89 +1,91 @@
-// Note BLE Debug Provider
-// Manages BLE debug state: log entries, drawer visibility, command execution
+// Note BLE Debug Provider (Note BLE 调试提供者)
+// Manages BLE debug state: log entries, drawer visibility, command execution (管理 BLE 调试状态：日志条目、抽屉可见性、命令执行)
 
 import 'dart:async';
+
 import 'package:omi/backend/schema/bt_device/note_device.dart';
 import 'package:omi/pages/note_debug/models/ble_log_entry.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'package:omi/services/devices/note_connection.dart';
+
 import 'base_provider.dart';
 
-/// Provider for BLE debug functionality
+/// Provider for BLE debug functionality (BLE 调试功能的提供者)
 class NoteBleDebugProvider extends BaseProvider {
-  /// Device connection reference
+  /// Device connection reference (设备连接引用)
   NoteDeviceConnection? _connection;
 
-  /// Response stream subscription
+  /// Response stream subscription (响应流订阅)
   StreamSubscription<List<int>>? _responseSubscription;
 
-  /// Log entries list (newest first)
+  /// Log entries list (newest first) (日志条目列表（最新的在前）)
   final List<BleLogEntry> _logEntries = [];
 
-  /// Maximum log entries to keep
+  /// Maximum log entries to keep (保留的最大日志条目数)
   static const int _maxLogEntries = 500;
 
-  /// Drawer visibility state
+  /// Drawer visibility state (抽屉可见性状态)
   bool _isDrawerOpen = false;
 
-  /// Last error message
+  /// Last error message (最后的错误消息)
   String? _lastError;
 
-  /// Whether a command is being executed
+  /// Whether a command is being executed (是否正在执行命令)
   bool _isExecuting = false;
 
   // ============ Device Status ============
 
-  /// Battery level (0-100, -1 = unknown)
+  /// Battery level (0-100, -1 = unknown) (电池电量（0-100，-1 = 未知）)
   int _batteryLevel = -1;
 
-  /// Firmware version string
+  /// Firmware version string (固件版本字符串)
   String? _firmwareVersion;
 
-  /// Storage info
+  /// Storage info (存储信息)
   NoteStorageInfo? _storageInfo;
 
-  /// Recording state (null = unknown, true = recording, false = not recording)
+  /// Recording state (null = unknown, true = recording, false = not recording) (录音状态（null = 未知，true = 正在录音，false = 未录音）)
   bool? _isRecording;
 
   // ============ Getters ============
 
-  /// Get log entries (unmodifiable)
+  /// Get log entries (unmodifiable) (获取日志条目（不可修改）)
   List<BleLogEntry> get logEntries => List.unmodifiable(_logEntries);
 
-  /// Whether the drawer is open
+  /// Whether the drawer is open (抽屉是否打开)
   bool get isDrawerOpen => _isDrawerOpen;
 
-  /// Last error message
+  /// Last error message (最后的错误消息)
   String? get lastError => _lastError;
 
-  /// Whether a command is being executed
+  /// Whether a command is being executed (是否正在执行命令)
   bool get isExecuting => _isExecuting;
 
-  /// Whether connected to a device
+  /// Whether connected to a device (是否已连接到设备)
   bool get isConnected => _connection != null;
 
-  /// Battery level (0-100, -1 = unknown)
+  /// Battery level (0-100, -1 = unknown) (电池电量（0-100，-1 = 未知）)
   int get batteryLevel => _batteryLevel;
 
-  /// Firmware version
+  /// Firmware version (固件版本)
   String? get firmwareVersion => _firmwareVersion;
 
-  /// Storage info
+  /// Storage info (存储信息)
   NoteStorageInfo? get storageInfo => _storageInfo;
 
-  /// Recording state (null = unknown)
+  /// Recording state (null = unknown) (录音状态（null = 未知）)
   bool? get isRecording => _isRecording;
 
   // ============ Connection Management ============
 
-  /// Set the device connection
+  /// Set the device connection (设置设备连接)
   void setConnection(NoteDeviceConnection? connection) {
     _connection = connection;
     _setupResponseListener();
     notifyListeners();
   }
 
-  /// Setup response stream listener
+  /// Setup response stream listener (设置响应流监听器)
   void _setupResponseListener() {
     _responseSubscription?.cancel();
     if (_connection != null) {
@@ -95,7 +97,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Log Management ============
 
-  /// Add a log entry
+  /// Add a log entry (添加日志条目)
   void _addLogEntry(BleLogDirection direction, List<int> data, {String? name}) {
     _logEntries.insert(
       0,
@@ -107,7 +109,7 @@ class NoteBleDebugProvider extends BaseProvider {
       ),
     );
 
-    // Keep max entries
+    // Keep max entries (保持最大条目数)
     if (_logEntries.length > _maxLogEntries) {
       _logEntries.removeLast();
     }
@@ -115,7 +117,7 @@ class NoteBleDebugProvider extends BaseProvider {
     notifyListeners();
   }
 
-  /// Clear all log entries
+  /// Clear all log entries (清除所有日志条目)
   void clearLogs() {
     _logEntries.clear();
     notifyListeners();
@@ -123,19 +125,19 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Drawer Control ============
 
-  /// Toggle drawer visibility
+  /// Toggle drawer visibility (切换抽屉可见性)
   void toggleDrawer() {
     _isDrawerOpen = !_isDrawerOpen;
     notifyListeners();
   }
 
-  /// Open the drawer
+  /// Open the drawer (打开抽屉)
   void openDrawer() {
     _isDrawerOpen = true;
     notifyListeners();
   }
 
-  /// Close the drawer
+  /// Close the drawer (关闭抽屉)
   void closeDrawer() {
     _isDrawerOpen = false;
     notifyListeners();
@@ -143,7 +145,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Command Execution ============
 
-  /// Execute a command and log it
+  /// Execute a command and log it (执行命令并记录日志)
   Future<void> executeCommand(List<int> command, String commandName) async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -156,10 +158,10 @@ class NoteBleDebugProvider extends BaseProvider {
     notifyListeners();
 
     try {
-      // Log the sent command
+      // Log the sent command (记录发送的命令)
       _addLogEntry(BleLogDirection.sent, command, name: commandName);
 
-      // Send command and wait for response
+      // Send command and wait for response (发送命令并等待响应)
       await _connection!.sendCommandWithResponse(command);
     } catch (e) {
       _lastError = e.toString();
@@ -171,7 +173,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Recording Commands ============
 
-  /// Send start recording command (0x01) and track state
+  /// Send start recording command (0x01) and track state (发送开始录音命令（0x01）并跟踪状态)
   Future<void> sendStartRecording() async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -190,7 +192,7 @@ class NoteBleDebugProvider extends BaseProvider {
         _isRecording = true;
         print('[NoteBleDebugProvider] Recording started');
       } else {
-        // Device is already recording
+        // Device is already recording (设备已在录音)
         _isRecording = true;
         print('[NoteBleDebugProvider] Device already recording');
       }
@@ -202,7 +204,7 @@ class NoteBleDebugProvider extends BaseProvider {
     }
   }
 
-  /// Send stop recording command (0x02) and track state
+  /// Send stop recording command (0x02) and track state (发送停止录音命令（0x02）并跟踪状态)
   Future<void> sendStopRecording() async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -229,7 +231,7 @@ class NoteBleDebugProvider extends BaseProvider {
     }
   }
 
-  /// Send set recording mode command (0x0D + mode)
+  /// Send set recording mode command (0x0D + mode) (发送设置录音模式命令（0x0D + 模式）)
   Future<void> sendSetRecordingMode(NoteRecordingMode mode) async {
     await executeCommand(
       [NoteCommands.setRecordingMode, mode.value],
@@ -239,7 +241,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Device Info Commands ============
 
-  /// Send query battery command (0xE1) and save result
+  /// Send query battery command (0xE1) and save result (发送查询电池命令（0xE1）并保存结果)
   Future<void> sendQueryBattery() async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -263,7 +265,7 @@ class NoteBleDebugProvider extends BaseProvider {
     }
   }
 
-  /// Send query version command (0xE3) and save result
+  /// Send query version command (0xE3) and save result (发送查询版本命令（0xE3）并保存结果)
   Future<void> sendQueryVersion() async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -287,7 +289,7 @@ class NoteBleDebugProvider extends BaseProvider {
     }
   }
 
-  /// Send query storage command (0xE8) and save result
+  /// Send query storage command (0xE8) and save result (发送查询存储命令（0xE8）并保存结果)
   Future<void> sendQueryStorage() async {
     if (_connection == null) {
       _lastError = 'Device not connected';
@@ -313,14 +315,14 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ File Management Commands ============
 
-  /// Send get file list command (0x03)
+  /// Send get file list command (0x03) (发送获取文件列表命令（0x03）)
   Future<void> sendGetFileList() async {
     await executeCommand([NoteCommands.getFileList], 'Get File List');
   }
 
   // ============ Device Control Commands ============
 
-  /// Send sync RTC command (0xE5 + timestamp)
+  /// Send sync RTC command (0xE5 + timestamp) (发送同步 RTC 命令（0xE5 + 时间戳）)
   Future<void> sendSyncRTC() async {
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await executeCommand(
@@ -335,17 +337,17 @@ class NoteBleDebugProvider extends BaseProvider {
     );
   }
 
-  /// Send bind device command (0x0B 0x01)
+  /// Send bind device command (0x0B 0x01) (发送绑定设备命令（0x0B 0x01）)
   Future<void> sendBindDevice() async {
     await executeCommand([NoteCommands.bindDevice, 0x01], 'Bind Device');
   }
 
-  /// Send unbind device command (0x0B 0x00)
+  /// Send unbind device command (0x0B 0x00) (发送解绑设备命令（0x0B 0x00）)
   Future<void> sendUnbindDevice() async {
     await executeCommand([NoteCommands.bindDevice, 0x00], 'Unbind Device');
   }
 
-  /// Send USB mode command (0xE4 + enabled)
+  /// Send USB mode command (0xE4 + enabled) (发送 USB 模式命令（0xE4 + 启用状态）)
   Future<void> sendSetUsbMode(bool enabled) async {
     await executeCommand(
       [NoteCommands.usbMode, enabled ? 0x01 : 0x00],
@@ -353,12 +355,12 @@ class NoteBleDebugProvider extends BaseProvider {
     );
   }
 
-  /// Send reboot command (0x09)
+  /// Send reboot command (0x09) (发送重启命令（0x09）)
   Future<void> sendReboot() async {
     await executeCommand([NoteCommands.reboot], 'Reboot');
   }
 
-  /// Send factory reset command (0xE9 + param)
+  /// Send factory reset command (0xE9 + param) (发送恢复出厂设置命令（0xE9 + 参数）)
   Future<void> sendFactoryReset(bool keepRecordings) async {
     await executeCommand(
       [NoteCommands.factoryReset, keepRecordings ? 0x00 : 0xFF],
@@ -368,7 +370,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ OTA Commands ============
 
-  /// Send enter OTA command (0xE6 + module)
+  /// Send enter OTA command (0xE6 + module) (发送进入 OTA 命令（0xE6 + 模块）)
   Future<void> sendOtaEnter(NoteOtaModule module) async {
     await executeCommand(
       [NoteCommands.otaEnter, module.value],
@@ -378,20 +380,14 @@ class NoteBleDebugProvider extends BaseProvider {
 
   // ============ Custom Command ============
 
-  /// Send custom hex command
+  /// Send custom hex command (发送自定义十六进制命令)
   Future<void> sendCustomCommand(String hexString) async {
     try {
-      final bytes = hexString
-          .split(RegExp(r'[\s,]+'))
-          .where((s) => s.isNotEmpty)
-          .map((s) {
-            // Support both "0xFF" and "FF" formats
-            final cleaned = s.startsWith('0x') || s.startsWith('0X')
-                ? s.substring(2)
-                : s;
-            return int.parse(cleaned, radix: 16);
-          })
-          .toList();
+      final bytes = hexString.split(RegExp(r'[\s,]+')).where((s) => s.isNotEmpty).map((s) {
+        // Support both "0xFF" and "FF" formats (支持 "0xFF" 和 "FF" 两种格式)
+        final cleaned = s.startsWith('0x') || s.startsWith('0X') ? s.substring(2) : s;
+        return int.parse(cleaned, radix: 16);
+      }).toList();
 
       if (bytes.isEmpty) {
         _lastError = 'Invalid hex string';
@@ -410,6 +406,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   @override
   void dispose() {
+    // 释放资源
     _responseSubscription?.cancel();
     super.dispose();
   }
