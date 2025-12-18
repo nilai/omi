@@ -311,6 +311,14 @@ struct DoneTodoResponse {
     255: BaseResp base_resp,
 }
 
+struct DeleteTodoRequest {
+    1: string todo_id,
+}
+
+struct DeleteTodoResponse {
+    255: BaseResp base_resp,
+}
+
 struct ChatRequest {
     1: string expert_id, // 专家模型ID, 不用的话，为空字符串
     2: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
@@ -377,6 +385,14 @@ struct GetSpeakerDetailResponse {
     255: BaseResp base_resp,
 }
 
+struct DeleteSpeakerRequest {
+    1: string speaker_id,
+}
+
+struct DeleteSpeakerResponse {
+    255: BaseResp base_resp,
+}
+
 struct GetExpertListRequest {
     1: string type,
     2: i32 page_size,
@@ -414,9 +430,11 @@ struct CreateExpertResponse {
     255: BaseResp base_resp,
 }
 
+
 struct UpdateExpertRequest {
-    1: optional feedback_cron_at,
-    2: optional bool cron_send,
+    1: string expert_id,
+    2: optional feedback_cron_at,
+    3: optional bool cron_send,
 }
 
 struct UpdateExpertResponse {
@@ -559,6 +577,8 @@ service AppService {
     CreateTodoResponse CreateTodo(1: CreateTodoRequest req)
     // POST /api/v1/todo/done
     DoneTodoResponse DoneTodo(1: DoneTodoRequest req)
+    // POST /api/v1/todo/delete
+    DeleteTodoResponse DeleteTodo(1: DeleteTodoRequest req)
 
     // chat相关接口
     // POST /api/v1/chat
@@ -577,6 +597,8 @@ service AppService {
     GetSpeakerListWithDetailResponse GetSpeakerListWithDetail(1: GetSpeakerListWithDetailRequest req)
     // GET /api/v1/speaker/get_detail
     GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
+    // POST /api/v1/speaker/delete
+    DeleteSpeakerResponse DeleteSpeaker(1: DeleteSpeakerRequest req)
 
     // 专家模型列表
     // GET /api/v1/expert/get_list
