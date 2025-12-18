@@ -19,6 +19,7 @@ struct SpeakerStruct {
     3: string avatar,
     4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
     5: bool myself_voice,
+    6: string audio_url,
 }
 
 struct SpeakerWithDetailStruct {
@@ -309,6 +310,14 @@ struct DoneTodoResponse {
     255: BaseResp base_resp,
 }
 
+struct DeleteTodoRequest {
+    1: string todo_id,
+}
+
+struct DeleteTodoResponse {
+    255: BaseResp base_resp,
+}
+
 struct ChatRequest {
     1: string expert_id, // 专家模型ID, 不用的话，为空字符串
     2: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
@@ -375,6 +384,14 @@ struct GetSpeakerDetailResponse {
     255: BaseResp base_resp,
 }
 
+struct DeleteSpeakerRequest {
+    1: string speaker_id,
+}
+
+struct DeleteSpeakerResponse {
+    255: BaseResp base_resp,
+}
+
 struct GetExpertListRequest {
     1: string type,
     2: i32 page_size,
@@ -405,14 +422,28 @@ struct CreateExpertRequest {
     6: string chat_prompt,
     7: string feedback_prompt,
     8: optional feedback_cron_at,
+    9: bool cron_send,
 }
 
 struct CreateExpertResponse {
     255: BaseResp base_resp,
 }
 
+
+struct UpdateExpertRequest {
+    1: string expert_id,
+    2: optional feedback_cron_at,
+    3: bool cron_send,
+}
+
+struct UpdateExpertResponse {
+    255: BaseResp base_resp,
+}
+
 struct UserAddExpertRequest {
     1: string expert_id,
+    2: optional feedback_cron_at,
+    3: bool cron_send,
 }
 
 struct UserAddExpertResponse {
@@ -545,6 +576,8 @@ service AppService {
     CreateTodoResponse CreateTodo(1: CreateTodoRequest req)
     // POST /api/v1/todo/done
     DoneTodoResponse DoneTodo(1: DoneTodoRequest req)
+    // POST /api/v1/todo/delete
+    DeleteTodoResponse DeleteTodo(1: DeleteTodoRequest req)
 
     // chat相关接口
     // POST /api/v1/chat
@@ -563,6 +596,8 @@ service AppService {
     GetSpeakerListWithDetailResponse GetSpeakerListWithDetail(1: GetSpeakerListWithDetailRequest req)
     // GET /api/v1/speaker/get_detail
     GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
+    // POST /api/v1/speaker/delete
+    DeleteSpeakerResponse DeleteSpeaker(1: DeleteSpeakerRequest req)
 
     // 专家模型列表
     // GET /api/v1/expert/get_list
@@ -571,6 +606,8 @@ service AppService {
     GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
     // POST /api/v1/expert/create
     CreateExpertResponse CreateExpert(1: CreateExpertRequest req)
+    // POST /api/v1/expert/update
+    UpdateExpertResponse UpdateExpert(1: UpdateExpertRequest req)
     // POST /api/v1/expert/user_add
     UserAddExpertResponse UserAddExpert(1: UserAddExpertRequest req)
     // POST /api/v1/expert/user_cancel
