@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
 
@@ -340,9 +341,7 @@ class _MPPageContentState extends State<MPPageContent> {
         await _uploadAudioFile(file);
       },
       onImportFromOtherApp: () async {
-        // final file = await AudioPickerUtils.pickAudioFromOtherApp(context);
-        // debugPrint('pickAudioFromOtherApp file: $file');
-        // await _uploadAudioFile(file);
+        MPToastUtils.showMessage('暂不支持从其他App导入音频');
       },
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
 /// 音频导入选项弹窗
@@ -8,7 +10,6 @@ class ImportAudioDialog extends StatelessWidget {
   final VoidCallback? onImportFromOtherApp;
   final VoidCallback? onClose;
   final bool autoClose;
-  
 
   const ImportAudioDialog({
     super.key,
@@ -41,10 +42,10 @@ class ImportAudioDialog extends StatelessWidget {
                 children: [
                   // 标题栏
                   _buildHeader(context),
-                  
+
                   // 导入选项
                   _buildImportOptions(),
-                  
+
                   // 底部描述
                   _buildDescription(),
                 ],
@@ -93,28 +94,35 @@ class ImportAudioDialog extends StatelessWidget {
   }
 
   /// 构建导入选项
+  /// Android: 只显示"从文件导入"
+  /// iOS: 显示三个选项（从文件导入、从相册导入、从其他App导入）
   Widget _buildImportOptions() {
-    return Column(
-      children: [
-        // 从文件导入
-        _buildImportOption(
-          icon: Icons.insert_drive_file_outlined,
-          title: '从文件导入',
-          onTap: (){
-            if (autoClose) {
-              onClose?.call();
-            }
-            onImportFromFile?.call();
-          },
-          iconBackgroundColor: const Color(0xFF007AFF),
-          iconColor: Colors.white,
-        ),
-        
-        // 从相册导入
+    final List<Widget> options = [];
+
+    // 从文件导入（所有平台都显示）
+    options.add(
+      _buildImportOption(
+        icon: Icons.insert_drive_file_outlined,
+        title: '从文件导入',
+        onTap: () {
+          if (autoClose) {
+            onClose?.call();
+          }
+          onImportFromFile?.call();
+        },
+        iconBackgroundColor: const Color(0xFF007AFF),
+        iconColor: Colors.white,
+      ),
+    );
+
+    // iOS 平台显示额外选项
+    if (Platform.isIOS) {
+      // 从相册导入
+      options.add(
         _buildImportOption(
           icon: Icons.photo_library_outlined,
           title: '从相册导入',
-          onTap: (){
+          onTap: () {
             if (autoClose) {
               onClose?.call();
             }
@@ -123,12 +131,14 @@ class ImportAudioDialog extends StatelessWidget {
           iconBackgroundColor: const Color(0xFFAF52DE),
           iconColor: Colors.white,
         ),
-        
-        // 从其他App导入
+      );
+
+      // 从其他App导入
+      options.add(
         _buildImportOption(
           icon: Icons.apps_outlined,
           title: '从其他App导入',
-          onTap: (){
+          onTap: () {
             if (autoClose) {
               onClose?.call();
             }
@@ -137,7 +147,11 @@ class ImportAudioDialog extends StatelessWidget {
           iconBackgroundColor: const Color(0xFF34C759),
           iconColor: Colors.white,
         ),
-      ],
+      );
+    }
+
+    return Column(
+      children: options,
     );
   }
 
@@ -183,9 +197,9 @@ class ImportAudioDialog extends StatelessWidget {
                   size: 20,
                 ),
               ),
-              
+
               const SizedBox(width: 16),
-              
+
               // 文字内容
               Expanded(
                 child: Text(
@@ -197,7 +211,7 @@ class ImportAudioDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              
+
               // 箭头图标
               const Icon(
                 Icons.arrow_forward_ios,
@@ -210,8 +224,6 @@ class ImportAudioDialog extends StatelessWidget {
       ),
     );
   }
-
-
 
   /// 构建底部描述
   Widget _buildDescription() {
