@@ -43,7 +43,9 @@ import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/mcp_provider.dart';
 import 'package:omi/providers/memories_provider.dart';
 import 'package:omi/providers/message_provider.dart';
+import 'package:omi/providers/note_ble_debug_provider.dart';
 import 'package:omi/providers/note_device_provider.dart';
+import 'package:omi/providers/note_file_list_provider.dart';
 import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/providers/people_provider.dart';
@@ -53,10 +55,6 @@ import 'package:omi/providers/sync_provider.dart';
 import 'package:omi/providers/task_integration_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/providers/user_provider.dart';
-import 'package:omi/providers/note_device_provider.dart';
-import 'package:omi/providers/note_ble_debug_provider.dart';
-import 'package:omi/providers/note_file_list_provider.dart';
-import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/services/notifications/action_item_notification_handler.dart';
@@ -313,7 +311,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => AudioRecordProvider()),
           ChangeNotifierProvider(create: (context) => SummaryProvider()),
           ChangeNotifierProvider(create: (context) => SyncProvider()),
-          // Note 设备相关 Providers
+          // Note 设备相关 Providers start
           ChangeNotifierProvider(create: (context) => NoteDeviceProvider()),
           ChangeNotifierProvider(create: (context) => NoteBleDebugProvider()),
           ChangeNotifierProvider(create: (context) => NoteFileListProvider()),
@@ -322,6 +320,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             update: (BuildContext context, deviceProvider, NoteOtaProvider? previous) =>
                 previous ?? NoteOtaProvider(deviceProvider),
           ),
+          // Note 设备相关 Providers end
           ChangeNotifierProvider(create: (context) => TaskIntegrationProvider()),
           ChangeNotifierProvider(create: (context) => SettingsProvider()),
           ChangeNotifierProvider(create: (context) => MemoProvider()),
