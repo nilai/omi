@@ -80,18 +80,37 @@ class _MicGainPageState extends State<MicGainPage> {
   Widget _buildSliderSection() {
     return Column(
       children: [
+        // 刻度数值
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 60),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(7, (index) {
+              final value = index * 5;
+              return Text(
+                '$value',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8E8E93),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 4),
         // 滑块控制行（减号、滑块、加号）
         Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // 减号按钮
             GestureDetector(
               onTap: _decreaseGain,
               child: Container(
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: const Color(0xFFE5E5EA),
                     width: 1,
@@ -110,73 +129,51 @@ class _MicGainPageState extends State<MicGainPage> {
 
             // 滑块区域（包含颜色轨道和滑块）
             Expanded(
-              child: Column(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  // 刻度数值
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: List.generate(7, (index) {
-                        final value = index * 5;
-                        return Text(
-                          '$value',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF8E8E93),
-                          ),
-                        );
-                      }),
+                  // 颜色渐变轨道背景
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF34C759), // 绿色 0-10
+                          Color(0xFF34C759), // 绿色到10
+                          Color(0xFFFF3B30), // 红色 10-20
+                          Color(0xFFFF3B30), // 红色到20
+                          Color(0xFF8E8E93), // 灰色 20-30
+                          Color(0xFF8E8E93), // 灰色到30
+                        ],
+                        stops: [0.0, 0.33, 0.33, 0.67, 0.67, 1.0],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  // 滑块和颜色轨道
-                  Stack(
-                    children: [
-                      // 颜色渐变轨道背景
-                      Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF34C759), // 绿色 0-10
-                              Color(0xFF34C759), // 绿色到10
-                              Color(0xFFFF3B30), // 红色 10-20
-                              Color(0xFFFF3B30), // 红色到20
-                              Color(0xFF8E8E93), // 灰色 20-30
-                              Color(0xFF8E8E93), // 灰色到30
-                            ],
-                            stops: [0.0, 0.33, 0.33, 0.67, 0.67, 1.0],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                        ),
-                      ),
-                      // 滑块（透明轨道，只显示thumb）
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: Colors.transparent,
-                          inactiveTrackColor: Colors.transparent,
-                          thumbColor: Colors.black,
-                          overlayColor: Colors.black.withOpacity(0.1),
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
-                          overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
-                          trackHeight: 0,
-                        ),
-                        child: Slider(
-                          value: _gainValue.toDouble(),
-                          min: _minGain.toDouble(),
-                          max: _maxGain.toDouble(),
-                          divisions: 6, // 0-30共6个刻度，每5一个
-                          onChanged: (value) {
-                            setState(() {
-                              _gainValue = value.toInt();
-                            });
-                          },
-                        ),
-                      ),
-                    ],
+                  // 滑块（透明轨道，只显示thumb）
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: Colors.transparent,
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: Colors.black,
+                      overlayColor: Colors.black.withOpacity(0.1),
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 28),
+                      trackHeight: 0,
+                    ),
+                    child: Slider(
+                      value: _gainValue.toDouble(),
+                      min: _minGain.toDouble(),
+                      max: _maxGain.toDouble(),
+                      divisions: 6, // 0-30共6个刻度，每5一个
+                      onChanged: (value) {
+                        setState(() {
+                          _gainValue = value.toInt();
+                        });
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -188,11 +185,11 @@ class _MicGainPageState extends State<MicGainPage> {
             GestureDetector(
               onTap: _increaseGain,
               child: Container(
-                width: 44,
-                height: 44,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: const Color(0xFFF2F2F7),
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: const Color(0xFFE5E5EA),
                     width: 1,

@@ -257,6 +257,10 @@ class $AssetsImagesGen {
   AssetGenImage get mpAppsIntegrationWorkIcon =>
       const AssetGenImage('assets/images/mp_apps_integration_work_icon.png');
 
+  /// File path: assets/images/mp_chat_no_msg_top_icon.png
+  AssetGenImage get mpChatNoMsgTopIcon =>
+      const AssetGenImage('assets/images/mp_chat_no_msg_top_icon.png');
+
   /// File path: assets/images/mp_feedback_detail_add.png
   AssetGenImage get mpFeedbackDetailAdd =>
       const AssetGenImage('assets/images/mp_feedback_detail_add.png');
@@ -692,9 +696,6 @@ class $AssetsImagesGen {
   AssetGenImage get youtubeLogo =>
       const AssetGenImage('assets/images/youtube_logo.png');
 
-  AssetGenImage get mpChatNoMsgTopIcon =>
-      const AssetGenImage('assets/images/mp_chat_no_msg_top_icon.png');
-
   /// List of all assets
   List<dynamic> get values => [
     a1,
@@ -749,6 +750,7 @@ class $AssetsImagesGen {
     mpAddExportUnchoose,
     mpAppIntegrationHelp,
     mpAppsIntegrationWorkIcon,
+    mpChatNoMsgTopIcon,
     mpFeedbackDetailAdd,
     mpFeedbackDetailAdded,
     mpIconMoreAddTag,
