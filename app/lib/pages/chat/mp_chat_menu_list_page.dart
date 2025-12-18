@@ -13,7 +13,7 @@ class MPChatMenuListPage extends StatefulWidget {
     return showDialog(
       context: context,
       barrierDismissible: true,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) => const MPChatMenuListPage(),
     );
   }
@@ -94,12 +94,12 @@ class _MPChatMenuListPageState extends State<MPChatMenuListPage> with SingleTick
                         color: Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 24,
                             offset: const Offset(-6, 0),
                           ),
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 40,
                             offset: const Offset(-12, 0),
                           ),
@@ -390,7 +390,7 @@ class _MenuContent extends StatelessWidget {
               width: 36,
               height: 36,
               decoration: BoxDecoration(
-                color: (item.iconColor ?? Colors.grey).withOpacity(0.15),
+                color: (item.iconColor ?? Colors.grey).withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: item.icon != null
