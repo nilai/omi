@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'mp_chat_people_memory_page.dart';
 import 'providers/mp_chat_menu_list_provider.dart';
 
 /// 聊天菜单列表页面
@@ -255,7 +256,7 @@ class _MenuContent extends StatelessWidget {
           ),
           onTap: () {
             Navigator.of(context).pop();
-            // TODO: 处理人物记忆
+            MPChatPeopleMemoryPage.show(context);
           },
         ),
       ],
