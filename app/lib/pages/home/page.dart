@@ -1,24 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:omi/backend/http/api/users.dart';
 import 'package:omi/backend/preferences.dart';
-import 'package:omi/backend/schema/app.dart';
 import 'package:omi/backend/schema/geolocation.dart';
 import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/main.dart';
-import 'package:omi/pages/apps/app_detail/app_detail.dart';
 import 'package:omi/pages/chat/mp_chat.dart';
-import 'package:omi/pages/chat/page.dart';
-import 'package:omi/pages/conversations/conversations_page.dart';
 import 'package:omi/pages/home/mp_page.dart';
 import 'package:omi/pages/memories/page.dart';
 import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
 import 'package:omi/pages/mp_newsetting/home/settings_cards_page.dart';
-import 'package:omi/pages/referral/referral_page.dart';
-import 'package:omi/pages/settings/data_privacy_page.dart';
-import 'package:omi/pages/settings/settings_drawer.dart';
 import 'package:omi/providers/app_provider.dart';
 import 'package:omi/providers/capture_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
@@ -29,12 +20,9 @@ import 'package:omi/services/notifications.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/audio/foreground.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
-import 'package:omi/utils/platform/platform_service.dart';
 import 'package:omi/utils/upload/mp_upload_client.dart';
-import 'package:omi/widgets/upgrade_alert.dart';
 import 'package:provider/provider.dart';
 
-import 'widgets/battery_info_widget.dart';
 import 'widgets/mp_home_tab_item_widget.dart';
 
 class HomePageWrapper extends StatefulWidget {
@@ -52,7 +40,9 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        context.read<DeviceProvider>().periodicConnect('coming from HomePageWrapper', boundDeviceOnly: true);
+        context
+            .read<DeviceProvider>()
+            .periodicConnect('coming from HomePageWrapper', boundDeviceOnly: false, autoConnectFirstDevice: true);
       }
       if (SharedPreferencesUtil().notificationsEnabled) {
         NotificationService.instance.register();
@@ -351,29 +341,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
   @override
   Widget build(BuildContext context) {
-   return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          body: GestureDetector(
-            onTap: () {
-              primaryFocus?.unfocus();
-            },
-            child: TabBarView(
-              controller: _tabController,
-              children: _pages,
-            ),
-          ),
-          bottomNavigationBar: Container(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            width: double.infinity,
-            color: Colors.white,
-            child: Consumer<HomeProvider>(
-      builder: (context, homeProvider, _) {
-        // Sync TabController with HomeProvider when tab is tapped
-        // if (_tabController.index != homeProvider.selectedIndex) {
-        //   _tabController.animateTo(homeProvider.selectedIndex);
-        // }
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      body: GestureDetector(
+        onTap: () {
+          primaryFocus?.unfocus();
+        },
+        child: TabBarView(
+          controller: _tabController,
+          children: _pages,
+        ),
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        width: double.infinity,
+        color: Colors.white,
+        child: Consumer<HomeProvider>(
+          builder: (context, homeProvider, _) {
+            // Sync TabController with HomeProvider when tab is tapped
+            // if (_tabController.index != homeProvider.selectedIndex) {
+            //   _tabController.animateTo(homeProvider.selectedIndex);
+            // }
 
-        return TabBar(
+            return TabBar(
               controller: _tabController,
               onTap: (index) {
                 HapticFeedback.mediumImpact();
@@ -421,10 +411,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                 ),
               ],
             );
-      },
-    ),
-          ),
-        );
+          },
+        ),
+      ),
+    );
 
     return Consumer<HomeProvider>(
       builder: (context, homeProvider, _) {
@@ -432,8 +422,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
         if (_tabController.index != homeProvider.selectedIndex) {
           _tabController.animateTo(homeProvider.selectedIndex);
         }
-
-        ;
       },
     );
     // return MyUpgradeAlert(

@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/api/device.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
-import 'package:omi/backend/http/api/device.dart';
 import 'package:omi/main.dart';
 import 'package:omi/pages/home/firmware_update.dart';
 import 'package:omi/providers/capture_provider.dart';
@@ -33,6 +33,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
   Timer? _reconnectionTimer; // 重连定时器
   DateTime? _reconnectAt; // 下次重连时间
   final int _connectionCheckSeconds = 15; // 连接检查间隔（秒）
+
+  /// Whether to auto-connect the first discovered unpaired device (是否自动连接第一个发现的未配对设备)
+  bool _autoConnectFirstDevice = false;
 
   bool _havingNewFirmware = false; // 是否有新固件
   bool get havingNewFirmware => _havingNewFirmware && pairedDevice != null && isConnected;
@@ -188,7 +191,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
   /// 每隔一定时间扫描并连接设备，直到连接成功
   /// @param printer 调试信息标识
   /// @param boundDeviceOnly 是否仅连接已绑定的设备
-  Future periodicConnect(String printer, {bool boundDeviceOnly = false}) async {
+  /// @param autoConnectFirstDevice 是否自动连接第一个发现的未配对设备
+  Future periodicConnect(String printer, {bool boundDeviceOnly = false, bool autoConnectFirstDevice = false}) async {
     _reconnectionTimer?.cancel();
     scan(t) async {
       debugPrint("Period connect seconds: $_connectionCheckSeconds, triggered timer at ${DateTime.now()}");
@@ -205,7 +209,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
         if (isConnecting) {
           return;
         }
-        await scanAndConnectToDevice();
+        await scanAndConnectToDevice(autoConnectFirstDevice: autoConnectFirstDevice);
       } else {
         t.cancel();
       }
@@ -217,8 +221,9 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
 
   /// 扫描并连接设备
   /// 先尝试直接重连已配对设备，失败后进行扫描
+  /// @param autoConnectFirstDevice 是否自动连接第一个发现的未配对设备
   /// @return 连接的设备对象，null 表示连接失败
-  Future<BtDevice?> _scanConnectDevice() async {
+  Future<BtDevice?> _scanConnectDevice({bool autoConnectFirstDevice = false}) async {
     var device = await _getConnectedDevice();
     if (device != null) {
       return device;
@@ -242,11 +247,21 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       }
     }
 
-    await ServiceManager.instance().device.discover(desirableDeviceId: pairedDeviceId);
+    // Set flag for auto-connecting first device
+    _autoConnectFirstDevice = autoConnectFirstDevice;
+
+    // If auto-connecting, scan without desirableDeviceId to discover all devices
+    if (autoConnectFirstDevice) {
+      Logger.debug('Scanning for unpaired devices, will auto-connect first found device');
+      await ServiceManager.instance().device.discover(desirableDeviceId: null);
+    } else {
+      await ServiceManager.instance().device.discover(desirableDeviceId: pairedDeviceId);
+    }
 
     // Waiting for the device connected (if any)
     await Future.delayed(const Duration(seconds: 2));
     if (connectedDevice != null) {
+      _autoConnectFirstDevice = false;
       return connectedDevice;
     }
     return null;
@@ -254,7 +269,8 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
 
   /// 扫描并连接到设备
   /// 主要的设备连接入口方法
-  Future scanAndConnectToDevice() async {
+  /// @param autoConnectFirstDevice 是否自动连接第一个发现的未配对设备
+  Future scanAndConnectToDevice({bool autoConnectFirstDevice = false}) async {
     updateConnectingStatus(true);
     if (isConnected) {
       if (connectedDevice == null) {
@@ -271,7 +287,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     }
 
     // else
-    var device = await _scanConnectDevice();
+    var device = await _scanConnectDevice(autoConnectFirstDevice: autoConnectFirstDevice);
     Logger.debug('inside scanAndConnectToDevice $device in device_provider');
     if (device != null) {
       var cDevice = await _getConnectedDevice();
@@ -541,15 +557,44 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
           _disconnectDebouncer.run(onDeviceDisconnected);
         }
         break;
-      default:
-        Logger.debug("Device connection state is not supported $state");
     }
   }
 
-  /// 设备列表变化回调（未实现）
+  /// 设备列表变化回调
+  /// 如果设置了自动连接标志，自动连接第一个发现的未配对设备
   /// @param devices 设备列表
   @override
-  void onDevices(List<BtDevice> devices) async {}
+  void onDevices(List<BtDevice> devices) async {
+    if (_autoConnectFirstDevice && devices.isNotEmpty && !isConnected && connectedDevice == null) {
+      // Find the first unpaired device (not in SharedPreferences)
+      final pairedDeviceId = SharedPreferencesUtil().btDevice.id;
+      BtDevice? deviceToConnect;
+
+      if (pairedDeviceId.isEmpty) {
+        // No paired device, connect to the first discovered device
+        deviceToConnect = devices.first;
+      } else {
+        // Find first device that is not the paired device
+        try {
+          deviceToConnect = devices.firstWhere((d) => d.id != pairedDeviceId);
+        } catch (e) {
+          // No unpaired device found
+          deviceToConnect = null;
+        }
+      }
+
+      if (deviceToConnect != null) {
+        Logger.debug('Auto-connecting to first discovered unpaired device: ${deviceToConnect.name}');
+        _autoConnectFirstDevice = false; // Reset flag before connecting
+        try {
+          await ServiceManager.instance().device.ensureConnection(deviceToConnect.id, force: true);
+          Logger.debug('Auto-connection initiated for device: ${deviceToConnect.name}');
+        } catch (e) {
+          Logger.debug('Auto-connection failed: $e');
+        }
+      }
+    }
+  }
 
   /// 设备服务状态变化回调（未实现）
   /// @param status 服务状态
