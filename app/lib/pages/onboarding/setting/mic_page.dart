@@ -167,10 +167,10 @@ class _MicGainPageState extends State<MicGainPage> {
                       value: _gainValue.toDouble(),
                       min: _minGain.toDouble(),
                       max: _maxGain.toDouble(),
-                      divisions: 6, // 0-30共6个刻度，每5一个
                       onChanged: (value) {
                         setState(() {
-                          _gainValue = value.toInt();
+                          // 拖拽到哪里就是最近的整数值
+                          _gainValue = value.round().clamp(_minGain, _maxGain);
                         });
                       },
                     ),
