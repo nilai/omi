@@ -15,7 +15,7 @@ class _MicGainPageState extends State<MicGainPage> {
   // 增益值范围
   static const int _minGain = 0;
   static const int _maxGain = 30;
-  static const int _stepValue = 5;
+  static const int _stepValue = 1;
 
   @override
   Widget build(BuildContext context) {
