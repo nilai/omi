@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-
 import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
@@ -94,16 +93,6 @@ class _MPPageContentState extends State<MPPageContent> {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: MPHomeUploadWidget(
-                    title: provider.uploadTitle,
-                    transferredCount: provider.uploadedCount,
-                    totalCount: provider.totalCount,
-                    percent: provider.uploadPercent,
-                    speedText: provider.speedText,
-                  ),
-                ),
-                Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,6 +136,16 @@ class _MPPageContentState extends State<MPPageContent> {
                         ],
                       ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: MPHomeUploadWidget(
+                    title: provider.uploadTitle,
+                    transferredCount: provider.uploadedCount,
+                    totalCount: provider.totalCount,
+                    percent: provider.uploadPercent,
+                    speedText: provider.speedText,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -205,7 +204,6 @@ class _MPPageContentState extends State<MPPageContent> {
       },
     );
   }
-  
 
   AppBar _buildAppBar(BuildContext context, MPHomePageProvider provider) {
     return AppBar(
@@ -216,127 +214,137 @@ class _MPPageContentState extends State<MPPageContent> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-            // Left circular icon button
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () {
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => FindDevicesPage(isFromOnboarding: false, goNext: () {}, onSkip: () {}, includeSkip: false,)),
-                );
-                
-              },
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  shape: BoxShape.circle,
-                  color:  Color(0xFFE0E0E0),
-                ),
-                child: const Icon(
-                  Icons.circle,
-                  color: Color(0xFF757575),
-                  size: 20,
-                ),
+          // Left circular icon button
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => FindDevicesPage(
+                          isFromOnboarding: false,
+                          goNext: () {},
+                          onSkip: () {},
+                          includeSkip: false,
+                        )),
+              );
+            },
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFE0E0E0),
+              ),
+              child: const Icon(
+                Icons.circle,
+                color: Color(0xFF757575),
+                size: 20,
               ),
             ),
-            const SizedBox(width: 16),
-            // Centered date selector
-            Expanded(
-              child: Center(
-                child: InkWell(
-                  onTap: () => _showDatePicker(context, provider),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          provider.selectedDate,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF111111),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.keyboard_arrow_down,
+          ),
+          const SizedBox(width: 16),
+          // Centered date selector
+          Expanded(
+            child: Center(
+              child: InkWell(
+                onTap: () => _showDatePicker(context, provider),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        provider.selectedDate,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                           color: Color(0xFF111111),
-                          size: 20,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Color(0xFF111111),
+                        size: 20,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 16),
-            // Search icon
-            IconButton(
-              icon: const Icon(Icons.search, color: Color(0xFF111111)),
-              // onPressed: provider.onSearchTap,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
-                );
-              },
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 16),
-            // Add icon
-            IconButton(
-              icon: const Icon(Icons.add, color: Color(0xFF111111)),
-              onPressed: () => _showAddRecordDialog(context, provider),
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-            ),
-          ],
+          ),
+          const SizedBox(width: 16),
+          // Search icon
+          IconButton(
+            icon: const Icon(Icons.search, color: Color(0xFF111111)),
+            // onPressed: provider.onSearchTap,
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
+              );
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 16),
+          // Add icon
+          IconButton(
+            icon: const Icon(Icons.add, color: Color(0xFF111111)),
+            onPressed: () => _showAddRecordDialog(context, provider),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
       ),
       elevation: 0,
       centerTitle: true,
     );
-     
   }
 
   Future<void> _showDatePicker(BuildContext context, MPHomePageProvider provider) async {
     MPCenterPopup.show(
-                  context: context,
-                  contentWidget: CalendarPopup(
-                    onDateSelected: (date) {
-                      print(date);
-                    },
-                 
-                  ),
-                );
+      context: context,
+      contentWidget: CalendarPopup(
+        onDateSelected: (date) {
+          print(date);
+        },
+      ),
+    );
   }
 
   Future<void> _showAddRecordDialog(BuildContext context, MPHomePageProvider provider) async {
-    RecordAudioOptionCard.show(context: context, onImportAudio: () {
-      _showImportAudioDialog(context);
-    },onStartRecording: () {
-      
-    },);
+    RecordAudioOptionCard.show(
+      context: context,
+      onImportAudio: () {
+        _showImportAudioDialog(context);
+      },
+      onStartRecording: () {},
+    );
   }
 
   void _showImportAudioDialog(BuildContext context) {
-    ImportAudioDialog.show(context: context, onImportFromFile: () async {
-      final file = await AudioPickerUtils.pickAudioFromFile();
-      debugPrint('pickAudioFromFile file: $file');
-      await _uploadAudioFile(file);
-    }, onImportFromAlbum: () async{
-      final file = await AudioPickerUtils.pickAudioFromAlbum();
-      debugPrint('pickAudioFromAlbum file: $file');
-      await _uploadAudioFile(file);
-    }, onImportFromOtherApp: () async {
-      final file = await AudioPickerUtils.pickAudioFromOtherApp(context);
-      debugPrint('pickAudioFromOtherApp file: $file');
-      await _uploadAudioFile(file);
-    },);
+    ImportAudioDialog.show(
+      context: context,
+      onImportFromFile: () async {
+        final file = await AudioPickerUtils.pickAudioFromFile();
+        debugPrint('pickAudioFromFile file: $file');
+        await _uploadAudioFile(file);
+      },
+      onImportFromAlbum: () async {
+        final file = await AudioPickerUtils.pickAudioFromAlbum();
+        debugPrint('pickAudioFromAlbum file: $file');
+        await _uploadAudioFile(file);
+      },
+      onImportFromOtherApp: () async {
+        final file = await AudioPickerUtils.pickAudioFromOtherApp(context);
+        debugPrint('pickAudioFromOtherApp file: $file');
+        await _uploadAudioFile(file);
+      },
+    );
   }
 
   Future<void> _uploadAudioFile(File? file) async {
@@ -356,7 +364,6 @@ class _MPPageContentState extends State<MPPageContent> {
         if (res != null) {
           // 保存 res 到本地数据库或其他存储方式
           // 刷新页面
-          
         }
       }
     }
@@ -483,7 +490,6 @@ class MPHomePageProvider extends ChangeNotifier {
   void onSearchTap() {
     debugPrint('Search tapped');
   }
-
 
   void onCardMore(MPMemoryItem item) {
     debugPrint('More tapped for ${item.headerText}');
