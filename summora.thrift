@@ -115,6 +115,7 @@ struct ExpertStruct {
     7: string chat_prompt,
     8: string feed_prompt,
     9: string feedback_cron_at,
+    10: bool cron_send,
 }
 
 struct ExpertMergeUserStruct {
@@ -422,7 +423,7 @@ struct CreateExpertRequest {
     6: string chat_prompt,
     7: string feedback_prompt,
     8: optional feedback_cron_at,
-    9: bool cron_send,
+    9: optional bool cron_send,
 }
 
 struct CreateExpertResponse {
@@ -433,7 +434,7 @@ struct CreateExpertResponse {
 struct UpdateExpertRequest {
     1: string expert_id,
     2: optional feedback_cron_at,
-    3: bool cron_send,
+    3: optional bool cron_send,
 }
 
 struct UpdateExpertResponse {
@@ -443,7 +444,7 @@ struct UpdateExpertResponse {
 struct UserAddExpertRequest {
     1: string expert_id,
     2: optional feedback_cron_at,
-    3: bool cron_send,
+    3: optional bool cron_send,
 }
 
 struct UserAddExpertResponse {
