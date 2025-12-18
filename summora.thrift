@@ -19,6 +19,7 @@ struct SpeakerStruct {
     3: string avatar,
     4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
     5: bool myself_voice,
+    6: string audio_url,
 }
 
 struct SpeakerWithDetailStruct {
@@ -114,6 +115,7 @@ struct ExpertStruct {
     7: string chat_prompt,
     8: string feed_prompt,
     9: string feedback_cron_at,
+    10: bool cron_send,
 }
 
 struct ExpertMergeUserStruct {
@@ -405,14 +407,26 @@ struct CreateExpertRequest {
     6: string chat_prompt,
     7: string feedback_prompt,
     8: optional feedback_cron_at,
+    9: optional bool cron_send,
 }
 
 struct CreateExpertResponse {
     255: BaseResp base_resp,
 }
 
+struct UpdateExpertRequest {
+    1: optional feedback_cron_at,
+    2: optional bool cron_send,
+}
+
+struct UpdateExpertResponse {
+    255: BaseResp base_resp,
+}
+
 struct UserAddExpertRequest {
     1: string expert_id,
+    2: optional feedback_cron_at,
+    3: optional bool cron_send,
 }
 
 struct UserAddExpertResponse {
@@ -571,6 +585,8 @@ service AppService {
     GetExpertDetailResponse GetExpertDetail(1: GetExpertDetailRequest req)
     // POST /api/v1/expert/create
     CreateExpertResponse CreateExpert(1: CreateExpertRequest req)
+    // POST /api/v1/expert/update
+    UpdateExpertResponse UpdateExpert(1: UpdateExpertRequest req)
     // POST /api/v1/expert/user_add
     UserAddExpertResponse UserAddExpert(1: UserAddExpertRequest req)
     // POST /api/v1/expert/user_cancel
