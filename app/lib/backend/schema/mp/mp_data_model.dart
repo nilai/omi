@@ -97,12 +97,16 @@ class MPTodoStruct {
   @JsonKey(name: 'deadline')
   final String deadline;
 
+  @JsonKey(name: 'status')
+  final int? status;
+
   MPTodoStruct({
     required this.id,
     required this.title,
     required this.owner,
     required this.priority,
     required this.deadline,
+    this.status,
   });
 
   factory MPTodoStruct.fromJson(Map<String, dynamic> json) => _$MPTodoStructFromJson(json);
@@ -286,21 +290,21 @@ class MPMemoStruct {
   final String content;
 
   @JsonKey(name: 'tags')
-  final List<String> tags;
+  final List<String>? tags;
 
   @JsonKey(name: 'create_at')
-  final int createAt;
+  final int? createAt;
 
   @JsonKey(name: 'relate_memory_id')
-  final int relateMemoryId;
+  final int? relateMemoryId;
 
   MPMemoStruct({
     required this.id,
     required this.title,
     required this.content,
-    required this.tags,
-    required this.createAt,
-    required this.relateMemoryId,
+    this.tags,
+    this.createAt,
+    this.relateMemoryId,
   });
 
   factory MPMemoStruct.fromJson(Map<String, dynamic> json) => _$MPMemoStructFromJson(json);

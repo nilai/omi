@@ -47,6 +47,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
       owner: MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
       priority: json['priority'] as String,
       deadline: json['deadline'] as String,
+      status: (json['status'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
@@ -56,6 +57,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'owner': instance.owner,
       'priority': instance.priority,
       'deadline': instance.deadline,
+      'status': instance.status,
     };
 
 MPSummaryConversationStruct _$MPSummaryConversationStructFromJson(
@@ -195,9 +197,9 @@ MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
       id: json['id'] as String,
       title: json['title'] as String,
       content: json['content'] as String,
-      tags: (json['tags'] as List<dynamic>).map((e) => e as String).toList(),
-      createAt: (json['create_at'] as num).toInt(),
-      relateMemoryId: (json['relate_memory_id'] as num).toInt(),
+      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      createAt: (json['create_at'] as num?)?.toInt(),
+      relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) =>

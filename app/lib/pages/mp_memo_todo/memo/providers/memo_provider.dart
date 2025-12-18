@@ -1,5 +1,9 @@
 // AI-generated START - Memo 状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_memo.dart' as mp_memo_api;
+import 'package:omi/backend/schema/mp/mp_data_model.dart';
+import 'package:omi/backend/schema/mp/mp_memo.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 
 /// Memo 任务数据模型
 class MemoTaskItem {
@@ -47,6 +51,10 @@ class MemoProvider with ChangeNotifier {
   // AI-generated START - 是否还有更多数据
   bool _hasMore = true;
   // AI-generated END - _hasMore
+
+  // AI-generated START - 分页游标
+  String _cursor = '';
+  // AI-generated END - _cursor
 
   // AI-generated START - 错误信息
   String? _error;
@@ -121,61 +129,40 @@ class MemoProvider with ChangeNotifier {
     setLoading(true);
     setError(null);
     _hasMore = true; // 重置 hasMore 状态
+    _cursor = ''; // 重置游标
     try {
-      // TODO: 从API或本地存储加载 Memo 数据
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
-      // AI-generated START - 默认测试数据
-      final now = DateTime.now();
-      _memos = [
-        MemoTaskItem(
-          id: '1',
-          title: '开发AI语音助手功能',
-          description: '实现语音识别、自然语言处理和智能对话功能，提升用户体验',
-          date: _formatDate(now.subtract(const Duration(days: 1))),
-          tags: ['AI', '产品功能'],
-        ),
-        MemoTaskItem(
-          id: '2',
-          title: '优化用户界面交互体验',
-          description: '简化操作流程,增加手势控制,提升用户满意度',
-          date: _formatDate(now.subtract(const Duration(days: 2))),
-          tags: ['UI/UX', '交互设计'],
-        ),
-        MemoTaskItem(
-          id: '3',
-          title: '探索新的商业合作',
-          description: '寻找潜在合作伙伴，拓展业务渠道，建立战略合作关系',
-          date: _formatDate(now.subtract(const Duration(days: 3))),
-          tags: ['商业', '合作'],
-        ),
-        MemoTaskItem(
-          id: '4',
-          title: '增加多语言支持功能',
-          description: '支持实时翻译,拓展国际市场',
-          date: _formatDate(now.subtract(const Duration(days: 4))),
-          tags: ['功能', '国际化'],
-        ),
-        MemoTaskItem(
-          id: '5',
-          title: '设计个性化推荐算法',
-          description: '根据用户习惯推荐内容和功能',
-          date: _formatDate(now.subtract(const Duration(days: 5))),
-          tags: ['算法', 'AI'],
-        ),
-        MemoTaskItem(
-          id: '6',
-          title: '开发团队协作工具',
-          description: '提升内部沟通效率,集成项目管理功能',
-          date: _formatDate(now.subtract(const Duration(days: 6))),
-          tags: ['工具', '协作'],
-        ),
-      ];
-      // AI-generated END - 默认测试数据
-      // 模拟：如果数据少于某个数量，则认为没有更多数据
-      _hasMore = _memos.length >= 6; // 这里可以根据实际API响应调整
+      // 调用 API 获取 Memo 列表
+      final request = MPGetMemoListRequest(
+        pageSize: 20, // 每页数量
+        cursor: _cursor, // 分页游标，首次加载为空字符串
+      );
+
+      final response = await mp_memo_api.getMemoList(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code != 0) {
+          setError(response.baseResp.message);
+          _memos = [];
+        } else {
+          // 将 API 返回的数据转换为 MemoTaskItem
+          _memos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
+          _hasMore = response.hasMore;
+          // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
+          // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 memo 的 id 作为 cursor
+          if (_memos.isNotEmpty) {
+            _cursor = _memos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
+          }
+        }
+      } else {
+        setError('获取 Memo 列表失败');
+        _memos = [];
+      }
+
       notifyListeners();
     } catch (e) {
       setError(e.toString());
+      debugPrint('加载 Memo 列表失败: $e');
     } finally {
       setLoading(false);
     }
@@ -189,24 +176,31 @@ class MemoProvider with ChangeNotifier {
     setFetching(true);
 
     try {
-      // TODO: 从API加载更多 Memo 数据
-      await Future.delayed(const Duration(milliseconds: 500)); // 模拟网络请求
+      // 调用 API 加载更多 Memo 数据
+      final request = MPGetMemoListRequest(
+        pageSize: 20, // 每页数量
+        cursor: _cursor, // 使用当前游标
+      );
 
-      // AI-generated START - 模拟加载更多数据
-      final now = DateTime.now();
-      final moreMemos = [
-        MemoTaskItem(
-          id: '${_memos.length + 1}',
-          title: '新增Memo任务${_memos.length + 1}',
-          description: '新增的Memo数据，用于测试上拉加载功能',
-          date: _formatDate(now.subtract(Duration(days: _memos.length + 7))),
-          tags: ['测试'],
-        ),
-      ];
-      _memos.addAll(moreMemos);
-      // 模拟：如果已加载超过10条，则认为没有更多数据
-      _hasMore = _memos.length < 10;
-      // AI-generated END - 模拟加载更多数据
+      final response = await mp_memo_api.getMemoList(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code != 0) {
+          debugPrint('加载更多 Memo 失败: ${response.baseResp.message}');
+        } else {
+          // 将 API 返回的数据转换为 MemoTaskItem 并追加到列表
+          final moreMemos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
+          _memos.addAll(moreMemos);
+          _hasMore = response.hasMore;
+          // 更新游标
+          if (moreMemos.isNotEmpty) {
+            _cursor = moreMemos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
+          }
+        }
+      } else {
+        debugPrint('加载更多 Memo 失败: 响应为空');
+      }
 
       notifyListeners();
     } catch (e) {
@@ -224,6 +218,46 @@ class MemoProvider with ChangeNotifier {
   }
   // AI-generated END - addMemo
 
+  // AI-generated START - 通过文本创建 Memo
+  /// 通过 API 使用文本内容创建 Memo
+  /// [content] Memo 的文本内容
+  /// [createAt] 创建时间戳（秒级），如果为 null 则使用当前时间
+  /// 返回 true 表示创建成功，false 表示创建失败
+  Future<void> createMemoWithText({
+    required String content,
+    int? createAt,
+  }) async {
+    try {
+      // 如果没有提供创建时间，使用当前时间戳（秒级）
+      final timestamp = createAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+      // 创建请求
+      final request = MPCreateMemoWithTextRequest(
+        content: content,
+        createAt: timestamp,
+      );
+
+      // 调用 API
+      final response = await mp_memo_api.createMemoWithText(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code == 0) {
+          MPToastUtils.showMessage('Memo 创建成功');
+          // 创建成功后，刷新列表
+          await loadMemos();
+        } else {
+          MPToastUtils.showMessage(response.baseResp.message);
+        }
+      } else {
+        MPToastUtils.showMessage('创建 Memo 失败: 响应为空');
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('创建 Memo 异常: $e');
+    }
+  }
+  // AI-generated END - createMemoWithText
+
   // AI-generated START - 更新 Memo 任务
   void updateMemo(String id, MemoTaskItem updatedMemo) {
     final index = _memos.indexWhere((m) => m.id == id);
@@ -235,9 +269,33 @@ class MemoProvider with ChangeNotifier {
   // AI-generated END - updateMemo
 
   // AI-generated START - 删除 Memo 任务
-  void deleteMemo(String id) {
-    _memos.removeWhere((m) => m.id == id);
-    notifyListeners();
+  /// 通过 API 删除 Memo 任务
+  /// [id] Memo 的 ID
+  /// 返回 true 表示删除成功，false 表示删除失败
+  Future<void> deleteMemo(String id) async {
+    try {
+      // 创建删除请求
+      final request = MPDeleteMemoRequest(memoId: id);
+
+      // 调用 API
+      final response = await mp_memo_api.deleteMemo(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code == 0) {
+          MPToastUtils.showMessage('Memo 删除成功');
+          // 从本地列表中删除
+          _memos.removeWhere((m) => m.id == id);
+          notifyListeners();
+        } else {
+          MPToastUtils.showMessage(response.baseResp.message);
+        }
+      } else {
+        MPToastUtils.showMessage('删除 Memo 失败: 响应为空');
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('删除 Memo 异常: $e');
+    }
   }
   // AI-generated END - deleteMemo
 
@@ -253,5 +311,36 @@ class MemoProvider with ChangeNotifier {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
   }
   // AI-generated END - _formatDate
+
+  // AI-generated START - 将 MPMemoStruct 转换为 MemoTaskItem
+  MemoTaskItem _convertToMemoTaskItem(MPMemoStruct memo) {
+    // 解析 createAt 时间戳（秒级）
+    DateTime createDate;
+    if (memo.createAt != null) {
+      try {
+        createDate = DateTime.fromMillisecondsSinceEpoch(memo.createAt! * 1000).toLocal();
+      } catch (e) {
+        // 如果解析失败，使用当前日期
+        debugPrint('解析 createAt 失败: ${memo.createAt}, 使用当前日期');
+        createDate = DateTime.now();
+      }
+    } else {
+      // 如果 createAt 为 null，使用当前日期
+      createDate = DateTime.now();
+    }
+
+    // 使用 content 作为 description，如果 content 太长则截取前50个字符作为 title
+    String title = memo.title;
+    String description = memo.content;
+
+    return MemoTaskItem(
+      id: memo.id,
+      title: title,
+      description: description,
+      date: _formatDate(createDate),
+      tags: memo.tags ?? [],
+    );
+  }
+  // AI-generated END - _convertToMemoTaskItem
 }
 // AI-generated END - memo_provider.dart

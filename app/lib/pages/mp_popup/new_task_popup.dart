@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 
 /// 任务优先级枚举
 enum TaskPriority {
-  low,    // 低优先级
+  low, // 低优先级
   normal, // 普通优先级
-  high,   // 高优先级
+  high, // 高优先级
 }
 
 /// 新建任务弹窗组件
@@ -48,7 +48,7 @@ class NewTaskPopup extends StatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-        
+
         return Padding(
           padding: EdgeInsets.only(bottom: keyboardHeight),
           child: GestureDetector(
@@ -94,22 +94,27 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(12.0),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // 顶部：关闭按钮、标题和完成按钮
           _buildHeader(context),
-          const SizedBox(height: 24.0),
+          const SizedBox(height: 12.0),
+          const Divider(
+            height: 1.0,
+            color: Color(0xFFE5E7EB),
+          ),
           // 任务标题输入框
           _buildTitleInput(),
           const SizedBox(height: 20.0),
           // Due date字段
           _buildDueDateField(context),
-          const SizedBox(height: 16.0),
+          const SizedBox(height: 12.0),
           // Priority字段
           _buildPriorityField(context),
+          const SizedBox(height: 20.0),
         ],
       ),
     );
@@ -132,16 +137,16 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
             }
           },
           child: Container(
-            width: 32.0,
-            height: 32.0,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
+            width: 40.0,
+            height: 40.0,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF3F4F6),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.close,
               size: 20.0,
-              color: Color(0xFF212121),
+              color: Color(0xFF374151),
             ),
           ),
         ),
@@ -149,25 +154,23 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
         const Text(
           '新建任务',
           style: TextStyle(
-            fontSize: 18.0,
+            fontSize: 14.0,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
+            color: Color(0xFF1F2937),
           ),
         ),
         // 完成按钮
         TextButton(
-          onPressed: _titleController.text.trim().isNotEmpty
-              ? () {
-                  if (widget.onComplete != null) {
-                    widget.onComplete!(
-                      _titleController.text.trim(),
-                      _dueDate,
-                      _priority,
-                    );
-                  }
-                  Navigator.of(context).pop();
-                }
-              : null,
+          onPressed: () {
+            if (widget.onComplete != null) {
+              widget.onComplete!(
+                _titleController.text.trim(),
+                _dueDate,
+                _priority,
+              );
+            }
+            Navigator.of(context).pop();
+          },
           style: TextButton.styleFrom(
             foregroundColor: const Color(0xFF2196F3),
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -175,8 +178,9 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           child: const Text(
             '完成',
             style: TextStyle(
-              fontSize: 16.0,
+              fontSize: 14.0,
               fontWeight: FontWeight.w600,
+              color: Color(0xFF2563EB),
             ),
           ),
         ),
@@ -194,32 +198,37 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
         TextField(
           controller: _titleController,
           maxLength: widget.maxTitleLength,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '输入任务标题...',
             hintStyle: TextStyle(
-              fontSize: 16.0,
-              color: Colors.grey[400],
+              fontSize: 14.0,
+              color: Color(0xFF9CA3AF),
             ),
             border: InputBorder.none,
             contentPadding: EdgeInsets.zero,
             counterText: '',
           ),
           style: const TextStyle(
-            fontSize: 16.0,
-            color: Color(0xFF212121),
+            fontSize: 14.0,
+            color: Color(0xFF374151),
           ),
           onChanged: (value) {
             setState(() {});
           },
         ),
         const SizedBox(height: 4.0),
+        const Divider(
+          height: 1.0,
+          color: Color(0xFFE5E7EB),
+        ),
+        const SizedBox(height: 8.0),
         // 字符计数
         Text(
           '${_titleController.text.length}/${widget.maxTitleLength}',
           textAlign: TextAlign.right,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 12.0,
-            color: Colors.grey[500],
+            color: Color(0xFF6B7280),
           ),
         ),
       ],
@@ -245,42 +254,45 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1.0,
-            ),
-          ),
+          color: Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16.0),
         ),
         child: Row(
           children: [
             Icon(
               Icons.calendar_today,
-              size: 20.0,
+              size: 16.0,
               color: Colors.grey[600],
             ),
-            const SizedBox(width: 12.0),
-            const Text(
-              'Due date',
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              _dueDate != null
-                  ? '${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')}'
-                  : '-/-/-',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: _dueDate != null ? const Color(0xFF212121) : Colors.grey[400],
-              ),
-            ),
             const SizedBox(width: 8.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Due date',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.normal,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 4.0),
+                  Text(
+                    _dueDate != null
+                        ? '${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')}'
+                        : '-/-/-',
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: _dueDate != null ? const Color(0xFF1F2937) : Colors.grey[400],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             if (_dueDate != null)
               GestureDetector(
                 onTap: () {
@@ -288,17 +300,17 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
                     _dueDate = null;
                   });
                 },
-                child: Icon(
+                child: const Icon(
                   Icons.close,
-                  size: 18.0,
-                  color: Colors.grey[400],
+                  size: 14.0,
+                  color: Color(0xFF4B5563),
                 ),
               )
             else
-              Icon(
+              const Icon(
                 Icons.calendar_today,
-                size: 18.0,
-                color: Colors.grey[400],
+                size: 14.0,
+                color: Color(0xFF4B5563),
               ),
           ],
         ),
@@ -320,7 +332,6 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.flag, color: Colors.grey),
                     title: const Text('低'),
                     onTap: () {
                       setState(() {
@@ -330,7 +341,6 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.flag, color: Colors.orange),
                     title: const Text('普通'),
                     onTap: () {
                       setState(() {
@@ -340,7 +350,6 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.flag, color: Colors.red),
                     title: const Text('高'),
                     onTap: () {
                       setState(() {
@@ -356,44 +365,48 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12.0),
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: Colors.grey[300]!,
-              width: 1.0,
-            ),
-          ),
+          color: Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(16.0),
         ),
         child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.flag,
               size: 20.0,
-              color: _getPriorityColor(),
+              color: Color(0xFF4B5563),
             ),
-            const SizedBox(width: 12.0),
-            const Text(
-              'Priority',
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF212121),
-              ),
-            ),
-            const Spacer(),
-            Text(
-              _getPriorityText(),
-              style: TextStyle(
-                fontSize: 16.0,
-                color: _priority != null ? const Color(0xFF212121) : Colors.grey[400],
+            const SizedBox(width: 8.0),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Priority',
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 2.0),
+                  Text(
+                    _getPriorityText(),
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: _priority != null ? const Color(0xFF1F2937) : Colors.grey[400],
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 8.0),
-            Icon(
+            const Icon(
               Icons.keyboard_arrow_down,
-              size: 20.0,
-              color: Colors.grey[400],
+              size: 16.0,
+              color: Color(0xFF000000),
             ),
           ],
         ),
@@ -418,22 +431,6 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
   }
   // AI-generated END - 获取优先级文本
 
-  // AI-generated START - 获取优先级颜色
-  /// 获取优先级颜色
-  Color _getPriorityColor() {
-    switch (_priority) {
-      case TaskPriority.low:
-        return Colors.grey;
-      case TaskPriority.normal:
-        return Colors.orange;
-      case TaskPriority.high:
-        return Colors.red;
-      case null:
-        return Colors.grey[400]!;
-    }
-  }
-  // AI-generated END - 获取优先级颜色
-
   // AI-generated START - 清理资源
   @override
   void dispose() {
@@ -443,4 +440,3 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
   // AI-generated END - 清理资源
 }
 // AI-generated END - new_task_popup.dart
-

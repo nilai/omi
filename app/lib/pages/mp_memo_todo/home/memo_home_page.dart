@@ -3,8 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/memo_todo_switch_card.dart';
 import 'package:omi/pages/mp_memo_todo/memo/memo_page.dart';
+import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
+import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/todo/todo_page.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import 'package:omi/pages/mp_popup/new_memo_popup.dart';
+import 'package:omi/pages/mp_popup/new_task_popup.dart';
+import 'package:provider/provider.dart';
 
 /// Memo/Todo 主页面
 /// 顶部显示切换卡片，根据选择显示 Memo 或 Todo 页面
@@ -54,6 +59,52 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
   }
   // AI-generated END - scrollToTop
 
+  // AI-generated START - 处理浮动按钮点击
+  void _onFloatingActionButtonPressed() {
+    if (_selectedType == MemoTodoType.memo) {
+      // 打开创建 Memo 的弹窗
+      NewMemoPopup.show(
+        context: context,
+        onSave: (content) async {
+          // 调用 API 创建 Memo
+          final memoProvider = Provider.of<MemoProvider>(context, listen: false);
+          await memoProvider.createMemoWithText(content: content);
+        },
+      );
+    } else {
+      // 打开创建 Todo 的弹窗
+      NewTaskPopup.show(
+        context: context,
+        onComplete: (title, dueDate, priority) async {
+          // 创建新的 Todo
+          final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+          final now = DateTime.now();
+          final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          final dateStr =
+              dueDate != null ? '${months[dueDate.month - 1]} ${dueDate.day}' : '${months[now.month - 1]} ${now.day}';
+
+          final priorityTag = priority != null
+              ? (priority == TaskPriority.high
+                  ? 'High'
+                  : priority == TaskPriority.normal
+                      ? 'Normal'
+                      : 'Low')
+              : 'Normal';
+
+          final newTodo = TodoTaskItem(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            title: title,
+            description: '', // Todo 可能没有描述，或者可以从其他地方获取
+            date: dateStr,
+            priorityTag: priorityTag,
+          );
+          await todoProvider.addTodo(newTodo);
+        },
+      );
+    }
+  }
+  // AI-generated END - _onFloatingActionButtonPressed
+
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {
@@ -90,6 +141,21 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
           // AI-generated END - 根据选择显示对应页面
         ],
       ),
+      // AI-generated START - 浮动操作按钮
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 60.0), // 避免与底部导航栏重叠
+        child: FloatingActionButton(
+          heroTag: 'memo_todo_fab',
+          onPressed: _onFloatingActionButtonPressed,
+          backgroundColor: Colors.blue,
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+            size: 32.0, // 增大图标尺寸
+          ),
+        ),
+      ),
+      // AI-generated END - 浮动操作按钮
     );
   }
   // AI-generated END - 构建方法

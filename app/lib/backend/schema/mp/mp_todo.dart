@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
@@ -17,8 +18,7 @@ class MPGetTodoListRequest {
     required this.cursor,
   });
 
-  factory MPGetTodoListRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetTodoListRequestFromJson(json);
+  factory MPGetTodoListRequest.fromJson(Map<String, dynamic> json) => _$MPGetTodoListRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetTodoListRequestToJson(this);
 }
@@ -45,8 +45,7 @@ class MPCreateTodoRequest {
     required this.deadline,
   });
 
-  factory MPCreateTodoRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPCreateTodoRequestFromJson(json);
+  factory MPCreateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPCreateTodoRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateTodoRequestToJson(this);
 }
@@ -61,10 +60,24 @@ class MPDoneTodoRequest {
     required this.todoId,
   });
 
-  factory MPDoneTodoRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPDoneTodoRequestFromJson(json);
+  factory MPDoneTodoRequest.fromJson(Map<String, dynamic> json) => _$MPDoneTodoRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDoneTodoRequestToJson(this);
+}
+
+// Delete Todo Request
+@JsonSerializable()
+class MPDeleteTodoRequest {
+  @JsonKey(name: 'todo_id')
+  final String todoId;
+
+  MPDeleteTodoRequest({
+    required this.todoId,
+  });
+
+  factory MPDeleteTodoRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteTodoRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteTodoRequestToJson(this);
 }
 
 // ========== Response Classes ==========
@@ -87,8 +100,7 @@ class MPGetTodoListResponse {
     required this.baseResp,
   });
 
-  factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetTodoListResponseFromJson(json);
+  factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetTodoListResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetTodoListResponseToJson(this);
 }
@@ -103,8 +115,7 @@ class MPCreateTodoResponse {
     required this.baseResp,
   });
 
-  factory MPCreateTodoResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPCreateTodoResponseFromJson(json);
+  factory MPCreateTodoResponse.fromJson(Map<String, dynamic> json) => _$MPCreateTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateTodoResponseToJson(this);
 }
@@ -119,9 +130,22 @@ class MPDoneTodoResponse {
     required this.baseResp,
   });
 
-  factory MPDoneTodoResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPDoneTodoResponseFromJson(json);
+  factory MPDoneTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDoneTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDoneTodoResponseToJson(this);
 }
 
+// Delete Todo Response
+@JsonSerializable()
+class MPDeleteTodoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteTodoResponse({
+    required this.baseResp,
+  });
+
+  factory MPDeleteTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteTodoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteTodoResponseToJson(this);
+}

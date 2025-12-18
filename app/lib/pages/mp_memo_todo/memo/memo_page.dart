@@ -202,14 +202,8 @@ class _MemoPageState extends State<MemoPage> {
             onTap: () {
               // TODO: 导航到 Memo 详情页面
             },
-            onDelete: () {
-              provider.deleteMemo(memo.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Memo 已删除'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+            onDelete: () async {
+              await provider.deleteMemo(memo.id);
             },
           );
         },

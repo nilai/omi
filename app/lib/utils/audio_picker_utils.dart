@@ -25,12 +25,16 @@ class AudioPickerUtils {
       }
 
       // 打开文件选择器
+      // Android上需要明确设置allowMultiple为false，确保单选模式
+      // 注意：某些Android文件管理器可能不尊重allowedExtensions过滤
+      // 为了确保音频文件能正确显示，我们使用custom类型并明确指定扩展名
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: audioExtensions,
         dialogTitle: '选择音频文件',
         withData: false,
         allowCompression: false,
+        allowMultiple: false,
       );
 
       if (result != null && result.files.isNotEmpty && result.files.single.path != null) {
@@ -43,11 +47,15 @@ class AudioPickerUtils {
           return null;
         }
 
-        // 验证音频格式
+        // 验证音频格式（Android上如果使用any类型，需要手动过滤）
         if (_isAudioFormatSupported(filePath)) {
           return file;
         } else {
           debugPrint('不支持的音频格式: $filePath');
+          // 在Android上，如果文件格式不支持，提示用户
+          if (Platform.isAndroid) {
+            debugPrint('请选择音频文件（mp3, m4a, wav, aac）');
+          }
           return null;
         }
       }
@@ -124,6 +132,7 @@ class AudioPickerUtils {
         allowedExtensions: audioExtensions,
         withData: false,
         allowCompression: false,
+        allowMultiple: false,
         dialogTitle: Platform.isIOS ? '选择音频文件' : '从相册选择音频',
       );
 

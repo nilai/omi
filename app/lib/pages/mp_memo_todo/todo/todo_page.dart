@@ -199,17 +199,15 @@ class _TodoPageState extends State<TodoPage> {
             description: todo.description,
             date: todo.date,
             priorityTag: todo.priorityTag,
+            status: todo.status,
             onTap: () {
               // TODO: 导航到 Todo 详情页面
             },
-            onComplete: () {
-              provider.completeTodo(todo.id);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Todo 已完成'),
-                  duration: Duration(seconds: 1),
-                ),
-              );
+            onComplete: () async {
+              await provider.completeTodo(todo.id);
+            },
+            onDelete: () async {
+              await provider.deleteTodo(todo.id);
             },
           );
         },
