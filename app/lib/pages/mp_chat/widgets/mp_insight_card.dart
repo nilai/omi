@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 import '../mp_insight_model.dart';
 
 /// Insights 卡片 Widget
@@ -127,4 +128,3 @@ class MPInsightCard extends StatelessWidget {
     );
   }
 }
-
