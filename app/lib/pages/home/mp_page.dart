@@ -352,8 +352,6 @@ class _MPPageContentState extends State<MPPageContent> {
       final uri = await MPAudioUploadService().uploadMPAudio(file);
       if (uri != null) {
         // 保存 uri 到本地数据库或其他存储方式
-// Future<MPCreateRecordResponse?> createRecord(MPCreateRecordRequest req)
-
         final req = MPCreateRecordRequest(
           recordFile: uri,
           createAt: DateTime.now().millisecondsSinceEpoch,
