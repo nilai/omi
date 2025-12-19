@@ -333,12 +333,12 @@ class _MPPageContentState extends State<MPPageContent> {
       onImportFromFile: () async {
         final file = await AudioPickerUtils.pickAudioFromFile();
         debugPrint('pickAudioFromFile file: $file');
-        await _uploadAudioFile(file);
+        await _uploadAudioFile(context, file);
       },
       onImportFromAlbum: () async {
         final file = await AudioPickerUtils.pickAudioFromAlbum();
         debugPrint('pickAudioFromAlbum file: $file');
-        await _uploadAudioFile(file);
+        await _uploadAudioFile(context, file);
       },
       onImportFromOtherApp: () async {
         MPToastUtils.showMessage('暂不支持从其他App导入音频');
@@ -346,7 +346,7 @@ class _MPPageContentState extends State<MPPageContent> {
     );
   }
 
-  Future<void> _uploadAudioFile(File? file) async {
+  Future<void> _uploadAudioFile(BuildContext context, File? file) async {
     // 保存 uri 到本地数据库或其他存储方式
     if (file != null) {
       final uri = await MPAudioUploadService().uploadMPAudio(file);
@@ -363,6 +363,8 @@ class _MPPageContentState extends State<MPPageContent> {
         if (res != null) {
           // 保存 res 到本地数据库或其他存储方式
           // 刷新页面
+          final provider = context.read<MPHomePageProvider>();
+          await provider.refresh();
         }
       }
     }
