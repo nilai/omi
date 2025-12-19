@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../backend/schema/bt_device/bt_device.dart';
 import '../../../services/services.dart';
 import '../../../utils/audio/wav_bytes.dart';
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
@@ -195,21 +194,43 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   }
 
   /// 保存音频块到文件
+  ///
+  /// 将录音数据块转换为 WAV 格式文件
+  /// 录音配置：PCM16, 16kHz, 单声道
   Future<File> _saveAudioChunksToFile() async {
     final tempDir = await getTemporaryDirectory();
     final wavFilePath = '${tempDir.path}/temp_recording.wav';
 
-    // 将 List<Uint8List> 转换为 List<List<int>>
-    List<List<int>> frames = _audioChunks.map((chunk) => chunk.toList()).toList();
+    // 检查是否有音频数据
+    if (_audioChunks.isEmpty) {
+      debugPrint('没有音频数据可保存');
+      throw Exception('没有音频数据可保存');
+    }
 
-    // 创建 WavBytesUtil 实例处理 PCM 数据
-    WavBytesUtil wavUtil = WavBytesUtil(codec: BleAudioCodec.pcm16, framesPerSecond: 100);
+    // 计算总字节数
+    final totalBytes = _audioChunks.fold<int>(0, (sum, chunk) => sum + chunk.length);
+    debugPrint('保存音频文件: 总字节数=$totalBytes, 块数=${_audioChunks.length}');
 
-    // 获取正确的 PCM 样本并转换为 WAV 字节
-    Int16List samples = wavUtil.getPcmSamples(frames);
-    Uint8List wavBytes = WavBytesUtil.getUInt8ListBytes(samples, 16000);
+    // 合并所有音频块为单个 Uint8List
+    final combinedPcm = Uint8List(totalBytes);
+    int offset = 0;
+    for (final chunk in _audioChunks) {
+      combinedPcm.setRange(offset, offset + chunk.length, chunk);
+      offset += chunk.length;
+    }
 
+    // 使用 WavBytes 类创建正确的 WAV 文件
+    // 参数：PCM 数据、采样率 16000、单声道
+    final wavBytes = WavBytes.fromPcm(
+      combinedPcm,
+      sampleRate: 16000,
+      numChannels: 1,
+    ).asBytes();
+
+    // 写入文件
     await File(wavFilePath).writeAsBytes(wavBytes);
+    debugPrint('音频文件保存成功: $wavFilePath, 文件大小=${wavBytes.length} bytes');
+
     return File(wavFilePath);
   }
 
