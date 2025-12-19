@@ -1,8 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:omi/pages/home/widgets/mp_home_card.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
+import 'package:omi/pages/mp_home/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
 
@@ -16,7 +16,7 @@ import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../onboarding/find_device/page.dart';
-import 'widgets/mp_home_upload_widget.dart';
+import 'mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
   const MPPage({super.key});
