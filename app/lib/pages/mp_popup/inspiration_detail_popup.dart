@@ -108,16 +108,21 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
               // 顶部：标题和关闭按钮
               _buildHeader(context),
               const SizedBox(height: 20.0),
+              Divider(
+                color: Colors.grey[200],
+                height: 1.0,
+              ),
+              const SizedBox(height: 20.0),
               // 主标题
               Text(
                 widget.title,
                 style: const TextStyle(
                   fontSize: 20.0,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF212121),
+                  color: Color(0xFF1F2937),
                 ),
               ),
-              const SizedBox(height: 12.0),
+              const SizedBox(height: 2.0),
               // 日期时间和标签
               Row(
                 children: [
@@ -125,21 +130,22 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
                     widget.dateTime,
                     style: TextStyle(
                       fontSize: 14.0,
-                      color: Colors.grey[600],
+                      color: Color(0xFF6B7280),
                     ),
                   ),
-                  if (widget.tags.isNotEmpty) ...[
-                    const SizedBox(width: 12.0),
+                  const SizedBox(width: 8.0),
+                  // 总是显示标签区域，如果为空则显示空的 tag
+                  if (widget.tags.isNotEmpty)
                     ...widget.tags.map((tag) => Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: _buildTag(tag),
-                        )),
-                  ],
+                        ))
                 ],
               ),
-              const SizedBox(height: 20.0),
+              const SizedBox(height: 12.0),
               // 内容输入框（可编辑）
-              Flexible(
+              SizedBox(
+                height: 160.0,
                 child: TextField(
                   controller: _contentController,
                   maxLines: null,
@@ -148,19 +154,23 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
                   decoration: InputDecoration(
                     hintText: '输入内容...',
                     hintStyle: TextStyle(
-                      fontSize: 16.0,
-                      color: Colors.grey[400],
+                      fontSize: 14.0,
+                      color: Color(0xFF374151),
                     ),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
                   ),
                   style: const TextStyle(
-                    fontSize: 16.0,
-                    color: Color(0xFF212121),
-                    height: 1.5,
+                    fontSize: 14.0,
+                    color: Color(0xFF374151),
+                    height: 1.2,
                   ),
                 ),
+              ),
+              const Divider(
+                color: Color(0xFFE5E7EB),
+                height: 1.0,
               ),
               const SizedBox(height: 24.0),
               // 保存按钮
@@ -189,8 +199,8 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
           '灵感详情',
           style: TextStyle(
             fontSize: 18.0,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF212121),
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF1F2937),
           ),
         ),
         GestureDetector(
@@ -201,18 +211,10 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
               Navigator.of(context).pop();
             }
           },
-          child: Container(
-            width: 32.0,
-            height: 32.0,
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.close,
-              size: 20.0,
-              color: Color(0xFF212121),
-            ),
+          child: const Icon(
+            Icons.close,
+            size: 20.0,
+            color: Color(0xFF6B7280),
           ),
         ),
       ],
@@ -223,18 +225,22 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
   // AI-generated START - 构建标签
   /// 构建标签
   Widget _buildTag(String tag) {
+    if (tag.isEmpty) {
+      return const SizedBox.shrink();
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      height: 24,
+      padding: const EdgeInsets.symmetric(horizontal: 2.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD), // 浅蓝色背景
+        color: const Color(0xFFEFF6FF), // 浅蓝色背景
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Text(
         tag,
         style: const TextStyle(
           fontSize: 12.0,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF2196F3), // 蓝色文字
+          fontWeight: FontWeight.w400,
+          color: Color(0xFF2563EB), // 蓝色文字
         ),
       ),
     );
@@ -252,7 +258,7 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
         Navigator.of(context).pop();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF9C27B0), // 紫色
+        backgroundColor: const Color(0xFF9333EA), // 紫色
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16.0),
         shape: RoundedRectangleBorder(
@@ -263,7 +269,7 @@ class _InspirationDetailPopupState extends State<InspirationDetailPopup> {
       child: const Text(
         'Save Memo',
         style: TextStyle(
-          fontSize: 16.0,
+          fontSize: 18.0,
           fontWeight: FontWeight.w600,
         ),
       ),

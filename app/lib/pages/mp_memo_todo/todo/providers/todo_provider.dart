@@ -231,11 +231,6 @@ class TodoProvider with ChangeNotifier {
     try {
       // 获取用户ID
       final ownerId = SharedPreferencesUtil().uid;
-      if (ownerId.isEmpty) {
-        debugPrint('创建 Todo 失败: 用户ID为空');
-        return false;
-      }
-
       // 如果没有提供截止日期，使用当前日期
       final deadlineStr = deadline ?? DateTime.now().toIso8601String().split('T')[0];
 

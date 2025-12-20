@@ -156,7 +156,7 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
               borderRadius: BorderRadius.circular(16.0),
             ),
             alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20.0),
+            padding: const EdgeInsets.only(right: 24.0),
             child: GestureDetector(
               onTap: _handleDeleteClick,
               child: const Text(
@@ -177,6 +177,13 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
           animation: _slideAnimation,
           builder: (context, child) {
             final offset = _animationController.isAnimating ? _slideAnimation.value : _dragOffset;
+            // 根据滑动状态动态设置圆角：滑动时只有左侧圆角，不滑动时四个角都有圆角
+            final borderRadius = offset < 0
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(12.0),
+                    bottomLeft: Radius.circular(12.0),
+                  )
+                : BorderRadius.circular(12.0);
             return Transform.translate(
               offset: Offset(offset, 0),
               child: GestureDetector(
@@ -194,7 +201,7 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
                   margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.0),
+                    borderRadius: borderRadius,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withValues(alpha: 0.1),
@@ -224,7 +231,7 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
                               ),
                               // AI-generated END - 标题
 
-                              const SizedBox(height: 8.0),
+                              const SizedBox(height: 4.0),
 
                               // AI-generated START - 描述
                               Text(
@@ -239,7 +246,7 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
                               ),
                               // AI-generated END - 描述
 
-                              const SizedBox(height: 12.0),
+                              const SizedBox(height: 2.0),
 
                               // AI-generated START - 日期和标签
                               Row(

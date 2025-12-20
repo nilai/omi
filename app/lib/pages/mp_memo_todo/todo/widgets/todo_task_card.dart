@@ -15,7 +15,7 @@ class TodoTaskCard extends StatefulWidget {
   // AI-generated END - title
 
   // AI-generated START - 任务描述
-  final String description;
+  final String? description;
   // AI-generated END - description
 
   // AI-generated START - 任务日期（格式：YYYY-MM-DD 或 Dec 16）
@@ -46,7 +46,7 @@ class TodoTaskCard extends StatefulWidget {
     super.key,
     required this.id,
     required this.title,
-    required this.description,
+    this.description,
     required this.date,
     this.status,
     this.priorityTag,
@@ -95,13 +95,13 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'high':
-        return Colors.red;
+        return const Color(0xFFEF4444);
       case 'normal':
-        return Colors.orange;
+        return const Color(0xFFF97316);
       case 'low':
-        return Colors.grey;
+        return const Color(0xFF9CA3AF);
       default:
-        return Colors.grey;
+        return const Color(0xFF9CA3AF);
     }
   }
   // AI-generated END - _getPriorityColor
@@ -197,11 +197,11 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             decoration: BoxDecoration(
-              color: Colors.green,
+              color: _isCompleted() ? const Color(0xFFEF4444) : const Color(0xFF22C55E),
               borderRadius: BorderRadius.circular(16.0),
             ),
             alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 20.0),
+            padding: const EdgeInsets.only(right: 24.0),
             child: GestureDetector(
               onTap: _handleCompleteClick,
               child: Text(
@@ -222,6 +222,13 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
           animation: _slideAnimation,
           builder: (context, child) {
             final offset = _animationController.isAnimating ? _slideAnimation.value : _dragOffset;
+            // 根据滑动状态动态设置圆角：滑动时只有左侧圆角，不滑动时四个角都有圆角
+            final borderRadius = offset < 0
+                ? const BorderRadius.only(
+                    topLeft: Radius.circular(12.0),
+                    bottomLeft: Radius.circular(12.0),
+                  )
+                : BorderRadius.circular(12.0);
             return Transform.translate(
               offset: Offset(offset, 0),
               child: GestureDetector(
@@ -236,10 +243,10 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
                   }
                 },
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(12.0),
+                    borderRadius: borderRadius,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.grey.withValues(alpha: 0.1),
@@ -249,122 +256,95 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
+                    padding: const EdgeInsets.only(left: 12.0, right: 12.0, top: 12.0, bottom: 4.0),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // AI-generated START - 左侧内容区域
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // AI-generated START - 标题
-                              Text(
+                        // 完成状态图标和标题
+                        Row(
+                          children: [
+                            // 完成状态图标（仅在完成时显示）
+                            if (_isCompleted()) ...[
+                              Container(
+                                width: 20.0,
+                                height: 20.0,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF3B82F6),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.check,
+                                  color: Colors.white,
+                                  size: 14.0,
+                                ),
+                              ),
+                              const SizedBox(width: 8.0),
+                            ],
+                            Expanded(
+                              child: Text(
                                 widget.title,
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 16.0,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              // AI-generated END - 标题
-
-                              const SizedBox(height: 8.0),
-
-                              // AI-generated START - 描述
-                              Text(
-                                widget.description,
                                 style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color: _isCompleted() ? Colors.grey.shade500 : const Color(0xFF1F2937),
                                   fontSize: 14.0,
-                                  height: 1.4,
+                                  fontWeight: FontWeight.w400,
+                                  decoration: _isCompleted() ? TextDecoration.lineThrough : null,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                              // AI-generated END - 描述
-
-                              const SizedBox(height: 12.0),
-
-                              // AI-generated START - 日期和优先级标签
-                              Row(
-                                children: [
-                                  // 日期（带日历图片）
-                                  Row(
+                            ),
+                          ],
+                        ),
+                        // const SizedBox(height: 4.0),
+                        // Text(
+                        //   widget.description ?? '',
+                        //   style: TextStyle(
+                        //     color: _isCompleted() ? Colors.grey.shade400 : Colors.grey.shade700,
+                        //     fontSize: 14.0,
+                        //     height: 1.4,
+                        //     decoration: _isCompleted() ? TextDecoration.lineThrough : null,
+                        //   ),
+                        //   maxLines: 2,
+                        //   overflow: TextOverflow.ellipsis,
+                        // ),
+                        Row(
+                          children: [
+                            // 日期（带日历图片）
+                            Expanded(
+                                child: Row(
+                              children: [
+                                Container(
+                                  height: 32.0,
+                                  width: 84.0,
+                                  decoration: BoxDecoration(
+                                    color: _isCompleted() ? const Color(0xFFF3F4F6) : const Color(0xFFF0FDF4),
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Image.asset(
                                         'assets/images/mp_todo_cancendar.png',
-                                        width: 14.0,
-                                        height: 14.0,
+                                        width: 16.0,
+                                        height: 16.0,
                                         fit: BoxFit.contain,
                                       ),
                                       const SizedBox(width: 4.0),
                                       Text(
                                         widget.date,
                                         style: TextStyle(
-                                          color: Colors.grey.shade600,
+                                          color: _isCompleted() ? const Color(0xFF9CA3AF) : const Color(0xFF16A34A),
                                           fontSize: 12.0,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  if (widget.priorityTag != null && widget.priorityTag!.isNotEmpty) ...[
-                                    const SizedBox(width: 12.0),
-                                    // 优先级标签
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10.0,
-                                        vertical: 4.0,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: _getPriorityColor(widget.priorityTag!),
-                                        borderRadius: BorderRadius.circular(12.0),
-                                      ),
-                                      child: Text(
-                                        widget.priorityTag!,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12.0,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              // AI-generated END - 日期和优先级标签
-                            ],
-                          ),
+                                ),
+                                _buildPriorityTag(),
+                              ],
+                            )),
+                            const SizedBox(width: 8.0),
+                            _buildRightAction(),
+                          ],
                         ),
-                        // AI-generated END - 左侧内容区域
-
-                        const SizedBox(width: 12.0),
-
-                        // AI-generated START - 右侧操作按钮
-                        GestureDetector(
-                          onTap: () {
-                            HapticFeedback.lightImpact();
-                            widget.onTap?.call();
-                          },
-                          child: Container(
-                            width: 36.0,
-                            height: 36.0,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF007AFF),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Image.asset(
-                                'assets/images/mp_todo_edit.png',
-                                width: 20.0,
-                                height: 20.0,
-                                fit: BoxFit.contain,
-                              ),
-                            ),
-                          ),
-                        ),
-                        // AI-generated END - 右侧操作按钮
                       ],
                     ),
                   ),
@@ -373,8 +353,59 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
             );
           },
         ),
-        // AI-generated END - 可滑动的卡片
       ],
+    );
+  }
+
+  Widget _buildPriorityTag() {
+    final isCompleted = _isCompleted();
+    return Visibility(
+        visible: widget.priorityTag != null && widget.priorityTag!.isNotEmpty,
+        child: Padding(
+            padding: const EdgeInsets.only(left: 12.0),
+            child: Container(
+              height: 32.0,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+              ),
+              decoration: BoxDecoration(
+                color: isCompleted ? const Color(0xFFD1D5DB) : _getPriorityColor(widget.priorityTag!),
+                borderRadius: BorderRadius.circular(16.0),
+              ),
+              child: Center(
+                child: Text(
+                  widget.priorityTag!,
+                  style: TextStyle(
+                    color: isCompleted ? const Color(0xFF6B7280) : Colors.white,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            )));
+  }
+
+  /// 判断任务是否已完成
+  /// 任务状态：1-进行中，0-已删除，2-已完成, 3-已超期
+  bool _isCompleted() {
+    return widget.status == 2;
+  }
+
+  Widget _buildRightAction() {
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onTap?.call();
+      },
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Image.asset(
+          'assets/images/mp_todo_edit.png',
+          width: 32.0,
+          height: 32.0,
+          fit: BoxFit.contain,
+        ),
+      ),
     );
   }
 }
