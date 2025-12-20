@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:omi/pages/chat/providers/mp_chat_people_memory_provider.dart';
+import 'package:omi/pages/mp_chat/providers/mp_chat_people_memory_provider.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
 import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';

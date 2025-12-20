@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/search_tasks_card.dart';
 import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/todo/widgets/todo_task_card.dart';
+import 'package:omi/pages/mp_popup/new_task_popup.dart';
 import 'package:provider/provider.dart';
 
 /// Todo 页面
@@ -201,7 +202,20 @@ class _TodoPageState extends State<TodoPage> {
             priorityTag: todo.priorityTag,
             status: todo.status,
             onTap: () {
-              // TODO: 导航到 Todo 详情页面
+              NewTaskPopup.show(
+                context: context,
+                showMarkComplete: true, // 显示 Mark complete 复选框
+                showDeleteTask: true, // 显示删除任务按钮
+                isCompleted: false, // 初始完成状态
+                onDelete: () async {
+                  await provider.deleteTodo(todo.id);
+                  // 处理删除操作
+                },
+                onComplete: (title, dueDate, priority) async {
+                  // 处理完成操作
+                  await provider.completeTodo(todo.id);
+                },
+              );
             },
             onComplete: () async {
               await provider.completeTodo(todo.id);

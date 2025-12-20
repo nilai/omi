@@ -5,9 +5,9 @@ import 'package:omi/backend/http/api/users.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/geolocation.dart';
 import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/pages/chat/mp_chat.dart';
-import 'package:omi/pages/home/mp_page.dart';
 import 'package:omi/pages/memories/page.dart';
+import 'package:omi/pages/mp_chat/mp_chat.dart';
+import 'package:omi/pages/mp_home/mp_page.dart';
 import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
 import 'package:omi/pages/mp_newsetting/home/settings_cards_page.dart';
 import 'package:omi/providers/app_provider.dart';
@@ -23,7 +23,7 @@ import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/upload/mp_upload_client.dart';
 import 'package:provider/provider.dart';
 
-import 'widgets/mp_home_tab_item_widget.dart';
+import '../mp_home/mp_home_tab_item_widget.dart';
 
 class HomePageWrapper extends StatefulWidget {
   final String? navigateToRoute;

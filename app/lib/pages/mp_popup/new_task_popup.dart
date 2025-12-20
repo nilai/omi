@@ -14,11 +14,31 @@ class NewTaskPopup extends StatefulWidget {
   // AI-generated START - 构造函数
   const NewTaskPopup({
     super.key,
+    this.title,
+    this.initialTitle,
+    this.initialDueDate,
+    this.initialPriority,
     this.onComplete,
     this.onCancel,
     this.maxTitleLength = 200,
+    this.showMarkComplete = false,
+    this.showDeleteTask = false,
+    this.isCompleted = false,
+    this.onDelete,
   });
   // AI-generated END - 构造函数
+
+  /// 弹窗标题（头部显示的标题）
+  final String? title;
+
+  /// 初始任务标题（用于回显）
+  final String? initialTitle;
+
+  /// 初始截止日期（用于回显）
+  final DateTime? initialDueDate;
+
+  /// 初始优先级（用于回显）
+  final TaskPriority? initialPriority;
 
   /// 完成回调，参数为任务标题、截止日期和优先级
   final Function(String title, DateTime? dueDate, TaskPriority? priority)? onComplete;
@@ -29,6 +49,18 @@ class NewTaskPopup extends StatefulWidget {
   /// 标题最大字符长度（默认200）
   final int maxTitleLength;
 
+  /// 是否显示 Mark complete 复选框
+  final bool showMarkComplete;
+
+  /// 是否显示删除任务按钮
+  final bool showDeleteTask;
+
+  /// 是否已完成（用于 Mark complete 复选框的初始状态）
+  final bool isCompleted;
+
+  /// 删除任务回调
+  final VoidCallback? onDelete;
+
   // AI-generated START - 创建状态
   @override
   State<NewTaskPopup> createState() => _NewTaskPopupState();
@@ -38,9 +70,17 @@ class NewTaskPopup extends StatefulWidget {
   /// 显示新建任务弹窗（底部显示）
   static Future<T?> show<T>({
     required BuildContext context,
+    String? title,
+    String? initialTitle,
+    DateTime? initialDueDate,
+    TaskPriority? initialPriority,
     Function(String title, DateTime? dueDate, TaskPriority? priority)? onComplete,
     VoidCallback? onCancel,
     int maxTitleLength = 200,
+    bool showMarkComplete = false,
+    bool showDeleteTask = false,
+    bool isCompleted = false,
+    VoidCallback? onDelete,
   }) {
     return showModalBottomSheet<T>(
       context: context,
@@ -63,9 +103,17 @@ class NewTaskPopup extends StatefulWidget {
               ),
               child: SafeArea(
                 child: NewTaskPopup(
+                  title: title,
+                  initialTitle: initialTitle,
+                  initialDueDate: initialDueDate,
+                  initialPriority: initialPriority,
                   onComplete: onComplete,
                   onCancel: onCancel ?? () => Navigator.of(context).pop(),
                   maxTitleLength: maxTitleLength,
+                  showMarkComplete: showMarkComplete,
+                  showDeleteTask: showDeleteTask,
+                  isCompleted: isCompleted,
+                  onDelete: onDelete,
                 ),
               ),
             ),
@@ -79,7 +127,7 @@ class NewTaskPopup extends StatefulWidget {
 
 class _NewTaskPopupState extends State<NewTaskPopup> {
   // AI-generated START - 文本编辑控制器
-  final TextEditingController _titleController = TextEditingController();
+  late final TextEditingController _titleController;
   // AI-generated END - 文本编辑控制器
 
   // AI-generated START - 截止日期
@@ -89,6 +137,25 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
   // AI-generated START - 优先级
   TaskPriority? _priority;
   // AI-generated END - 优先级
+
+  // AI-generated START - 完成状态
+  late bool _isCompleted;
+  // AI-generated END - 完成状态
+
+  // AI-generated START - 初始化状态
+  @override
+  void initState() {
+    super.initState();
+    // 初始化文本控制器，如果有初始标题则设置
+    _titleController = TextEditingController(text: widget.initialTitle ?? '');
+    // 初始化截止日期
+    _dueDate = widget.initialDueDate;
+    // 初始化优先级
+    _priority = widget.initialPriority;
+    // 初始化完成状态
+    _isCompleted = widget.isCompleted;
+  }
+  // AI-generated END - 初始化状态
 
   // AI-generated START - 构建方法
   @override
@@ -109,12 +176,22 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           // 任务标题输入框
           _buildTitleInput(),
           const SizedBox(height: 20.0),
+          // Mark complete复选框（如果启用）
+          if (widget.showMarkComplete) ...[
+            _buildCompleteCheckbox(),
+            const SizedBox(height: 20.0),
+          ],
           // Due date字段
           _buildDueDateField(context),
           const SizedBox(height: 12.0),
           // Priority字段
           _buildPriorityField(context),
           const SizedBox(height: 20.0),
+          // 删除任务按钮（如果启用）
+          if (widget.showDeleteTask) ...[
+            _buildDeleteButton(context),
+            const SizedBox(height: 12.0),
+          ],
         ],
       ),
     );
@@ -151,9 +228,9 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           ),
         ),
         // 标题
-        const Text(
-          '新建任务',
-          style: TextStyle(
+        Text(
+          widget.title ?? '新建任务',
+          style: const TextStyle(
             fontSize: 14.0,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1F2937),
@@ -199,7 +276,7 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           controller: _titleController,
           maxLength: widget.maxTitleLength,
           decoration: const InputDecoration(
-            hintText: '输入任务标题...',
+            hintText: '输入任务详情...',
             hintStyle: TextStyle(
               fontSize: 14.0,
               color: Color(0xFF9CA3AF),
@@ -256,15 +333,16 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
         decoration: BoxDecoration(
-          color: Color(0xFFF9FAFB),
+          color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16.0),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today,
-              size: 16.0,
-              color: Colors.grey[600],
+            Image.asset(
+              'assets/images/mp_todo_add_canlendar.png',
+              width: 17.0,
+              height: 16.0,
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8.0),
             Expanded(
@@ -367,15 +445,16 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
         decoration: BoxDecoration(
-          color: Color(0xFFF9FAFB),
+          color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16.0),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.flag,
-              size: 20.0,
-              color: Color(0xFF4B5563),
+            Image.asset(
+              'assets/images/mp_todo_add_priority.png',
+              width: 17.0,
+              height: 24.0,
+              fit: BoxFit.contain,
             ),
             const SizedBox(width: 8.0),
             Expanded(
@@ -430,6 +509,71 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
     }
   }
   // AI-generated END - 获取优先级文本
+
+  // AI-generated START - 构建完成复选框
+  /// 构建Mark complete复选框
+  Widget _buildCompleteCheckbox() {
+    return Row(
+      children: [
+        Checkbox(
+          value: _isCompleted,
+          onChanged: (value) {
+            setState(() {
+              _isCompleted = value ?? false;
+            });
+          },
+        ),
+        const Text(
+          'Mark complete',
+          style: TextStyle(
+            fontSize: 14.0,
+            color: Color(0xFF1F2937),
+          ),
+        ),
+      ],
+    );
+  }
+  // AI-generated END - 构建完成复选框
+
+  // AI-generated START - 构建删除按钮
+  /// 构建删除任务按钮
+  Widget _buildDeleteButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        if (widget.onDelete != null) {
+          widget.onDelete!();
+        }
+        Navigator.of(context).pop();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.delete_outline,
+              size: 20.0,
+              color: Colors.red[400],
+            ),
+            const SizedBox(width: 8.0),
+            Text(
+              '删除任务',
+              style: TextStyle(
+                fontSize: 14.0,
+                color: Colors.red[400],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  // AI-generated END - 构建删除按钮
 
   // AI-generated START - 清理资源
   @override

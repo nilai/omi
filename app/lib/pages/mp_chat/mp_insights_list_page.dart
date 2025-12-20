@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/mp_insights_list_provider.dart';
 import 'widgets/mp_insight_card.dart';
 
@@ -31,8 +32,7 @@ class _MPInsightsListPageState extends State<MPInsightsListPage> {
   /// 滚动监听，实现上拉加载更多
   void _onScroll() {
     final provider = context.read<MPInsightsListProvider>();
-    if (_scrollController.position.pixels >=
-            _scrollController.position.maxScrollExtent - 200 &&
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
         !provider.isLoadingMore &&
         provider.hasMore) {
       provider.loadMore();
@@ -144,4 +144,3 @@ class _MPInsightsListPageState extends State<MPInsightsListPage> {
     );
   }
 }
-

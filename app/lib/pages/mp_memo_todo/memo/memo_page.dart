@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/search_tasks_card.dart';
 import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
 import 'package:omi/pages/mp_memo_todo/memo/widgets/memo_task_card.dart';
+import 'package:omi/pages/mp_popup/inspiration_detail_popup.dart';
 import 'package:provider/provider.dart';
 
 /// Memo 页面
@@ -200,7 +201,16 @@ class _MemoPageState extends State<MemoPage> {
             date: memo.date,
             tags: memo.tags,
             onTap: () {
-              // TODO: 导航到 Memo 详情页面
+              InspirationDetailPopup.show(
+                context: context,
+                title: memo.title,
+                content: memo.description,
+                dateTime: memo.date,
+                tags: memo.tags,
+                onSave: (content) {
+                  provider.createMemoWithText(content: content);
+                },
+              );
             },
             onDelete: () async {
               await provider.deleteMemo(memo.id);

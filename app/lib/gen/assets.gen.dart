@@ -417,6 +417,14 @@ class $AssetsImagesGen {
   AssetGenImage get mpStartRecordingIcon =>
       const AssetGenImage('assets/images/mp_start_recording_icon.png');
 
+  /// File path: assets/images/mp_todo_add_canlendar.png
+  AssetGenImage get mpTodoAddCanlendar =>
+      const AssetGenImage('assets/images/mp_todo_add_canlendar.png');
+
+  /// File path: assets/images/mp_todo_add_priority.png
+  AssetGenImage get mpTodoAddPriority =>
+      const AssetGenImage('assets/images/mp_todo_add_priority.png');
+
   /// File path: assets/images/mp_todo_cancendar.png
   AssetGenImage get mpTodoCancendar =>
       const AssetGenImage('assets/images/mp_todo_cancendar.png');
@@ -790,6 +798,8 @@ class $AssetsImagesGen {
     mpSettingVoice,
     mpSettingVoiceTime,
     mpStartRecordingIcon,
+    mpTodoAddCanlendar,
+    mpTodoAddPriority,
     mpTodoCancendar,
     mpTodoEdit,
     mpTranscriptionCheck,

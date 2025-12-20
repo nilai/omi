@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../mp_insight_model.dart';
 
 /// Insights 列表 Provider
@@ -22,16 +23,16 @@ class MPInsightsListProvider extends ChangeNotifier {
   /// 加载 Insights 数据
   Future<void> loadInsights() async {
     if (_isLoading) return;
-    
+
     _isLoading = true;
     _hasMore = true;
     notifyListeners();
 
     // 模拟网络请求延迟
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     _insights = _generateMockInsights(start: 0, count: _pageSize);
-    
+
     _isLoading = false;
     notifyListeners();
   }
@@ -44,29 +45,29 @@ class MPInsightsListProvider extends ChangeNotifier {
   /// 上拉加载更多
   Future<void> loadMore() async {
     if (_isLoadingMore || !_hasMore) return;
-    
+
     _isLoadingMore = true;
     notifyListeners();
 
     // 模拟网络请求延迟
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     final moreInsights = _generateMockInsights(
       start: _insights.length,
       count: _pageSize,
     );
-    
+
     if (moreInsights.isEmpty) {
       _hasMore = false;
     } else {
       _insights.addAll(moreInsights);
-      
+
       // 模拟数据加载完毕（当数据超过50条时）
       if (_insights.length >= 50) {
         _hasMore = false;
       }
     }
-    
+
     _isLoadingMore = false;
     notifyListeners();
   }
@@ -74,23 +75,23 @@ class MPInsightsListProvider extends ChangeNotifier {
   /// 生成假数据
   List<MPInsightModel> _generateMockInsights({required int start, required int count}) {
     final List<MPInsightModel> insights = [];
-    
+
     // 如果已经超过50条，返回空列表
     if (start >= 50) {
       return insights;
     }
-    
+
     final now = DateTime.now();
     int insightIndex = start;
-    
+
     for (int i = 0; i < count && insightIndex < 50; i++) {
       final date = now.subtract(Duration(days: insightIndex));
-      
+
       MPInsightType type;
       String title;
       String timeText;
       String period;
-      
+
       // 根据索引决定类型
       if (insightIndex % 7 == 0 && insightIndex > 0) {
         // 每周洞察
@@ -110,10 +111,11 @@ class MPInsightsListProvider extends ChangeNotifier {
         // 每日洞察
         type = MPInsightType.daily;
         title = '${_formatMonthDay(date)} Daily Insight';
-        timeText = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} 00:00:00';
+        timeText =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} 00:00:00';
         period = '';
       }
-      
+
       insights.add(MPInsightModel(
         id: 'insight_$insightIndex',
         type: type,
@@ -123,22 +125,20 @@ class MPInsightsListProvider extends ChangeNotifier {
         description: _generateDescription(type),
         timestamp: date,
       ));
-      
+
       insightIndex++;
     }
-    
+
     return insights;
   }
 
   String _formatMonthDay(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[date.month - 1]} ${date.day}';
   }
 
   String _formatMonth(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[date.month - 1];
   }
 
@@ -163,4 +163,3 @@ class MPInsightsListProvider extends ChangeNotifier {
     }
   }
 }
-

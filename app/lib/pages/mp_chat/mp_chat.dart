@@ -25,7 +25,7 @@ import 'package:omi/widgets/extensions/string.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'widgets/message_action_menu.dart';
+import '../chat/widgets/message_action_menu.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
 
