@@ -5,7 +5,9 @@ import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
+import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_memory/conversation_detail/conversation_detail_page.dart';
+import '../widgets/mp_delete_memory_dialog.dart';
 
 class MPMemoryItem {
   MPMemoryItem({
@@ -179,33 +181,23 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 记忆项
   void onCardDelete(BuildContext context, MPMemoryItem item) {
     debugPrint('Delete tapped for ${item.headerText}');
-    // TODO: 实现删除功能
-    // 可以显示确认对话框
-    showDialog(
+    // 显示确认对话框
+    MPDeleteMemoryDialog.show(
       context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: const Text('确认删除'),
-          content: const Text('确定要删除这条记录吗？'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop();
-                // TODO: 执行删除操作
-                // 删除后刷新列表
-                refresh();
-              },
-              child: const Text(
-                '删除',
-                style: TextStyle(color: Color(0xFFFF0000)),
-              ),
-            ),
-          ],
-        );
+      onCancel: () {
+        debugPrint('Delete cancelled');
+      },
+      onConfirm: () async {
+        // 执行删除操作
+        final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
+        final response = await deleteMemory(req);
+        if (response != null) {
+          if (response.baseResp.code == 0) {
+            refresh();
+          } else {
+            MPToastUtils.showMessage(response.baseResp.message);
+          }
+        }
       },
     );
   }
