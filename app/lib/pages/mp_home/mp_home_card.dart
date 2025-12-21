@@ -11,7 +11,6 @@ class MPHomeCard extends StatefulWidget {
     this.tagText = '任务提醒',
     this.tagBackgroundColor = const Color(0xFFF4B95A),
     this.description,
-    // this.onMorePressed,
     this.onShare,
     this.onDelete,
     this.onViewDetail,
@@ -37,10 +36,6 @@ class MPHomeCard extends StatefulWidget {
 
   /// 中间正文，最多展示三行，缺省则隐藏。
   final String? description;
-
-  // /// 右侧三个点点击回调（已废弃，使用 onShare 和 onDelete）。
-  // @Deprecated('使用 onShare 和 onDelete 替代')
-  // final VoidCallback? onMorePressed;
 
   /// 分享回调。
   final VoidCallback? onShare;
@@ -115,28 +110,58 @@ class _MPHomeCardState extends State<MPHomeCard> {
                     size: 20,
                   ),
                   padding: EdgeInsets.zero,
+                  color: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(
+                      color: Color(0xFFE5E5E5),
+                      width: 1,
+                    ),
                   ),
+                  elevation: 4,
                   itemBuilder: (BuildContext context) => [
                     PopupMenuItem<String>(
                       value: 'share',
-                      child: const Text(
-                        '分享',
-                        style: TextStyle(
-                          color: Color(0xFF111111),
-                          fontSize: 14,
-                        ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.share_outlined,
+                            color: Color(0xFF111111),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '分享',
+                            style: TextStyle(
+                              color: Color(0xFF111111),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     PopupMenuItem<String>(
                       value: 'delete',
-                      child: const Text(
-                        '删除',
-                        style: TextStyle(
-                          color: Color(0xFFFF0000),
-                          fontSize: 14,
-                        ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.delete_outline,
+                            color: Color(0xFFFF0000),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            '删除',
+                            style: TextStyle(
+                              color: Color(0xFFFF0000),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -146,10 +171,6 @@ class _MPHomeCardState extends State<MPHomeCard> {
                     } else if (value == 'delete') {
                       widget.onDelete?.call();
                     }
-                    // // 兼容旧的回调
-                    // if (widget.onMorePressed != null && widget.onShare == null && widget.onDelete == null) {
-                    //   widget.onMorePressed?.call();
-                    // }
                   },
                 ),
               ],
