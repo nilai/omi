@@ -17,7 +17,7 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
       this.initialName,
       this.audioDuration,
       this.isEditMode = false,
-      this.audioFile,
+      this.audioPath,
       this.isMyselfVoice = false});
 
   /// 是否是编辑模式
@@ -33,7 +33,7 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
   final int? audioDuration;
 
   /// 音频数据
-  final File? audioFile;
+  final String? audioPath;
 
   /// 是否是自己的声音
   final bool isMyselfVoice;
@@ -64,7 +64,7 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
         voiceId: widget.voiceId,
         audioDuration: widget.audioDuration ?? 95, // 默认95秒
         isEditMode: widget.isEditMode,
-        audioFile: widget.audioFile,
+        audioPath: widget.audioPath,
         isMyselfVoice: widget.isMyselfVoice,
       ),
       child: Scaffold(

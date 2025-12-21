@@ -4,11 +4,10 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import '../../../services/services.dart';
-import '../../../utils/audio/wav_bytes.dart';
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
@@ -38,10 +37,6 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   List<Uint8List> _audioChunks = [];
   // AI-generated END - _audioChunks
 
-  // AI-generated START - 音频可视化级别
-  List<double> _audioLevels = List.generate(50, (_) => 0.1);
-  // AI-generated END - _audioLevels
-
   // AI-generated START - 构造函数
   MPAddVoiceRecognitionProvider({
     this.isMyselfVoice = false,
@@ -61,112 +56,57 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
   // AI-generated END - audioChunks
 
   // AI-generated START - 获取音频可视化级别
-  List<double> get audioLevels => _audioLevels;
+  // List<double> get audioLevels => _audioLevels;
   // AI-generated END - audioLevels
 
   BuildContext? context;
+
+  FlutterSoundRecorder? recorder;
+
+  String? _audioPath;
 
   // AI-generated START - 开始录音
   Future<void> startRecording() async {
     // 请求麦克风权限
     await Permission.microphone.request();
-
     _recordingDuration = 0;
     _audioChunks = [];
     // 重置音频可视化级别
-    _audioLevels = List.generate(50, (_) => 0.1);
-    notifyListeners();
+    // _audioLevels = List.generate(50, (_) => 0.1);
 
+    // 启动实际录音服务
+    _audioPath = await _getAudioFilePath();
+    recorder ??= FlutterSoundRecorder();
+    await recorder!.openRecorder(isBGService: false);
+    await recorder!.startRecorder(
+      toFile: _audioPath!,
+      codec: Codec.aacADTS,
+      bitRate: 8000,
+      numChannels: 1,
+      sampleRate: 8000,
+    );
     // 启动定时器，每秒更新一次
+    _isRecording = true;
+    notifyListeners();
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // if (_recordingDuration < maxRecordingDuration) {
-      //   _recordingDuration++;
-      //   notifyListeners();
-      // } else {
-      //   // 达到最大时长，自动停止
-      //   stopRecording();
-      // }
       _recordingDuration++;
       notifyListeners();
     });
-
-    // 启动实际录音服务
-    await ServiceManager.instance().mic.start(
-      onByteReceived: (bytes) {
-        if (_isRecording) {
-          _audioChunks.add(bytes);
-          debugPrint('-------hjj Recording ${bytes.length} bytes');
-
-          // // 根据实际音频级别更新音频可视化
-          // if (bytes.isNotEmpty) {
-          //   // 计算PCM16音频数据的RMS（均方根）
-          //   double rms = 0;
-
-          //   // 将字节作为16位样本处理（每个样本2个字节）
-          //   for (int i = 0; i < bytes.length - 1; i += 2) {
-          //     // 将两个字节转换为16位有符号整数
-          //     // PCM16是小端序：最低有效字节在前，最高有效字节在后
-          //     int sample = bytes[i] | (bytes[i + 1] << 8);
-
-          //     // 转换为有符号值（如果高位被设置）
-          //     if (sample > 32767) {
-          //       sample = sample - 65536;
-          //     }
-
-          //     // 对样本进行平方并加到总和中
-          //     rms += sample * sample;
-          //   }
-
-          //   // 计算RMS并归一化到0.0-1.0范围
-          //   // 32768是16位音频的最大绝对值
-          //   int sampleCount = bytes.length ~/ 2;
-          //   if (sampleCount > 0) {
-          //     rms = sqrt(rms / sampleCount) / 32768.0;
-          //   } else {
-          //     rms = 0;
-          //   }
-
-          //   // 应用非线性缩放使安静的声音更可见，响亮的声音更戏剧化
-          //   final level = pow(rms, 0.4).toDouble().clamp(0.1, 1.0);
-
-          //   // 将所有值向左移动
-          //   for (int i = 0; i < _audioLevels.length - 1; i++) {
-          //     _audioLevels[i] = _audioLevels[i + 1];
-          //   }
-
-          //   // 在末尾添加新级别
-          //   _audioLevels[_audioLevels.length - 1] = level;
-
-          //   notifyListeners();
-          // }
-        }
-      },
-      onRecording: () {
-        debugPrint('-------hjj Recording started');
-        _isRecording = true;
-        notifyListeners();
-      },
-      onStop: () {
-        debugPrint('-------hjj Recording stopped');
-        _isRecording = false;
-        _recordingTimer?.cancel();
-        _recordingTimer = null;
-        // notifyListeners();
-        _stopRecordDeal();
-      },
-      onInitializing: () {
-        debugPrint('-------hjj Initializing');
-      },
-    );
   }
   // AI-generated END - startRecording
 
   // AI-generated START - 停止录音
-  void stopRecording(BuildContext context) {
+  void stopRecording(BuildContext context) async {
     // 停止录音服务
-    ServiceManager.instance().mic.stop();
-
+    if (recorder == null) {
+      return;
+    }
     this.context = context;
+    await recorder!.stopRecorder();
+    await recorder!.closeRecorder();
+    recorder = null;
+    _isRecording = false;
+    _stopRecordDeal();
   }
   // AI-generated END - stopRecording
 
@@ -176,10 +116,11 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       return;
     }
     if (_recordingDuration < 30) {
+      _deleteAudioFile();
       Navigator.pop(context!);
       return;
     }
-    final audioFile = await _saveAudioChunksToFile();
+    // final audioFile = await _saveAudioChunksToFile();
     // 跳转详情页面
     Navigator.of(context!).pushReplacement(MaterialPageRoute(
       builder: (context) => MPVoiceRecognitionDetailPage(
@@ -187,51 +128,26 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
         initialName: null,
         audioDuration: _recordingDuration,
         isEditMode: true,
-        audioFile: audioFile,
+        audioPath: _audioPath,
         isMyselfVoice: isMyselfVoice,
       ),
     ));
   }
 
-  /// 保存音频块到文件
-  ///
-  /// 将录音数据块转换为 WAV 格式文件
-  /// 录音配置：PCM16, 16kHz, 单声道
-  Future<File> _saveAudioChunksToFile() async {
+  Future<String> _getAudioFilePath() async {
     final tempDir = await getTemporaryDirectory();
-    final wavFilePath = '${tempDir.path}/temp_recording.wav';
+    final audioFilePath = '${tempDir.path}/recording_${DateTime.now().millisecondsSinceEpoch}.aac';
+    return audioFilePath;
+  }
 
-    // 检查是否有音频数据
-    if (_audioChunks.isEmpty) {
-      debugPrint('没有音频数据可保存');
-      throw Exception('没有音频数据可保存');
+  void _deleteAudioFile() {
+    if (_audioPath != null && File(_audioPath!).existsSync()) {
+      File(_audioPath!).delete().catchError((e) {
+        debugPrint('删除音频文件时出错: $e');
+        return File(_audioPath!);
+      });
+      _audioPath = null;
     }
-
-    // 计算总字节数
-    final totalBytes = _audioChunks.fold<int>(0, (sum, chunk) => sum + chunk.length);
-    debugPrint('保存音频文件: 总字节数=$totalBytes, 块数=${_audioChunks.length}');
-
-    // 合并所有音频块为单个 Uint8List
-    final combinedPcm = Uint8List(totalBytes);
-    int offset = 0;
-    for (final chunk in _audioChunks) {
-      combinedPcm.setRange(offset, offset + chunk.length, chunk);
-      offset += chunk.length;
-    }
-
-    // 使用 WavBytes 类创建正确的 WAV 文件
-    // 参数：PCM 数据、采样率 16000、单声道
-    final wavBytes = WavBytes.fromPcm(
-      combinedPcm,
-      sampleRate: 16000,
-      numChannels: 1,
-    ).asBytes();
-
-    // 写入文件
-    await File(wavFilePath).writeAsBytes(wavBytes);
-    debugPrint('音频文件保存成功: $wavFilePath, 文件大小=${wavBytes.length} bytes');
-
-    return File(wavFilePath);
   }
 
   @override
