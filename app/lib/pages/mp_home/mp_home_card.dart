@@ -51,128 +51,132 @@ class _MPHomeCardState extends State<MPHomeCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromARGB(25, 0, 0, 0),
-            blurRadius: 12,
-            offset: Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Text(
-                widget.dateText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6D6D6D),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Visibility(
-                visible: widget.tagText.isNotEmpty,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: widget.tagBackgroundColor,
-                    borderRadius: BorderRadius.circular(6),
+    return GestureDetector(
+      onTap: () => widget.onViewDetail?.call(),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromARGB(25, 0, 0, 0),
+              blurRadius: 12,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Text(
+                  widget.dateText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF6D6D6D),
+                    fontWeight: FontWeight.w600,
                   ),
-                  child: Text(
-                    widget.tagText,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                ),
+                const SizedBox(width: 8),
+                Visibility(
+                  visible: widget.tagText.isNotEmpty,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: widget.tagBackgroundColor,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      widget.tagText,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: widget.onMorePressed,
-                child: const Padding(
-                  padding: EdgeInsets.all(4.0),
-                  child: Icon(
-                    Icons.more_vert,
-                    color: Color(0xFF5F5F5F),
-                    size: 20,
+                const Spacer(),
+                InkWell(
+                  borderRadius: BorderRadius.circular(18),
+                  onTap: widget.onMorePressed,
+                  child: const Padding(
+                    padding: EdgeInsets.all(4.0),
+                    child: Icon(
+                      Icons.more_vert,
+                      color: Color(0xFF5F5F5F),
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.headerText,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF111111),
-              fontWeight: FontWeight.w700,
-              fontSize: 15,
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.access_time, color: Color(0xFFB2B2B2), size: 14),
-              const SizedBox(width: 4),
-              Text(
-                widget.timeText,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF7D7D7D),
-                  fontWeight: FontWeight.w500,
-                ),
+            const SizedBox(height: 8),
+            Text(
+              widget.headerText,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF111111),
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
               ),
-              if (widget.secondsText != null && widget.secondsText!.isNotEmpty) ...[
-                const SizedBox(width: 10),
-                const Icon(Icons.play_circle_outline, color: Color(0xFF7D7D7D), size: 14),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.access_time, color: Color(0xFFB2B2B2), size: 14),
                 const SizedBox(width: 4),
                 Text(
-                  widget.secondsText!,
+                  widget.timeText,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF7D7D7D),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                if (widget.secondsText != null && widget.secondsText!.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  const Icon(Icons.play_circle_outline, color: Color(0xFF7D7D7D), size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.secondsText!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF7D7D7D),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
-          if (widget.description != null && widget.description!.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              widget.description!,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF2C2C2C),
-                height: 1.25,
-              ),
             ),
-          ],
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: widget.onViewDetail,
-              behavior: HitTestBehavior.opaque,
-              child: Text(
-                '查看详情',
+            if (widget.description != null && widget.description!.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                widget.description!,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF2962FF),
-                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2C2C2C),
+                  height: 1.25,
+                ),
+              ),
+            ],
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: GestureDetector(
+                onTap: () => widget.onViewDetail?.call(),
+                behavior: HitTestBehavior.opaque,
+                child: Text(
+                  '查看详情',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF2962FF),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
