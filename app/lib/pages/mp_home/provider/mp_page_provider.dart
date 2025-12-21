@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
+import '../../../env/env.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -175,7 +176,7 @@ class MPHomePageProvider extends ChangeNotifier {
   void onCardShare(BuildContext context, MPMemoryItem item) {
     debugPrint('Share tapped for ${item.headerText}');
     // TODO: 实现分享功能
-    MPShareMemoryDialog.show(context: context, shareUrl: 'https://h.omi.me/memories/${item.memory.id}');
+    MPShareMemoryDialog.show(context: context, memoryId: item.memory.id);
   }
 
   /// 删除卡片
