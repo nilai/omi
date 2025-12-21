@@ -120,19 +120,21 @@ class _MPHomeCardState extends State<MPHomeCard> {
                   ),
                   elevation: 4,
                   itemBuilder: (BuildContext context) => [
-                    PopupMenuItem<String>(
+                    const PopupMenuItem<String>(
                       value: 'share',
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      height: 32,
+                      // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.share_outlined,
                             color: Color(0xFF111111),
                             size: 18,
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
+                          SizedBox(width: 8),
+                          Text(
                             '分享',
                             style: TextStyle(
                               color: Color(0xFF111111),
@@ -142,19 +144,21 @@ class _MPHomeCardState extends State<MPHomeCard> {
                         ],
                       ),
                     ),
-                    PopupMenuItem<String>(
+                    const PopupMenuItem<String>(
                       value: 'delete',
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      height: 32,
+                      // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Icon(
+                          Icon(
                             Icons.delete_outline,
                             color: Color(0xFFFF0000),
                             size: 18,
                           ),
-                          const SizedBox(width: 8),
-                          const Text(
+                          SizedBox(width: 8),
+                          Text(
                             '删除',
                             style: TextStyle(
                               color: Color(0xFFFF0000),
