@@ -253,10 +253,12 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     _progressSubscription = _audioPlayer?.onProgress?.listen((disposition) {
       _currentTime = disposition.position.inSeconds;
       final duration = disposition.duration.inSeconds;
-      if (duration > 0) {
-        debugPrint('播放进度更新: $_currentTime / $duration');
-        notifyListeners();
-      }
+      debugPrint('播放进度更新: $_currentTime / $duration');
+      notifyListeners();
+      // if (duration > 0) {
+        
+        
+      // }
     });
     if (_progressSubscription == null) {
       debugPrint('警告: onProgress 流为 null，无法设置进度监听');
