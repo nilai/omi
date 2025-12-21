@@ -133,6 +133,8 @@ class _MPHomeCardState extends State<MPHomeCard> {
               ),
               if (widget.secondsText != null && widget.secondsText!.isNotEmpty) ...[
                 const SizedBox(width: 10),
+                const Icon(Icons.play_circle_outline, color: Color(0xFF7D7D7D), size: 14),
+                const SizedBox(width: 4),
                 Text(
                   widget.secondsText!,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -175,4 +177,3 @@ class _MPHomeCardState extends State<MPHomeCard> {
     );
   }
 }
-
