@@ -11,6 +11,7 @@ MPGetMemoryListRequest _$MPGetMemoryListRequestFromJson(
     MPGetMemoryListRequest(
       pageSize: (json['page_size'] as num).toInt(),
       cursor: json['cursor'] as String,
+      date: json['date'] as String,
     );
 
 Map<String, dynamic> _$MPGetMemoryListRequestToJson(
@@ -18,6 +19,7 @@ Map<String, dynamic> _$MPGetMemoryListRequestToJson(
     <String, dynamic>{
       'page_size': instance.pageSize,
       'cursor': instance.cursor,
+      'date': instance.date,
     };
 
 MPGetMemoryDaysRequest _$MPGetMemoryDaysRequestFromJson(
