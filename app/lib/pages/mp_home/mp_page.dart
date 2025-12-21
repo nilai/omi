@@ -145,8 +145,8 @@ class _MPPageContentState extends State<MPPageContent> {
                   child: MPHomeUploadWidget(
                     title: provider.uploadTitle,
                     subtitle: '正在处理音频文件...',
-                    transferredCount: provider.uploadedCount,
-                    totalCount: provider.totalCount,
+                    // transferredCount: provider.uploadedCount,
+                    // totalCount: provider.totalCount,
                     percent: provider.uploadPercent,
                   ),
                 ),

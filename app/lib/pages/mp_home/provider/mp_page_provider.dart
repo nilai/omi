@@ -26,8 +26,8 @@ class MPHomePageProvider extends ChangeNotifier {
   String title = 'MemoPin 传输管理器';
   String selectedDate = MPTimestampUtils.getCurrentDate();
   String uploadTitle = '正在从 MemoPin 传输录音至 APP...';
-  int uploadedCount = 1;
-  int totalCount = 1;
+  // int uploadedCount = 1;
+  // int totalCount = 1;
   double uploadPercent = 10;
   String speedText = '0.00KB/S';
   int recordCount = 20;
@@ -105,8 +105,8 @@ class MPHomePageProvider extends ChangeNotifier {
       ..addAll(_generateMockItems());
     recordCount = items.length;
     uploadPercent = 70;
-    uploadedCount = 1;
-    totalCount = 1;
+    // uploadedCount = 1;
+    // totalCount = 1;
   }
 
   List<MPMemoryItem> _generateMockItems({int start = 0}) {
