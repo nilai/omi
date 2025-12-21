@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_memory.dart';
+import '../../gen/assets.gen.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -233,18 +234,10 @@ class _MPPageContentState extends State<MPPageContent> {
                         )),
               );
             },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFE0E0E0),
-              ),
-              child: const Icon(
-                Icons.circle,
-                color: Color(0xFF757575),
-                size: 20,
-              ),
+            child: Assets.images.settingCamera.image(
+              width: 32.0,
+              height: 32.0,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 16),
