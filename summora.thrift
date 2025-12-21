@@ -57,7 +57,7 @@ struct OnlyRecordMemoryStruct {
     1: string record_file, // 本地保存的文件名
 }
 
-struct SummaryConversationStruct {
+struct RecordConversationStruct {
     1: string id,
     2: SpeakerStruct speaker,
     3: string content,
@@ -69,7 +69,7 @@ struct SummaryMemoryStruct {
     2: i32: participants_cnt,
     2: string record_url, // 录音地址
     3: string summary, // markdown格式
-    4: list<SummaryConversationStruct> transcript,
+    4: list<RecordConversationStruct> transcript,
     5: list<TodoStruct> todos,
 }
 
@@ -102,7 +102,8 @@ struct TemplateStruct {
     2: string title,
     3: string icon,
     4: string type,
-    4: string prompt,
+    5: string prompt,
+    6: bool custome_template,  // 为true是用户自己创建模板
 }
 
 struct ExpertStruct {
@@ -141,17 +142,31 @@ struct UserStruct {
     6: UserAISettings ai_settings,
 }
 
+struct ConversationStruct {
+    1: string id,
+    2: SpeakerStruct speaker,
+    3: string content,
+    4: string time,
+}
+
+struct ConversationHeaderStruct {
+    1: string id,
+    2: string title,
+}
+
 ///// 
 
 struct GetMemoryListResponse {
     1: list<MemoryStruct> memorys,
     2: bool has_more,
+    3: i32 memory_total,
     255: BaseResp base_resp,
 }
 
 struct GetMemoryListRequest {
-    1: i32 page_size,
-    2: string cursor,
+    1: optional string day,  // 20250-12-14
+    2: i32 page_size,
+    3: string cursor,
 }
 
 struct GetMemoryDaysRequest {
@@ -210,6 +225,15 @@ struct SummaryRecordRequest {
 }
 
 struct SummaryRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct SearchMemoryRequest {
+    1: string search_content,
+}
+
+struct SearchMemoryResponse {
+    1: list<MemoryStruct> memorys,
     255: BaseResp base_resp,
 }
 
@@ -339,15 +363,46 @@ struct DeleteTodoResponse {
     255: BaseResp base_resp,
 }
 
+struct CreateConversationRequest {
+}
+
+struct CreateConversationResponse {
+    1: string conversation_id,
+    255: BaseResp base_resp,
+}
+
 struct ChatRequest {
     1: string expert_id, // 专家模型ID, 不用的话，为空字符串
     2: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
     3: string template_id, // 对应的模板id，不用的话，为空字符串
     4: string speaker_id, // 对应人物的id，没有的话，为空字符串。针对AI分析助手的场景
+    5: string message,  // 输入的内容
+    6: string conversation_id,
 }
 
 struct ChatResponse {
     // streaming 接口
+}
+
+struct GetConversationListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetConversationListResponse {
+    1: list<ConversationHeaderStruct> conversations,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct GetConversationDetailRequest {
+    1: string conversation_id,
+}
+
+struct GetConversationDetailResponse {
+    1: string title,
+    2: list<ConversationStruct> contents,
+    255: BaseResp base_resp,
 }
 
 struct AddSpeakerRequest {
@@ -503,10 +558,12 @@ struct GetTemplateDetailResponse {
 }
 
 struct CreateTemplateRequest {
-    1: string title,
-    2: string icon,
-    3: string prompt,
-    4: string type,
+    1: optional string template_id,
+    2: string title,
+    3: string icon,
+    4: string prompt,
+    5: string type,
+    6: bool set_default, // 是否设置为默认模板
 }
 
 struct CreateTemplateResponse {
@@ -573,6 +630,8 @@ service AppService {
     GetUploadRecordUrlResponse GetUploadRecordUrl(1: GetUploadRecordUrlRequest req)
     // POST /api/v1/memory/summary_record
     SummaryRecordResponse SummaryRecord(1: SummaryRecordRequest req)
+    // GET /api/v1/memory/search
+    SearchMemoryResponse SearchMemory(1: SearchMemoryRequest req)
     // GET /api/v1/memory/share
     ShareMemoryResponse ShareMemory(1: ShareMemoryRequest req)
     // POST /api/v1/memory/delete
@@ -605,8 +664,14 @@ service AppService {
     DeleteTodoResponse DeleteTodo(1: DeleteTodoRequest req)
 
     // chat相关接口
-    // POST /api/v1/chat
+    // POST /api/v1/chat/create_conversation
+    CreateConversationResponse CreateConversation(1: CreateConversationRequest req)
+    // POST /api/v1/chat/chat
     ChatResponse Chat(1: ChatRequest req)
+    // GET /api/v1/chat/get_conversation_list
+    GetConversationListResponse GetConversationList(1: GetConversationListRequest req)
+    // GET /api/v1/chat/get_conversation_detail
+    GetConversationDetailResponse GetConversationDetail(1: GetConversationDetailRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
