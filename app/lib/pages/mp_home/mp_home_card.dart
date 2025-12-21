@@ -103,78 +103,103 @@ class _MPHomeCardState extends State<MPHomeCard> {
                   ),
                 ),
                 const Spacer(),
-                PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Color(0xFF5F5F5F),
-                    size: 20,
-                  ),
-                  padding: EdgeInsets.zero,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(
-                      color: Color(0xFFE5E5E5),
-                      width: 1,
-                    ),
-                  ),
-                  elevation: 4,
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem<String>(
-                      value: 'share',
-                      height: 32,
-                      // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.share_outlined,
-                            color: Color(0xFF111111),
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            '分享',
-                            style: TextStyle(
-                              color: Color(0xFF111111),
-                              fontSize: 14,
+                Builder(
+                  builder: (BuildContext context) {
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                        final Offset offset = renderBox.localToGlobal(Offset.zero);
+                        final Size size = renderBox.size;
+                        final MediaQueryData mediaQuery = MediaQuery.of(context);
+                        final double screenWidth = mediaQuery.size.width;
+                        final double screenHeight = mediaQuery.size.height;
+
+                        // 计算菜单位置：显示在图标底部，右对齐
+                        final double menuWidth = 100.0; // 菜单预估宽度
+                        final double menuHeight = 64.0; // 菜单高度（两个item，每个32px）
+                        final double left = offset.dx + size.width - menuWidth;
+                        final double top = offset.dy + size.height;
+                        final double right = screenWidth - left - menuWidth;
+                        final double bottom = screenHeight - top - menuHeight;
+
+                        showMenu<String>(
+                          context: context,
+                          position: RelativeRect.fromLTRB(left, top, right, bottom),
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: const BorderSide(
+                              color: Color(0xFFE5E5E5),
+                              width: 1,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'delete',
-                      height: 32,
-                      // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            color: Color(0xFFFF0000),
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            '删除',
-                            style: TextStyle(
-                              color: Color(0xFFFF0000),
-                              fontSize: 14,
+                          elevation: 4,
+                          items: [
+                            const PopupMenuItem<String>(
+                              value: 'share',
+                              height: 32,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.share_outlined,
+                                    color: Color(0xFF111111),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '分享',
+                                    style: TextStyle(
+                                      color: Color(0xFF111111),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            const PopupMenuItem<String>(
+                              value: 'delete',
+                              height: 32,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    color: Color(0xFFFF0000),
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    '删除',
+                                    style: TextStyle(
+                                      color: Color(0xFFFF0000),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ).then((String? value) {
+                          if (value == 'share') {
+                            widget.onShare?.call();
+                          } else if (value == 'delete') {
+                            widget.onDelete?.call();
+                          }
+                        });
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.more_vert,
+                          color: Color(0xFF5F5F5F),
+                          size: 20,
+                        ),
                       ),
-                    ),
-                  ],
-                  onSelected: (String value) {
-                    if (value == 'share') {
-                      widget.onShare?.call();
-                    } else if (value == 'delete') {
-                      widget.onDelete?.call();
-                    }
+                    );
                   },
                 ),
               ],
