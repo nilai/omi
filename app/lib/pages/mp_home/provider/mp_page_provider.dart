@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../mp_custom_utils/mp_timestamp_utils.dart';
+
 class MPMemoryItem {
   MPMemoryItem({
     required this.dateText,
@@ -22,7 +24,7 @@ class MPMemoryItem {
 
 class MPHomePageProvider extends ChangeNotifier {
   String title = 'MemoPin 传输管理器';
-  String selectedDate = 'Dec 8';
+  String selectedDate = MPTimestampUtils.getCurrentDate();
   String uploadTitle = '正在从 MemoPin 传输录音至 APP...';
   int uploadedCount = 1;
   int totalCount = 1;
@@ -34,8 +36,8 @@ class MPHomePageProvider extends ChangeNotifier {
   bool hasMore = true;
   final List<MPMemoryItem> items = [];
 
-  void bootstrap() {
-    _seed();
+  void dispose() {
+    super.dispose();
   }
 
   Future<void> refresh() async {
@@ -71,6 +73,14 @@ class MPHomePageProvider extends ChangeNotifier {
     if (value < 0) return;
     recordCount = value;
     notifyListeners();
+  }
+
+  /// 将日期字符串（yyyy-MM-dd 或 yyyy-M-d）转换为 MMM d 格式
+  ///
+  /// [dateString] 日期字符串，例如：2025-12-8 或 2025-12-08
+  /// @returns 格式化后的日期字符串，例如：Dec 8
+  String formatDateToMonthDay(String dateString) {
+    return MPTimestampUtils.dateStringToMonthDay(dateString);
   }
 
   void onLeftWidgetTap() {

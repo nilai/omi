@@ -1,5 +1,7 @@
 // AI-generated START - 时间戳转换工具类
 
+import 'package:intl/intl.dart';
+
 /// 时间戳转换工具类
 /// 提供时间戳与 DateTime 之间的转换方法
 class MPTimestampUtils {
@@ -27,6 +29,38 @@ class MPTimestampUtils {
     final dateTime = timestampToDateTime(timestamp);
     return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
   }
+
+  /// 获取当前日期，格式为 yyyy-MM-dd
+  /// @returns 当前日期的字符串，例如：2025-11-11
+  static String getCurrentDate() {
+    final now = DateTime.now();
+    return DateFormat('yyyy-MM-dd').format(now);
+  }
+
+  /// 将日期字符串（yyyy-MM-dd 或 yyyy-M-d）转换为 MMM d 格式
+  /// 
+  /// [dateString] 日期字符串，例如：2025-12-8 或 2025-12-08
+  /// @returns 格式化后的日期字符串，例如：Dec 8
+  static String dateStringToMonthDay(String dateString) {
+    try {
+      // 解析日期字符串
+      final parts = dateString.split('-');
+      if (parts.length != 3) {
+        return dateString; // 如果格式不正确，返回原字符串
+      }
+      
+      final year = int.parse(parts[0]);
+      final month = int.parse(parts[1]);
+      final day = int.parse(parts[2]);
+      
+      final dateTime = DateTime(year, month, day);
+      return DateFormat('MMM d', 'en_US').format(dateTime);
+    } catch (e) {
+      // 如果解析失败，返回原字符串
+      return dateString;
+    }
+  }
+
 
   /// 将秒级时间戳转换为相对时间格式
   ///

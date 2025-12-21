@@ -74,7 +74,7 @@ class _MPPageContentState extends State<MPPageContent> {
           provider.loadMore();
         }
       });
-      provider.bootstrap();
+      provider.refresh();
     });
   }
 
@@ -258,7 +258,7 @@ class _MPPageContentState extends State<MPPageContent> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        provider.selectedDate,
+                        provider.formatDateToMonthDay(provider.selectedDate),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -409,4 +409,3 @@ class _MPPageContentState extends State<MPPageContent> {
     );
   }
 }
-
