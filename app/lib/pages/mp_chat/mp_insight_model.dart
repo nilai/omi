@@ -1,3 +1,5 @@
+import '../../backend/schema/mp/mp_data_model.dart';
+
 /// Insights 类型
 enum MPInsightType {
   daily,
@@ -25,4 +27,3 @@ class MPInsightModel {
     required this.timestamp,
   });
 }
-

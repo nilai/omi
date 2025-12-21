@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../../../backend/schema/mp/mp_data_model.dart';
+import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../mp_insight_model.dart';
 
 /// Insights 列表 Provider
@@ -116,15 +119,20 @@ class MPInsightsListProvider extends ChangeNotifier {
         period = '';
       }
 
-      insights.add(MPInsightModel(
-        id: 'insight_$insightIndex',
-        type: type,
+      // 创建模拟的 MPMemoryStruct
+      final memory = MPMemoryStruct(
+        id: 'insight_memory_$insightIndex',
+        createAt: date.millisecondsSinceEpoch,
         title: title,
-        timeText: timeText,
-        period: period,
-        description: _generateDescription(type),
-        timestamp: date,
-      ));
+        type: MPMemoryType.insight,
+        label: period.isNotEmpty ? period : 'Insight',
+        content: _generateDescription(type),
+        duration: 0,
+        insightContent: MPInsightMemoryStruct(content: _generateDescription(type)),
+      );
+
+      // 使用扩展方法将 MPMemoryStruct 转换为 MPInsightModel
+      insights.add(memory.toMPInsightModel());
 
       insightIndex++;
     }
@@ -161,5 +169,50 @@ class MPInsightsListProvider extends ChangeNotifier {
       case MPInsightType.monthly:
         return 'October is a season of harvest. The team achieved breakthrough progress in multiple dimensions such as product R&D, market expansion, and team building. Completed several important milestones, laying a solid foundation for the next phase of development.';
     }
+  }
+}
+
+/// MPMemoryStruct 扩展方法
+/// 提供将 MPMemoryStruct 转换为 MPInsightModel 的方法
+extension MPMemoryStructToInsightExtension on MPMemoryStruct {
+  /// 将 MPMemoryStruct 转换为 MPInsightModel
+  /// @returns 转换后的 MPInsightModel 对象
+  MPInsightModel toMPInsightModel() {
+    // 将时间戳转换为 DateTime
+    final dateTime = MPTimestampUtils.timestampMsToDateTime(createAt);
+
+    // 生成 timeText (yyyy-MM-dd HH:mm:ss)
+    final timeText = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+
+    // 根据 label 或 title 推断 Insight 类型，默认为 daily
+    MPInsightType insightType = MPInsightType.daily;
+    String period = '';
+
+    // 尝试从 label 推断类型
+    final labelLower = label.toLowerCase();
+    if (labelLower.contains('weekly') || labelLower.contains('周')) {
+      insightType = MPInsightType.weekly;
+      period = label;
+    } else if (labelLower.contains('monthly') || labelLower.contains('月')) {
+      insightType = MPInsightType.monthly;
+      period = label;
+    } else {
+      // 默认为 daily
+      insightType = MPInsightType.daily;
+      period = '';
+    }
+
+    // 获取描述内容，优先使用 insightContent，否则使用 content
+    final description = insightContent?.content ?? content;
+
+    return MPInsightModel(
+      id: id,
+      type: insightType,
+      title: title,
+      timeText: timeText,
+      period: period,
+      description: description,
+      timestamp: dateTime,
+    );
   }
 }

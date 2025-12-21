@@ -3,6 +3,7 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
 import 'mp_chat_people_memory_page.dart';
+import 'mp_insights_list_page.dart';
 import 'providers/mp_chat_menu_list_provider.dart';
 
 /// 聊天菜单列表页面
@@ -236,8 +237,20 @@ class _MenuContent extends StatelessWidget {
           iconColor: Colors.purple,
           title: 'Daily insight',
           onTap: () {
-            Navigator.of(context).pop();
-            // TODO: 处理每日洞察
+            // Navigator.of(context).pop();
+            // // TODO: 处理每日洞察
+            // Future.delayed(const Duration(milliseconds: 300), () {
+            //   Navigator.of(context).push(
+            //     MaterialPageRoute(
+            //       builder: (context) => const MPInsightsListPage(),
+            //     ),
+            //   );
+            // });
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const MPInsightsListPage(),
+              ),
+            );
           },
         ),
         _buildMenuItem(

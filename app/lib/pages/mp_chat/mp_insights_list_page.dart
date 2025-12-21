@@ -129,6 +129,13 @@ class _MPInsightsListPageState extends State<MPInsightsListPage> {
                     onViewDetailTap: () {
                       // 查看详情点击事件
                       debugPrint('View detail tapped: ${insight.id}');
+                      // Navigator.of(context).push(
+                      //   MaterialPageRoute(
+                      //     builder: (context) => ConversationDetailPage(
+                      //       memoryId: insight.id,
+                      //     ),
+                      //   ),
+                      // );
                     },
                     onMenuTap: () {
                       // 菜单点击事件
