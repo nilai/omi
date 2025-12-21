@@ -14,10 +14,10 @@ import 'package:omi/pages/chat/widgets/ai_message.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
 import 'package:omi/pages/mp_chat/mp_chat_menu_list_page.dart';
-import 'package:omi/providers/connectivity_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
+import 'package:omi/providers/mp_message_provider.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/other/temp.dart';
@@ -45,8 +45,11 @@ enum MPChatPageType {
 }
 
 class MPChatPage extends StatefulWidget {
+  final String chatId;
+
   const MPChatPage({
     super.key,
+    this.chatId = '',
   });
 
   @override
@@ -57,6 +60,8 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   TextEditingController textController = TextEditingController();
   late ScrollController scrollController;
   late FocusNode textFieldFocusNode;
+
+  late MPMessageProvider provider;
 
   bool isScrollingDown = false;
 
@@ -71,6 +76,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   @override
   void initState() {
+    provider = MPMessageProvider(chatId: widget.chatId);
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();
     textController.addListener(() {
@@ -123,9 +129,14 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Consumer2<MessageProvider, ConnectivityProvider>(
-      builder: (context, provider, connectivityProvider, child) {
-        return Scaffold(
+    // return Consumer2<MessageProvider, ConnectivityProvider>(
+    //   builder: (context, provider, connectivityProvider, child) {
+
+    //   },
+    // );
+    return ChangeNotifierProvider.value(
+        value: provider,
+        child: Scaffold(
           key: scaffoldKey,
           backgroundColor: Theme.of(context).colorScheme.primary,
           appBar: MPChatAppBar(
@@ -199,14 +210,14 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                     },
                                     onThumbsUp: message.sender == MessageSender.ai && message.askForNps
                                         ? () {
-                                            provider.setMessageNps(message, 1);
+                                            // provider.setMessageNps(message, 1);
                                             Navigator.pop(context);
                                             AppSnackbar.showSnackbar('Thank you for your feedback!');
                                           }
                                         : null,
                                     onThumbsDown: message.sender == MessageSender.ai && message.askForNps
                                         ? () {
-                                            provider.setMessageNps(message, 0);
+                                            // provider.setMessageNps(message, 0);
                                             Navigator.pop(context);
                                             AppSnackbar.showSnackbar('Thank you for your feedback!');
                                           }
@@ -268,22 +279,23 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                               child: Padding(
                                 key: ValueKey(message.id),
                                 padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
-                                child: message.sender == MessageSender.ai
-                                    ? AIMessage(
-                                        showTypingIndicator: provider.showTypingIndicator && chatIndex == 0,
-                                        message: message,
-                                        sendMessage: _sendMessageUtil,
-                                        displayOptions: provider.messages.length <= 1 &&
-                                            provider.messageSenderApp(message.appId)?.isNotPersona() == true,
-                                        appSender: provider.messageSenderApp(message.appId),
-                                        updateConversation: (ServerConversation conversation) {
-                                          context.read<ConversationProvider>().updateConversation(conversation);
-                                        },
-                                        setMessageNps: (int value) {
-                                          provider.setMessageNps(message, value);
-                                        },
-                                      )
-                                    : HumanMessage(message: message),
+                                // child: message.sender == MessageSender.ai
+                                //     ? AIMessage(
+                                //         showTypingIndicator: provider.showTypingIndicator && chatIndex == 0,
+                                //         message: message,
+                                //         sendMessage: _sendMessageUtil,
+                                //         displayOptions: provider.messages.length <= 1 &&
+                                //             provider.messageSenderApp(message.appId)?.isNotPersona() == true,
+                                //         appSender: provider.messageSenderApp(message.appId),
+                                //         updateConversation: (ServerConversation conversation) {
+                                //           context.read<ConversationProvider>().updateConversation(conversation);
+                                //         },
+                                //         setMessageNps: (int value) {
+                                //           // provider.setMessageNps(message, value);
+                                //         },
+                                //       )
+                                //     : HumanMessage(message: message),
+                                child: HumanMessage(message: message),
                               ),
                             );
                           },
@@ -411,9 +423,8 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                       valueListenable: textController,
                                       builder: (context, value, child) {
                                         bool canSend = value.text.trim().isNotEmpty &&
-                                            !provider.sendingMessage &&
-                                            !provider.isUploadingFiles &&
-                                            connectivityProvider.isConnected;
+                                            !provider.sendingMessage ;
+                                            // !provider.isUploadingFiles;
 
                                         return GestureDetector(
                                           onTap: canSend
@@ -450,9 +461,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
               ],
             ),
           ),
-        );
-      },
-    );
+        ));
   }
 
   // 没有消息时显示的Widget
@@ -487,7 +496,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     );
   }
 
-  bool _shouldShowSendButton(MessageProvider p) {
+  bool _shouldShowSendButton(MPMessageProvider p) {
     return !p.sendingMessage && !_showVoiceRecorder;
   }
 
@@ -498,7 +507,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   _sendMessageUtil(String text) {
     textFieldFocusNode.unfocus();
 
-    var provider = context.read<MessageProvider>();
+    var provider = context.read<MPMessageProvider>();
     provider.setSendingMessage(true);
     provider.addMessageLocally(text);
     textController.clear();
@@ -508,12 +517,12 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     });
 
     provider.sendMessageStreamToServer(text);
-    provider.clearSelectedFiles();
+    // provider.clearSelectedFiles();
     provider.setSendingMessage(false);
   }
 
   sendInitialAppMessage(App? app) async {
-    context.read<MessageProvider>().setSendingMessage(true);
+    context.read<MPMessageProvider>().setSendingMessage(true);
     scrollToBottom();
     ServerMessage message = await getInitialAppMessage(app?.id);
     if (mounted) {

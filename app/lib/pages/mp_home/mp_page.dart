@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_memory.dart';
+import '../../gen/assets.gen.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -15,6 +16,7 @@ import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../note_debug/note_ble_debug_page.dart';
+import '../onboarding/find_device/page.dart';
 import 'widgets/mp_home_upload_widget.dart';
 import 'provider/mp_page_provider.dart';
 import 'mp_search_page.dart';
@@ -221,32 +223,21 @@ class _MPPageContentState extends State<MPPageContent> {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //       builder: (context) => FindDevicesPage(
-              //             isFromOnboarding: false,
-              //             goNext: () {},
-              //             onSkip: () {},
-              //             includeSkip: false,
-              //           )),
-              // );
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const NoteBleDebugPage(),
-              ));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => FindDevicesPage(
+                          isFromOnboarding: false,
+                          goNext: () {},
+                          onSkip: () {},
+                          includeSkip: false,
+                        )),
+              );
             },
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFE0E0E0),
-              ),
-              child: const Icon(
-                Icons.circle,
-                color: Color(0xFF757575),
-                size: 20,
-              ),
+            child: Assets.images.settingCamera.image(
+              width: 32.0,
+              height: 32.0,
+              fit: BoxFit.contain,
             ),
           ),
           const SizedBox(width: 16),

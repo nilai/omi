@@ -71,17 +71,17 @@ class MPInsightCard extends StatelessWidget {
                   ),
                 ),
                 // 菜单按钮
-                GestureDetector(
-                  onTap: onMenuTap,
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    child: const FaIcon(
-                      FontAwesomeIcons.ellipsisVertical,
-                      size: 16,
-                      color: Color(0xFF9CA3AF),
-                    ),
-                  ),
-                ),
+                // GestureDetector(
+                //   onTap: onMenuTap,
+                //   child: Container(
+                //     padding: const EdgeInsets.all(4),
+                //     child: const FaIcon(
+                //       FontAwesomeIcons.ellipsisVertical,
+                //       size: 16,
+                //       color: Color(0xFF9CA3AF),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
             const SizedBox(height: 12),
