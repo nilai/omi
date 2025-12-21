@@ -71,6 +71,7 @@ import 'package:provider/provider.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'pages/mp_memory/memory_detail/providers/memory_detail_provider.dart';
 import 'pages/mp_newsetting/personal/providers/personal_provider.dart';
 
 /// Background message handler for FCM data messages
@@ -328,6 +329,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => MPExpertProvider()),
           ChangeNotifierProvider(create: (context) => CalendarProvider()),
           ChangeNotifierProvider(create: (context) => PersonalProvider()),
+          ChangeNotifierProvider(create: (context) => MemoryDetailProvider()),
         ],
         builder: (context, child) {
           return WithForegroundTask(

@@ -6,6 +6,8 @@ import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
 import 'package:provider/provider.dart';
 
+import 'widgets/mp_chat_people_memory_card.dart';
+
 /// People Memory 页面
 /// 从屏幕右侧滑入的 dialog，显示人物记忆列表
 class MPChatPeopleMemoryPage extends StatefulWidget {
@@ -278,13 +280,12 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
               }
 
               final memory = provider.memories[index];
-              return MemoryConversationCard(
+              return MPChatPeopleMemoryCard(
                 name: memory.name,
                 timestamp: MPTimestampUtils.timestampToRelativeDateString(
                   memory.createdAt ?? 0,
                 ),
                 description: memory.description ?? '',
-                conversationCount: memory.conversationCount,
                 avatarUrl: memory.avatarUrl,
                 onTap: () {
                   Navigator.of(context).pop();
