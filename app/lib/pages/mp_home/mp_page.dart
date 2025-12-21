@@ -191,7 +191,7 @@ class _MPPageContentState extends State<MPPageContent> {
                             secondsText: item.secondsText,
                             description: item.description,
                             onMorePressed: () => provider.onCardMore(item),
-                            onViewDetail: () => provider.onCardViewDetail(item),
+                            onViewDetail: () => provider.onCardViewDetail(context, item),
                           );
                         },
                         separatorBuilder: (_, __) => const SizedBox(height: 12),

@@ -5,6 +5,7 @@ import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
+import '../../mp_memory/conversation_detail/conversation_detail_page.dart';
 
 class MPMemoryItem {
   MPMemoryItem({
@@ -15,6 +16,7 @@ class MPMemoryItem {
     required this.timeText,
     this.secondsText,
     this.description,
+    required this.memory,
   });
 
   final String dateText;
@@ -24,6 +26,7 @@ class MPMemoryItem {
   final String timeText;
   final String? secondsText;
   final String? description;
+  final MPMemoryStruct memory;
 }
 
 /// MPMemoryStruct 扩展方法
@@ -80,6 +83,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       timeText: timeText,
       secondsText: secondsText,
       description: content.isNotEmpty ? content : null,
+      memory: this,
     );
   }
 }
@@ -153,7 +157,9 @@ class MPHomePageProvider extends ChangeNotifier {
     debugPrint('More tapped for ${item.headerText}');
   }
 
-  void onCardViewDetail(MPMemoryItem item) {
+  void onCardViewDetail(BuildContext context, MPMemoryItem item) {
     debugPrint('View detail for ${item.headerText}');
+    // ConversationDetailPage
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
   }
 }

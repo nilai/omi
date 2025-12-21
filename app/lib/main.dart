@@ -22,7 +22,8 @@ import 'package:omi/firebase_options_dev.dart' as dev;
 import 'package:omi/firebase_options_prod.dart' as prod;
 import 'package:omi/flavors.dart';
 import 'package:omi/pages/apps/providers/add_app_provider.dart';
-import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+// import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+import 'package:omi/pages/mp_memory/conversation_detail/providers/conversation_detail_provider.dart';
 import 'package:omi/pages/mp_canlendar/providers/calendar_provider.dart';
 import 'package:omi/pages/mp_expert_feedback/home/providers/mp_expert_provider.dart';
 import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
@@ -292,11 +293,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             update: (BuildContext context, device, SpeechProfileProvider? previous) =>
                 (previous?..setProviders(device)) ?? SpeechProfileProvider(),
           ),
-          ChangeNotifierProxyProvider2<AppProvider, ConversationProvider, ConversationDetailProvider>(
-            create: (context) => ConversationDetailProvider(),
-            update: (BuildContext context, app, conversation, ConversationDetailProvider? previous) =>
-                (previous?..setProviders(app, conversation)) ?? ConversationDetailProvider(),
-          ),
+          // ChangeNotifierProxyProvider2<AppProvider, ConversationProvider, ConversationDetailProvider>(
+          //   create: (context) => ConversationDetailProvider(),
+          //   update: (BuildContext context, app, conversation, ConversationDetailProvider? previous) =>
+          //       (previous?..setProviders(app, conversation)) ?? ConversationDetailProvider(),
+          // ),
           ChangeNotifierProvider(create: (context) => DeveloperModeProvider()),
           ChangeNotifierProvider(create: (context) => McpProvider()),
           ChangeNotifierProxyProvider<AppProvider, AddAppProvider>(
@@ -330,6 +331,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => CalendarProvider()),
           ChangeNotifierProvider(create: (context) => PersonalProvider()),
           ChangeNotifierProvider(create: (context) => MemoryDetailProvider()),
+          ChangeNotifierProvider(create: (context) => ConversationDetailProvider()),
         ],
         builder: (context, child) {
           return WithForegroundTask(
