@@ -47,7 +47,7 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             // 设置图标
                 GestureDetector(
                   onTap: onMenuTap,
-                  child: Assets.images.settingSet.image(
+                  child: Assets.images.mpAiChatMenu.image(
                     width: 32.0,
                     height: 32.0,
                     fit: BoxFit.contain,
