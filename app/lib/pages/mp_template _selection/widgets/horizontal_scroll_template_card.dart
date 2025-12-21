@@ -7,9 +7,12 @@ class HorizontalScrollTemplateItem {
   const HorizontalScrollTemplateItem({
     required this.id,
     required this.title,
+    this.imageUrl,
     this.icon,
     this.iconColor,
     this.backgroundColor,
+    this.isCreateItem = false,
+    this.isMyTemplate = false,
   });
   // AI-generated END - 构造函数
 
@@ -19,7 +22,10 @@ class HorizontalScrollTemplateItem {
   /// 标题文字
   final String title;
 
-  /// 图标（可选）
+  /// 网络图片URL（可选，优先使用）
+  final String? imageUrl;
+
+  /// 图标（可选，当没有网络图片时使用）
   final IconData? icon;
 
   /// 图标颜色（可选）
@@ -27,19 +33,20 @@ class HorizontalScrollTemplateItem {
 
   /// 背景颜色（可选）
   final Color? backgroundColor;
+
+  /// 是否为创建模板项
+  final bool isCreateItem;
+
+  /// 是否为自己的模板
+  final bool isMyTemplate;
 }
 
-/// 横向滑动模版卡片组件
-/// 显示一个标题和多个可横向滑动的模版项
-class HorizontalScrollTemplateCard extends StatelessWidget {
+/// 卡片项数据模型
+class CardItem {
   // AI-generated START - 构造函数
-  const HorizontalScrollTemplateCard({
-    super.key,
+  const CardItem({
     required this.title,
     required this.items,
-    this.onItemTap,
-    this.itemWidth = 120.0,
-    this.itemHeight = 120.0,
   });
   // AI-generated END - 构造函数
 
@@ -48,6 +55,23 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
 
   /// 模版项列表
   final List<HorizontalScrollTemplateItem> items;
+}
+
+/// 横向滑动模版卡片组件
+/// 显示一个标题和多个可横向滑动的模版项
+class HorizontalScrollTemplateCard extends StatelessWidget {
+  // AI-generated START - 构造函数
+  const HorizontalScrollTemplateCard({
+    super.key,
+    required this.item,
+    this.onItemTap,
+    this.itemWidth = 150.0,
+    this.itemHeight = 120.0,
+  });
+  // AI-generated END - 构造函数
+
+  /// 模版项列表
+  final CardItem item;
 
   /// 项点击回调，参数为被点击的项
   final Function(HorizontalScrollTemplateItem item)? onItemTap;
@@ -62,10 +86,11 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 4.0),
           // 标题
           _buildTitle(),
           const SizedBox(height: 16.0),
@@ -81,19 +106,21 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
   /// 构建标题
   Widget _buildTitle() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
-          title,
+          item.title,
           style: const TextStyle(
             fontSize: 18.0,
             fontWeight: FontWeight.bold,
             color: Color(0xFF1F2937),
           ),
         ),
+        const SizedBox(width: 4.0),
         const Icon(
           Icons.arrow_forward_ios,
-          size: 14.0,
+          size: 12.0,
           color: Color(0xFF9CA3AF),
         ),
       ],
@@ -104,7 +131,7 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
   // AI-generated START - 构建可滑动的项列表
   /// 构建横向滑动的项列表
   Widget _buildScrollableItems() {
-    if (items.isEmpty) {
+    if (item.items.isEmpty) {
       return const SizedBox.shrink();
     }
 
@@ -112,10 +139,10 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
       height: itemHeight,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        itemCount: items.length,
+        itemCount: item.items.length,
         itemBuilder: (context, index) {
-          final item = items[index];
-          return _buildItem(item);
+          final itemModel = item.items[index];
+          return _buildItem(itemModel);
         },
       ),
     );
@@ -125,6 +152,11 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
   // AI-generated START - 构建单个项
   /// 构建单个模版项
   Widget _buildItem(HorizontalScrollTemplateItem item) {
+    // 如果是创建模板项，使用特殊样式
+    if (item.isCreateItem) {
+      return _buildCreateItem(item);
+    }
+
     return GestureDetector(
       onTap: () {
         onItemTap?.call(item);
@@ -136,42 +168,21 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: item.backgroundColor ?? Colors.white,
           borderRadius: BorderRadius.circular(12.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 图标
-            if (item.icon != null)
-              Container(
-                width: 48.0,
-                height: 48.0,
-                decoration: BoxDecoration(
-                  color: item.iconColor ?? const Color(0xFF374151),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                child: Icon(
-                  item.icon,
-                  color: Colors.white,
-                  size: 24.0,
-                ),
-              )
-            else
-              Container(
-                width: 48.0,
-                height: 48.0,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF374151),
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
+            // 图标或网络图片
+            Container(
+              width: 48.0,
+              height: 48.0,
+              decoration: BoxDecoration(
+                color: item.iconColor ?? const Color(0xFF374151),
+                borderRadius: BorderRadius.circular(8.0),
               ),
+              child: _buildIconOrImage(item),
+            ),
             const SizedBox(height: 12.0),
             // 标题文字
             Padding(
@@ -179,12 +190,12 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
               child: Text(
                 item.title,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 14.0,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF1F2937),
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111827),
                 ),
               ),
             ),
@@ -194,6 +205,133 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
     );
   }
   // AI-generated END - 构建单个项
+
+  // AI-generated START - 构建创建模板项
+  /// 构建创建模板项（特殊样式：虚线边框、加号图标）
+  Widget _buildCreateItem(HorizontalScrollTemplateItem item) {
+    return GestureDetector(
+      onTap: () {
+        onItemTap?.call(item);
+      },
+      child: Container(
+        width: itemWidth,
+        height: itemHeight,
+        margin: const EdgeInsets.only(right: 12.0),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFEFF6FF), // 浅蓝色
+              Color(0xFFFAF5FF), // 浅紫色
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12.0),
+          border: Border.all(
+            color: const Color(0xFFBFDBFE),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // 加号图标
+            Container(
+              width: 48.0,
+              height: 48.0,
+              decoration: const BoxDecoration(
+                color: Color(0xFFDBEAFE), // 蓝色
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.add,
+                color: Color(0xFF2563EB),
+                size: 18.0,
+              ),
+            ),
+            const SizedBox(height: 8.0),
+            // 标题文字
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Text(
+                item.title,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF3B82F6), // 蓝色文字
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  // AI-generated END - 构建创建模板项
+
+  // AI-generated START - 构建图标或图片
+  /// 构建图标或网络图片，优先使用网络图片，失败时使用本地图标
+  Widget _buildIconOrImage(HorizontalScrollTemplateItem item) {
+    // 如果有网络图片URL，优先使用网络图片
+    if (item.imageUrl != null && item.imageUrl!.isNotEmpty) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Image.network(
+          item.imageUrl!,
+          width: 48.0,
+          height: 48.0,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // 网络图片加载失败时，使用本地图标
+            return _buildLocalIcon(item);
+          },
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) {
+              return child;
+            }
+            // 加载中显示占位符
+            return Container(
+              color: item.iconColor ?? const Color(0xFF374151),
+              child: Center(
+                child: SizedBox(
+                  width: 24.0,
+                  height: 24.0,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.0,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                    value: loadingProgress.expectedTotalBytes != null
+                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                        : null,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
+    // 没有网络图片时，使用本地图标
+    return _buildLocalIcon(item);
+  }
+  // AI-generated END - 构建图标或图片
+
+  // AI-generated START - 构建本地图标
+  /// 构建本地图标
+  Widget _buildLocalIcon(HorizontalScrollTemplateItem item) {
+    if (item.icon != null) {
+      return Icon(
+        item.icon,
+        color: Colors.white,
+        size: 24.0,
+      );
+    }
+    // 既没有网络图片也没有图标时，显示空容器
+    return const SizedBox.shrink();
+  }
+  // AI-generated END - 构建本地图标
 }
 // AI-generated END - horizontal_scroll_template_card.dart
-

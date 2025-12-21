@@ -258,6 +258,43 @@ class MemoProvider with ChangeNotifier {
   }
   // AI-generated END - createMemoWithText
 
+  // AI-generated START - 通过文本更新 Memo
+  /// 通过 API 使用文本内容更新 Memo
+  /// [memoId] Memo 的 ID
+  /// [content] Memo 的文本内容
+  /// 返回 true 表示更新成功，false 表示更新失败
+  Future<void> updateMemoWithText({
+    required String memoId,
+    required String content,
+  }) async {
+    try {
+      // 创建请求
+      final request = MPUpdateMemoRequest(
+        memoId: memoId,
+        content: content,
+      );
+
+      // 调用 API
+      final response = await mp_memo_api.updateMemo(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code == 0) {
+          MPToastUtils.showMessage('Memo 更新成功');
+          // 更新成功后，刷新列表
+          await loadMemos();
+        } else {
+          MPToastUtils.showMessage(response.baseResp.message);
+        }
+      } else {
+        MPToastUtils.showMessage('更新 Memo 失败: 响应为空');
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('更新 Memo 异常: $e');
+    }
+  }
+  // AI-generated END - updateMemoWithText
+
   // AI-generated START - 更新 Memo 任务
   void updateMemo(String id, MemoTaskItem updatedMemo) {
     final index = _memos.indexWhere((m) => m.id == id);

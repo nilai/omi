@@ -363,22 +363,26 @@ class MPExpertStruct {
 @JsonSerializable()
 class MPTemplateStruct {
   @JsonKey(name: 'id')
-  final String id;
+  final String? id;
 
   @JsonKey(name: 'title')
-  final String title;
+  final String? title;
 
-  @JsonKey(name: 'description')
-  final String description;
+  @JsonKey(name: 'icon')
+  final String? icon;
 
-  @JsonKey(name: 'content')
-  final String content;
+  @JsonKey(name: 'type')
+  final String? type;
+
+  @JsonKey(name: 'prompt')
+  final String? prompt;
 
   MPTemplateStruct({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.content,
+    this.id,
+    this.title,
+    this.icon,
+    this.type,
+    this.prompt,
   });
 
   factory MPTemplateStruct.fromJson(Map<String, dynamic> json) => _$MPTemplateStructFromJson(json);

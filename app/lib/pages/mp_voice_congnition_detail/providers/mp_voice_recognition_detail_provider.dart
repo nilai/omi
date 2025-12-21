@@ -169,9 +169,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   }
   // AI-generated END - play
 
-  /**
-   * 结束播放
-   */
+  /// 结束播放
   Future<void> stopPlayer() async {
     try {
       if (_audioPlayer != null && _audioPlayer!.isPlaying) {
@@ -185,9 +183,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     }
   }
 
-  /**
-   * 取消播放监听
-   */
+  /// 取消播放监听
   void cancelPlayerSubscriptions() {
     if (_progressSubscription != null) {
       _progressSubscription!.cancel();
@@ -195,9 +191,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     }
   }
 
-  /**
-   * 获取播放状态
-   */
+  /// 获取播放状态
   Future<PlayerState> getPlayState() async {
     if (_audioPlayer == null) {
       return PlayerState.isStopped;
@@ -205,9 +199,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     return await _audioPlayer!.getPlayerState();
   }
 
-  /**
-   * 释放播放器
-   */
+  /// 释放播放器
   Future<void> releaseFlauto() async {
     try {
       if (_audioPlayer != null) {
@@ -218,17 +210,13 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     }
   }
 
-  /**
-   * 判断文件是否存在
-   */
+  /// 判断文件是否存在
   Future<bool> _fileExists(String path) async {
     return await File(path).exists();
   }
 
-  /**
-   * 初始化播放器
-   * 确保播放器已创建并打开
-   */
+  /// 初始化播放器
+  /// 确保播放器已创建并打开
   Future<void> _ensurePlayerInitialized() async {
     if (_audioPlayer != null) return;
 
@@ -244,10 +232,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     }
   }
 
-  /**
-   * 设置播放进度监听
-   * 与 audio_player_utils.dart 的 _setupPositionTracking 保持一致
-   */
+  /// 设置播放进度监听
+  /// 与 audio_player_utils.dart 的 _setupPositionTracking 保持一致
   void _setupPositionTracking() {
     _progressSubscription?.cancel();
     _progressSubscription = _audioPlayer?.onProgress?.listen((disposition) {
@@ -266,10 +252,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     }
   }
 
-  /**
-   * 暂停播放
-   * 暂停当前正在播放的音频
-   */
+  /// 暂停播放
+  /// 暂停当前正在播放的音频
   Future<void> pause() async {
     if (!_isPlaying) return;
 
@@ -288,10 +272,8 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   }
   // AI-generated END - pause
 
-  /**
-   * 跳转到指定位置
-   * @param progress 播放进度 (0.0 - 1.0)
-   */
+  /// 跳转到指定位置
+  /// @param progress 播放进度 (0.0 - 1.0)
   Future<void> seekTo(double progress) async {
     final newTime = (progress * _totalDuration).round();
     _currentTime = newTime.clamp(0, _totalDuration);

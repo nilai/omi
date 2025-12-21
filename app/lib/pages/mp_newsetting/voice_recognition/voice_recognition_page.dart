@@ -100,9 +100,8 @@ class VoiceRecognitionPage extends StatelessWidget {
       onEmptyStateTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => ChangeNotifierProvider<MPAddVoiceRecognitionProvider>(
-              create: (_) => MPAddVoiceRecognitionProvider(),
-              child: const MPAddVoiceRecognitionPage(),
+            builder: (context) => const MPAddVoiceRecognitionPage(
+              isMyselfVoice: true,
             ),
           ),
         );

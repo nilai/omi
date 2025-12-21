@@ -32,12 +32,53 @@ Map<String, dynamic> _$MPGetTemplateDetailRequestToJson(
       'template_id': instance.templateId,
     };
 
+MPSetTemplateDefaultRequest _$MPSetTemplateDefaultRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPSetTemplateDefaultRequest(
+      templateId: json['template_id'] as String,
+    );
+
+Map<String, dynamic> _$MPSetTemplateDefaultRequestToJson(
+        MPSetTemplateDefaultRequest instance) =>
+    <String, dynamic>{
+      'template_id': instance.templateId,
+    };
+
+MPCreateTemplateRequest _$MPCreateTemplateRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateTemplateRequest(
+      title: json['title'] as String,
+      icon: json['icon'] as String,
+      prompt: json['prompt'] as String,
+      type: json['type'] as String,
+    );
+
+Map<String, dynamic> _$MPCreateTemplateRequestToJson(
+        MPCreateTemplateRequest instance) =>
+    <String, dynamic>{
+      'title': instance.title,
+      'icon': instance.icon,
+      'prompt': instance.prompt,
+      'type': instance.type,
+    };
+
 MPGetTemplateListResponse _$MPGetTemplateListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetTemplateListResponse(
-      templates: (json['templates'] as List<dynamic>)
+      recommendTemplates: (json['recommend_templates'] as List<dynamic>)
           .map((e) => MPTemplateStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
+      customTemplates: (json['custom_templates'] as List<dynamic>)
+          .map((e) => MPTemplateStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      recentTemplate: json['recent_template'] == null
+          ? null
+          : MPTemplateStruct.fromJson(
+              json['recent_template'] as Map<String, dynamic>),
+      templates: (json['templates'] as Map<String, dynamic>).map(
+        (k, e) =>
+            MapEntry(k, MPTemplateStruct.fromJson(e as Map<String, dynamic>)),
+      ),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
@@ -45,6 +86,9 @@ MPGetTemplateListResponse _$MPGetTemplateListResponseFromJson(
 Map<String, dynamic> _$MPGetTemplateListResponseToJson(
         MPGetTemplateListResponse instance) =>
     <String, dynamic>{
+      'recommend_templates': instance.recommendTemplates,
+      'custom_templates': instance.customTemplates,
+      'recent_template': instance.recentTemplate,
       'templates': instance.templates,
       'has_more': instance.hasMore,
       'base_resp': instance.baseResp,
@@ -62,5 +106,29 @@ Map<String, dynamic> _$MPGetTemplateDetailResponseToJson(
         MPGetTemplateDetailResponse instance) =>
     <String, dynamic>{
       'template': instance.template,
+      'base_resp': instance.baseResp,
+    };
+
+MPSetTemplateDefaultResponse _$MPSetTemplateDefaultResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPSetTemplateDefaultResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPSetTemplateDefaultResponseToJson(
+        MPSetTemplateDefaultResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPCreateTemplateResponse _$MPCreateTemplateResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateTemplateResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPCreateTemplateResponseToJson(
+        MPCreateTemplateResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };

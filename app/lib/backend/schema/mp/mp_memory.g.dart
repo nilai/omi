@@ -271,7 +271,8 @@ Map<String, dynamic> _$MPDeleteMemoryResponseToJson(
 MPGetPopularSearchKeywordsResponse _$MPGetPopularSearchKeywordsResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetPopularSearchKeywordsResponse(
-      keywords: (json['keywords'] as List<dynamic>).map((e) => e as String).toList(),
+      keywords:
+          (json['keywords'] as List<dynamic>).map((e) => e as String).toList(),
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 

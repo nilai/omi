@@ -242,18 +242,20 @@ Map<String, dynamic> _$MPExpertStructToJson(MPExpertStruct instance) =>
 
 MPTemplateStruct _$MPTemplateStructFromJson(Map<String, dynamic> json) =>
     MPTemplateStruct(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      content: json['content'] as String,
+      id: json['id'] as String?,
+      title: json['title'] as String?,
+      icon: json['icon'] as String?,
+      type: json['type'] as String?,
+      prompt: json['prompt'] as String?,
     );
 
 Map<String, dynamic> _$MPTemplateStructToJson(MPTemplateStruct instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
-      'description': instance.description,
-      'content': instance.content,
+      'icon': instance.icon,
+      'type': instance.type,
+      'prompt': instance.prompt,
     };
 
 MPUserAISettings _$MPUserAISettingsFromJson(Map<String, dynamic> json) =>

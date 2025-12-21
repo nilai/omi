@@ -212,8 +212,22 @@ class _TodoPageState extends State<TodoPage> {
                   // 处理删除操作
                 },
                 onComplete: (title, dueDate, priority) async {
+                  final now = DateTime.now();
+                  final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  final dateStr = dueDate != null
+                      ? '${months[dueDate.month - 1]} ${dueDate.day}'
+                      : '${months[now.month - 1]} ${now.day}';
+
+                  final priorityTag = priority != null
+                      ? (priority == TaskPriority.high
+                          ? 'High'
+                          : priority == TaskPriority.normal
+                              ? 'Normal'
+                              : 'Low')
+                      : 'Normal';
                   // 处理完成操作
-                  await provider.completeTodo(todo.id);
+                  await provider.updateTodoWithRequest(
+                      todoId: todo.id, title: title, priority: priorityTag, deadline: dateStr);
                 },
               );
             },

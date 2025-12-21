@@ -68,3 +68,19 @@ Future<MPDeleteTodoResponse?> deleteTodo(MPDeleteTodoRequest req) async {
   }
   return null;
 }
+
+// POST /api/v1/todo/update
+Future<MPUpdateTodoResponse?> updateTodo(MPUpdateTodoRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/todo/update',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('updateTodo response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPUpdateTodoResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

@@ -108,6 +108,25 @@ class MPUpdateMemoAIRequest {
   Map<String, dynamic> toJson() => _$MPUpdateMemoAIRequestToJson(this);
 }
 
+// Update Memo Request
+@JsonSerializable()
+class MPUpdateMemoRequest {
+  @JsonKey(name: 'memo_id')
+  final String memoId;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  MPUpdateMemoRequest({
+    required this.memoId,
+    required this.content,
+  });
+
+  factory MPUpdateMemoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Get Memo List Response
@@ -212,4 +231,19 @@ class MPUpdateMemoAIResponse {
   factory MPUpdateMemoAIResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoAIResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPUpdateMemoAIResponseToJson(this);
+}
+
+// Update Memo Response
+@JsonSerializable()
+class MPUpdateMemoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPUpdateMemoResponse({
+    required this.baseResp,
+  });
+
+  factory MPUpdateMemoResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoResponseToJson(this);
 }

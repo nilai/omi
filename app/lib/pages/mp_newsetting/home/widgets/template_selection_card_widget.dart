@@ -72,7 +72,7 @@ class TemplateSelectionCardWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      title ?? '模板选择',
+                      title ?? '模板社区',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18.0,

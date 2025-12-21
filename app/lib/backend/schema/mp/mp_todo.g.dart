@@ -58,6 +58,23 @@ Map<String, dynamic> _$MPDeleteTodoRequestToJson(
       'todo_id': instance.todoId,
     };
 
+MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
+    MPUpdateTodoRequest(
+      todoId: json['todo_id'] as String,
+      title: json['title'] as String,
+      priority: json['priority'] as String,
+      deadline: json['deadline'] as String,
+    );
+
+Map<String, dynamic> _$MPUpdateTodoRequestToJson(
+        MPUpdateTodoRequest instance) =>
+    <String, dynamic>{
+      'todo_id': instance.todoId,
+      'title': instance.title,
+      'priority': instance.priority,
+      'deadline': instance.deadline,
+    };
+
 MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetTodoListResponse(
@@ -106,6 +123,18 @@ MPDeleteTodoResponse _$MPDeleteTodoResponseFromJson(
 
 Map<String, dynamic> _$MPDeleteTodoResponseToJson(
         MPDeleteTodoResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPUpdateTodoResponse _$MPUpdateTodoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateTodoResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPUpdateTodoResponseToJson(
+        MPUpdateTodoResponse instance) =>
     <String, dynamic>{
       'base_resp': instance.baseResp,
     };

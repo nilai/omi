@@ -208,7 +208,7 @@ class _MemoPageState extends State<MemoPage> {
                 dateTime: memo.date,
                 tags: memo.tags,
                 onSave: (content) {
-                  provider.createMemoWithText(content: content);
+                  provider.updateMemoWithText(memoId: memo.id, content: content);
                 },
               );
             },

@@ -37,3 +37,34 @@ Future<MPGetTemplateDetailResponse?> getTemplateDetail(MPGetTemplateDetailReques
   return null;
 }
 
+// POST /api/v1/template/set_default
+Future<MPSetTemplateDefaultResponse?> setTemplateDefault(MPSetTemplateDefaultRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/template/set_default',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('setTemplateDefault response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPSetTemplateDefaultResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/template/create
+Future<MPCreateTemplateResponse?> createTemplate(MPCreateTemplateRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/template/create',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('createTemplate response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPCreateTemplateResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

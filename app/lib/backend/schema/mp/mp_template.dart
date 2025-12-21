@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'mp_data_model.dart';
 
 part 'mp_template.g.dart';
@@ -17,8 +18,7 @@ class MPGetTemplateListRequest {
     required this.cursor,
   });
 
-  factory MPGetTemplateListRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetTemplateListRequestFromJson(json);
+  factory MPGetTemplateListRequest.fromJson(Map<String, dynamic> json) => _$MPGetTemplateListRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetTemplateListRequestToJson(this);
 }
@@ -33,10 +33,52 @@ class MPGetTemplateDetailRequest {
     required this.templateId,
   });
 
-  factory MPGetTemplateDetailRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetTemplateDetailRequestFromJson(json);
+  factory MPGetTemplateDetailRequest.fromJson(Map<String, dynamic> json) => _$MPGetTemplateDetailRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetTemplateDetailRequestToJson(this);
+}
+
+// Set Template Default Request
+@JsonSerializable()
+class MPSetTemplateDefaultRequest {
+  @JsonKey(name: 'template_id')
+  final String templateId;
+
+  MPSetTemplateDefaultRequest({
+    required this.templateId,
+  });
+
+  factory MPSetTemplateDefaultRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPSetTemplateDefaultRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSetTemplateDefaultRequestToJson(this);
+}
+
+// Create Template Request
+@JsonSerializable()
+class MPCreateTemplateRequest {
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'icon')
+  final String icon;
+
+  @JsonKey(name: 'prompt')
+  final String prompt;
+
+  @JsonKey(name: 'type')
+  final String type;
+
+  MPCreateTemplateRequest({
+    required this.title,
+    required this.icon,
+    required this.prompt,
+    required this.type,
+  });
+
+  factory MPCreateTemplateRequest.fromJson(Map<String, dynamic> json) => _$MPCreateTemplateRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateTemplateRequestToJson(this);
 }
 
 // ========== Response Classes ==========
@@ -44,8 +86,17 @@ class MPGetTemplateDetailRequest {
 // Get Template List Response
 @JsonSerializable()
 class MPGetTemplateListResponse {
+  @JsonKey(name: 'recommend_templates')
+  final List<MPTemplateStruct> recommendTemplates;
+
+  @JsonKey(name: 'custom_templates')
+  final List<MPTemplateStruct> customTemplates;
+
+  @JsonKey(name: 'recent_template')
+  final MPTemplateStruct? recentTemplate;
+
   @JsonKey(name: 'templates')
-  final List<MPTemplateStruct> templates;
+  final Map<String, MPTemplateStruct> templates;
 
   @JsonKey(name: 'has_more')
   final bool hasMore;
@@ -54,13 +105,15 @@ class MPGetTemplateListResponse {
   final MPBaseResp baseResp;
 
   MPGetTemplateListResponse({
+    required this.recommendTemplates,
+    required this.customTemplates,
+    this.recentTemplate,
     required this.templates,
     required this.hasMore,
     required this.baseResp,
   });
 
-  factory MPGetTemplateListResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetTemplateListResponseFromJson(json);
+  factory MPGetTemplateListResponse.fromJson(Map<String, dynamic> json) => _$MPGetTemplateListResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetTemplateListResponseToJson(this);
 }
@@ -85,3 +138,33 @@ class MPGetTemplateDetailResponse {
   Map<String, dynamic> toJson() => _$MPGetTemplateDetailResponseToJson(this);
 }
 
+// Set Template Default Response
+@JsonSerializable()
+class MPSetTemplateDefaultResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPSetTemplateDefaultResponse({
+    required this.baseResp,
+  });
+
+  factory MPSetTemplateDefaultResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPSetTemplateDefaultResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSetTemplateDefaultResponseToJson(this);
+}
+
+// Create Template Response
+@JsonSerializable()
+class MPCreateTemplateResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateTemplateResponse({
+    required this.baseResp,
+  });
+
+  factory MPCreateTemplateResponse.fromJson(Map<String, dynamic> json) => _$MPCreateTemplateResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateTemplateResponseToJson(this);
+}

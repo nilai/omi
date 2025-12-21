@@ -70,6 +70,7 @@ class NewTaskPopup extends StatefulWidget {
   /// 显示新建任务弹窗（底部显示）
   static Future<T?> show<T>({
     required BuildContext context,
+    String? todoId,
     String? title,
     String? initialTitle,
     DateTime? initialDueDate,

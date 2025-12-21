@@ -80,6 +80,33 @@ class MPDeleteTodoRequest {
   Map<String, dynamic> toJson() => _$MPDeleteTodoRequestToJson(this);
 }
 
+// Update Todo Request
+@JsonSerializable()
+class MPUpdateTodoRequest {
+  @JsonKey(name: 'todo_id')
+  final String todoId;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'priority')
+  final String priority;
+
+  @JsonKey(name: 'deadline')
+  final String deadline;
+
+  MPUpdateTodoRequest({
+    required this.todoId,
+    required this.title,
+    required this.priority,
+    required this.deadline,
+  });
+
+  factory MPUpdateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateTodoRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Get Todo List Response
@@ -148,4 +175,19 @@ class MPDeleteTodoResponse {
   factory MPDeleteTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteTodoResponseToJson(this);
+}
+
+// Update Todo Response
+@JsonSerializable()
+class MPUpdateTodoResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPUpdateTodoResponse({
+    required this.baseResp,
+  });
+
+  factory MPUpdateTodoResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateTodoResponseToJson(this);
 }

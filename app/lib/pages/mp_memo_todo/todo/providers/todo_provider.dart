@@ -326,6 +326,53 @@ class TodoProvider with ChangeNotifier {
   }
   // AI-generated END - addTodo
 
+  // AI-generated START - 通过 API 更新 Todo 任务
+  /// 通过 API 更新 Todo 任务
+  /// [todoId] Todo 的 ID
+  /// [title] 任务标题
+  /// [priority] 优先级（high, normal, low）
+  /// [deadline] 截止日期（ISO 8601 格式字符串，如 "2025-01-15"）
+  /// 返回 true 表示更新成功，false 表示更新失败
+  Future<bool> updateTodoWithRequest({
+    required String todoId,
+    required String title,
+    required String priority,
+    required String deadline,
+  }) async {
+    try {
+      // 创建请求
+      final request = MPUpdateTodoRequest(
+        todoId: todoId,
+        title: title,
+        priority: priority,
+        deadline: deadline,
+      );
+
+      // 调用 API
+      final response = await mp_todo_api.updateTodo(request);
+
+      if (response != null) {
+        // 检查响应状态
+        if (response.baseResp.code == 0) {
+          MPToastUtils.showMessage('Todo 更新成功');
+          // 更新成功后，刷新列表
+          await loadTodos();
+          return true;
+        } else {
+          MPToastUtils.showMessage(response.baseResp.message);
+          return false;
+        }
+      } else {
+        MPToastUtils.showMessage('更新 Todo 失败: 响应为空');
+        return false;
+      }
+    } catch (e) {
+      MPToastUtils.showMessage('更新 Todo 异常: $e');
+      return false;
+    }
+  }
+  // AI-generated END - updateTodoWithRequest
+
   // AI-generated START - 更新 Todo 任务
   void updateTodo(String id, TodoTaskItem updatedTodo) {
     final index = _todos.indexWhere((t) => t.id == id);
