@@ -15,6 +15,7 @@ import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../note_debug/note_ble_debug_page.dart';
+import '../onboarding/find_device/page.dart';
 import 'widgets/mp_home_upload_widget.dart';
 import 'provider/mp_page_provider.dart';
 import 'mp_search_page.dart';
@@ -221,19 +222,16 @@ class _MPPageContentState extends State<MPPageContent> {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //       builder: (context) => FindDevicesPage(
-              //             isFromOnboarding: false,
-              //             goNext: () {},
-              //             onSkip: () {},
-              //             includeSkip: false,
-              //           )),
-              // );
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const NoteBleDebugPage(),
-              ));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => FindDevicesPage(
+                          isFromOnboarding: false,
+                          goNext: () {},
+                          onSkip: () {},
+                          includeSkip: false,
+                        )),
+              );
             },
             child: Container(
               width: 40,

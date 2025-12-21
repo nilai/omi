@@ -26,6 +26,8 @@ import 'package:omi/pages/mp_template _selection/providers/template_selection_pr
 import 'package:omi/pages/mp_template _selection/template_selection_page.dart';
 import 'package:provider/provider.dart';
 
+import '../../note_debug/note_ble_debug_page.dart';
+
 /// 设置卡片展示页面
 /// 从上到下显示所有设置相关的卡片组件
 class SettingsCardsPage extends StatefulWidget {
@@ -82,7 +84,9 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
           appBar: SettingsTopBar(
             onLeftIconTap: () {
               // 处理左侧图标点击
-              Navigator.of(context).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const NoteBleDebugPage(),
+              ));
             },
             onSettingsTap: () {
               // AI-generated START - 打开设置页面
