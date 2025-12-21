@@ -284,11 +284,12 @@ class _MPPageContentState extends State<MPPageContent> {
             icon: const Icon(Icons.search, color: Color(0xFF111111)),
             // onPressed: provider.onSearchTap,
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //       builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
+              // );
+              MPToastUtils.showFeatureComingSoon();
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
@@ -313,7 +314,7 @@ class _MPPageContentState extends State<MPPageContent> {
       context: context,
       contentWidget: CalendarPopup(
         onDateSelected: (date) {
-          print(date);
+          provider.updateSelectedDate(date);
         },
       ),
     );

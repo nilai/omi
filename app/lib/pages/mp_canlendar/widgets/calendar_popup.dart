@@ -211,6 +211,7 @@ class CalendarPopup extends StatelessWidget {
         provider.selectDate(date);
         if (onDateSelected != null) {
           onDateSelected!(date);
+          Navigator.of(context).pop();
         }
       },
       borderRadius: BorderRadius.circular(8.0),
@@ -263,6 +264,7 @@ class CalendarPopup extends StatelessWidget {
           provider.goToToday();
           if (onDateSelected != null && provider.selectedDate != null) {
             onDateSelected!(provider.selectedDate!);
+            Navigator.of(context).pop();
           }
         },
         style: ElevatedButton.styleFrom(

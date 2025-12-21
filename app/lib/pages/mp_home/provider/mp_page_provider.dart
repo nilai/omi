@@ -157,6 +157,15 @@ class MPHomePageProvider extends ChangeNotifier {
     debugPrint('More tapped for ${item.headerText}');
   }
 
+  void updateSelectedDate(DateTime date) {
+    final timestamp = MPTimestampUtils.dateTimeToTimestamp(date);
+    final dateString = MPTimestampUtils.timestampToDateString(timestamp);
+    if (selectedDate == dateString) return;
+    selectedDate = dateString;
+    notifyListeners();
+    refresh();
+  }
+
   /// 分享卡片
   /// @param context 上下文
   /// @param item 记忆项
