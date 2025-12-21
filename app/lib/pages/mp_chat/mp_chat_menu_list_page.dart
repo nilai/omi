@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
 import 'mp_chat_people_memory_page.dart';
@@ -192,12 +193,7 @@ class _MenuContent extends StatelessWidget {
       ),
       child: GestureDetector(
         onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('搜索功能开发中...'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          MPToastUtils.showFeatureComingSoon();
         },
         child: Row(
           children: [

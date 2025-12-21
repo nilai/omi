@@ -13,6 +13,7 @@ import 'package:omi/pages/chat/select_text_screen.dart';
 import 'package:omi/pages/chat/widgets/ai_message.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
+import 'package:omi/pages/mp_chat/mp_chat_menu_list_page.dart';
 import 'package:omi/providers/connectivity_provider.dart';
 import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/home_provider.dart';
@@ -129,7 +130,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           backgroundColor: Theme.of(context).colorScheme.primary,
           appBar: MPChatAppBar(
             onLeftIconTap: () => (),
-            onMenuTap: () => (),
+            onMenuTap: () => MPChatMenuListPage.show(context),
           ),
           body: GestureDetector(
             onTap: () {
