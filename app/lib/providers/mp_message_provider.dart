@@ -14,6 +14,11 @@ import 'package:uuid/uuid.dart';
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
+
+  String chatId = '';
+
+  MPMessageProvider({required this.chatId});
+
   /// 消息列表，按时间倒序排列（最新的在索引 0）
   List<ServerMessage> messages = [];
 
