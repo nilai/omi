@@ -39,7 +39,9 @@ class MPInsightsListProvider extends ChangeNotifier {
     if (response == null) return;
     _insights = response.memorys.map((e) => e.toMPInsightModel()).toList();
     _hasMore = response.hasMore;
-    _cursor = response.memorys.last.id;
+    if (response.memorys.isNotEmpty) {
+      _cursor = response.memorys.last.id;
+    }
     _isLoading = false;
     notifyListeners();
   }
@@ -60,7 +62,9 @@ class MPInsightsListProvider extends ChangeNotifier {
     if (response == null) return;
     _insights.addAll(response.memorys.map((e) => e.toMPInsightModel()).toList());
     _hasMore = response.hasMore;
-    _cursor = response.memorys.last.id;
+    if (response.memorys.isNotEmpty) {
+      _cursor = response.memorys.last.id;
+    }
     _isLoadingMore = false;
     notifyListeners();
   }
