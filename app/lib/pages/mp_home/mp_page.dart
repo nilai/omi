@@ -144,10 +144,10 @@ class _MPPageContentState extends State<MPPageContent> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: MPHomeUploadWidget(
                     title: provider.uploadTitle,
+                    subtitle: '正在处理音频文件...',
                     transferredCount: provider.uploadedCount,
                     totalCount: provider.totalCount,
                     percent: provider.uploadPercent,
-                    speedText: provider.speedText,
                   ),
                 ),
                 const SizedBox(height: 12),
