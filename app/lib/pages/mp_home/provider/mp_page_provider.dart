@@ -55,6 +55,19 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     // 生成 secondsText (从 duration 转换)
     final secondsText = duration > 0 ? '${duration}s' : null;
 
+
+//  @JsonValue(1)
+//   summary,
+
+//   @JsonValue(2)
+//   onlyRecord,
+
+//   @JsonValue(3)
+//   insight,
+
+//   @JsonValue(4)
+//   aiExpert,
+
     // 根据 type 确定 tagColor
     Color tagColor;
     switch (type) {
