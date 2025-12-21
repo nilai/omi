@@ -23,7 +23,7 @@ import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/upload/mp_upload_client.dart';
 import 'package:provider/provider.dart';
 
-import '../mp_home/mp_home_tab_item_widget.dart';
+import '../mp_home/widgets/mp_home_tab_item_widget.dart';
 
 class HomePageWrapper extends StatefulWidget {
   final String? navigateToRoute;

@@ -21,8 +21,7 @@ class MPGetMemoryListRequest {
     required this.date,
   });
 
-  factory MPGetMemoryListRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryListRequestFromJson(json);
+  factory MPGetMemoryListRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryListRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryListRequestToJson(this);
 }
@@ -37,8 +36,7 @@ class MPGetMemoryDaysRequest {
     required this.month,
   });
 
-  factory MPGetMemoryDaysRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryDaysRequestFromJson(json);
+  factory MPGetMemoryDaysRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryDaysRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryDaysRequestToJson(this);
 }
@@ -53,8 +51,7 @@ class MPGetMemoryDetailRequest {
     required this.memoryId,
   });
 
-  factory MPGetMemoryDetailRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryDetailRequestFromJson(json);
+  factory MPGetMemoryDetailRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryDetailRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryDetailRequestToJson(this);
 }
@@ -73,8 +70,7 @@ class MPGetInsightListRequest {
     required this.cursor,
   });
 
-  factory MPGetInsightListRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetInsightListRequestFromJson(json);
+  factory MPGetInsightListRequest.fromJson(Map<String, dynamic> json) => _$MPGetInsightListRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetInsightListRequestToJson(this);
 }
@@ -97,8 +93,7 @@ class MPCreateRecordRequest {
     required this.duration,
   });
 
-  factory MPCreateRecordRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPCreateRecordRequestFromJson(json);
+  factory MPCreateRecordRequest.fromJson(Map<String, dynamic> json) => _$MPCreateRecordRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateRecordRequestToJson(this);
 }
@@ -137,8 +132,7 @@ class MPSummaryRecordRequest {
     required this.recordMemoAt,
   });
 
-  factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPSummaryRecordRequestFromJson(json);
+  factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPSummaryRecordRequestToJson(this);
 }
@@ -153,8 +147,7 @@ class MPShareMemoryRequest {
     required this.memoryId,
   });
 
-  factory MPShareMemoryRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPShareMemoryRequestFromJson(json);
+  factory MPShareMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPShareMemoryRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPShareMemoryRequestToJson(this);
 }
@@ -169,8 +162,7 @@ class MPDeleteMemoryRequest {
     required this.memoryId,
   });
 
-  factory MPDeleteMemoryRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPDeleteMemoryRequestFromJson(json);
+  factory MPDeleteMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoryRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoryRequestToJson(this);
 }
@@ -195,8 +187,7 @@ class MPGetMemoryListResponse {
     required this.baseResp,
   });
 
-  factory MPGetMemoryListResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryListResponseFromJson(json);
+  factory MPGetMemoryListResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryListResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryListResponseToJson(this);
 }
@@ -215,8 +206,7 @@ class MPGetMemoryDaysResponse {
     required this.baseResp,
   });
 
-  factory MPGetMemoryDaysResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryDaysResponseFromJson(json);
+  factory MPGetMemoryDaysResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryDaysResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryDaysResponseToJson(this);
 }
@@ -235,8 +225,7 @@ class MPGetMemoryDetailResponse {
     required this.baseResp,
   });
 
-  factory MPGetMemoryDetailResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetMemoryDetailResponseFromJson(json);
+  factory MPGetMemoryDetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryDetailResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetMemoryDetailResponseToJson(this);
 }
@@ -259,8 +248,7 @@ class MPGetInsightListResponse {
     required this.baseResp,
   });
 
-  factory MPGetInsightListResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetInsightListResponseFromJson(json);
+  factory MPGetInsightListResponse.fromJson(Map<String, dynamic> json) => _$MPGetInsightListResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetInsightListResponseToJson(this);
 }
@@ -275,8 +263,7 @@ class MPCreateRecordResponse {
     required this.baseResp,
   });
 
-  factory MPCreateRecordResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPCreateRecordResponseFromJson(json);
+  factory MPCreateRecordResponse.fromJson(Map<String, dynamic> json) => _$MPCreateRecordResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateRecordResponseToJson(this);
 }
@@ -315,8 +302,7 @@ class MPSummaryRecordResponse {
     required this.baseResp,
   });
 
-  factory MPSummaryRecordResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPSummaryRecordResponseFromJson(json);
+  factory MPSummaryRecordResponse.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPSummaryRecordResponseToJson(this);
 }
@@ -355,8 +341,7 @@ class MPShareMemoryResponse {
     required this.baseResp,
   });
 
-  factory MPShareMemoryResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPShareMemoryResponseFromJson(json);
+  factory MPShareMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPShareMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
 }
@@ -371,9 +356,27 @@ class MPDeleteMemoryResponse {
     required this.baseResp,
   });
 
-  factory MPDeleteMemoryResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPDeleteMemoryResponseFromJson(json);
+  factory MPDeleteMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoryResponseToJson(this);
 }
 
+// Get Popular Search Keywords Response
+@JsonSerializable()
+class MPGetPopularSearchKeywordsResponse {
+  @JsonKey(name: 'keywords')
+  final List<String> keywords;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetPopularSearchKeywordsResponse({
+    required this.keywords,
+    required this.baseResp,
+  });
+
+  factory MPGetPopularSearchKeywordsResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetPopularSearchKeywordsResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetPopularSearchKeywordsResponseToJson(this);
+}

@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
-import 'package:omi/pages/mp_home/mp_home_card.dart';
+import 'package:omi/pages/mp_home/widgets/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
 import 'package:provider/provider.dart';
 
@@ -10,14 +10,14 @@ import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_memory.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
-import '../chat/widgets/voice_recorder_widget.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
-import '../onboarding/find_device/page.dart';
-import 'mp_home_upload_widget.dart';
+import '../note_debug/note_ble_debug_page.dart';
+import 'widgets/mp_home_upload_widget.dart';
 import 'provider/mp_page_provider.dart';
+import 'mp_search_page.dart';
 
 class MPPage extends StatefulWidget {
   const MPPage({super.key});
@@ -221,16 +221,19 @@ class _MPPageContentState extends State<MPPageContent> {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => FindDevicesPage(
-                          isFromOnboarding: false,
-                          goNext: () {},
-                          onSkip: () {},
-                          includeSkip: false,
-                        )),
-              );
+              // Navigator.push(
+              //   context,
+              //   MaterialPageRoute(
+              //       builder: (context) => FindDevicesPage(
+              //             isFromOnboarding: false,
+              //             goNext: () {},
+              //             onSkip: () {},
+              //             includeSkip: false,
+              //           )),
+              // );
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => const NoteBleDebugPage(),
+              ));
             },
             child: Container(
               width: 40,
@@ -282,14 +285,13 @@ class _MPPageContentState extends State<MPPageContent> {
           // Search icon
           IconButton(
             icon: const Icon(Icons.search, color: Color(0xFF111111)),
-            // onPressed: provider.onSearchTap,
             onPressed: () {
-              // Navigator.push(
-              //   context,
-              //   MaterialPageRoute(
-              //       builder: (context) => VoiceRecorderWidget(onTranscriptReady: (value) {}, onClose: () {})),
-              // );
-              MPToastUtils.showFeatureComingSoon();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MPSearchPage(),
+                ),
+              );
             },
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),

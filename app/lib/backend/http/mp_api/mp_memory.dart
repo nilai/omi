@@ -149,3 +149,19 @@ Future<MPDeleteMemoryResponse?> deleteMemory(MPDeleteMemoryRequest req) async {
   return null;
 }
 
+// GET /api/v1/memory/get_popular_search_keywords
+Future<MPGetPopularSearchKeywordsResponse?> getPopularSearchKeywords() async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/get_popular_search_keywords',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getPopularSearchKeywords response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetPopularSearchKeywordsResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
