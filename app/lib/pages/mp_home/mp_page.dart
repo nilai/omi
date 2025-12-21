@@ -437,7 +437,7 @@ class MPHomePageProvider extends ChangeNotifier {
   int totalCount = 1;
   double uploadPercent = 10;
   String speedText = '0.00KB/S';
-  int recordCount = 7;
+  int recordCount = 20;
   bool loading = false;
   bool loadingMore = false;
   bool hasMore = true;

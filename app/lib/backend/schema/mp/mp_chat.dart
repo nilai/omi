@@ -20,10 +20,10 @@ class MPChatRequest {
   final String speakerId; // 对应人物的id，没有的话，为空字符串。针对AI分析助手的场景
 
   MPChatRequest({
-    required this.expertId,
-    required this.memoryId,
-    required this.templateId,
-    required this.speakerId,
+    this.expertId = '',
+    this.memoryId = '',
+    this.templateId = '',
+    this.speakerId = '',
   });
 
   factory MPChatRequest.fromJson(Map<String, dynamic> json) => _$MPChatRequestFromJson(json);

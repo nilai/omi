@@ -249,6 +249,10 @@ class $AssetsImagesGen {
   AssetGenImage get mpAddExportUnchoose =>
       const AssetGenImage('assets/images/mp_add_export_unchoose.png');
 
+  /// File path: assets/images/mp_ai_chat_menu.png
+  AssetGenImage get mpAiChatMenu =>
+      const AssetGenImage('assets/images/mp_ai_chat_menu.png');
+
   /// File path: assets/images/mp_app_integration_help.png
   AssetGenImage get mpAppIntegrationHelp =>
       const AssetGenImage('assets/images/mp_app_integration_help.png');
@@ -756,6 +760,7 @@ class $AssetsImagesGen {
     mpAddExportFeedbackUnselect,
     mpAddExportRobot,
     mpAddExportUnchoose,
+    mpAiChatMenu,
     mpAppIntegrationHelp,
     mpAppsIntegrationWorkIcon,
     mpChatNoMsgTopIcon,

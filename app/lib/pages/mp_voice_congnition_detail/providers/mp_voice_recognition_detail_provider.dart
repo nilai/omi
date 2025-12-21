@@ -256,8 +256,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       debugPrint('播放进度更新: $_currentTime / $duration');
       notifyListeners();
       // if (duration > 0) {
-        
-        
+
       // }
     });
     if (_progressSubscription == null) {
