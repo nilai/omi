@@ -273,6 +273,15 @@ struct CreateMemoWithTextResponse {
     255: BaseResp base_resp,
 }
 
+struct UpdateMemoRequest {
+    1: string memo_id,
+    2: string content,
+}
+
+struct UpdateMemoResponse {
+    255: BaseResp base_resp,
+}
+
 struct DeleteMemoRequest {
     1: string memo_id,
 }
@@ -308,6 +317,17 @@ struct DoneTodoRequest {
 }
 
 struct DoneTodoResponse {
+    255: BaseResp base_resp,
+}
+
+struct UpdateTodoRequest {
+    1: string todo_id,
+    2: string title,
+    3: string priority,
+    4: string deadline,
+}
+
+struct UpdateTodoResponse {
     255: BaseResp base_resp,
 }
 
@@ -567,6 +587,8 @@ service AppService {
     CreateMemoWithRecordResponse CreateMemoWithRecord(1: CreateMemoWithRecordRequest req)
     // POST /api/v1/memo/create_with_text
     CreateMemoWithTextResponse CreateMemoWithText(1: CreateMemoWithTextRequest req)
+    // POST /api/v1/memo/update
+    UpdateMemoResponse UpdateMemo(1: UpdateMemoRequest req)
     // POST /api/v1/memo/delete
     DeleteMemoResponse DeleteMemo(1: DeleteMemoRequest req)
 
@@ -577,6 +599,8 @@ service AppService {
     CreateTodoResponse CreateTodo(1: CreateTodoRequest req)
     // POST /api/v1/todo/done
     DoneTodoResponse DoneTodo(1: DoneTodoRequest req)
+    // POST /api/v1/todo/update
+    UpdateTodoResponse UpdateTodo(1: UpdateTodoRequest req)
     // POST /api/v1/todo/delete
     DeleteTodoResponse DeleteTodo(1: DeleteTodoRequest req)
 
