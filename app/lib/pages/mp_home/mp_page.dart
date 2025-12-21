@@ -190,7 +190,8 @@ class _MPPageContentState extends State<MPPageContent> {
                             timeText: item.timeText,
                             secondsText: item.secondsText,
                             description: item.description,
-                            onMorePressed: () => provider.onCardMore(item),
+                            onShare: () => provider.onCardShare(context, item),
+                            onDelete: () => provider.onCardDelete(context, item),
                             onViewDetail: () => provider.onCardViewDetail(context, item),
                           );
                         },
