@@ -118,7 +118,7 @@ class MemoryConversationCard extends StatelessWidget {
                         child: Text(
                           name,
                           style: const TextStyle(
-                            color: Colors.black87,
+                            color: Color(0xFF1F2937),
                             fontSize: 16.0,
                             fontWeight: FontWeight.bold,
                           ),
@@ -126,8 +126,8 @@ class MemoryConversationCard extends StatelessWidget {
                       ),
                       Text(
                         timestamp,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
+                        style: const TextStyle(
+                          color: Color(0xFF9CA3AF),
                           fontSize: 12.0,
                         ),
                       ),
@@ -135,37 +135,45 @@ class MemoryConversationCard extends StatelessWidget {
                   ),
                   // AI-generated END - 姓名和时间戳
 
-                  const SizedBox(height: 2.0),
+                  const SizedBox(height: 3.0),
 
                   // AI-generated START - 活动描述
                   Text(
                     description,
-                    style: TextStyle(
-                      color: Colors.grey.shade800,
+                    style: const TextStyle(
+                      color: Color(0xFF4B5563),
                       fontSize: 14.0,
-                      height: 1.4,
+                      height: 1.2,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   // AI-generated END - 活动描述
 
-                  const SizedBox(height: 4.0),
+                  const SizedBox(height: 2.0),
 
                   // AI-generated START - 对话次数
                   Row(
                     children: [
                       Assets.images.mpMemoryImessage.image(
-                        width: 16.0,
-                        height: 16.0,
+                        width: 12.0,
+                        height: 12.0,
                       ),
                       const SizedBox(width: 4.0),
-                      Text(
-                        '$conversationCount次对话',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12.0,
+                      Expanded(
+                        child: Text(
+                          '$conversationCount次对话',
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 12.0,
+                          ),
                         ),
+                      ),
+                      const SizedBox(width: 4.0),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: Color(0xFF9CA3AF),
+                        size: 20.0,
                       ),
                     ],
                   ),
@@ -178,11 +186,7 @@ class MemoryConversationCard extends StatelessWidget {
             const SizedBox(width: 8.0),
 
             // AI-generated START - 右侧：箭头
-            Icon(
-              Icons.chevron_right,
-              color: Colors.grey.shade400,
-              size: 20.0,
-            ),
+
             // AI-generated END - 右侧：箭头
           ],
         ),

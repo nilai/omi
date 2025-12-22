@@ -51,15 +51,19 @@ MPCreateTemplateRequest _$MPCreateTemplateRequestFromJson(
       icon: json['icon'] as String,
       prompt: json['prompt'] as String,
       type: json['type'] as String,
+      setDefault: json['set_default'] as bool?,
+      templateId: json['template_id'] as String?,
     );
 
 Map<String, dynamic> _$MPCreateTemplateRequestToJson(
         MPCreateTemplateRequest instance) =>
     <String, dynamic>{
+      'template_id': instance.templateId,
       'title': instance.title,
       'icon': instance.icon,
       'prompt': instance.prompt,
       'type': instance.type,
+      'set_default': instance.setDefault,
     };
 
 MPGetTemplateListResponse _$MPGetTemplateListResponseFromJson(

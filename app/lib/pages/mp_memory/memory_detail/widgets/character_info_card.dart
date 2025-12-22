@@ -80,7 +80,7 @@ class CharacterInfoCard extends StatelessWidget {
                   Text(
                     name,
                     style: const TextStyle(
-                      color: Colors.black87,
+                      color: Color(0xFF1F2937),
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                     ),
@@ -92,16 +92,10 @@ class CharacterInfoCard extends StatelessWidget {
                   // AI-generated START - 对话次数
                   Row(
                     children: [
-                      Icon(
-                        Icons.chat_bubble_outline,
-                        size: 16.0,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4.0),
                       Text(
                         '共 $conversationCount 次对话',
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: Color(0xFF6B7280),
                           fontSize: 14.0,
                         ),
                       ),

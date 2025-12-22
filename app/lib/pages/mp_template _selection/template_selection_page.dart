@@ -28,6 +28,24 @@ class TemplateSelectionPage extends StatefulWidget {
 }
 
 class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
+  // AI-generated START - 初始化方法
+  @override
+  void initState() {
+    super.initState();
+    // AI-generated START - 加载模版列表
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // 使用 Future.microtask 确保在下一帧执行，避免在构建过程中触发 notifyListeners
+      Future.microtask(() {
+        if (!mounted) return;
+        final provider = Provider.of<TemplateSelectionProvider>(context, listen: false);
+        provider.loadTemplates();
+      });
+    });
+    // AI-generated END - 加载模版列表
+  }
+  // AI-generated END - 初始化方法
+
   // AI-generated START - 构建方法
   @override
   Widget build(BuildContext context) {

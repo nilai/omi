@@ -257,6 +257,150 @@ class $AssetsImagesGen {
   AssetGenImage get mpAppIntegrationHelp =>
       const AssetGenImage('assets/images/mp_app_integration_help.png');
 
+  /// File path: assets/images/mp_apps_1.png
+  AssetGenImage get mpApps1 =>
+      const AssetGenImage('assets/images/mp_apps_1.png');
+
+  /// File path: assets/images/mp_apps_10.png
+  AssetGenImage get mpApps10 =>
+      const AssetGenImage('assets/images/mp_apps_10.png');
+
+  /// File path: assets/images/mp_apps_11.png
+  AssetGenImage get mpApps11 =>
+      const AssetGenImage('assets/images/mp_apps_11.png');
+
+  /// File path: assets/images/mp_apps_12.png
+  AssetGenImage get mpApps12 =>
+      const AssetGenImage('assets/images/mp_apps_12.png');
+
+  /// File path: assets/images/mp_apps_13.png
+  AssetGenImage get mpApps13 =>
+      const AssetGenImage('assets/images/mp_apps_13.png');
+
+  /// File path: assets/images/mp_apps_14.png
+  AssetGenImage get mpApps14 =>
+      const AssetGenImage('assets/images/mp_apps_14.png');
+
+  /// File path: assets/images/mp_apps_15.png
+  AssetGenImage get mpApps15 =>
+      const AssetGenImage('assets/images/mp_apps_15.png');
+
+  /// File path: assets/images/mp_apps_16.png
+  AssetGenImage get mpApps16 =>
+      const AssetGenImage('assets/images/mp_apps_16.png');
+
+  /// File path: assets/images/mp_apps_17.png
+  AssetGenImage get mpApps17 =>
+      const AssetGenImage('assets/images/mp_apps_17.png');
+
+  /// File path: assets/images/mp_apps_18.png
+  AssetGenImage get mpApps18 =>
+      const AssetGenImage('assets/images/mp_apps_18.png');
+
+  /// File path: assets/images/mp_apps_19.png
+  AssetGenImage get mpApps19 =>
+      const AssetGenImage('assets/images/mp_apps_19.png');
+
+  /// File path: assets/images/mp_apps_2.png
+  AssetGenImage get mpApps2 =>
+      const AssetGenImage('assets/images/mp_apps_2.png');
+
+  /// File path: assets/images/mp_apps_20.png
+  AssetGenImage get mpApps20 =>
+      const AssetGenImage('assets/images/mp_apps_20.png');
+
+  /// File path: assets/images/mp_apps_21.png
+  AssetGenImage get mpApps21 =>
+      const AssetGenImage('assets/images/mp_apps_21.png');
+
+  /// File path: assets/images/mp_apps_22.png
+  AssetGenImage get mpApps22 =>
+      const AssetGenImage('assets/images/mp_apps_22.png');
+
+  /// File path: assets/images/mp_apps_23.png
+  AssetGenImage get mpApps23 =>
+      const AssetGenImage('assets/images/mp_apps_23.png');
+
+  /// File path: assets/images/mp_apps_24.png
+  AssetGenImage get mpApps24 =>
+      const AssetGenImage('assets/images/mp_apps_24.png');
+
+  /// File path: assets/images/mp_apps_25.png
+  AssetGenImage get mpApps25 =>
+      const AssetGenImage('assets/images/mp_apps_25.png');
+
+  /// File path: assets/images/mp_apps_26.png
+  AssetGenImage get mpApps26 =>
+      const AssetGenImage('assets/images/mp_apps_26.png');
+
+  /// File path: assets/images/mp_apps_27.png
+  AssetGenImage get mpApps27 =>
+      const AssetGenImage('assets/images/mp_apps_27.png');
+
+  /// File path: assets/images/mp_apps_28.png
+  AssetGenImage get mpApps28 =>
+      const AssetGenImage('assets/images/mp_apps_28.png');
+
+  /// File path: assets/images/mp_apps_29.png
+  AssetGenImage get mpApps29 =>
+      const AssetGenImage('assets/images/mp_apps_29.png');
+
+  /// File path: assets/images/mp_apps_3.png
+  AssetGenImage get mpApps3 =>
+      const AssetGenImage('assets/images/mp_apps_3.png');
+
+  /// File path: assets/images/mp_apps_30.png
+  AssetGenImage get mpApps30 =>
+      const AssetGenImage('assets/images/mp_apps_30.png');
+
+  /// File path: assets/images/mp_apps_31.png
+  AssetGenImage get mpApps31 =>
+      const AssetGenImage('assets/images/mp_apps_31.png');
+
+  /// File path: assets/images/mp_apps_32.png
+  AssetGenImage get mpApps32 =>
+      const AssetGenImage('assets/images/mp_apps_32.png');
+
+  /// File path: assets/images/mp_apps_33.png
+  AssetGenImage get mpApps33 =>
+      const AssetGenImage('assets/images/mp_apps_33.png');
+
+  /// File path: assets/images/mp_apps_34.png
+  AssetGenImage get mpApps34 =>
+      const AssetGenImage('assets/images/mp_apps_34.png');
+
+  /// File path: assets/images/mp_apps_35.png
+  AssetGenImage get mpApps35 =>
+      const AssetGenImage('assets/images/mp_apps_35.png');
+
+  /// File path: assets/images/mp_apps_36.png
+  AssetGenImage get mpApps36 =>
+      const AssetGenImage('assets/images/mp_apps_36.png');
+
+  /// File path: assets/images/mp_apps_4.png
+  AssetGenImage get mpApps4 =>
+      const AssetGenImage('assets/images/mp_apps_4.png');
+
+  /// File path: assets/images/mp_apps_5.png
+  AssetGenImage get mpApps5 =>
+      const AssetGenImage('assets/images/mp_apps_5.png');
+
+  /// File path: assets/images/mp_apps_6.png
+  AssetGenImage get mpApps6 =>
+      const AssetGenImage('assets/images/mp_apps_6.png');
+
+  /// File path: assets/images/mp_apps_7.png
+  AssetGenImage get mpApps7 =>
+      const AssetGenImage('assets/images/mp_apps_7.png');
+
+  /// File path: assets/images/mp_apps_8.png
+  AssetGenImage get mpApps8 =>
+      const AssetGenImage('assets/images/mp_apps_8.png');
+
+  /// File path: assets/images/mp_apps_9.png
+  AssetGenImage get mpApps9 =>
+      const AssetGenImage('assets/images/mp_apps_9.png');
+
   /// File path: assets/images/mp_apps_integration_work_icon.png
   AssetGenImage get mpAppsIntegrationWorkIcon =>
       const AssetGenImage('assets/images/mp_apps_integration_work_icon.png');
@@ -762,6 +906,42 @@ class $AssetsImagesGen {
     mpAddExportUnchoose,
     mpAiChatMenu,
     mpAppIntegrationHelp,
+    mpApps1,
+    mpApps10,
+    mpApps11,
+    mpApps12,
+    mpApps13,
+    mpApps14,
+    mpApps15,
+    mpApps16,
+    mpApps17,
+    mpApps18,
+    mpApps19,
+    mpApps2,
+    mpApps20,
+    mpApps21,
+    mpApps22,
+    mpApps23,
+    mpApps24,
+    mpApps25,
+    mpApps26,
+    mpApps27,
+    mpApps28,
+    mpApps29,
+    mpApps3,
+    mpApps30,
+    mpApps31,
+    mpApps32,
+    mpApps33,
+    mpApps34,
+    mpApps35,
+    mpApps36,
+    mpApps4,
+    mpApps5,
+    mpApps6,
+    mpApps7,
+    mpApps8,
+    mpApps9,
     mpAppsIntegrationWorkIcon,
     mpChatNoMsgTopIcon,
     mpFeedbackDetailAdd,

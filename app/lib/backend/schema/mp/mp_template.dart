@@ -57,6 +57,9 @@ class MPSetTemplateDefaultRequest {
 // Create Template Request
 @JsonSerializable()
 class MPCreateTemplateRequest {
+  @JsonKey(name: 'template_id')
+  final String? templateId;
+
   @JsonKey(name: 'title')
   final String title;
 
@@ -69,11 +72,16 @@ class MPCreateTemplateRequest {
   @JsonKey(name: 'type')
   final String type;
 
+  @JsonKey(name: 'set_default')
+  final bool? setDefault;
+
   MPCreateTemplateRequest({
     required this.title,
     required this.icon,
     required this.prompt,
     required this.type,
+    required this.setDefault,
+    this.templateId,
   });
 
   factory MPCreateTemplateRequest.fromJson(Map<String, dynamic> json) => _$MPCreateTemplateRequestFromJson(json);

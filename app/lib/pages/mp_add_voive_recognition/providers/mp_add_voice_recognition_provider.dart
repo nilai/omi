@@ -5,9 +5,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import '../../mp_voice_congnition_detail/mp_voice_recognition_detail_page.dart';
 
 /// 录制声纹状态管理Provider
@@ -125,7 +125,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
     Navigator.of(context!).pushReplacement(MaterialPageRoute(
       builder: (context) => MPVoiceRecognitionDetailPage(
         voiceId: null,
-        initialName: null,
+        initialName: isMyselfVoice ? '我的声音' : null,
         audioDuration: _recordingDuration,
         isEditMode: true,
         audioPath: _audioPath,

@@ -1,6 +1,7 @@
 // AI-generated START - 记忆详情页面
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/conversation_detail_page.dart';
 import 'package:omi/pages/mp_memory/home/providers/memory_provider.dart';
@@ -41,15 +42,19 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
     // AI-generated START - 初始化记忆详情数据
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final detailProvider = Provider.of<MemoryDetailProvider>(context, listen: false);
+      // 使用 Future.microtask 确保在下一帧执行，避免在构建过程中触发 notifyListeners
+      Future.microtask(() {
+        if (!mounted) return;
+        final detailProvider = Provider.of<MemoryDetailProvider>(context, listen: false);
 
-      // 如果传入了memoryItem，直接设置
-      if (widget.memoryItem != null) {
-        detailProvider.setMemoryItem(widget.memoryItem);
-      }
+        // 如果传入了memoryItem，直接设置
+        if (widget.memoryItem != null) {
+          detailProvider.setMemoryItem(widget.memoryItem);
+        }
 
-      // 加载对话记录
-      detailProvider.loadMemoryDetail(widget.memoryId);
+        // 加载对话记录
+        detailProvider.loadMemoryDetail(widget.memoryId);
+      });
     });
     // AI-generated END - 初始化记忆详情数据
   }
@@ -63,6 +68,7 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
         final memoryItem = detailProvider.memoryItem;
 
         return Scaffold(
+          backgroundColor: MPConstUtils.backgroundColorGrey,
           appBar: MPCommonAppBar(
             title: memoryItem != null ? '与${memoryItem.name}的对话' : '记忆详情',
           ),
@@ -152,13 +158,13 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
                         // AI-generated START - 导航到对话详情页面
                         final memory = provider.getMemoryById(summary.id);
                         if (memory != null) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => ConversationDetailPage(
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => ConversationDetailPage(
                                 memory: memory,
+                              ),
                             ),
-                          ),
-                        );
+                          );
                         }
                         // AI-generated END - 导航到对话详情页面
                       },

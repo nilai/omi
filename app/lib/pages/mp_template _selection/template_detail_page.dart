@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import 'package:omi/pages/mp_popup/template_category_selection_popup.dart';
+import 'package:omi/pages/mp_popup/template_icon_selection_popup.dart';
 import 'package:omi/pages/mp_template%20_selection/providers/template_detail_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -46,24 +48,33 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
   void initState() {
     super.initState();
 
-    final provider = Provider.of<MPTemplateDetailProvider>(context, listen: false);
-
     // 初始化控制器
     _titleController = TextEditingController();
     _categoryController = TextEditingController();
     _promptController = TextEditingController();
 
-    // 初始化 provider（根据 templateId 判断是新增还是编辑）
-    provider.initializeTemplate(widget.templateId, widget.template).then((_) {
-      if (mounted) {
-        // 更新控制器
-        if (provider.template != null) {
-          _titleController.text = provider.template!.title ?? '';
-          _categoryController.text = provider.category;
-          _promptController.text = provider.template!.prompt ?? '';
-        }
-      }
+    // AI-generated START - 初始化模板数据
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // 使用 Future.microtask 确保在下一帧执行，避免在构建过程中触发 notifyListeners
+      Future.microtask(() {
+        if (!mounted) return;
+        final provider = Provider.of<MPTemplateDetailProvider>(context, listen: false);
+
+        // 根据 templateId 判断是新增还是编辑
+        // 如果 templateId 有值，调用接口加载模板详情；如果没有值，即为新增模式
+        provider.initializeTemplate(widget.templateId, widget.template).then((_) {
+          if (!mounted) return;
+          // 更新控制器
+          if (provider.template != null) {
+            _titleController.text = provider.template!.title ?? '';
+            _categoryController.text = provider.category;
+            _promptController.text = provider.template!.prompt ?? '';
+          }
+        });
+      });
     });
+    // AI-generated END - 初始化模板数据
   }
 
   @override
@@ -95,7 +106,17 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
   Future<void> _setAsDefaultTemplate() async {
     final provider = Provider.of<MPTemplateDetailProvider>(context, listen: false);
 
-    await provider.setAsDefaultTemplate();
+    // 如果没有 id（新增模式），则调用 saveTemplate 方法，setDefault 设置为 true
+    if (provider.template?.id == null) {
+      final success = await provider.saveTemplate(setDefault: true);
+      if (success) {
+        MPToastUtils.showMessage('模板已创建并设置为默认模板');
+        Navigator.pop(context, true);
+      }
+    } else {
+      // 如果有 id（编辑模式），调用 setAsDefaultTemplate 方法
+      await provider.setAsDefaultTemplate();
+    }
   }
   // AI-generated END - 设置为默认模板
 
@@ -197,10 +218,29 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
   /// 构建模板图标（网络图片或本地图标）
   Widget _buildTemplateIcon(MPTemplateDetailProvider provider) {
     final iconUrl = provider.template?.icon;
+    final tempLocalPath = provider.tempLocalIconPath;
+    final isCreateMode = widget.isMyTemplate && provider.template?.id == null;
 
-    if (iconUrl != null && iconUrl.isNotEmpty) {
+    Widget iconWidget;
+
+    // 优先使用临时本地路径（选择后立即显示）
+    if (tempLocalPath != null && tempLocalPath.isNotEmpty) {
+      iconWidget = ClipRRect(
+        borderRadius: BorderRadius.circular(8.0),
+        child: Image.asset(
+          tempLocalPath,
+          width: 48.0,
+          height: 48.0,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            // 本地图片加载失败时，使用默认图标
+            return _buildLocalIcon();
+          },
+        ),
+      );
+    } else if (iconUrl != null && iconUrl.isNotEmpty) {
       // 使用网络图片
-      return ClipRRect(
+      iconWidget = ClipRRect(
         borderRadius: BorderRadius.circular(8.0),
         child: Image.network(
           iconUrl,
@@ -241,9 +281,96 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
       );
     } else {
       // 没有网络图片时，使用本地图标
-      return _buildLocalIcon();
+      iconWidget = _buildLocalIcon();
+    }
+
+    // 如果是新增模式，让图标可点击选择
+    if (isCreateMode) {
+      return GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => _selectIcon(provider),
+        child: Stack(
+          children: [
+            iconWidget,
+            // 添加选择提示
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Container(
+                width: 16.0,
+                height: 16.0,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2.0,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.edit,
+                  size: 10.0,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return iconWidget;
+  }
+
+  // AI-generated START - 选择图标
+  /// 打开图标选择弹窗并更新图标
+  Future<void> _selectIcon(MPTemplateDetailProvider provider) async {
+    // 创建弹窗实例，设置回调来处理URL更新
+    final result = await showDialog<IconSelectionResult>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder: (context) {
+        return MPTemplateIconSelectionPopup(
+          onIconSelected: (result) {
+            // 先使用本地图片路径显示（立即显示）
+            provider.updateIcon(result.localPath);
+
+            // 如果上传成功，更新为URL
+            if (result.url != null && result.url!.isNotEmpty) {
+              provider.updateIcon(result.url!);
+            }
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      // 立即使用本地图片路径显示
+      provider.updateIcon(result.localPath);
     }
   }
+  // AI-generated END - 选择图标
+
+  // AI-generated START - 选择类别
+  /// 打开类别选择弹窗并更新类别
+  Future<void> _selectCategory(MPTemplateDetailProvider provider) async {
+    // 先移除焦点，避免弹出键盘
+    FocusScope.of(context).unfocus();
+
+    final category = await MPTemplateCategorySelectionPopup.show(
+      context: context,
+      selectedCategory: provider.category,
+    );
+
+    if (category != null && category.isNotEmpty) {
+      provider.updateCategory(category);
+      _categoryController.text = category;
+      // 再次确保移除焦点
+      FocusScope.of(context).unfocus();
+    }
+  }
+  // AI-generated END - 选择类别
 
   /// 构建本地图标
   Widget _buildLocalIcon() {
@@ -251,12 +378,12 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
       width: 48.0,
       height: 48.0,
       decoration: BoxDecoration(
-        color: const Color(0xFFFCE7F6),
+        color: const Color(0xFFEC4899),
         borderRadius: BorderRadius.circular(8.0),
       ),
       child: const Icon(
         Icons.description,
-        color: Color(0xFFEC4899),
+        color: Colors.white,
         size: 24.0,
       ),
     );
@@ -277,45 +404,46 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
           ),
         ),
         const SizedBox(height: 8.0),
-        Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(8.0),
-          ),
-          child: TextField(
-            controller: _categoryController,
-            readOnly: !widget.isMyTemplate,
-            decoration: InputDecoration(
-              hintText: '请选择类别',
-              hintStyle: const TextStyle(
-                fontSize: 14.0,
-                color: Color(0xFF9CA3AF),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.isMyTemplate ? () => _selectCategory(provider) : null,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: IgnorePointer(
+              child: TextField(
+                controller: _categoryController,
+                readOnly: true,
+                enabled: widget.isMyTemplate,
+                enableInteractiveSelection: false,
+                decoration: InputDecoration(
+                  hintText: '请选择类别',
+                  hintStyle: const TextStyle(
+                    fontSize: 14.0,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                  suffixIcon: widget.isMyTemplate
+                      ? const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14.0,
+                          color: Color(0xFF111827),
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16.0),
+                  isDense: true,
+                  isCollapsed: true,
+                ),
+                style: const TextStyle(
+                  fontSize: 14.0,
+                  color: Color(0xFF111827),
+                ),
               ),
-              suffixIcon: widget.isMyTemplate
-                  ? const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 14.0,
-                      color: Color(0xFF111827),
-                    )
-                  : null,
-              border: InputBorder.none,
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16.0),
-              isDense: true,
-              isCollapsed: true,
             ),
-            style: const TextStyle(
-              fontSize: 14.0,
-              color: Color(0xFF111827),
-            ),
-            onTap: widget.isMyTemplate
-                ? () {
-                    // TODO: 实现类别选择
-                    debugPrint('选择类别');
-                    provider.updateCategory('工作');
-                  }
-                : null,
           ),
         )
       ],

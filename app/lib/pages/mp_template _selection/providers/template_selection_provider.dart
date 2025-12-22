@@ -72,16 +72,19 @@ class TemplateSelectionProvider with ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 500));
 
       // 模拟假数据
-      final response = _createMockResponse();
+      // final response = _createMockResponse();
 
-      // 真实API调用（已注释）
-      // final request = MPGetTemplateListRequest(
-      //   pageSize: 20,
-      //   cursor: _cursor,
-      // );
-      // final response = await mp_template_api.getTemplateList(request);
-      // if (response != null) { ... }
-
+      //真实API调用（已注释）
+      final request = MPGetTemplateListRequest(
+        pageSize: 20,
+        cursor: _cursor,
+      );
+      final response = await mp_template_api.getTemplateList(request);
+      if (response == null) {
+        _error = '获取模版列表失败';
+        _templates = [];
+        return;
+      }
       // 检查响应状态
       if (response.baseResp.code != 0) {
         _error = response.baseResp.message;

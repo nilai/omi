@@ -71,45 +71,29 @@ class MPTemplateDetailProvider with ChangeNotifier {
     });
 
     try {
-      // 模拟网络延迟
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 调用真实 API
+      final request = MPGetTemplateDetailRequest(templateId: templateId);
+      final response = await mp_template_api.getTemplateDetail(request);
 
-      // 使用模拟数据
-      final mockResponse = _createMockTemplateDetailResponse(templateId);
-
-      if (mockResponse != null && mockResponse.baseResp.code == 0) {
-        setState(() {
-          _template = mockResponse.template;
-          _isLoading = false;
-        });
+      if (response != null) {
+        if (response.baseResp.code == 0) {
+          setState(() {
+            _template = response.template;
+            _category = response.template.type ?? '通用';
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            MPToastUtils.showMessage(response.baseResp.message);
+            _isLoading = false;
+          });
+        }
       } else {
         setState(() {
-          MPToastUtils.showMessage(mockResponse?.baseResp.message ?? '加载模板详情失败');
+          MPToastUtils.showMessage('加载模板详情失败');
           _isLoading = false;
         });
       }
-
-      // 实际 API 调用（注释掉，使用模拟数据）
-      // final request = MPGetTemplateDetailRequest(templateId: templateId);
-      // final response = await mp_template_api.getTemplateDetail(request);
-      // if (response != null) {
-      //   if (response.baseResp.code == 0) {
-      //     setState(() {
-      //       _template = response.template;
-      //       _isLoading = false;
-      //     });
-      //   } else {
-      //     setState(() {
-      //       _error = response.baseResp.message;
-      //       _isLoading = false;
-      //     });
-      //   }
-      // } else {
-      //   setState(() {
-      //     _error = '加载模板详情失败';
-      //     _isLoading = false;
-      //   });
-      // }
     } catch (e) {
       setState(() {
         MPToastUtils.showMessage(e.toString());
@@ -139,9 +123,56 @@ class MPTemplateDetailProvider with ChangeNotifier {
   void updateCategory(String category) {
     setState(() {
       _category = category;
+      // 同时更新模板对象中的 type 和 icon 字段，以便图标显示能够正确更新
+      _template = MPTemplateStruct(
+        id: _template?.id,
+        title: _template?.title,
+        icon: _template?.icon ?? '', // 确保 icon 字段也被更新
+        type: category,
+        prompt: _template?.prompt,
+      );
     });
   }
   // AI-generated END - 更新模板类别
+
+  // AI-generated START - 临时本地图标路径
+  String? _tempLocalIconPath;
+  // AI-generated END - _tempLocalIconPath
+
+  // AI-generated START - 获取临时本地图标路径
+  String? get tempLocalIconPath => _tempLocalIconPath;
+  // AI-generated END - tempLocalIconPath
+
+  // AI-generated START - 更新模板图标
+  /// 更新模板图标URL
+  /// [iconUrl] 图标URL，如果以 'assets/' 开头则为本地路径
+  void updateIcon(String iconUrl) {
+    setState(() {
+      // 如果是本地路径（asset路径），保存为临时路径
+      if (iconUrl.startsWith('assets/')) {
+        _tempLocalIconPath = iconUrl;
+        // 本地路径不保存到 template.icon，因为那是用于网络图片的
+        _template = MPTemplateStruct(
+          id: _template?.id,
+          title: _template?.title,
+          icon: _template?.icon, // 保持原有icon或为空
+          type: _template?.type ?? _category,
+          prompt: _template?.prompt,
+        );
+      } else {
+        // 网络URL，更新到template.icon并清除临时路径
+        _tempLocalIconPath = null;
+        _template = MPTemplateStruct(
+          id: _template?.id,
+          title: _template?.title,
+          icon: iconUrl,
+          type: _template?.type ?? _category,
+          prompt: _template?.prompt,
+        );
+      }
+    });
+  }
+  // AI-generated END - 更新模板图标
 
   // AI-generated START - 更新模板内容
   /// 更新模板内容（Prompt）
@@ -160,7 +191,8 @@ class MPTemplateDetailProvider with ChangeNotifier {
 
   // AI-generated START - 保存模板
   /// 保存模板
-  Future<bool> saveTemplate() async {
+  /// [setDefault] 是否设置为默认模板，默认为 false
+  Future<bool> saveTemplate({bool setDefault = false}) async {
     if (_template == null) {
       MPToastUtils.showMessage('模板数据为空');
       notifyListeners();
@@ -198,6 +230,8 @@ class MPTemplateDetailProvider with ChangeNotifier {
           icon: _template!.icon ?? '',
           prompt: prompt,
           type: _category,
+          setDefault: setDefault,
+          templateId: _templateId,
         );
         final response = await mp_template_api.createTemplate(request);
 
@@ -250,7 +284,7 @@ class MPTemplateDetailProvider with ChangeNotifier {
     try {
       // 调用 API 设置默认模板
       final request = MPSetTemplateDefaultRequest(
-        templateId: _template!.id ?? '',
+        templateId: _template!.id!,
       );
       final response = await mp_template_api.setTemplateDefault(request);
 
@@ -276,32 +310,6 @@ class MPTemplateDetailProvider with ChangeNotifier {
     }
   }
   // AI-generated END - 设置为默认模板
-
-  // AI-generated START - 创建模拟模板详情响应
-  /// 创建模拟的模板详情响应数据
-  MPGetTemplateDetailResponse? _createMockTemplateDetailResponse(String templateId) {
-    // 根据 templateId 返回不同的模拟数据
-
-    // 默认模板
-    MPTemplateStruct mockTemplate = MPTemplateStruct(
-      id: templateId,
-      title: '通用会议记录模板',
-      type: '通用',
-      prompt:
-          '**Meeting Summary**\n\n**Date:** [Date]\n**Attendees:** [List of attendees]\n**Duration:** [Duration]\n\n**Agenda Items:**\n1. [Item 1]\n2. [Item 2]\n3. [Item 3]\n\n**Key Discussion Points:**\n- [Point 1]\n- [Point 2]\n- [Point 3]\n\n**Decisions Made:**\n- [Decision 1]\n- [Decision 2]\n\n**Action Items:**\n- [ ] [Action 1] - Owner: [Name] - Due: [Date]\n- [ ] [Action 2] - Owner: [Name] - Due: [Date]\n\n**Next Steps:**\n- [Next step 1]\n- [Next step 2]\n\n**Notes:**\n[Additional notes or observations]',
-    );
-    final baseResp = MPBaseResp(
-      code: 0,
-      message: 'success',
-      logid: 'mock_logid_${DateTime.now().millisecondsSinceEpoch}',
-    );
-
-    return MPGetTemplateDetailResponse(
-      template: mockTemplate,
-      baseResp: baseResp,
-    );
-  }
-  // AI-generated END - 创建模拟模板详情响应
 
   // AI-generated START - 设置状态
   /// 设置状态并通知监听者
