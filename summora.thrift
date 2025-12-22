@@ -143,10 +143,9 @@ struct UserStruct {
 }
 
 struct ConversationStruct {
-    1: string id,
-    2: SpeakerStruct speaker,
-    3: string content,
-    4: string time,
+    1: SpeakerStruct speaker,
+    2: string content,
+    3: string time,
 }
 
 struct ConversationHeaderStruct {
@@ -364,6 +363,11 @@ struct DeleteTodoResponse {
 }
 
 struct CreateConversationRequest {
+    1: optional string title,
+    2: string expert_id, // 专家模型ID, 不用的话，为空字符串
+    3: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
+    4: string template_id, // 对应的模板id，不用的话，为空字符串
+    5: string speaker_id, // 对应人物的id，没有的话，为空字符串。针对AI分析助手的场景
 }
 
 struct CreateConversationResponse {
@@ -372,12 +376,8 @@ struct CreateConversationResponse {
 }
 
 struct ChatRequest {
-    1: string expert_id, // 专家模型ID, 不用的话，为空字符串
-    2: string memory_id, // 对应的记忆id，不用的话，为空字符串。针对记忆总结的场景
-    3: string template_id, // 对应的模板id，不用的话，为空字符串
-    4: string speaker_id, // 对应人物的id，没有的话，为空字符串。针对AI分析助手的场景
-    5: string message,  // 输入的内容
-    6: string conversation_id,
+    1: string message,  // 输入的内容
+    2: string conversation_id,
 }
 
 struct ChatResponse {
