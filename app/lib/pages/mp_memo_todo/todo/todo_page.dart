@@ -202,16 +202,57 @@ class _TodoPageState extends State<TodoPage> {
             priorityTag: todo.priorityTag,
             status: todo.status,
             onTap: () {
+              // 解析日期字符串（可能是 "Dec 20" 或 "YYYY-MM-DD" 格式）
+              DateTime? parsedDate;
+              try {
+                if (todo.date.contains('-')) {
+                  // 格式是 "YYYY-MM-DD"
+                  parsedDate = DateTime.parse(todo.date);
+                } else {
+                  // 格式是 "Dec 20"，需要转换为当前年份的日期
+                  final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  final parts = todo.date.split(' ');
+                  if (parts.length == 2) {
+                    final monthIndex = months.indexOf(parts[0]);
+                    if (monthIndex != -1) {
+                      final day = int.tryParse(parts[1]) ?? DateTime.now().day;
+                      final now = DateTime.now();
+                      parsedDate = DateTime(now.year, monthIndex + 1, day);
+                    }
+                  }
+                }
+              } catch (e) {
+                debugPrint('解析日期失败: ${todo.date}, 错误: $e');
+                parsedDate = null;
+              }
+
+              // 解析优先级（priorityTag 可能是 "High", "Normal", "Low"，需要转换为小写匹配枚举）
+              TaskPriority? parsedPriority;
+              if (todo.priorityTag != null) {
+                try {
+                  parsedPriority = TaskPriority.values.firstWhere(
+                    (e) => e.name.toLowerCase() == todo.priorityTag!.toLowerCase(),
+                    orElse: () => TaskPriority.normal, // 如果找不到匹配项，使用默认值
+                  );
+                } catch (e) {
+                  debugPrint('解析优先级失败: ${todo.priorityTag}, 错误: $e');
+                  parsedPriority = null;
+                }
+              }
+
               NewTaskPopup.show(
                 context: context,
+                initialTitle: todo.title,
+                initialDueDate: parsedDate,
+                initialPriority: parsedPriority,
                 showMarkComplete: true, // 显示 Mark complete 复选框
                 showDeleteTask: true, // 显示删除任务按钮
-                isCompleted: false, // 初始完成状态
+                isCompleted: todo.status == 2 ? true : false, // 初始完成状态
                 onDelete: () async {
                   await provider.deleteTodo(todo.id);
                   // 处理删除操作
                 },
-                onComplete: (title, dueDate, priority) async {
+                onComplete: (isCompleted, title, dueDate, priority) async {
                   final now = DateTime.now();
                   final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                   final dateStr = dueDate != null

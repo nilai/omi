@@ -41,7 +41,7 @@ class NewTaskPopup extends StatefulWidget {
   final TaskPriority? initialPriority;
 
   /// 完成回调，参数为任务标题、截止日期和优先级
-  final Function(String title, DateTime? dueDate, TaskPriority? priority)? onComplete;
+  final Function(bool, String title, DateTime? dueDate, TaskPriority? priority)? onComplete;
 
   /// 取消回调
   final VoidCallback? onCancel;
@@ -75,7 +75,7 @@ class NewTaskPopup extends StatefulWidget {
     String? initialTitle,
     DateTime? initialDueDate,
     TaskPriority? initialPriority,
-    Function(String title, DateTime? dueDate, TaskPriority? priority)? onComplete,
+    Function(bool isCompleted, String title, DateTime? dueDate, TaskPriority? priority)? onComplete,
     VoidCallback? onCancel,
     int maxTitleLength = 200,
     bool showMarkComplete = false,
@@ -174,14 +174,15 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
             height: 1.0,
             color: Color(0xFFE5E7EB),
           ),
-          // 任务标题输入框
-          _buildTitleInput(),
-          const SizedBox(height: 20.0),
+          const SizedBox(height: 12.0),
           // Mark complete复选框（如果启用）
           if (widget.showMarkComplete) ...[
             _buildCompleteCheckbox(),
-            const SizedBox(height: 20.0),
+            const SizedBox(height: 12.0),
           ],
+          // 任务标题输入框
+          _buildTitleInput(),
+
           // Due date字段
           _buildDueDateField(context),
           const SizedBox(height: 12.0),
@@ -242,6 +243,7 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           onPressed: () {
             if (widget.onComplete != null) {
               widget.onComplete!(
+                _isCompleted,
                 _titleController.text.trim(),
                 _dueDate,
                 _priority,
@@ -514,24 +516,43 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
   // AI-generated START - 构建完成复选框
   /// 构建Mark complete复选框
   Widget _buildCompleteCheckbox() {
-    return Row(
-      children: [
-        Checkbox(
-          value: _isCompleted,
-          onChanged: (value) {
-            setState(() {
-              _isCompleted = value ?? false;
-            });
-          },
+    return Container(
+      height: 36,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Center(
+        child: Row(
+          children: [
+            Checkbox(
+              value: _isCompleted,
+              activeColor: const Color(0xFF3B82F6), // 选中时的背景颜色
+              checkColor: Colors.white, // 选中时的勾选标记颜色
+              fillColor: WidgetStateProperty.resolveWith<Color?>(
+                (Set<WidgetState> states) {
+                  if (states.contains(WidgetState.selected)) {
+                    return const Color(0xFF3B82F6); // 选中时的背景颜色
+                  }
+                  return null; // 未选中时使用默认颜色
+                },
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _isCompleted = value ?? false;
+                });
+              },
+            ),
+            const Text(
+              'Mark complete',
+              style: TextStyle(
+                fontSize: 14.0,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+          ],
         ),
-        const Text(
-          'Mark complete',
-          style: TextStyle(
-            fontSize: 14.0,
-            color: Color(0xFF1F2937),
-          ),
-        ),
-      ],
+      ),
     );
   }
   // AI-generated END - 构建完成复选框
@@ -557,15 +578,15 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           children: [
             Icon(
               Icons.delete_outline,
-              size: 20.0,
-              color: Colors.red[400],
+              size: 16.0,
+              color: Color(0xFFDC2626),
             ),
             const SizedBox(width: 8.0),
             Text(
               '删除任务',
               style: TextStyle(
                 fontSize: 14.0,
-                color: Colors.red[400],
+                color: Color(0xFFDC2626),
                 fontWeight: FontWeight.w500,
               ),
             ),

@@ -75,7 +75,9 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
       // 打开创建 Todo 的弹窗
       NewTaskPopup.show(
         context: context,
-        onComplete: (title, dueDate, priority) async {
+        showMarkComplete: false, // 显示 Mark complete 复选框
+        showDeleteTask: false, // 显示删除任务按钮
+        onComplete: (isCompleted, title, dueDate, priority) async {
           // 创建新的 Todo
           final todoProvider = Provider.of<TodoProvider>(context, listen: false);
           final now = DateTime.now();
