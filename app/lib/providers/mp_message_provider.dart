@@ -161,7 +161,6 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 发送文本消息流到服务器
   /// @param {String} text - 要发送的消息文本
-  /// @param {String?} appId - 关联的应用 ID
   /// 通过流式方式发送消息，实时接收并显示 AI 的回复
   /// 使用缓冲区机制优化 UI 更新频率（每 100ms 刷新一次）
   /// 处理思考过程、数据流、完成和错误等不同类型的消息块
@@ -234,84 +233,6 @@ class MPMessageProvider extends ChangeNotifier {
     } finally {
       timer?.cancel();
       flushBuffer();
-      setShowTypingIndicator(false);
-      setSendingMessage(false);
-    }
-  }
-
-  /// 发送语音消息流到服务器
-  /// @param {List<List<int>>} audioBytes - 音频字节数据列表
-  /// @param {Function?} onFirstChunkRecived} - 收到第一个数据块时的回调函数
-  /// @param {BleAudioCodec?} codec - 音频编解码器，用于确定帧大小
-  /// 将音频数据保存为临时文件后，通过流式方式发送到服务器
-  /// 实时处理服务器返回的消息块（思考过程、数据、完成、错误等）
-  Future<void> sendVoiceMessageStreamToServer(
-    List<List<int>> audioBytes, {
-    Function? onFirstChunkRecived,
-    BleAudioCodec? codec,
-  }) async {
-    try {
-      File file = await FileUtils.saveAudioBytesToTempFile(
-        audioBytes,
-        DateTime.now().millisecondsSinceEpoch ~/ 1000 - (audioBytes.length / 100).ceil(),
-        codec?.getFrameSize() ?? 160,
-      );
-
-      setShowTypingIndicator(true);
-      setSendingMessage(true);
-      var message = ServerMessage.empty();
-      messages.insert(0, message);
-      notifyListeners();
-
-      bool firstChunkRecieved = false;
-      await for (var chunk in sendVoiceMessageStreamServer([file])) {
-        if (!firstChunkRecieved && [MessageChunkType.data, MessageChunkType.done].contains(chunk.type)) {
-          firstChunkRecieved = true;
-          if (onFirstChunkRecived != null) {
-            onFirstChunkRecived();
-          }
-        }
-
-        if (chunk.type == MessageChunkType.think) {
-          message.thinkings.add(chunk.text);
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.data) {
-          message.text += chunk.text;
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.done) {
-          message = chunk.message!;
-          messages[0] = message;
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.message) {
-          messages.insert(1, chunk.message!);
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.error) {
-          message.text = chunk.text;
-          notifyListeners();
-          AppSnackbar.showSnackbarError('发送语音消息失败，请稍后重试');
-          continue;
-        }
-      }
-    } catch (e) {
-      debugPrint('发送语音消息错误: $e');
-      AppSnackbar.showSnackbarError('发送语音消息失败，请稍后重试');
-      var message = ServerMessage.empty();
-      message.text = ServerMessageChunk.failedMessage().text;
-      messages.insert(0, message);
-      notifyListeners();
-    } finally {
       setShowTypingIndicator(false);
       setSendingMessage(false);
     }
