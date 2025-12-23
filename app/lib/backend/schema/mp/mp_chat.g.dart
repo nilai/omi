@@ -8,18 +8,14 @@ part of 'mp_chat.dart';
 
 MPChatRequest _$MPChatRequestFromJson(Map<String, dynamic> json) =>
     MPChatRequest(
-      expertId: json['expert_id'] as String? ?? '',
-      memoryId: json['memory_id'] as String? ?? '',
-      templateId: json['template_id'] as String? ?? '',
-      speakerId: json['speaker_id'] as String? ?? '',
+      message: json['message'] as String,
+      conversationId: json['conversation_id'] as String,
     );
 
 Map<String, dynamic> _$MPChatRequestToJson(MPChatRequest instance) =>
     <String, dynamic>{
-      'expert_id': instance.expertId,
-      'memory_id': instance.memoryId,
-      'template_id': instance.templateId,
-      'speaker_id': instance.speakerId,
+      'message': instance.message,
+      'conversation_id': instance.conversationId,
     };
 
 MPChatResponse _$MPChatResponseFromJson(Map<String, dynamic> json) =>

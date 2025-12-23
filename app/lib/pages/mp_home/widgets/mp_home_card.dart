@@ -14,6 +14,7 @@ class MPHomeCard extends StatefulWidget {
     this.onShare,
     this.onDelete,
     this.onViewDetail,
+    this.isUploading = false,
   });
 
   /// 左上角日期文本（例：07-22）。
@@ -46,11 +47,46 @@ class MPHomeCard extends StatefulWidget {
   /// "查看详情"点击回调（文案不可修改）。
   final VoidCallback? onViewDetail;
 
+  /// 是否正在上传。
+  final bool isUploading;
+
   @override
   State<MPHomeCard> createState() => _MPHomeCardState();
 }
 
-class _MPHomeCardState extends State<MPHomeCard> {
+class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateMixin {
+  late AnimationController _rotationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+    if (widget.isUploading) {
+      _rotationController.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(MPHomeCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isUploading != oldWidget.isUploading) {
+      if (widget.isUploading) {
+        _rotationController.repeat();
+      } else {
+        _rotationController.stop();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -85,23 +121,7 @@ class _MPHomeCardState extends State<MPHomeCard> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Visibility(
-                  visible: widget.tagText.isNotEmpty,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: widget.tagBackgroundColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      widget.tagText,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ),
+                _buildStatusWidget(theme),
                 const Spacer(),
                 Builder(
                   builder: (BuildContext context) {
@@ -267,6 +287,56 @@ class _MPHomeCardState extends State<MPHomeCard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusWidget(ThemeData theme) {
+    if (widget.isUploading) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RotationTransition(
+            turns: _rotationController,
+            child: const Icon(
+              Icons.sync,
+              color: Color(0xFF2962FF),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '云同步中',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF2962FF),
+              fontSize: 14,
+            ),
+          ),
+          const Text(
+            '...',
+            style: TextStyle(
+              color: Color(0xFF2962FF),
+              fontSize: 14,
+            ),
+          ),
+        ],
+      );
+    }
+    return Visibility(
+      visible: widget.tagText.isNotEmpty,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: widget.tagBackgroundColor,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          widget.tagText,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
     );

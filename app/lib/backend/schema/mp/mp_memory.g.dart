@@ -136,6 +136,7 @@ MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
           .toList(),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+      memoryTotal: (json['memory_total'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MPGetMemoryListResponseToJson(
@@ -144,6 +145,7 @@ Map<String, dynamic> _$MPGetMemoryListResponseToJson(
       'memorys': instance.memorys,
       'has_more': instance.hasMore,
       'base_resp': instance.baseResp,
+      'memory_total': instance.memoryTotal,
     };
 
 MPGetMemoryDaysResponse _$MPGetMemoryDaysResponseFromJson(

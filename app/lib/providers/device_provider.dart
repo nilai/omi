@@ -192,11 +192,35 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
   /// @param printer 调试信息标识
   /// @param boundDeviceOnly 是否仅连接已绑定的设备
   /// @param autoConnectFirstDevice 是否自动连接第一个发现的未配对设备
-  Future periodicConnect(String printer, {bool boundDeviceOnly = false, bool autoConnectFirstDevice = false}) async {
-    _reconnectionTimer?.cancel();
+  Future periodicConnect(String printer, {bool boundDeviceOnly = false, bool autoConnectFirstDevice = true}) async {
+    // _reconnectionTimer?.cancel();
+    // scan(t) async {
+    //   debugPrint("Period connect seconds: $_connectionCheckSeconds, triggered timer at ${DateTime.now()}");
+    //   updateConnectingStatus(true);
+    //   if (_reconnectAt != null && _reconnectAt!.isAfter(DateTime.now())) {
+    //     return;
+    //   }
+    //   if (boundDeviceOnly && SharedPreferencesUtil().btDevice.id.isEmpty) {
+    //     t.cancel();
+    //     return;
+    //   }
+    //   Logger.debug("isConnected: $isConnected, isConnecting: $isConnecting, connectedDevice: $connectedDevice");
+    //   if ((!isConnected && connectedDevice == null)) {
+    //     if (isConnecting) {
+    //       return;
+    //     }
+    //     await scanAndConnectToDevice(autoConnectFirstDevice: autoConnectFirstDevice);
+    //   } else {
+    //     t.cancel();
+    //   }
+    // }
+
+    // _reconnectionTimer = Timer.periodic(Duration(seconds: _connectionCheckSeconds), scan);
+    // scan(_reconnectionTimer);
+
+     _reconnectionTimer?.cancel();
     scan(t) async {
       debugPrint("Period connect seconds: $_connectionCheckSeconds, triggered timer at ${DateTime.now()}");
-      updateConnectingStatus(true);
       if (_reconnectAt != null && _reconnectAt!.isAfter(DateTime.now())) {
         return;
       }
@@ -280,8 +304,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       }
 
       setIsConnected(true);
-      // updateConnectingStatus(false);
-      updateConnectingStatus(true);
+      updateConnectingStatus(false);
       notifyListeners();
       return;
     }
@@ -300,8 +323,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       }
       Logger.debug('device is not null $cDevice');
     }
-    // updateConnectingStatus(false);
-    updateConnectingStatus(true);
+    updateConnectingStatus(false);
 
     notifyListeners();
   }

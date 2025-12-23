@@ -181,10 +181,14 @@ class MPGetMemoryListResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
+  @JsonKey(name: 'memory_total')
+  final int memoryTotal;
+
   MPGetMemoryListResponse({
     required this.memorys,
     required this.hasMore,
     required this.baseResp,
+    required this.memoryTotal,
   });
 
   factory MPGetMemoryListResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryListResponseFromJson(json);

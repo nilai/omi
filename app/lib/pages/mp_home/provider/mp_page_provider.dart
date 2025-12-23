@@ -1,10 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../env/env.dart';
+import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -21,6 +26,9 @@ class MPMemoryItem {
     this.secondsText,
     this.description,
     required this.memory,
+    this.localPath,
+    this.isUploading = false,
+    required this.createAt,
   });
 
   final String dateText;
@@ -31,6 +39,44 @@ class MPMemoryItem {
   final String? secondsText;
   final String? description;
   final MPMemoryStruct memory;
+  final String? localPath;
+  final int createAt;
+  bool isUploading = false;
+}
+
+class MPLocalMemoryModel {
+  MPLocalMemoryModel({
+    required this.fileName,
+    required this.createAt,
+    required this.path,
+  });
+
+  final String fileName;
+  final int createAt;
+  final String path;
+
+  factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
+        fileName: json['fileName'],
+        createAt: json['createAt'],
+        path: json['path'],
+      );
+
+  Map<String, dynamic> toJson() => {
+        'fileName': fileName,
+        'createAt': createAt,
+        'path': path,
+      };
+
+  /// 将模型转为 json 字符串
+  String toJsonString() {
+    return jsonEncode(toJson());
+  }
+
+  /// 从 json 字符串解析创建模型
+  static MPLocalMemoryModel fromJsonString(String jsonString) {
+    final Map<String, dynamic> map = jsonDecode(jsonString);
+    return MPLocalMemoryModel.fromJson(map);
+  }
 }
 
 /// MPMemoryStruct 扩展方法
@@ -88,8 +134,15 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       secondsText: secondsText,
       description: content.isNotEmpty ? content : null,
       memory: this,
+      createAt: createAt,
     );
   }
+}
+
+enum MPHomeImportAudioType {
+  local,
+  sdCard,
+  none,
 }
 
 class MPHomePageProvider extends ChangeNotifier {
@@ -97,12 +150,17 @@ class MPHomePageProvider extends ChangeNotifier {
   // int uploadedCount = 1;
   // int totalCount = 1;
   double uploadPercent = 10;
-  int recordCount = 20;
+  int recordCount = 0;
   bool loading = false;
   bool loadingMore = false;
   bool hasMore = true;
-  final List<MPMemoryItem> items = [];
+  List<MPMemoryItem> items = [];
   String _cursor = '';
+
+  MPHomeImportAudioType importAudioType = MPHomeImportAudioType.none;
+
+  List<MPLocalMemoryModel> _localRecords = [];
+  List<MPMemoryItem> _remoteItems = [];
 
   Future<void> refresh() async {
     loading = true;
@@ -111,10 +169,15 @@ class MPHomePageProvider extends ChangeNotifier {
     final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
     final response = await getMemoryList(req);
     if (response != null) {
-      items.clear();
-      items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
+      // items.clear();
+      // items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
+      recordCount = response.memoryTotal;
+      final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      _remoteItems.clear();
+      _remoteItems = list;
+      _updateItems();
     }
     loading = false;
     notifyListeners();
@@ -127,9 +190,12 @@ class MPHomePageProvider extends ChangeNotifier {
     final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
     final response = await getMemoryList(req);
     if (response != null) {
-      items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
+      recordCount = response.memoryTotal;
+      final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      _remoteItems.addAll(list);
+      _updateItems();
     }
     loadingMore = false;
     notifyListeners();
@@ -141,24 +207,22 @@ class MPHomePageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateImportAudioType(MPHomeImportAudioType type) {
+    importAudioType = type;
+    notifyListeners();
+  }
+
+  void updateUploadPercent(double value) {
+    uploadPercent = value;
+    notifyListeners();
+  }
+
   /// 将日期字符串（yyyy-MM-dd 或 yyyy-M-d）转换为 MMM d 格式
   ///
   /// [dateString] 日期字符串，例如：2025-12-8 或 2025-12-08
   /// @returns 格式化后的日期字符串，例如：Dec 8
   String formatDateToMonthDay(String dateString) {
     return MPTimestampUtils.dateStringToMonthDay(dateString);
-  }
-
-  void onLeftWidgetTap() {
-    debugPrint('Left widget tapped');
-  }
-
-  void onSearchTap() {
-    debugPrint('Search tapped');
-  }
-
-  void onCardMore(MPMemoryItem item) {
-    debugPrint('More tapped for ${item.headerText}');
   }
 
   void updateSelectedDate(DateTime date) {
@@ -168,6 +232,93 @@ class MPHomePageProvider extends ChangeNotifier {
     selectedDate = dateString;
     notifyListeners();
     refresh();
+  }
+
+  /// 添加本地记录
+  /// @param item 本地记录
+  Future<void> addLocalRecord(String path) async {
+    // 通过path获取到filename
+    final String filename = path.split('/').last;
+    final model = MPLocalMemoryModel(fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path);
+    _localRecords.add(model);
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
+    await prefs.setStringList('mp_local_records', jsonList);
+    _updateItems();
+  }
+
+  /// 删除本地记录
+  /// @param item 本地记录
+  Future<void> removeLocalRecord(String path) async {
+    _localRecords.removeWhere((e) => e.path == path);
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
+    await prefs.setStringList('mp_local_records', jsonList);
+    _updateItems();
+  }
+
+  /// 加载本地记录
+  /// @returns 无返回值
+  Future<void> loadLocalRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getStringList('mp_local_records');
+    if (jsonString != null) {
+      _localRecords = jsonString.map((e) => MPLocalMemoryModel.fromJsonString(e)).toList();
+    } else {
+      _localRecords = [];
+    }
+    _updateItems();
+  }
+
+  /// 更新items
+  void _updateItems() {
+    List<MPMemoryItem> localItems = [];
+    for (var element in _localRecords) {
+      final memory = MPMemoryStruct(
+        id: 'local_${element.createAt}',
+        createAt: element.createAt,
+        duration: 0,
+        type: MPMemoryType.onlyRecord,
+        label: '',
+        title: element.fileName,
+        content: '',
+      );
+      final item = memory.toMPMemoryItem();
+      item.isUploading = true;
+      print('------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}');
+      localItems.add(item);
+    }
+    List<MPMemoryItem> list = [];
+    // 合并 _remoteItems 和 localItems，根据 createAt 排序生成新 list
+    list.addAll(_remoteItems);
+    list.addAll(localItems);
+    list.sort((a, b) => b.memory.createAt.compareTo(a.memory.createAt)); // 降序，最新在前
+    for (var element in list) {
+      print('------hj------list item: ${element.headerText}, isUploading: ${element.isUploading}');
+    }
+    items = list;
+    notifyListeners();
+  }
+
+  /// 上传本地记录
+  /// @returns 无返回值
+  void uploadLocalRecords() async {
+    for (var element in _localRecords) {
+      final file = File(element.path);
+      final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
+      if (uri != null) {
+        final req = MPCreateRecordRequest(
+          recordFile: uri,
+          createAt: element.createAt,
+          duration: 0,
+        );
+        final res = await createRecord(req);
+        if (res != null) {
+          await removeLocalRecord(element.path);
+          refresh();
+        }
+      }
+    }
   }
 
   /// 分享卡片
