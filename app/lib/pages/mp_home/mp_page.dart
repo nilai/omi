@@ -190,6 +190,7 @@ class _MPPageContentState extends State<MPPageContent> {
                             onShare: () => provider.onCardShare(context, item),
                             onDelete: () => provider.onCardDelete(context, item),
                             onViewDetail: () => provider.onCardViewDetail(context, item),
+                            isUploading: item.isUploading,
                           );
                         },
                         separatorBuilder: (_, __) => const SizedBox(height: 12),

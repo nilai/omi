@@ -293,7 +293,6 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
   }
 
   Widget _buildStatusWidget(ThemeData theme) {
-    print('------hj------isUploading: ${widget.isUploading}, headerText: ${widget.headerText}');
     if (widget.isUploading) {
       return Row(
         mainAxisSize: MainAxisSize.min,

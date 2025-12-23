@@ -293,6 +293,9 @@ class MPHomePageProvider extends ChangeNotifier {
     list.addAll(_remoteItems);
     list.addAll(localItems);
     list.sort((a, b) => b.memory.createAt.compareTo(a.memory.createAt)); // 降序，最新在前
+    for (var element in list) {
+      print('------hj------list item: ${element.headerText}, isUploading: ${element.isUploading}');
+    }
     items = list;
     notifyListeners();
   }
