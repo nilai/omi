@@ -194,18 +194,6 @@ class MPHomePageProvider extends ChangeNotifier {
     return MPTimestampUtils.dateStringToMonthDay(dateString);
   }
 
-  void onLeftWidgetTap() {
-    debugPrint('Left widget tapped');
-  }
-
-  void onSearchTap() {
-    debugPrint('Search tapped');
-  }
-
-  void onCardMore(MPMemoryItem item) {
-    debugPrint('More tapped for ${item.headerText}');
-  }
-
   void updateSelectedDate(DateTime date) {
     final timestamp = MPTimestampUtils.dateTimeToTimestamp(date);
     final dateString = MPTimestampUtils.timestampToDateString(timestamp);
