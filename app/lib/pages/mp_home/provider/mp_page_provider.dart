@@ -28,6 +28,7 @@ class MPMemoryItem {
     required this.memory,
     this.localPath,
     this.isUploading = false,
+    required this.createAt,
   });
 
   final String dateText;
@@ -39,32 +40,33 @@ class MPMemoryItem {
   final String? description;
   final MPMemoryStruct memory;
   final String? localPath;
+  final int createAt;
   bool isUploading = false;
 }
 
 class MPLocalMemoryModel {
-   MPLocalMemoryModel({
+  MPLocalMemoryModel({
     required this.fileName,
     required this.createAt,
     required this.path,
   });
-  
+
   final String fileName;
   final int createAt;
   final String path;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
-    fileName: json['fileName'],
-    createAt: json['createAt'],
-    path: json['path'],
-  );
+        fileName: json['fileName'],
+        createAt: json['createAt'],
+        path: json['path'],
+      );
 
   Map<String, dynamic> toJson() => {
-    'fileName': fileName,
-    'createAt': createAt,
-    'path': path,
-  };
- 
+        'fileName': fileName,
+        'createAt': createAt,
+        'path': path,
+      };
+
   /// 将模型转为 json 字符串
   String toJsonString() {
     return jsonEncode(toJson());
@@ -132,8 +134,15 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       secondsText: secondsText,
       description: content.isNotEmpty ? content : null,
       memory: this,
+      createAt: createAt,
     );
   }
+}
+
+enum MPHomeImportAudioType {
+  local,
+  sdCard,
+  none,
 }
 
 class MPHomePageProvider extends ChangeNotifier {
@@ -145,10 +154,13 @@ class MPHomePageProvider extends ChangeNotifier {
   bool loading = false;
   bool loadingMore = false;
   bool hasMore = true;
-  final List<MPMemoryItem> items = [];
+  List<MPMemoryItem> items = [];
   String _cursor = '';
 
+  MPHomeImportAudioType importAudioType = MPHomeImportAudioType.none;
+
   List<MPLocalMemoryModel> _localRecords = [];
+  List<MPMemoryItem> _remoteItems = [];
 
   Future<void> refresh() async {
     loading = true;
@@ -157,11 +169,15 @@ class MPHomePageProvider extends ChangeNotifier {
     final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
     final response = await getMemoryList(req);
     if (response != null) {
-      items.clear();
-      items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
+      // items.clear();
+      // items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
       recordCount = response.memoryTotal;
+      final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      _remoteItems.clear();
+      _remoteItems = list;
+      _updateItems();
     }
     loading = false;
     notifyListeners();
@@ -174,10 +190,12 @@ class MPHomePageProvider extends ChangeNotifier {
     final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
     final response = await getMemoryList(req);
     if (response != null) {
-      items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
       recordCount = response.memoryTotal;
+      final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      _remoteItems.addAll(list);
+      _updateItems();
     }
     loadingMore = false;
     notifyListeners();
@@ -186,6 +204,16 @@ class MPHomePageProvider extends ChangeNotifier {
   void updateRecordCount(int value) {
     if (value < 0) return;
     recordCount = value;
+    notifyListeners();
+  }
+
+  void updateImportAudioType(MPHomeImportAudioType type) {
+    importAudioType = type;
+    notifyListeners();
+  }
+
+  void updateUploadPercent(double value) {
+    uploadPercent = value;
     notifyListeners();
   }
 
@@ -208,7 +236,7 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 添加本地记录
   /// @param item 本地记录
-  void addLocalRecord(String path) async{
+  Future<void> addLocalRecord(String path) async {
     // 通过path获取到filename
     final String filename = path.split('/').last;
     final model = MPLocalMemoryModel(fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path);
@@ -216,22 +244,22 @@ class MPHomePageProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
-    notifyListeners();
+    _updateItems();
   }
 
   /// 删除本地记录
   /// @param item 本地记录
-  void removeLocalRecord(String path) async{
+  Future<void> removeLocalRecord(String path) async {
     _localRecords.removeWhere((e) => e.path == path);
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
-    notifyListeners();
+    _updateItems();
   }
 
   /// 加载本地记录
   /// @returns 无返回值
-  void loadLocalRecords() async {
+  Future<void> loadLocalRecords() async {
     final prefs = await SharedPreferences.getInstance();
     final jsonString = prefs.getStringList('mp_local_records');
     if (jsonString != null) {
@@ -239,6 +267,30 @@ class MPHomePageProvider extends ChangeNotifier {
     } else {
       _localRecords = [];
     }
+    _updateItems();
+  }
+
+  /// 更新items
+  void _updateItems() {
+    List<MPMemoryItem> localItems = [];
+    for (var element in _localRecords) {
+      final memory = MPMemoryStruct(
+        id: 'local_${element.createAt}',
+        createAt: element.createAt,
+        duration: 0,
+        type: MPMemoryType.onlyRecord,
+        label: '',
+        title: element.fileName,
+        content: '',
+      );
+      localItems.add(memory.toMPMemoryItem());
+    }
+    List<MPMemoryItem> list = [];
+    // 合并 _remoteItems 和 localItems，根据 createAt 排序生成新 list
+    list.addAll(_remoteItems);
+    list.addAll(localItems);
+    list.sort((a, b) => b.memory.createAt.compareTo(a.memory.createAt)); // 降序，最新在前
+    items = list;
     notifyListeners();
   }
 
@@ -247,9 +299,7 @@ class MPHomePageProvider extends ChangeNotifier {
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
       final file = File(element.path);
-      final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {
-        debugPrint('uploadLocalRecords progress: $current / $total');
-      });
+      final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {
         final req = MPCreateRecordRequest(
           recordFile: uri,
@@ -258,11 +308,12 @@ class MPHomePageProvider extends ChangeNotifier {
         );
         final res = await createRecord(req);
         if (res != null) {
-          removeLocalRecord(element.path);
+          await removeLocalRecord(element.path);
+          refresh();
         }
       }
     }
-  }  
+  }
 
   /// 分享卡片
   /// @param context 上下文

@@ -146,16 +146,7 @@ class _MPPageContentState extends State<MPPageContent> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: MPHomeUploadWidget(
-                    title: '音频导入中',
-                    subtitle: '正在处理音频文件...',
-                    // transferredCount: provider.uploadedCount,
-                    // totalCount: provider.totalCount,
-                    percent: provider.uploadPercent,
-                  ),
-                ),
+                _buildImportAudioTypeWidget(context, provider),
                 const SizedBox(height: 12),
                 Expanded(
                   child: RefreshIndicator(
@@ -306,6 +297,32 @@ class _MPPageContentState extends State<MPPageContent> {
     );
   }
 
+  Widget _buildImportAudioTypeWidget(BuildContext context, MPHomePageProvider provider) {
+    if (provider.importAudioType == MPHomeImportAudioType.none) {
+      return const SizedBox.shrink();
+    }
+    if (provider.importAudioType == MPHomeImportAudioType.local) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: MPHomeUploadWidget(
+          title: '音频导入中',
+          subtitle: '正在处理音频文件...',
+          // transferredCount: provider.uploadedCount,
+          // totalCount: provider.totalCount,
+          percent: provider.uploadPercent,
+        ),
+      );
+    }
+    if (provider.importAudioType == MPHomeImportAudioType.sdCard) {
+      return Row(
+        children: [
+          Text('SD卡导入音频'),
+        ],
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   Future<void> _showDatePicker(BuildContext context, MPHomePageProvider provider) async {
     MPCenterPopup.show(
       context: context,
@@ -331,19 +348,23 @@ class _MPPageContentState extends State<MPPageContent> {
     ImportAudioDialog.show(
       context: context,
       onImportFromFile: () async {
-        // final file = await AudioPickerUtils.pickAudioFromFile();
-        // debugPrint('pickAudioFromFile file: $file');
-        // await _uploadAudioFile(context, file);
-
+        final provider = context.read<MPHomePageProvider>();
+        provider.updateImportAudioType(MPHomeImportAudioType.local);
+        provider.updateUploadPercent(0);
         final path = await AudioPickerUtils.pickAudioFromFileAndSync(onProgress: (progress, copiedBytes, totalBytes) {
-          debugPrint('pickAudioFromFileAndSync progress: $progress, copiedBytes: $copiedBytes, totalBytes: $totalBytes');
+          provider.updateUploadPercent(progress);
         });
+        provider.updateUploadPercent(100);
+        provider.updateImportAudioType(MPHomeImportAudioType.none);
         debugPrint('pickAudioFromFileAndSync file: $path');
         if (path != null) {
-          /// 记录信息到本地，更新列表数据，刷新页面
-          /// 文件名、时间戳、时长
-          /// 上传文件，上传完成删除记录信息
-          await _uploadAudioFile(context, File(path));
+          // /// 记录信息到本地，更新列表数据，刷新页面
+          // /// 文件名、时间戳、时长
+          // /// 上传文件，上传完成删除记录信息
+          // await _uploadAudioFile(context, File(path));
+
+          await provider.addLocalRecord(path);
+          provider.uploadLocalRecords();
         }
       },
       onImportFromAlbum: () async {
@@ -361,7 +382,6 @@ class _MPPageContentState extends State<MPPageContent> {
       },
     );
   }
-  
 
   Future<void> _uploadAudioFile(BuildContext context, File? file) async {
     // 保存 uri 到本地数据库或其他存储方式
