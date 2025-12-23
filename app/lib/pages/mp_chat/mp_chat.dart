@@ -45,6 +45,7 @@ enum MPChatPageType {
 }
 
 class MPChatPage extends StatefulWidget {
+  /// 聊天ID(根据MPChatPageType不同，chatId赋值给不同的开聊id)
   final String chatId;
 
   const MPChatPage({
@@ -129,11 +130,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   Widget build(BuildContext context) {
     super.build(context);
 
-    // return Consumer2<MessageProvider, ConnectivityProvider>(
-    //   builder: (context, provider, connectivityProvider, child) {
-
-    //   },
-    // );
     return ChangeNotifierProvider.value(
         value: provider,
         child: Scaffold(
