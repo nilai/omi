@@ -16,6 +16,18 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// 右侧操作按钮列表
   final List<Widget>? actions;
 
+  /// 是否显示分享按钮，默认为 false
+  final bool showShareButton;
+
+  /// 是否显示更多选项按钮，默认为 false
+  final bool showMoreButton;
+
+  /// 分享按钮点击回调
+  final VoidCallback? onSharePressed;
+
+  /// 更多选项按钮点击回调
+  final VoidCallback? onMorePressed;
+
   /// 背景色，默认为白色
   final Color? backgroundColor;
 
@@ -31,6 +43,10 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.onBackPressed,
     this.actions,
+    this.showShareButton = false,
+    this.showMoreButton = false,
+    this.onSharePressed,
+    this.onMorePressed,
     this.backgroundColor,
     this.titleColor,
     this.iconColor,
@@ -63,12 +79,49 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
         ),
       ),
       centerTitle: true,
-      actions: actions,
+      actions: _buildActions(),
     );
+  }
+
+  /// 构建右侧操作按钮
+  List<Widget>? _buildActions() {
+    // 如果提供了自定义 actions，优先使用
+    if (actions != null) {
+      return actions;
+    }
+
+    final List<Widget> builtActions = [];
+
+    // 分享按钮
+    if (showShareButton) {
+      builtActions.add(
+        IconButton(
+          icon: Icon(
+            Icons.share,
+            color: iconColor ?? Colors.grey.shade800,
+          ),
+          onPressed: onSharePressed,
+        ),
+      );
+    }
+
+    // 更多选项按钮
+    if (showMoreButton) {
+      builtActions.add(
+        IconButton(
+          icon: Icon(
+            Icons.more_vert,
+            color: iconColor ?? Colors.grey.shade800,
+          ),
+          onPressed: onMorePressed,
+        ),
+      );
+    }
+
+    return builtActions.isEmpty ? null : builtActions;
   }
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 // AI-generated END - mp_common_app_bar.dart
-

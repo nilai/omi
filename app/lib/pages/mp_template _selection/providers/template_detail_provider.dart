@@ -31,9 +31,19 @@ class MPTemplateDetailProvider with ChangeNotifier {
   String? _templateId;
   // AI-generated END - 模板ID
 
+  // AI-generated START - 是否已初始化
+  bool _isInitialized = false;
+  // AI-generated END - 是否已初始化
+
   // AI-generated START - 初始化模板
   /// 根据 templateId 初始化模板（新增或编辑）
   Future<void> initializeTemplate(String? templateId, MPTemplateStruct? template) async {
+    // 如果是新增模式且已经初始化过，则不重新初始化（保留用户已输入的数据和选择的图片）
+    if (templateId == null && _isInitialized && isCreateMode) {
+      // 保留已有状态，不重新初始化
+      return;
+    }
+
     _templateId = templateId;
 
     if (template != null) {
@@ -42,23 +52,47 @@ class MPTemplateDetailProvider with ChangeNotifier {
         _template = template;
         _category = template.type ?? '通用';
         _isLoading = false;
+        _isInitialized = true;
       });
     } else if (isCreateMode) {
       // 新增模式：创建新模板
+      // 保留已有的临时本地图标路径和其他已输入的数据
+      final savedTempLocalIconPath = _tempLocalIconPath;
+      final savedTitle = _template?.title;
+      final savedPrompt = _template?.prompt;
+      final savedCategory = _category;
+
       setState(() {
-        _template = MPTemplateStruct(
-          id: null,
-          title: null,
-          icon: null,
-          type: null,
-          prompt: null,
-        );
-        _category = '通用';
+        // 如果还没有初始化过，创建新模板；否则保留已有数据
+        if (!_isInitialized) {
+          _template = MPTemplateStruct(
+            id: null,
+            title: null,
+            icon: null,
+            type: '通用',
+            prompt: null,
+          );
+          _category = '通用';
+        } else {
+          // 保留已有数据
+          _template = MPTemplateStruct(
+            id: null,
+            title: savedTitle,
+            icon: null,
+            type: savedCategory,
+            prompt: savedPrompt,
+          );
+          _category = savedCategory;
+        }
         _isLoading = false;
+        // 恢复临时本地图标路径
+        _tempLocalIconPath = savedTempLocalIconPath;
+        _isInitialized = true;
       });
     } else if (_templateId != null) {
       // 编辑模式：从 API 加载模板详情
       await loadTemplateDetail(_templateId!);
+      _isInitialized = true;
     }
   }
   // AI-generated END - 初始化模板
@@ -146,11 +180,16 @@ class MPTemplateDetailProvider with ChangeNotifier {
   // AI-generated START - 更新模板图标
   /// 更新模板图标URL
   /// [iconUrl] 图标URL，如果以 'assets/' 开头则为本地路径
+  void updateLocalIconPath(String localIconPath) {
+    setState(() {
+      _tempLocalIconPath = localIconPath;
+    });
+  }
+
   void updateIcon(String iconUrl) {
     setState(() {
       // 如果是本地路径（asset路径），保存为临时路径
       if (iconUrl.startsWith('assets/')) {
-        _tempLocalIconPath = iconUrl;
         // 本地路径不保存到 template.icon，因为那是用于网络图片的
         _template = MPTemplateStruct(
           id: _template?.id,
@@ -161,7 +200,6 @@ class MPTemplateDetailProvider with ChangeNotifier {
         );
       } else {
         // 网络URL，更新到template.icon并清除临时路径
-        _tempLocalIconPath = null;
         _template = MPTemplateStruct(
           id: _template?.id,
           title: _template?.title,
@@ -325,6 +363,8 @@ class MPTemplateDetailProvider with ChangeNotifier {
     _template = null;
     _isLoading = false;
     _category = '通用';
+    _tempLocalIconPath = null;
+    _isInitialized = false;
     notifyListeners();
   }
   // AI-generated END - 重置状态

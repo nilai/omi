@@ -45,64 +45,61 @@ class ActionButtonsCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 0.0, vertical: 20.0),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: buttons.map((button) {
-          return _buildActionButton(button);
+        children: buttons.asMap().entries.map((entry) {
+          final index = entry.key;
+          final button = entry.value;
+          final isLast = index == buttons.length - 1;
+          return _buildActionButton(button, isLast: isLast);
         }).toList(),
       ),
     );
   }
 
   // AI-generated START - 构建操作按钮
-  Widget _buildActionButton(ActionButton button) {
+  Widget _buildActionButton(ActionButton button, {bool isLast = false}) {
     return Expanded(
       child: GestureDetector(
         onTap: button.onTap,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // AI-generated START - 图标
-            Container(
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Icon(
+        child: Container(
+          margin: EdgeInsets.only(right: isLast ? 0.0 : 8.0),
+          padding: const EdgeInsets.symmetric(vertical: 12.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.0),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // AI-generated START - 图标
+              Icon(
                 button.icon,
-                color: Colors.grey.shade700,
-                size: 28.0,
+                color: const Color(0xFF374151),
+                size: 20.0,
               ),
-            ),
-            // AI-generated END - 图标
+              // AI-generated END - 图标
 
-            const SizedBox(height: 8.0),
+              const SizedBox(height: 4.0),
 
-            // AI-generated START - 标签文本
-            Text(
-              button.label,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 13.0,
-                fontWeight: FontWeight.normal,
+              // AI-generated START - 标签文本
+              Text(
+                button.label,
+                style: const TextStyle(
+                  color: Color(0xFF374151),
+                  fontSize: 14.0,
+                  fontWeight: FontWeight.normal,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            // AI-generated END - 标签文本
-          ],
+              // AI-generated END - 标签文本
+            ],
+          ),
         ),
       ),
     );
@@ -110,4 +107,3 @@ class ActionButtonsCard extends StatelessWidget {
   // AI-generated END - _buildActionButton
 }
 // AI-generated END - action_buttons_card.dart
-

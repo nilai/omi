@@ -132,15 +132,16 @@ class TemplateSelectionProvider with ChangeNotifier {
 
         // 4. templates map 中的模板（按 key 分组）
         if (response.templates.isNotEmpty) {
-          // 可以按 key 分组，或者将所有值合并到一个卡片中
-          final templateItems =
-              response.templates.values.map((template) => _convertToHorizontalScrollItem(template)).toList();
-          if (templateItems.isNotEmpty) {
-            _templates.add(CardItem(
-              title: '全部模板',
-              items: templateItems,
-            ));
-          }
+          // 遍历 Map，将 key 作为 title，value（List）作为 items
+          response.templates.forEach((key, templatesList) {
+            if (templatesList.isNotEmpty) {
+              final templateItems = templatesList.map((template) => _convertToHorizontalScrollItem(template)).toList();
+              _templates.add(CardItem(
+                title: key, // 使用 Map 的 key 作为 title
+                items: templateItems, // 使用 Map 的 value（List）作为 items
+              ));
+            }
+          });
         }
 
         _hasMore = response.hasMore;
@@ -220,22 +221,26 @@ class TemplateSelectionProvider with ChangeNotifier {
       prompt: '用于投资人路演的沟通模板',
     );
 
-    // 创建模拟的 templates map
-    final templatesMap = <String, MPTemplateStruct>{
-      'template_1': MPTemplateStruct(
-        id: 'template_1',
-        title: '面试记录模板',
-        icon: '',
-        type: '通用',
-        prompt: '面试记录模板内容...',
-      ),
-      'template_2': MPTemplateStruct(
-        id: 'template_2',
-        title: '通话摘要模板',
-        icon: '',
-        type: '通用',
-        prompt: '通话摘要模板内容...',
-      ),
+    // 创建模拟的 templates map（value 是 List）
+    final templatesMap = <String, List<MPTemplateStruct>>{
+      'template_1': [
+        MPTemplateStruct(
+          id: 'template_1',
+          title: '面试记录模板',
+          icon: '',
+          type: '通用',
+          prompt: '面试记录模板内容...',
+        ),
+      ],
+      'template_2': [
+        MPTemplateStruct(
+          id: 'template_2',
+          title: '通话摘要模板',
+          icon: '',
+          type: '通用',
+          prompt: '通话摘要模板内容...',
+        ),
+      ],
     };
 
     // 创建模拟的基础响应
@@ -262,13 +267,22 @@ class TemplateSelectionProvider with ChangeNotifier {
     MPTemplateStruct template, {
     bool isMyTemplate = false,
   }) {
-    // 根据标题或描述映射图标和颜色
-    final iconData = _getIconForTemplate(template.title ?? '');
-    final iconColor = _getColorForTemplate(template.title ?? '');
+    // 优先使用 template.icon 作为网络图片URL
+    // 如果没有 template.icon，则使用默认图标和颜色
+    final iconUrl = template.icon;
+    IconData? iconData;
+    Color? iconColor;
+
+    if (iconUrl == null || iconUrl.isEmpty) {
+      // 如果没有 icon URL，使用默认图标和颜色
+      iconData = _getIconForTemplate(template.title ?? '');
+      iconColor = _getColorForTemplate(template.title ?? '');
+    }
 
     return HorizontalScrollTemplateItem(
       id: template.id ?? '',
       title: template.title ?? '',
+      imageUrl: iconUrl,
       icon: iconData,
       iconColor: iconColor,
       backgroundColor: Colors.white,
@@ -416,16 +430,19 @@ class TemplateSelectionProvider with ChangeNotifier {
             items: moreCustomTemplateItems,
           ));
 
-          // 4. templates map 中的模板
+          // 4. templates map 中的模板（按 key 分组）
           if (response.templates.isNotEmpty) {
-            final templateItems =
-                response.templates.values.map((template) => _convertToHorizontalScrollItem(template)).toList();
-            if (templateItems.isNotEmpty) {
-              moreCardItems.add(CardItem(
-                title: '全部模板',
-                items: templateItems,
-              ));
-            }
+            // 遍历 Map，将 key 作为 title，value（List）作为 items
+            response.templates.forEach((key, templatesList) {
+              if (templatesList.isNotEmpty) {
+                final templateItems =
+                    templatesList.map((template) => _convertToHorizontalScrollItem(template)).toList();
+                moreCardItems.add(CardItem(
+                  title: key, // 使用 Map 的 key 作为 title
+                  items: templateItems, // 使用 Map 的 value（List）作为 items
+                ));
+              }
+            });
           }
 
           _templates.addAll(moreCardItems);

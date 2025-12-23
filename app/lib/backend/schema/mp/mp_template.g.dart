@@ -79,10 +79,7 @@ MPGetTemplateListResponse _$MPGetTemplateListResponseFromJson(
           ? null
           : MPTemplateStruct.fromJson(
               json['recent_template'] as Map<String, dynamic>),
-      templates: (json['templates'] as Map<String, dynamic>).map(
-        (k, e) =>
-            MapEntry(k, MPTemplateStruct.fromJson(e as Map<String, dynamic>)),
-      ),
+      templates: _templatesFromJson(json['templates']),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );

@@ -295,6 +295,7 @@ class _MPTemplateIconSelectionPopupState extends State<MPTemplateIconSelectionPo
     // 获取本地图片路径
     final assetPath = _iconAssets[index].path;
 
+    print('assetPath3333333: $assetPath');
     // 先创建结果对象，包含本地路径
     final result = IconSelectionResult(localPath: assetPath);
 

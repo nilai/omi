@@ -1,11 +1,10 @@
 // AI-generated START - 声纹详情页面
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/mp_add_voive_recognition/widgets/mp_delete_voice_dialog.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_voice_congnition_detail/providers/mp_voice_recognition_detail_provider.dart';
+import 'package:omi/services/voice_recognition_event_service.dart';
 import 'package:provider/provider.dart';
 
 /// 声纹详情页面
@@ -368,7 +367,14 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
       child: ElevatedButton(
         onPressed: () {
           provider.saveVoice(_nameController.text, () {
-            Navigator.of(context).pop();
+            // 发送声音保存成功事件
+            final voiceName = _nameController.text.isNotEmpty ? _nameController.text : '声纹';
+            VoiceRecognitionEventService().emitVoiceSaved(
+              data: {
+                'voiceName': voiceName,
+              },
+            );
+            Navigator.of(context).pop(true);
           });
         },
         style: ElevatedButton.styleFrom(

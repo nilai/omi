@@ -246,16 +246,16 @@ class MPMemoryStruct {
   @JsonKey(name: 'duration')
   final int duration;
 
-  @JsonKey(name: 'SummaryContent')
+  @JsonKey(name: 'summary_content')
   final MPSummaryMemoryStruct? summaryContent;
 
-  @JsonKey(name: 'OnlyRecordContent')
+  @JsonKey(name: 'only_record_content')
   final MPOnlyRecordMemoryStruct? onlyRecordContent;
 
-  @JsonKey(name: 'InsightContent')
+  @JsonKey(name: 'insight_content')
   final MPInsightMemoryStruct? insightContent;
 
-  @JsonKey(name: 'AiExpertContent')
+  @JsonKey(name: 'ai_expert_content')
   final MPAiExpertMemoryStruct? aiExpertContent;
 
   MPMemoryStruct({

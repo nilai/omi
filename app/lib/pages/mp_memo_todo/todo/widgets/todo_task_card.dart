@@ -359,30 +359,36 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
 
   Widget _buildPriorityTag() {
     final isCompleted = _isCompleted();
-    return Visibility(
-        visible: widget.priorityTag != null && widget.priorityTag!.isNotEmpty,
-        child: Padding(
-            padding: const EdgeInsets.only(left: 12.0),
-            child: Container(
-              height: 32.0,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10.0,
-              ),
-              decoration: BoxDecoration(
-                color: isCompleted ? const Color(0xFFD1D5DB) : _getPriorityColor(widget.priorityTag!),
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              child: Center(
-                child: Text(
-                  widget.priorityTag!,
-                  style: TextStyle(
-                    color: isCompleted ? const Color(0xFF6B7280) : Colors.white,
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            )));
+    final priorityTag = widget.priorityTag;
+
+    // 如果 priorityTag 为 null 或空，返回空 widget
+    if (priorityTag == null || priorityTag.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: Container(
+        height: 32.0,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10.0,
+        ),
+        decoration: BoxDecoration(
+          color: isCompleted ? const Color(0xFFD1D5DB) : _getPriorityColor(priorityTag),
+          borderRadius: BorderRadius.circular(16.0),
+        ),
+        child: Center(
+          child: Text(
+            priorityTag,
+            style: TextStyle(
+              color: isCompleted ? const Color(0xFF6B7280) : Colors.white,
+              fontSize: 12.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   /// 判断任务是否已完成

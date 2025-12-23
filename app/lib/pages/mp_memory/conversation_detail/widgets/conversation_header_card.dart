@@ -22,41 +22,30 @@ class ConversationHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // AI-generated START - 标题
           Text(
             title,
             style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
+              color: Color(0xFF1F2937),
+              fontSize: 20.0,
               fontWeight: FontWeight.bold,
-              height: 1.4,
+              height: 1.2,
             ),
           ),
           // AI-generated END - 标题
 
-          const SizedBox(height: 12.0),
+          const SizedBox(height: 4.0),
 
           // AI-generated START - 总结时间
           Text(
             '总结时间 : $summaryTime',
             style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 13.0,
+              color: Color(0xFF6B7280),
+              fontSize: 14.0,
               fontWeight: FontWeight.normal,
             ),
           ),
@@ -67,4 +56,3 @@ class ConversationHeaderCard extends StatelessWidget {
   }
 }
 // AI-generated END - conversation_header_card.dart
-

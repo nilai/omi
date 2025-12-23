@@ -116,6 +116,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
     } else {
       // 如果有 id（编辑模式），调用 setAsDefaultTemplate 方法
       await provider.setAsDefaultTemplate();
+      Navigator.pop(context, true);
     }
   }
   // AI-generated END - 设置为默认模板
@@ -326,7 +327,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
   /// 打开图标选择弹窗并更新图标
   Future<void> _selectIcon(MPTemplateDetailProvider provider) async {
     // 创建弹窗实例，设置回调来处理URL更新
-    final result = await showDialog<IconSelectionResult>(
+    await showDialog<IconSelectionResult>(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black54,
@@ -334,7 +335,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
         return MPTemplateIconSelectionPopup(
           onIconSelected: (result) {
             // 先使用本地图片路径显示（立即显示）
-            provider.updateIcon(result.localPath);
+            provider.updateLocalIconPath(result.localPath);
 
             // 如果上传成功，更新为URL
             if (result.url != null && result.url!.isNotEmpty) {
@@ -344,11 +345,6 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
         );
       },
     );
-
-    if (result != null) {
-      // 立即使用本地图片路径显示
-      provider.updateIcon(result.localPath);
-    }
   }
   // AI-generated END - 选择图标
 

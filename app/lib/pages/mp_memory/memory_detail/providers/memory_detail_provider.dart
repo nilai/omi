@@ -146,9 +146,9 @@ class MemoryDetailProvider with ChangeNotifier {
 
           // 获取摘要内容（优先使用 summaryContent.summary，否则使用 content）
           String summaryText = memory.content;
-          if (memory.summaryContent != null && memory.summaryContent!.summary.isNotEmpty) {
-            summaryText = memory.summaryContent!.summary;
-          }
+          // if (memory.summaryContent != null && memory.summaryContent!.summary.isNotEmpty) {
+          //   summaryText = memory.summaryContent!.summary;
+          // }
 
           return ConversationSummary(
             id: memory.id,
@@ -160,7 +160,7 @@ class MemoryDetailProvider with ChangeNotifier {
           );
         }).toList();
 
-      notifyListeners();
+        notifyListeners();
       } else {
         debugPrint('Error loading memory detail: ${response?.baseResp.message ?? "Unknown error"}');
         setError(response?.baseResp.message ?? '加载失败');

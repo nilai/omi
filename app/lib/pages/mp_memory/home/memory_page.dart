@@ -1,4 +1,6 @@
 // AI-generated START - 记忆中心页面
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
@@ -9,6 +11,7 @@ import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/providers/voice_recognition_provider.dart';
 import 'package:omi/pages/mp_newsetting/voice_recognition/voice_recognition_page.dart';
+import 'package:omi/services/voice_recognition_event_service.dart';
 import 'package:provider/provider.dart';
 
 /// 记忆中心页面
@@ -35,6 +38,10 @@ class _MemoryPageState extends State<MemoryPage> {
   final ScrollController _scrollController = ScrollController();
   // AI-generated END - _scrollController
 
+  // AI-generated START - 事件订阅
+  StreamSubscription? _voiceEventSubscription;
+  // AI-generated END - 事件订阅
+
   // AI-generated START - 初始化方法
   @override
   void initState() {
@@ -51,6 +58,15 @@ class _MemoryPageState extends State<MemoryPage> {
       provider.loadMemories();
     });
     // AI-generated END - 初始化记忆数据
+    // AI-generated START - 监听声音保存事件
+    _voiceEventSubscription = VoiceRecognitionEventService().events.listen((event) {
+      if (event.type == VoiceRecognitionEventType.voiceSaved && mounted) {
+        // 声音保存成功后，刷新记忆列表
+        final provider = Provider.of<MemoryProvider>(context, listen: false);
+        provider.loadMemories();
+      }
+    });
+    // AI-generated END - 监听声音保存事件
   }
   // AI-generated END - 初始化方法
 
@@ -59,6 +75,7 @@ class _MemoryPageState extends State<MemoryPage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _voiceEventSubscription?.cancel();
     super.dispose();
   }
   // AI-generated END - 清理资源

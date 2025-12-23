@@ -79,8 +79,8 @@ class TabSelectorCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12.0),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue.shade50 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12.0),
+            color: isSelected ? Color(0xFFEFF6FF) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16.0),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -88,7 +88,7 @@ class TabSelectorCard extends StatelessWidget {
               // AI-generated START - 图标
               Icon(
                 option.icon,
-                color: isSelected ? Colors.blue : Colors.grey.shade700,
+                color: isSelected ? Color(0xFF2563EB) : Color(0xFF4B5563),
                 size: 24.0,
               ),
               // AI-generated END - 图标
@@ -99,9 +99,9 @@ class TabSelectorCard extends StatelessWidget {
               Text(
                 option.label,
                 style: TextStyle(
-                  color: isSelected ? Colors.blue : Colors.grey.shade700,
+                  color: isSelected ? Color(0xFF2563EB) : Color(0xFF4B5563),
                   fontSize: 12.0,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                 ),
               ),
               // AI-generated END - 标签文本
@@ -114,4 +114,3 @@ class TabSelectorCard extends StatelessWidget {
   // AI-generated END - _buildTabOption
 }
 // AI-generated END - tab_selector_card.dart
-

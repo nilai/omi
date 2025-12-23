@@ -21,8 +21,9 @@ class MeetingSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.all(20.0),
+      padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
@@ -41,22 +42,22 @@ class MeetingSummaryCard extends StatelessWidget {
           Text(
             title ?? '会议总结',
             style: const TextStyle(
-              color: Colors.black87,
-              fontSize: 18.0,
-              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+              fontSize: 14.0,
+              fontWeight: FontWeight.w500,
             ),
           ),
           // AI-generated END - 标题
 
-          const SizedBox(height: 16.0),
+          const SizedBox(height: 8.0),
 
           // AI-generated START - 正文内容
           Text(
             content,
             style: TextStyle(
-              color: Colors.grey.shade800,
-              fontSize: 15.0,
-              height: 1.6,
+              color: Color(0xFF374151),
+              fontSize: 14.0,
+              height: 1.4,
               fontWeight: FontWeight.normal,
             ),
           ),
@@ -67,4 +68,3 @@ class MeetingSummaryCard extends StatelessWidget {
   }
 }
 // AI-generated END - meeting_summary_card.dart
-

@@ -1,6 +1,8 @@
 // AI-generated START - 对话详情状态管理Provider
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_memory.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
+import 'package:omi/backend/schema/mp/mp_memory.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/participants_card.dart';
 
@@ -14,6 +16,8 @@ class ConversationMessage {
     this.type = MessageType.user,
     this.audioUrl,
     this.duration,
+    this.senderName,
+    this.avatarUrl,
   });
   // AI-generated END - 构造函数
 
@@ -34,6 +38,12 @@ class ConversationMessage {
 
   /// 音频时长（秒，可选）
   final int? duration;
+
+  /// 发送者姓名（可选）
+  final String? senderName;
+
+  /// 头像URL（可选）
+  final String? avatarUrl;
 }
 
 /// 消息类型枚举
@@ -57,13 +67,24 @@ class ConversationDetailProvider with ChangeNotifier {
   // AI-generated START - 对话标题
   String? _title;
   // AI-generated END - _title
+  // AI-generated START - 对话时长
+  int? _duration;
+  // AI-generated END - _duration
+  // AI-generated START - 摘要时间
+  String? _summaryTime;
+  // AI-generated END - _summaryTime
+  // AI-generated START - 获取摘要时间
+  String? get summaryTime => _summaryTime;
+  // AI-generated END - summaryTime
+
+  String? _summary;
 
   // AI-generated START - 消息列表
-  List<ConversationMessage> _messages = [];
+  List<ConversationMessage> _transcripts = [];
   // AI-generated END - _messages
 
   // AI-generated START - 参与者列表
-  List<Participant> _participants = [];
+  final List<Participant> _participants = [];
   // AI-generated END - _participants
 
   // AI-generated START - 获取对话ID
@@ -74,13 +95,113 @@ class ConversationDetailProvider with ChangeNotifier {
   String? get title => _title;
   // AI-generated END - title
 
+  // AI-generated START - 获取对话时长
+  int? get duration => _duration;
+  // AI-generated END - duration
+
   // AI-generated START - 获取消息列表
-  List<ConversationMessage> get messages => _messages;
+  List<ConversationMessage> get transcripts => _transcripts;
   // AI-generated END - messages
 
   // AI-generated START - 获取参与者列表
   List<Participant> get participants => _participants;
   // AI-generated END - participants
+
+  // AI-generated START - 原始记忆数据
+  MPMemoryStruct? _memory;
+  // AI-generated END - _memory
+
+  // AI-generated START - 获取原始记忆数据
+  MPMemoryStruct? get memory => _memory;
+  // AI-generated END - memory
+
+  // AI-generated START - 获取摘要内容
+  String? get summary => _summary;
+  // AI-generated END - summary
+
+  // AI-generated START - 搜索关键词
+  String _searchQuery = '';
+  // AI-generated END - _searchQuery
+
+  // AI-generated START - 获取搜索关键词
+  String get searchQuery => _searchQuery;
+  // AI-generated END - searchQuery
+
+  // AI-generated START - 设置搜索关键词
+  void setSearchQuery(String query) {
+    _searchQuery = query;
+    // 搜索功能暂时不实现
+    notifyListeners();
+  }
+  // AI-generated END - setSearchQuery
+
+  // AI-generated START - 获取待办列表
+  List<MPTodoStruct> get todos {
+    if (_memory?.summaryContent?.todos != null) {
+      return _memory!.summaryContent!.todos;
+    }
+    return [];
+  }
+  // AI-generated END - todos
+
+  // AI-generated START - 获取过滤后的待办列表
+  List<MPTodoStruct> get filteredTodos {
+    // 搜索功能暂时不实现，直接返回所有数据
+    return todos;
+  }
+  // AI-generated END - filteredTodos
+
+  // AI-generated START - 获取仅录音内容
+  MPOnlyRecordMemoryStruct? get onlyRecordContent => _memory?.onlyRecordContent;
+  // AI-generated END - onlyRecordContent
+
+  // AI-generated START - 获取洞察内容
+  MPInsightMemoryStruct? get insightContent => _memory?.insightContent;
+  // AI-generated END - insightContent
+
+  // AI-generated START - 获取AI专家内容
+  MPAiExpertMemoryStruct? get aiExpertContent => _memory?.aiExpertContent;
+  // AI-generated END - aiExpertContent
+
+  // AI-generated START - 获取录音文件URL
+  String? get recordFileUrl {
+    if (_memory?.onlyRecordContent != null) {
+      return _memory!.onlyRecordContent!.recordFile;
+    }
+    if (_memory?.summaryContent != null) {
+      return _memory!.summaryContent!.recordUrl;
+    }
+    return null;
+  }
+  // AI-generated END - recordFileUrl
+
+  // AI-generated START - 根据标签ID加载对应的数据
+  void loadDataForTab(String tabId) {
+    if (_memory == null) return;
+
+    switch (tabId) {
+      case 'summary':
+        // Summary 标签：使用 summaryContent
+        _summary = _memory?.summaryContent?.summary;
+        break;
+      case 'transcript':
+        // Transcript 标签：加载转录数据
+        _loadTranscriptData(_memory!);
+        break;
+      case 'todolist':
+        _loadTranscriptData(memory!);
+        // TodoList 标签：数据已经在 getter 中获取
+        break;
+      case 'mindmap':
+        // MindMap 标签：可能需要从 insightContent 或 aiExpertContent 获取
+        // 暂时不处理，等待具体需求
+        break;
+      default:
+        break;
+    }
+    notifyListeners();
+  }
+  // AI-generated END - loadDataForTab
 
   // AI-generated START - 设置对话信息
   void setConversationInfo(String conversationId, String? title) {
@@ -92,72 +213,84 @@ class ConversationDetailProvider with ChangeNotifier {
 
   // AI-generated START - 初始化对话详情（从 MPMemoryStruct）
   void initializeFromMemory(MPMemoryStruct memory) {
+    // 保存原始记忆数据
+    _memory = memory;
+
     // 设置对话信息
     _conversationId = memory.id;
     _title = memory.title;
+    _duration = memory.duration;
+    _summaryTime = MPTimestampUtils.timestampToRelativeDateString(memory.createAt);
 
-    // 从 summaryContent 中提取参与者
-    if (memory.summaryContent != null) {
-      _participants = memory.summaryContent!.participants.map((speaker) {
-        return Participant(
-          id: speaker.id,
-          name: speaker.name,
-        );
-      }).toList();
-    } else {
-      _participants = [];
+    _summary = memory.summaryContent?.summary;
+
+    // 如果 memory 数据不完整，调用接口获取详情
+    _loadMemoryDetail(memory.id);
+
+    notifyListeners();
+  }
+
+  // AI-generated START - 加载记忆详情
+  Future<void> _loadMemoryDetail(String memoryId) async {
+    try {
+      final response = await getMemoryDetail(
+        MPGetMemoryDetailRequest(memoryId: memoryId),
+      );
+
+      if (response != null && response.baseResp.code == 0) {
+        // 更新记忆数据
+        _memory = response.memory;
+
+        // 更新对话信息
+        _conversationId = response.memory.id;
+        _title = response.memory.title;
+        _duration = response.memory.duration;
+        _summaryTime = MPTimestampUtils.timestampToRelativeDateString(response.memory.createAt);
+
+        // 更新摘要
+        _summary = response.memory.summaryContent?.summary;
+
+        print('122222summary: ${response.memory.summaryContent?.todos}');
+        print('222222summary: ${response.memory.summaryContent?.transcript}');
+        print('322222summary: $_summary');
+        print('422222summary: ${response.memory.summaryContent?.participants}');
+
+        notifyListeners();
+      } else {
+        debugPrint('获取记忆详情失败: ${response?.baseResp.message ?? '未知错误'}');
+      }
+    } catch (e) {
+      debugPrint('调用 getMemoryDetail 接口失败: $e');
     }
+  }
+  // AI-generated END - _loadMemoryDetail
 
+  // AI-generated START - 加载转录数据
+  void _loadTranscriptData(MPMemoryStruct memory) {
     // 从 summaryContent 中提取转录消息
     if (memory.summaryContent != null && memory.summaryContent!.transcript.isNotEmpty) {
-      _messages = memory.summaryContent!.transcript.map((transcript) {
+      _transcripts = memory.summaryContent!.transcript.map((transcript) {
         // 将时间字符串转换为 DateTime（这里简化处理，实际可能需要更复杂的解析）
         final createdAt = MPTimestampUtils.timestampToDateTime(memory.createAt);
+
+        // 根据 speaker 判断消息类型（如果是用户自己的声音，则为 user，否则为 ai）
+        final messageType = transcript.speaker.myselfVoice == true ? MessageType.user : MessageType.ai;
 
         return ConversationMessage(
           id: transcript.id,
           content: transcript.content,
           createdAt: createdAt,
-          type: MessageType.user, // 可以根据 speaker 判断类型
+          type: messageType,
+          duration: _duration,
+          senderName: transcript.speaker.name,
+          avatarUrl: transcript.speaker.avatar.isNotEmpty ? transcript.speaker.avatar : null,
         );
       }).toList();
     } else {
-      _messages = [];
+      _transcripts = [];
     }
-
-    notifyListeners();
   }
+  // AI-generated END - _loadTranscriptData
   // AI-generated END - initializeFromMemory
-
-  // AI-generated START - 添加消息
-  void addMessage(ConversationMessage message) {
-    _messages.add(message);
-    notifyListeners();
-  }
-  // AI-generated END - addMessage
-
-  // AI-generated START - 删除消息
-  void deleteMessage(String messageId) {
-    _messages.removeWhere((m) => m.id == messageId);
-    notifyListeners();
-  }
-  // AI-generated END - deleteMessage
-
-  // AI-generated START - 清空消息
-  void clearMessages() {
-    _messages.clear();
-    notifyListeners();
-  }
-  // AI-generated END - clearMessages
-
-  // AI-generated START - 重置状态
-  void reset() {
-    _conversationId = null;
-    _title = null;
-    _messages.clear();
-    _participants.clear();
-    notifyListeners();
-  }
-  // AI-generated END - reset
 }
 // AI-generated END - conversation_detail_provider.dart

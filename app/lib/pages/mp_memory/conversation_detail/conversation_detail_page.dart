@@ -1,14 +1,19 @@
 // AI-generated START - 对话详情页面
 import 'package:flutter/material.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
+import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
+import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
+import 'package:omi/pages/mp_memo_todo/todo/widgets/todo_task_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/providers/conversation_detail_provider.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/action_buttons_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/audio_player_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/conversation_header_card.dart';
-import 'package:omi/pages/mp_memory/conversation_detail/widgets/key_content_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/meeting_summary_card.dart';
+import 'package:omi/pages/mp_memory/conversation_detail/widgets/mp_message_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/participants_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/tab_selector_card.dart';
+import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import 'package:omi/pages/mp_popup/new_task_popup.dart';
 import 'package:provider/provider.dart';
 
 /// 对话详情页面
@@ -46,6 +51,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
       // 从 MPMemoryStruct 初始化数据
       provider.initializeFromMemory(widget.memory);
+
+      // 加载默认标签的数据
+      provider.loadDataForTab(_selectedTab);
     });
     // AI-generated END - 初始化对话详情数据
   }
@@ -57,31 +65,21 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     return Consumer<ConversationDetailProvider>(
       builder: (context, provider, child) {
         return Scaffold(
-          appBar: AppBar(
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share),
-                onPressed: () {
-                  // TODO: 实现分享功能
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('分享')),
-                  );
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.more_vert),
-                onPressed: () {
-                  // TODO: 实现更多选项
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('更多选项')),
-                  );
-                },
-              ),
-            ],
+          backgroundColor: MPConstUtils.backgroundColorGrey,
+          appBar: MPCommonAppBar(
+            title: provider.title ?? widget.memory.title,
+            showMoreButton: true,
+            showShareButton: true,
+            onMorePressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('更多选项')),
+              );
+            },
+            onSharePressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('分享')),
+              );
+            },
           ),
           body: _buildBody(provider),
         );
@@ -94,11 +92,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   Widget _buildBody(ConversationDetailProvider provider) {
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // AI-generated START - 对话头部卡片
           ConversationHeaderCard(
             title: provider.title ?? widget.memory.title,
-            summaryTime: '2025-07-22 15:21:54',
+            summaryTime: provider.summaryTime ?? '',
           ),
           // AI-generated END - 对话头部卡片
 
@@ -110,9 +110,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           // AI-generated END - 参与人卡片
 
           // AI-generated START - 音频播放器卡片
-          const AudioPlayerCard(
+          AudioPlayerCard(
             title: '原始音频',
-            totalDurationSeconds: 2529, // 42分9秒
+            totalDurationSeconds: provider.duration ?? 0,
           ),
           // AI-generated END - 音频播放器卡片
 
@@ -145,6 +145,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               setState(() {
                 _selectedTab = id;
               });
+              // 切换标签时加载对应的数据
+              final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+              provider.loadDataForTab(id);
             },
           ),
           // AI-generated END - 标签选择器卡片
@@ -216,70 +219,103 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   // AI-generated START - 构建摘要内容
   Widget _buildSummaryContent() {
-    return Column(
-      children: [
-        // AI-generated START - 重点内容卡片
-        KeyContentCard(
-          items: const [
-            KeyContentItem(
-              id: '1',
-              time: '15:32',
-              isFavorite: true,
-              highlightQuote: '用户体验是我们最大的差异化优势,必须做到极致',
-              analysis: '这是会议的核心洞察,体现了产品策略的重要转变',
-              tags: [
-                '用户体验设计原则',
-                'AI硬件交互标准',
-              ],
-            ),
-            KeyContentItem(
-              id: '2',
-              time: '28:45',
-              isFavorite: true,
-              highlightQuote: '技术门槛很高,但这也是我们的护城河',
-              analysis: '识别了技术壁垒作为竞争优势的战略价值',
-              tags: [
-                'AI芯片技术发展',
-                '语音识别算法优化',
-              ],
-            ),
-          ],
-          onFavoriteChanged: (id) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('收藏状态变化: $id')),
-            );
-          },
-          onTagTap: (tag) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('标签点击: $tag')),
-            );
-          },
-        ),
-        // AI-generated END - 重点内容卡片
+    return Consumer<ConversationDetailProvider>(
+      builder: (context, provider, child) {
+        return Column(
+          children: [
+            // AI-generated START - 重点内容卡片
+            // TODO: 如果后续有 keyContent 数据，可以从 provider.memory 中获取
+            // KeyContentCard(
+            //   items: const [
+            //     KeyContentItem(
+            //       id: '1',
+            //       time: '15:32',
+            //       isFavorite: true,
+            //       highlightQuote: '用户体验是我们最大的差异化优势,必须做到极致',
+            //       analysis: '这是会议的核心洞察,体现了产品策略的重要转变',
+            //       tags: [
+            //         '用户体验设计原则',
+            //         'AI硬件交互标准',
+            //       ],
+            //     ),
+            //     KeyContentItem(
+            //       id: '2',
+            //       time: '28:45',
+            //       isFavorite: true,
+            //       highlightQuote: '技术门槛很高,但这也是我们的护城河',
+            //       analysis: '识别了技术壁垒作为竞争优势的战略价值',
+            //       tags: [
+            //         'AI芯片技术发展',
+            //         '语音识别算法优化',
+            //       ],
+            //     ),
+            //   ],
+            //   onFavoriteChanged: (id) {
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       SnackBar(content: Text('收藏状态变化: $id')),
+            //     );
+            //   },
+            //   onTagTap: (tag) {
+            //     ScaffoldMessenger.of(context).showSnackBar(
+            //       SnackBar(content: Text('标签点击: $tag')),
+            //     );
+            //   },
+            // ),
+            // AI-generated END - 重点内容卡片
 
-        // AI-generated START - 会议总结卡片
-        const MeetingSummaryCard(
-          content:
-              '本次会议重点讨论了AI硬件市场的需求分析和产品设计方案。团队确定了以用户体验为核心的差异化策略,强调技术门槛作为竞争壁垒的重要性。会议涉及了目标用户画像、产品功能规格、技术实现路径以及商业模式等关键议题。最终形成了清晰的产品开发路线图和下一步行动计划。',
-        ),
-        // AI-generated END - 会议总结卡片
-      ],
+            // AI-generated START - 会议总结卡片
+            MeetingSummaryCard(
+              content: provider.summary ?? '暂无总结内容',
+            ),
+            // AI-generated END - 会议总结卡片
+          ],
+        );
+      },
     );
   }
   // AI-generated END - _buildSummaryContent
 
   // AI-generated START - 构建思维导图内容
   Widget _buildMindMapContent() {
-    return Container(
-      margin: const EdgeInsets.all(16.0),
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-      ),
-      child: const Center(
-        child: Text('思维导图内容'),
-      ),
+    return Consumer<ConversationDetailProvider>(
+      builder: (context, provider, child) {
+        // 优先使用 insightContent，如果没有则使用 aiExpertContent
+        final content = provider.insightContent?.content ?? provider.aiExpertContent?.content;
+
+        if (content == null || content.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: const Center(
+              child: Text(
+                '暂无思维导图内容',
+                style: TextStyle(fontSize: 14.0, color: Color(0xFF1F2937), height: 1.5),
+              ),
+            ),
+          );
+        }
+
+        return Container(
+          margin: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Text(
+            content,
+            style: const TextStyle(
+              fontSize: 14.0,
+              color: Color(0xFF1F2937),
+              height: 1.5,
+            ),
+          ),
+        );
+      },
     );
   }
   // AI-generated END - _buildMindMapContent
@@ -288,7 +324,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   Widget _buildTranscriptContent() {
     return Consumer<ConversationDetailProvider>(
       builder: (context, provider, child) {
-        if (provider.messages.isEmpty) {
+        if (provider.transcripts.isEmpty) {
           return Container(
             margin: const EdgeInsets.all(16.0),
             padding: const EdgeInsets.all(20.0),
@@ -303,7 +339,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         }
 
         return Column(
-          children: provider.messages.map((message) {
+          children: provider.transcripts.map((message) {
             return _buildMessageItem(message);
           }).toList(),
         );
@@ -314,151 +350,178 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   // AI-generated START - 构建待办列表内容
   Widget _buildTodoListContent() {
-    return Container(
-      margin: const EdgeInsets.all(16.0),
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-      ),
-      child: const Center(
-        child: Text('待办列表内容'),
-      ),
+    return Consumer<ConversationDetailProvider>(
+      builder: (context, provider, child) {
+        final todos = provider.filteredTodos;
+
+        if (todos.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: const Center(
+              child: Text('暂无待办事项'),
+            ),
+          );
+        }
+
+        return Column(
+          children: todos.map((todo) {
+            // 格式化日期（从 ISO 8601 格式转换为 "Dec 16" 格式）
+            String formattedDate = _formatTodoDate(todo.deadline);
+
+            // 转换 priority 为 priorityTag 格式（首字母大写）
+            String? priorityTag;
+            if (todo.priority.isNotEmpty) {
+              if (todo.priority.length == 1) {
+                priorityTag = todo.priority.toUpperCase();
+              } else {
+                priorityTag = todo.priority.substring(0, 1).toUpperCase() + todo.priority.substring(1).toLowerCase();
+              }
+            }
+
+            return TodoTaskCard(
+              id: todo.id,
+              title: todo.title,
+              description: todo.owner.name,
+              date: formattedDate,
+              priorityTag: priorityTag,
+              status: todo.status,
+              onTap: () {
+                // 解析日期字符串（服务端返回的是 ISO 8601 格式，如 "2025-01-15"）
+                DateTime? parsedDate;
+                try {
+                  // 直接解析 ISO 8601 格式的日期字符串
+                  parsedDate = DateTime.parse(todo.deadline).toLocal();
+                } catch (e) {
+                  debugPrint('解析日期失败: ${todo.deadline}, 错误: $e');
+                  parsedDate = null;
+                }
+
+                // 解析优先级（服务端返回的 priority 可能是 "high", "normal", "low" 小写格式）
+                TaskPriority? parsedPriority;
+                if (todo.priority.isNotEmpty) {
+                  try {
+                    // 将服务端返回的 priority 转换为小写后匹配枚举
+                    final priorityLower = todo.priority.toLowerCase();
+                    parsedPriority = TaskPriority.values.firstWhere(
+                      (e) => e.name.toLowerCase() == priorityLower,
+                      orElse: () => TaskPriority.normal, // 如果找不到匹配项，使用默认值
+                    );
+                  } catch (e) {
+                    debugPrint('解析优先级失败: ${todo.priority}, 错误: $e');
+                    parsedPriority = TaskPriority.normal;
+                  }
+                } else {
+                  parsedPriority = null;
+                }
+
+                final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+
+                NewTaskPopup.show(
+                  context: context,
+                  initialTitle: todo.title,
+                  initialDueDate: parsedDate,
+                  initialPriority: parsedPriority,
+                  showMarkComplete: true, // 显示 Mark complete 复选框
+                  showDeleteTask: true, // 显示删除任务按钮
+                  isCompleted: todo.status == 2 ? true : false, // 初始完成状态
+                  onDelete: () async {
+                    await todoProvider.deleteTodo(todo.id);
+                    // 刷新对话详情数据
+                    final conversationProvider = Provider.of<ConversationDetailProvider>(context, listen: false);
+                    if (conversationProvider.memory != null) {
+                      conversationProvider.initializeFromMemory(conversationProvider.memory!);
+                    }
+                  },
+                  onComplete: (isCompleted, title, dueDate, priority) async {
+                    final now = DateTime.now();
+                    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    final dateStr = dueDate != null
+                        ? '${months[dueDate.month - 1]} ${dueDate.day}'
+                        : '${months[now.month - 1]} ${now.day}';
+
+                    final priorityTagStr = priority != null
+                        ? (priority == TaskPriority.high
+                            ? 'High'
+                            : priority == TaskPriority.normal
+                                ? 'Normal'
+                                : 'Low')
+                        : 'Normal';
+                    // 处理完成操作
+                    await todoProvider.updateTodoWithRequest(
+                        todoId: todo.id, title: title, priority: priorityTagStr, deadline: dateStr);
+                    // 刷新对话详情数据
+                    final conversationProvider = Provider.of<ConversationDetailProvider>(context, listen: false);
+                    if (conversationProvider.memory != null) {
+                      conversationProvider.initializeFromMemory(conversationProvider.memory!);
+                    }
+                  },
+                );
+              },
+              onComplete: () async {
+                final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+                await todoProvider.completeTodo(todo.id);
+                // 刷新对话详情数据
+                final conversationProvider = Provider.of<ConversationDetailProvider>(context, listen: false);
+                if (conversationProvider.memory != null) {
+                  conversationProvider.initializeFromMemory(conversationProvider.memory!);
+                }
+              },
+              onDelete: () async {
+                final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+                await todoProvider.deleteTodo(todo.id);
+                // 刷新对话详情数据
+                final conversationProvider = Provider.of<ConversationDetailProvider>(context, listen: false);
+                if (conversationProvider.memory != null) {
+                  conversationProvider.initializeFromMemory(conversationProvider.memory!);
+                }
+              },
+            );
+          }).toList(),
+        );
+      },
     );
   }
   // AI-generated END - _buildTodoListContent
 
   // AI-generated START - 构建消息项
   Widget _buildMessageItem(ConversationMessage message) {
-    final isUser = message.type == MessageType.user;
+    // 格式化时间戳为 HH:mm 格式
+    final timestamp =
+        '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            // AI-generated START - AI头像
-            CircleAvatar(
-              radius: 20.0,
-              backgroundColor: Colors.purple.shade100,
-              child: Icon(
-                Icons.smart_toy,
-                size: 24.0,
-                color: Colors.purple.shade700,
-              ),
-            ),
-            const SizedBox(width: 12.0),
-          ],
+    // 获取发送者姓名，如果没有则使用默认值
+    final senderName = message.senderName ?? (message.type == MessageType.user ? '我' : 'AI助手');
 
-          // AI-generated START - 消息内容
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                  decoration: BoxDecoration(
-                    color: isUser ? Colors.blue.shade50 : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.content,
-                        style: TextStyle(
-                          fontSize: 15.0,
-                          color: Colors.grey.shade800,
-                          height: 1.5,
-                        ),
-                      ),
-                      if (message.audioUrl != null) ...[
-                        const SizedBox(height: 8.0),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.volume_up,
-                              size: 16.0,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              message.duration != null ? _formatDuration(message.duration!) : '音频',
-                              style: TextStyle(
-                                fontSize: 12.0,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4.0),
-                Text(
-                  _formatTime(message.createdAt),
-                  style: TextStyle(
-                    fontSize: 11.0,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // AI-generated END - 消息内容
-
-          if (isUser) ...[
-            const SizedBox(width: 12.0),
-            // AI-generated START - 用户头像
-            CircleAvatar(
-              radius: 20.0,
-              backgroundColor: Colors.blue.shade100,
-              child: Icon(
-                Icons.person,
-                size: 24.0,
-                color: Colors.blue.shade700,
-              ),
-            ),
-            // AI-generated END - 用户头像
-          ],
-        ],
+    return MPMessageCard(
+      message: MPMessageCardData(
+        senderName: senderName,
+        content: message.content,
+        timestamp: timestamp,
+        avatarText: senderName.isNotEmpty ? senderName[0] : '?',
+        avatarUrl: message.avatarUrl,
       ),
     );
   }
   // AI-generated END - _buildMessageItem
 
-  // AI-generated START - 格式化时间
-  String _formatTime(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 1) {
-      return '刚刚';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}分钟前';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}小时前';
-    } else {
-      return '${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  // AI-generated START - 格式化待办日期
+  /// 将 ISO 8601 格式的日期字符串转换为 "Dec 16" 格式
+  String _formatTodoDate(String deadline) {
+    try {
+      // 尝试解析 ISO 8601 格式的日期字符串
+      final date = DateTime.parse(deadline).toLocal();
+      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return '${months[date.month - 1]} ${date.day}';
+    } catch (e) {
+      // 如果解析失败，返回原始字符串
+      return deadline;
     }
   }
-  // AI-generated END - _formatTime
-
-  // AI-generated START - 格式化时长
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    if (minutes > 0 && remainingSeconds > 0) {
-      return '$minutes分$remainingSeconds秒';
-    } else if (minutes > 0) {
-      return '$minutes分钟';
-    } else {
-      return '$remainingSeconds秒';
-    }
-  }
-  // AI-generated END - _formatDuration
+  // AI-generated END - _formatTodoDate
 }
 // AI-generated END - conversation_detail_page.dart

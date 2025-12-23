@@ -178,7 +178,10 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
               width: 48.0,
               height: 48.0,
               decoration: BoxDecoration(
-                color: item.iconColor ?? const Color(0xFF374151),
+                // 如果有网络图片URL，不显示背景色；否则显示图标背景色
+                color: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                    ? Colors.transparent
+                    : (item.iconColor ?? const Color(0xFF374151)),
                 borderRadius: BorderRadius.circular(8.0),
               ),
               child: _buildIconOrImage(item),
@@ -294,19 +297,11 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
             }
             // 加载中显示占位符
             return Container(
-              color: item.iconColor ?? const Color(0xFF374151),
-              child: Center(
-                child: SizedBox(
-                  width: 24.0,
-                  height: 24.0,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.0,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                ),
+              width: 48.0,
+              height: 48.0,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(8.0),
               ),
             );
           },

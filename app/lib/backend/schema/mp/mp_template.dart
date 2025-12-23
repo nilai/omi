@@ -4,6 +4,28 @@ import 'mp_data_model.dart';
 
 part 'mp_template.g.dart';
 
+// 自定义转换函数：处理 templates 字段可能是 List 或 Map 的情况
+Map<String, List<MPTemplateStruct>> _templatesFromJson(dynamic json) {
+  if (json == null) {
+    return {};
+  }
+
+  if (json is Map) {
+    // 如果是 Map，直接转换
+    final Map<String, List<MPTemplateStruct>> result = {};
+    json.forEach((key, value) {
+      if (value is Map<String, dynamic>) {
+        result[key.toString()] = [MPTemplateStruct.fromJson(value)];
+      } else if (value is List<dynamic>) {
+        result[key.toString()] = value.map((e) => MPTemplateStruct.fromJson(e as Map<String, dynamic>)).toList();
+      }
+    });
+    return result;
+  } else {
+    return {};
+  }
+}
+
 // Get Template List Request
 @JsonSerializable()
 class MPGetTemplateListRequest {
@@ -103,8 +125,8 @@ class MPGetTemplateListResponse {
   @JsonKey(name: 'recent_template')
   final MPTemplateStruct? recentTemplate;
 
-  @JsonKey(name: 'templates')
-  final Map<String, MPTemplateStruct> templates;
+  @JsonKey(name: 'templates', fromJson: _templatesFromJson)
+  final Map<String, List<MPTemplateStruct>> templates;
 
   @JsonKey(name: 'has_more')
   final bool hasMore;

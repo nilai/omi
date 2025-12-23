@@ -120,16 +120,16 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
             final cardItem = entry.value;
             return HorizontalScrollTemplateCard(
               item: cardItem,
-              onItemTap: (item) {
+              onItemTap: (item) async {
                 // 如果是创建模板项，导航到创建模板页面
                 if (item.isCreateItem) {
-                  _navigateToCreateTemplate(context);
+                  await _navigateToCreateTemplate(context);
                   return;
                 }
 
                 // 否则选中模板并导航到详情页
                 provider.selectTemplate(cardIndex, cardItem.items.indexOf(item));
-                _navigateToTemplateDetail(context, item.id, item.isMyTemplate);
+                await _navigateToTemplateDetail(context, item.id, item.isMyTemplate);
                 debugPrint('选中模版: ${item.title}');
               },
             );
@@ -142,8 +142,8 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
 
   // AI-generated START - 导航到创建模板页面
   /// 导航到创建模板页面
-  void _navigateToCreateTemplate(BuildContext context) {
-    Navigator.push(
+  Future<void> _navigateToCreateTemplate(BuildContext context) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider(
@@ -155,13 +155,19 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
         ),
       ),
     );
+
+    // 如果返回 true，表示模板已保存，需要刷新页面
+    if (result == true && mounted) {
+      final provider = Provider.of<TemplateSelectionProvider>(context, listen: false);
+      provider.loadTemplates();
+    }
   }
   // AI-generated END - 导航到创建模板页面
 
   // AI-generated START - 导航到模板详情页面
   /// 导航到模板详情页面
-  void _navigateToTemplateDetail(BuildContext context, String templateId, bool isMyTemplate) {
-    Navigator.push(
+  Future<void> _navigateToTemplateDetail(BuildContext context, String templateId, bool isMyTemplate) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ChangeNotifierProvider(
@@ -173,6 +179,12 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
         ),
       ),
     );
+
+    // 如果返回 true，表示模板已保存，需要刷新页面
+    if (result == true && mounted) {
+      final provider = Provider.of<TemplateSelectionProvider>(context, listen: false);
+      provider.loadTemplates();
+    }
   }
   // AI-generated END - 导航到模板详情页面
 

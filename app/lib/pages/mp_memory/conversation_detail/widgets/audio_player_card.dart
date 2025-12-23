@@ -38,9 +38,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   @override
   Widget build(BuildContext context) {
-    final progress = widget.totalDurationSeconds > 0
-        ? _currentPosition / widget.totalDurationSeconds
-        : 0.0;
+    final progress = widget.totalDurationSeconds > 0 ? _currentPosition / widget.totalDurationSeconds : 0.0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -97,8 +95,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                   // TODO: 实现音频播放/暂停逻辑
                 },
                 child: Container(
-                  width: 48.0,
-                  height: 48.0,
+                  width: 40.0,
+                  height: 40.0,
                   decoration: BoxDecoration(
                     color: Colors.blue,
                     shape: BoxShape.circle,
@@ -106,13 +104,13 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                   child: Icon(
                     _isPlaying ? Icons.pause : Icons.play_arrow,
                     color: Colors.white,
-                    size: 28.0,
+                    size: 20.0,
                   ),
                 ),
               ),
               // AI-generated END - 播放按钮
 
-              const SizedBox(width: 16.0),
+              const SizedBox(width: 12.0),
 
               // AI-generated START - 进度条和时间
               Expanded(
@@ -121,12 +119,12 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                   children: [
                     // AI-generated START - 进度条
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(2.0),
+                      borderRadius: BorderRadius.circular(4.0),
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade600),
-                        minHeight: 4.0,
+                        backgroundColor: Color(0xFFE5E7EB),
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                        minHeight: 8.0,
                       ),
                     ),
                     // AI-generated END - 进度条
@@ -139,15 +137,15 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                       children: [
                         Text(
                           _formatTime(_currentPosition),
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
                             fontSize: 12.0,
                           ),
                         ),
                         Text(
                           _formatTime(widget.totalDurationSeconds),
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
                             fontSize: 12.0,
                           ),
                         ),
@@ -189,4 +187,3 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
   // AI-generated END - _formatTime
 }
 // AI-generated END - audio_player_card.dart
-

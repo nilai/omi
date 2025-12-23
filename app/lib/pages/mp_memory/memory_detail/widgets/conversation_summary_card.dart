@@ -86,18 +86,21 @@ class ConversationSummaryCard extends StatelessWidget {
             ),
             // AI-generated END - 标题区域
 
-            const SizedBox(height: 12.0),
-
             // AI-generated START - 摘要内容
-            Text(
-              summary,
-              style: TextStyle(
-                color: Colors.grey.shade800,
-                fontSize: 14.0,
-                height: 1.5,
-              ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
+            Visibility(
+              visible: summary.isNotEmpty,
+              child: Padding(
+                  padding: EdgeInsets.only(top: 12.0),
+                  child: Text(
+                    summary,
+                    style: TextStyle(
+                      color: Colors.grey.shade800,
+                      fontSize: 14.0,
+                      height: 1.5,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  )),
             ),
             // AI-generated END - 摘要内容
 
