@@ -76,7 +76,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   void initState() {
     provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
     provider.title = widget.title;
-    
+
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();
     textController.addListener(() {
@@ -514,17 +514,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     provider.sendMessageStreamToServer(text);
     // provider.clearSelectedFiles();
     provider.setSendingMessage(false);
-  }
-
-  sendInitialAppMessage(App? app) async {
-    context.read<MPMessageProvider>().setSendingMessage(true);
-    scrollToBottom();
-    ServerMessage message = await getInitialAppMessage(app?.id);
-    if (mounted) {
-      context.read<MessageProvider>().addMessage(message);
-      scrollToBottom();
-      context.read<MessageProvider>().setSendingMessage(false);
-    }
   }
 
   void _moveListToBottom() {
