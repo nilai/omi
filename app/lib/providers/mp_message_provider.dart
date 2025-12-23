@@ -30,6 +30,9 @@ class MPMessageProvider extends ChangeNotifier {
 
   MPMessageProvider({required this.chatId});
 
+  /// 页面模型列表
+  List<MPMessagePageModel> pageModels = [];
+
   /// 消息列表，按时间倒序排列（最新的在索引 0）
   List<ServerMessage> messages = [];
 
