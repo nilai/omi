@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -35,6 +37,45 @@ class MPMemoryItem {
   final MPMemoryStruct memory;
   final String? localPath;
   bool isUploading = false;
+}
+
+class MPLocalMemoryModel {
+   MPLocalMemoryModel({
+    required this.fileName,
+    required this.createAt,
+    required this.duration,
+    required this.path,
+  });
+  
+  final String fileName;
+  final int createAt;
+  final int duration;
+  final String path;
+
+  factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
+    fileName: json['fileName'],
+    createAt: json['createAt'],
+    duration: json['duration'],
+    path: json['path'],
+  );
+
+  Map<String, dynamic> toJson() => {
+    'fileName': fileName,
+    'createAt': createAt,
+    'duration': duration,
+    'path': path,
+  };
+ 
+  /// 将模型转为 json 字符串
+  String toJsonString() {
+    return jsonEncode(toJson());
+  }
+
+  /// 从 json 字符串解析创建模型
+  static MPLocalMemoryModel fromJsonString(String jsonString) {
+    final Map<String, dynamic> map = jsonDecode(jsonString);
+    return MPLocalMemoryModel.fromJson(map);
+  }
 }
 
 /// MPMemoryStruct 扩展方法
