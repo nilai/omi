@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_memory.dart';
 import '../../gen/assets.gen.dart';
+import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -76,6 +77,9 @@ class _MPPageContentState extends State<MPPageContent> {
         }
       });
       provider.refresh();
+      if (mounted) {
+        // context.read<DeviceProvider>().periodicConnect('coming from HomePageWrapper', boundDeviceOnly: true, autoConnectFirstDevice: true);
+      }
     });
   }
 

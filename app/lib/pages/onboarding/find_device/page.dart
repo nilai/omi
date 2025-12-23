@@ -51,6 +51,7 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
 
   // 开始扫描
   Future<void> _scanDevices() async {
+    debugPrint('-----hjj-----scanDevices');
     _provider?.scanDevices(
       onShowDialog: () {
         if (mounted) {
@@ -105,22 +106,22 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                           ),
                         ),
                       ),
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
-                        onPressed: () {
-                          Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const MemoPinSettingPage(),
-                    ),
-                  );
-                        },
-                        icon: const Icon(
-                          Icons.settings_outlined,
-                          color: Color(0xFF1D1D1F),
-                          size: 22,
-                        ),
-                      ),
+                      // IconButton(
+                      //   visualDensity: VisualDensity.compact,
+                      //   // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                      //   onPressed: () {
+                      //     Navigator.of(context).push(
+                      //       MaterialPageRoute(
+                      //         builder: (context) => const MemoPinSettingPage(),
+                      //       ),
+                      //     );
+                      //   },
+                      //   icon: const Icon(
+                      //     Icons.settings_outlined,
+                      //     color: Color(0xFF1D1D1F),
+                      //     size: 22,
+                      //   ),
+                      // ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -133,7 +134,6 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                   if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
                     const SizedBox(height: 16),
                     TextButton(
-                      // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
                       onPressed: () {
                         MPToastUtils.showFeatureComingSoon();
                       },

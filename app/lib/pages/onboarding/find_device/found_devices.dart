@@ -16,6 +16,8 @@ import 'package:omi/gen/flutter_communicator.g.dart';
 import 'package:omi/utils/device.dart';
 import 'package:provider/provider.dart';
 
+import '../setting/mic_page.dart';
+
 class FoundDevices extends StatefulWidget {
   final bool isFromOnboarding;
   final VoidCallback goNext;
@@ -36,6 +38,7 @@ class _FoundDevicesState extends State<FoundDevices> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
+        debugPrint('-----hjj-----addPostFrameCallback periodicConnect');
         context.read<DeviceProvider>().periodicConnect('coming from FoundDevices');
       }
     });
@@ -182,6 +185,7 @@ class _FoundDevicesState extends State<FoundDevices> {
   @override
   Widget build(BuildContext context) {
     return Consumer<OnboardingProvider>(builder: (context, provider, child) {
+      debugPrint('-----hjj-----build FoundDevices is connected: ${provider.isConnected}');
       return MessageListener<OnboardingProvider>(
         showError: (error) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -209,12 +213,12 @@ class _FoundDevicesState extends State<FoundDevices> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              // child: provider.isConnected
-              //     ? _buildConnected(provider)
-              //     : provider.deviceList.isEmpty
-              //         ? _buildSearching(context)
-              //         : _buildFoundList(provider),
-              child: _buildConnected(provider),
+              child: provider.isConnected
+                  ? _buildConnected(provider)
+                  : provider.deviceList.isEmpty
+                      ? _buildSearching(context)
+                      : _buildFoundList(provider),
+              // child: _buildConnected(provider),
             ),
           ],
         ),
@@ -459,6 +463,7 @@ class _FoundDevicesState extends State<FoundDevices> {
   }
 
   Widget _buildConnected(OnboardingProvider provider) {
+    debugPrint('-----hjj-----buildConnected');
     final battery = provider.batteryPercentage;
     return SingleChildScrollView(
       child: Column(
@@ -699,6 +704,8 @@ class _FoundDevicesState extends State<FoundDevices> {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _buildMicrophoneGainCard(context),
           const SizedBox(height: 24),
         ],
       ),
@@ -725,6 +732,84 @@ class _FoundDevicesState extends State<FoundDevices> {
           ),
         ],
       ],
+    );
+  }
+
+  /// 构建麦克风增益卡片
+  Widget _buildMicrophoneGainCard(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFFE5E5EA),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              '麦克风增益',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1D1D1F),
+              ),
+            ),
+          ),
+          // 增益调节行
+          GestureDetector(
+            onTap: () {
+              // TODO: 实现增益调节功能
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const MicGainPage(),
+                ),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF007AFF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Icon(
+                      Icons.mic,
+                      color: Color(0xFF007AFF),
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      '增益调节',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF1D1D1F),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: Color(0x991D1D1F),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
