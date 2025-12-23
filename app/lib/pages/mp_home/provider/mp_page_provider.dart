@@ -203,15 +203,7 @@ class MPHomePageProvider extends ChangeNotifier {
     refresh();
   }
 
-  void addRecord(MPMemoryItem item) {
-    items.add(item);
-    notifyListeners();
-  }
-
-  void removeRecord(MPMemoryItem item) {
-    items.remove(item);
-    notifyListeners();
-  }
+  
 
   /// 分享卡片
   /// @param context 上下文
