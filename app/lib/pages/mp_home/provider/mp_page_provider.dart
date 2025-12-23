@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
@@ -43,26 +44,22 @@ class MPLocalMemoryModel {
    MPLocalMemoryModel({
     required this.fileName,
     required this.createAt,
-    required this.duration,
     required this.path,
   });
   
   final String fileName;
   final int createAt;
-  final int duration;
   final String path;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
     fileName: json['fileName'],
     createAt: json['createAt'],
-    duration: json['duration'],
     path: json['path'],
   );
 
   Map<String, dynamic> toJson() => {
     'fileName': fileName,
     'createAt': createAt,
-    'duration': duration,
     'path': path,
   };
  
@@ -149,6 +146,8 @@ class MPHomePageProvider extends ChangeNotifier {
   final List<MPMemoryItem> items = [];
   String _cursor = '';
 
+  List<MPLocalMemoryModel> _localRecords = [];
+
   Future<void> refresh() async {
     loading = true;
     notifyListeners();
@@ -203,7 +202,41 @@ class MPHomePageProvider extends ChangeNotifier {
     refresh();
   }
 
-  
+  /// 添加本地记录
+  /// @param item 本地记录
+  void addLocalRecord(String path) async{
+    // 通过path获取到filename
+    final String filename = path.split('/').last;
+    final model = MPLocalMemoryModel(fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path);
+    _localRecords.add(model);
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
+    await prefs.setStringList('mp_local_records', jsonList);
+    notifyListeners();
+  }
+
+  /// 删除本地记录
+  /// @param item 本地记录
+  void removeLocalRecord(String path) async{
+    _localRecords.removeWhere((e) => e.path == path);
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
+    await prefs.setStringList('mp_local_records', jsonList);
+    notifyListeners();
+  }
+
+  /// 加载本地记录
+  /// @returns 无返回值
+  void loadLocalRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getStringList('mp_local_records');
+    if (jsonString != null) {
+      _localRecords = jsonString.map((e) => MPLocalMemoryModel.fromJsonString(e)).toList();
+    } else {
+      _localRecords = [];
+    }
+    notifyListeners();
+  }
 
   /// 分享卡片
   /// @param context 上下文
