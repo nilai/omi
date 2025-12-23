@@ -9,8 +9,6 @@ import 'package:omi/widgets/dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../mp_custom_utils/mp_toast_utils.dart';
-import '../setting/page.dart';
 import 'found_devices.dart';
 
 class FindDevicesPage extends StatefulWidget {
@@ -49,9 +47,7 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
     super.dispose();
   }
 
-  // 开始扫描
   Future<void> _scanDevices() async {
-    debugPrint('-----hjj-----scanDevices');
     _provider?.scanDevices(
       onShowDialog: () {
         if (mounted) {
@@ -64,7 +60,7 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
               },
               () {},
               'Enable Bluetooth',
-              'MemoPin needs Bluetooth to connect to your wearable. Please enable Bluetooth and try again.',
+              'Omi needs Bluetooth to connect to your wearable. Please enable Bluetooth and try again.',
               singleButton: true,
             ),
           );
@@ -77,90 +73,59 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
   Widget build(BuildContext context) {
     return Consumer<OnboardingProvider>(
       builder: (context, provider, child) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF1D1D1F),
-                          size: 20,
-                        ),
-                      ),
-                      const Expanded(
-                        child: Text(
-                          '连接设备',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1D1D1F),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: FoundDevices(
-                      goNext: widget.goNext,
-                      isFromOnboarding: widget.isFromOnboarding,
-                    ),
-                  ),
-                  if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: () {
-                        MPToastUtils.showFeatureComingSoon();
-                      },
-                      child: const Text(
-                        '遇到问题？联系支持',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF4361EE),
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (widget.includeSkip) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (widget.isFromOnboarding) {
-                            widget.onSkip!();
-                          } else {
-                            widget.goNext();
-                          }
-                          MixpanelManager().useWithoutDeviceOnboardingFindDevices();
-                        },
-                        child: const Text(
-                          '稍后连接',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FoundDevices(
+              goNext: widget.goNext,
+              isFromOnboarding: widget.isFromOnboarding,
             ),
-          ),
+            if (provider.deviceList.isEmpty && provider.enableInstructions) const SizedBox(height: 48),
+            if (provider.deviceList.isEmpty && provider.enableInstructions)
+              ElevatedButton(
+                onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
+                child: Container(
+                  width: double.infinity,
+                  height: 45,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Contact Support?',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      color: Colors.white,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            if (widget.includeSkip)
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.isFromOnboarding) {
+                    widget.onSkip!();
+                  } else {
+                    widget.goNext();
+                  }
+                  MixpanelManager().useWithoutDeviceOnboardingFindDevices();
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 45,
+                  alignment: Alignment.center,
+                  child: const Text(
+                    'Connect Later',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w400,
+                      fontSize: 16,
+                      color: Colors.white,
+                      // decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
