@@ -141,7 +141,7 @@ class MPHomePageProvider extends ChangeNotifier {
   // int uploadedCount = 1;
   // int totalCount = 1;
   double uploadPercent = 10;
-  int recordCount = 20;
+  int recordCount = 0;
   bool loading = false;
   bool loadingMore = false;
   bool hasMore = true;
@@ -161,6 +161,7 @@ class MPHomePageProvider extends ChangeNotifier {
       items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
+      recordCount = response.memoryTotal;
     }
     loading = false;
     notifyListeners();
@@ -176,6 +177,7 @@ class MPHomePageProvider extends ChangeNotifier {
       items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
       hasMore = response.hasMore;
       _cursor = response.memorys.last.id;
+      recordCount = response.memoryTotal;
     }
     loadingMore = false;
     notifyListeners();
