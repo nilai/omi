@@ -283,7 +283,10 @@ class MPHomePageProvider extends ChangeNotifier {
         title: element.fileName,
         content: '',
       );
-      localItems.add(memory.toMPMemoryItem());
+      final item = memory.toMPMemoryItem();
+      item.isUploading = true;
+      print('------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}');
+      localItems.add(item);
     }
     List<MPMemoryItem> list = [];
     // 合并 _remoteItems 和 localItems，根据 createAt 排序生成新 list
