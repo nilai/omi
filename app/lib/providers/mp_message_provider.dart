@@ -11,6 +11,17 @@ import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/file.dart';
 import 'package:uuid/uuid.dart';
 
+class MPMessagePageModel {
+  /// 聊天ID
+  String chatId;
+  /// 会话ID
+  String conversationId;
+  /// 消息列表
+  List<ServerMessage> messages;
+
+  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages});
+}
+
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
