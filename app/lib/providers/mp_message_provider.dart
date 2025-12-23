@@ -14,6 +14,21 @@ import 'package:uuid/uuid.dart';
 import '../backend/http/mp_api/mp_chat.dart';
 import '../backend/schema/mp/mp_chat.dart';
 
+
+// 聊天页面类型。不同类型调用url接口入参不同。
+enum MPChatPageType {
+  // 普通聊天
+  normal,
+  // 记忆总结
+  memory,
+  // 模板聊天
+  template,
+  // AI分析助手
+  aiAssistant,
+  // 专家模型
+  expert,
+}
+
 class MPMessagePageModel {
   /// 聊天ID
   String chatId;
@@ -23,10 +38,12 @@ class MPMessagePageModel {
 
   String title;
 
+  MPChatPageType type;
+
   /// 消息列表
   List<ServerMessage> messages;
 
-  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages, this.title = ''});
+  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages, this.title = '', this.type = MPChatPageType.normal});
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
@@ -38,7 +55,10 @@ class MPMessageProvider extends ChangeNotifier {
   /// 聊天标题
   String title = '';
 
-  MPMessageProvider({this.chatId = '', this.title = ''});
+  /// 聊天页面类型
+  MPChatPageType type = MPChatPageType.normal;
+
+  MPMessageProvider({this.chatId = '', this.title = '', this.type = MPChatPageType.normal});
 
   /// 页面模型列表
   List<MPMessagePageModel> pageModels = [];
@@ -68,20 +88,22 @@ class MPMessageProvider extends ChangeNotifier {
         }
       }
       messages = curPageModel?.messages ?? [];
+      notifyListeners();
       return;
     }
 
     curPageModel = null;
+
     final req = MPCreateConversationRequest(
       title: title,
-      expertId: chatId,
-      memoryId: '',
-      templateId: '',
-      speakerId: '',
+      expertId: type == MPChatPageType.expert ? chatId : '',
+      memoryId: type == MPChatPageType.memory ? chatId : '',
+      templateId: type == MPChatPageType.template ? chatId : '',
+      speakerId: type == MPChatPageType.aiAssistant ? chatId : '',
     );
     final response = await createConversation(req);
     if (response != null) {
-      final model = MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: []);
+      final model = MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       pageModels.add(model);
       curPageModel = model;
     }

@@ -30,21 +30,13 @@ import '../chat/widgets/message_action_menu.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
 
-// 聊天页面类型。不同类型调用url接口入参不同。
-enum MPChatPageType {
-  // 普通聊天
-  normal,
-  // 记忆总结
-  memory,
-  // 模板聊天
-  template,
-  // AI分析助手
-  aiAssistant,
-  // 专家模型
-  expert,
-}
+
 
 class MPChatPage extends StatefulWidget {
+
+  /// 聊天页面类型
+  final MPChatPageType type;
+
   /// 聊天ID(根据MPChatPageType不同，chatId赋值给不同的开聊id)
   final String chatId;
 
@@ -53,6 +45,7 @@ class MPChatPage extends StatefulWidget {
 
   const MPChatPage({
     super.key,
+    this.type = MPChatPageType.normal,
     this.chatId = '',
     this.title = '',
   });
@@ -81,7 +74,9 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   @override
   void initState() {
-    provider = MPMessageProvider(chatId: widget.chatId);
+    provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
+    provider.title = widget.title;
+    
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();
     textController.addListener(() {
