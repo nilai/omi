@@ -15,7 +15,6 @@ import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
-import '../note_debug/note_ble_debug_page.dart';
 import '../onboarding/find_device/page.dart';
 import 'widgets/mp_home_upload_widget.dart';
 import 'provider/mp_page_provider.dart';
