@@ -42,7 +42,7 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
       if (mounted) {
         context
             .read<DeviceProvider>()
-            .periodicConnect('coming from HomePageWrapper', boundDeviceOnly: false, autoConnectFirstDevice: true);
+            .periodicConnect('coming from HomePageWrapper', boundDeviceOnly: false,);
       }
       if (SharedPreferencesUtil().notificationsEnabled) {
         NotificationService.instance.register();

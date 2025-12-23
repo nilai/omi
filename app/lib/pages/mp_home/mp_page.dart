@@ -79,7 +79,7 @@ class _MPPageContentState extends State<MPPageContent> {
       });
       provider.refresh();
       if (mounted) {
-        // context.read<DeviceProvider>().periodicConnect('coming from HomePageWrapper', boundDeviceOnly: true, autoConnectFirstDevice: true);
+        // context.read<DeviceProvider>().periodicConnect('coming from HomePageWrapper', boundDeviceOnly: true,);
       }
     });
   }

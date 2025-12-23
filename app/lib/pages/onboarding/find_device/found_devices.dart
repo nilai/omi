@@ -38,7 +38,6 @@ class _FoundDevicesState extends State<FoundDevices> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        debugPrint('-----hjj-----addPostFrameCallback periodicConnect');
         context.read<DeviceProvider>().periodicConnect('coming from FoundDevices');
       }
     });
@@ -463,8 +462,8 @@ class _FoundDevicesState extends State<FoundDevices> {
   }
 
   Widget _buildConnected(OnboardingProvider provider) {
-    debugPrint('-----hjj-----buildConnected');
     final battery = provider.batteryPercentage;
+    print('-----hjj-----buildConnected battery: $battery');
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
