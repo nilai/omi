@@ -42,6 +42,14 @@ class MPMessageProvider extends ChangeNotifier {
   /// 是否正在发送消息
   bool sendingMessage = false;
 
+  /// 更新页面消息列表
+  /// @param {String} conversationId - 会话ID
+  /// 没有会话ID则清空消息列表，并通过chatId获取会话ID
+  void updatePageMessages(String conversationId) {
+    messages = [];
+
+  }
+
   /// 设置是否正在发送消息的标志
   /// @param {bool} value - 是否正在发送消息
   void setSendingMessage(bool value) {
