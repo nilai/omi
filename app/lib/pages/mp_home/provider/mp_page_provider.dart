@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,7 @@ import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../env/env.dart';
+import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -237,6 +239,28 @@ class MPHomePageProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  /// 上传本地记录
+  /// @returns 无返回值
+  void uploadLocalRecords() async {
+    for (var element in _localRecords) {
+      final file = File(element.path);
+      final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {
+        debugPrint('uploadLocalRecords progress: $current / $total');
+      });
+      if (uri != null) {
+        final req = MPCreateRecordRequest(
+          recordFile: uri,
+          createAt: element.createAt,
+          duration: 0,
+        );
+        final res = await createRecord(req);
+        if (res != null) {
+          removeLocalRecord(element.path);
+        }
+      }
+    }
+  }  
 
   /// 分享卡片
   /// @param context 上下文
