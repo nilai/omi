@@ -11,27 +11,39 @@ import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/file.dart';
 import 'package:uuid/uuid.dart';
 
+import '../backend/http/mp_api/mp_chat.dart';
+import '../backend/schema/mp/mp_chat.dart';
+
 class MPMessagePageModel {
   /// 聊天ID
   String chatId;
+
   /// 会话ID
   String conversationId;
+
+  String title;
+
   /// 消息列表
   List<ServerMessage> messages;
 
-  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages});
+  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages, this.title = ''});
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
-
+  /// 聊天ID
   String chatId = '';
 
-  MPMessageProvider({required this.chatId});
+  /// 聊天标题
+  String title = '';
+
+  MPMessageProvider({this.chatId = '', this.title = ''});
 
   /// 页面模型列表
   List<MPMessagePageModel> pageModels = [];
+
+  MPMessagePageModel? curPageModel;
 
   /// 消息列表，按时间倒序排列（最新的在索引 0）
   List<ServerMessage> messages = [];
@@ -45,9 +57,35 @@ class MPMessageProvider extends ChangeNotifier {
   /// 更新页面消息列表
   /// @param {String} conversationId - 会话ID
   /// 没有会话ID则清空消息列表，并通过chatId获取会话ID
-  void updatePageMessages(String conversationId) {
+  void updatePageMessages(String conversationId) async {
     messages = [];
+    curPageModel = null;
+    if (conversationId.isNotEmpty) {
+      for (var element in pageModels) {
+        if (element.conversationId == conversationId) {
+          curPageModel = element;
+          break;
+        }
+      }
+      messages = curPageModel?.messages ?? [];
+      return;
+    }
 
+    curPageModel = null;
+    final req = MPCreateConversationRequest(
+      title: title,
+      expertId: chatId,
+      memoryId: '',
+      templateId: '',
+      speakerId: '',
+    );
+    final response = await createConversation(req);
+    if (response != null) {
+      final model = MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: []);
+      pageModels.add(model);
+      curPageModel = model;
+    }
+    notifyListeners();
   }
 
   /// 设置是否正在发送消息的标志

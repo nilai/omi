@@ -79,7 +79,10 @@ class MPCreateConversationRequest {
 
 /// Create Conversation Response
 class MPCreateConversationResponse {
+  @JsonKey(name: 'conversation_id')
   final String conversationId;
+
+  @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
   MPCreateConversationResponse({

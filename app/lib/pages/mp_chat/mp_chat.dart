@@ -48,9 +48,13 @@ class MPChatPage extends StatefulWidget {
   /// 聊天ID(根据MPChatPageType不同，chatId赋值给不同的开聊id)
   final String chatId;
 
+  /// 聊天标题
+  final String title;
+
   const MPChatPage({
     super.key,
     this.chatId = '',
+    this.title = '',
   });
 
   @override
