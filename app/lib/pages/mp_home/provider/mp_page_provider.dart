@@ -21,6 +21,8 @@ class MPMemoryItem {
     this.secondsText,
     this.description,
     required this.memory,
+    this.localPath,
+    this.isUploading = false,
   });
 
   final String dateText;
@@ -31,6 +33,8 @@ class MPMemoryItem {
   final String? secondsText;
   final String? description;
   final MPMemoryStruct memory;
+  final String? localPath;
+  bool isUploading = false;
 }
 
 /// MPMemoryStruct 扩展方法
@@ -168,6 +172,16 @@ class MPHomePageProvider extends ChangeNotifier {
     selectedDate = dateString;
     notifyListeners();
     refresh();
+  }
+
+  void addRecord(MPMemoryItem item) {
+    items.add(item);
+    notifyListeners();
+  }
+
+  void removeRecord(MPMemoryItem item) {
+    items.remove(item);
+    notifyListeners();
   }
 
   /// 分享卡片

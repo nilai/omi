@@ -106,22 +106,6 @@ class _FindDevicesPageState extends State<FindDevicesPage> {
                           ),
                         ),
                       ),
-                      // IconButton(
-                      //   visualDensity: VisualDensity.compact,
-                      //   // onPressed: () => launchUrl(Uri.parse('mailto:team@basedhardware.com')),
-                      //   onPressed: () {
-                      //     Navigator.of(context).push(
-                      //       MaterialPageRoute(
-                      //         builder: (context) => const MemoPinSettingPage(),
-                      //       ),
-                      //     );
-                      //   },
-                      //   icon: const Icon(
-                      //     Icons.settings_outlined,
-                      //     color: Color(0xFF1D1D1F),
-                      //     size: 22,
-                      //   ),
-                      // ),
                     ],
                   ),
                   const SizedBox(height: 12),

@@ -7,9 +7,43 @@ import 'package:omi/backend/http/api/audio_record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// 同步进度回调
+/// [progress] 已完成比例 0-1
+/// [copiedBytes] 已复制的字节数
+/// [totalBytes] 文件总字节数
+typedef SyncProgressCallback = void Function(
+  double progress,
+  int copiedBytes,
+  int totalBytes,
+);
+
 /// 音频选择工具类
 /// 提供从文件、相册选择音频文件的功能，包含权限检查
 class AudioPickerUtils {
+  static const String _sandboxAudioDirName = 'mp_audio_storage';
+
+  /// 从文件选择音频并同步到沙盒持久目录
+  /// @param onProgress 同步进度回调
+  /// @return 成功返回沙盒内文件路径，失败返回 null
+  static Future<String?> pickAudioFromFileAndSync({
+    SyncProgressCallback? onProgress,
+  }) async {
+    final file = await pickAudioFromFile();
+    if (file == null) return null;
+    return syncAudioToSandbox(file, onProgress: onProgress);
+  }
+
+  /// 从相册选择音频并同步到沙盒持久目录
+  /// @param onProgress 同步进度回调
+  /// @return 成功返回沙盒内文件路径，失败返回 null
+  static Future<String?> pickAudioFromAlbumAndSync({
+    SyncProgressCallback? onProgress,
+  }) async {
+    final file = await pickAudioFromAlbum();
+    if (file == null) return null;
+    return syncAudioToSandbox(file, onProgress: onProgress);
+  }
+
   /// 从文件选择音频 - 打开文件浏览器选择音频文件
   /// 在 Android 上需要存储权限，iOS 上不需要额外权限
   /// @return 选择的音频文件，如果用户取消或出错则返回 null
@@ -295,5 +329,58 @@ class AudioPickerUtils {
       debugPrint('复制文件失败: $e');
       return null;
     }
+  }
+
+  /// 将文件同步到沙盒的持久化音频目录
+  /// @param sourceFile 源文件
+  /// @param onProgress 进度回调，返回进度、已复制字节数、总字节数
+  /// @return 成功返回沙盒内的文件路径，失败返回 null
+  static Future<String?> syncAudioToSandbox(
+    File sourceFile, {
+    SyncProgressCallback? onProgress,
+  }) async {
+    try {
+      if (!await sourceFile.exists()) {
+        debugPrint('源文件不存在: ${sourceFile.path}');
+        return null;
+      }
+
+      final totalBytes = await sourceFile.length();
+      final dir = await _getPersistentAudioDirectory();
+      final fileName = sourceFile.path.split('/').last;
+      final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final targetFile = File(targetPath);
+
+      if (await targetFile.exists()) {
+        await targetFile.delete();
+      }
+
+      final sink = targetFile.openWrite();
+      var copiedBytes = 0;
+
+      await for (final chunk in sourceFile.openRead()) {
+        sink.add(chunk);
+        copiedBytes += chunk.length;
+        final progress = totalBytes == 0 ? 1.0 : (copiedBytes / totalBytes).clamp(0, 1).toDouble();
+        onProgress?.call(progress, copiedBytes, totalBytes);
+      }
+
+      await sink.close();
+      return targetFile.path;
+    } catch (e) {
+      debugPrint('同步文件到沙盒失败: $e');
+      return null;
+    }
+  }
+
+  /// 获取/创建沙盒内持久化音频目录
+  /// @return 目录实例
+  static Future<Directory> _getPersistentAudioDirectory() async {
+    final appDir = await getApplicationDocumentsDirectory();
+    final dir = Directory('${appDir.path}/$_sandboxAudioDirName');
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    return dir;
   }
 }

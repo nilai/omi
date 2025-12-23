@@ -14,6 +14,7 @@ class MPHomeCard extends StatefulWidget {
     this.onShare,
     this.onDelete,
     this.onViewDetail,
+    this.isUploading = false,
   });
 
   /// 左上角日期文本（例：07-22）。
@@ -45,6 +46,9 @@ class MPHomeCard extends StatefulWidget {
 
   /// "查看详情"点击回调（文案不可修改）。
   final VoidCallback? onViewDetail;
+  
+  /// 是否正在上传。
+  final bool isUploading;
 
   @override
   State<MPHomeCard> createState() => _MPHomeCardState();

@@ -330,20 +330,37 @@ class _MPPageContentState extends State<MPPageContent> {
     ImportAudioDialog.show(
       context: context,
       onImportFromFile: () async {
-        final file = await AudioPickerUtils.pickAudioFromFile();
-        debugPrint('pickAudioFromFile file: $file');
-        await _uploadAudioFile(context, file);
+        // final file = await AudioPickerUtils.pickAudioFromFile();
+        // debugPrint('pickAudioFromFile file: $file');
+        // await _uploadAudioFile(context, file);
+
+        final path = await AudioPickerUtils.pickAudioFromFileAndSync(onProgress: (progress, copiedBytes, totalBytes) {
+          debugPrint('pickAudioFromFileAndSync progress: $progress, copiedBytes: $copiedBytes, totalBytes: $totalBytes');
+        });
+        debugPrint('pickAudioFromFileAndSync file: $path');
+        if (path != null) {
+          /// 记录信息到本地，更新列表数据，刷新页面
+          /// 文件名、时间戳、时长
+          /// 上传文件，上传完成删除记录信息
+          await _uploadAudioFile(context, File(path));
+        }
       },
       onImportFromAlbum: () async {
-        final file = await AudioPickerUtils.pickAudioFromAlbum();
-        debugPrint('pickAudioFromAlbum file: $file');
-        await _uploadAudioFile(context, file);
+        // final file = await AudioPickerUtils.pickAudioFromAlbum();
+        // debugPrint('pickAudioFromAlbum file: $file');
+        // await _uploadAudioFile(context, file);
+        final path = await AudioPickerUtils.pickAudioFromAlbumAndSync();
+        debugPrint('pickAudioFromAlbumAndSync file: $path');
+        if (path != null) {
+          await _uploadAudioFile(context, File(path));
+        }
       },
       onImportFromOtherApp: () async {
         MPToastUtils.showMessage('暂不支持从其他App导入音频');
       },
     );
   }
+  
 
   Future<void> _uploadAudioFile(BuildContext context, File? file) async {
     // 保存 uri 到本地数据库或其他存储方式
