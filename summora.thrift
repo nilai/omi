@@ -405,11 +405,11 @@ struct GetConversationDetailResponse {
     255: BaseResp base_resp,
 }
 
-struct GetTranscriptRequest {
+struct TranscriptRequest {
     1: string audio_url,
 }
 
-struct GetTranscriptResponse {
+struct TranscriptResponse {
     1: string content,
     255: BaseResp base_resp,
 }
@@ -681,8 +681,8 @@ service AppService {
     GetConversationListResponse GetConversationList(1: GetConversationListRequest req)
     // GET /api/v1/chat/get_conversation_detail
     GetConversationDetailResponse GetConversationDetail(1: GetConversationDetailRequest req)
-    // GET /api/v1/chat/transcript
-    GetTranscriptResponse GetTranscript(1: GetTranscriptRequest req)
+    // POST /api/v1/chat/transcript
+    TranscriptResponse Transcript(1: TranscriptRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
