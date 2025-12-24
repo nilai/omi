@@ -144,7 +144,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                 Expanded(
                   child: _buildMessagesWidget(),
                 ),
-
+                _buildQuickQuestionsWidget(),
                 _buildSendMessageWidget(),
               ],
             ),
@@ -226,6 +226,15 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           'Ask about anything you\'ve said or heard',
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
         ),
+      ],
+    );
+  }
+
+  // 快速提问区域
+  Widget _buildQuickQuestionsWidget() {
+    return Column(
+      children: [
+        Text('快速提问'),
       ],
     );
   }
