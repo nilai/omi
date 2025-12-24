@@ -477,6 +477,16 @@ struct DeleteSpeakerResponse {
     255: BaseResp base_resp,
 }
 
+struct UpdateSpeakerResponse {
+    255: BaseResp base_resp,
+}
+
+struct UpdateSpeakerRequest {
+    1: string speaker_id,
+    2: optional string name,
+    3: optional string avatar,
+}
+
 struct GetExpertListRequest {
     1: string type,
     2: i32 page_size,
@@ -699,6 +709,8 @@ service AppService {
     GetSpeakerDetailResponse GetSpeakerDetail(1: GetSpeakerDetailRequest req)
     // POST /api/v1/speaker/delete
     DeleteSpeakerResponse DeleteSpeaker(1: DeleteSpeakerRequest req)
+    // POST /api/v1/speaker/update
+    UpdateSpeakerResponse UpdateSpeaker(1: UpdateSpeakerRequest req)
 
     // 专家模型列表
     // GET /api/v1/expert/get_list
