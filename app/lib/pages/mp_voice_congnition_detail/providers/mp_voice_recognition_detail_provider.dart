@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:omi/backend/http/mp_api/mp_speaker.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 
@@ -45,6 +46,11 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   String? audioPath;
   // AI-generated END - audioFile
 
+  // AI-generated START - 头像图片路径
+  File? _avatarImage;
+  String? _avatarUrl;
+  // AI-generated END - _avatarImage
+
   // AI-generated START - 音频播放器
   FlutterSoundPlayer? _audioPlayer;
   // AI-generated END - _audioPlayer
@@ -60,8 +66,10 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     this.audioPath,
     bool isEditMode = false,
     this.isMyselfVoice = false,
+    String? avatarUrl,
   })  : _totalDuration = audioDuration,
-        _isEditMode = isEditMode;
+        _isEditMode = isEditMode,
+        _avatarUrl = avatarUrl;
   // AI-generated END - 构造函数
 
   // AI-generated START - 获取是否正在播放
@@ -93,6 +101,32 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     return _currentTime / _totalDuration;
   }
   // AI-generated END - progress
+
+  // AI-generated START - 获取头像图片
+  File? get avatarImage => _avatarImage;
+  String? get avatarUrl => _avatarUrl;
+  // AI-generated END - avatarImage
+
+  // AI-generated START - 选择头像图片
+  /// 从相册选择头像图片
+  Future<void> pickAvatarImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        _avatarImage = File(image.path);
+        _avatarUrl = null; // 清除之前的网络URL
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('选择头像图片失败: $e');
+      MPToastUtils.showMessage('选择图片失败');
+    }
+  }
+  // AI-generated END - pickAvatarImage
 
   // AI-generated START - 播放音频
   Future<void> play() async {
@@ -298,39 +332,116 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       MPToastUtils.showMessage('请输入姓名');
       return;
     }
-    debugPrint('Saving voice: $name, voiceId: $voiceId');
-    if (audioPath == null) {
-      debugPrint('保存声纹失败，音频文件为空');
-      return;
-    }
-    final uri = await MPAudioUploadService().uploadMPAudio(File(audioPath!)) ?? '';
-    if (uri.isEmpty) {
-      debugPrint('保存声纹失败，返回的uri为空');
-      return;
-    }
-    final req = MPAddSpeakerRequest(
-      name: name,
-      audioUrl: uri,
-      avatar: '',
-      myselfVoice: isMyselfVoice,
-    );
+    debugPrint('Saving voice: $name, voiceId: $voiceId, isEditMode: $_isEditMode');
 
-    // await MPVoiceRecognitionService().addSpeaker(req);
-    final res = await addSpeaker(req);
-    if (res?.baseResp.code == 0) {
-      debugPrint('保存声纹成功，声纹ID: ${res?.baseResp.message}');
-      successCallback?.call();
-      _deleteAudioFile();
+    // 上传头像（如果有）
+    String avatarUrl = '';
+    if (_avatarImage != null) {
+      final avatarUri = await MPAudioUploadService().uploadMPAudio(_avatarImage!);
+      avatarUrl = avatarUri ?? '';
+    } else if (_avatarUrl != null) {
+      avatarUrl = _avatarUrl!;
+    }
+
+    if (_isEditMode) {
+      // 编辑模式：更新现有声纹
+      if (voiceId == null || voiceId!.isEmpty) {
+        debugPrint('更新声纹失败，voiceId为空');
+        MPToastUtils.showMessage('声纹ID为空，无法更新');
+        return;
+      }
+
+      // 编辑模式下，音频文件可能没有变化，所以 audioPath 可能为空
+      String? audioUri;
+      if (audioPath != null) {
+        audioUri = await MPAudioUploadService().uploadMPAudio(File(audioPath!)) ?? '';
+        if (audioUri.isEmpty) {
+          debugPrint('更新声纹失败，音频上传失败');
+          MPToastUtils.showMessage('音频上传失败');
+          return;
+        }
+      }
+
+      final updateReq = MPUpdateSpeakerRequest(
+        speakerId: voiceId!,
+        name: name,
+        audioUrl: audioUri,
+        avatar: avatarUrl.isNotEmpty ? avatarUrl : null,
+        myselfVoice: isMyselfVoice,
+      );
+
+      final res = await updateSpeaker(updateReq);
+      if (res?.baseResp.code == 0) {
+        debugPrint('更新声纹成功');
+        MPToastUtils.showMessage('更新声纹成功');
+        successCallback?.call();
+        _deleteAudioFile();
+      } else {
+        debugPrint('更新声纹失败: ${res?.baseResp.message}');
+        MPToastUtils.showMessage(res?.baseResp.message ?? '更新声纹失败');
+      }
     } else {
-      MPToastUtils.showMessage('保存声纹失败');
+      // 新增模式：创建新声纹
+      if (audioPath == null) {
+        debugPrint('保存声纹失败，音频文件为空');
+        MPToastUtils.showMessage('音频文件为空');
+        return;
+      }
+
+      final uri = await MPAudioUploadService().uploadMPAudio(File(audioPath!)) ?? '';
+      if (uri.isEmpty) {
+        debugPrint('保存声纹失败，返回的uri为空');
+        MPToastUtils.showMessage('音频上传失败');
+        return;
+      }
+
+      final req = MPAddSpeakerRequest(
+        name: name,
+        audioUrl: uri,
+        avatar: avatarUrl,
+        myselfVoice: isMyselfVoice,
+      );
+
+      final res = await addSpeaker(req);
+      if (res?.baseResp.code == 0) {
+        debugPrint('保存声纹成功，声纹ID: ${res?.baseResp.message}');
+        MPToastUtils.showMessage('保存声纹成功');
+        successCallback?.call();
+        _deleteAudioFile();
+      } else {
+        debugPrint('保存声纹失败: ${res?.baseResp.message}');
+        MPToastUtils.showMessage(res?.baseResp.message ?? '保存声纹失败');
+      }
     }
   }
   // AI-generated END - saveVoice
 
   // AI-generated START - 删除声纹
-  void deleteVoice() {
-    // TODO: 实现删除声纹的逻辑
-    debugPrint('Deleting voice: $voiceId');
+  /// 删除声纹
+  /// 如果是编辑模式（有 voiceId），调用删除 API
+  /// 如果是新增模式（没有 voiceId），只删除本地文件
+  Future<void> deleteVoice({VoidCallback? successCallback}) async {
+    if (_isEditMode && voiceId != null && voiceId!.isNotEmpty) {
+      // 编辑模式：调用删除 API
+      debugPrint('删除声纹: $voiceId');
+      final req = MPDeleteSpeakerRequest(speakerId: voiceId!);
+      final res = await deleteSpeaker(req);
+
+      if (res?.baseResp.code == 0) {
+        debugPrint('删除声纹成功');
+        MPToastUtils.showMessage('删除声纹成功');
+        successCallback?.call();
+      } else {
+        debugPrint('删除声纹失败: ${res?.baseResp.message}');
+        MPToastUtils.showMessage(res?.baseResp.message ?? '删除声纹失败');
+      }
+    } else {
+      // 新增模式：只删除本地文件
+      debugPrint('删除本地音频文件');
+      _deleteAudioFile();
+      MPToastUtils.showMessage('删除声纹成功');
+      successCallback?.call();
+    }
   }
   // AI-generated END - deleteVoice
 

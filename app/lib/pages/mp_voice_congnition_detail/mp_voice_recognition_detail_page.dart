@@ -17,7 +17,8 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
       this.audioDuration,
       this.isEditMode = false,
       this.audioPath,
-      this.isMyselfVoice = false});
+      this.isMyselfVoice = false,
+      this.imageUrl});
 
   /// 是否是编辑模式
   final bool isEditMode;
@@ -29,13 +30,16 @@ class MPVoiceRecognitionDetailPage extends StatefulWidget {
   final String? initialName;
 
   /// 音频时长（秒）
-  final int? audioDuration;
+  final String? audioDuration;
 
   /// 音频数据
   final String? audioPath;
 
   /// 是否是自己的声音
   final bool isMyselfVoice;
+
+  /// 头像图片URL
+  final String? imageUrl;
 
   @override
   State<MPVoiceRecognitionDetailPage> createState() => _MPVoiceRecognitionDetailPageState();
@@ -56,15 +60,37 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     super.dispose();
   }
 
+  /// 解析音频时长字符串为秒数
+  /// 支持格式：'0秒'、'95'、'1分30秒' 等
+  int _parseAudioDuration(String? durationStr) {
+    if (durationStr == null || durationStr.isEmpty) {
+      return 0;
+    }
+
+    try {
+      // 如果直接是数字字符串，直接解析
+      return int.parse(durationStr);
+    } catch (e) {
+      // 如果不是纯数字，尝试提取数字部分
+      // 移除所有非数字字符，只保留数字
+      final digitsOnly = durationStr.replaceAll(RegExp(r'[^\d]'), '');
+      if (digitsOnly.isNotEmpty) {
+        return int.parse(digitsOnly);
+      }
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => MPVoiceRecognitionDetailProvider(
         voiceId: widget.voiceId,
-        audioDuration: widget.audioDuration ?? 95, // 默认95秒
+        audioDuration: _parseAudioDuration(widget.audioDuration),
         isEditMode: widget.isEditMode,
         audioPath: widget.audioPath,
         isMyselfVoice: widget.isMyselfVoice,
+        avatarUrl: widget.imageUrl,
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -80,8 +106,28 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 2.0),
-                    // 名字输入框
-                    _buildNameInput(),
+                    Container(
+                      padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(
+                          color: const Color(0xFFF3F4F6),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          // 头像
+                          _buildAvatar(),
+                          const SizedBox(width: 8.0),
+                          Expanded(
+                            child: // 名字输入框
+                                _buildNameInput(),
+                          )
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 20.0),
                     // 音频文件部分
                     _buildAudioFileSection(provider),
@@ -107,68 +153,119 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     );
   }
 
+  /// 构建头像
+  Widget _buildAvatar() {
+    return Consumer<MPVoiceRecognitionDetailProvider>(
+      builder: (context, provider, child) {
+        final avatarImage = provider.avatarImage;
+        final avatarUrl = provider.avatarUrl;
+        final canEdit = provider.isEditMode && !widget.isMyselfVoice;
+
+        return GestureDetector(
+          onTap: canEdit
+              ? () async {
+                  await provider.pickAvatarImage();
+                }
+              : null,
+          child: Container(
+            width: 48.0,
+            height: 48.0,
+            decoration: const BoxDecoration(
+              color: Color(0xFFEEF2FF),
+              shape: BoxShape.circle,
+            ),
+            child: ClipOval(
+              child: avatarImage != null
+                  ? Image.file(
+                      avatarImage,
+                      width: 48.0,
+                      height: 48.0,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          size: 24.0,
+                          color: Color(0xFF6B7280),
+                        );
+                      },
+                    )
+                  : avatarUrl != null && avatarUrl.isNotEmpty
+                      ? Image.network(
+                          avatarUrl,
+                          width: 48.0,
+                          height: 48.0,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              size: 24.0,
+                              color: Color(0xFF6B7280),
+                            );
+                          },
+                        )
+                      : const Icon(
+                          Icons.person,
+                          size: 24.0,
+                          color: Color(0xFF6B7280),
+                        ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   /// 构建名字输入框
   Widget _buildNameInput() {
     return Consumer<MPVoiceRecognitionDetailProvider>(
       builder: (context, provider, child) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.0),
-            border: Border.all(
-              color: const Color(0xFFF3F4F6),
-              width: 1.0,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '名字',
+              style: TextStyle(
+                fontSize: 12.0,
+                color: Color(0xFF6B7280),
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                '名字',
-                style: TextStyle(
-                  fontSize: 12.0,
-                  color: Color(0xFF6B7280),
-                ),
+            const SizedBox(height: 4.0),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(4.0),
               ),
-              const SizedBox(height: 8.0),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                child: TextField(
-                  controller: _nameController,
-                  readOnly: !provider.isEditMode || widget.isMyselfVoice, // 如果是我的声音，只能查看
-                  enabled: provider.isEditMode && !widget.isMyselfVoice, // 如果是我的声音，禁用输入
-                  cursorColor: const Color(0xFF1F2937),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    focusedErrorBorder: InputBorder.none,
-                    isDense: true,
-                    isCollapsed: true,
-                    contentPadding: EdgeInsets.zero,
-                    hintText: '请输入名字',
-                    hintStyle: TextStyle(
-                      fontSize: 16.0,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                  style: TextStyle(
+              child: TextField(
+                controller: _nameController,
+                readOnly: !provider.isEditMode || widget.isMyselfVoice, // 如果是我的声音，只能查看
+                enabled: provider.isEditMode && !widget.isMyselfVoice, // 如果是我的声音，禁用输入
+                cursorColor: const Color(0xFF1F2937),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  errorBorder: InputBorder.none,
+                  focusedErrorBorder: InputBorder.none,
+                  isDense: true,
+                  isCollapsed: true,
+                  contentPadding: EdgeInsets.zero,
+                  hintText: '请输入名字',
+                  hintStyle: TextStyle(
                     fontSize: 16.0,
-                    color: (provider.isEditMode && !widget.isMyselfVoice)
-                        ? const Color(0xFF1F2937)
-                        : const Color(0xFF6B7280),
+                    color: Color(0xFF1F2937),
                   ),
                 ),
+                style: TextStyle(
+                  fontSize: 16.0,
+                  color: (provider.isEditMode && !widget.isMyselfVoice)
+                      ? const Color(0xFF1F2937)
+                      : const Color(0xFF6B7280),
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -435,8 +532,19 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
         Navigator.of(context).pop();
       },
       onConfirm: () {
-        provider.deleteVoice();
-        Navigator.of(context).pop(); // 返回上一页
+        Navigator.of(context).pop(); // 先关闭对话框
+        provider.deleteVoice(
+          successCallback: () {
+            // 发送声音删除成功事件
+            VoiceRecognitionEventService().emitVoiceDeleted(
+              data: {
+                'voiceId': widget.voiceId,
+                'voiceName': _nameController.text.isNotEmpty ? _nameController.text : '声纹',
+              },
+            );
+            Navigator.of(context).pop(true); // 返回上一页
+          },
+        );
       },
     );
   }

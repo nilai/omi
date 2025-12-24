@@ -84,3 +84,35 @@ Future<MPGetSpeakerDetailResponse?> getSpeakerDetail(MPGetSpeakerDetailRequest r
   }
   return null;
 }
+
+// POST /api/v1/speaker/update
+Future<MPUpdateSpeakerResponse?> updateSpeaker(MPUpdateSpeakerRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/speaker/update',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('updateSpeaker response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPUpdateSpeakerResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/speaker/delete
+Future<MPDeleteSpeakerResponse?> deleteSpeaker(MPDeleteSpeakerRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/speaker/delete',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('deleteSpeaker response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPDeleteSpeakerResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

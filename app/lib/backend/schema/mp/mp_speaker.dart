@@ -112,6 +112,52 @@ class MPGetSpeakerDetailRequest {
   Map<String, dynamic> toJson() => _$MPGetSpeakerDetailRequestToJson(this);
 }
 
+// Delete Speaker Request
+@JsonSerializable()
+class MPDeleteSpeakerRequest {
+  @JsonKey(name: 'speaker_id')
+  final String speakerId;
+
+  MPDeleteSpeakerRequest({
+    required this.speakerId,
+  });
+
+  factory MPDeleteSpeakerRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteSpeakerRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteSpeakerRequestToJson(this);
+}
+
+// Update Speaker Request
+@JsonSerializable()
+class MPUpdateSpeakerRequest {
+  @JsonKey(name: 'speaker_id')
+  final String speakerId;
+
+  @JsonKey(name: 'audio_url')
+  final String? audioUrl;
+
+  @JsonKey(name: 'name')
+  final String? name;
+
+  @JsonKey(name: 'avatar')
+  final String? avatar;
+
+  @JsonKey(name: 'myself_voice')
+  final bool? myselfVoice;
+
+  MPUpdateSpeakerRequest({
+    required this.speakerId,
+    this.audioUrl,
+    this.name,
+    this.avatar,
+    this.myselfVoice,
+  });
+
+  factory MPUpdateSpeakerRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateSpeakerRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateSpeakerRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Add Speaker Response
@@ -216,4 +262,34 @@ class MPGetSpeakerDetailResponse {
   factory MPGetSpeakerDetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetSpeakerDetailResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetSpeakerDetailResponseToJson(this);
+}
+
+// Update Speaker Response
+@JsonSerializable()
+class MPUpdateSpeakerResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPUpdateSpeakerResponse({
+    required this.baseResp,
+  });
+
+  factory MPUpdateSpeakerResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateSpeakerResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateSpeakerResponseToJson(this);
+}
+
+// Delete Speaker Response
+@JsonSerializable()
+class MPDeleteSpeakerResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteSpeakerResponse({
+    required this.baseResp,
+  });
+
+  factory MPDeleteSpeakerResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteSpeakerResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteSpeakerResponseToJson(this);
 }

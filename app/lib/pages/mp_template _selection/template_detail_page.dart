@@ -565,9 +565,9 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
               const SizedBox(width: 12.0),
             ],
             Expanded(
-              child: ElevatedButton(
+              child: OutlinedButton(
                 onPressed: provider.isLoading ? null : _setAsDefaultTemplate,
-                style: ElevatedButton.styleFrom(
+                style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                   backgroundColor: const Color(0xFF1F2937), // 黑色
                   shape: RoundedRectangleBorder(

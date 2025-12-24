@@ -5,6 +5,9 @@ import 'dart:async';
 enum VoiceRecognitionEventType {
   /// 声音保存成功
   voiceSaved,
+
+  /// 声音删除成功
+  voiceDeleted,
 }
 
 /// 声纹识别事件
@@ -44,6 +47,14 @@ class VoiceRecognitionEventService {
   void emitVoiceSaved({Map<String, dynamic>? data}) {
     emit(VoiceRecognitionEvent(
       type: VoiceRecognitionEventType.voiceSaved,
+      data: data,
+    ));
+  }
+
+  /// 发送声音删除成功事件
+  void emitVoiceDeleted({Map<String, dynamic>? data}) {
+    emit(VoiceRecognitionEvent(
+      type: VoiceRecognitionEventType.voiceDeleted,
       data: data,
     ));
   }

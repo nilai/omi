@@ -163,7 +163,7 @@ class VoiceItemCard extends StatelessWidget {
             ),
             const SizedBox(width: 2.0),
             Text(
-              item.duration,
+              item.duration?.toString() ?? '0',
               style: TextStyle(
                 fontSize: 12.0,
                 color: Colors.grey[600],

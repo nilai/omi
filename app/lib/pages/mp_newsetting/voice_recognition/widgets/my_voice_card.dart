@@ -15,6 +15,7 @@ class MyVoiceItem {
     required this.date,
     this.icon,
     this.imageUrl,
+    this.audioUrl,
   });
   // AI-generated END - 构造函数
 
@@ -35,6 +36,7 @@ class MyVoiceItem {
 
   /// 图标图片URL或资源路径（当icon为空时使用）
   final String? imageUrl;
+  final String? audioUrl;
 }
 
 /// 我的声音卡片组件

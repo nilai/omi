@@ -43,19 +43,17 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 40.0),
                 child: Column(
                   children: [
-                    const SizedBox(height: 24.0),
                     // 设备图片区域
                     _buildDeviceImageArea(),
-                    const SizedBox(height: 24.0),
                     // 说明文字
                     _buildInstructionText(),
-                    const SizedBox(height: 24.0),
+                    const SizedBox(height: 12.0),
                     // 朗读文本
                     _buildReadText(),
-                    const SizedBox(height: 32.0),
+                    const SizedBox(height: 12.0),
                     // 录音按钮区域
                     _buildRecordingButtons(provider),
-                    const SizedBox(height: 16.0),
+                    const SizedBox(height: 8.0),
                     _buildHintText(),
                     const SizedBox(height: 32.0),
                   ],
@@ -89,9 +87,9 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
       '请您连续平静的朗读下面这段话，可重复朗读，我们将用于识别您的声音，录音时间需在${MPAddVoiceRecognitionProvider.maxRecordingDuration}秒以上',
       textAlign: TextAlign.center,
       style: TextStyle(
-        fontSize: 16.0,
+        fontSize: 14.0,
         color: Colors.grey.shade800,
-        height: 1.5,
+        height: 1.4,
       ),
     );
   }
@@ -112,9 +110,9 @@ class _MPAddVoiceRecognitionPageState extends State<MPAddVoiceRecognitionPage> {
         '清晨的阳光透过树梢洒在窗台，微风带着草木的清香轻轻掠过。我们走过喧闹的街巷，也看过安静的湖畔，那些日常里的细碎时光，都藏着温暖的印记。试着放慢脚步，感受每一次呼吸的节奏，让声音自然舒展，清晰传递出属于自己的独特韵律，留存下最真实的语音模样。',
         textAlign: TextAlign.center,
         style: TextStyle(
-          fontSize: 14.0,
+          fontSize: 12.0,
           color: Color(0xFF1F2937),
-          height: 1.5,
+          height: 1.4,
         ),
       ),
     );
