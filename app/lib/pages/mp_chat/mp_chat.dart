@@ -232,10 +232,82 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   // 快速提问区域
   Widget _buildQuickQuestionsWidget() {
-    return Column(
-      children: [
-        Text('快速提问'),
-      ],
+    List<String> questionList = [];
+//     enum MPChatPageType {
+//   // 普通聊天
+//   normal,
+//   // 记忆总结
+//   memory,
+//   // 模板聊天
+//   template,
+//   // AI分析助手
+//   aiAssistant,
+//   // 专家模型
+//   expert,
+// }
+    if (widget.type == MPChatPageType.memory) {
+      questionList = [
+        '有哪些需要跟进的地方?',
+        '和对方沟通的风险点是哪些?',
+        '还有哪些没有解决的问题?',
+        '下次会议需要准备什么材料?',
+      ];
+    } else if (widget.type == MPChatPageType.expert) {
+      questionList = [
+        '帮我总结一下近半年我们的沟通情况',
+        '我们讨论的最重要三个话题',
+        '前几次讨论我们还有没有没解决的问题',
+      ];
+    }
+    // else {
+    //   questionList = [
+    //     '今天我应该怎么做？',
+    //     '我昨天做了什么？',
+    //     '最近有什么重要事项？',
+    //     '帮我总结一下',
+    //   ];
+    // }
+    if (questionList.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      height: 50,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: questionList.length,
+        itemBuilder: (context, index) {
+          return Container(
+            margin: EdgeInsets.only(right: index < questionList.length - 1 ? 12 : 0),
+            child: GestureDetector(
+              onTap: () {
+                _sendMessageUtil(questionList[index]);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: const Color(0xFFE5E7EB),
+                    width: 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    questionList[index],
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF4B5563),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
