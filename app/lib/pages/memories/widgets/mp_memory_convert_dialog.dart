@@ -59,15 +59,15 @@ class MPMemoryConvertDialog extends StatefulWidget {
         const [
           MPMemoryConvertTemplate(
             id: 'meeting_notes',
-            title: '会议纪要',
-            description: '会议过程详细整理 + 详细的会议议题内容和行动事项拆分',
+            title: '会议秘书',
+            description: '会议执行摘要 + 详细的 会议讨论内容和行动事项拆分',
             provider: 'Milo',
             badge: '上次使用',
           ),
           MPMemoryConvertTemplate(
             id: 'smart_summary',
             title: '智能摘要',
-            description: '自适应的输出 全场景覆盖',
+            description: '自适应结构 全场景适配',
             provider: 'Auto',
           ),
         ];
@@ -139,31 +139,36 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: Column(
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              '2025-10-17 16:14:51',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1F1F1F),
-                              ),
+                          children: [
+                            const Icon(
+                              Icons.description_outlined,
+                              size: 20,
+                              color: Color(0xFF6B7280),
                             ),
-                            SizedBox(height: 4),
-                            Text(
-                              '24m 29s',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF6B7280),
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'MemoPin',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Color(0xFF6B7280),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    '2025-10-17 16:14:51',
+                                    style: TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1F1F1F),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    '24m 29s',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF6B7280),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -186,26 +191,11 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                         Row(
                           children: [
                             const Text(
-                              '选择总结模版',
+                              '选择总结模板',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF1F1F1F),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                '剩余 2 个免费模版使用次数',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF4B5563),
-                                ),
                               ),
                             ),
                             const Spacer(),
@@ -221,16 +211,51 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        ...widget.templates.map(
-                          (template) => Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _TemplateCard(
-                              template: template,
-                              selected: _selectedTemplate.id == template.id,
-                              onTap: () => setState(() => _selectedTemplate = template),
-                            ),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF3F4FF),
+                            borderRadius: BorderRadius.circular(8),
                           ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(
+                                Icons.lock_outline,
+                                size: 14,
+                                color: Color(0xFF6366F1),
+                              ),
+                              SizedBox(width: 6),
+                              Text(
+                                '剩余2个免费模板使用次数',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF6366F1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: widget.templates
+                              .map(
+                                (template) => Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: template.id == widget.templates.first.id ? 6 : 0,
+                                      left: template.id != widget.templates.first.id ? 6 : 0,
+                                    ),
+                                    child: _TemplateCard(
+                                      template: template,
+                                      selected: _selectedTemplate.id == template.id,
+                                      onTap: () => setState(() => _selectedTemplate = template),
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                         ),
                         const SizedBox(height: 8),
                         _buildSwitchTile(
@@ -258,8 +283,8 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: SizedBox(
                     width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
+                    child: InkWell(
+                      onTap: () {
                         Navigator.of(context).pop(
                           MPMemoryConvertResult(
                             template: _selectedTemplate,
@@ -269,15 +294,32 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                           ),
                         );
                       },
-                      style: ElevatedButton.styleFrom(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: const Color(0xFF6366F1),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text(
-                        '立即生成',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(
+                              Icons.auto_awesome,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              '立即生成',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -420,6 +462,17 @@ class _TemplateCard extends StatelessWidget {
     final borderColor = selected ? const Color(0xFF6366F1) : const Color(0xFFE5E7EB);
     final bgColor = selected ? const Color(0xFFF5F7FF) : Colors.white;
 
+    // 根据模板ID选择不同的图标
+    IconData iconData;
+    Color iconColor;
+    if (template.id == 'meeting_notes') {
+      iconData = Icons.groups;
+      iconColor = selected ? const Color(0xFF6366F1) : const Color(0xFF6B7280);
+    } else {
+      iconData = Icons.auto_awesome;
+      iconColor = selected ? const Color(0xFF6366F1) : const Color(0xFF6366F1);
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -429,75 +482,99 @@ class _TemplateCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: selected ? 1.6 : 1),
         ),
         padding: const EdgeInsets.all(14),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.description_outlined,
-                  size: 20,
-                  color: selected ? const Color(0xFF6366F1) : const Color(0xFF6B7280),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        template.title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111827),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          iconData,
+                          size: 20,
+                          color: iconColor,
                         ),
                       ),
-                      if (template.badge != null) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE0E7FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            template.badge!,
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF4F46E5)),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    template.description,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      height: 1.35,
-                      color: Color(0xFF4B5563),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _Chip(text: template.provider),
-                      const SizedBox(width: 8),
-                      if (selected) const Icon(Icons.check_circle, color: Color(0xFF6366F1), size: 18),
-                    ],
-                  ),
-                ],
-              ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                template.title,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF111827),
+                                ),
+                              ),
+                              if (template.badge != null) ...[
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE0E7FF),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    template.badge!,
+                                    style: const TextStyle(fontSize: 11, color: Color(0xFF4F46E5)),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            template.description,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              color: Color(0xFF4B5563),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              _Chip(text: template.provider),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
+            if (selected)
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF6366F1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -512,19 +589,30 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11,
-          color: Color(0xFF4B5563),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF4B5563),
+            ),
+          ),
         ),
-      ),
+        const SizedBox(width: 4),
+        const Icon(
+          Icons.bar_chart,
+          size: 14,
+          color: Color(0xFF6B7280),
+        ),
+      ],
     );
   }
 }
