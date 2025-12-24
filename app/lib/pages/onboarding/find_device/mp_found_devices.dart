@@ -9,6 +9,8 @@ import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/utils/device.dart';
 import 'package:provider/provider.dart';
 
+import '../../../services/devices/note_connection.dart';
+import '../../../services/services.dart';
 import '../setting/mic_page.dart';
 
 class MPFoundDevices extends StatefulWidget {
@@ -32,7 +34,15 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         final deviceProvider = context.read<DeviceProvider>();
+        final onboardingProvider = context.read<OnboardingProvider>();
         await deviceProvider.periodicConnect('coming from MPFoundDevices');
+        final deviceId = deviceProvider.connectedDevice?.id ?? '';
+        final connection = await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
+        if (connection != null) {
+          onboardingProvider.sendQueryVersion(connection);
+          onboardingProvider.sendQueryBattery(connection);
+          onboardingProvider.sendQueryStorage(connection);
+        }
       }
     });
   }
@@ -40,7 +50,6 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
   @override
   Widget build(BuildContext context) {
     return Consumer<OnboardingProvider>(builder: (context, provider, child) {
-      debugPrint('-----hjj-----build MPFoundDevices is connected: ${provider.isConnected}');
       return MessageListener<OnboardingProvider>(
         showError: (error) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -379,7 +388,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
               ),
               const SizedBox(width: 16),
               Text(
-                provider.firmwareRevision.isNotEmpty ? provider.firmwareRevision : 'v1.1.11',
+                provider.firmwareRevision.isNotEmpty ? provider.firmwareRevision : 'unknown',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -417,7 +426,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -431,7 +440,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Pendant firmware 1.1.20',
+                        'Pendant firmware ${provider.hardwareRevision.isNotEmpty ? provider.hardwareRevision : '1.1.20'}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,

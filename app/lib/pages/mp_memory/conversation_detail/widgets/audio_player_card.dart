@@ -1,5 +1,7 @@
 // AI-generated START - 音频播放器卡片组件，显示原始音频播放控件
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 /// 音频播放器卡片组件
 /// 显示原始音频的播放控件，包括播放按钮、进度条和时间显示
@@ -28,6 +30,10 @@ class AudioPlayerCard extends StatefulWidget {
 }
 
 class _AudioPlayerCardState extends State<AudioPlayerCard> {
+  // AI-generated START - 音频播放器
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  // AI-generated END - _audioPlayer
+
   // AI-generated START - 是否正在播放
   bool _isPlaying = false;
   // AI-generated END - _isPlaying
@@ -35,6 +41,123 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
   // AI-generated START - 当前播放位置（秒）
   int _currentPosition = 0;
   // AI-generated END - _currentPosition
+
+  // AI-generated START - 是否正在缓冲
+  bool _isBuffering = false;
+  // AI-generated END - _isBuffering
+
+  // AI-generated START - 进度监听订阅
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration?>? _durationSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  // AI-generated END - 订阅
+
+  @override
+  void initState() {
+    super.initState();
+    _setupPlayer();
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  /// 初始化音频播放器
+  Future<void> _setupPlayer() async {
+    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+      return;
+    }
+
+    try {
+      await _audioPlayer.setUrl(widget.audioUrl!);
+      _setupPositionTracking();
+    } catch (e) {
+      debugPrint('初始化音频播放器失败: $e');
+    }
+  }
+
+  /// 设置播放进度监听
+  void _setupPositionTracking() {
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+
+    _positionSubscription = _audioPlayer.positionStream.listen((position) {
+      if (mounted) {
+        setState(() {
+          _currentPosition = position.inSeconds;
+        });
+      }
+    });
+
+    _durationSubscription = _audioPlayer.durationStream.listen((duration) {
+      if (mounted && duration != null) {
+        // 如果传入的 totalDurationSeconds 和实际时长不一致，可以在这里更新
+      }
+    });
+
+    _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isPlaying = state.playing;
+          _isBuffering =
+              state.processingState == ProcessingState.loading || state.processingState == ProcessingState.buffering;
+        });
+      }
+    });
+  }
+
+  /// 播放音频
+  Future<void> play() async {
+    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+      debugPrint('音频URL为空，无法播放');
+      return;
+    }
+
+    try {
+      // 如果播放器还没有设置URL，先设置
+      if (_audioPlayer.audioSource == null) {
+        await _audioPlayer.setUrl(widget.audioUrl!);
+        _setupPositionTracking();
+      }
+      await _audioPlayer.play();
+    } catch (e) {
+      debugPrint('播放音频失败: $e');
+    }
+  }
+
+  /// 暂停音频
+  Future<void> pause() async {
+    try {
+      await _audioPlayer.pause();
+    } catch (e) {
+      debugPrint('暂停音频失败: $e');
+    }
+  }
+
+  /// 继续播放音频（从暂停位置继续）
+  Future<void> resume() async {
+    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+      debugPrint('音频URL为空，无法继续播放');
+      return;
+    }
+
+    try {
+      // 如果播放器还没有设置URL，先设置
+      if (_audioPlayer.audioSource == null) {
+        await _audioPlayer.setUrl(widget.audioUrl!);
+        _setupPositionTracking();
+      }
+      await _audioPlayer.play();
+    } catch (e) {
+      debugPrint('继续播放音频失败: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,24 +211,39 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
             children: [
               // AI-generated START - 播放按钮
               GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isPlaying = !_isPlaying;
-                  });
-                  // TODO: 实现音频播放/暂停逻辑
-                },
+                onTap: _isBuffering
+                    ? null
+                    : () {
+                        if (_isPlaying) {
+                          pause();
+                        } else {
+                          if (_currentPosition > 0) {
+                            resume();
+                          } else {
+                            play();
+                          }
+                        }
+                      },
                 child: Container(
                   width: 40.0,
                   height: 40.0,
                   decoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: _isBuffering ? Colors.grey : Colors.blue,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _isPlaying ? Icons.pause : Icons.play_arrow,
-                    color: Colors.white,
-                    size: 20.0,
-                  ),
+                  child: _isBuffering
+                      ? const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.0,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(
+                          _isPlaying ? Icons.pause : Icons.play_arrow,
+                          color: Colors.white,
+                          size: 20.0,
+                        ),
                 ),
               ),
               // AI-generated END - 播放按钮

@@ -113,6 +113,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           AudioPlayerCard(
             title: '原始音频',
             totalDurationSeconds: provider.duration ?? 0,
+            audioUrl: provider.recordFileUrl,
           ),
           // AI-generated END - 音频播放器卡片
 
