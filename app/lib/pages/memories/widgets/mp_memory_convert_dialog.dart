@@ -222,9 +222,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             mainAxisSize: MainAxisSize.min,
                             children: const [
                               Icon(
-                                Icons.lock_outline,
-                                size: 14,
-                                color: Color(0xFF6366F1),
+                                Icons.card_giftcard,
+                                size: 16,
+                                color: Colors.white,
                               ),
                               SizedBox(width: 6),
                               Text(
@@ -464,13 +464,10 @@ class _TemplateCard extends StatelessWidget {
 
     // 根据模板ID选择不同的图标
     IconData iconData;
-    Color iconColor;
     if (template.id == 'meeting_notes') {
       iconData = Icons.groups;
-      iconColor = selected ? const Color(0xFF6366F1) : const Color(0xFF6B7280);
     } else {
       iconData = Icons.auto_awesome;
-      iconColor = selected ? const Color(0xFF6366F1) : const Color(0xFF6366F1);
     }
 
     return GestureDetector(
@@ -487,76 +484,69 @@ class _TemplateCard extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Icon(
-                          iconData,
-                          size: 20,
-                          color: iconColor,
-                        ),
-                      ),
+                // 图标在左上角
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(
+                      iconData,
+                      size: 20,
+                      color: Colors.white,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                template.title,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF111827),
-                                ),
-                              ),
-                              if (template.badge != null) ...[
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE0E7FF),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    template.badge!,
-                                    style: const TextStyle(fontSize: 11, color: Color(0xFF4F46E5)),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            template.description,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              height: 1.35,
-                              color: Color(0xFF4B5563),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              _Chip(text: template.provider),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
+                const SizedBox(height: 12),
+                // 标题
+                Text(
+                  template.title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                // 描述
+                Text(
+                  template.description,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.35,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Provider和图标
+                _Chip(text: template.provider),
               ],
             ),
+            // 徽章在右上角
+            if (template.badge != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6366F1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    template.badge!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            // 选中标记在右下角
             if (selected)
               Positioned(
                 bottom: 0,
