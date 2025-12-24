@@ -136,11 +136,11 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 12, 0),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             const Icon(
                               Icons.description_outlined,
