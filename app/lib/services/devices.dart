@@ -37,7 +37,7 @@ enum DeviceConnectionState {
   disconnected,
 }
 
-/// Feature flags for MemoPin device capabilities
+/// Feature flags for Omi device capabilities
 /// Must match the firmware definitions in features.h
 class OmiFeatures {
   static const int speaker = 1 << 0;
@@ -112,6 +112,9 @@ class DeviceService implements IDeviceService {
       }
 
       _devices = discoveredDevices;
+      for (final device in _devices) {
+        debugPrint('------hjj -discover: ${device.id} --- type: ${device.type} --- name: ${device.name}');
+      }
       onDevices(devices);
 
       if (desirableDeviceId != null && desirableDeviceId.isNotEmpty) {
@@ -221,7 +224,7 @@ class DeviceService implements IDeviceService {
   Future<DeviceConnection?> ensureConnection(String deviceId, {bool force = false}) async {
     await _mutex.acquire();
     try {
-      debugPrint("ensureConnection ${_connection?.device.id} ${_connection?.status} $force");
+      debugPrint("ensureConnection ${_connection?.device.id} ${_connection?.status} $force ${_connection?.device.type}");
 
       // Not force
       if (!force && _connection != null) {

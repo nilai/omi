@@ -30,14 +30,18 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
       // Get connection from DeviceProvider via ServiceManager
       final deviceProvider = context.read<DeviceProvider>();
       final debugProvider = context.read<NoteBleDebugProvider>();
-
+      print('------hjj connected device: ${deviceProvider.connectedDevice?.id ?? "未知"}');
       if (deviceProvider.connectedDevice != null) {
-        final connection = await ServiceManager.instance()
-            .device
-            .ensureConnection(deviceProvider.connectedDevice!.id);
+        final connection = await ServiceManager.instance().device.ensureConnection(deviceProvider.connectedDevice!.id);
+        print('------hjj connection: $connection');
         if (connection is NoteDeviceConnection) {
           debugProvider.setConnection(connection);
+          print('------hjj set connection');
+        }else {
+          print('------hjj connection is not NoteDeviceConnection');
         }
+      }else {
+        print('------hjj no connected device');
       }
     });
   }
@@ -83,9 +87,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
                           minHeight: 16,
                         ),
                         child: Text(
-                          provider.logEntries.length > 99
-                              ? '99+'
-                              : '${provider.logEntries.length}',
+                          provider.logEntries.length > 99 ? '99+' : '${provider.logEntries.length}',
                           style: const TextStyle(fontSize: 9, color: Colors.white),
                           textAlign: TextAlign.center,
                         ),
@@ -216,15 +218,13 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
             CommandButton(
               title: 'USB Mode ON',
               hexCode: '0xE4 0x01',
-              onPressed:
-                  provider.isConnected ? () => provider.sendSetUsbMode(true) : null,
+              onPressed: provider.isConnected ? () => provider.sendSetUsbMode(true) : null,
               isLoading: provider.isExecuting,
             ),
             CommandButton(
               title: 'USB Mode OFF',
               hexCode: '0xE4 0x00',
-              onPressed:
-                  provider.isConnected ? () => provider.sendSetUsbMode(false) : null,
+              onPressed: provider.isConnected ? () => provider.sendSetUsbMode(false) : null,
               isLoading: provider.isExecuting,
             ),
             CommandButton(
@@ -237,16 +237,14 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
             CommandButton(
               title: 'Factory Reset (Keep Files)',
               hexCode: '0xE9 0x00',
-              onPressed:
-                  provider.isConnected ? () => provider.sendFactoryReset(true) : null,
+              onPressed: provider.isConnected ? () => provider.sendFactoryReset(true) : null,
               isLoading: provider.isExecuting,
               isDangerous: true,
             ),
             CommandButton(
               title: 'Factory Reset (Delete All)',
               hexCode: '0xE9 0xFF',
-              onPressed:
-                  provider.isConnected ? () => provider.sendFactoryReset(false) : null,
+              onPressed: provider.isConnected ? () => provider.sendFactoryReset(false) : null,
               isLoading: provider.isExecuting,
               isDangerous: true,
             ),
@@ -261,18 +259,14 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
             CommandButton(
               title: 'Enter OTA (8711)',
               hexCode: '0xE6 0x04',
-              onPressed: provider.isConnected
-                  ? () => provider.sendOtaEnter(NoteOtaModule.module8711)
-                  : null,
+              onPressed: provider.isConnected ? () => provider.sendOtaEnter(NoteOtaModule.module8711) : null,
               isLoading: provider.isExecuting,
               isDangerous: true,
             ),
             CommandButton(
               title: 'Enter OTA (3085)',
               hexCode: '0xE6 0x01',
-              onPressed: provider.isConnected
-                  ? () => provider.sendOtaEnter(NoteOtaModule.module3085)
-                  : null,
+              onPressed: provider.isConnected ? () => provider.sendOtaEnter(NoteOtaModule.module3085) : null,
               isLoading: provider.isExecuting,
               isDangerous: true,
             ),
@@ -297,14 +291,10 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: provider.isConnected
-            ? Colors.green.withValues(alpha: 0.15)
-            : Colors.grey.withValues(alpha: 0.15),
+        color: provider.isConnected ? Colors.green.withValues(alpha: 0.15) : Colors.grey.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: provider.isConnected
-              ? Colors.green.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.3),
+          color: provider.isConnected ? Colors.green.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -484,9 +474,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
           IconButton(
             icon: const Icon(Icons.send, size: 18),
             color: provider.isConnected ? Colors.white54 : Colors.grey.shade700,
-            onPressed: provider.isConnected
-                ? () => provider.sendSetRecordingMode(_selectedRecordingMode)
-                : null,
+            onPressed: provider.isConnected ? () => provider.sendSetRecordingMode(_selectedRecordingMode) : null,
           ),
         ],
       ),
@@ -539,9 +527,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
                 ),
                 Icon(
                   Icons.arrow_forward_ios,
-                  color: provider.isConnected
-                      ? Colors.white54
-                      : Colors.grey.shade700,
+                  color: provider.isConnected ? Colors.white54 : Colors.grey.shade700,
                   size: 16,
                 ),
               ],

@@ -409,17 +409,20 @@ class OnboardingProvider extends BaseProvider with MessageNotifierMixin implemen
       connectingToDeviceId = device.id;
       notifyListeners();
       await ServiceManager.instance().device.ensureConnection(device.id, force: true);
-      debugPrint('Connected to device: ${device.name}');
+      debugPrint('Connected to device: ${device.name}, type: ${device.type}');
       deviceId = device.id;
       await SharedPreferencesUtil().btDeviceSet(device);
       deviceName = device.name;
       deviceType = device.type;
+      debugPrint('------hjj deviceType: $deviceType');
       var cDevice = await _getConnectedDevice(deviceId);
+      debugPrint('------hjj cDevice type: ${cDevice?.type}');
       if (cDevice != null) {
         deviceProvider!.setConnectedDevice(cDevice);
         SharedPreferencesUtil().deviceName = cDevice.name;
         deviceProvider!.setIsConnected(true);
       }
+      debugPrint('------hjj deviceProvider connectedDevice type: ${deviceProvider?.connectedDevice?.type}');
       await deviceProvider?.scanAndConnectToDevice();
       var connectedDevice = deviceProvider!.connectedDevice;
       batteryPercentage = deviceProvider!.batteryLevel;

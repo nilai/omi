@@ -326,7 +326,7 @@ class _ConnectedDeviceState extends State<ConnectedDevice> {
                                 isRedBackground: true,
                                 onTap: () async {
                                   await SharedPreferencesUtil()
-                                      .btDeviceSet(BtDevice(id: '', name: '', type: DeviceType.omi, rssi: 0));
+                                      .btDeviceSet(BtDevice(id: '', name: '', type: DeviceType.aiNote, rssi: 0));
                                   SharedPreferencesUtil().deviceName = '';
                                   if (provider.connectedDevice != null) {
                                     await _bleDisconnectDevice(provider.connectedDevice!);
