@@ -238,24 +238,27 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          children: widget.templates
-                              .map(
-                                (template) => Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: template.id == widget.templates.first.id ? 6 : 0,
-                                      left: template.id != widget.templates.first.id ? 6 : 0,
-                                    ),
-                                    child: _TemplateCard(
-                                      template: template,
-                                      selected: _selectedTemplate.id == template.id,
-                                      onTap: () => setState(() => _selectedTemplate = template),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: widget.templates
+                                .map(
+                                  (template) => Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(
+                                        right: template.id == widget.templates.first.id ? 6 : 0,
+                                        left: template.id != widget.templates.first.id ? 6 : 0,
+                                      ),
+                                      child: _TemplateCard(
+                                        template: template,
+                                        selected: _selectedTemplate.id == template.id,
+                                        onTap: () => setState(() => _selectedTemplate = template),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                )
+                                .toList(),
+                          ),
                         ),
                         const SizedBox(height: 8),
                         _buildSwitchTile(
@@ -483,6 +486,7 @@ class _TemplateCard extends StatelessWidget {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.max,
               children: [
                 // 图标在左上角
                 Container(
