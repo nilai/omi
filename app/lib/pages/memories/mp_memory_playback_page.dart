@@ -200,10 +200,12 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                           child: _buildMetaSection(),
                         ),
+                        const SizedBox(height: 32),
                         _buildAudioCard(context),
+                        const SizedBox(height: 16),
                         _buildSummaryPlaceholder(context),
                         const Spacer(),
                       ],
@@ -232,25 +234,46 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       children: [
         Row(
           children: [
-            const Icon(Icons.calendar_today_outlined, size: 16),
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 16,
+              color: Color(0xFF6B7280),
+            ),
             const SizedBox(width: 8),
-            Text(dateText),
+            Text(
+              dateText,
+              style: const TextStyle(color: Color(0xFF6B7280)),
+            ),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            const Icon(Icons.access_time, size: 16),
+            const Icon(
+              Icons.access_time,
+              size: 16,
+              color: Color(0xFF6B7280),
+            ),
             const SizedBox(width: 8),
-            Text(durationText),
+            Text(
+              durationText,
+              style: const TextStyle(color: Color(0xFF6B7280)),
+            ),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
-            const Icon(Icons.bookmark_outline, size: 16),
+            const Icon(
+              Icons.bookmark_outline,
+              size: 16,
+              color: Color(0xFF6B7280),
+            ),
             const SizedBox(width: 8),
-            Text(widget.memory.label.isNotEmpty ? widget.memory.label : '记忆'),
+            Text(
+              widget.memory.label.isNotEmpty ? widget.memory.label : '记忆',
+              style: const TextStyle(color: Color(0xFF6B7280)),
+            ),
           ],
         ),
       ],
