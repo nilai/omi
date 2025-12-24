@@ -22,20 +22,53 @@ Future<MPCreateConversationResponse?> createConversation(MPCreateConversationReq
 }
 
 /// POST /api/v1/chat/chat
-Future<MPChatResponse?> chat(MPChatRequest req) async {
-  final response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/chat/chat',
-    headers: {},
-    method: 'POST',
+Stream<String> chat(MPChatRequest req) async* {
+  // final response = await makeApiCall(
+  //   url: '${Env.apiBaseUrl}api/v1/chat/chat',
+  //   headers: {},
+  //   method: 'POST',
+  //   body: jsonEncode(req.toJson()),
+  // );
+  // if (response == null) return null;
+  // debugPrint('chat response: ${response.body}');
+  // if (response.statusCode == 200) {
+  //   return MPChatResponse.fromJson(jsonDecode(response.body));
+  // }
+  // return null;
+
+  var url = '${Env.apiBaseUrl}api/v1/chat/chat';
+  // var messageId = "1000"; // Default new message
+
+  await for (var line in makeStreamingApiCall(
+    url: url,
+    // body: jsonEncode({'text': text, 'file_ids': filesId}),
     body: jsonEncode(req.toJson()),
-  );
-  if (response == null) return null;
-  debugPrint('chat response: ${response.body}');
-  if (response.statusCode == 200) {
-    return MPChatResponse.fromJson(jsonDecode(response.body));
+  )) {
+    yield line;
   }
-  return null;
 }
+
+// Stream<ServerMessageChunk> sendMessageStreamServer(String text) async* {
+//   var url = '${Env.apiBaseUrl}api/v1/chat/chat';
+//   // if (appId == null || appId.isEmpty || appId == 'null' || appId == 'no_selected') {
+//   //   url = '${Env.apiBaseUrl}v2/messages';
+//   // }
+
+//   var messageId = "1000"; // Default new message
+
+//   await for (var line in makeStreamingApiCall(
+//     url: url,
+//     body: jsonEncode({'text': text, 'file_ids': filesId}),
+//   )) {
+//     var messageChunk = parseMessageChunk(line, messageId);
+//     if (messageChunk != null) {
+//       yield messageChunk;
+//     } else {
+//       yield ServerMessageChunk.failedMessage();
+//       return;
+//     }
+//   }
+// }
 
 /// GET /api/v1/chat/get_conversation_list
 Future<MPGetConversationListResponse?> getConversationList(MPGetConversationListRequest req) async {

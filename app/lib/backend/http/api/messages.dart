@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:omi/backend/http/shared.dart';
 import 'package:omi/backend/schema/message.dart';
 import 'package:omi/env/env.dart';
-import 'package:omi/utils/other/string_utils.dart';
 
 Future<List<ServerMessage>> getMessagesServer({
   String? appId,
@@ -50,27 +49,29 @@ Future<List<ServerMessage>> clearChatServer({String? appId}) async {
 }
 
 ServerMessageChunk? parseMessageChunk(String line, String messageId) {
-  if (line.startsWith('think: ')) {
-    return ServerMessageChunk(messageId, line.substring(7).replaceAll("__CRLF__", "\n"), MessageChunkType.think);
-  }
+  // if (line.startsWith('think: ')) {
+  //   return ServerMessageChunk(messageId, line.substring(7).replaceAll("__CRLF__", "\n"), MessageChunkType.think);
+  // }
 
-  if (line.startsWith('data: ')) {
-    return ServerMessageChunk(messageId, line.substring(6).replaceAll("__CRLF__", "\n"), MessageChunkType.data);
-  }
+  // if (line.startsWith('data: ')) {
+  //   return ServerMessageChunk(messageId, line.substring(6).replaceAll("__CRLF__", "\n"), MessageChunkType.data);
+  // }
 
-  if (line.startsWith('done: ')) {
-    var text = decodeBase64(line.substring(6));
-    return ServerMessageChunk(messageId, text, MessageChunkType.done,
-        message: ServerMessage.fromJson(json.decode(text)));
-  }
+  // if (line.startsWith('done: ')) {
+  //   var text = decodeBase64(line.substring(6));
+  //   return ServerMessageChunk(messageId, text, MessageChunkType.done,
+  //       message: ServerMessage.fromJson(json.decode(text)));
+  // }
 
-  if (line.startsWith('message: ')) {
-    var text = decodeBase64(line.substring(9));
-    return ServerMessageChunk(messageId, text, MessageChunkType.message,
-        message: ServerMessage.fromJson(json.decode(text)));
-  }
+  // if (line.startsWith('message: ')) {
+  //   var text = decodeBase64(line.substring(9));
+  //   return ServerMessageChunk(messageId, text, MessageChunkType.message,
+  //       message: ServerMessage.fromJson(json.decode(text)));
+  // }
 
-  return null;
+  // return null;
+  return ServerMessageChunk(messageId, line, MessageChunkType.message,
+      message: ServerMessage.fromJson(jsonDecode(line)));
 }
 
 Stream<ServerMessageChunk> sendMessageStreamServer(String text, {String? appId, List<String>? filesId}) async* {

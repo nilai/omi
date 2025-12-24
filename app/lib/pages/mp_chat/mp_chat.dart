@@ -22,6 +22,8 @@ import 'package:omi/widgets/extensions/string.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../backend/schema/conversation.dart';
+import '../chat/widgets/ai_message.dart';
 import '../chat/widgets/message_action_menu.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
@@ -280,23 +282,22 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                               child: Padding(
                                 key: ValueKey(message.id),
                                 padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
-                                // child: message.sender == MessageSender.ai
-                                //     ? AIMessage(
-                                //         showTypingIndicator: provider.showTypingIndicator && chatIndex == 0,
-                                //         message: message,
-                                //         sendMessage: _sendMessageUtil,
-                                //         displayOptions: provider.messages.length <= 1 &&
-                                //             provider.messageSenderApp(message.appId)?.isNotPersona() == true,
-                                //         appSender: provider.messageSenderApp(message.appId),
-                                //         updateConversation: (ServerConversation conversation) {
-                                //           context.read<ConversationProvider>().updateConversation(conversation);
-                                //         },
-                                //         setMessageNps: (int value) {
-                                //           // provider.setMessageNps(message, value);
-                                //         },
-                                //       )
-                                //     : HumanMessage(message: message),
-                                child: HumanMessage(message: message),
+                                child: message.sender == MessageSender.ai
+                                    ? AIMessage(
+                                        showTypingIndicator: provider.showTypingIndicator && chatIndex == 0,
+                                        message: message,
+                                        sendMessage: _sendMessageUtil,
+                                        displayOptions: provider.messages.length <= 1,
+                                        appSender: null,
+                                        updateConversation: (ServerConversation conversation) {
+                                          // context.read<ConversationProvider>().updateConversation(conversation);
+                                          // provider.updateConversation(conversation);
+                                        },
+                                        setMessageNps: (int value) {
+                                          // provider.setMessageNps(message, value);
+                                        },
+                                      )
+                                    : HumanMessage(message: message),
                               ),
                             );
                           },
@@ -313,149 +314,152 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                     ),
                   ),
                   child: Consumer<HomeProvider>(builder: (context, home, child) {
-                    return Column(
-                      children: [
-                        Consumer<MessageProvider>(builder: (context, provider, child) {
-                          return const SizedBox.shrink();
-                        }),
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.only(left: 16, right: 8),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Expanded(
-                                        child: _showVoiceRecorder
-                                            ? VoiceRecorderWidget(
-                                                onTranscriptReady: (transcript) {
-                                                  setState(() {
-                                                    textController.text = transcript;
-                                                    _showVoiceRecorder = false;
-                                                    context.read<MessageProvider>().setNextMessageOriginIsVoice(true);
-                                                  });
-                                                },
-                                                onClose: () {
-                                                  setState(() {
-                                                    _showVoiceRecorder = false;
-                                                  });
-                                                },
-                                              )
-                                            : Container(
-                                                alignment: Alignment.centerLeft,
-                                                child: TextField(
-                                                  enabled: true,
-                                                  controller: textController,
-                                                  focusNode: textFieldFocusNode,
-                                                  obscureText: false,
-                                                  textAlign: TextAlign.start,
-                                                  textAlignVertical: TextAlignVertical.center,
-                                                  decoration: const InputDecoration(
-                                                    // hintText: 'Ask Anything',
-                                                    // hintStyle: TextStyle(fontSize: 16.0, color: Colors.white54),
-                                                    focusedBorder: InputBorder.none,
-                                                    enabledBorder: InputBorder.none,
-                                                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                                                    isDense: true,
-                                                  ),
-                                                  minLines: 1,
-                                                  maxLines: 10,
-                                                  keyboardType: TextInputType.multiline,
-                                                  textCapitalization: TextCapitalization.sentences,
-                                                  style: const TextStyle(
-                                                      fontSize: 16.0, color: Color(0xFF4B5563), height: 1.4),
-                                                ),
-                                              ),
-                                      ),
-                                      if (_shouldShowVoiceRecorderButton())
-                                        textController.text.isNotEmpty
-                                            ? GestureDetector(
-                                                onTap: () {
-                                                  textController.clear();
-                                                },
-                                                child: Container(
-                                                  height: 44,
-                                                  width: 44,
-                                                  alignment: Alignment.center,
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFF3F4F6),
-                                                    borderRadius: BorderRadius.circular(22),
-                                                  ),
-                                                  child: const FaIcon(
-                                                    FontAwesomeIcons.xmark,
-                                                    color: Color(0xFF4B5563),
-                                                    size: 20,
+                    return Consumer<MPMessageProvider>(builder: (context, mpProvider, child) {
+                      return Column(
+                        children: [
+                          Consumer<MessageProvider>(builder: (context, provider, child) {
+                            return const SizedBox.shrink();
+                          }),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.only(left: 16, right: 8),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Expanded(
+                                          child: _showVoiceRecorder
+                                              ? VoiceRecorderWidget(
+                                                  onTranscriptReady: (transcript) {
+                                                    setState(() {
+                                                      textController.text = transcript;
+                                                      _showVoiceRecorder = false;
+                                                      context.read<MessageProvider>().setNextMessageOriginIsVoice(true);
+                                                    });
+                                                  },
+                                                  onClose: () {
+                                                    setState(() {
+                                                      _showVoiceRecorder = false;
+                                                    });
+                                                  },
+                                                )
+                                              : Container(
+                                                  alignment: Alignment.centerLeft,
+                                                  child: TextField(
+                                                    enabled: true,
+                                                    controller: textController,
+                                                    focusNode: textFieldFocusNode,
+                                                    obscureText: false,
+                                                    textAlign: TextAlign.start,
+                                                    textAlignVertical: TextAlignVertical.center,
+                                                    decoration: const InputDecoration(
+                                                      hintText: 'Ask Anything',
+                                                      hintStyle: TextStyle(fontSize: 16.0, color: Colors.white54),
+                                                      focusedBorder: InputBorder.none,
+                                                      enabledBorder: InputBorder.none,
+                                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                                      isDense: true,
+                                                    ),
+                                                    minLines: 1,
+                                                    maxLines: 10,
+                                                    keyboardType: TextInputType.multiline,
+                                                    textCapitalization: TextCapitalization.sentences,
+                                                    style: const TextStyle(
+                                                        fontSize: 16.0, color: Color(0xFF4B5563), height: 1.4),
                                                   ),
                                                 ),
-                                              )
-                                            : GestureDetector(
-                                                child: Container(
-                                                  height: 44,
-                                                  width: 44,
-                                                  alignment: Alignment.center,
-                                                  decoration: BoxDecoration(
-                                                    color: const Color(0xFFF3F4F6),
-                                                    borderRadius: BorderRadius.circular(22),
+                                        ),
+                                        if (_shouldShowVoiceRecorderButton())
+                                          textController.text.isNotEmpty
+                                              ? GestureDetector(
+                                                  onTap: () {
+                                                    textController.clear();
+                                                  },
+                                                  child: Container(
+                                                    height: 44,
+                                                    width: 44,
+                                                    alignment: Alignment.center,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFF3F4F6),
+                                                      borderRadius: BorderRadius.circular(22),
+                                                    ),
+                                                    child: const FaIcon(
+                                                      FontAwesomeIcons.xmark,
+                                                      color: Color(0xFF4B5563),
+                                                      size: 20,
+                                                    ),
                                                   ),
-                                                  child: const FaIcon(
-                                                    FontAwesomeIcons.microphone,
-                                                    color: Color(0xFF4B5563),
-                                                    size: 20,
+                                                )
+                                              : GestureDetector(
+                                                  child: Container(
+                                                    height: 44,
+                                                    width: 44,
+                                                    alignment: Alignment.center,
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFFF3F4F6),
+                                                      borderRadius: BorderRadius.circular(22),
+                                                    ),
+                                                    child: const FaIcon(
+                                                      FontAwesomeIcons.microphone,
+                                                      color: Color(0xFF4B5563),
+                                                      size: 20,
+                                                    ),
                                                   ),
+                                                  onTap: () {
+                                                    FocusScope.of(context).unfocus();
+                                                    setState(() {
+                                                      _showVoiceRecorder = true;
+                                                    });
+                                                  },
                                                 ),
-                                                onTap: () {
-                                                  FocusScope.of(context).unfocus();
-                                                  setState(() {
-                                                    _showVoiceRecorder = true;
-                                                  });
-                                                },
-                                              ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                              !_shouldShowSendButton(provider)
-                                  ? const SizedBox.shrink()
-                                  : ValueListenableBuilder<TextEditingValue>(
-                                      valueListenable: textController,
-                                      builder: (context, value, child) {
-                                        bool canSend = value.text.trim().isNotEmpty && !provider.sendingMessage;
-                                        // !provider.isUploadingFiles;
-
-                                        return GestureDetector(
-                                          onTap: canSend
-                                              ? () {
-                                                  HapticFeedback.mediumImpact();
-                                                  String message = textController.text.trim();
-                                                  if (message.isEmpty) return;
-                                                  _sendMessageUtil(message);
-                                                }
-                                              : null,
-                                          child: Container(
-                                            height: 44,
-                                            width: 44,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF3F4F6),
-                                              borderRadius: BorderRadius.circular(22),
+                                !_shouldShowSendButton(mpProvider)
+                                    ? const SizedBox.shrink()
+                                    : ValueListenableBuilder<TextEditingValue>(
+                                        valueListenable: textController,
+                                        builder: (context, value, child) {
+                                          bool canSend = value.text.trim().isNotEmpty && !mpProvider.sendingMessage;
+                                          // !mpProvider.isUploadingFiles;
+                                          print(
+                                              '----------- canSend: $canSend -------------- textController.text: ${textController.text} -------------- mpProvider.sendingMessage: ${mpProvider.sendingMessage}');
+                                          return GestureDetector(
+                                            onTap: canSend
+                                                ? () {
+                                                    HapticFeedback.mediumImpact();
+                                                    String message = textController.text.trim();
+                                                    if (message.isEmpty) return;
+                                                    _sendMessageUtil(message);
+                                                  }
+                                                : null,
+                                            child: Container(
+                                              height: 44,
+                                              width: 44,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF3F4F6),
+                                                borderRadius: BorderRadius.circular(22),
+                                              ),
+                                              child: const Icon(
+                                                FontAwesomeIcons.arrowUp,
+                                                color: Color(0xFF4B5563),
+                                                size: 20,
+                                              ),
                                             ),
-                                            child: const Icon(
-                                              FontAwesomeIcons.arrowUp,
-                                              color: Color(0xFF4B5563),
-                                              size: 20,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                            ],
+                                          );
+                                        },
+                                      ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
-                    );
+                        ],
+                      );
+                    });
                   }),
                 ),
               ],
@@ -507,7 +511,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   _sendMessageUtil(String text) {
     textFieldFocusNode.unfocus();
 
-    var provider = context.read<MPMessageProvider>();
+    // 直接使用已创建的 provider 实例，避免 context 作用域问题
     provider.setSendingMessage(true);
     provider.addMessageLocally(text);
     textController.clear();

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:omi/backend/http/api/messages.dart';
 import 'package:omi/backend/schema/message.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:uuid/uuid.dart';
@@ -195,46 +194,16 @@ class MPMessageProvider extends ChangeNotifier {
       }
     }
 
+    final req = MPChatRequest(conversationId: curPageModel?.conversationId ?? '', message: text);
+
     try {
-      await for (var chunk in sendMessageStreamServer(text, appId: appId)) {
-        if (chunk.type == MessageChunkType.think) {
+      await for (var line in chat(req)) {
+        print('-------- chat response text : $line');
+
+        textBuffer += line;
+        timer ??= Timer.periodic(const Duration(milliseconds: 100), (_) {
           flushBuffer();
-          message.thinkings.add(chunk.text);
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.data) {
-          textBuffer += chunk.text;
-          timer ??= Timer.periodic(const Duration(milliseconds: 100), (_) {
-            flushBuffer();
-          });
-          continue;
-        }
-
-        timer?.cancel();
-        timer = null;
-        flushBuffer();
-
-        if (chunk.type == MessageChunkType.done) {
-          message = chunk.message!;
-          messages[0] = message;
-          notifyListeners();
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.error) {
-          message.text = chunk.text;
-          notifyListeners();
-          AppSnackbar.showSnackbarError('发送消息失败，请稍后重试');
-          continue;
-        }
-
-        if (chunk.type == MessageChunkType.message) {
-          messages.insert(1, chunk.message!);
-          notifyListeners();
-          continue;
-        }
+        });
       }
     } catch (e) {
       debugPrint('发送消息错误: $e');
