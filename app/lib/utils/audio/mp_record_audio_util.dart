@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/services/devices/note_connection.dart';
@@ -41,7 +42,7 @@ class MPRecordAudioUtil {
 
       // 检查设备是否已连接
       if (deviceProvider.connectedDevice == null) {
-        print('[MPRecordAudioUtil] 设备未连接');
+        _toast('设备未连接');
         throw Exception('设备未连接');
       }
 
@@ -50,11 +51,9 @@ class MPRecordAudioUtil {
           as NoteDeviceConnection?;
 
       if (connection == null) {
-        print('[MPRecordAudioUtil] 无法获取设备连接');
+        _toast('无法获取设备连接');
         throw Exception('无法获取设备连接');
       }
-
-      print('[MPRecordAudioUtil] 开始录音');
 
       // 开始录音
       final success = await connection.startRecording();
@@ -64,11 +63,13 @@ class MPRecordAudioUtil {
         print('[MPRecordAudioUtil] 录音已开始');
       } else {
         print('[MPRecordAudioUtil] 开始录音失败');
+        _toast('开始录音失败');
       }
 
       return success;
     } catch (e) {
       print('[MPRecordAudioUtil] 开始录音失败: $e');
+      _toast('开始录音失败: $e');
       _isRecording = false;
       rethrow;
     }
@@ -86,7 +87,7 @@ class MPRecordAudioUtil {
 
       // 检查设备是否已连接
       if (deviceProvider.connectedDevice == null) {
-        print('[MPRecordAudioUtil] 设备未连接');
+        _toast('设备未连接');
         throw Exception('设备未连接');
       }
 
@@ -95,7 +96,7 @@ class MPRecordAudioUtil {
           as NoteDeviceConnection?;
 
       if (connection == null) {
-        print('[MPRecordAudioUtil] 无法获取设备连接');
+        _toast('无法获取设备连接');
         throw Exception('无法获取设备连接');
       }
 
@@ -108,14 +109,19 @@ class MPRecordAudioUtil {
         _isRecording = false;
         print('[MPRecordAudioUtil] 录音已停止');
       } else {
-        print('[MPRecordAudioUtil] 停止录音失败');
+        _toast('停止录音失败');
       }
 
       return result;
     } catch (e) {
-      print('[MPRecordAudioUtil] 停止录音失败: $e');
+      _toast('停止录音失败: $e');
       _isRecording = false;
       rethrow;
     }
+  }
+
+  /// 显示Toast
+  void _toast(String message) {
+    MPToastUtils.showMessage(message);
   }
 }
