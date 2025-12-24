@@ -140,6 +140,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             },
             child: Column(
               children: [
+                // 消息列表
                 Expanded(
                   child: Consumer<MPMessageProvider>(
                     builder: (context, mpProvider, child) {
@@ -184,6 +185,8 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                     },
                   ),
                 ),
+
+                // 发送消息区域
                 Container(
                   margin: const EdgeInsets.only(top: 10, left: 16, right: 16),
                   decoration: BoxDecoration(
