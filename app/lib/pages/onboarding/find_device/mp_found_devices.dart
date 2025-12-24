@@ -3,16 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
-import 'package:omi/backend/preferences.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
-import 'package:omi/pages/onboarding/apple_watch_permission_page.dart';
-import 'package:omi/widgets/apple_watch_setup_bottom_sheet.dart';
-import 'package:omi/widgets/confirmation_dialog.dart';
-import 'package:omi/services/devices/apple_watch_connection.dart';
-import 'package:omi/services/services.dart';
 import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/gen/flutter_communicator.g.dart';
 import 'package:omi/utils/device.dart';
 import 'package:provider/provider.dart';
 
@@ -38,147 +31,10 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        context.read<DeviceProvider>().periodicConnect('coming from MPFoundDevices');
+        final deviceProvider = context.read<DeviceProvider>();
+        await deviceProvider.periodicConnect('coming from MPFoundDevices');
       }
     });
-  }
-
-  Future<void> _handleAppleWatchOnboarding(BtDevice device, OnboardingProvider provider) async {
-    try {
-      // First check if the watch is reachable
-      final hostAPI = WatchRecorderHostAPI();
-      final bool isReachable = await hostAPI.isWatchReachable();
-
-      if (!isReachable) {
-        // Watch is not reachable - show bottom sheet to install/open app
-        await _showWatchNotReachableBottomSheet(device.id);
-        return;
-      }
-
-      // Watch is reachable - connect and check permissions
-      await ServiceManager.instance().device.ensureConnection(device.id, force: true);
-      final connection = await ServiceManager.instance().device.ensureConnection(device.id);
-
-      if (connection is! AppleWatchDeviceConnection) {
-        debugPrint('Device is not an Apple Watch connection');
-        return;
-      }
-
-      // Check permission and try to start recording immediately
-      final bool recordingStarted = await connection.checkPermissionAndStartRecording();
-
-      if (!recordingStarted) {
-        await _showMicrophonePermissionPage(connection);
-      } else {
-        await _completeAppleWatchOnboarding(device, provider);
-      }
-    } catch (e) {
-      debugPrint('Error handling Apple Watch onboarding: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error connecting to Apple Watch: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  /// Show bottom sheet when Apple Watch is not reachable
-  Future<void> _showWatchNotReachableBottomSheet(String deviceId) async {
-    await showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => AppleWatchSetupBottomSheet(
-        deviceId: deviceId,
-        onConnected: () async {
-          // Retry the connection flow when user says they've connected
-          final device =
-              Provider.of<OnboardingProvider>(context, listen: false).deviceList.firstWhere((d) => d.id == deviceId);
-          final provider = Provider.of<OnboardingProvider>(context, listen: false);
-          await _handleAppleWatchOnboarding(device, provider);
-        },
-      ),
-    );
-  }
-
-  Future<void> _showMicrophonePermissionPage(AppleWatchDeviceConnection connection) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => AppleWatchPermissionPage(
-          connection: connection,
-          onPermissionGranted: () async {
-            final provider = Provider.of<OnboardingProvider>(context, listen: false);
-            final device = provider.deviceList.firstWhere((d) => d.id == connection.device.id);
-            await _completeAppleWatchOnboarding(device, provider);
-          },
-        ),
-      ),
-    );
-  }
-
-  Future<void> _completeAppleWatchOnboarding(BtDevice device, OnboardingProvider provider) async {
-    try {
-      provider.deviceId = device.id;
-      provider.deviceName = device.name;
-      provider.isConnected = true;
-      provider.isClicked = false;
-      provider.connectingToDeviceId = null;
-
-      await provider.deviceProvider?.scanAndConnectToDevice();
-
-      // Show firmware warning if needed
-      await _showFirmwareWarningIfNeeded(device);
-
-      if (widget.isFromOnboarding) {
-        widget.goNext();
-      } else {
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      debugPrint('Error completing Apple Watch onboarding: $e');
-    }
-  }
-
-  Future<void> _showFirmwareWarningIfNeeded(BtDevice device) async {
-    final warningMessage = device.getFirmwareWarningMessage();
-    if (warningMessage.isEmpty) {
-      return; // No warning needed for this device type
-    }
-
-    // Check if user has already acknowledged this device type
-    final prefKey = 'firmware_warning_acknowledged_${device.type.toString()}';
-    final alreadyAcknowledged = SharedPreferencesUtil().getBool(prefKey) ?? false;
-
-    if (alreadyAcknowledged) {
-      return; // User already acknowledged this warning
-    }
-
-    bool dontShowAgain = false;
-
-    await showDialog(
-      context: context,
-      barrierDismissible: false, // Must click button
-      builder: (context) => ConfirmationDialog(
-        title: device.getFirmwareWarningTitle(),
-        description: warningMessage,
-        checkboxText: "Don't show it again",
-        checkboxValue: false,
-        onCheckboxChanged: (value) {
-          dontShowAgain = value;
-        },
-        confirmText: "I Understand",
-        onConfirm: () {
-          if (dontShowAgain) {
-            SharedPreferencesUtil().saveBool(prefKey, true);
-          }
-          Navigator.of(context).pop();
-        },
-        onCancel: () {
-          // Not used, but required by ConfirmationDialog
-        },
-      ),
-    );
   }
 
   @override
@@ -196,16 +52,10 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
           if (info == "DEVICE_CONNECTED") {
             // Navigator.of(context).pushAndRemoveUntil(
             //   MaterialPageRoute(
-            //     builder: (context) => const HomePageWrapper(),
+            //     builder: (context) => const mp(),
             //   ),
             //   (route) => false,
             // );
-            Navigator.pop(context);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(info),
-              backgroundColor: Colors.green,
-            ));
           }
         },
         child: Column(
@@ -300,7 +150,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-           Row(
+          Row(
             children: [
               Icon(Icons.info_outline, color: Color(0xFF4361EE)),
               SizedBox(width: 8),
@@ -314,12 +164,12 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
               ),
             ],
           ),
-           SizedBox(height: 12),
-           _MPTipRow(index: 1, text: '确保设备电量充足'),
-            SizedBox(height: 8),
-             _MPTipRow(index: 2, text: '将设备靠近手机'),
-           SizedBox(height: 8),
-           _MPTipRow(index: 3, text: '首次连接需要在设备上确认配对'),
+          SizedBox(height: 12),
+          _MPTipRow(index: 1, text: '确保设备电量充足'),
+          SizedBox(height: 8),
+          _MPTipRow(index: 2, text: '将设备靠近手机'),
+          SizedBox(height: 8),
+          _MPTipRow(index: 3, text: '首次连接需要在设备上确认配对'),
         ],
       ),
     );
@@ -357,19 +207,11 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
               return GestureDetector(
                 onTap: !provider.isClicked
                     ? () async {
-                        if (device.type == DeviceType.appleWatch) {
-                          await _handleAppleWatchOnboarding(device, provider);
-                        } else {
-                          await provider.handleTap(
-                            device: device,
-                            isFromOnboarding: widget.isFromOnboarding,
-                            goNext: widget.goNext,
-                          );
-
-                          if (provider.isConnected) {
-                            await _showFirmwareWarningIfNeeded(device);
-                          }
-                        }
+                        await provider.handleTap(
+                          device: device,
+                          isFromOnboarding: widget.isFromOnboarding,
+                          goNext: widget.goNext,
+                        );
                       }
                     : null,
                 child: Container(
@@ -462,8 +304,6 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
   }
 
   Widget _buildConnected(OnboardingProvider provider) {
-    final battery = provider.batteryPercentage;
-    print('-----hjj-----buildConnected battery: $battery');
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -522,7 +362,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             children: [
               _buildStatusBadge(
                 icon: Icons.battery_charging_full,
-                text: '$battery%',
+                text: '${provider.batteryPercentage}%',
                 color: const Color(0xFF34C759),
               ),
               const SizedBox(width: 16),
@@ -538,9 +378,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                 color: const Color(0xFF34C759),
               ),
               const SizedBox(width: 16),
-              const Text(
-                'v1.1.11',
-                style: TextStyle(
+              Text(
+                provider.firmwareRevision.isNotEmpty ? provider.firmwareRevision : 'v1.1.11',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF1D1D1F),
@@ -623,14 +463,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             ),
             child: Column(
               children: [
-                _buildInfoRow('名称', 'MemoPin'),
+                _buildInfoRow('名称', provider.deviceName.isNotEmpty ? provider.deviceName : 'MemoPin'),
                 const Divider(height: 24, color: Color(0xFFE5E5EA)),
-                _buildInfoRow(
-                  '序列号',
-                  provider.deviceId.length >= 4
-                      ? 'MP202400${provider.deviceId.substring(provider.deviceId.length - 4)}'
-                      : 'MP202400${provider.deviceId}',
-                ),
+                _buildInfoRow('序列号', provider.deviceId.isNotEmpty ? provider.deviceId : 'MP202400${provider.deviceId}'),
               ],
             ),
           ),
@@ -690,9 +525,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                         ],
                       ),
                     ),
-                    const Text(
-                      '0 KB',
-                      style: TextStyle(
+                    Text(
+                      provider.noteUsedKBTitle,
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: Color(0x991D1D1F),
