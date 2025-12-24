@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
 
+import '../../utils/audio/mp_record_audio_util.dart';
+
 /// 录音选项卡片组件
 /// 用于显示开始录音和导入音频的选项
 class RecordAudioOptionCard extends StatelessWidget {
@@ -16,7 +18,7 @@ class RecordAudioOptionCard extends StatelessWidget {
   // AI-generated START - 构造函数
   const RecordAudioOptionCard({
     super.key,
-    this.onStartRecording,
+    // this.onStartRecording,
     this.onImportAudio,
     this.onClose,
     this.autoClose = true,
@@ -24,7 +26,7 @@ class RecordAudioOptionCard extends StatelessWidget {
   // AI-generated END - 构造函数
 
   /// 开始录音回调
-  final VoidCallback? onStartRecording;
+  // final VoidCallback? onStartRecording;
 
   /// 导入音频回调
   final VoidCallback? onImportAudio;
@@ -58,13 +60,17 @@ class RecordAudioOptionCard extends StatelessWidget {
               icon: Icons.mic,
               iconColor: Colors.red,
               backgroundColor: Colors.red[50]!,
-              title: '开始录音',
+              title: MPRecordAudioUtil.instance.isRecording ? '停止录音' : '开始录音',
               imagePath: kStartRecordingIcon,
               onTap: () {
                 if (autoClose) {
                   _close(context);
                 }
-                onStartRecording?.call();
+                if (MPRecordAudioUtil.instance.isRecording) {
+                  MPRecordAudioUtil.instance.stopRecording(context);
+                } else {
+                  MPRecordAudioUtil.instance.startRecording(context);
+                }
               },
             ),
             const SizedBox(height: 16.0),
@@ -159,7 +165,7 @@ if (onClose != null) {
   /// 显示录音选项弹窗
   static Future<T?> show<T>({
     required BuildContext context,
-    VoidCallback? onStartRecording,
+    // VoidCallback? onStartRecording,
     VoidCallback? onImportAudio,
     VoidCallback? onClose,
   }) {
@@ -170,7 +176,7 @@ if (onClose != null) {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: RecordAudioOptionCard(
-            onStartRecording: onStartRecording,
+            // onStartRecording: onStartRecording,
             onImportAudio: onImportAudio,
             onClose: onClose ?? () => Navigator.of(context).pop(),
           ),

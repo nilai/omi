@@ -80,7 +80,10 @@ class _MPPageContentState extends State<MPPageContent> {
       });
       provider.refresh();
       if (mounted) {
-        context.read<DeviceProvider>().periodicConnect('coming from HomePageWrapper', boundDeviceOnly: true,);
+        context.read<DeviceProvider>().periodicConnect(
+              'coming from HomePageWrapper',
+              boundDeviceOnly: true,
+            );
       }
     });
   }
@@ -342,7 +345,6 @@ class _MPPageContentState extends State<MPPageContent> {
       onImportAudio: () {
         _showImportAudioDialog(context);
       },
-      onStartRecording: () {},
     );
   }
 
