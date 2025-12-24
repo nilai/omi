@@ -9,6 +9,7 @@ import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
 import 'package:omi/pages/mp_chat/mp_chat_menu_list_page.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
 import 'package:omi/providers/mp_message_provider.dart';
@@ -291,9 +292,10 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                                   ),
                                                   onTap: () {
                                                     FocusScope.of(context).unfocus();
-                                                    setState(() {
-                                                      _showVoiceRecorder = true;
-                                                    });
+                                                    // setState(() {
+                                                    //   _showVoiceRecorder = true;
+                                                    // });
+                                                    MPToastUtils.showFeatureComingSoon();
                                                   },
                                                 ),
                                       ],
