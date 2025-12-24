@@ -126,7 +126,7 @@ class MPAddVoiceRecognitionProvider with ChangeNotifier {
       builder: (context) => MPVoiceRecognitionDetailPage(
         voiceId: null,
         initialName: isMyselfVoice ? '我的声音' : null,
-        audioDuration: _recordingDuration,
+        audioDuration: _recordingDuration.toString(),
         isEditMode: true,
         audioPath: _audioPath,
         isMyselfVoice: isMyselfVoice,

@@ -23,10 +23,6 @@ class MPTemplateDetailProvider with ChangeNotifier {
   /// 是否为新增模式（templateId 为 null 或 'new'）
   bool get isCreateMode => _templateId == null;
 
-  /// 是否为编辑模式
-  bool get isEditMode => !isCreateMode;
-  // AI-generated END - Getters
-
   // AI-generated START - 模板ID
   String? _templateId;
   // AI-generated END - 模板ID
@@ -244,9 +240,21 @@ class MPTemplateDetailProvider with ChangeNotifier {
     try {
       if (isCreateMode) {
         // 创建新模板
-        final title = _template!.title ?? '';
-        final prompt = _template!.prompt ?? '';
+        final title = _template!.title?.trim() ?? '';
+        final prompt = _template!.prompt?.trim() ?? '';
+        final icon = _template!.icon ?? '';
+        final hasLocalIcon = _tempLocalIconPath != null && _tempLocalIconPath!.isNotEmpty;
 
+        // 检查图标：必须有网络图标或本地临时图标
+        if (icon.isEmpty && !hasLocalIcon) {
+          setState(() {
+            _isLoading = false;
+          });
+          MPToastUtils.showMessage('请选择模板图标');
+          return false;
+        }
+
+        // 验证所有必填字段
         if (title.isEmpty) {
           setState(() {
             _isLoading = false;
@@ -287,13 +295,7 @@ class MPTemplateDetailProvider with ChangeNotifier {
           return false;
         }
       } else {
-        // TODO: 更新现有模板的 API 调用
-        // 目前先返回成功（模拟）
-        setState(() {
-          _isLoading = false;
-        });
-        MPToastUtils.showMessage('更新模板成功');
-        return true;
+        return false;
       }
     } catch (e) {
       setState(() {
@@ -320,6 +322,38 @@ class MPTemplateDetailProvider with ChangeNotifier {
     });
 
     try {
+      // 创建新模板
+      final title = _template!.title?.trim() ?? '';
+      final prompt = _template!.prompt?.trim() ?? '';
+      final icon = _template!.icon ?? '';
+      final hasLocalIcon = _tempLocalIconPath != null && _tempLocalIconPath!.isNotEmpty;
+
+      // 验证所有必填字段
+      if (title.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        MPToastUtils.showMessage('请输入模板名称');
+        return false;
+      }
+
+      // 检查图标：必须有网络图标或本地临时图标
+      if (icon.isEmpty && !hasLocalIcon) {
+        setState(() {
+          _isLoading = false;
+        });
+        MPToastUtils.showMessage('请选择模板图标');
+        return false;
+      }
+
+      if (prompt.isEmpty) {
+        setState(() {
+          _isLoading = false;
+        });
+        MPToastUtils.showMessage('请输入Prompt内容');
+        return false;
+      }
+
       // 调用 API 设置默认模板
       final request = MPSetTemplateDefaultRequest(
         templateId: _template!.id!,

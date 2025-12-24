@@ -58,15 +58,18 @@ class _MemoryPageState extends State<MemoryPage> {
       provider.loadMemories();
     });
     // AI-generated END - 初始化记忆数据
-    // AI-generated START - 监听声音保存事件
+    // AI-generated START - 监听声音保存和删除事件
     _voiceEventSubscription = VoiceRecognitionEventService().events.listen((event) {
-      if (event.type == VoiceRecognitionEventType.voiceSaved && mounted) {
-        // 声音保存成功后，刷新记忆列表
-        final provider = Provider.of<MemoryProvider>(context, listen: false);
-        provider.loadMemories();
+      if (mounted) {
+        if (event.type == VoiceRecognitionEventType.voiceSaved ||
+            event.type == VoiceRecognitionEventType.voiceDeleted) {
+          // 声音保存或删除成功后，刷新记忆列表
+          final provider = Provider.of<MemoryProvider>(context, listen: false);
+          provider.loadMemories();
+        }
       }
     });
-    // AI-generated END - 监听声音保存事件
+    // AI-generated END - 监听声音保存和删除事件
   }
   // AI-generated END - 初始化方法
 

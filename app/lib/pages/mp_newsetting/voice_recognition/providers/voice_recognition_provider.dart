@@ -111,6 +111,7 @@ class VoiceRecognitionProvider with ChangeNotifier {
       date: date,
       icon: speaker.myselfVoice == true ? Assets.images.mpMyVoice.path : null,
       imageUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,
+      audioUrl: speaker.audioUrl,
     );
   }
   // AI-generated END - _convertSpeakerToVoiceItem

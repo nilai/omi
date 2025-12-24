@@ -38,12 +38,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   @override
   void initState() {
     super.initState();
-    // 监听声音保存成功事件
+    // 监听声音保存和删除事件
     _eventSubscription = VoiceRecognitionEventService().events.listen((event) {
-      if (event.type == VoiceRecognitionEventType.voiceSaved && mounted) {
-        // 刷新声音列表
-        final provider = Provider.of<VoiceRecognitionProvider>(context, listen: false);
-        provider.loadSpeakerList();
+      if (mounted) {
+        if (event.type == VoiceRecognitionEventType.voiceSaved ||
+            event.type == VoiceRecognitionEventType.voiceDeleted) {
+          // 刷新声音列表
+          final provider = Provider.of<VoiceRecognitionProvider>(context, listen: false);
+          provider.loadSpeakerList();
+        }
       }
     });
   }
@@ -110,6 +113,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             builder: (context) => MPVoiceRecognitionDetailPage(
               voiceId: item.id,
               initialName: item.title,
+              audioPath: item.audioUrl,
+              audioDuration: item.duration,
               isMyselfVoice: true,
             ),
           ),
@@ -121,6 +126,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             builder: (context) => MPVoiceRecognitionDetailPage(
               voiceId: item.id,
               initialName: item.title,
+              audioPath: item.audioUrl,
+              audioDuration: item.duration,
               isMyselfVoice: true,
             ),
           ),
@@ -157,7 +164,12 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => MPVoiceRecognitionDetailPage(
-                voiceId: item.id, isEditMode: true, initialName: item.title, isMyselfVoice: false),
+                voiceId: item.id,
+                isEditMode: true,
+                initialName: item.title,
+                isMyselfVoice: false,
+                audioPath: item.audioUrl,
+                audioDuration: item.duration),
           ),
         );
       },
@@ -165,7 +177,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) => MPVoiceRecognitionDetailPage(
-                voiceId: item.id, isEditMode: true, initialName: item.title, isMyselfVoice: false),
+                voiceId: item.id,
+                isEditMode: true,
+                initialName: item.title,
+                isMyselfVoice: false,
+                audioPath: item.audioUrl,
+                imageUrl: item.imageUrl,
+                audioDuration: item.duration),
           ),
         );
       },

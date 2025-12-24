@@ -81,6 +81,38 @@ Map<String, dynamic> _$MPGetSpeakerDetailRequestToJson(
       'speaker_id': instance.speakerId,
     };
 
+MPDeleteSpeakerRequest _$MPDeleteSpeakerRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPDeleteSpeakerRequest(
+      speakerId: json['speaker_id'] as String,
+    );
+
+Map<String, dynamic> _$MPDeleteSpeakerRequestToJson(
+        MPDeleteSpeakerRequest instance) =>
+    <String, dynamic>{
+      'speaker_id': instance.speakerId,
+    };
+
+MPUpdateSpeakerRequest _$MPUpdateSpeakerRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateSpeakerRequest(
+      speakerId: json['speaker_id'] as String,
+      audioUrl: json['audio_url'] as String?,
+      name: json['name'] as String?,
+      avatar: json['avatar'] as String?,
+      myselfVoice: json['myself_voice'] as bool?,
+    );
+
+Map<String, dynamic> _$MPUpdateSpeakerRequestToJson(
+        MPUpdateSpeakerRequest instance) =>
+    <String, dynamic>{
+      'speaker_id': instance.speakerId,
+      'audio_url': instance.audioUrl,
+      'name': instance.name,
+      'avatar': instance.avatar,
+      'myself_voice': instance.myselfVoice,
+    };
+
 MPAddSpeakerResponse _$MPAddSpeakerResponseFromJson(
         Map<String, dynamic> json) =>
     MPAddSpeakerResponse(
@@ -160,5 +192,29 @@ Map<String, dynamic> _$MPGetSpeakerDetailResponseToJson(
       'speaker': instance.speaker,
       'memorys': instance.memorys,
       'memory_total': instance.memoryTotal,
+      'base_resp': instance.baseResp,
+    };
+
+MPUpdateSpeakerResponse _$MPUpdateSpeakerResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateSpeakerResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPUpdateSpeakerResponseToJson(
+        MPUpdateSpeakerResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPDeleteSpeakerResponse _$MPDeleteSpeakerResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPDeleteSpeakerResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPDeleteSpeakerResponseToJson(
+        MPDeleteSpeakerResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };
