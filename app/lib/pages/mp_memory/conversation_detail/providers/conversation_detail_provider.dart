@@ -144,13 +144,6 @@ class ConversationDetailProvider with ChangeNotifier {
   }
   // AI-generated END - todos
 
-  // AI-generated START - 获取过滤后的待办列表
-  List<MPTodoStruct> get filteredTodos {
-    // 搜索功能暂时不实现，直接返回所有数据
-    return todos;
-  }
-  // AI-generated END - filteredTodos
-
   // AI-generated START - 获取仅录音内容
   MPOnlyRecordMemoryStruct? get onlyRecordContent => _memory?.onlyRecordContent;
   // AI-generated END - onlyRecordContent
@@ -177,28 +170,6 @@ class ConversationDetailProvider with ChangeNotifier {
 
   // AI-generated START - 根据标签ID加载对应的数据
   void loadDataForTab(String tabId) {
-    if (_memory == null) return;
-
-    switch (tabId) {
-      case 'summary':
-        // Summary 标签：使用 summaryContent
-        _summary = _memory?.summaryContent?.summary;
-        break;
-      case 'transcript':
-        // Transcript 标签：加载转录数据
-        _loadTranscriptData(_memory!);
-        break;
-      case 'todolist':
-        _loadTranscriptData(memory!);
-        // TodoList 标签：数据已经在 getter 中获取
-        break;
-      case 'mindmap':
-        // MindMap 标签：可能需要从 insightContent 或 aiExpertContent 获取
-        // 暂时不处理，等待具体需求
-        break;
-      default:
-        break;
-    }
     notifyListeners();
   }
   // AI-generated END - loadDataForTab
@@ -249,12 +220,6 @@ class ConversationDetailProvider with ChangeNotifier {
 
         // 更新摘要
         _summary = response.memory.summaryContent?.summary;
-
-        print('122222summary: ${response.memory.summaryContent?.todos}');
-        print('222222summary: ${response.memory.summaryContent?.transcript}');
-        print('322222summary: $_summary');
-        print('422222summary: ${response.memory.summaryContent?.participants}');
-
         notifyListeners();
       } else {
         debugPrint('获取记忆详情失败: ${response?.baseResp.message ?? '未知错误'}');

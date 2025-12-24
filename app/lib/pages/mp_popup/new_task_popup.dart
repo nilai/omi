@@ -229,15 +229,20 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
             ),
           ),
         ),
+
+        const SizedBox(width: 8.0),
         // 标题
-        Text(
-          widget.title ?? '新建任务',
-          style: const TextStyle(
-            fontSize: 14.0,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1F2937),
+        Expanded(
+          child: Text(
+            widget.title ?? '新建任务',
+            style: const TextStyle(
+              fontSize: 14.0,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
+            ),
           ),
         ),
+        const SizedBox(width: 8.0),
         // 完成按钮
         TextButton(
           onPressed: () {
@@ -534,8 +539,15 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
                   if (states.contains(WidgetState.selected)) {
                     return const Color(0xFF3B82F6); // 选中时的背景颜色
                   }
-                  return null; // 未选中时使用默认颜色
+                  return Colors.transparent; // 未选中时透明
                 },
+              ),
+              side: BorderSide(
+                color: _isCompleted ? const Color(0xFF3B82F6) : const Color(0xFFD1D5DB),
+                width: 1.5,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(4.0), // 圆角矩形
               ),
               onChanged: (value) {
                 setState(() {
@@ -573,7 +585,7 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(8.0),
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -581,7 +593,7 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
               size: 16.0,
               color: Color(0xFFDC2626),
             ),
-            const SizedBox(width: 8.0),
+            SizedBox(width: 8.0),
             Text(
               '删除任务',
               style: TextStyle(

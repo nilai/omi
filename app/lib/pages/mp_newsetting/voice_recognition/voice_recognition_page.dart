@@ -83,7 +83,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   MaterialPageRoute(
                     builder: (context) => ChangeNotifierProvider<MPAddVoiceRecognitionProvider>(
                       create: (_) => MPAddVoiceRecognitionProvider(),
-                      child: const MPAddVoiceRecognitionPage(),
+                      child: const MPAddVoiceRecognitionPage(
+                        isMyselfVoice: false,
+                      ),
                     ),
                   ),
                 );

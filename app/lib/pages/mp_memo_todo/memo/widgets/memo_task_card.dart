@@ -221,17 +221,21 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // AI-generated START - 标题
-                              Text(
-                                widget.title,
-                                style: const TextStyle(
-                                  color: Color(0xFF1F2937),
-                                  fontSize: 14.0,
-                                  fontWeight: FontWeight.w600,
+                              Visibility(
+                                visible: widget.title.isNotEmpty,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: Text(
+                                    widget.title,
+                                    style: const TextStyle(
+                                      color: Color(0xFF1F2937),
+                                      fontSize: 14.0,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                               ),
                               // AI-generated END - 标题
-
-                              const SizedBox(height: 4.0),
 
                               // AI-generated START - 描述
                               Text(
