@@ -78,7 +78,7 @@ function generate_ios_custom_config() {
 
   # Custom bundle identifier
   SUFFIX=$(generate_device_suffix)
-  CUSTOM_BUNDLE="com.friend-app-with-wearable.ios12-${SUFFIX}"
+  CUSTOM_BUNDLE="com.asksky.fitness-${SUFFIX}"
   echo APP_BUNDLE_IDENTIFIER=${CUSTOM_BUNDLE} >> "ios/Flutter/Custom.xcconfig"
 }
 
@@ -122,8 +122,8 @@ function setup_firebase_with_service_account() {
   flutterfire config \
     --platforms="android,ios,macos,web" \
     --out=lib/firebase_options_dev.dart \
-    --ios-bundle-id=com.friend-app-with-wearable.ios12.development \
-    --macos-bundle-id=com.friend-app-with-wearable.ios12.development \
+    --ios-bundle-id=com.asksky.fitness \
+    --macos-bundle-id=com.asksky.fitness \
     --android-app-id=com.friend.ios.dev \
     --android-out=android/app/src/dev/  \
     --ios-out=ios/Config/Dev/ \
@@ -137,8 +137,8 @@ function setup_firebase_with_service_account() {
   flutterfire config \
     --platforms="android,ios,macos,web" \
     --out=lib/firebase_options_prod.dart \
-    --ios-bundle-id=com.friend-app-with-wearable.ios12 \
-    --macos-bundle-id=com.friend-app-with-wearable.ios12 \
+    --ios-bundle-id=com.asksky.fitness \
+    --macos-bundle-id=com.asksky.fitness \
     --android-app-id=com.friend.ios.dev \
     --android-out=android/app/src/prod/ \
     --ios-out=ios/Config/Prod/ \
@@ -161,7 +161,7 @@ function setup_provisioning_profile() {
     fi
     
     MATCH_PASSWORD=omi fastlane match development --readonly \
-        --app_identifier com.friend-app-with-wearable.ios12.development \
+        --app_identifier com.asksky.fitness \
         --git_url "git@github.com:BasedHardware/omi-community-certs.git"
 }
 
@@ -177,7 +177,7 @@ function setup_provisioning_profile_macos() {
     
     MATCH_PASSWORD=omi fastlane match development --readonly \
         --platform macos \
-        --app_identifier com.friend-app-with-wearable.ios12.development \
+        --app_identifier com.asksky.fitness \
         --git_url "git@github.com:BasedHardware/omi-community-certs.git"
 }
 
