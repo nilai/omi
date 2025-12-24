@@ -95,6 +95,8 @@
 	<string>When creating your memories, we use your location for determining where they were created.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app needs access to your microphone for recording audio.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app needs access to your photo library to select audio files.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photo library to select audio files.</string>
 	<key>NSRemindersUsageDescription</key>

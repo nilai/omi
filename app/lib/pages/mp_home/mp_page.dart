@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_memory.dart';
 import '../../gen/assets.gen.dart';
-import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -17,9 +16,9 @@ import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../onboarding/find_device/page.dart';
-import 'widgets/mp_home_upload_widget.dart';
-import 'provider/mp_page_provider.dart';
 import 'mp_search_page.dart';
+import 'provider/mp_page_provider.dart';
+import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
   const MPPage({super.key});
@@ -315,7 +314,7 @@ class _MPPageContentState extends State<MPPageContent> {
       );
     }
     if (provider.importAudioType == MPHomeImportAudioType.sdCard) {
-      return Row(
+      return const Row(
         children: [
           Text('SD卡导入音频'),
         ],
@@ -369,13 +368,23 @@ class _MPPageContentState extends State<MPPageContent> {
         }
       },
       onImportFromAlbum: () async {
-        // final file = await AudioPickerUtils.pickAudioFromAlbum();
-        // debugPrint('pickAudioFromAlbum file: $file');
-        // await _uploadAudioFile(context, file);
-        final path = await AudioPickerUtils.pickAudioFromAlbumAndSync();
+        final provider = context.read<MPHomePageProvider>();
+        provider.updateImportAudioType(MPHomeImportAudioType.local);
+        provider.updateUploadPercent(0);
+        final path = await AudioPickerUtils.pickAudioFromAlbumAndSync(onProgress: (progress, copiedBytes, totalBytes) {
+          provider.updateUploadPercent(progress);
+        });
+        provider.updateUploadPercent(100);
+        provider.updateImportAudioType(MPHomeImportAudioType.none);
         debugPrint('pickAudioFromAlbumAndSync file: $path');
         if (path != null) {
-          await _uploadAudioFile(context, File(path));
+          // /// 记录信息到本地，更新列表数据，刷新页面
+          // /// 文件名、时间戳、时长
+          // /// 上传文件，上传完成删除记录信息
+          // await _uploadAudioFile(context, File(path));
+
+          await provider.addLocalRecord(path);
+          provider.uploadLocalRecords();
         }
       },
       onImportFromOtherApp: () async {

@@ -262,30 +262,62 @@ class AudioPickerUtils {
       } else if (Platform.isIOS) {
         // iOS 使用照片库权限
         PermissionStatus status = await Permission.photos.status;
+        debugPrint('iOS 照片库权限状态: $status');
 
-        if (status.isGranted) {
+        // 如果已经授予或受限访问（iOS 14+），返回 true
+        if (status.isGranted || status.isLimited) {
+          debugPrint('iOS 照片库权限已授予或受限访问');
           return true;
         }
 
-        if (status.isDenied) {
-          // 请求权限
-          status = await Permission.photos.request();
-          return status.isGranted;
-        }
-
+        // 如果权限被永久拒绝，无法请求
         if (status.isPermanentlyDenied) {
-          // 权限被永久拒绝
-          debugPrint('照片库权限被永久拒绝，请到设置中手动开启');
+          debugPrint('iOS 照片库权限被永久拒绝，请到设置中手动开启');
           return false;
         }
 
-        return false;
+        // 如果权限被限制（如家长控制），无法请求
+        if (status.isRestricted) {
+          debugPrint('iOS 照片库权限被限制，无法请求');
+          return false;
+        }
+
+        // 如果权限未确定或被拒绝，尝试请求权限
+        // 在 iOS 上，notDetermined 和 denied 状态都应该调用 request() 来弹出权限对话框
+        if (status.isDenied || status == PermissionStatus.denied) {
+          debugPrint('iOS 照片库权限被拒绝，尝试请求权限...');
+          status = await Permission.photos.request();
+          debugPrint('iOS 照片库权限请求后状态: $status');
+
+          // 请求后检查是否授予或受限访问
+          if (status.isGranted || status.isLimited) {
+            return true;
+          }
+
+          // 如果请求后仍然被拒绝，可能是用户拒绝了
+          if (status.isPermanentlyDenied) {
+            debugPrint('iOS 照片库权限被永久拒绝，请到设置中手动开启');
+            return false;
+          }
+
+          return false;
+        }
+
+        // 对于 notDetermined 状态，也应该请求权限
+        // 注意：permission_handler 可能不会将 notDetermined 识别为 isDenied
+        // 所以我们需要显式检查并请求
+        debugPrint('iOS 照片库权限状态未确定，尝试请求权限...');
+        status = await Permission.photos.request();
+        debugPrint('iOS 照片库权限请求后状态: $status');
+
+        return status.isGranted || status.isLimited;
       } else {
         // 桌面平台不需要权限
         return true;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       debugPrint('检查媒体库权限时出错: $e');
+      debugPrint('堆栈跟踪: $stackTrace');
       return false;
     }
   }
