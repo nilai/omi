@@ -271,7 +271,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       return const SizedBox.shrink();
     }
     return Container(
-      height: 50,
+      height: 40,
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
