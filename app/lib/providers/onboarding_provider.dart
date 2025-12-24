@@ -22,12 +22,47 @@ import 'package:omi/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../services/devices/note_connection.dart';
+
 class OnboardingProvider extends BaseProvider with MessageNotifierMixin implements IDeviceServiceSubsciption {
   DeviceProvider? deviceProvider;
   bool isClicked = false;
   bool isConnected = false;
   int batteryPercentage = -1;
   String deviceName = '';
+  String firmwareRevision = '';
+  String hardwareRevision = '';
+  String manufacturerName = '';
+  int noteUsedKB = 0;
+  int noteTotalKB = 0;
+
+  /// 获取已使用存储的显示标题
+  /// 按照1000进位，保留两位小数，单位使用KB/MB/GB
+  String get noteUsedKBTitle {
+    return _formatStorageSize(noteUsedKB);
+  }
+
+  /// 获取总存储的显示标题
+  /// 按照1000进位，保留两位小数，单位使用KB/MB/GB
+  String get noteTotalKBTitle {
+    return _formatStorageSize(noteTotalKB);
+  }
+
+  /// 格式化存储大小
+  /// [sizeKB] 存储大小（单位：KB）
+  /// 返回格式化后的字符串，如 "1.23 MB"、"456.78 KB"、"12.34 GB"
+  String _formatStorageSize(int sizeKB) {
+    if (sizeKB < 1000) {
+      return '${sizeKB.toStringAsFixed(2)} KB';
+    } else if (sizeKB < 1000000) {
+      double mb = sizeKB / 1000.0;
+      return '${mb.toStringAsFixed(2)} MB';
+    } else {
+      double gb = sizeKB / 1000000.0;
+      return '${gb.toStringAsFixed(2)} GB';
+    }
+  }
+
   DeviceType? deviceType;
   String deviceId = '';
   String? connectingToDeviceId;
@@ -414,6 +449,7 @@ class OnboardingProvider extends BaseProvider with MessageNotifierMixin implemen
       await SharedPreferencesUtil().btDeviceSet(device);
       deviceName = device.name;
       deviceType = device.type;
+
       debugPrint('------hjj deviceType: $deviceType');
       var cDevice = await _getConnectedDevice(deviceId);
       debugPrint('------hjj cDevice type: ${cDevice?.type}');
@@ -435,6 +471,13 @@ class OnboardingProvider extends BaseProvider with MessageNotifierMixin implemen
       SharedPreferencesUtil().deviceName = connectedDevice.name;
       foundDevicesMap.clear();
       deviceList.clear();
+      final NoteDeviceConnection? connection =
+      await ServiceManager.instance().device.ensureConnection(connectedDevice.id) as NoteDeviceConnection?;
+      sendQueryBattery(connection);
+      sendQueryVersion(connection);
+      sendQueryStorage(connection);
+      deviceName = connectedDevice.name;
+      deviceType = connectedDevice.type;
       if (isFromOnboarding) {
         goNext!();
       } else {
@@ -537,5 +580,39 @@ class OnboardingProvider extends BaseProvider with MessageNotifierMixin implemen
   @override
   void onStatusChanged(DeviceServiceStatus status) {
     // TODO: implement onStatusChanged
+  }
+
+  /// get device info
+  Future<void> sendQueryBattery(NoteDeviceConnection? connection) async {
+    if (connection == null) {
+      return;
+    }
+
+    final batteryLevel = await connection.performRetrieveBatteryLevel();
+    batteryPercentage = batteryLevel;
+    notifyListeners();
+  }
+
+  /// Send query version command (0xE3) and save result
+  Future<void> sendQueryVersion(NoteDeviceConnection? connection) async {
+    if (connection == null) {
+      return;
+    }
+    final firmwareVersion = await connection.queryFirmwareVersion();
+    firmwareRevision = firmwareVersion;
+    notifyListeners();
+  }
+
+  /// Send query storage command (0xE8) and save result
+  Future<void> sendQueryStorage(NoteDeviceConnection? connection) async {
+    if (connection == null) {
+      notifyListeners();
+      return;
+    }
+
+    final storageInfo = await connection.queryStorage();
+    noteUsedKB = storageInfo.usedKB;
+    noteTotalKB = storageInfo.totalKB;
+    notifyListeners();
   }
 }

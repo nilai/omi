@@ -52,16 +52,10 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
           if (info == "DEVICE_CONNECTED") {
             // Navigator.of(context).pushAndRemoveUntil(
             //   MaterialPageRoute(
-            //     builder: (context) => const HomePageWrapper(),
+            //     builder: (context) => const mp(),
             //   ),
             //   (route) => false,
             // );
-            Navigator.pop(context);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(info),
-              backgroundColor: Colors.green,
-            ));
           }
         },
         child: Column(
@@ -310,8 +304,6 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
   }
 
   Widget _buildConnected(OnboardingProvider provider) {
-    final battery = provider.batteryPercentage;
-    print('-----hjj-----buildConnected battery: $battery');
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -370,7 +362,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             children: [
               _buildStatusBadge(
                 icon: Icons.battery_charging_full,
-                text: '$battery%',
+                text: '${provider.batteryPercentage}%',
                 color: const Color(0xFF34C759),
               ),
               const SizedBox(width: 16),
@@ -386,9 +378,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                 color: const Color(0xFF34C759),
               ),
               const SizedBox(width: 16),
-              const Text(
-                'v1.1.11',
-                style: TextStyle(
+              Text(
+                provider.firmwareRevision.isNotEmpty ? provider.firmwareRevision : 'v1.1.11',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF1D1D1F),
@@ -471,14 +463,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             ),
             child: Column(
               children: [
-                _buildInfoRow('名称', 'MemoPin'),
+                _buildInfoRow('名称', provider.deviceName.isNotEmpty ? provider.deviceName : 'MemoPin'),
                 const Divider(height: 24, color: Color(0xFFE5E5EA)),
-                _buildInfoRow(
-                  '序列号',
-                  provider.deviceId.length >= 4
-                      ? 'MP202400${provider.deviceId.substring(provider.deviceId.length - 4)}'
-                      : 'MP202400${provider.deviceId}',
-                ),
+                _buildInfoRow('序列号', provider.deviceId.isNotEmpty ? provider.deviceId : 'MP202400${provider.deviceId}'),
               ],
             ),
           ),
@@ -538,9 +525,9 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                         ],
                       ),
                     ),
-                    const Text(
-                      '0 KB',
-                      style: TextStyle(
+                    Text(
+                      provider.noteUsedKBTitle,
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: Color(0x991D1D1F),
