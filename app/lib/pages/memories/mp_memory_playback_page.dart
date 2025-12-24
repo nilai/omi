@@ -2,30 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../backend/schema/mp/mp_data_model.dart';
+import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
+import '../../utils/alerts/mp_share_memory_dialog.dart';
+import 'widgets/mp_memory_convert_dialog.dart';
+
 /// 记忆详情播放页
 /// - 顶部与底部固定
 /// - 页面内容根据屏幕尺寸自适应：内容不足不滚动，内容溢出可滚动
 /// - 支持音频播放/暂停/进度条拖拽
 class MPMemoryPlaybackPage extends StatefulWidget {
-  final String audioUrl;
-  final Duration initialDuration;
-  final DateTime createdAt;
-  final String? title;
-  final String? tag;
-  final VoidCallback? onShare;
-  final VoidCallback? onMore;
-  final VoidCallback? onSummarize;
+  final MPMemoryStruct memory;
 
   const MPMemoryPlaybackPage({
     super.key,
-    required this.audioUrl,
-    required this.initialDuration,
-    required this.createdAt,
-    this.title,
-    this.tag,
-    this.onShare,
-    this.onMore,
-    this.onSummarize,
+    required this.memory,
   });
 
   @override
@@ -41,17 +32,39 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   bool _isBuffering = true;
   bool _contentOverflow = false;
 
+  /// 从 memory 中获取音频 URL
+  String? get _audioUrl {
+    if (widget.memory.onlyRecordContent != null) {
+      return widget.memory.onlyRecordContent!.recordFile;
+    }
+    if (widget.memory.summaryContent != null) {
+      return widget.memory.summaryContent!.recordUrl;
+    }
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
-    _duration = widget.initialDuration;
+    // 从 memory.duration 初始化，单位是秒
+    _duration = Duration(seconds: widget.memory.duration);
     _setupPlayer();
   }
 
   Future<void> _setupPlayer() async {
+    final audioUrl = _audioUrl;
+    if (audioUrl == null) {
+      if (mounted) {
+        setState(() {
+          _isBuffering = false;
+        });
+      }
+      return;
+    }
+
     try {
-      await _player.setUrl(widget.audioUrl);
-      _duration = _player.duration ?? widget.initialDuration;
+      await _player.setUrl(audioUrl);
+      _duration = _player.duration ?? Duration(seconds: widget.memory.duration);
     } catch (_) {
       // 失败时仍允许界面显示，播放按钮会被禁用
     } finally {
@@ -79,8 +92,8 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     _player.playerStateStream.listen((state) {
       if (!mounted) return;
       setState(() {
-        _isBuffering = state.processingState == ProcessingState.loading ||
-            state.processingState == ProcessingState.buffering;
+        _isBuffering =
+            state.processingState == ProcessingState.loading || state.processingState == ProcessingState.buffering;
       });
     });
   }
@@ -121,15 +134,19 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined),
-            onPressed: widget.onShare,
+            onPressed: () => MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id),
           ),
           IconButton(
             icon: const Icon(Icons.more_horiz),
-            onPressed: widget.onMore,
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('更多选项')),
+              );
+            },
           ),
         ],
         centerTitle: true,
-        title: Text(widget.title ?? '记忆详情'),
+        title: Text(widget.memory.title.isNotEmpty ? widget.memory.title : '记忆详情'),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -138,7 +155,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: widget.onSummarize,
+              onPressed: () => MPMemoryConvertDialog.show(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 foregroundColor: Colors.white,
@@ -164,8 +181,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             });
 
             return SingleChildScrollView(
-              physics:
-                  _contentOverflow ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+              physics: _contentOverflow ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
               child: ConstrainedBox(
                 constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
@@ -194,7 +210,9 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   Widget _buildMetaSection() {
-    final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(widget.createdAt);
+    // 从 memory.createAt 获取时间（时间戳，单位可能是毫秒或秒）
+    final createdAt = MPTimestampUtils.timestampMsToDateTime(widget.memory.createAt);
+    final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt);
     final durationText =
         '${_duration.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(_duration.inSeconds.remainder(60)).toString().padLeft(2, '0')}';
 
@@ -221,7 +239,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
           children: [
             const Icon(Icons.bookmark_outline, size: 16),
             const SizedBox(width: 8),
-            Text(widget.tag ?? '记忆'),
+            Text(widget.memory.label.isNotEmpty ? widget.memory.label : '记忆'),
           ],
         ),
       ],
@@ -229,9 +247,8 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   Widget _buildAudioCard(BuildContext context) {
-    final progress = _duration.inMilliseconds == 0
-        ? 0.0
-        : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
+    final progress =
+        _duration.inMilliseconds == 0 ? 0.0 : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
 
     return Container(
       width: double.infinity,

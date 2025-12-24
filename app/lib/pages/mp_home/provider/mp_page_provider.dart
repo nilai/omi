@@ -11,6 +11,7 @@ import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../env/env.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../memories/mp_memory_playback_page.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_memory/conversation_detail/conversation_detail_page.dart';
@@ -358,7 +359,27 @@ class MPHomePageProvider extends ChangeNotifier {
 
   void onCardViewDetail(BuildContext context, MPMemoryItem item) {
     debugPrint('View detail for ${item.headerText}');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MPMemoryPlaybackPage(
+          memory: item.memory,
+        ),
+      ),
+    );
+    return;
     // ConversationDetailPage
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
+    if (item.memory.type == MPMemoryType.onlyRecord) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MPMemoryPlaybackPage(
+            memory: item.memory,
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
+    }
   }
 }
