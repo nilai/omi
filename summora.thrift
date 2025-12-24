@@ -405,6 +405,15 @@ struct GetConversationDetailResponse {
     255: BaseResp base_resp,
 }
 
+struct GetTranscriptRequest {
+    1: string audio_url,
+}
+
+struct GetTranscriptResponse {
+    1: string content,
+    255: BaseResp base_resp,
+}
+
 struct AddSpeakerRequest {
     1: string audio_url,
     2: string name,
@@ -543,7 +552,7 @@ struct GetTemplateListResponse {
     1: list<TemplateStruct> recommend_templates,
     2: list<TemplateStruct> custom_templates,
     3: optional TemplateStruct recent_template,
-    4: map<string, TemplateStruct> templates,
+    4: map<string, list<TemplateStruct>> templates,
     5: bool has_more,
     255: BaseResp base_resp,
 }
@@ -672,6 +681,8 @@ service AppService {
     GetConversationListResponse GetConversationList(1: GetConversationListRequest req)
     // GET /api/v1/chat/get_conversation_detail
     GetConversationDetailResponse GetConversationDetail(1: GetConversationDetailRequest req)
+    // GET /api/v1/chat/transcript
+    GetTranscriptResponse GetTranscript(1: GetTranscriptRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
