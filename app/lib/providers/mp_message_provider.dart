@@ -198,8 +198,6 @@ class MPMessageProvider extends ChangeNotifier {
 
     try {
       await for (var line in chat(req)) {
-        print('-------- chat response text : $line');
-
         textBuffer += line;
         timer ??= Timer.periodic(const Duration(milliseconds: 100), (_) {
           flushBuffer();

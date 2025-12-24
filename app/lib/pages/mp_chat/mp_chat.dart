@@ -153,155 +153,159 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             child: Column(
               children: [
                 Expanded(
-                  child: provider.messages.isEmpty
-                      ? _noMessagesWidget()
-                      : ListView.builder(
-                          shrinkWrap: false,
-                          reverse: true,
-                          controller: scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                          itemCount: provider.messages.length,
-                          itemBuilder: (context, chatIndex) {
-                            final message = provider.messages[chatIndex];
-                            double topPadding = chatIndex == provider.messages.length - 1 ? 8 : 16;
+                  child: Consumer<MPMessageProvider>(
+                    builder: (context, mpProvider, child) {
+                      return mpProvider.messages.isEmpty
+                          ? _noMessagesWidget()
+                          : ListView.builder(
+                              shrinkWrap: false,
+                              reverse: true,
+                              controller: scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                              itemCount: mpProvider.messages.length,
+                              itemBuilder: (context, chatIndex) {
+                                final message = mpProvider.messages[chatIndex];
+                                double topPadding = chatIndex == mpProvider.messages.length - 1 ? 8 : 16;
 
-                            double bottomPadding = chatIndex == 0 ? 16 : 0;
-                            return GestureDetector(
-                              onLongPress: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(20),
-                                    ),
-                                  ),
-                                  builder: (context) => MessageActionMenu(
-                                    message: message.text.decodeString,
-                                    onCopy: () async {
-                                      MixpanelManager()
-                                          .track('Chat Message Copied', properties: {'message': message.text});
-                                      await Clipboard.setData(ClipboardData(text: message.text.decodeString));
-                                      if (context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Message copied to clipboard.',
-                                              style: TextStyle(
-                                                color: Color.fromARGB(255, 255, 255, 255),
-                                                fontSize: 12.0,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 2000),
-                                          ),
-                                        );
-                                        Navigator.pop(context);
-                                      }
-                                    },
-                                    onSelectText: () {
-                                      MixpanelManager()
-                                          .track('Chat Message Text Selected', properties: {'message': message.text});
-                                      routeToPage(context, SelectTextScreen(message: message));
-                                    },
-                                    onShare: () {
-                                      MixpanelManager()
-                                          .track('Chat Message Shared', properties: {'message': message.text});
-                                      Share.share(
-                                        '${message.text.decodeString}\n\nResponse from Omi. Get yours at https://omi.me',
-                                        subject: 'Chat with Omi',
-                                      );
-                                      Navigator.pop(context);
-                                    },
-                                    onThumbsUp: message.sender == MessageSender.ai && message.askForNps
-                                        ? () {
-                                            // provider.setMessageNps(message, 1);
-                                            Navigator.pop(context);
-                                            AppSnackbar.showSnackbar('Thank you for your feedback!');
-                                          }
-                                        : null,
-                                    onThumbsDown: message.sender == MessageSender.ai && message.askForNps
-                                        ? () {
-                                            // provider.setMessageNps(message, 0);
-                                            Navigator.pop(context);
-                                            AppSnackbar.showSnackbar('Thank you for your feedback!');
-                                          }
-                                        : null,
-                                    onReport: () {
-                                      if (message.sender == MessageSender.human) {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'You cannot report your own messages.',
-                                              style: TextStyle(
-                                                color: Color.fromARGB(255, 255, 255, 255),
-                                                fontSize: 12.0,
-                                              ),
-                                            ),
-                                            duration: Duration(milliseconds: 2000),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) {
-                                          return getDialog(
-                                            context,
-                                            () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            () {
-                                              MixpanelManager().track('Chat Message Reported',
-                                                  properties: {'message': message.text});
-                                              Navigator.of(context).pop();
-                                              Navigator.of(context).pop();
-                                              context.read<MessageProvider>().removeLocalMessage(message.id);
-                                              reportMessageServer(message.id);
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text(
-                                                    'Message reported successfully.',
-                                                    style: TextStyle(
-                                                      color: Color.fromARGB(255, 255, 255, 255),
-                                                      fontSize: 12.0,
-                                                    ),
+                                double bottomPadding = chatIndex == 0 ? 16 : 0;
+                                return GestureDetector(
+                                  onLongPress: () {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20),
+                                        ),
+                                      ),
+                                      builder: (context) => MessageActionMenu(
+                                        message: message.text.decodeString,
+                                        onCopy: () async {
+                                          MixpanelManager()
+                                              .track('Chat Message Copied', properties: {'message': message.text});
+                                          await Clipboard.setData(ClipboardData(text: message.text.decodeString));
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'Message copied to clipboard.',
+                                                  style: TextStyle(
+                                                    color: Color.fromARGB(255, 255, 255, 255),
+                                                    fontSize: 12.0,
                                                   ),
-                                                  duration: Duration(milliseconds: 2000),
                                                 ),
+                                                duration: Duration(milliseconds: 2000),
+                                              ),
+                                            );
+                                            Navigator.pop(context);
+                                          }
+                                        },
+                                        onSelectText: () {
+                                          MixpanelManager().track('Chat Message Text Selected',
+                                              properties: {'message': message.text});
+                                          routeToPage(context, SelectTextScreen(message: message));
+                                        },
+                                        onShare: () {
+                                          MixpanelManager()
+                                              .track('Chat Message Shared', properties: {'message': message.text});
+                                          Share.share(
+                                            '${message.text.decodeString}\n\nResponse from Omi. Get yours at https://omi.me',
+                                            subject: 'Chat with Omi',
+                                          );
+                                          Navigator.pop(context);
+                                        },
+                                        onThumbsUp: message.sender == MessageSender.ai && message.askForNps
+                                            ? () {
+                                                // mpProvider.setMessageNps(message, 1);
+                                                Navigator.pop(context);
+                                                AppSnackbar.showSnackbar('Thank you for your feedback!');
+                                              }
+                                            : null,
+                                        onThumbsDown: message.sender == MessageSender.ai && message.askForNps
+                                            ? () {
+                                                // mpProvider.setMessageNps(message, 0);
+                                                Navigator.pop(context);
+                                                AppSnackbar.showSnackbar('Thank you for your feedback!');
+                                              }
+                                            : null,
+                                        onReport: () {
+                                          if (message.sender == MessageSender.human) {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                  'You cannot report your own messages.',
+                                                  style: TextStyle(
+                                                    color: Color.fromARGB(255, 255, 255, 255),
+                                                    fontSize: 12.0,
+                                                  ),
+                                                ),
+                                                duration: Duration(milliseconds: 2000),
+                                              ),
+                                            );
+                                            return;
+                                          }
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return getDialog(
+                                                context,
+                                                () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                () {
+                                                  MixpanelManager().track('Chat Message Reported',
+                                                      properties: {'message': message.text});
+                                                  Navigator.of(context).pop();
+                                                  Navigator.of(context).pop();
+                                                  context.read<MessageProvider>().removeLocalMessage(message.id);
+                                                  reportMessageServer(message.id);
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text(
+                                                        'Message reported successfully.',
+                                                        style: TextStyle(
+                                                          color: Color.fromARGB(255, 255, 255, 255),
+                                                          fontSize: 12.0,
+                                                        ),
+                                                      ),
+                                                      duration: Duration(milliseconds: 2000),
+                                                    ),
+                                                  );
+                                                },
+                                                'Report Message',
+                                                'Are you sure you want to report this message?',
                                               );
                                             },
-                                            'Report Message',
-                                            'Are you sure you want to report this message?',
                                           );
                                         },
-                                      );
-                                    },
+                                      ),
+                                    );
+                                  },
+                                  child: Padding(
+                                    key: ValueKey(message.id),
+                                    padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
+                                    child: message.sender == MessageSender.ai
+                                        ? AIMessage(
+                                            showTypingIndicator: mpProvider.showTypingIndicator && chatIndex == 0,
+                                            message: message,
+                                            sendMessage: _sendMessageUtil,
+                                            displayOptions: mpProvider.messages.length <= 1,
+                                            appSender: null,
+                                            updateConversation: (ServerConversation conversation) {
+                                              // context.read<ConversationProvider>().updateConversation(conversation);
+                                              // mpProvider.updateConversation(conversation);
+                                            },
+                                            setMessageNps: (int value) {
+                                              // mpProvider.setMessageNps(message, value);
+                                            },
+                                          )
+                                        : HumanMessage(message: message),
                                   ),
                                 );
                               },
-                              child: Padding(
-                                key: ValueKey(message.id),
-                                padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
-                                child: message.sender == MessageSender.ai
-                                    ? AIMessage(
-                                        showTypingIndicator: provider.showTypingIndicator && chatIndex == 0,
-                                        message: message,
-                                        sendMessage: _sendMessageUtil,
-                                        displayOptions: provider.messages.length <= 1,
-                                        appSender: null,
-                                        updateConversation: (ServerConversation conversation) {
-                                          // context.read<ConversationProvider>().updateConversation(conversation);
-                                          // provider.updateConversation(conversation);
-                                        },
-                                        setMessageNps: (int value) {
-                                          // provider.setMessageNps(message, value);
-                                        },
-                                      )
-                                    : HumanMessage(message: message),
-                              ),
                             );
-                          },
-                        ),
+                    },
+                  ),
                 ),
                 Container(
                   margin: const EdgeInsets.only(top: 10, left: 16, right: 16),

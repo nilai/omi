@@ -57,6 +57,8 @@ class _AIMessageState extends State<AIMessage> {
 
   @override
   Widget build(BuildContext context) {
+    print(
+        '-------- message text : ${widget.message.text} --------------showTypingIndicator: ${widget.showTypingIndicator}');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
