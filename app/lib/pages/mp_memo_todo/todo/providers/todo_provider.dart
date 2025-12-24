@@ -338,14 +338,34 @@ class TodoProvider with ChangeNotifier {
     required String title,
     required String priority,
     required String deadline,
+    required bool isCompleted,
   }) async {
     try {
+      // 参数判空处理
+      if (todoId.isEmpty) {
+        MPToastUtils.showMessage('任务ID不能为空');
+        return false;
+      }
+      if (title.trim().isEmpty) {
+        MPToastUtils.showMessage('任务标题不能为空');
+        return false;
+      }
+      if (priority.isEmpty) {
+        MPToastUtils.showMessage('优先级不能为空');
+        return false;
+      }
+      if (deadline.isEmpty) {
+        MPToastUtils.showMessage('截止日期不能为空');
+        return false;
+      }
+
       // 创建请求
       final request = MPUpdateTodoRequest(
         todoId: todoId,
-        title: title,
+        title: title.trim(),
         priority: priority,
         deadline: deadline,
+        isCompleted: isCompleted,
       );
 
       // 调用 API

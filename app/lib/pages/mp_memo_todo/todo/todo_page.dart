@@ -242,6 +242,7 @@ class _TodoPageState extends State<TodoPage> {
 
               NewTaskPopup.show(
                 context: context,
+                title: todo.title,
                 initialTitle: todo.title,
                 initialDueDate: parsedDate,
                 initialPriority: parsedPriority,
@@ -261,14 +262,18 @@ class _TodoPageState extends State<TodoPage> {
 
                   final priorityTag = priority != null
                       ? (priority == TaskPriority.high
-                          ? 'High'
+                          ? 'high'
                           : priority == TaskPriority.normal
-                              ? 'Normal'
-                              : 'Low')
-                      : 'Normal';
+                              ? 'normal'
+                              : 'low')
+                      : 'normal';
                   // 处理完成操作
                   await provider.updateTodoWithRequest(
-                      todoId: todo.id, title: title, priority: priorityTag, deadline: dateStr);
+                      todoId: todo.id,
+                      title: title,
+                      priority: priorityTag,
+                      deadline: dateStr,
+                      isCompleted: isCompleted);
                 },
               );
             },

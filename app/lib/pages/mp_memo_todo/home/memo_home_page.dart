@@ -87,11 +87,11 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
 
           final priorityTag = priority != null
               ? (priority == TaskPriority.high
-                  ? 'High'
+                  ? 'high'
                   : priority == TaskPriority.normal
-                      ? 'Normal'
-                      : 'Low')
-              : 'Normal';
+                      ? 'normal'
+                      : 'low')
+              : 'normal';
 
           final newTodo = TodoTaskItem(
             id: DateTime.now().millisecondsSinceEpoch.toString(),

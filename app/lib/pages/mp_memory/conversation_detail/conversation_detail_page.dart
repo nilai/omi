@@ -352,7 +352,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   Widget _buildTodoListContent() {
     return Consumer<ConversationDetailProvider>(
       builder: (context, provider, child) {
-        final todos = provider.filteredTodos;
+        final todos = provider.todos;
 
         if (todos.isEmpty) {
           return Container(
@@ -374,6 +374,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             String formattedDate = _formatTodoDate(todo.deadline);
 
             // 转换 priority 为 priorityTag 格式（首字母大写）
+            print('122222todo.priority: ${todo.priority}');
             String? priorityTag;
             if (todo.priority.isNotEmpty) {
               if (todo.priority.length == 1) {
@@ -394,8 +395,22 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 // 解析日期字符串（服务端返回的是 ISO 8601 格式，如 "2025-01-15"）
                 DateTime? parsedDate;
                 try {
-                  // 直接解析 ISO 8601 格式的日期字符串
-                  parsedDate = DateTime.parse(todo.deadline).toLocal();
+                  if (todo.deadline.contains('-')) {
+                    // 格式是 "YYYY-MM-DD"
+                    parsedDate = DateTime.parse(todo.deadline);
+                  } else {
+                    // 格式是 "Dec 20"，需要转换为当前年份的日期
+                    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    final parts = todo.deadline.split(' ');
+                    if (parts.length == 2) {
+                      final monthIndex = months.indexOf(parts[0]);
+                      if (monthIndex != -1) {
+                        final day = int.tryParse(parts[1]) ?? DateTime.now().day;
+                        final now = DateTime.now();
+                        parsedDate = DateTime(now.year, monthIndex + 1, day);
+                      }
+                    }
+                  }
                 } catch (e) {
                   debugPrint('解析日期失败: ${todo.deadline}, 错误: $e');
                   parsedDate = null;
@@ -423,6 +438,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
                 NewTaskPopup.show(
                   context: context,
+                  title: todo.title,
                   initialTitle: todo.title,
                   initialDueDate: parsedDate,
                   initialPriority: parsedPriority,
@@ -446,14 +462,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
                     final priorityTagStr = priority != null
                         ? (priority == TaskPriority.high
-                            ? 'High'
+                            ? 'high'
                             : priority == TaskPriority.normal
-                                ? 'Normal'
-                                : 'Low')
-                        : 'Normal';
+                                ? 'normal'
+                                : 'low')
+                        : 'normal';
                     // 处理完成操作
                     await todoProvider.updateTodoWithRequest(
-                        todoId: todo.id, title: title, priority: priorityTagStr, deadline: dateStr);
+                        todoId: todo.id,
+                        title: title,
+                        priority: priorityTagStr,
+                        deadline: dateStr,
+                        isCompleted: isCompleted);
                     // 刷新对话详情数据
                     final conversationProvider = Provider.of<ConversationDetailProvider>(context, listen: false);
                     if (conversationProvider.memory != null) {

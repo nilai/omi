@@ -52,6 +52,14 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName ?? '');
+
+    // // 在页面初始化后，如果 audioDuration 为 0，尝试从 audioPath 获取时长
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   final provider = Provider.of<MPVoiceRecognitionDetailProvider>(context, listen: false);
+    //   if (provider.totalDuration == 0 && widget.audioPath != null && widget.audioPath!.isNotEmpty) {
+    //     provider.initializeDurationFromPath();
+    //   }
+    // });
   }
 
   @override

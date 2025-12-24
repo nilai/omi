@@ -112,18 +112,20 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
 
               // AI-generated START - 底部：重叠的头像列表
               SizedBox(
-                height: 40.0,
+                height: 44.0,
                 child: Stack(
                   children: [
                     ...visibleAvatars.asMap().entries.map((entry) {
                       final index = entry.key;
                       final avatarUrl = entry.value;
                       // AI-generated START - 计算头像位置，每个头像重叠12像素
-                      final double left = index * 36.0; // 48 - 12 = 36
+                      final double left = index * 28.0; // 40 - 12 = 28
                       // AI-generated END - left
                       return Positioned(
                         left: left,
                         child: Container(
+                          height: 40.0,
+                          width: 40.0,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             border: Border.all(
@@ -132,7 +134,7 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                             ),
                           ),
                           child: CircleAvatar(
-                            radius: 24.0,
+                            radius: 20.0,
                             backgroundColor: Colors.grey.shade300,
                             backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
                             child: avatarUrl.isEmpty
@@ -148,7 +150,7 @@ class MemoryWarehouseCardWidget extends StatelessWidget {
                     }),
                     if (remainingCount > 0)
                       Positioned(
-                        left: visibleAvatars.length * 36.0,
+                        left: visibleAvatars.length * 28.0,
                         child: Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,

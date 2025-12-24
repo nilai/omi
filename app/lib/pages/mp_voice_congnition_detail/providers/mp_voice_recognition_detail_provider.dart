@@ -31,7 +31,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated END - _currentTime
 
   // AI-generated START - 总时长（秒）
-  final int _totalDuration;
+  int _totalDuration;
   // AI-generated END - _totalDuration
 
   // // AI-generated START - 播放定时器
@@ -69,7 +69,13 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     String? avatarUrl,
   })  : _totalDuration = audioDuration,
         _isEditMode = isEditMode,
-        _avatarUrl = avatarUrl;
+        _avatarUrl = avatarUrl {
+    // 如果 audioDuration 为 0 且 audioPath 存在，尝试从 audioPath 获取时长
+    // if (_totalDuration == 0 && audioPath != null && audioPath!.isNotEmpty) {
+    //   // 异步初始化时长，不阻塞构造函数
+    //   initializeDurationFromPath();
+    // }
+  }
   // AI-generated END - 构造函数
 
   // AI-generated START - 获取是否正在播放
@@ -94,6 +100,110 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated START - 获取总时长
   int get totalDuration => _totalDuration;
   // AI-generated END - totalDuration
+
+  // AI-generated START - 从 audioPath 获取音频时长
+  /// 从 audioPath 获取音频时长
+  /// 通过播放器的 onProgress 流获取时长
+  /// 如果 audioPath 为空或获取失败，返回 null
+  Future<int?> getAudioDurationFromPath() async {
+    if (audioPath == null || audioPath!.isEmpty) {
+      debugPrint('audioPath 为空，无法获取时长');
+      return null;
+    }
+
+    try {
+      // 确保播放器已初始化
+      await _ensurePlayerInitialized();
+      if (_audioPlayer == null) {
+        debugPrint('播放器初始化失败，无法获取时长');
+        return null;
+      }
+
+      // 对于本地文件，检查文件是否存在
+      if (!audioPath!.contains('http')) {
+        if (!await _fileExists(audioPath!)) {
+          debugPrint('音频文件不存在: $audioPath');
+          return null;
+        }
+      }
+
+      // 使用一个临时的进度监听来获取时长
+      // 注意：需要先开始播放才能获取准确的时长
+      // 这里我们尝试获取进度信息
+      Completer<int?> completer = Completer<int?>();
+      StreamSubscription<PlaybackDisposition>? tempSubscription;
+
+      // 设置临时监听，获取时长后立即取消
+      tempSubscription = _audioPlayer?.onProgress?.listen((disposition) {
+        final duration = disposition.duration.inSeconds;
+        if (duration > 0 && !completer.isCompleted) {
+          tempSubscription?.cancel();
+          completer.complete(duration);
+        }
+      });
+
+      // 尝试开始播放以获取时长（静音播放）
+      try {
+        if (audioPath!.contains('http')) {
+          await _audioPlayer!.startPlayer(
+            fromURI: audioPath!,
+            codec: Codec.mp3,
+            sampleRate: 44100,
+          );
+        } else {
+          await _audioPlayer!.startPlayer(
+            fromURI: audioPath!,
+            codec: Codec.aacADTS,
+            sampleRate: 8000,
+          );
+        }
+
+        // 等待获取时长（最多等待 3 秒）
+        final duration = await completer.future.timeout(
+          const Duration(seconds: 3),
+          onTimeout: () {
+            tempSubscription?.cancel();
+            return null;
+          },
+        );
+
+        // 停止播放
+        await _audioPlayer!.stopPlayer();
+
+        if (duration != null && duration > 0) {
+          debugPrint('从 audioPath 获取到时长: $duration 秒');
+          return duration;
+        }
+      } catch (e) {
+        debugPrint('播放音频以获取时长时出错: $e');
+        tempSubscription?.cancel();
+        await _audioPlayer!.stopPlayer().catchError((_) {});
+      }
+    } catch (e) {
+      debugPrint('获取音频时长失败: $e');
+    }
+
+    return null;
+  }
+
+  /// 初始化时从 audioPath 获取时长（如果 audioDuration 为 0）
+  Future<void> initializeDurationFromPath() async {
+    // 如果已经有有效的时长，不需要重新获取
+    if (_totalDuration > 0) {
+      return;
+    }
+
+    // 如果 audioPath 存在，尝试获取时长
+    if (audioPath != null && audioPath!.isNotEmpty) {
+      final duration = await getAudioDurationFromPath();
+      if (duration != null && duration > 0) {
+        _totalDuration = duration;
+        notifyListeners();
+        debugPrint('更新总时长: $_totalDuration 秒');
+      }
+    }
+  }
+  // AI-generated END - getAudioDurationFromPath
 
   // AI-generated START - 获取播放进度（0.0 - 1.0）
   double get progress {
@@ -273,11 +383,13 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
     _progressSubscription = _audioPlayer?.onProgress?.listen((disposition) {
       _currentTime = disposition.position.inSeconds;
       final duration = disposition.duration.inSeconds;
-      debugPrint('播放进度更新: $_currentTime / $duration');
+      // 如果从播放器获取到的时长与当前不同，更新总时长
+      if (duration > 0 && duration != _totalDuration) {
+        _totalDuration = duration;
+        debugPrint('从播放器更新总时长: $_totalDuration 秒');
+      }
+      debugPrint('播放进度更新: $_currentTime / $_totalDuration');
       notifyListeners();
-      // if (duration > 0) {
-
-      // }
     });
     if (_progressSubscription == null) {
       debugPrint('警告: onProgress 流为 null，无法设置进度监听');
@@ -343,31 +455,25 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       avatarUrl = _avatarUrl!;
     }
 
-    if (_isEditMode) {
-      // 编辑模式：更新现有声纹
-      if (voiceId == null || voiceId!.isEmpty) {
-        debugPrint('更新声纹失败，voiceId为空');
-        MPToastUtils.showMessage('声纹ID为空，无法更新');
-        return;
-      }
-
+    // 编辑模式：更新现有声纹
+    if (voiceId != null && voiceId!.isNotEmpty) {
       // 编辑模式下，音频文件可能没有变化，所以 audioPath 可能为空
-      String? audioUri;
-      if (audioPath != null) {
-        audioUri = await MPAudioUploadService().uploadMPAudio(File(audioPath!)) ?? '';
-        if (audioUri.isEmpty) {
-          debugPrint('更新声纹失败，音频上传失败');
-          MPToastUtils.showMessage('音频上传失败');
-          return;
-        }
-      }
+      // String? audioUri;
+      // if (audioPath != null) {
+      //   audioUri = await MPAudioUploadService().uploadMPAudio(File(audioPath!)) ?? '';
+      //   if (audioUri.isEmpty) {
+      //     debugPrint('更新声纹失败，音频上传失败');
+      //     MPToastUtils.showMessage('音频上传失败');
+      //     return;
+      //   }
+      // }
 
       final updateReq = MPUpdateSpeakerRequest(
         speakerId: voiceId!,
         name: name,
-        audioUrl: audioUri,
+        // audioUrl: audioUri,
         avatar: avatarUrl.isNotEmpty ? avatarUrl : null,
-        myselfVoice: isMyselfVoice,
+        // myselfVoice: isMyselfVoice,
       );
 
       final res = await updateSpeaker(updateReq);

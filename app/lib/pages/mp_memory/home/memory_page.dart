@@ -159,6 +159,7 @@ class _MemoryPageState extends State<MemoryPage> {
                 final memory = provider.memories[index];
                 return MemoryConversationCard(
                   name: memory.name,
+                  avatarUrl: memory.avatarUrl,
                   timestamp: MPTimestampUtils.timestampToRelativeDateString(memory.createdAt ?? 0),
                   description: memory.description ?? '',
                   conversationCount: memory.conversationCount,

@@ -1,4 +1,6 @@
 // AI-generated START - 设置卡片展示页面，从上到下显示所有设置相关的卡片组件
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_apps_integration/apps_integration_page.dart';
 import 'package:omi/pages/mp_apps_integration/providers/apps_integration_provider.dart';
@@ -24,6 +26,7 @@ import 'package:omi/pages/mp_newsetting/voice_recognition/providers/voice_recogn
 import 'package:omi/pages/mp_newsetting/voice_recognition/voice_recognition_page.dart';
 import 'package:omi/pages/mp_template _selection/providers/template_selection_provider.dart';
 import 'package:omi/pages/mp_template _selection/template_selection_page.dart';
+import 'package:omi/services/voice_recognition_event_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../note_debug/note_ble_debug_page.dart';
@@ -39,6 +42,7 @@ class SettingsCardsPage extends StatefulWidget {
 
 class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeepAliveClientMixin {
   late ScrollController _scrollController;
+  StreamSubscription? _voiceEventSubscription;
 
   @override
   bool get wantKeepAlive => true;
@@ -56,11 +60,25 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
       provider.loadTranscriptionMode();
     });
     // AI-generated END - 初始化时加载用户资料、speaker 列表和专家列表
+
+    // AI-generated START - 监听声纹保存和删除事件
+    _voiceEventSubscription = VoiceRecognitionEventService().events.listen((event) {
+      if (mounted) {
+        if (event.type == VoiceRecognitionEventType.voiceSaved ||
+            event.type == VoiceRecognitionEventType.voiceDeleted) {
+          // 声纹保存或删除成功后，刷新 speaker 列表以更新 friendAvatars
+          final provider = Provider.of<SettingsProvider>(context, listen: false);
+          provider.loadSpeakerList();
+        }
+      }
+    });
+    // AI-generated END - 监听声纹保存和删除事件
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _voiceEventSubscription?.cancel();
     super.dispose();
   }
 

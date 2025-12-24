@@ -133,24 +133,16 @@ class MPUpdateSpeakerRequest {
   @JsonKey(name: 'speaker_id')
   final String speakerId;
 
-  @JsonKey(name: 'audio_url')
-  final String? audioUrl;
-
   @JsonKey(name: 'name')
   final String? name;
 
   @JsonKey(name: 'avatar')
   final String? avatar;
 
-  @JsonKey(name: 'myself_voice')
-  final bool? myselfVoice;
-
   MPUpdateSpeakerRequest({
     required this.speakerId,
-    this.audioUrl,
     this.name,
     this.avatar,
-    this.myselfVoice,
   });
 
   factory MPUpdateSpeakerRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateSpeakerRequestFromJson(json);

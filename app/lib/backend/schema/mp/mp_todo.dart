@@ -95,11 +95,15 @@ class MPUpdateTodoRequest {
   @JsonKey(name: 'deadline')
   final String deadline;
 
+  @JsonKey(name: 'is_completed')
+  final bool isCompleted;
+
   MPUpdateTodoRequest({
     required this.todoId,
     required this.title,
     required this.priority,
     required this.deadline,
+    required this.isCompleted,
   });
 
   factory MPUpdateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoRequestFromJson(json);
