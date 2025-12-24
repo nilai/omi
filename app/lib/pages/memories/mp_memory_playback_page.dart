@@ -3,7 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../backend/schema/mp/mp_data_model.dart';
+import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
+import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
 
@@ -125,28 +127,17 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined),
-            onPressed: () => MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_horiz),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('更多选项')),
-              );
-            },
-          ),
-        ],
-        centerTitle: true,
-        title: Text(widget.memory.title.isNotEmpty ? widget.memory.title : '记忆详情'),
+      backgroundColor: MPConstUtils.backgroundColorGrey,
+      appBar: MPCommonAppBar(
+        title: widget.memory.title.isNotEmpty ? widget.memory.title : '记忆详情',
+        showMoreButton: true,
+        showShareButton: true,
+        onMorePressed: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('更多选项')),
+          );
+        },
+        onSharePressed: () => MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id),
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
@@ -161,7 +152,24 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: const Text('AI总结'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.auto_awesome,
+                    size: 20,
+                    color: Color(0xFF60A5FA), // 浅蓝色图标
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'AI总结',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -187,14 +195,15 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                 child: IntrinsicHeight(
                   key: _contentKey,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 12),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        _buildMetaSection(),
-                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _buildMetaSection(),
+                        ),
                         _buildAudioCard(context),
-                        const SizedBox(height: 16),
                         _buildSummaryPlaceholder(context),
                         const Spacer(),
                       ],
@@ -213,8 +222,10 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     // 从 memory.createAt 获取时间（时间戳，单位可能是毫秒或秒）
     final createdAt = MPTimestampUtils.timestampMsToDateTime(widget.memory.createAt);
     final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt);
-    final durationText =
-        '${_duration.inMinutes.remainder(60).toString().padLeft(2, '0')}:${(_duration.inSeconds.remainder(60)).toString().padLeft(2, '0')}';
+    // 格式化时长为 "2m 6s" 格式
+    final minutes = _duration.inMinutes;
+    final seconds = _duration.inSeconds.remainder(60);
+    final durationText = '${minutes}m ${seconds}s';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,77 +262,96 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         _duration.inMilliseconds == 0 ? 0.0 : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary.withOpacity(0.12),
-            Theme.of(context).colorScheme.primary.withOpacity(0.08),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 8.0,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            children: [
-              InkWell(
-                onTap: _isBuffering ? null : _togglePlay,
-                borderRadius: BorderRadius.circular(32),
-                child: Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _isBuffering
-                      ? const Padding(
-                          padding: EdgeInsets.all(12.0),
-                          child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white),
-                        )
-                      : Icon(
-                          _player.playing ? Icons.pause : Icons.play_arrow,
-                          color: Colors.white,
-                          size: 32,
-                        ),
-                ),
+          // 播放按钮
+          InkWell(
+            onTap: _isBuffering ? null : _togglePlay,
+            borderRadius: BorderRadius.circular(32),
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: const BoxDecoration(
+                color: Color(0xFF2563EB), // 蓝色播放按钮
+                shape: BoxShape.circle,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SliderTheme(
-                      data: SliderTheme.of(context).copyWith(
-                        trackHeight: 4,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+              child: _isBuffering
+                  ? const Padding(
+                      padding: EdgeInsets.all(12.0),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
                       ),
-                      child: Slider(
-                        value: progress.isNaN ? 0 : progress,
-                        min: 0,
-                        max: 1,
-                        onChanged: (value) {
-                          if (_duration == Duration.zero) return;
-                          _seek(_duration.inSeconds * value);
-                        },
+                    )
+                  : Icon(
+                      _player.playing ? Icons.pause : Icons.play_arrow,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+            ),
+          ),
+          const SizedBox(width: 12.0),
+          // 进度条和时间
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 进度条
+                SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackHeight: 8.0,
+                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12.0),
+                    activeTrackColor: const Color(0xFF2563EB),
+                    inactiveTrackColor: const Color(0xFFE5E7EB),
+                    thumbColor: const Color(0xFF2563EB),
+                  ),
+                  child: Slider(
+                    value: progress.isNaN ? 0 : progress,
+                    min: 0,
+                    max: 1,
+                    onChanged: (value) {
+                      if (_duration == Duration.zero) return;
+                      _seek(_duration.inSeconds * value);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                // 时间显示
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _formatClock(_position),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12.0,
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_formatClock(_position)),
-                        Text(_formatClock(_duration)),
-                      ],
+                    Text(
+                      _formatClock(_duration),
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 12.0,
+                      ),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -330,25 +360,34 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   Widget _buildSummaryPlaceholder(BuildContext context) {
     return Container(
-      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       padding: const EdgeInsets.symmetric(vertical: 24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
-      ),
-      child: Column(
+      child: const Column(
         children: [
-          Icon(Icons.chat_bubble_outline, size: 32, color: Theme.of(context).colorScheme.outline),
-          const SizedBox(height: 12),
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: Icon(
+              Icons.chat_bubble_outline,
+              size: 24,
+              color: Color(0xFF6B7280),
+            ),
+          ),
+          SizedBox(height: 12),
           Text(
             '随时可生成',
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            style: TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 14.0,
+            ),
           ),
-          const SizedBox(height: 6),
+          SizedBox(height: 6),
           Text(
-            '生成后将在此处展示摘要',
-            style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            '生成后将在此处显示转写',
+            style: TextStyle(
+              color: Color(0xFF9CA3AF),
+              fontSize: 12.0,
+            ),
           ),
         ],
       ),
