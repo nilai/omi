@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:omi/backend/http/api/audio_record.dart';
 import 'package:path_provider/path_provider.dart';
@@ -103,22 +104,17 @@ class AudioPickerUtils {
   /// Android: 使用 FilePicker 访问媒体库
   /// iOS: 使用 ImagePicker 的 pickMedia 方法访问系统相册（如果支持音频）
   /// 在 Android 上需要存储权限，iOS 上需要照片库权限
+  /// 注意：在 iOS 上，ImagePicker 会自动请求权限，所以不需要预先检查权限
   /// @return 选择的音频文件，如果用户取消或出错则返回 null
   static Future<File?> pickAudioFromAlbum() async {
     try {
-      // 检查并请求权限
-      final hasPermission = await _checkAndRequestMediaPermission();
-      if (!hasPermission) {
-        debugPrint('媒体库权限被拒绝，无法从相册选择音频');
-        return null;
-      }
-
       if (Platform.isIOS) {
-        // iOS: 尝试使用 ImagePicker 的 pickMedia 方法
+        // iOS: 直接使用 ImagePicker，它会自动请求权限
         // 注意：ImagePicker 主要支持图片和视频，音频支持可能有限
         try {
           final ImagePicker picker = ImagePicker();
           // pickMedia 在 iOS 14+ 支持选择音频文件
+          // ImagePicker 会自动处理权限请求，如果权限未授予会弹出权限对话框
           final XFile? media = await picker.pickMedia(
             imageQuality: 100,
           );
@@ -141,12 +137,28 @@ class AudioPickerUtils {
               return await _pickAudioFromAlbumFallback();
             }
           }
+        } on PlatformException catch (e) {
+          // 处理权限被拒绝的情况
+          if (e.code == 'photo_access_denied' || e.code == 'photo_access_restricted') {
+            debugPrint('照片库权限被拒绝: ${e.message}');
+            // 权限被拒绝，返回 null
+            return null;
+          }
+          debugPrint('使用 ImagePicker 选择音频失败，回退到 FilePicker: $e');
+          // 回退到 FilePicker
+          return await _pickAudioFromAlbumFallback();
         } catch (e) {
           debugPrint('使用 ImagePicker 选择音频失败，回退到 FilePicker: $e');
           // 回退到 FilePicker
           return await _pickAudioFromAlbumFallback();
         }
       } else {
+        // Android: 需要先检查并请求权限
+        final hasPermission = await _checkAndRequestMediaPermission();
+        if (!hasPermission) {
+          debugPrint('媒体库权限被拒绝，无法从相册选择音频');
+          return null;
+        }
         // Android: 使用 FilePicker 访问媒体库
         return await _pickAudioFromAlbumFallback();
       }
@@ -282,35 +294,51 @@ class AudioPickerUtils {
           return false;
         }
 
-        // 如果权限未确定或被拒绝，尝试请求权限
-        // 在 iOS 上，notDetermined 和 denied 状态都应该调用 request() 来弹出权限对话框
-        if (status.isDenied || status == PermissionStatus.denied) {
-          debugPrint('iOS 照片库权限被拒绝，尝试请求权限...');
+        // 在 iOS 上，如果权限状态是 denied（用户之前拒绝过），
+        // 再次调用 request() 不会弹出对话框，而是直接返回 permanentlyDenied
+        // 所以我们需要特殊处理这种情况
+        if (status.isDenied) {
+          debugPrint('iOS 照片库权限之前被拒绝，尝试请求权限（可能不会弹出对话框）...');
+          // 尝试请求权限，虽然可能不会弹出对话框
           status = await Permission.photos.request();
           debugPrint('iOS 照片库权限请求后状态: $status');
 
-          // 请求后检查是否授予或受限访问
-          if (status.isGranted || status.isLimited) {
-            return true;
+          // 如果请求后变成永久拒绝，说明需要去设置中开启
+          if (status.isPermanentlyDenied) {
+            debugPrint('iOS 照片库权限被永久拒绝，需要到设置中手动开启');
+            // 可以在这里打开设置页面，但为了保持方法简洁，只返回 false
+            // 调用方可以根据需要处理打开设置页面的逻辑
+            return false;
           }
 
-          // 如果请求后仍然被拒绝，可能是用户拒绝了
-          if (status.isPermanentlyDenied) {
-            debugPrint('iOS 照片库权限被永久拒绝，请到设置中手动开启');
-            return false;
+          // 如果请求后授予了权限（虽然不太可能，但检查一下）
+          if (status.isGranted || status.isLimited) {
+            debugPrint('iOS 照片库权限请求成功');
+            return true;
           }
 
           return false;
         }
 
-        // 对于 notDetermined 状态，也应该请求权限
-        // 注意：permission_handler 可能不会将 notDetermined 识别为 isDenied
-        // 所以我们需要显式检查并请求
-        debugPrint('iOS 照片库权限状态未确定，尝试请求权限...');
+        // 对于 notDetermined 状态（首次请求），调用 request() 会弹出权限对话框
+        debugPrint('iOS 照片库权限状态未确定，请求权限（将弹出对话框）...');
         status = await Permission.photos.request();
         debugPrint('iOS 照片库权限请求后状态: $status');
 
-        return status.isGranted || status.isLimited;
+        // 请求后检查是否授予或受限访问
+        if (status.isGranted || status.isLimited) {
+          debugPrint('iOS 照片库权限请求成功');
+          return true;
+        }
+
+        // 如果请求后仍然被拒绝，可能是用户拒绝了
+        if (status.isPermanentlyDenied) {
+          debugPrint('iOS 照片库权限被永久拒绝，请到设置中手动开启');
+          return false;
+        }
+
+        debugPrint('iOS 照片库权限请求被拒绝');
+        return false;
       } else {
         // 桌面平台不需要权限
         return true;
