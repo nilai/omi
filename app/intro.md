@@ -1,4 +1,4 @@
-# Omi App - Comprehensive Project Analysis
+# MemoPin App - Comprehensive Project Analysis
 
 ## 1. 功能概述 (Functionality Overview)
 

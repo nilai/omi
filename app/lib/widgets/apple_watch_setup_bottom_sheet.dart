@@ -115,26 +115,26 @@ class _AppleWatchSetupBottomSheetState extends State<AppleWatchSetupBottomSheet>
                 ] else if (_isAppInstalled == false) ...[
                   // App not installed
                   Text(
-                    'Install Omi on your\nApple Watch',
+                    'Install MemoPin on your\nApple Watch',
                     style: responsive.titleLarge.copyWith(height: 1.2),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'To use your Apple Watch with Omi, you need to install the Omi app on your watch first.',
+                    'To use your Apple Watch with Omi, you need to install the MemoPin app on your watch first.',
                     style: responsive.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
                 ] else ...[
                   // App installed but not reachable (not open)
                   Text(
-                    'Open Omi on your\nApple Watch',
+                    'Open MemoPin on your\nApple Watch',
                     style: responsive.titleLarge.copyWith(height: 1.2),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'The Omi app is installed on your Apple Watch. Open it and tap Start to begin.',
+                    'The MemoPin app is installed on your Apple Watch. Open it and tap Start to begin.',
                     style: responsive.bodyLarge,
                     textAlign: TextAlign.center,
                   ),
@@ -227,7 +227,7 @@ class _AppleWatchSetupBottomSheetState extends State<AppleWatchSetupBottomSheet>
       }
     } catch (e) {
       AppSnackbar.showSnackbar(
-        'Unable to open Apple Watch app. Please manually open the Watch app on your Apple Watch and install Omi from the "Available Apps" section.',
+        'Unable to open Apple Watch app. Please manually open the Watch app on your Apple Watch and install MemoPin from the "Available Apps" section.',
         duration: const Duration(seconds: 6),
       );
 
@@ -255,7 +255,7 @@ class _AppleWatchSetupBottomSheetState extends State<AppleWatchSetupBottomSheet>
         widget.onConnected?.call();
       } else {
         AppSnackbar.showSnackbar(
-          'Apple Watch still not reachable. Please make sure the Omi app is open on your watch.',
+          'Apple Watch still not reachable. Please make sure the MemoPin app is open on your watch.',
           duration: const Duration(seconds: 4),
         );
       }

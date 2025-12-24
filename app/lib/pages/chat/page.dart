@@ -1,12 +1,12 @@
 /// 聊天页面主文件
-/// 
+///
 /// 提供完整的聊天界面功能，包括：
 /// - 消息列表展示（AI消息和用户消息）
 /// - 消息发送功能（文本、语音、图片、文件）
 /// - 应用选择器（支持切换不同的聊天应用）
 /// - 消息操作菜单（复制、分享、选择文本、举报等）
 /// - 滚动控制和自动聚焦
-/// 
+///
 /// 兼容 iOS 和 Android 平台
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:collection/collection.dart';
@@ -43,7 +43,7 @@ import 'package:share_plus/share_plus.dart';
 import 'widgets/message_action_menu.dart';
 
 /// 聊天页面组件
-/// 
+///
 /// 主要的聊天界面，支持与 AI 和不同应用的对话
 class ChatPage extends StatefulWidget {
   /// 是否将底部输入框固定在底部（用于某些特殊布局场景）
@@ -59,7 +59,7 @@ class ChatPage extends StatefulWidget {
 }
 
 /// 聊天页面状态管理类
-/// 
+///
 /// 管理聊天界面的所有状态，包括：
 /// - 文本输入控制
 /// - 滚动控制
@@ -68,10 +68,10 @@ class ChatPage extends StatefulWidget {
 class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   /// 文本输入控制器
   TextEditingController textController = TextEditingController();
-  
+
   /// 滚动控制器，用于控制消息列表的滚动
   late ScrollController scrollController;
-  
+
   /// 文本输入框的焦点节点
   late FocusNode textFieldFocusNode;
 
@@ -80,19 +80,19 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
 
   /// 是否显示语音录制器
   bool _showVoiceRecorder = false;
-  
+
   /// 是否为首次加载（用于控制自动聚焦）
   bool _isInitialLoad = true;
 
   /// 共享偏好设置工具
   var prefs = SharedPreferencesUtil();
-  
+
   /// 应用列表
   late List<App> apps;
 
   /// Scaffold 的全局键
   final scaffoldKey = GlobalKey<ScaffoldState>();
-  
+
   /// 应用选择按钮的全局键（用于定位菜单位置）
   final GlobalKey _appButtonKey = GlobalKey();
 
@@ -667,9 +667,9 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 发送消息的工具方法
-  /// 
+  ///
   /// [text] 要发送的消息文本
-  /// 
+  ///
   /// 处理消息发送的完整流程：
   /// 1. 移除输入框焦点
   /// 2. 设置发送状态
@@ -698,9 +698,9 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 发送应用的初始消息
-  /// 
-  /// [app] 要发送初始消息的应用，如果为 null 则发送默认的 Omi 初始消息
-  /// 
+  ///
+  /// [app] 要发送初始消息的应用，如果为 null 则发送默认的 MemoPin 初始消息
+  ///
   /// 当切换到新应用或开始新对话时，自动发送应用的欢迎消息
   sendInitialAppMessage(App? app) async {
     context.read<MessageProvider>().setSendingMessage(true);
@@ -714,7 +714,7 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 将消息列表滚动到底部
-  /// 
+  ///
   /// 使用动画平滑滚动到列表底部（由于列表是反向的，所以滚动到 0.0 位置）
   void _moveListToBottom() {
     SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -732,10 +732,10 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   scrollToBottom() => _moveListToBottom();
 
   /// 处理应用选择
-  /// 
+  ///
   /// [val] 选择的值，可以是应用 ID、'clear_chat' 或 'enable'
   /// [provider] 应用提供者
-  /// 
+  ///
   /// 根据选择的值执行不同的操作：
   /// - 'clear_chat': 显示清空聊天对话框
   /// - 'enable': 导航到应用页面
@@ -765,7 +765,7 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 显示清空聊天对话框
-  /// 
+  ///
   /// 确认用户是否要清空当前聊天的所有消息
   void _showClearChatDialog() {
     if (!mounted) return;
@@ -786,7 +786,7 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 导航到应用页面
-  /// 
+  ///
   /// 用于让用户启用或管理聊天应用
   void _navigateToAppsPage() {
     if (!mounted) return;
@@ -800,10 +800,10 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 选择应用并切换聊天上下文
-  /// 
+  ///
   /// [appId] 要选择的应用 ID
   /// [appProvider] 应用提供者
-  /// 
+  ///
   /// 执行应用切换的完整流程：
   /// 1. 标记不再处于初始加载状态
   /// 2. 设置选中的应用
@@ -844,10 +844,10 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 构建应用栏
-  /// 
+  ///
   /// [context] 构建上下文
   /// [provider] 消息提供者
-  /// 
+  ///
   /// 返回包含应用选择器和返回按钮的应用栏
   PreferredSizeWidget _buildAppBar(BuildContext context, MessageProvider provider) {
     return AppBar(
@@ -894,14 +894,14 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 显示应用选择菜单
-  /// 
+  ///
   /// [ctx] 构建上下文
   /// [appProvider] 应用提供者
-  /// 
+  ///
   /// 在应用选择按钮下方显示一个下拉菜单，包含：
   /// - 清空聊天选项
   /// - 启用应用选项
-  /// - Omi 选项
+  /// - MemoPin 选项
   /// - 所有已启用的聊天应用列表
   void _showAppsMenu(BuildContext ctx, AppProvider appProvider) {
     final renderBox = _appButtonKey.currentContext?.findRenderObject() as RenderBox?;
@@ -1035,10 +1035,10 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 构建应用选择器组件
-  /// 
+  ///
   /// [context] 构建上下文
   /// [provider] 应用提供者
-  /// 
+  ///
   /// 显示当前选中的应用头像和名称，点击可打开应用选择菜单
   Widget _buildAppSelection(BuildContext context, AppProvider provider) {
     final messageProvider = Provider.of<MessageProvider>(context, listen: false);
@@ -1076,9 +1076,9 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 获取应用头像组件
-  /// 
+  ///
   /// [app] 应用对象
-  /// 
+  ///
   /// 返回一个圆形头像，显示应用的图标
   Widget _getAppAvatar(App app) {
     return CachedNetworkImage(
@@ -1108,9 +1108,9 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
     );
   }
 
-  /// 获取 Omi 默认头像组件
-  /// 
-  /// 返回 Omi 的默认头像，使用资源图片
+  /// 获取 MemoPin 默认头像组件
+  ///
+  /// 返回 MemoPin 的默认头像，使用资源图片
   Widget _getOmiAvatar() {
     return Container(
       decoration: BoxDecoration(
@@ -1136,9 +1136,9 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 显示 iOS 风格的操作表
-  /// 
+  ///
   /// [context] 构建上下文
-  /// 
+  ///
   /// 显示底部操作表，包含以下选项：
   /// - 拍照
   /// - 从相册选择
@@ -1211,7 +1211,7 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 构建 iOS 风格的操作项
-  /// 
+  ///
   /// [title] 操作项标题
   /// [onTap] 点击回调
   /// [icon] 图标（可选）
@@ -1264,7 +1264,7 @@ class ChatPageState extends State<ChatPage> with AutomaticKeepAliveClientMixin, 
   }
 
   /// 构建分隔线组件
-  /// 
+  ///
   /// 用于在操作项之间添加分隔线
   Widget _buildDivider() {
     return Container(

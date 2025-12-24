@@ -37,7 +37,7 @@ class DeviceUtils {
             latestVersionStr
           );
         } else {
-          return ('A new version is available! Update your Omi now.', true, latestVersionStr);
+          return ('A new version is available! Update your MemoPin now.', true, latestVersionStr);
         }
       } else {
         return ('You are already on the latest version', false, latestVersionStr);
@@ -72,7 +72,7 @@ class DeviceUtils {
         case DeviceType.aiNote:
           return Assets.images.omiDevkitWithoutRope.path; // Use default device image for AI Note
         case DeviceType.omi:
-          // For omi type, need to check model/name to distinguish between devkit and regular omi
+          // For MemoPin type, need to check model/name to distinguish between devkit and regular omi
           if (modelNumber != null && modelNumber.isNotEmpty && modelNumber.toUpperCase() != 'UNKNOWN') {
             final upperModel = modelNumber.toUpperCase();
             if (upperModel.contains('DEVKIT') || upperModel.contains('FRIEND')) {
@@ -85,7 +85,7 @@ class DeviceUtils {
               return Assets.images.omiDevkitWithoutRope.path;
             }
           }
-          // Default omi image
+          // Default MemoPin image
           return Assets.images.omiWithoutRope.path;
       }
     }
@@ -167,7 +167,7 @@ class DeviceUtils {
     String? deviceName,
     required bool isConnected,
   }) {
-    // Special case for Omi when disconnected
+    // Special case for MemoPin when disconnected
     if (deviceType == DeviceType.omi && !isConnected) {
       return Assets.images.omiWithoutRopeTurnedOff.path;
     }

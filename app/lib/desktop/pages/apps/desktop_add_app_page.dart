@@ -260,7 +260,7 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Build and submit your custom Omi app',
+                  'Build and submit your custom MemoPin app',
                   style: TextStyle(
                     fontSize: 12,
                     color: ResponsiveHelper.textSecondary.withValues(alpha: 0.5),
@@ -808,7 +808,7 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
               ),
               const Expanded(
                 child: Text(
-                  'By submitting this app, I agree to the Omi AI Terms of Service and Privacy Policy',
+                  'By submitting this app, I agree to the MemoPin AI Terms of Service and Privacy Policy',
                   style: TextStyle(
                     color: ResponsiveHelper.textPrimary,
                     fontSize: 14,

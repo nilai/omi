@@ -360,7 +360,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'To connect Omi with other applications to read, search, and manage your memories and conversations. Create a key to get started.',
+                    'To connect MemoPin with other applications to read, search, and manage your memories and conversations. Create a key to get started.',
                     style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
                   ),
                   const SizedBox(height: 16),
@@ -573,7 +573,7 @@ class _DeveloperSettingsPageState extends State<DeveloperSettingsPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Try the latest experimental features from Omi Team.',
+                    'Try the latest experimental features from MemoPin Team.',
                     style: TextStyle(color: Colors.grey.shade200, fontSize: 14),
                   ),
                   const SizedBox(height: 16.0),

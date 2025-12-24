@@ -324,7 +324,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
             // PREFERENCES SECTION
             _buildPreferenceToggle(
-              title: 'Help improve Omi by sharing anonymized analytics data',
+              title: 'Help improve MemoPin by sharing anonymized analytics data',
               value: SharedPreferencesUtil().optInAnalytics,
               onChanged: (value) {
                 setState(() {

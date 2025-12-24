@@ -288,7 +288,7 @@ class _AppsListState extends State<_AppsList> {
           isSelected: widget.currentAppId == null,
           onTap: () => _handleAutoAppTap(context),
           trailingIcon: const Icon(Icons.autorenew, color: Colors.white, size: 20),
-          subtitle: 'Let Omi automatically choose the best app for this summary.',
+          subtitle: 'Let MemoPin automatically choose the best app for this summary.',
           provider: widget.provider,
         ),
 

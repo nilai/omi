@@ -42,12 +42,12 @@ class _FirmwareUpdateDialogState extends State<FirmwareUpdateDialog> {
       'no_usb': FirmwareUpdateStep(
         title: 'No USB',
         description:
-            "Disconnect your Omi device from any USB connection. USB connection during updates may damage your device.",
+            "Disconnect your MemoPin device from any USB connection. USB connection during updates may damage your device.",
         icon: Icons.usb_off,
       ),
       'battery': FirmwareUpdateStep(
         title: 'Battery > 15%',
-        description: "Ensure your Omi device has at least 15% battery remaining for a safe update.",
+        description: "Ensure your MemoPin device has at least 15% battery remaining for a safe update.",
         icon: Icons.battery_5_bar,
       ),
       'internet': FirmwareUpdateStep(

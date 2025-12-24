@@ -77,7 +77,7 @@ class OmiDeviceConnection extends DeviceConnection {
     try {
       final stream = transport.getCharacteristicStream(buttonServiceUuid, buttonTriggerCharacteristicUuid);
 
-      debugPrint('Subscribed to button stream from Omi Device');
+      debugPrint('Subscribed to button stream from MemoPin Device');
       final subscription = stream.listen((value) {
         debugPrint("new button value $value");
         if (value.isNotEmpty) onButtonReceived(value);
@@ -97,7 +97,7 @@ class OmiDeviceConnection extends DeviceConnection {
     try {
       final stream = transport.getCharacteristicStream(omiServiceUuid, audioDataStreamCharacteristicUuid);
 
-      debugPrint('Subscribed to audioBytes stream from Omi Device');
+      debugPrint('Subscribed to audioBytes stream from MemoPin Device');
       final subscription = stream.listen((value) {
         if (value.isNotEmpty) onAudioBytesReceived(value);
       });
@@ -286,7 +286,7 @@ class OmiDeviceConnection extends DeviceConnection {
     try {
       final stream = transport.getCharacteristicStream(omiServiceUuid, imageDataStreamCharacteristicUuid);
 
-      debugPrint('Subscribed to imageBytes stream from Omi Device');
+      debugPrint('Subscribed to imageBytes stream from MemoPin Device');
       final subscription = stream.listen((value) {
         if (value.isNotEmpty) onImageBytesReceived(value);
       });
@@ -546,7 +546,7 @@ class OmiDeviceConnection extends DeviceConnection {
     }
   }
 
-  /// Get device information from Omi device
+  /// Get device information from MemoPin device
   Future<Map<String, String>> getDeviceInfo() async {
     Map<String, String> deviceInfo = {};
 

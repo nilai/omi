@@ -1,6 +1,6 @@
 # Scripts
 
-This directory contains utility scripts for the Omi app project.
+This directory contains utility scripts for the MemoPin app project.
 
 ## patch_reactive_ble.sh
 

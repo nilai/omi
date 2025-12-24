@@ -1,4 +1,4 @@
-# Set up the Omi Mobile Project(iOS/Android).
+# Set up the MemoPin Mobile Project(iOS/Android).
 #
 # Prerequisites (stable versions, use these or higher):
 #
@@ -21,7 +21,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Write-Host "👋 Yo folks! Welcome to the OMI Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
+Write-Host "👋 Yo folks! Welcome to the MemoPin Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
 Write-Host "Prerequisites (stable versions, use these or higher):"
 Write-Host ""
 Write-Host "Common for all developers:"

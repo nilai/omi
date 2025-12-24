@@ -1078,7 +1078,7 @@ class _SyncPageState extends State<SyncPage> with TickerProviderStateMixin {
                             ),
                             const SizedBox(height: 8),
                             const Text(
-                              'Your Omi device will automatically save audio recordings here. Once you have recordings, you can process them into readable conversations.',
+                              'Your MemoPin device will automatically save audio recordings here. Once you have recordings, you can process them into readable conversations.',
                               style: TextStyle(color: Colors.grey, fontSize: 14),
                               textAlign: TextAlign.center,
                             ),
@@ -1145,8 +1145,8 @@ class _SyncPageState extends State<SyncPage> with TickerProviderStateMixin {
                             const SizedBox(height: 8),
                             Text(
                               syncProvider.storageFilter == WalStorage.sdcard
-                                  ? 'No audio files found on your device\'s SD card. Make sure your Omi device has recorded audio to its SD card.'
-                                  : 'No audio files found in phone storage. Audio gets stored here when your Omi device transfers recordings to your phone.',
+                                  ? 'No audio files found on your device\'s SD card. Make sure your MemoPin device has recorded audio to its SD card.'
+                                  : 'No audio files found in phone storage. Audio gets stored here when your MemoPin device transfers recordings to your phone.',
                               style: const TextStyle(color: Colors.grey, fontSize: 14),
                               textAlign: TextAlign.center,
                             ),

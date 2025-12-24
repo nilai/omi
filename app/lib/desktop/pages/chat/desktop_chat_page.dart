@@ -1544,7 +1544,7 @@ class DesktopChatPageState extends State<DesktopChatPage> with AutomaticKeepAliv
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 children: [
-                  // Default Omi option
+                  // Default MemoPin option
                   _buildAppSelectionItem(
                     app: null,
                     isSelected: selectedApp == null,

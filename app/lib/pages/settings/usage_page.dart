@@ -131,7 +131,7 @@ class _UsagePageState extends State<UsagePage> with TickerProviderStateMixin {
     final numberFormatter = NumberFormat.decimalPattern('en_US');
 
     String shareText;
-    const baseText = 'Sharing my Omi stats! (omi.me - your always-on AI assistant)';
+    const baseText = 'Sharing my MemoPin stats! (omi.me - your always-on AI assistant)';
 
     if (stats != null) {
       final transcriptionMinutes = (stats.transcriptionSeconds / 60).round();
@@ -154,16 +154,16 @@ class _UsagePageState extends State<UsagePage> with TickerProviderStateMixin {
         String periodText;
         switch (periodTitle) {
           case 'Today':
-            periodText = 'Today, omi has:';
+            periodText = 'Today, MemoPin has:';
             break;
           case 'This Month':
-            periodText = 'This month, omi has:';
+            periodText = 'This month, MemoPin has:';
             break;
           case 'This Year':
-            periodText = 'This year, omi has:';
+            periodText = 'This year, MemoPin has:';
             break;
           case 'All Time':
-            periodText = 'So far, omi has:';
+            periodText = 'So far, MemoPin has:';
             break;
           default:
             periodText = 'Omi has:';
@@ -278,7 +278,7 @@ class _UsagePageState extends State<UsagePage> with TickerProviderStateMixin {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Your Omi Insights'),
+        title: const Text('Your MemoPin Insights'),
         centerTitle: true,
         elevation: 0,
         leading: IconButton(
@@ -714,7 +714,7 @@ class _UsagePageState extends State<UsagePage> with TickerProviderStateMixin {
                 icon: FontAwesomeIcons.microphone,
                 title: 'Listening',
                 value: transcriptionValue,
-                subtitle: 'Total time Omi has actively listened.',
+                subtitle: 'Total time MemoPin has actively listened.',
                 color: Colors.blue.shade300,
                 subscription: provider.subscription,
               ),

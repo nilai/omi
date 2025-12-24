@@ -40,9 +40,10 @@ class _HomePageWrapperState extends State<HomePageWrapper> {
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        context
-            .read<DeviceProvider>()
-            .periodicConnect('coming from HomePageWrapper', boundDeviceOnly: false,);
+        context.read<DeviceProvider>().periodicConnect(
+              'coming from HomePageWrapper',
+              boundDeviceOnly: false,
+            );
       }
       if (SharedPreferencesUtil().notificationsEnabled) {
         NotificationService.instance.register();
@@ -263,7 +264,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //     case "chat":
     //       print('inside chat alias $detailPageId');
     //       if (detailPageId != null && detailPageId.isNotEmpty) {
-    //         var appId = detailPageId != "omi" ? detailPageId : ''; // omi ~ no select
+    //         var appId = detailPageId != "omi" ? detailPageId : ''; // MemoPin ~ no select
     //         if (mounted) {
     //           var appProvider = Provider.of<AppProvider>(context, listen: false);
     //           var messageProvider = Provider.of<MessageProvider>(context, listen: false);
@@ -542,7 +543,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                           home.isMemoriesSearchFieldFocused) {
     //                         return const SizedBox.shrink();
     //                       } else {
-    //                         // Check if OMI device is connected
+    //                         // Check if MemoPin device is connected
     //                         bool isOmiDeviceConnected =
     //                             deviceProvider.isConnected && deviceProvider.connectedDevice != null;
 
@@ -622,7 +623,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                         ),
     //                                       ),
     //                                     ),
-    //                                     // Center space for record button - only when no OMI device is connected
+    //                                     // Center space for record button - only when no MemoPin device is connected
     //                                     if (!isOmiDeviceConnected) const SizedBox(width: 80),
     //                                     // Memories tab
     //                                     Expanded(
@@ -690,7 +691,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     //                                 ),
     //                               ),
     //                             ),
-    //                             // Central Record Button - Only show when no OMI device is connected
+    //                             // Central Record Button - Only show when no MemoPin device is connected
     //                             // if (!isOmiDeviceConnected)
     //                             //   Positioned(
     //                             //     left: MediaQuery.of(context).size.width / 2 - 40,

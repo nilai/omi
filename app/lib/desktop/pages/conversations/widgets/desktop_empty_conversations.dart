@@ -16,7 +16,7 @@ class DesktopEmptyConversations extends StatelessWidget {
           const OmiEmptyState(
             icon: Icons.forum_rounded,
             title: 'No conversations yet',
-            message: 'Start capturing conversations with your Omi device to see them here.',
+            message: 'Start capturing conversations with your MemoPin device to see them here.',
             iconSize: 48,
             iconPadding: 24,
             color: ResponsiveHelper.purplePrimary,

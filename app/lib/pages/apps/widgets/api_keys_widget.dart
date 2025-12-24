@@ -165,7 +165,7 @@ class _ApiKeysWidgetState extends State<ApiKeysWidget> {
                             backgroundColor: const Color(0xFF1F1F25),
                             title: const Text('Omi API Keys'),
                             content: const Text(
-                              'API Keys are used for authentication when your app communicates with the OMI server. They allow your application to create memories and access other OMI services securely.',
+                              'API Keys are used for authentication when your app communicates with the MemoPin server. They allow your application to create memories and access other MemoPin services securely.',
                             ),
                             actions: [
                               TextButton(
@@ -182,7 +182,7 @@ class _ApiKeysWidgetState extends State<ApiKeysWidget> {
                           ),
                         );
                       },
-                      tooltip: 'About Omi API Keys',
+                      tooltip: 'About MemoPin API Keys',
                     ),
                   ],
                 ),

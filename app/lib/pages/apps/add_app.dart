@@ -417,7 +417,7 @@ class _AddAppPageState extends State<AddAppPage> {
                               ),
                               const Expanded(
                                 child: Text(
-                                    "By submitting this app, I agree to the Omi AI Terms of Service and Privacy Policy"),
+                                    "By submitting this app, I agree to the MemoPin AI Terms of Service and Privacy Policy"),
                               ),
                             ],
                           ),

@@ -109,7 +109,7 @@ class _FCMNotificationService implements NotificationInterface {
       await platform.invokeMethod(
         'setNotificationOnKillService',
         {
-          'title': "Your Omi Device Disconnected",
+          'title': "Your MemoPin Device Disconnected",
           'description': "Please keep your app opened to continue using your Omi.",
         },
       );

@@ -245,8 +245,8 @@ class _DeviceSettingsState extends State<DeviceSettings> {
                       Navigator.of(context).pop();
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content:
-                            Text('Your Omi is ${provider.connectedDevice == null ? "unpaired" : "disconnected"}  😔'),
+                        content: Text(
+                            'Your MemoPin is ${provider.connectedDevice == null ? "unpaired" : "disconnected"}  😔'),
                       ));
                       MixpanelManager().disconnectFriendClicked();
                     },

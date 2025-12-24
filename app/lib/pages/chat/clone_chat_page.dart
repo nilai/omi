@@ -60,7 +60,7 @@ class CloneChatPageState extends State<CloneChatPage> {
         var appProvider = Provider.of<AppProvider>(context, listen: false);
         SharedPreferencesUtil().appsList = [selectedApp];
         appProvider.setApps();
-        // Set to null to chat with Omi by default
+        // Set to null to chat with MemoPin by default
         appProvider.setSelectedChatAppId(null);
 
         // 如果应用未启用，则启用它

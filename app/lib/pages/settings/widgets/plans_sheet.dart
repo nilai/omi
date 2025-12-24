@@ -94,7 +94,7 @@ class _PlansSheetState extends State<PlansSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Get Omi Unlimited for free by contributing your data to train AI models.',
+                  'Get MemoPin Unlimited for free by contributing your data to train AI models.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -936,7 +936,7 @@ class _PlansSheetState extends State<PlansSheet> {
                           const SizedBox(height: 16),
                           _buildFeatureItem(
                             faIcon: FontAwesomeIcons.solidComments,
-                            text: 'Ask Omi anything about your life',
+                            text: 'Ask MemoPin anything about your life',
                           ),
                           const SizedBox(height: 16),
                           _buildFeatureItem(

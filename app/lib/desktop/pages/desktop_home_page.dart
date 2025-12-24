@@ -141,7 +141,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> with WidgetsBindingOb
   late Animation<double> _sidebarSlideAnimation;
   final GlobalKey _profileCardKey = GlobalKey();
 
-  // State for Get Omi Widget
+  // State for Get MemoPin Widget
   bool _showGetOmiWidget = true;
 
   void _initiateApps() {
@@ -538,7 +538,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> with WidgetsBindingOb
                           // Subscription upgrade banner
                           _buildSubscriptionBanner(),
 
-                          // Get Omi Device widget and spacer
+                          // Get MemoPin Device widget and spacer
                           if (_showGetOmiWidget) ...[
                             const SizedBox(height: 12),
                             _buildGetOmiWidget(),
@@ -839,7 +839,7 @@ class _DesktopHomePageState extends State<DesktopHomePage> with WidgetsBindingOb
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  MixpanelManager().track('Get Omi Device Clicked');
+                  MixpanelManager().track('Get MemoPin Device Clicked');
                   final url = Uri.parse('https://www.omi.me');
                   if (await canLaunchUrl(url)) {
                     await launchUrl(url, mode: LaunchMode.externalApplication);

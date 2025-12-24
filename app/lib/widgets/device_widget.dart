@@ -87,7 +87,7 @@ class _DeviceAnimationWidgetState extends State<DeviceAnimationWidget> with Tick
     final double imageHeight = (MediaQuery.sizeOf(context).height <= 700 ? 130 : 160) * widget.sizeMultiplier;
     final double imageWidth = (MediaQuery.sizeOf(context).height <= 700 ? 130 : 160) * widget.sizeMultiplier;
 
-    // Special handling for Omi device with connection indicator
+    // Special handling for MemoPin device with connection indicator
     if ((widget.deviceType == DeviceType.omi || widget.deviceName == 'Omi') && !widget.isConnected) {
       return Stack(
         alignment: Alignment.center,

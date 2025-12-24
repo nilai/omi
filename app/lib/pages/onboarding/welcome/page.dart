@@ -223,7 +223,7 @@ class _WelcomePageState extends State<WelcomePage> with TickerProviderStateMixin
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             const Text(
-                                              'Connect Omi / OmiGlass',
+                                              'Connect MemoPin / OmiGlass',
                                               style: TextStyle(
                                                 color: Colors.black87,
                                                 fontSize: 18,

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Omi is a Flutter-based mobile application that serves as the companion app for Omi wearable devices. The app enables users to interact with their Omi device (and other supported devices like Frame, Apple Watch, XOR), manage apps, record and process conversations/memories, and customize their experience.
+Omi is a Flutter-based mobile application that serves as the companion app for MemoPin wearable devices. The app enables users to interact with their MemoPin device (and other supported devices like Frame, Apple Watch, XOR), manage apps, record and process conversations/memories, and customize their experience.
 
 ## Development Commands
 
@@ -113,7 +113,7 @@ The app supports multiple device types through an abstraction layer:
 - **DeviceConnectionFactory** (`lib/services/devices/device_connection.dart`) - Creates appropriate device connections based on device type and transport
 - **Transport Layer** - Abstracts communication protocols (BLE, Watch Connectivity, Frame)
 - **Device-Specific Connections** - Handle device-specific logic:
-  - `OmiDeviceConnection` - For Omi and OpenGlass devices
+  - `OmiDeviceConnection` - For MemoPin and OpenGlass devices
   - `FrameDeviceConnection` - For Brilliant Frame smart glasses
   - `AppleWatchConnection` - For Apple Watch integration
   - `XorDeviceConnection` - For XOR devices

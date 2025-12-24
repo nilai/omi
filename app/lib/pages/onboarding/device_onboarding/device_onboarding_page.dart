@@ -34,27 +34,27 @@ class _DeviceOnboardingPageState extends State<DeviceOnboardingPage> with Single
   final List<Map<String, String>> _slideContent = [
     {
       'title': 'Charging Your Omi',
-      'subtitle': 'Place your Omi on the charging dock. An orange light indicates that it\'s charging.',
+      'subtitle': 'Place your MemoPin on the charging dock. An orange light indicates that it\'s charging.',
       'buttonText': 'Got it'
     },
     {
       'title': 'Device Disconnected',
-      'subtitle': 'When disconnected, your Omi will show a red light to indicate offline status.',
+      'subtitle': 'When disconnected, your MemoPin will show a red light to indicate offline status.',
       'buttonText': 'Understood'
     },
     {
       'title': 'Device Connected',
-      'subtitle': 'A blue light indicates that your Omi is connected and capturing conversations.',
+      'subtitle': 'A blue light indicates that your MemoPin is connected and capturing conversations.',
       'buttonText': 'Perfect'
     },
     {
       'title': 'Ask Questions',
-      'subtitle': 'Long press Omi and speak out to ask questions. Omi will respond through notifications.',
+      'subtitle': 'Long press MemoPin and speak out to ask questions. MemoPin will respond through notifications.',
       'buttonText': 'Cool'
     },
     {
       'title': 'Power Control',
-      'subtitle': 'Short press the button to turn your Omi device on or off as needed.',
+      'subtitle': 'Short press the button to turn your MemoPin device on or off as needed.',
       'buttonText': 'Let\'s Go!'
     },
   ];

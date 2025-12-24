@@ -372,7 +372,7 @@ class _TaskIntegrationsPageState extends State<TaskIntegrationsPage> with Widget
             style: const TextStyle(color: Colors.white),
           ),
           content: Text(
-            'You\'ll need to authorize Omi to create tasks in your ${app.displayName} account. This will open your browser for authentication.',
+            'You\'ll need to authorize MemoPin to create tasks in your ${app.displayName} account. This will open your browser for authentication.',
             style: const TextStyle(color: Color(0xFF8E8E93)),
           ),
           actions: [

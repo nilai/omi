@@ -88,7 +88,7 @@ class SpeechProfileCardWidget extends StatelessWidget {
                                   Icon(Icons.multitrack_audio),
                                   SizedBox(width: 16),
                                   Text(
-                                    'Teach Omi your voice',
+                                    'Teach MemoPin your voice',
                                     style: TextStyle(color: Colors.white, fontSize: 16),
                                   ),
                                 ],
@@ -153,7 +153,7 @@ class UpdateFirmwareCardWidget extends StatelessWidget {
                                 Icon(Icons.upload),
                                 SizedBox(width: 16),
                                 Text(
-                                  'Update omi firmware',
+                                  'Update MemoPin firmware',
                                   style: TextStyle(color: Colors.white, fontSize: 16),
                                 ),
                               ],

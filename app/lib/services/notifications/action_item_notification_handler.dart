@@ -31,7 +31,7 @@ class ActionItemNotificationHandler {
         content: NotificationContent(
           id: notificationId,
           channelKey: channelKey,
-          title: '⏰ Omi Reminder',
+          title: '⏰ MemoPin Reminder',
           body: description,
           payload: {
             'action_item_id': actionItemId,

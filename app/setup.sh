@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Set up the Omi Mobile Project(iOS/Android).
+# Set up the MemoPin Mobile Project(iOS/Android).
 #
 # Prerequisites (stable versions, use these or higher):
 #
@@ -30,7 +30,7 @@
 
 set -euo pipefail
 
-echo "👋 Yo folks! Welcome to the OMI Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
+echo "👋 Yo folks! Welcome to the MemoPin Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
 echo "Prerequisites (stable versions, use these or higher):"
 echo ""
 echo "Common for all developers:"

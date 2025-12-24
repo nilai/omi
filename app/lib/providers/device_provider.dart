@@ -288,7 +288,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
     _disconnectNotificationTimer?.cancel();
     _disconnectNotificationTimer = Timer(const Duration(seconds: 30), () {
       NotificationService.instance.createNotification(
-        title: 'Your Omi Device Disconnected',
+        title: 'Your MemoPin Device Disconnected',
         body: 'Please reconnect to continue using your Omi.',
       );
     });
@@ -422,7 +422,7 @@ class DeviceProvider extends ChangeNotifier implements IDeviceServiceSubsciption
       builder: (context) => ConfirmationDialog(
         title: 'Firmware Update Available',
         description:
-            'A new firmware update ($_latestFirmwareVersion) is available for your Omi device. Would you like to update now?',
+            'A new firmware update ($_latestFirmwareVersion) is available for your MemoPin device. Would you like to update now?',
         confirmText: 'Update',
         cancelText: 'Later',
         onConfirm: () {

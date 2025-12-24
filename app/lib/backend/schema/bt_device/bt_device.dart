@@ -199,7 +199,7 @@ enum DeviceType {
   plaud,
   bee,
   fieldy,
-  aiNote,  // AI Note device with new BLE protocol
+  aiNote, // AI Note device with new BLE protocol
   friendPendant,
 }
 
@@ -366,7 +366,7 @@ class BtDevice {
     } on PlatformException catch (e) {
       Logger.error('Device Disconnected while getting device info: $e');
     } catch (e) {
-      Logger.error('Error getting Omi device info: $e');
+      Logger.error('Error getting MemoPin device info: $e');
     }
 
     return copyWith(

@@ -122,7 +122,7 @@ extension FlutterError: Error {}
 
     private func handleAudioChunk(_ message: [String: Any]) {
         guard isRecordingActive else {
-            print("Ignoring audio chunk - recording not active") // probably started recording with main omi app closed
+            print("Ignoring audio chunk - recording not active") // probably started recording with main MemoPin app closed
             return
         }
 

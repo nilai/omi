@@ -56,7 +56,7 @@ class MenuBarManager: NSObject {
         // Create menu
         let menu = NSMenu()
         
-        // Open Omi Window item
+        // Open MemoPin Window item
         let openOmiItem = NSMenuItem(title: "Open Omi", action: #selector(openOmiWindow), keyEquivalent: "m")
         openOmiItem.target = self
         openOmiItem.keyEquivalentModifierMask = [.command]
@@ -178,7 +178,7 @@ class MenuBarManager: NSObject {
     }
     
     @objc private func openOmiWindow() {
-        print("INFO: Menu bar open Omi window action triggered")
+        print("INFO: Menu bar open MemoPin window action triggered")
         NotificationCenter.default.post(name: MenuBarManager.toggleWindowNotification, object: nil)
     }
 

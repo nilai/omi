@@ -255,7 +255,7 @@ class _DataProtectionSectionState extends State<DataProtectionSection> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your data is encrypted with a key unique to you on our servers, hosted on Google Cloud. This means your raw content is inaccessible to anyone, including Omi staff or Google, directly from the database.',
+                  'Your data is encrypted with a key unique to you on our servers, hosted on Google Cloud. This means your raw content is inaccessible to anyone, including MemoPin staff or Google, directly from the database.',
                   style: TextStyle(color: Colors.grey.shade400, fontSize: 14, height: 1.4),
                 ),
               ],

@@ -37,7 +37,7 @@ enum DeviceConnectionState {
   disconnected,
 }
 
-/// Feature flags for Omi device capabilities
+/// Feature flags for MemoPin device capabilities
 /// Must match the firmware definitions in features.h
 class OmiFeatures {
   static const int speaker = 1 << 0;
