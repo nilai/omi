@@ -5,16 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:omi/backend/http/api/messages.dart';
 import 'package:omi/backend/preferences.dart';
-import 'package:omi/backend/schema/app.dart';
-import 'package:omi/backend/schema/conversation.dart';
 import 'package:omi/backend/schema/message.dart';
 import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/chat/select_text_screen.dart';
-import 'package:omi/pages/chat/widgets/ai_message.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
 import 'package:omi/pages/mp_chat/mp_chat_menu_list_page.dart';
-import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
 import 'package:omi/providers/mp_message_provider.dart';
@@ -30,9 +26,9 @@ import '../chat/widgets/message_action_menu.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
 
-
-
 class MPChatPage extends StatefulWidget {
+  /// 全局Key，用于在其他页面获取MPChatPageState
+  static final GlobalKey<MPChatPageState> globalKey = GlobalKey<MPChatPageState>();
 
   /// 聊天页面类型
   final MPChatPageType type;
@@ -43,12 +39,22 @@ class MPChatPage extends StatefulWidget {
   /// 聊天标题
   final String title;
 
-  const MPChatPage({
-    super.key,
+  MPChatPage({
+    Key? key,
     this.type = MPChatPageType.normal,
     this.chatId = '',
     this.title = '',
-  });
+  }) : super(key: key ?? globalKey);
+
+  /// 获取当前MPChatPageState实例
+  static MPChatPageState? getCurrentState() {
+    return globalKey.currentState;
+  }
+
+  /// 获取当前MPMessageProvider实例
+  static MPMessageProvider? getCurrentProvider() {
+    return globalKey.currentState?.provider;
+  }
 
   @override
   State<MPChatPage> createState() => MPChatPageState();
@@ -417,9 +423,8 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                   : ValueListenableBuilder<TextEditingValue>(
                                       valueListenable: textController,
                                       builder: (context, value, child) {
-                                        bool canSend = value.text.trim().isNotEmpty &&
-                                            !provider.sendingMessage ;
-                                            // !provider.isUploadingFiles;
+                                        bool canSend = value.text.trim().isNotEmpty && !provider.sendingMessage;
+                                        // !provider.isUploadingFiles;
 
                                         return GestureDetector(
                                           onTap: canSend
