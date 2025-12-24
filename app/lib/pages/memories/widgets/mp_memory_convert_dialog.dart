@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
+
+import '../../../main.dart';
+import '../../mp_template _selection/template_selection_page.dart';
 
 /// Result returned by the convert dialog.
 class MPMemoryConvertResult {
@@ -200,7 +204,16 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             ),
                             const Spacer(),
                             TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                // Navigator.of(MyApp.navigatorKey.currentState!.overlay!.context).push(
+                                //   MaterialPageRoute(
+                                //     builder: (context) => const TemplateSelectionPage(
+                                //       title: '选择模版',
+                                //     ),
+                                //   ),
+                                // );
+                                MPToastUtils.showFeatureComingSoon();
+                              },
                               style: TextButton.styleFrom(
                                 foregroundColor: const Color(0xFF6366F1),
                                 padding: EdgeInsets.zero,
@@ -238,27 +251,25 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: widget.templates
-                                .map(
-                                  (template) => Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(
-                                        right: template.id == widget.templates.first.id ? 6 : 0,
-                                        left: template.id != widget.templates.first.id ? 6 : 0,
-                                      ),
-                                      child: _TemplateCard(
-                                        template: template,
-                                        selected: _selectedTemplate.id == template.id,
-                                        onTap: () => setState(() => _selectedTemplate = template),
-                                      ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: widget.templates
+                              .map(
+                                (template) => Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: template.id == widget.templates.first.id ? 6 : 0,
+                                      left: template.id != widget.templates.first.id ? 6 : 0,
+                                    ),
+                                    child: _TemplateCard(
+                                      template: template,
+                                      selected: _selectedTemplate.id == template.id,
+                                      onTap: () => setState(() => _selectedTemplate = template),
                                     ),
                                   ),
-                                )
-                                .toList(),
-                          ),
+                                ),
+                              )
+                              .toList(),
                         ),
                         const SizedBox(height: 8),
                         _buildSwitchTile(
@@ -486,7 +497,7 @@ class _TemplateCard extends StatelessWidget {
           children: [
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.max,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // 图标在左上角
                 Container(
