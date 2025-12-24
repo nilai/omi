@@ -142,215 +142,60 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
               children: [
                 // 消息列表
                 Expanded(
-                  child: Consumer<MPMessageProvider>(
-                    builder: (context, mpProvider, child) {
-                      return mpProvider.messages.isEmpty
-                          ? _noMessagesWidget()
-                          : ListView.builder(
-                              shrinkWrap: false,
-                              reverse: true,
-                              controller: scrollController,
-                              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-                              itemCount: mpProvider.messages.length,
-                              itemBuilder: (context, chatIndex) {
-                                final message = mpProvider.messages[chatIndex];
-                                double topPadding = chatIndex == mpProvider.messages.length - 1 ? 8 : 16;
-
-                                double bottomPadding = chatIndex == 0 ? 16 : 0;
-                                return GestureDetector(
-                                  onLongPress: () {},
-                                  child: Padding(
-                                    key: ValueKey(message.id),
-                                    padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
-                                    child: message.sender == MessageSender.ai
-                                        ? AIMessage(
-                                            showTypingIndicator: mpProvider.showTypingIndicator && chatIndex == 0,
-                                            message: message,
-                                            sendMessage: _sendMessageUtil,
-                                            displayOptions: mpProvider.messages.length <= 1,
-                                            appSender: null,
-                                            updateConversation: (ServerConversation conversation) {
-                                              // context.read<ConversationProvider>().updateConversation(conversation);
-                                              // mpProvider.updateConversation(conversation);
-                                            },
-                                            setMessageNps: (int value) {
-                                              // mpProvider.setMessageNps(message, value);
-                                            },
-                                          )
-                                        : HumanMessage(message: message),
-                                  ),
-                                );
-                              },
-                            );
-                    },
-                  ),
+                  child: _buildMessagesWidget(),
                 ),
 
-                // 发送消息区域
-                Container(
-                  margin: const EdgeInsets.only(top: 10, left: 16, right: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(
-                      color: const Color(0xFFE5E7EB),
-                      width: 1.0,
-                    ),
-                  ),
-                  child: Consumer<HomeProvider>(builder: (context, home, child) {
-                    return Consumer<MPMessageProvider>(builder: (context, mpProvider, child) {
-                      return Column(
-                        children: [
-                          Consumer<MessageProvider>(builder: (context, provider, child) {
-                            return const SizedBox.shrink();
-                          }),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    padding: const EdgeInsets.only(left: 16, right: 8),
-                                    child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
-                                      children: [
-                                        Expanded(
-                                          child: _showVoiceRecorder
-                                              ? VoiceRecorderWidget(
-                                                  onTranscriptReady: (transcript) {
-                                                    setState(() {
-                                                      textController.text = transcript;
-                                                      _showVoiceRecorder = false;
-                                                      context.read<MessageProvider>().setNextMessageOriginIsVoice(true);
-                                                    });
-                                                  },
-                                                  onClose: () {
-                                                    setState(() {
-                                                      _showVoiceRecorder = false;
-                                                    });
-                                                  },
-                                                )
-                                              : Container(
-                                                  alignment: Alignment.centerLeft,
-                                                  child: TextField(
-                                                    enabled: true,
-                                                    controller: textController,
-                                                    focusNode: textFieldFocusNode,
-                                                    obscureText: false,
-                                                    textAlign: TextAlign.start,
-                                                    textAlignVertical: TextAlignVertical.center,
-                                                    decoration: const InputDecoration(
-                                                      hintText: 'Ask Anything',
-                                                      hintStyle: TextStyle(fontSize: 16.0, color: Colors.white54),
-                                                      focusedBorder: InputBorder.none,
-                                                      enabledBorder: InputBorder.none,
-                                                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                                                      isDense: true,
-                                                    ),
-                                                    minLines: 1,
-                                                    maxLines: 10,
-                                                    keyboardType: TextInputType.multiline,
-                                                    textCapitalization: TextCapitalization.sentences,
-                                                    style: const TextStyle(
-                                                        fontSize: 16.0, color: Color(0xFF4B5563), height: 1.4),
-                                                  ),
-                                                ),
-                                        ),
-                                        if (_shouldShowVoiceRecorderButton())
-                                          textController.text.isNotEmpty
-                                              ? GestureDetector(
-                                                  onTap: () {
-                                                    textController.clear();
-                                                  },
-                                                  child: Container(
-                                                    height: 44,
-                                                    width: 44,
-                                                    alignment: Alignment.center,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF3F4F6),
-                                                      borderRadius: BorderRadius.circular(22),
-                                                    ),
-                                                    child: const FaIcon(
-                                                      FontAwesomeIcons.xmark,
-                                                      color: Color(0xFF4B5563),
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                )
-                                              : GestureDetector(
-                                                  child: Container(
-                                                    height: 44,
-                                                    width: 44,
-                                                    alignment: Alignment.center,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFFF3F4F6),
-                                                      borderRadius: BorderRadius.circular(22),
-                                                    ),
-                                                    child: const FaIcon(
-                                                      FontAwesomeIcons.microphone,
-                                                      color: Color(0xFF4B5563),
-                                                      size: 20,
-                                                    ),
-                                                  ),
-                                                  onTap: () {
-                                                    FocusScope.of(context).unfocus();
-                                                    // setState(() {
-                                                    //   _showVoiceRecorder = true;
-                                                    // });
-                                                    MPToastUtils.showFeatureComingSoon();
-                                                  },
-                                                ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                !_shouldShowSendButton(mpProvider)
-                                    ? const SizedBox.shrink()
-                                    : ValueListenableBuilder<TextEditingValue>(
-                                        valueListenable: textController,
-                                        builder: (context, value, child) {
-                                          bool canSend = value.text.trim().isNotEmpty && !mpProvider.sendingMessage;
-                                          // !mpProvider.isUploadingFiles;
-                                          print(
-                                              '----------- canSend: $canSend -------------- textController.text: ${textController.text} -------------- mpProvider.sendingMessage: ${mpProvider.sendingMessage}');
-                                          return GestureDetector(
-                                            onTap: canSend
-                                                ? () {
-                                                    HapticFeedback.mediumImpact();
-                                                    String message = textController.text.trim();
-                                                    if (message.isEmpty) return;
-                                                    _sendMessageUtil(message);
-                                                  }
-                                                : null,
-                                            child: Container(
-                                              height: 44,
-                                              width: 44,
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF3F4F6),
-                                                borderRadius: BorderRadius.circular(22),
-                                              ),
-                                              child: const Icon(
-                                                FontAwesomeIcons.arrowUp,
-                                                color: Color(0xFF4B5563),
-                                                size: 20,
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    });
-                  }),
-                ),
+                _buildSendMessageWidget(),
               ],
             ),
           ),
         ));
+  }
+
+  // 消息列表
+  Widget _buildMessagesWidget() {
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        return mpProvider.messages.isEmpty
+            ? _noMessagesWidget()
+            : ListView.builder(
+                shrinkWrap: false,
+                reverse: true,
+                controller: scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                itemCount: mpProvider.messages.length,
+                itemBuilder: (context, chatIndex) {
+                  final message = mpProvider.messages[chatIndex];
+                  double topPadding = chatIndex == mpProvider.messages.length - 1 ? 8 : 16;
+
+                  double bottomPadding = chatIndex == 0 ? 16 : 0;
+                  return GestureDetector(
+                    onLongPress: () {},
+                    child: Padding(
+                      key: ValueKey(message.id),
+                      padding: EdgeInsets.only(bottom: bottomPadding, top: topPadding),
+                      child: message.sender == MessageSender.ai
+                          ? AIMessage(
+                              showTypingIndicator: mpProvider.showTypingIndicator && chatIndex == 0,
+                              message: message,
+                              sendMessage: _sendMessageUtil,
+                              displayOptions: mpProvider.messages.length <= 1,
+                              appSender: null,
+                              updateConversation: (ServerConversation conversation) {
+                                // context.read<ConversationProvider>().updateConversation(conversation);
+                                // mpProvider.updateConversation(conversation);
+                              },
+                              setMessageNps: (int value) {
+                                // mpProvider.setMessageNps(message, value);
+                              },
+                            )
+                          : HumanMessage(message: message),
+                    ),
+                  );
+                },
+              );
+      },
+    );
   }
 
   // 没有消息时显示的Widget
@@ -382,6 +227,169 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
         ),
       ],
+    );
+  }
+
+  // 发送消息区域
+  Widget _buildSendMessageWidget() {
+    return Container(
+      margin: const EdgeInsets.only(top: 10, left: 16, right: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: 1.0,
+        ),
+      ),
+      child: Consumer<HomeProvider>(builder: (context, home, child) {
+        return Consumer<MPMessageProvider>(builder: (context, mpProvider, child) {
+          return Column(
+            children: [
+              Consumer<MessageProvider>(builder: (context, provider, child) {
+                return const SizedBox.shrink();
+              }),
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.only(left: 16, right: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: _showVoiceRecorder
+                                  ? VoiceRecorderWidget(
+                                      onTranscriptReady: (transcript) {
+                                        setState(() {
+                                          textController.text = transcript;
+                                          _showVoiceRecorder = false;
+                                          context.read<MessageProvider>().setNextMessageOriginIsVoice(true);
+                                        });
+                                      },
+                                      onClose: () {
+                                        setState(() {
+                                          _showVoiceRecorder = false;
+                                        });
+                                      },
+                                    )
+                                  : Container(
+                                      alignment: Alignment.centerLeft,
+                                      child: TextField(
+                                        enabled: true,
+                                        controller: textController,
+                                        focusNode: textFieldFocusNode,
+                                        obscureText: false,
+                                        textAlign: TextAlign.start,
+                                        textAlignVertical: TextAlignVertical.center,
+                                        decoration: const InputDecoration(
+                                          hintText: 'Ask Anything',
+                                          hintStyle: TextStyle(fontSize: 16.0, color: Colors.white54),
+                                          focusedBorder: InputBorder.none,
+                                          enabledBorder: InputBorder.none,
+                                          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                                          isDense: true,
+                                        ),
+                                        minLines: 1,
+                                        maxLines: 10,
+                                        keyboardType: TextInputType.multiline,
+                                        textCapitalization: TextCapitalization.sentences,
+                                        style: const TextStyle(fontSize: 16.0, color: Color(0xFF4B5563), height: 1.4),
+                                      ),
+                                    ),
+                            ),
+                            if (_shouldShowVoiceRecorderButton())
+                              textController.text.isNotEmpty
+                                  ? GestureDetector(
+                                      onTap: () {
+                                        textController.clear();
+                                      },
+                                      child: Container(
+                                        height: 44,
+                                        width: 44,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(22),
+                                        ),
+                                        child: const FaIcon(
+                                          FontAwesomeIcons.xmark,
+                                          color: Color(0xFF4B5563),
+                                          size: 20,
+                                        ),
+                                      ),
+                                    )
+                                  : GestureDetector(
+                                      child: Container(
+                                        height: 44,
+                                        width: 44,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(22),
+                                        ),
+                                        child: const FaIcon(
+                                          FontAwesomeIcons.microphone,
+                                          color: Color(0xFF4B5563),
+                                          size: 20,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        FocusScope.of(context).unfocus();
+                                        // setState(() {
+                                        //   _showVoiceRecorder = true;
+                                        // });
+                                        MPToastUtils.showFeatureComingSoon();
+                                      },
+                                    ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    !_shouldShowSendButton(mpProvider)
+                        ? const SizedBox.shrink()
+                        : ValueListenableBuilder<TextEditingValue>(
+                            valueListenable: textController,
+                            builder: (context, value, child) {
+                              bool canSend = value.text.trim().isNotEmpty && !mpProvider.sendingMessage;
+                              // !mpProvider.isUploadingFiles;
+                              print(
+                                  '----------- canSend: $canSend -------------- textController.text: ${textController.text} -------------- mpProvider.sendingMessage: ${mpProvider.sendingMessage}');
+                              return GestureDetector(
+                                onTap: canSend
+                                    ? () {
+                                        HapticFeedback.mediumImpact();
+                                        String message = textController.text.trim();
+                                        if (message.isEmpty) return;
+                                        _sendMessageUtil(message);
+                                      }
+                                    : null,
+                                child: Container(
+                                  height: 44,
+                                  width: 44,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF3F4F6),
+                                    borderRadius: BorderRadius.circular(22),
+                                  ),
+                                  child: const Icon(
+                                    FontAwesomeIcons.arrowUp,
+                                    color: Color(0xFF4B5563),
+                                    size: 20,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        });
+      }),
     );
   }
 
