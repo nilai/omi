@@ -1,19 +1,15 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:omi/backend/http/api/messages.dart';
-import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/backend/schema/message.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
-import 'package:omi/utils/file.dart';
 import 'package:uuid/uuid.dart';
 
 import '../backend/http/mp_api/mp_chat.dart';
 import '../backend/schema/mp/mp_chat.dart';
-
 
 // 聊天页面类型。不同类型调用url接口入参不同。
 enum MPChatPageType {
@@ -43,7 +39,12 @@ class MPMessagePageModel {
   /// 消息列表
   List<ServerMessage> messages;
 
-  MPMessagePageModel({required this.chatId, required this.conversationId, required this.messages, this.title = '', this.type = MPChatPageType.normal});
+  MPMessagePageModel(
+      {required this.chatId,
+      required this.conversationId,
+      required this.messages,
+      this.title = '',
+      this.type = MPChatPageType.normal});
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
@@ -87,6 +88,15 @@ class MPMessageProvider extends ChangeNotifier {
           break;
         }
       }
+      final req = MPGetConversationDetailRequest(conversationId: conversationId);
+      final response = await getConversationDetail(req);
+      if (response != null) {
+        messages = response.contents
+            .map((e) =>
+                ServerMessage('', DateTime.now(), e.content, MessageSender.ai, MessageType.text, '', false, [], [], []))
+            .toList();
+        curPageModel?.messages = messages;
+      }
       messages = curPageModel?.messages ?? [];
       notifyListeners();
       return;
@@ -103,7 +113,8 @@ class MPMessageProvider extends ChangeNotifier {
     );
     final response = await createConversation(req);
     if (response != null) {
-      final model = MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
+      final model =
+          MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       pageModels.add(model);
       curPageModel = model;
     }
