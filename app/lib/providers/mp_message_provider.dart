@@ -77,7 +77,7 @@ class MPMessageProvider extends ChangeNotifier {
   /// 更新页面消息列表
   /// @param {String} conversationId - 会话ID
   /// 没有会话ID则清空消息列表，并通过chatId获取会话ID
-  void updatePageMessages(String conversationId) async {
+  Future<void> updatePageMessages(String conversationId) async {
     messages = [];
     curPageModel = null;
     if (conversationId.isNotEmpty) {
@@ -100,9 +100,17 @@ class MPMessageProvider extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    createConversationIfNeeded();
+  }
 
-    curPageModel = null;
-
+  /// 如果当前会话ID为空，则创建会话
+  Future<void> createConversationIfNeeded() async {
+    final conversationId = curPageModel?.conversationId ?? '';
+    if (conversationId.isNotEmpty) {
+      return;
+    }
+    messages = [];
+    notifyListeners();
     final req = MPCreateConversationRequest(
       title: title,
       expertId: type == MPChatPageType.expert ? chatId : '',

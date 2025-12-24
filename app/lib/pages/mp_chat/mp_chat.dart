@@ -115,11 +115,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       }
     });
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      var provider = context.read<MessageProvider>();
-      if (provider.messages.isEmpty) {
-        provider.refreshMessages();
-      }
-      // provider.fetchChatApps();
+      await provider.updatePageMessages('');
       scrollToBottom();
     });
     super.initState();
