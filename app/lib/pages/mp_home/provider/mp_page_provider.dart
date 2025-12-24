@@ -359,27 +359,19 @@ class MPHomePageProvider extends ChangeNotifier {
 
   void onCardViewDetail(BuildContext context, MPMemoryItem item) {
     debugPrint('View detail for ${item.headerText}');
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MPMemoryPlaybackPage(
-          memory: item.memory,
-        ),
-      ),
-    );
-    return;
     // ConversationDetailPage
-    if (item.memory.type == MPMemoryType.onlyRecord) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MPMemoryPlaybackPage(
-            memory: item.memory,
-          ),
-        ),
-      );
-    } else {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
-    }
+    // if (item.memory.type == MPMemoryType.onlyRecord) {
+    //   Navigator.push(
+    //     context,
+    //     MaterialPageRoute(
+    //       builder: (context) => MPMemoryPlaybackPage(
+    //         memory: item.memory,
+    //       ),
+    //     ),
+    //   );
+    // } else {
+    //   Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
+    // }
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: item.memory)));
   }
 }
