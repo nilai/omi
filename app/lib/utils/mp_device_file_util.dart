@@ -614,6 +614,101 @@ class MPDeviceFileUtil {
     return null;
   }
 
+  /// 批量导出所有文件
+  ///
+  /// [context] BuildContext，用于获取 DeviceProvider
+  /// [onFileListCount] 文件列表数量回调
+  /// [onExportProgress] 导出进度回调，参数：文件索引、进度(0.0-1.0)、速度(字节/秒)
+  /// [onFileExported] 文件导出完成回调，参数：文件索引、文件详情
+  ///
+  /// 返回所有导出文件的路径列表
+  Future<List<String>> exportAllFiles(
+    BuildContext context, {
+    void Function(int count)? onFileListCount,
+    void Function(int index, double progress, double speed)? onExportProgress,
+    void Function(int index, MPDeviceFileDetail fileDetail)? onFileExported,
+  }) async {
+    try {
+      // 1. 获取所有文件列表
+      final files = await getDeviceFiles(context);
+      final fileCount = files.length;
+      print('[MPDeviceFileUtil] 开始批量导出，共 $fileCount 个文件');
+
+      // 回调文件列表数量
+      onFileListCount?.call(fileCount);
+
+      if (fileCount == 0) {
+        print('[MPDeviceFileUtil] 没有文件需要导出');
+        return [];
+      }
+
+      final List<String> exportedPaths = [];
+
+      // 2. 遍历文件，逐个导出
+      for (int i = 0; i < files.length; i++) {
+        final fileDetail = files[i];
+        print('[MPDeviceFileUtil] 开始导出文件 [$i/$fileCount]: ${fileDetail.name}');
+
+        try {
+          // 用于跟踪速度的变量
+          final stopwatch = Stopwatch();
+
+          // 导出文件，带进度和速度回调
+          final filePath = await exportFileFromDetail(
+            context,
+            fileDetail,
+            onProgress: (progress) {
+              double speed = 0.0;
+
+              if (!stopwatch.isRunning) {
+                // 第一次更新，开始计时
+                stopwatch.start();
+              } else {
+                // 计算速度：使用总下载字节数除以总时间
+                final elapsedSeconds = stopwatch.elapsedMilliseconds / 1000.0;
+                if (elapsedSeconds > 0) {
+                  final currentDownloaded = _getDownloadedBytes() + _fileDataBuffer.length;
+                  // 使用平均速度（总字节数 / 总时间）
+                  speed = currentDownloaded / elapsedSeconds;
+                }
+              }
+
+              // 回调进度和速度
+              onExportProgress?.call(i, progress, speed);
+            },
+          );
+
+          exportedPaths.add(filePath);
+          print('[MPDeviceFileUtil] 文件 [$i/$fileCount] 导出完成: $filePath');
+
+          // 3. 文件导出完成回调
+          // 更新文件详情中的本地路径
+          final updatedDetail = MPDeviceFileDetail(
+            name: fileDetail.name,
+            size: fileDetail.size,
+            createTime: fileDetail.createTime,
+            durationSeconds: fileDetail.durationSeconds,
+            index: fileDetail.index,
+            isEstimatedSize: fileDetail.isEstimatedSize,
+            localPath: filePath,
+            mp3Path: fileDetail.mp3Path,
+          );
+
+          onFileExported?.call(i, updatedDetail);
+        } catch (e) {
+          print('[MPDeviceFileUtil] 导出文件 [$i/$fileCount] 失败: $e');
+          // 继续导出下一个文件，不中断整个流程
+        }
+      }
+
+      print('[MPDeviceFileUtil] 批量导出完成，共导出 ${exportedPaths.length}/$fileCount 个文件');
+      return exportedPaths;
+    } catch (e) {
+      print('[MPDeviceFileUtil] 批量导出失败: $e');
+      rethrow;
+    }
+  }
+
   /// 清理资源
   void dispose() {
     _fileDataSubscription?.cancel();
