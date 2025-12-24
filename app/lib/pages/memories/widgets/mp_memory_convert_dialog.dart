@@ -310,8 +310,23 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
         trailing: Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: Colors.white,
+          thumbColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
+                return const Color(0xFF6366F1);
+              }
+              return Colors.white;
+            },
+          ),
           activeTrackColor: const Color(0xFF6366F1),
+          trackColor: WidgetStateProperty.resolveWith<Color>(
+            (Set<WidgetState> states) {
+              if (states.contains(WidgetState.selected)) {
+                return const Color(0xFF6366F1);
+              }
+              return Colors.white;
+            },
+          ),
         ),
       ),
     );
