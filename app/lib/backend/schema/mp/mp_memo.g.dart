@@ -75,12 +75,22 @@ MPUpdateMemoAIRequest _$MPUpdateMemoAIRequestFromJson(
         Map<String, dynamic> json) =>
     MPUpdateMemoAIRequest(
       rightNowTranscribe: json['right_now_transcribe'] as bool?,
+      appellation: json['appellation'] as String?,
+      profession: json['profession'] as String?,
+      aiPersonality: json['ai_personality'] as String?,
+      responseStyle: json['response_style'] as String?,
+      customPrompt: json['custom_prompt'] as String?,
     );
 
 Map<String, dynamic> _$MPUpdateMemoAIRequestToJson(
         MPUpdateMemoAIRequest instance) =>
     <String, dynamic>{
       'right_now_transcribe': instance.rightNowTranscribe,
+      'appellation': instance.appellation,
+      'profession': instance.profession,
+      'ai_personality': instance.aiPersonality,
+      'response_style': instance.responseStyle,
+      'custom_prompt': instance.customPrompt,
     };
 
 MPUpdateMemoRequest _$MPUpdateMemoRequestFromJson(Map<String, dynamic> json) =>

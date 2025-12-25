@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/utils/responsive/responsive_helper.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_custom_switch.dart';
 
+import '../../backend/http/mp_api/mp_memo.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
+import '../../backend/schema/mp/mp_memo.dart';
 
 /// AI 设置对话框
 /// 用于自定义 MemoPin AI 的个性化设置
@@ -49,9 +52,22 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
   }
 
   /// 保存设置
-  void _onSave() {
-    // TODO: 实现保存逻辑
-    Navigator.of(context).pop();
+  void _onSave() async {
+    final request = MPUpdateMemoAIRequest(
+      appellation: _nameController.text,
+      profession: _occupationController.text,
+      aiPersonality: _personalityDescriptionController.text,
+      responseStyle: _verbosity,
+      customPrompt: _additionalInfoController.text,
+    );
+    final response = await updateMemoAI(request);
+    if (response == null) {
+      MPToastUtils.showMessage('Failed to update AI settings');
+      return;
+    }
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   /// 取消并关闭对话框

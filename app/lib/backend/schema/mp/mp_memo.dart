@@ -99,8 +99,31 @@ class MPUpdateMemoAIRequest {
   @JsonKey(name: 'right_now_transcribe')
   final bool? rightNowTranscribe;
 
+  // AI如何称呼您
+  @JsonKey(name: 'appellation')
+  final String? appellation;
+
+  // 职业
+  @JsonKey(name: 'profession')
+  final String? profession;
+
+  // AI人格
+  @JsonKey(name: 'ai_personality')
+  final String? aiPersonality;
+
+  @JsonKey(name: 'response_style')
+  final String? responseStyle;
+
+  @JsonKey(name: 'custom_prompt')
+  final String? customPrompt;
+
   MPUpdateMemoAIRequest({
     this.rightNowTranscribe,
+    this.appellation,
+    this.profession,
+    this.aiPersonality,
+    this.responseStyle,
+    this.customPrompt,
   });
 
   factory MPUpdateMemoAIRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoAIRequestFromJson(json);
