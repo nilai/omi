@@ -220,13 +220,14 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
           ),
           const SizedBox(height: 16),
           // Personality Description 文本区域
-          if (_personality == 'Custom')
+          if (_enableCustomization && _personality == 'Custom')
             Container(
               margin: const EdgeInsets.only(bottom: 24),
               child: _buildMultilineInput(
                 controller: _personalityDescriptionController,
                 hint: 'Describe the personality and communication style you\'d like...',
                 minLines: 4,
+                enabled: true,
               ),
             ),
           // What should we call you? 输入框
@@ -246,13 +247,16 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
           ),
           const SizedBox(height: 24),
           // Anything else MemoPin should know about you? 文本区域
-          _buildSectionTitle('Anything else MemoPin should know about you?'),
-          const SizedBox(height: 12),
-          _buildMultilineInput(
-            controller: _additionalInfoController,
-            hint: 'Share any additional context that would help personalize your experience...',
-            minLines: 4,
-          ),
+          if (_enableCustomization && _personality == 'Custom') ...[
+            _buildSectionTitle('Anything else MemoPin should know about you?'),
+            const SizedBox(height: 12),
+            _buildMultilineInput(
+              controller: _additionalInfoController,
+              hint: 'Share any additional context that would help personalize your experience...',
+              minLines: 4,
+              enabled: true,
+            ),
+          ],
           // 底部间距，确保内容滑动到底部后距离底部 Save 按钮 24px
           const SizedBox(height: 24),
         ],
@@ -378,6 +382,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
     required TextEditingController controller,
     required String hint,
     int minLines = 4,
+    bool enabled = true,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -392,8 +397,9 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
         controller: controller,
         maxLines: null,
         minLines: minLines,
-        style: const TextStyle(
-          color: ResponsiveHelper.textPrimary,
+        enabled: enabled,
+        style: TextStyle(
+          color: enabled ? ResponsiveHelper.textPrimary : ResponsiveHelper.textTertiary,
           fontSize: 14,
           height: 1.5,
         ),
