@@ -87,14 +87,16 @@ class _MPInsightsListPageState extends State<MPInsightsListPage> {
 
             if (provider.insights.isEmpty) {
               return const Center(
+                  child: Padding(
+                padding: EdgeInsets.all(32),
                 child: Text(
-                  '暂无数据',
+                  'This page is your memory overview.\nOver time, your recordings will be distilled into Daily, Weekly, and Monthly insights — summaries, patterns, and signals you might otherwise miss.\nThere’s nothing here yet because your memory is just getting started.',
                   style: TextStyle(
                     fontSize: 14,
                     color: Color(0xFF9CA3AF),
                   ),
                 ),
-              );
+              ));
             }
 
             return RefreshIndicator(

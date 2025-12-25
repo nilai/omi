@@ -280,7 +280,6 @@ class _MenuContent extends StatelessWidget {
           iconColor: Colors.purple,
           title: 'Daily insight',
           onTap: () {
-            print('------hjj open daily insight page');
             // 打开 Daily Insight 页面
             // 注意：当前 MPInsightsListPage 可能不返回结果
             // 如果需要获取选中的ID，需要修改 MPInsightsListPage 使其返回选中的ID
