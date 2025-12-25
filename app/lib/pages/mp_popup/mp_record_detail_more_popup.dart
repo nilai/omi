@@ -86,6 +86,23 @@ extension MPRecordDetailMoreActionExtension on MPRecordDetailMoreAction {
         return const Color(0xFFEF4444); // 红色
     }
   }
+
+  static List<MPRecordDetailMoreAction> get onlyRecordActions => [
+    MPRecordDetailMoreAction.renameMemory,
+    MPRecordDetailMoreAction.export,
+    MPRecordDetailMoreAction.addTag,
+    MPRecordDetailMoreAction.deleteMemory,
+  ];
+
+  static List<MPRecordDetailMoreAction> get allActions => [
+    MPRecordDetailMoreAction.renameMemory,
+    MPRecordDetailMoreAction.addTag,
+    MPRecordDetailMoreAction.export,
+    MPRecordDetailMoreAction.copyTranscript,
+    MPRecordDetailMoreAction.copySummary,
+    MPRecordDetailMoreAction.regenerateSummary,
+    MPRecordDetailMoreAction.deleteMemory,
+  ];
 }
 
 /// 录音详情更多操作弹窗组件
