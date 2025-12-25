@@ -16,6 +16,10 @@ import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_popup/new_task_popup.dart';
 import 'package:provider/provider.dart';
 
+import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../mp_custom_utils/mp_toast_utils.dart';
+import '../../mp_popup/mp_record_detail_more_popup.dart';
+
 /// 对话详情页面
 /// 显示特定对话的详细消息记录
 class ConversationDetailPage extends StatefulWidget {
@@ -71,14 +75,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             showMoreButton: true,
             showShareButton: true,
             onMorePressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('更多选项')),
-              );
+              _showMoreActionsDialog(context);
             },
             onSharePressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('分享')),
-              );
+              MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id);
             },
           ),
           body: _buildBody(provider),
@@ -544,5 +544,40 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     }
   }
   // AI-generated END - _formatTodoDate
+
+  void _showMoreActionsDialog(BuildContext context) {
+    final actions = [
+      MPRecordDetailMoreAction.renameMemory,
+      MPRecordDetailMoreAction.addTag,
+      MPRecordDetailMoreAction.export,
+      MPRecordDetailMoreAction.copyTranscript,
+      MPRecordDetailMoreAction.copySummary,
+      MPRecordDetailMoreAction.regenerateSummary,
+      MPRecordDetailMoreAction.deleteMemory,
+    ];
+    MPRecordDetailMorePopup.show(context: context, actions: actions).then((value) {
+      if (value != null) {
+        switch (value) {
+          case MPRecordDetailMoreAction.renameMemory:
+            break;
+          case MPRecordDetailMoreAction.addTag:
+            break;
+          case MPRecordDetailMoreAction.export:
+            MPToastUtils.showFeatureComingSoon();
+            break;
+          case MPRecordDetailMoreAction.copyTranscript:
+            break;
+          case MPRecordDetailMoreAction.copySummary:
+            break;
+          case MPRecordDetailMoreAction.regenerateSummary:
+            break;
+          case MPRecordDetailMoreAction.deleteMemory:
+            break;
+          default:
+            break;
+        }
+      }
+    });
+  }
 }
 // AI-generated END - conversation_detail_page.dart

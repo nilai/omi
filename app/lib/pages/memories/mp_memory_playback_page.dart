@@ -7,6 +7,8 @@ import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
+import '../mp_custom_utils/mp_toast_utils.dart';
+import '../mp_popup/mp_record_detail_more_popup.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
 
 /// 记忆详情播放页
@@ -133,9 +135,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         showMoreButton: true,
         showShareButton: true,
         onMorePressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('更多选项')),
-          );
+          _showMoreActionsDialog(context);
         },
         onSharePressed: () => MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id),
       ),
@@ -421,5 +421,31 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
     final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$minutes:$seconds';
+  }
+
+  void _showMoreActionsDialog(BuildContext context) {
+    final actions = [
+      MPRecordDetailMoreAction.renameMemory,
+      MPRecordDetailMoreAction.export,
+      MPRecordDetailMoreAction.addTag,
+      MPRecordDetailMoreAction.deleteMemory,
+    ];
+    MPRecordDetailMorePopup.show(context: context, actions: actions).then((value) {
+      if (value != null) {
+        switch (value) {
+          case MPRecordDetailMoreAction.renameMemory:
+            break;
+          case MPRecordDetailMoreAction.export:
+            MPToastUtils.showFeatureComingSoon();
+            break;
+          case MPRecordDetailMoreAction.addTag:
+            break;
+          case MPRecordDetailMoreAction.deleteMemory:
+            break;
+          default:
+            break;
+        }
+      }
+    });
   }
 }
