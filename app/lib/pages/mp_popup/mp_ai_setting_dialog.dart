@@ -16,10 +16,10 @@ class MPAISettingDialog extends StatefulWidget {
 
   /// 显示对话框
   static Future<void> show(BuildContext context, {MPUserAISettings? aiSettings}) {
-    return showDialog(
+    return showModalBottomSheet(
       context: context,
-      barrierDismissible: true,
-      barrierColor: Colors.black54,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => MPAISettingDialog(aiSettings: aiSettings),
     );
   }
@@ -78,36 +78,34 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final maxDialogHeight = screenHeight * 0.8; // 屏幕高度的五分之四
+    final maxDialogHeight = screenHeight * 0.9; // 屏幕高度的五分之四
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: Container(
-        width: double.infinity,
-        height: screenHeight,
-        color: Colors.transparent,
-        child: Center(
-          child: Container(
-            width: screenWidth * 0.9,
-            height: maxDialogHeight,
-            decoration: BoxDecoration(
-              color: ResponsiveHelper.backgroundSecondary,
-              borderRadius: BorderRadius.circular(16),
+    return Padding(
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      child: GestureDetector(
+        onTap: () {}, // 阻止事件冒泡
+        child: Container(
+          width: double.infinity,
+          height: maxDialogHeight,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.0),
+              topRight: Radius.circular(20.0),
             ),
-            child: Column(
-              children: [
-                // 顶部标题栏
-                _buildHeader(),
-                // 可滚动内容区域
-                Expanded(
-                  child: _buildScrollableContent(),
-                ),
-                // 底部保存按钮
-                _buildBottomSaveButton(),
-              ],
-            ),
+          ),
+          child: Column(
+            children: [
+              // 顶部标题栏
+              _buildHeader(),
+              // 可滚动内容区域
+              Expanded(
+                child: _buildScrollableContent(),
+              ),
+              // 底部保存按钮
+              _buildBottomSaveButton(),
+            ],
           ),
         ),
       ),
@@ -121,7 +119,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
-            color: ResponsiveHelper.backgroundTertiary.withOpacity(0.3),
+            color: Colors.grey.withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -129,13 +127,13 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 左上角 Cancel 按钮
+          // 左上角 Cancel 按钮（占位，保持对称）
           TextButton(
-            onPressed: _onCancel,
+            onPressed: () {},
             child: const Text(
               'Cancel',
               style: TextStyle(
-                color: ResponsiveHelper.textPrimary,
+                color: Colors.transparent,
                 fontSize: 16,
               ),
             ),
@@ -144,18 +142,18 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
           const Text(
             'Customize MemoPin AI',
             style: TextStyle(
-              color: ResponsiveHelper.textPrimary,
+              color: Colors.black87,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
           ),
-          // 右上角 Cancel 按钮
+          // 右上角 Cancel 按钮（
           TextButton(
             onPressed: _onCancel,
             child: const Text(
               'Cancel',
               style: TextStyle(
-                color: ResponsiveHelper.textPrimary,
+                color: Colors.black87,
                 fontSize: 16,
               ),
             ),
@@ -278,7 +276,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
             Text(
               label,
               style: const TextStyle(
-                color: ResponsiveHelper.textPrimary,
+                color: Colors.black87,
                 fontSize: 16,
               ),
             ),
@@ -291,7 +289,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
                 child: Icon(
                   Icons.info_outline,
                   size: 18,
-                  color: ResponsiveHelper.textTertiary,
+                  color: Colors.grey[600],
                 ),
               ),
             ],
@@ -308,38 +306,60 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: ResponsiveHelper.backgroundTertiary.withOpacity(0.6),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: ResponsiveHelper.backgroundTertiary.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: DropdownButton<String>(
-        value: value,
-        items: items.map((item) {
-          return DropdownMenuItem<String>(
-            value: item,
-            child: Text(
-              item,
-              style: const TextStyle(
-                color: ResponsiveHelper.textPrimary,
-                fontSize: 14,
+    return Theme(
+      data: Theme.of(context).copyWith(
+        menuTheme: MenuThemeData(
+          style: MenuStyle(
+            backgroundColor: WidgetStateProperty.all(Colors.white),
+            shape: WidgetStateProperty.all(
+              RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
-          );
-        }).toList(),
-        onChanged: onChanged,
-        underline: const SizedBox.shrink(),
-        icon: Icon(
-          Icons.arrow_drop_down,
-          color: ResponsiveHelper.textTertiary,
+            elevation: WidgetStateProperty.all(8),
+            shadowColor: WidgetStateProperty.all(Colors.black.withOpacity(0.1)),
+          ),
         ),
-        isExpanded: false,
-        dropdownColor: ResponsiveHelper.backgroundSecondary,
+      ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: DropdownButton<String>(
+          value: value,
+          items: items.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 14,
+                ),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          underline: const SizedBox.shrink(),
+          icon: Icon(
+            Icons.arrow_drop_down,
+            color: Colors.grey[600],
+          ),
+          isExpanded: false,
+          dropdownColor: Colors.white,
+          menuMaxHeight: 200,
+          borderRadius: BorderRadius.circular(12),
+          style: const TextStyle(
+            color: Colors.black87,
+            fontSize: 14,
+          ),
+        ),
       ),
     );
   }
@@ -351,23 +371,23 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: ResponsiveHelper.backgroundTertiary.withOpacity(0.6),
+        color: Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: ResponsiveHelper.backgroundTertiary.withOpacity(0.3),
+          color: Colors.grey.withOpacity(0.3),
           width: 1,
         ),
       ),
       child: TextField(
         controller: controller,
         style: const TextStyle(
-          color: ResponsiveHelper.textPrimary,
+          color: Colors.black87,
           fontSize: 14,
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            color: ResponsiveHelper.textTertiary,
+          hintStyle: TextStyle(
+            color: Colors.grey[600],
             fontSize: 14,
           ),
           border: InputBorder.none,
@@ -386,10 +406,10 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: ResponsiveHelper.backgroundTertiary.withOpacity(0.6),
+        color: Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: ResponsiveHelper.backgroundTertiary.withOpacity(0.3),
+          color: Colors.grey.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -399,14 +419,14 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
         minLines: minLines,
         enabled: enabled,
         style: TextStyle(
-          color: enabled ? ResponsiveHelper.textPrimary : ResponsiveHelper.textTertiary,
+          color: enabled ? Colors.black87 : Colors.grey[400],
           fontSize: 14,
           height: 1.5,
         ),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            color: ResponsiveHelper.textTertiary,
+          hintStyle: TextStyle(
+            color: Colors.grey[600],
             fontSize: 14,
           ),
           border: InputBorder.none,
@@ -421,7 +441,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
     return Text(
       title,
       style: const TextStyle(
-        color: ResponsiveHelper.textPrimary,
+        color: Colors.black87,
         fontSize: 16,
         fontWeight: FontWeight.w500,
       ),
@@ -435,7 +455,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
-            color: ResponsiveHelper.backgroundTertiary.withOpacity(0.3),
+            color: Colors.grey.withOpacity(0.2),
             width: 1,
           ),
         ),
