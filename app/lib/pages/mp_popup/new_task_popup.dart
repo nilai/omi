@@ -283,6 +283,7 @@ class _NewTaskPopupState extends State<NewTaskPopup> {
         TextField(
           controller: _titleController,
           maxLength: widget.maxTitleLength,
+          cursorColor: const Color(0xFF1F2937),
           decoration: const InputDecoration(
             hintText: '输入任务详情...',
             hintStyle: TextStyle(

@@ -17,7 +17,6 @@ import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
 import '../onboarding/find_device/mp_page.dart';
-import '../onboarding/find_device/page.dart';
 import 'mp_search_page.dart';
 import 'provider/mp_page_provider.dart';
 import 'widgets/mp_home_upload_widget.dart';
@@ -166,6 +165,7 @@ class _MPPageContentState extends State<MPPageContent> {
                         return false;
                       },
                       child: ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                         itemCount: provider.items.length + (provider.loadingMore ? 1 : 0),

@@ -204,6 +204,7 @@ class _NewMemoPopupState extends State<NewMemoPopup> {
         maxLength: widget.maxLength,
         maxLines: null,
         textAlignVertical: TextAlignVertical.top,
+        cursorColor: Color(0xFF1F2937),
         decoration: const InputDecoration(
           hintText: 'I have a very good idea',
           hintStyle: TextStyle(
