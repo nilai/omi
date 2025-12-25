@@ -3,28 +3,31 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:omi/backend/http/api/messages.dart';
 import 'package:omi/services/services.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../../backend/http/mp_api/mp_chat.dart';
+import '../../../backend/schema/mp/mp_chat.dart';
+import '../../../services/mp_audio_upload.dart';
+
 /// 录音状态枚举
 /// 定义了录音过程中的各种状态
 enum RecordingState {
   /// 未录音状态
   notRecording,
-  
+
   /// 正在录音状态
   recording,
-  
+
   /// 正在转录状态
   transcribing,
-  
+
   /// 转录成功状态
   transcribeSuccess,
-  
+
   /// 转录失败状态
   transcribeFailed,
 }
@@ -33,7 +36,7 @@ class VoiceRecorderWidget extends StatefulWidget {
   /// 转录完成回调函数
   /// 当语音转录完成后调用，参数为转录的文本
   final Function(String) onTranscriptReady;
-  
+
   /// 关闭回调函数
   /// 当用户关闭录音控件时调用
   final VoidCallback onClose;
@@ -51,23 +54,23 @@ class VoiceRecorderWidget extends StatefulWidget {
 class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTickerProviderStateMixin {
   /// 当前录音状态
   RecordingState _state = RecordingState.recording;
-  
+
   /// 存储音频数据块的列表
   List<List<int>> _audioChunks = [];
-  
+
   /// 存储转录文本
   String _transcript = '';
-  
+
   /// 是否正在处理音频数据
   bool _isProcessing = false;
 
   // Audio visualization
   /// 音频可视化级别数组
   final List<double> _audioLevels = List.generate(20, (_) => 0.1);
-  
+
   /// 动画控制器，用于音频波形动画
   late AnimationController _animationController;
-  
+
   /// 波形更新定时器
   Timer? _waveformTimer;
 
@@ -236,18 +239,27 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
       1, // Mono channel
     );
 
+    ///上传文件，获取到url
+    final url = await MPAudioUploadService().uploadMPAudio(audioFile);
+    if (url == null) {
+      AppSnackbar.showSnackbarError('Failed to upload audio');
+      return;
+    }
     try {
-      final transcript = await transcribeVoiceMessage(audioFile);
+      final request = MPTranscriptRequest(audioUrl: url);
+      final response = await mpTranscript(request);
+      if (response == null) {
+        AppSnackbar.showSnackbarError('Failed to transcribe audio');
+        return;
+      }
       if (mounted) {
         setState(() {
-          _transcript = transcript;
+          _transcript = response.content;
           _state = RecordingState.transcribeSuccess;
           _isProcessing = false;
         });
-        if (transcript.isNotEmpty) {
-          widget.onTranscriptReady(transcript);
-        }
       }
+      widget.onTranscriptReady(response.content);
     } catch (e) {
       debugPrint('Error processing recording: $e');
       if (mounted) {
@@ -276,6 +288,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
   Widget build(BuildContext context) {
     switch (_state) {
       case RecordingState.recording:
+
         /// 正在录音状态UI
         return Container(
           decoration: BoxDecoration(
@@ -324,6 +337,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
         );
 
       case RecordingState.transcribing:
+
         /// 正在转录状态UI
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -349,6 +363,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
         );
 
       case RecordingState.transcribeSuccess:
+
         /// 转录成功状态UI
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -389,6 +404,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
         );
 
       case RecordingState.transcribeFailed:
+
         /// 转录失败状态UI
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
@@ -450,6 +466,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
         );
 
       default:
+
         /// 默认状态UI
         return const SizedBox.shrink();
     }
@@ -459,7 +476,7 @@ class _VoiceRecorderWidgetState extends State<VoiceRecorderWidget> with SingleTi
 class AudioWavePainter extends CustomPainter {
   /// 音频级别数组
   final List<double> levels;
-  
+
   // Add timestamp to control repaint frequency
   /// 时间戳，用于控制重绘频率
   final DateTime timestamp;

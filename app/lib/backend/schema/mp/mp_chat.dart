@@ -266,3 +266,49 @@ class MPGetConversationDetailResponse {
     };
   }
 }
+
+/// Transcript Request
+class MPTranscriptRequest {
+  final String audioUrl;
+
+  MPTranscriptRequest({
+    required this.audioUrl,
+  });
+
+  factory MPTranscriptRequest.fromJson(Map<String, dynamic> json) {
+    return MPTranscriptRequest(
+      audioUrl: json['audio_url'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'audio_url': audioUrl,
+    };
+  }
+}
+
+/// Transcript Response
+class MPTranscriptResponse {
+  final String content;
+  final MPBaseResp baseResp;
+
+  MPTranscriptResponse({
+    required this.content,
+    required this.baseResp,
+  });
+
+  factory MPTranscriptResponse.fromJson(Map<String, dynamic> json) {
+    return MPTranscriptResponse(
+      content: json['content'] as String? ?? '',
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'content': content,
+      'base_resp': baseResp.toJson(),
+    };
+  }
+}

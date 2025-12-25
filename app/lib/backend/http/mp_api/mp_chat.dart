@@ -101,3 +101,19 @@ Future<MPGetConversationDetailResponse?> getConversationDetail(MPGetConversation
   }
   return null;
 }
+
+/// POST /api/v1/chat/transcript
+Future<MPTranscriptResponse?> mpTranscript(MPTranscriptRequest req) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/transcript',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('transcript response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPTranscriptResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
