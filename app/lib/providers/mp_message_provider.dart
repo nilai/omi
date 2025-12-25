@@ -74,6 +74,28 @@ class MPMessageProvider extends ChangeNotifier {
   /// 是否正在发送消息
   bool sendingMessage = false;
 
+  /// 更新页面信息，通过chatid及type获取页面信息
+  Future<void> updatePageInfo(String chatId, MPChatPageType type) async {
+    curPageModel = null;
+
+    /// 遍历pageModels，通过chatid及type获取页面信息
+    for (var element in pageModels) {
+      if (element.chatId == chatId && element.type == type) {
+        curPageModel = element;
+        break;
+      }
+    }
+    //curPageModel为空，创建会话
+    if (curPageModel == null) {
+      this.chatId = chatId;
+      this.type = type;
+      await createConversationIfNeeded();
+    } else {
+      /// 更新页面消息列表
+      await updatePageMessages(curPageModel?.conversationId ?? '');
+    }
+  }
+
   /// 更新页面消息列表
   /// @param {String} conversationId - 会话ID
   /// 没有会话ID则清空消息列表，并通过chatId获取会话ID
