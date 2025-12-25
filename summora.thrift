@@ -20,6 +20,7 @@ struct SpeakerStruct {
     4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
     5: bool myself_voice,
     6: string audio_url,
+    7: i32 duration,  // 声音时长，单位s
 }
 
 struct SpeakerWithDetailStruct {
@@ -348,6 +349,7 @@ struct UpdateTodoRequest {
     2: string title,
     3: string priority,
     4: string deadline,
+    5: string is_completed,
 }
 
 struct UpdateTodoResponse {
@@ -419,6 +421,7 @@ struct AddSpeakerRequest {
     2: string name,
     3: string avatar, // 可以为空
     4: bool myself_voice,
+    5: i32 duration,  // 声音时长，单位s
 }
 
 struct AddSpeakerResponse {
