@@ -6,47 +6,60 @@ part of 'mp_todo.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-MPGetTodoListRequest _$MPGetTodoListRequestFromJson(Map<String, dynamic> json) => MPGetTodoListRequest(
+MPGetTodoListRequest _$MPGetTodoListRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPGetTodoListRequest(
       pageSize: (json['page_size'] as num).toInt(),
       cursor: json['cursor'] as String,
     );
 
-Map<String, dynamic> _$MPGetTodoListRequestToJson(MPGetTodoListRequest instance) => <String, dynamic>{
+Map<String, dynamic> _$MPGetTodoListRequestToJson(
+        MPGetTodoListRequest instance) =>
+    <String, dynamic>{
       'page_size': instance.pageSize,
       'cursor': instance.cursor,
     };
 
-MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) => MPCreateTodoRequest(
+MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
+    MPCreateTodoRequest(
       title: json['title'] as String,
       ownerId: json['owner_id'] as String,
       priority: json['priority'] as String,
       deadline: json['deadline'] as String,
     );
 
-Map<String, dynamic> _$MPCreateTodoRequestToJson(MPCreateTodoRequest instance) => <String, dynamic>{
+Map<String, dynamic> _$MPCreateTodoRequestToJson(
+        MPCreateTodoRequest instance) =>
+    <String, dynamic>{
       'title': instance.title,
       'owner_id': instance.ownerId,
       'priority': instance.priority,
       'deadline': instance.deadline,
     };
 
-MPDoneTodoRequest _$MPDoneTodoRequestFromJson(Map<String, dynamic> json) => MPDoneTodoRequest(
+MPDoneTodoRequest _$MPDoneTodoRequestFromJson(Map<String, dynamic> json) =>
+    MPDoneTodoRequest(
       todoId: json['todo_id'] as String,
     );
 
-Map<String, dynamic> _$MPDoneTodoRequestToJson(MPDoneTodoRequest instance) => <String, dynamic>{
+Map<String, dynamic> _$MPDoneTodoRequestToJson(MPDoneTodoRequest instance) =>
+    <String, dynamic>{
       'todo_id': instance.todoId,
     };
 
-MPDeleteTodoRequest _$MPDeleteTodoRequestFromJson(Map<String, dynamic> json) => MPDeleteTodoRequest(
+MPDeleteTodoRequest _$MPDeleteTodoRequestFromJson(Map<String, dynamic> json) =>
+    MPDeleteTodoRequest(
       todoId: json['todo_id'] as String,
     );
 
-Map<String, dynamic> _$MPDeleteTodoRequestToJson(MPDeleteTodoRequest instance) => <String, dynamic>{
+Map<String, dynamic> _$MPDeleteTodoRequestToJson(
+        MPDeleteTodoRequest instance) =>
+    <String, dynamic>{
       'todo_id': instance.todoId,
     };
 
-MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) => MPUpdateTodoRequest(
+MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
+    MPUpdateTodoRequest(
       todoId: json['todo_id'] as String,
       title: json['title'] as String,
       priority: json['priority'] as String,
@@ -54,7 +67,9 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) => 
       isCompleted: json['is_completed'] as bool,
     );
 
-Map<String, dynamic> _$MPUpdateTodoRequestToJson(MPUpdateTodoRequest instance) => <String, dynamic>{
+Map<String, dynamic> _$MPUpdateTodoRequestToJson(
+        MPUpdateTodoRequest instance) =>
+    <String, dynamic>{
       'todo_id': instance.todoId,
       'title': instance.title,
       'priority': instance.priority,
@@ -62,46 +77,66 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(MPUpdateTodoRequest instance) =
       'is_completed': instance.isCompleted,
     };
 
-MPGetTodoListResponse _$MPGetTodoListResponseFromJson(Map<String, dynamic> json) => MPGetTodoListResponse(
-      todos: (json['todos'] as List<dynamic>).map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>)).toList(),
+MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetTodoListResponse(
+      todos: (json['todos'] as List<dynamic>)
+          .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MPGetTodoListResponseToJson(MPGetTodoListResponse instance) => <String, dynamic>{
+Map<String, dynamic> _$MPGetTodoListResponseToJson(
+        MPGetTodoListResponse instance) =>
+    <String, dynamic>{
       'todos': instance.todos,
       'has_more': instance.hasMore,
       'base_resp': instance.baseResp,
     };
 
-MPCreateTodoResponse _$MPCreateTodoResponseFromJson(Map<String, dynamic> json) => MPCreateTodoResponse(
+MPCreateTodoResponse _$MPCreateTodoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPCreateTodoResponse(
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MPCreateTodoResponseToJson(MPCreateTodoResponse instance) => <String, dynamic>{
+Map<String, dynamic> _$MPCreateTodoResponseToJson(
+        MPCreateTodoResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };
 
-MPDoneTodoResponse _$MPDoneTodoResponseFromJson(Map<String, dynamic> json) => MPDoneTodoResponse(
+MPDoneTodoResponse _$MPDoneTodoResponseFromJson(Map<String, dynamic> json) =>
+    MPDoneTodoResponse(
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MPDoneTodoResponseToJson(MPDoneTodoResponse instance) => <String, dynamic>{
+Map<String, dynamic> _$MPDoneTodoResponseToJson(MPDoneTodoResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };
 
-MPDeleteTodoResponse _$MPDeleteTodoResponseFromJson(Map<String, dynamic> json) => MPDeleteTodoResponse(
+MPDeleteTodoResponse _$MPDeleteTodoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPDeleteTodoResponse(
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MPDeleteTodoResponseToJson(MPDeleteTodoResponse instance) => <String, dynamic>{
+Map<String, dynamic> _$MPDeleteTodoResponseToJson(
+        MPDeleteTodoResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };
 
-MPUpdateTodoResponse _$MPUpdateTodoResponseFromJson(Map<String, dynamic> json) => MPUpdateTodoResponse(
+MPUpdateTodoResponse _$MPUpdateTodoResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateTodoResponse(
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$MPUpdateTodoResponseToJson(MPUpdateTodoResponse instance) => <String, dynamic>{
+Map<String, dynamic> _$MPUpdateTodoResponseToJson(
+        MPUpdateTodoResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };
