@@ -43,6 +43,13 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
   final List<String> _personalityOptions = ['Professional', 'Warm', 'Casual', 'Custom'];
 
   @override
+  void initState() {
+    // TODO: implement initState
+    _nameController.text = widget.aiSettings?.appellation ?? '';
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _personalityDescriptionController.dispose();
     _nameController.dispose();
