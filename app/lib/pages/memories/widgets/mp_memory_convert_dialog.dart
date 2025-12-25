@@ -3,9 +3,6 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
-import '../../../main.dart';
-import '../../mp_template _selection/template_selection_page.dart';
-
 /// Result returned by the convert dialog.
 class MPMemoryConvertResult {
   final MPMemoryConvertTemplate template;
@@ -428,6 +425,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
     final options = homeProvider.availableLanguages.keys.toList();
     final selected = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -447,6 +445,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
     final options = ['Auto', 'GPT-4o', 'Claude 3.5', 'Gemini'];
     final selected = await showModalBottomSheet<String>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -639,71 +638,76 @@ class _SimpleSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final maxListHeight = screenHeight * 0.6; // 限制列表最大高度为屏幕的60%
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    return SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 12),
-          Container(
-            height: 4,
-            width: 40,
-            decoration: BoxDecoration(
-              color: const Color(0xFFCFD2D7),
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: screenHeight * 0.8,
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCFD2D7),
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Color(0xFF9CA3AF)),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: maxListHeight,
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: options.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
-              itemBuilder: (context, index) {
-                final option = options[index];
-                final isSelected = option == selected;
-                return ListTile(
-                  title: Text(
-                    option,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      color: const Color(0xFF1F2937),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: Row(
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF111827),
+                      ),
                     ),
-                  ),
-                  trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF6366F1)) : null,
-                  onTap: () => Navigator.of(context).pop(option),
-                );
-              },
-            ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Color(0xFF9CA3AF)),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: options.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
+                  itemBuilder: (context, index) {
+                    final option = options[index];
+                    final isSelected = option == selected;
+                    return ListTile(
+                      title: Text(
+                        option,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: const Color(0xFF1F2937),
+                        ),
+                      ),
+                      trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF6366F1)) : null,
+                      onTap: () => Navigator.of(context).pop(option),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
           ),
-          const SizedBox(height: 12),
-        ],
+        ),
       ),
     );
   }
