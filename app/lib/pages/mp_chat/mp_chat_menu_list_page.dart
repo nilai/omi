@@ -136,7 +136,12 @@ class _MPChatMenuListPageState extends State<MPChatMenuListPage> with SingleTick
                           ),
                         ],
                       ),
-                      child: const _MenuContent(),
+                      child: _MenuContent(
+                        newChatCallback: widget.newChatCallback,
+                        dailyInsightCallback: widget.dailyInsightCallback,
+                        peopleMemoryCallback: widget.peopleMemoryCallback,
+                        conversationCallback: widget.conversationCallback,
+                      ),
                     ),
                   ),
                 ),
@@ -151,7 +156,17 @@ class _MPChatMenuListPageState extends State<MPChatMenuListPage> with SingleTick
 
 /// 菜单内容
 class _MenuContent extends StatelessWidget {
-  const _MenuContent();
+  const _MenuContent({
+    required this.newChatCallback,
+    required this.dailyInsightCallback,
+    required this.peopleMemoryCallback,
+    required this.conversationCallback,
+  });
+
+  final VoidCallback newChatCallback;
+  final MPStringFutureCallback dailyInsightCallback;
+  final MPStringFutureCallback peopleMemoryCallback;
+  final MPStringFutureCallback conversationCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +271,7 @@ class _MenuContent extends StatelessWidget {
           title: 'New Chat',
           onTap: () {
             Navigator.of(context).pop();
-            // TODO: 处理新建聊天
+            newChatCallback();
           },
         ),
         _buildMenuItem(
@@ -264,21 +279,18 @@ class _MenuContent extends StatelessWidget {
           icon: Icons.lightbulb_outline,
           iconColor: Colors.purple,
           title: 'Daily insight',
-          onTap: () {
-            // Navigator.of(context).pop();
-            // // TODO: 处理每日洞察
-            // Future.delayed(const Duration(milliseconds: 300), () {
-            //   Navigator.of(context).push(
-            //     MaterialPageRoute(
-            //       builder: (context) => const MPInsightsListPage(),
-            //     ),
-            //   );
-            // });
-            Navigator.of(context).push(
+          onTap: () async {
+            // 打开 Daily Insight 页面
+            // 注意：当前 MPInsightsListPage 可能不返回结果
+            // 如果需要获取选中的ID，需要修改 MPInsightsListPage 使其返回选中的ID
+            final result = await Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (context) => const MPInsightsListPage(),
               ),
             );
+            if (result != null && result is String) {
+              await dailyInsightCallback(result);
+            }
           },
         ),
         _buildMenuItem(
@@ -291,9 +303,16 @@ class _MenuContent extends StatelessWidget {
             size: 20,
             color: Colors.grey[400],
           ),
-          onTap: () {
+          onTap: () async {
             Navigator.of(context).pop();
-            MPChatPeopleMemoryPage.show(context);
+            // 打开 People Memory 页面
+            // 注意：当前 MPChatPeopleMemoryPage.show 返回 Future<void>
+            // 如果需要获取选中的ID，需要修改 MPChatPeopleMemoryPage 使其返回选中的ID
+            await MPChatPeopleMemoryPage.show(context);
+            // TODO: 当 MPChatPeopleMemoryPage 支持返回选中ID时，调用 peopleMemoryCallback
+            // if (result != null && result is String) {
+            //   await peopleMemoryCallback(result);
+            // }
           },
         ),
       ],
@@ -410,9 +429,10 @@ class _MenuContent extends StatelessWidget {
   ) {
     return GestureDetector(
       onTap: item.onTap ??
-          () {
+          () async {
             Navigator.of(context).pop();
-            // TODO: 处理对话点击
+            // 使用对话ID调用回调
+            await conversationCallback(item.id);
           },
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
