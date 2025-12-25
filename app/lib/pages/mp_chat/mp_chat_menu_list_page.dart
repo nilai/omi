@@ -6,18 +6,46 @@ import 'mp_chat_people_memory_page.dart';
 import 'mp_insights_list_page.dart';
 import 'providers/mp_chat_menu_list_provider.dart';
 
+typedef MPStringFutureCallback = Future<void> Function(String str);
+
 /// 聊天菜单列表页面
 /// 从屏幕右侧滑入的dialog
+// ignore: must_be_immutable
 class MPChatMenuListPage extends StatefulWidget {
-  const MPChatMenuListPage({super.key});
+  MPChatMenuListPage({
+    super.key,
+    required this.newChatCallback,
+    required this.dailyInsightCallback,
+    required this.peopleMemoryCallback,
+    required this.conversationCallback,
+  });
+
+  VoidCallback newChatCallback;
+
+  MPStringFutureCallback dailyInsightCallback;
+
+  MPStringFutureCallback peopleMemoryCallback;
+
+  MPStringFutureCallback conversationCallback;
 
   /// 显示菜单dialog的静态方法
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(
+    BuildContext context, {
+    required VoidCallback newChatCallback,
+    required MPStringFutureCallback dailyInsightCallback,
+    required MPStringFutureCallback peopleMemoryCallback,
+    required MPStringFutureCallback conversationCallback,
+  }) async {
     return showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (context) => const MPChatMenuListPage(),
+      builder: (context) => MPChatMenuListPage(
+        newChatCallback: newChatCallback,
+        dailyInsightCallback: dailyInsightCallback,
+        peopleMemoryCallback: peopleMemoryCallback,
+        conversationCallback: conversationCallback,
+      ),
     );
   }
 

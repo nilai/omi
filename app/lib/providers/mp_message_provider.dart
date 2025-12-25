@@ -76,7 +76,7 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 更新页面信息，通过chatid及type获取页面信息
   Future<void> updatePageInfo(String chatId, MPChatPageType type) async {
-    curPageModel = null;
+    resetPageInfo();
 
     /// 遍历pageModels，通过chatid及type获取页面信息
     for (var element in pageModels) {
@@ -100,8 +100,7 @@ class MPMessageProvider extends ChangeNotifier {
   /// @param {String} conversationId - 会话ID
   /// 没有会话ID则清空消息列表，并通过chatId获取会话ID
   Future<void> updatePageMessages(String conversationId) async {
-    messages = [];
-    curPageModel = null;
+    resetPageInfo();
     if (conversationId.isNotEmpty) {
       for (var element in pageModels) {
         if (element.conversationId == conversationId) {
@@ -205,6 +204,7 @@ class MPMessageProvider extends ChangeNotifier {
   /// 使用缓冲区机制优化 UI 更新频率（每 100ms 刷新一次）
   /// 处理思考过程、数据流、完成和错误等不同类型的消息块
   Future<void> sendMessageStreamToServer(String text, {String? appId}) async {
+    await createConversationIfNeeded();
     setShowTypingIndicator(true);
     setSendingMessage(true);
 
@@ -255,6 +255,15 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 清空消息列表
   void clearMessages() {
+    messages.clear();
+    notifyListeners();
+  }
+
+  /// 重置页面信息，恢复初始化状态
+  void resetPageInfo() {
+    chatId = '';
+    type = MPChatPageType.normal;
+    curPageModel = null;
     messages.clear();
     notifyListeners();
   }

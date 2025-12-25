@@ -131,7 +131,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           backgroundColor: Theme.of(context).colorScheme.primary,
           appBar: MPChatAppBar(
             onLeftIconTap: () => (),
-            onMenuTap: () => MPChatMenuListPage.show(context),
+            onMenuTap: () => _showMenuListPage(context),
           ),
           body: GestureDetector(
             onTap: () {
@@ -509,4 +509,24 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   }
 
   scrollToBottom() => _moveListToBottom();
+
+  // show menu list page
+  void _showMenuListPage(BuildContext context) {
+    MPChatMenuListPage.show(
+      context,
+      newChatCallback: () {
+        provider.resetPageInfo();
+        provider.createConversationIfNeeded();
+      },
+      dailyInsightCallback: (String str) async {
+        await provider.updatePageInfo(str, MPChatPageType.memory);
+      },
+      peopleMemoryCallback: (String str) async {
+        await provider.updatePageInfo(str, MPChatPageType.memory);
+      },
+      conversationCallback: (String str) async {
+        await provider.updatePageMessages(str);
+      },
+    );
+  }
 }
