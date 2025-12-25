@@ -58,6 +58,20 @@ class MPChatPage extends StatefulWidget {
 
   @override
   State<MPChatPage> createState() => MPChatPageState();
+
+  static void openChatPage(BuildContext context,
+      {String chatId = '', String title = '', MPChatPageType type = MPChatPageType.normal}) {
+    // 切换到第3个tab（AI助理，索引为2）
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    homeProvider.setIndex(2);
+
+    // 返回到主页
+    Navigator.of(context).popUntil((route) => route.isFirst);
+
+    final messageProvider = MPChatPage.getCurrentProvider();
+    messageProvider.title = title;
+    messageProvider.updatePageInfo(chatId, type);
+  }
 }
 
 class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
