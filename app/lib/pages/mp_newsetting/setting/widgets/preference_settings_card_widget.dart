@@ -7,6 +7,9 @@ import 'package:omi/pages/mp_newsetting/setting/widgets/transcription_mode_dialo
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../utils/mp_user_profile_share.dart';
+import '../../../mp_popup/mp_ai_setting_dialog.dart';
+
 /// 偏好设置项信息数据模型
 class PreferenceSettingItem {
   // AI-generated START - 设置项标题
@@ -62,15 +65,11 @@ class PreferenceSettingsCardWidget extends StatelessWidget {
         title: 'AI偏好',
         description: '自定义AI助手的行为和风格',
         icon: Assets.images.settingAiperfect.path,
-        onTap: () {
+        onTap: () async {
           // AI-generated START - 默认点击事件处理
-          if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('打开AI偏好设置'),
-                duration: Duration(seconds: 1),
-              ),
-            );
+          final response = await MPUserProfileShare.instance.getUserProfile();
+          if (context != null && context.mounted) { 
+            MPAISettingDialog.show(context, aiSettings: response?.user.aiSettings);
           }
           // AI-generated END - 默认点击事件处理
         },

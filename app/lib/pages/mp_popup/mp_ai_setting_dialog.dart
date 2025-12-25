@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:omi/utils/responsive/responsive_helper.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_custom_switch.dart';
 
+import '../../backend/schema/mp/mp_data_model.dart';
+
 /// AI 设置对话框
 /// 用于自定义 MemoPin AI 的个性化设置
 class MPAISettingDialog extends StatefulWidget {
-  const MPAISettingDialog({super.key});
+  const MPAISettingDialog({super.key, this.aiSettings});
+
+  final MPUserAISettings? aiSettings;
 
   /// 显示对话框
-  static Future<void> show(BuildContext context) {
+  static Future<void> show(BuildContext context, {MPUserAISettings? aiSettings}) {
     return showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black54,
-      builder: (context) => const MPAISettingDialog(),
+      builder: (context) => MPAISettingDialog(aiSettings: aiSettings),
     );
   }
 
@@ -33,7 +37,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
 
   // 下拉选项
   final List<String> _verbosityOptions = ['Low', 'Medium', 'High'];
-  final List<String> _personalityOptions = ['Default', 'Friendly', 'Professional', 'Casual', 'Custom'];
+  final List<String> _personalityOptions = ['Professional', 'Warm', 'Casual', 'Custom'];
 
   @override
   void dispose() {

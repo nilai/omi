@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_user.dart';
 import 'package:omi/backend/schema/mp/mp_user.dart';
 
+import '../../../../utils/mp_user_profile_share.dart';
+
 /// 用户资料数据模型
 class UserProfile {
   // AI-generated START - 构造函数
@@ -144,8 +146,7 @@ class PersonalProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = MPGetUserProfileRequest();
-      final response = await getUserProfile(request);
+      final response = await MPUserProfileShare.instance.getUserProfile();
 
       if (response != null) {
         if (response.baseResp.code == 0) {
