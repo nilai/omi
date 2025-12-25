@@ -38,7 +38,7 @@ class SettingsProvider with ChangeNotifier {
   // AI-generated END - _isLoadingExperts
 
   // AI-generated START - 转写模式：true = 确认后转写，false = 立即转写
-  bool _transcriptionConfirmMode = false;
+  bool _transcriptionConfirmMode = true;
   // AI-generated END - _transcriptionConfirmMode
 
   // AI-generated START - 音频保留时间

@@ -150,6 +150,7 @@ class MemoryDetailProvider with ChangeNotifier {
           //   summaryText = memory.summaryContent!.summary;
           // }
 
+          print('memory.duration: ${memory.duration}');
           return ConversationSummary(
             id: memory.id,
             title: memory.title,

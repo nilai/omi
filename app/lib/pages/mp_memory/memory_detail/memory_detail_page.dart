@@ -1,6 +1,7 @@
 // AI-generated START - 记忆详情页面
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_chat/mp_chat.dart';
 import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/conversation_detail_page.dart';
@@ -9,7 +10,10 @@ import 'package:omi/pages/mp_memory/memory_detail/providers/memory_detail_provid
 import 'package:omi/pages/mp_memory/memory_detail/widgets/character_info_card.dart';
 import 'package:omi/pages/mp_memory/memory_detail/widgets/conversation_summary_card.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import 'package:omi/providers/mp_message_provider.dart';
 import 'package:provider/provider.dart';
+
+import '../../../providers/home_provider.dart';
 
 /// 记忆详情页面
 /// 显示特定人物记忆的详细信息和对话记录
@@ -75,10 +79,20 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
           body: _buildBody(detailProvider, memoryItem),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              // TODO: 打开录音/对话功能
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('开始新对话')),
-              );
+              // 获取 MPMessageProvider 并传递 memoryId
+              final messageProvider = MPChatPage.getCurrentProvider();
+              if (messageProvider != null) {
+                final memoryTitle = memoryItem != null ? '与${memoryItem.name}的对话' : '记忆对话';
+                messageProvider.title = memoryTitle;
+                messageProvider.updatePageInfo(widget.memoryId, MPChatPageType.speaker);
+              }
+
+              // 切换到第3个tab（AI助理，索引为2）
+              final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+              homeProvider.setIndex(2);
+
+              // 返回到主页
+              Navigator.of(context).popUntil((route) => route.isFirst);
             },
             backgroundColor: Colors.transparent,
             elevation: 0,
