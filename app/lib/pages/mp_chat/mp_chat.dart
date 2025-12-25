@@ -41,12 +41,19 @@ class MPChatPage extends StatefulWidget {
 
   /// 获取当前MPChatPageState实例
   static MPChatPageState? getCurrentState() {
-    return globalKey.currentState;
+    return MPChatPageState.currentInstance;
   }
 
   /// 获取当前MPMessageProvider实例
-  static MPMessageProvider? getCurrentProvider() {
-    return globalKey.currentState?.provider;
+  /// 如果页面已加载，返回页面的 provider
+  /// 如果页面未加载，返回或创建一个静态的 provider 实例（延迟初始化）
+  static MPMessageProvider getCurrentProvider() {
+    // 优先返回页面已加载的 provider
+    if (MPChatPageState.currentInstance != null) {
+      return MPChatPageState.currentInstance!.provider;
+    }
+    // 如果页面未加载，返回静态的 provider（延迟初始化）
+    return MPChatPageState._getOrCreateStaticProvider;
   }
 
   @override
@@ -54,6 +61,21 @@ class MPChatPage extends StatefulWidget {
 }
 
 class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+  /// 当前活跃的 MPChatPageState 实例的静态引用
+  static MPChatPageState? _currentInstance;
+
+  /// 获取当前活跃的实例（用于外部访问）
+  static MPChatPageState? get currentInstance => _currentInstance;
+
+  /// 静态的 provider 实例，用于在页面未加载时也能访问
+  static MPMessageProvider? _staticProvider;
+
+  /// 获取静态 provider 实例（延迟初始化）
+  static MPMessageProvider get _getOrCreateStaticProvider {
+    _staticProvider ??= MPMessageProvider();
+    return _staticProvider!;
+  }
+
   TextEditingController textController = TextEditingController();
   late ScrollController scrollController;
   late FocusNode textFieldFocusNode;
@@ -73,8 +95,25 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   @override
   void initState() {
-    provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
-    provider.title = widget.title;
+    super.initState();
+    // 注册当前实例
+    _currentInstance = this;
+
+    // 如果静态 provider 存在，复用它的数据（如 pageModels）
+    if (_staticProvider != null) {
+      debugPrint('-----hj----- initState: reuse static provider');
+      provider = _staticProvider!;
+      // 更新 provider 的参数
+      provider.chatId = widget.chatId;
+      provider.type = widget.type;
+      provider.title = widget.title;
+      // 清除静态引用，因为现在由页面实例管理
+      _staticProvider = null;
+    } else {
+      debugPrint('-----hj----- initState: create new provider');
+      provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
+      provider.title = widget.title;
+    }
 
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();
@@ -109,11 +148,16 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       await provider.updatePageMessages('');
       scrollToBottom();
     });
-    super.initState();
   }
 
   @override
   void dispose() {
+    // 如果当前实例是 this，则清除引用
+    if (_currentInstance == this) {
+      _currentInstance = null;
+      // 将 provider 保存到静态引用，以便页面销毁后仍能访问
+      _staticProvider = provider;
+    }
     textController.dispose();
     scrollController.dispose();
     textFieldFocusNode.dispose();

@@ -79,20 +79,21 @@ class _MemoryDetailPageState extends State<MemoryDetailPage> {
           body: _buildBody(detailProvider, memoryItem),
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              // 获取 MPMessageProvider 并传递 memoryId
-              final messageProvider = MPChatPage.getCurrentProvider();
-              if (messageProvider != null) {
-                final memoryTitle = memoryItem != null ? '与${memoryItem.name}的对话' : '记忆对话';
-                messageProvider.title = memoryTitle;
-                messageProvider.updatePageInfo(widget.memoryId, MPChatPageType.speaker);
-              }
-
               // 切换到第3个tab（AI助理，索引为2）
               final homeProvider = Provider.of<HomeProvider>(context, listen: false);
               homeProvider.setIndex(2);
 
               // 返回到主页
               Navigator.of(context).popUntil((route) => route.isFirst);
+
+              // 获取 MPMessageProvider 并传递 memoryId
+              // getCurrentProvider() 现在总是返回非空实例（延迟初始化）
+              final messageProvider = MPChatPage.getCurrentProvider();
+              final memoryTitle = memoryItem != null ? '与${memoryItem.name}的对话' : '记忆对话';
+              messageProvider.title = memoryTitle;
+              debugPrint(
+                  '-----hj----- before updatePageInfo: chatId: ${widget.memoryId}, type: ${MPChatPageType.speaker} , title: $memoryTitle');
+              messageProvider.updatePageInfo(widget.memoryId, MPChatPageType.speaker);
             },
             backgroundColor: Colors.transparent,
             elevation: 0,
