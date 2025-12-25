@@ -222,7 +222,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                               showTypingIndicator: mpProvider.showTypingIndicator && chatIndex == 0,
                               message: message,
                               sendMessage: _sendMessageUtil,
-                              displayOptions: mpProvider.messages.length <= 1,
+                              displayOptions: false,
                               appSender: null,
                               updateConversation: (ServerConversation conversation) {
                                 // context.read<ConversationProvider>().updateConversation(conversation);
