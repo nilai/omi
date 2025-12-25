@@ -59,6 +59,18 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
   }
   // AI-generated END - scrollToTop
 
+  // AI-generated START - 下拉刷新方法
+  Future<void> _onRefresh() async {
+    if (_selectedType == MemoTodoType.memo) {
+      final memoProvider = Provider.of<MemoProvider>(context, listen: false);
+      await memoProvider.loadMemos();
+    } else {
+      final todoProvider = Provider.of<TodoProvider>(context, listen: false);
+      await todoProvider.loadTodos();
+    }
+  }
+  // AI-generated END - _onRefresh
+
   // AI-generated START - 处理浮动按钮点击
   void _onFloatingActionButtonPressed() {
     if (_selectedType == MemoTodoType.memo) {
@@ -123,6 +135,15 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
           MemoTodoSwitchCard(
             selectedType: _selectedType,
             onTypeChanged: (type) {
+              // 切换类型时，重置两个页面的活动卡片，还原左滑状态
+              final memoState = _memoPageKey.currentState;
+              if (memoState != null) {
+                (memoState as dynamic).resetActiveCard();
+              }
+              final todoState = _todoPageKey.currentState;
+              if (todoState != null) {
+                (todoState as dynamic).resetActiveCard();
+              }
               setState(() {
                 _selectedType = type;
               });
@@ -130,14 +151,16 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
           ),
           // AI-generated END - 固定的切换卡片
 
-          // AI-generated START - 根据选择显示对应页面
+          // AI-generated START - 根据选择显示对应页面（带下拉刷新）
           Expanded(
-            child: IndexedStack(
-              index: _selectedType == MemoTodoType.memo ? 0 : 1,
-              children: [
-                MemoPage(key: _memoPageKey),
-                TodoPage(key: _todoPageKey),
-              ],
+            child: NotificationListener<ScrollNotification>(
+              child: IndexedStack(
+                index: _selectedType == MemoTodoType.memo ? 0 : 1,
+                children: [
+                  MemoPage(key: _memoPageKey),
+                  TodoPage(key: _todoPageKey),
+                ],
+              ),
             ),
           ),
           // AI-generated END - 根据选择显示对应页面

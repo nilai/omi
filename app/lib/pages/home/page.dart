@@ -405,7 +405,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
                 ),
                 _buildCustomTab(
                   index: 3,
-                  label: '任务',
+                  label: '设置',
                   normalAsset: Assets.images.tabSetNormal.path,
                   selectedAsset: Assets.images.tabSetSelect.path,
                   homeProvider: homeProvider,

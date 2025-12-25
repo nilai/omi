@@ -419,9 +419,21 @@ class TodoProvider with ChangeNotifier {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           debugPrint('Todo 完成成功');
-          // 从本地列表中删除
-          _todos.removeWhere((t) => t.id == id);
-          notifyListeners();
+          // 直接更新本地状态：将任务状态更新为已完成（2）
+          final index = _todos.indexWhere((t) => t.id == id);
+          if (index != -1) {
+            final todo = _todos[index];
+            // 更新任务状态为已完成（2）
+            _todos[index] = TodoTaskItem(
+              id: todo.id,
+              title: todo.title,
+              description: todo.description,
+              date: todo.date,
+              priorityTag: todo.priorityTag,
+              status: 2, // 2-已完成
+            );
+            notifyListeners();
+          }
           return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
@@ -492,11 +504,46 @@ class TodoProvider with ChangeNotifier {
     // 解析 deadline 日期字符串
     DateTime deadlineDate;
     try {
-      // 尝试解析 ISO 8601 格式的日期字符串
-      deadlineDate = DateTime.parse(todo.deadline).toLocal();
+      if (todo.deadline.isEmpty) {
+        // 如果 deadline 为空，使用当前日期
+        deadlineDate = DateTime.now();
+      } else if (todo.deadline.contains('-')) {
+        // 格式是 "YYYY-MM-DD" 或 "YYYY-MM-DDTHH:mm:ss"
+        final parts = todo.deadline.split('T')[0].split('-');
+        if (parts.length == 3) {
+          final year = int.tryParse(parts[0]);
+          final month = int.tryParse(parts[1]);
+          final day = int.tryParse(parts[2]);
+          if (year != null && month != null && day != null) {
+            deadlineDate = DateTime(year, month, day).toLocal();
+          } else {
+            throw FormatException('无法解析日期部分: ${todo.deadline}');
+          }
+        } else {
+          // 尝试使用 DateTime.parse
+          deadlineDate = DateTime.parse(todo.deadline).toLocal();
+        }
+      } else {
+        // 格式可能是 "Dec 25"，需要转换为当前年份的日期
+        final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        final parts = todo.deadline.trim().split(' ');
+        if (parts.length == 2) {
+          final monthIndex = months.indexOf(parts[0]);
+          if (monthIndex != -1) {
+            final day = int.tryParse(parts[1]) ?? DateTime.now().day;
+            final now = DateTime.now();
+            deadlineDate = DateTime(now.year, monthIndex + 1, day).toLocal();
+          } else {
+            throw FormatException('无法解析月份: ${todo.deadline}');
+          }
+        } else {
+          // 尝试使用 DateTime.parse
+          deadlineDate = DateTime.parse(todo.deadline).toLocal();
+        }
+      }
     } catch (e) {
       // 如果解析失败，使用当前日期
-      debugPrint('解析 deadline 失败: ${todo.deadline}, 使用当前日期');
+      debugPrint('解析 deadline 失败: ${todo.deadline}, 错误: $e, 使用当前日期');
       deadlineDate = DateTime.now();
     }
 

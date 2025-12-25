@@ -34,6 +34,14 @@ class MemoTaskCard extends StatefulWidget {
   final VoidCallback? onDelete;
   // AI-generated END - onDelete
 
+  // AI-generated START - 当前活动的卡片ID（用于控制只有一个卡片处于滑动状态）
+  final String? activeCardId;
+  // AI-generated END - activeCardId
+
+  // AI-generated START - 滑动开始回调（通知父组件更新活动卡片）
+  final ValueChanged<String>? onSwipeStart;
+  // AI-generated END - onSwipeStart
+
   const MemoTaskCard({
     super.key,
     required this.id,
@@ -43,6 +51,8 @@ class MemoTaskCard extends StatefulWidget {
     this.tags = const [],
     this.onTap,
     this.onDelete,
+    this.activeCardId,
+    this.onSwipeStart,
   });
 
   @override
@@ -76,6 +86,17 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
   }
 
   @override
+  void didUpdateWidget(MemoTaskCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 如果当前卡片不再是活动卡片，且之前是活动的，则还原位置
+    if (oldWidget.activeCardId == widget.id && widget.activeCardId != widget.id) {
+      if (_dragOffset < 0) {
+        _resetCardPosition();
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _animationController.dispose();
     super.dispose();
@@ -88,6 +109,15 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
     widget.onDelete?.call();
   }
   // AI-generated END - _handleDeleteClick
+
+  // AI-generated START - 处理水平拖拽开始
+  void _onHorizontalDragStart(DragStartDetails details) {
+    // 当开始滑动时，通知父组件更新活动卡片
+    if (widget.onSwipeStart != null && widget.activeCardId != widget.id) {
+      widget.onSwipeStart!(widget.id);
+    }
+  }
+  // AI-generated END - _onHorizontalDragStart
 
   // AI-generated START - 处理水平拖拽更新
   void _onHorizontalDragUpdate(DragUpdateDetails details) {
@@ -187,6 +217,7 @@ class _MemoTaskCardState extends State<MemoTaskCard> with SingleTickerProviderSt
             return Transform.translate(
               offset: Offset(offset, 0),
               child: GestureDetector(
+                onHorizontalDragStart: _onHorizontalDragStart,
                 onHorizontalDragUpdate: _onHorizontalDragUpdate,
                 onHorizontalDragEnd: _onHorizontalDragEnd,
                 onTap: () {

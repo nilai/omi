@@ -30,6 +30,10 @@ class _MemoPageState extends State<MemoPage> {
   final ScrollController _scrollController = ScrollController();
   // AI-generated END - _scrollController
 
+  // AI-generated START - 当前活动的卡片ID（用于控制只有一个卡片处于滑动状态）
+  String? _activeCardId;
+  // AI-generated END - _activeCardId
+
   // AI-generated START - 初始化方法
   @override
   void initState() {
@@ -76,6 +80,12 @@ class _MemoPageState extends State<MemoPage> {
   }
   // AI-generated END - _onRefresh
 
+  // AI-generated START - 公共刷新方法（供父页面调用）
+  Future<void> refresh() async {
+    await _onRefresh();
+  }
+  // AI-generated END - refresh
+
   // AI-generated START - 滚动到顶部
   void scrollToTop() {
     if (_scrollController.hasClients) {
@@ -87,6 +97,16 @@ class _MemoPageState extends State<MemoPage> {
     }
   }
   // AI-generated END - scrollToTop
+
+  // AI-generated START - 重置活动卡片（用于切换类型时还原左滑状态）
+  void resetActiveCard() {
+    if (_activeCardId != null) {
+      setState(() {
+        _activeCardId = null;
+      });
+    }
+  }
+  // AI-generated END - resetActiveCard
 
   // AI-generated START - 构建方法
   @override
@@ -126,61 +146,82 @@ class _MemoPageState extends State<MemoPage> {
     }
 
     if (provider.error != null && provider.memos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.error!,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
+      return RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 200, // 确保有足够的高度支持下拉
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    provider.error!,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => provider.loadMemos(),
+                    child: const Text('重试'),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => provider.loadMemos(),
-              child: const Text('重试'),
-            ),
-          ],
+          ),
         ),
       );
     }
 
     if (provider.filteredMemos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.note_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              provider.searchQuery.isEmpty ? '暂无Memo' : '未找到相关Memo',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
+      return RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: SizedBox(
+            height: MediaQuery.of(context).size.height - 200, // 确保有足够的高度支持下拉
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.note_outlined,
+                    size: 64,
+                    color: Colors.grey.shade400,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    provider.searchQuery.isEmpty ? '暂无Memo' : '未找到相关Memo',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       );
     }
 
     // AI-generated START - Memo 列表（带下拉刷新和上拉加载）
     return RefreshIndicator(
+      color: const Color(0xFF306CFF),
+      backgroundColor: Colors.white,
       onRefresh: _onRefresh,
       child: ListView.builder(
         controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(), // 即使内容不足一屏也可以滚动和下拉刷新
         padding: const EdgeInsets.symmetric(vertical: 8.0),
         itemCount: provider.filteredMemos.length + (provider.hasMore && provider.isFetching ? 1 : 0),
         itemBuilder: (context, index) {
@@ -200,7 +241,18 @@ class _MemoPageState extends State<MemoPage> {
             description: memo.description,
             date: memo.date,
             tags: memo.tags,
+            activeCardId: _activeCardId,
+            onSwipeStart: (cardId) {
+              // 当新的卡片开始滑动时，更新活动卡片ID
+              setState(() {
+                _activeCardId = cardId;
+              });
+            },
             onTap: () {
+              // 清除活动卡片ID
+              setState(() {
+                _activeCardId = null;
+              });
               InspirationDetailPopup.show(
                 context: context,
                 title: memo.title,
@@ -214,6 +266,10 @@ class _MemoPageState extends State<MemoPage> {
             },
             onDelete: () async {
               await provider.deleteMemo(memo.id);
+              // 清除活动卡片ID
+              setState(() {
+                _activeCardId = null;
+              });
             },
           );
         },
