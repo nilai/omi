@@ -14,14 +14,14 @@ import '../backend/schema/mp/mp_chat.dart';
 enum MPChatPageType {
   // 普通聊天
   normal,
-  // 记忆总结
-  memory,
-  // 模板聊天
-  template,
-  // AI分析助手
-  aiAssistant,
-  // 专家模型
+  // 专家
   expert,
+  // 记忆
+  memory,
+  // 模板
+  template,
+  // 人物
+  speaker,
 }
 
 class MPMessagePageModel {
@@ -137,7 +137,7 @@ class MPMessageProvider extends ChangeNotifier {
       expertId: type == MPChatPageType.expert ? chatId : '',
       memoryId: type == MPChatPageType.memory ? chatId : '',
       templateId: type == MPChatPageType.template ? chatId : '',
-      speakerId: type == MPChatPageType.aiAssistant ? chatId : '',
+      speakerId: type == MPChatPageType.speaker ? chatId : '',
     );
     final response = await createConversation(req);
     if (response != null) {
