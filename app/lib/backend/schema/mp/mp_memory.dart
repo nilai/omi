@@ -237,7 +237,7 @@ class MPGetMemoryDetailResponse {
 // Get Insight List Response
 @JsonSerializable()
 class MPGetInsightListResponse {
-  @JsonKey(name: 'memorys')
+  @JsonKey(name: 'memorys', defaultValue: [])
   final List<MPMemoryStruct> memorys;
 
   @JsonKey(name: 'has_more')
