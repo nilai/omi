@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
+import 'mp_chat_menu_list_page.dart';
 import 'providers/mp_insights_list_provider.dart';
 import 'widgets/mp_insight_card.dart';
 
 /// Insights 列表页面
 class MPInsightsListPage extends StatefulWidget {
-  const MPInsightsListPage({super.key});
+  const MPInsightsListPage({super.key, required this.insightsCallback});
+
+  final MPStringCallback insightsCallback;
 
   @override
   State<MPInsightsListPage> createState() => _MPInsightsListPageState();
@@ -124,9 +128,11 @@ class _MPInsightsListPageState extends State<MPInsightsListPage> {
                     insight: insight,
                     onTap: () {
                       // 卡片点击事件
-                      debugPrint('Card tapped: ${insight.id}');
+                      widget.insightsCallback(insight.id);
+                      Navigator.of(context).pop();
                     },
                     onViewDetailTap: () {
+                      MPToastUtils.showFeatureComingSoon();
                       // 查看详情点击事件
                       debugPrint('View detail tapped: ${insight.id}');
                       // Navigator.of(context).push(

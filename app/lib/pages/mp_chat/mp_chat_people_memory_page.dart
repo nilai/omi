@@ -2,24 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_chat/providers/mp_chat_people_memory_provider.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_three_state_widget.dart';
-import 'package:omi/pages/mp_memory/home/widgets/memory_conversation_card.dart';
-import 'package:omi/pages/mp_memory/memory_detail/memory_detail_page.dart';
 import 'package:provider/provider.dart';
 
+import 'mp_chat_menu_list_page.dart';
 import 'widgets/mp_chat_people_memory_card.dart';
 
 /// People Memory 页面
 /// 从屏幕右侧滑入的 dialog，显示人物记忆列表
 class MPChatPeopleMemoryPage extends StatefulWidget {
-  const MPChatPeopleMemoryPage({super.key});
+  const MPChatPeopleMemoryPage({
+    super.key,
+    required this.peopleMemoryCallback,
+  });
+
+  final MPStringCallback peopleMemoryCallback;
 
   /// 显示 People Memory dialog 的静态方法
-  static Future<void> show(BuildContext context) async {
+  static Future<void> show(BuildContext context, {required MPStringCallback peopleMemoryCallback}) async {
     return showDialog(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
-      builder: (context) => const MPChatPeopleMemoryPage(),
+      builder: (context) => MPChatPeopleMemoryPage(peopleMemoryCallback: peopleMemoryCallback),
     );
   }
 
@@ -114,6 +118,10 @@ class _MPChatPeopleMemoryPageState extends State<MPChatPeopleMemoryPage> with Si
                       ),
                       child: _PeopleMemoryContent(
                         scrollController: _scrollController,
+                        peopleMemoryCallback: (String str) {
+                          widget.peopleMemoryCallback(str);
+                          Navigator.of(context).pop();
+                        },
                       ),
                     ),
                   ),
@@ -131,9 +139,12 @@ class _MPChatPeopleMemoryPageState extends State<MPChatPeopleMemoryPage> with Si
 class _PeopleMemoryContent extends StatefulWidget {
   const _PeopleMemoryContent({
     required this.scrollController,
+    required this.peopleMemoryCallback,
   });
 
   final ScrollController scrollController;
+
+  final MPStringCallback peopleMemoryCallback;
 
   @override
   State<_PeopleMemoryContent> createState() => _PeopleMemoryContentState();
@@ -288,15 +299,8 @@ class _PeopleMemoryContentState extends State<_PeopleMemoryContent> {
                 description: memory.description ?? '',
                 avatarUrl: memory.avatarUrl,
                 onTap: () {
+                  widget.peopleMemoryCallback(memory.id);
                   Navigator.of(context).pop();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MemoryDetailPage(
-                        memoryId: memory.id,
-                      ),
-                    ),
-                  );
                 },
               );
             },

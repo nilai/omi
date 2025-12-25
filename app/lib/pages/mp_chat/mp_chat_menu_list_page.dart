@@ -6,7 +6,7 @@ import 'mp_chat_people_memory_page.dart';
 import 'mp_insights_list_page.dart';
 import 'providers/mp_chat_menu_list_provider.dart';
 
-typedef MPStringFutureCallback = Future<void> Function(String str);
+typedef MPStringCallback = void Function(String str);
 
 /// 聊天菜单列表页面
 /// 从屏幕右侧滑入的dialog
@@ -22,19 +22,19 @@ class MPChatMenuListPage extends StatefulWidget {
 
   VoidCallback newChatCallback;
 
-  MPStringFutureCallback dailyInsightCallback;
+  MPStringCallback dailyInsightCallback;
 
-  MPStringFutureCallback peopleMemoryCallback;
+  MPStringCallback peopleMemoryCallback;
 
-  MPStringFutureCallback conversationCallback;
+  MPStringCallback conversationCallback;
 
   /// 显示菜单dialog的静态方法
   static Future<void> show(
     BuildContext context, {
     required VoidCallback newChatCallback,
-    required MPStringFutureCallback dailyInsightCallback,
-    required MPStringFutureCallback peopleMemoryCallback,
-    required MPStringFutureCallback conversationCallback,
+    required MPStringCallback dailyInsightCallback,
+    required MPStringCallback peopleMemoryCallback,
+    required MPStringCallback conversationCallback,
   }) async {
     return showDialog(
       context: context,
@@ -164,9 +164,9 @@ class _MenuContent extends StatelessWidget {
   });
 
   final VoidCallback newChatCallback;
-  final MPStringFutureCallback dailyInsightCallback;
-  final MPStringFutureCallback peopleMemoryCallback;
-  final MPStringFutureCallback conversationCallback;
+  final MPStringCallback dailyInsightCallback;
+  final MPStringCallback peopleMemoryCallback;
+  final MPStringCallback conversationCallback;
 
   @override
   Widget build(BuildContext context) {
@@ -283,14 +283,12 @@ class _MenuContent extends StatelessWidget {
             // 打开 Daily Insight 页面
             // 注意：当前 MPInsightsListPage 可能不返回结果
             // 如果需要获取选中的ID，需要修改 MPInsightsListPage 使其返回选中的ID
-            final result = await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => const MPInsightsListPage(),
-              ),
+            MaterialPageRoute(
+              builder: (context) => MPInsightsListPage(insightsCallback: (str) {
+                dailyInsightCallback(str);
+                Navigator.of(context).pop();
+              }),
             );
-            if (result != null && result is String) {
-              await dailyInsightCallback(result);
-            }
           },
         ),
         _buildMenuItem(
@@ -304,15 +302,10 @@ class _MenuContent extends StatelessWidget {
             color: Colors.grey[400],
           ),
           onTap: () async {
-            Navigator.of(context).pop();
-            // 打开 People Memory 页面
-            // 注意：当前 MPChatPeopleMemoryPage.show 返回 Future<void>
-            // 如果需要获取选中的ID，需要修改 MPChatPeopleMemoryPage 使其返回选中的ID
-            await MPChatPeopleMemoryPage.show(context);
-            // TODO: 当 MPChatPeopleMemoryPage 支持返回选中ID时，调用 peopleMemoryCallback
-            // if (result != null && result is String) {
-            //   await peopleMemoryCallback(result);
-            // }
+            MPChatPeopleMemoryPage.show(context, peopleMemoryCallback: (String str) {
+              peopleMemoryCallback(str);
+              Navigator.of(context).pop();
+            });
           },
         ),
       ],
@@ -432,7 +425,7 @@ class _MenuContent extends StatelessWidget {
           () async {
             Navigator.of(context).pop();
             // 使用对话ID调用回调
-            await conversationCallback(item.id);
+            conversationCallback(item.id);
           },
       child: Container(
         margin: const EdgeInsets.only(bottom: 6),
