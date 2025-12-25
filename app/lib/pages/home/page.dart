@@ -360,9 +360,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
         child: Consumer<HomeProvider>(
           builder: (context, homeProvider, _) {
             // Sync TabController with HomeProvider when tab is tapped
-            // if (_tabController.index != homeProvider.selectedIndex) {
-            //   _tabController.animateTo(homeProvider.selectedIndex);
-            // }
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _tabController.index != homeProvider.selectedIndex) {
+                _tabController.animateTo(homeProvider.selectedIndex);
+              }
+            });
 
             return TabBar(
               controller: _tabController,
@@ -415,15 +417,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
           },
         ),
       ),
-    );
-
-    return Consumer<HomeProvider>(
-      builder: (context, homeProvider, _) {
-        // Sync TabController with HomeProvider when tab is tapped
-        if (_tabController.index != homeProvider.selectedIndex) {
-          _tabController.animateTo(homeProvider.selectedIndex);
-        }
-      },
     );
     // return MyUpgradeAlert(
     //   upgrader: _upgrader,
