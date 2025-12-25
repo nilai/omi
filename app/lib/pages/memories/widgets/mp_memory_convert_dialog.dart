@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
+import 'package:omi/providers/home_provider.dart';
+import 'package:provider/provider.dart';
 
 import '../../../main.dart';
 import '../../mp_template _selection/template_selection_page.dart';
@@ -422,7 +424,8 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
   }
 
   void _showLanguageSheet() async {
-    final options = ['中文简体-普通话', 'English', '日本語'];
+    final homeProvider = Provider.of<HomeProvider>(context, listen: false);
+    final options =  homeProvider.availableLanguages.keys.toList();
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
