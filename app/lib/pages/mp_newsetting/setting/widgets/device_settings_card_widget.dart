@@ -1,7 +1,7 @@
 // AI-generated START - 设备设置卡片组件，显示设备设置选项列表
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/pages/onboarding/find_device/mp_found_devices.dart';
+import 'package:omi/pages/onboarding/find_device/mp_page.dart';
 
 /// 设备设置项信息数据模型
 class DeviceSettingItem {
@@ -78,19 +78,13 @@ class DeviceSettingsCardWidget extends StatelessWidget {
           if (context != null) {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => Scaffold(
-                  appBar: AppBar(
-                    title: const Text('连接设备'),
-                    backgroundColor: Colors.white,
-                    elevation: 0,
-                  ),
-                  body: MPFoundDevices(
-                    goNext: () {
-                      // 从设置页面打开，连接成功后可以关闭页面
-                      Navigator.of(context).pop();
-                    },
-                    isFromOnboarding: false,
-                  ),
+                builder: (context) => MPFindDevicesPage(
+                  goNext: () {
+                    // 从设置页面打开，连接成功后可以关闭页面
+                    Navigator.of(context).pop();
+                  },
+                  isFromOnboarding: false,
+                  includeSkip: false, // 从设置页面打开时不显示"稍后连接"按钮
                 ),
               ),
             );
