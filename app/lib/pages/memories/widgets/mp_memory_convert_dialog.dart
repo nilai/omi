@@ -49,7 +49,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     super.key,
     required this.templates,
     this.initialSeparateSpeakers = true,
-    this.initialLanguage = '中文简体-普通话',
+    this.initialLanguage = 'English',
     this.initialModel = 'Auto',
   });
 
@@ -58,7 +58,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     BuildContext context, {
     List<MPMemoryConvertTemplate>? templates,
     bool initialSeparateSpeakers = true,
-    String initialLanguage = '中文简体-普通话',
+    String initialLanguage = 'English',
     String initialModel = 'Auto',
   }) {
     final dialogTemplates = templates ??
@@ -425,7 +425,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
 
   void _showLanguageSheet() async {
     final homeProvider = Provider.of<HomeProvider>(context, listen: false);
-    final options =  homeProvider.availableLanguages.keys.toList();
+    final options = homeProvider.availableLanguages.keys.toList();
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
@@ -638,6 +638,9 @@ class _SimpleSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxListHeight = screenHeight * 0.6; // 限制列表最大高度为屏幕的60%
+
     return SafeArea(
       top: false,
       child: Column(
@@ -673,26 +676,31 @@ class _SimpleSelector extends StatelessWidget {
             ),
           ),
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
-          ListView.separated(
-            shrinkWrap: true,
-            itemCount: options.length,
-            separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
-            itemBuilder: (context, index) {
-              final option = options[index];
-              final isSelected = option == selected;
-              return ListTile(
-                title: Text(
-                  option,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                    color: const Color(0xFF1F2937),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: maxListHeight,
+            ),
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: options.length,
+              separatorBuilder: (_, __) => const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              itemBuilder: (context, index) {
+                final option = options[index];
+                final isSelected = option == selected;
+                return ListTile(
+                  title: Text(
+                    option,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: const Color(0xFF1F2937),
+                    ),
                   ),
-                ),
-                trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF6366F1)) : null,
-                onTap: () => Navigator.of(context).pop(option),
-              );
-            },
+                  trailing: isSelected ? const Icon(Icons.check, color: Color(0xFF6366F1)) : null,
+                  onTap: () => Navigator.of(context).pop(option),
+                );
+              },
+            ),
           ),
           const SizedBox(height: 12),
         ],
