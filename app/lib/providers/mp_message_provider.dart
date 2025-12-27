@@ -42,6 +42,9 @@ class MPMessagePageModel {
   /// 快速问题列表
   List<String>? questions;
 
+  /// 没有消息时的快速问题列表
+  List<String>? noMsgQuestions;
+
   /// 是否显示自定义卡片。记忆卡片、人物卡片
   bool showCustomCard = false;
 
@@ -51,7 +54,8 @@ class MPMessagePageModel {
       required this.messages,
       this.title = '',
       this.type = MPChatPageType.normal,
-      this.questions});
+      this.questions,
+      this.noMsgQuestions});
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
@@ -117,7 +121,6 @@ class MPMessageProvider extends ChangeNotifier {
       curPageModel = MPMessagePageModel(chatId: chatId, conversationId: '', messages: [], type: type);
       curPageModel?.title = title;
       curPageModel?.showCustomCard = true;
-      pageModels.add(curPageModel!);
       await createConversationIfNeeded();
     } else {
       /// 更新页面消息列表
@@ -147,6 +150,16 @@ class MPMessageProvider extends ChangeNotifier {
               ServerMessage('', DateTime.now(), e.content, MessageSender.ai, MessageType.text, '', false, [], [], []))
           .toList();
       curPageModel?.title = response.title;
+      curPageModel?.showCustomCard = true;
+      if (curPageModel?.type == MPChatPageType.normal) {
+        final list = await MPQuickQuestionUtil().getAllKeys();
+        curPageModel?.noMsgQuestions = list.take(4).toList();
+        curPageModel?.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
+      } else {
+        curPageModel?.noMsgQuestions = [];
+        curPageModel?.questions =
+            MPQuickQuestionUtil().getQuestionsByChatType(curPageModel?.type ?? MPChatPageType.normal);
+      }
     }
     notifyListeners();
   }
@@ -176,7 +189,17 @@ class MPMessageProvider extends ChangeNotifier {
       final model =
           MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       model.title = title;
-      model.questions = MPQuickQuestionUtil().getQuestionsByChatType(type);
+
+      if (type == MPChatPageType.normal) {
+        model.showCustomCard = true;
+        final list = await MPQuickQuestionUtil().getAllKeys();
+        model.noMsgQuestions = list.take(4).toList();
+        model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
+      } else {
+        model.showCustomCard = true;
+        model.noMsgQuestions = [];
+        model.questions = MPQuickQuestionUtil().getQuestionsByChatType(type);
+      }
       pageModels.add(model);
       curPageModel = model;
     }
