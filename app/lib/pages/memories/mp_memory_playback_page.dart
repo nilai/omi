@@ -151,8 +151,13 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             child: ElevatedButton(
               onPressed: () => MPMemoryConvertDialog.show(context, memory: widget.memory, onGenerate: () {
                 setState(() {});
-                MPToastUtils.showMessage('生成成功');
-                
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => MPMemoryPlaybackPage(
+                      memory: widget.memory,
+                    ),
+                  ),
+                );
               }),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
