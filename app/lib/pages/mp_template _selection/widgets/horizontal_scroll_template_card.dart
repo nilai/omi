@@ -67,11 +67,14 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
     this.onItemTap,
     this.itemWidth = 150.0,
     this.itemHeight = 120.0,
+    this.selectedItem,
   });
   // AI-generated END - 构造函数
 
   /// 模版项列表
   final CardItem item;
+
+  final HorizontalScrollTemplateItem? selectedItem;
 
   /// 项点击回调，参数为被点击的项
   final Function(HorizontalScrollTemplateItem item)? onItemTap;
@@ -157,6 +160,7 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
       return _buildCreateItem(item);
     }
 
+    bool isSelected = selectedItem?.id == item.id;
     return GestureDetector(
       onTap: () {
         onItemTap?.call(item);
@@ -168,7 +172,7 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: item.backgroundColor ?? Colors.white,
           borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+          border: Border.all(color: isSelected ? const Color(0xFF2DD4BF) : const Color(0xFFE5E7EB), width: 1),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
