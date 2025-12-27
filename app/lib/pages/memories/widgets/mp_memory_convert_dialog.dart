@@ -9,20 +9,7 @@ import '../../../main.dart';
 import '../../mp_template _selection/providers/template_selection_provider.dart';
 import '../../mp_template _selection/template_selection_page.dart';
 
-/// Result returned by the convert dialog.
-class MPMemoryConvertResult {
-  final MPMemoryConvertTemplate? template;
-  final bool separateSpeakers;
-  final String language;
-  final String model;
 
-  MPMemoryConvertResult({
-    required this.template,
-    required this.separateSpeakers,
-    required this.language,
-    required this.model,
-  });
-}
 
 /// Template configuration for the dialog.
 class MPMemoryConvertTemplate {
@@ -88,7 +75,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
         [];
     templates.addAll(recommendTemplates);
     if (!context.mounted) return;
-    await showModalBottomSheet<MPMemoryConvertResult>(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -328,14 +315,14 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                     width: double.infinity,
                     child: InkWell(
                       onTap: () {
-                        Navigator.of(context).pop(
-                          MPMemoryConvertResult(
-                            template: _selectedTemplate,
-                            separateSpeakers: _separateSpeakers,
-                            language: _language,
-                            model: _model,
-                          ),
-                        );
+                        // Navigator.of(context).pop(
+                        //   MPMemoryConvertResult(
+                        //     template: _selectedTemplate,
+                        //     separateSpeakers: _separateSpeakers,
+                        //     language: _language,
+                        //     model: _model,
+                        //   ),
+                        // );
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
