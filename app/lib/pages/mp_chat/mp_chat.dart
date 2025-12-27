@@ -284,65 +284,54 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   // 快速提问区域
   Widget _buildQuickQuestionsWidget() {
-    List<String> questionList = [];
-
-    final type = provider.curPageModel?.type ?? MPChatPageType.normal;
-    if (type == MPChatPageType.memory) {
-      questionList = [
-        '有哪些需要跟进的地方?',
-        '和对方沟通的风险点是哪些?',
-        '还有哪些没有解决的问题?',
-        '下次会议需要准备什么材料?',
-      ];
-    } else if (type == MPChatPageType.speaker) {
-      questionList = [
-        '帮我总结一下近半年我们的沟通情况',
-        '我们讨论的最重要三个话题',
-        '前几次讨论我们还有没有没解决的问题',
-      ];
-    }
-    print('-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${type}');
-    if (questionList.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: questionList.length,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: EdgeInsets.only(right: index < questionList.length - 1 ? 12 : 0),
-            child: GestureDetector(
-              onTap: () {
-                _sendMessageUtil(questionList[index]);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFE5E7EB),
-                    width: 1.0,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    questionList[index],
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF4B5563),
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        final questionList = mpProvider.questions;
+        print(
+            '-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${mpProvider.curPageModel?.type}');
+        if (questionList.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Container(
+          height: 40,
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: questionList.length,
+            itemBuilder: (context, index) {
+              return Container(
+                margin: EdgeInsets.only(right: index < questionList.length - 1 ? 12 : 0),
+                child: GestureDetector(
+                  onTap: () {
+                    _sendMessageUtil(questionList[index]);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                        width: 1.0,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        questionList[index],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          );
-        },
-      ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -561,7 +550,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         await provider.updatePageInfo(chatId: str, type: MPChatPageType.memory);
       },
       conversationCallback: (String str) async {
-        await provider.updatePageMessages( str);
+        await provider.updatePageMessages(str);
       },
     );
   }

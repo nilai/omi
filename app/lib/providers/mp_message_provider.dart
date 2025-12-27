@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../backend/http/mp_api/mp_chat.dart';
 import '../backend/schema/mp/mp_chat.dart';
+import '../pages/mp_chat/mp_chat_quick_question_util.dart';
 
 // 聊天页面类型。不同类型调用url接口入参不同。
 enum MPChatPageType {
@@ -38,12 +39,16 @@ class MPMessagePageModel {
   /// 消息列表
   List<ServerMessage> messages;
 
+  /// 快速问题列表
+  List<String>? questions;
+
   MPMessagePageModel(
       {required this.chatId,
       required this.conversationId,
       required this.messages,
       this.title = '',
-      this.type = MPChatPageType.normal});
+      this.type = MPChatPageType.normal,
+      this.questions});
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
@@ -71,6 +76,10 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 是否正在发送消息
   bool sendingMessage = false;
+
+  /// 根据当前页面类型获取快速问题列表
+  /// @returns {List<String>} 问题列表
+  List<String> get questions => curPageModel?.questions ?? [];
 
   /// 更新页面信息，通过chatid及type获取页面信息
   Future<void> updatePageInfo(
@@ -148,6 +157,7 @@ class MPMessageProvider extends ChangeNotifier {
       final model =
           MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       model.title = title;
+      model.questions = await MPQuickQuestionUtil().getQuestionsByChatType(type);
       pageModels.add(model);
       curPageModel = model;
     }
