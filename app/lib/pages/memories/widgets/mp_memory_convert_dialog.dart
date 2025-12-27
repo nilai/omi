@@ -3,6 +3,10 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../../main.dart';
+import '../../mp_template _selection/providers/template_selection_provider.dart';
+import '../../mp_template _selection/template_selection_page.dart';
+
 /// Result returned by the convert dialog.
 class MPMemoryConvertResult {
   final MPMemoryConvertTemplate template;
@@ -204,14 +208,17 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             const Spacer(),
                             TextButton(
                               onPressed: () {
-                                // Navigator.of(MyApp.navigatorKey.currentState!.overlay!.context).push(
-                                //   MaterialPageRoute(
-                                //     builder: (context) => const TemplateSelectionPage(
-                                //       title: '选择模版',
-                                //     ),
-                                //   ),
-                                // );
-                                MPToastUtils.showFeatureComingSoon();
+                                // MyApp.navigatorKey.currentState!.overlay!.context
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ChangeNotifierProvider<TemplateSelectionProvider>(
+                                      create: (_) => TemplateSelectionProvider(),
+                                      child: const TemplateSelectionPage(
+                                        title: '选择模版',
+                                      ),
+                                    ),
+                                  ),
+                                );
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: const Color(0xFF6366F1),

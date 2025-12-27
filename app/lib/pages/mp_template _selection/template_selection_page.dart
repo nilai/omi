@@ -8,18 +8,36 @@ import 'package:omi/pages/mp_template%20_selection/template_detail_page.dart';
 import 'package:omi/pages/mp_template%20_selection/widgets/horizontal_scroll_template_card.dart';
 import 'package:provider/provider.dart';
 
+enum TemplateSelectionPageType {
+  /// 已选模版
+  select,
+
+  /// 社区
+  community,
+}
+
+extension TemplateSelectionPageTypeExtension on TemplateSelectionPageType {
+  String get title {
+    switch (this) {
+      case TemplateSelectionPageType.select:
+        return '选择模版';
+      case TemplateSelectionPageType.community:
+        return '模板社区';
+    }
+  }
+}
+
 /// 模版选择页面
 /// 显示AI总结模版列表，支持选择和预览
 class TemplateSelectionPage extends StatefulWidget {
   // AI-generated START - 构造函数
   const TemplateSelectionPage({
     super.key,
-    this.title = '模版社区',
+    this.type = TemplateSelectionPageType.community,
   });
   // AI-generated END - 构造函数
 
-  /// 页面标题
-  final String title;
+  final TemplateSelectionPageType type;
 
   // AI-generated START - 创建状态
   @override
@@ -28,6 +46,7 @@ class TemplateSelectionPage extends StatefulWidget {
 }
 
 class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
+  
   // AI-generated START - 初始化方法
   @override
   void initState() {
@@ -52,7 +71,7 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
     return Scaffold(
       backgroundColor: MPConstUtils.backgroundColorGrey,
       appBar: MPCommonAppBar(
-        title: widget.title,
+        title: widget.type.title,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
