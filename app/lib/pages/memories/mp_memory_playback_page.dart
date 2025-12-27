@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../backend/schema/mp/mp_data_model.dart';
+import '../../env/env.dart';
 import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
@@ -38,13 +39,15 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   /// 从 memory 中获取音频 URL
   String? get _audioUrl {
+    String url = '${Env.apiBaseUrl}';
     if (widget.memory.onlyRecordContent != null) {
-      return widget.memory.onlyRecordContent!.recordFile;
+      url += widget.memory.onlyRecordContent!.recordFile;
     }
     if (widget.memory.summaryContent != null) {
-      return widget.memory.summaryContent!.recordUrl;
+      url += widget.memory.summaryContent!.recordUrl;
     }
-    return null;
+    debugPrint('-----hj----- _audioUrl: $url');
+    return url;
   }
 
   @override

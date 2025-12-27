@@ -38,7 +38,6 @@ class _MPPageState extends State<MPPage> with AutomaticKeepAliveClientMixin {
   void initState() {
     super.initState();
     _provider = MPHomePageProvider();
-    _provider.loadLocalRecords();
   }
 
   @override

@@ -10,6 +10,7 @@ import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../../utils/mp_user_profile_share.dart';
 import '../../memories/mp_memory_playback_page.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -49,22 +50,33 @@ class MPLocalMemoryModel {
     required this.fileName,
     required this.createAt,
     required this.path,
+    this.isCreated = false,
+    this.duration,
   });
 
   final String fileName;
   final int createAt;
   final String path;
+  /// 是否已创建
+  bool isCreated;
+
+  /// 时长，单位是秒
+  int? duration;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
         fileName: json['fileName'],
         createAt: json['createAt'],
         path: json['path'],
+        isCreated: json['isCreated'],
+        duration: json['duration'],
       );
 
   Map<String, dynamic> toJson() => {
         'fileName': fileName,
         'createAt': createAt,
         'path': path,
+        'isCreated': isCreated,
+        'duration': duration,
       };
 
   /// 将模型转为 json 字符串
@@ -190,6 +202,21 @@ class MPHomePageProvider extends ChangeNotifier {
 
   List<MPLocalMemoryModel> _localRecords = [];
   List<MPMemoryItem> _remoteItems = [];
+
+  bool _rightNowTranscribe = false;
+
+  /// 初始化
+  MPHomePageProvider() {
+    loadLocalRecords();
+    // 加载用户资料
+    MPUserProfileShare.instance.getUserProfile().then((value) {
+      if (value != null) {
+        _rightNowTranscribe = value.user.rightNowTranscribe ?? false;
+      }
+    });
+  }
+
+  // 
 
   Future<void> refresh() async {
     loading = true;
@@ -341,8 +368,20 @@ class MPHomePageProvider extends ChangeNotifier {
           createAt: element.createAt,
           duration: 0,
         );
+        
         final res = await createRecord(req);
         if (res != null) {
+          await removeLocalRecord(element.path);
+          refresh();
+        }
+
+        final summaryReq = MPSummaryRecordRequest(
+          memoryId: res.id,
+          recordUrl: res.recordUrl,
+          recordMemoAt: res.recordMemoAt,
+        );
+        final summaryRes = await summaryRecord(summaryReq);
+        if (summaryRes != null) {
           await removeLocalRecord(element.path);
           refresh();
         }
