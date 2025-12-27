@@ -500,16 +500,17 @@ class _TemplateCard extends StatelessWidget {
     final bgColor = selected ? const Color(0xFFF5F7FF) : Colors.white;
 
     // 根据模板ID选择不同的图标
-    IconData iconData;
-    if (template.id == 'meeting_notes') {
-      iconData = Icons.groups;
-    } else {
-      iconData = Icons.auto_awesome;
-    }
+    IconData iconData = Icons.auto_awesome;
+    // if (template.id == 'meeting_notes') {
+    //   iconData = Icons.groups;
+    // } else {
+    //   iconData = Icons.auto_awesome;
+    // }
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        width: 150,
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(14),
