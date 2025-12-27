@@ -167,6 +167,21 @@ class MPDeleteMemoryRequest {
   Map<String, dynamic> toJson() => _$MPDeleteMemoryRequestToJson(this);
 }
 
+// Get Summary Status Request
+@JsonSerializable()
+class MPGetSummaryStatusRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPGetSummaryStatusRequest({
+    required this.memoryId,
+  });
+
+  factory MPGetSummaryStatusRequest.fromJson(Map<String, dynamic> json) => _$MPGetSummaryStatusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryStatusRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Get Memory List Response
@@ -383,4 +398,24 @@ class MPGetPopularSearchKeywordsResponse {
       _$MPGetPopularSearchKeywordsResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetPopularSearchKeywordsResponseToJson(this);
+}
+
+// Get Summary Status Response
+@JsonSerializable()
+class MPGetSummaryStatusResponse {
+  @JsonKey(name: 'status')
+  final int status;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSummaryStatusResponse({
+    required this.status,
+    required this.baseResp,
+  });
+
+  factory MPGetSummaryStatusResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetSummaryStatusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryStatusResponseToJson(this);
 }

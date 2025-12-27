@@ -128,6 +128,18 @@ Map<String, dynamic> _$MPDeleteMemoryRequestToJson(
       'memory_id': instance.memoryId,
     };
 
+MPGetSummaryStatusRequest _$MPGetSummaryStatusRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSummaryStatusRequest(
+      memoryId: json['memory_id'] as String,
+    );
+
+Map<String, dynamic> _$MPGetSummaryStatusRequestToJson(
+        MPGetSummaryStatusRequest instance) =>
+    <String, dynamic>{
+      'memory_id': instance.memoryId,
+    };
+
 MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetMemoryListResponse(
@@ -283,5 +295,19 @@ Map<String, dynamic> _$MPGetPopularSearchKeywordsResponseToJson(
         MPGetPopularSearchKeywordsResponse instance) =>
     <String, dynamic>{
       'keywords': instance.keywords,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetSummaryStatusResponse _$MPGetSummaryStatusResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSummaryStatusResponse(
+      status: (json['status'] as num).toInt(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
+        MPGetSummaryStatusResponse instance) =>
+    <String, dynamic>{
+      'status': instance.status,
       'base_resp': instance.baseResp,
     };
