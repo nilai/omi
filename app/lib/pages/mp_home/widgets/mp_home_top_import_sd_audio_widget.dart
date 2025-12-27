@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /** 顶部导入 SD 卡音频的进度卡片。 */
-class MPHomeTopImportSdAudioWidget extends StatelessWidget {
+class MPHomeTopImportSdAudioWidget extends StatefulWidget {
   /** 标题文案，示例：正在从 MemoPin 传输录音至 APP... */
   final String title;
 
@@ -31,9 +31,32 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
   });
 
   @override
+  State<MPHomeTopImportSdAudioWidget> createState() => _MPHomeTopImportSdAudioWidgetState();
+}
+
+class _MPHomeTopImportSdAudioWidgetState extends State<MPHomeTopImportSdAudioWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _rotationController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final clamped = percent.clamp(0, 100);
+    final clamped = widget.percent.clamp(0, 100);
     final progress = clamped / 100;
 
     return Container(
@@ -64,14 +87,22 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEAF2FF),
-                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color.fromARGB(20, 0, 0, 0),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Padding(
-                  padding: EdgeInsets.all(6),
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2F80ED)),
+                child: RotationTransition(
+                  turns: _rotationController,
+                  child: const Icon(
+                    Icons.autorenew,
+                    color: Color(0xFF2F80ED),
+                    size: 20,
                   ),
                 ),
               ),
@@ -81,7 +112,7 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
+                      widget.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
@@ -91,9 +122,9 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (speedText != null && speedText!.isNotEmpty)
+                    if (widget.speedText != null && widget.speedText!.isNotEmpty)
                       Text(
-                        speedText!,
+                        widget.speedText!,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: const Color(0xFF8D8D8D),
                           fontWeight: FontWeight.w600,
@@ -113,7 +144,7 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: const Color(0xFFEAEAEA),
-                valueColor: AlwaysStoppedAnimation<Color>(progressColor),
+                valueColor: AlwaysStoppedAnimation<Color>(widget.progressColor),
               ),
             ),
           ),
@@ -122,7 +153,9 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  transferredCount != null && totalCount != null ? '${transferredCount! + 1}/$totalCount' : '',
+                  widget.transferredCount != null && widget.totalCount != null
+                      ? '${widget.transferredCount! + 1}/${widget.totalCount}'
+                      : '',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF7A7A7A),
                     fontWeight: FontWeight.w600,
