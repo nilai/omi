@@ -165,7 +165,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                 children: [
                                   Text(
                                     MPTimestampUtils.timestampToRelativeDateString(widget.memory.createAt),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF1F1F1F),
@@ -175,7 +175,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                   Text(
                                     // secondsToHumanReadable(widget.memory.duration),
                                     MPTimestampUtils.toMinutesAndSecondsString(widget.memory.duration),
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF6B7280),
                                     ),
