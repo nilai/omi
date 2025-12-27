@@ -68,9 +68,7 @@ class TemplateSelectionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 模拟网络延迟
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      
       // 模拟假数据
       // final response = _createMockResponse();
 
