@@ -12,6 +12,7 @@ import '../../gen/assets.gen.dart';
 import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
+import '../memories/mp_memory_page_client.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
@@ -192,7 +193,7 @@ class _MPPageContentState extends State<MPPageContent> {
                             description: item.description,
                             onShare: () => provider.onCardShare(context, item),
                             onDelete: () => provider.onCardDelete(context, item),
-                            onViewDetail: () => provider.onCardViewDetail(context, item),
+                            onViewDetail: () => MPMemoryPageClient.navigateToDetailPage(context, item.memory),
                             isUploading: item.isUploading,
                           );
                         },
