@@ -256,6 +256,24 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   // 没有消息时显示的Widget
   Widget _noMessagesWidget() {
+    final type = provider.curPageModel?.type ?? widget.type;
+
+    switch (type) {
+      case MPChatPageType.normal:
+        return _buildNormalNoMessagesWidget();
+      case MPChatPageType.expert:
+        return _buildExpertNoMessagesWidget();
+      case MPChatPageType.memory:
+        return _buildMemoryNoMessagesWidget();
+      case MPChatPageType.template:
+        return _buildTemplateNoMessagesWidget();
+      case MPChatPageType.speaker:
+        return _buildSpeakerNoMessagesWidget();
+    }
+  }
+
+  /// 普通聊天类型的空消息Widget
+  Widget _buildNormalNoMessagesWidget() {
     return Column(
       children: [
         const SizedBox(
@@ -286,6 +304,91 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     );
   }
 
+  /// 专家类型的空消息Widget
+  Widget _buildExpertNoMessagesWidget() {
+    return Column(
+      children: [
+        const SizedBox(
+          height: 16,
+        ),
+        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+        const Text(
+          '基于专家提问',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+        ),
+        const Spacer(),
+        const Text(
+          'Ask about anything you\'ve said or heard',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+        ),
+      ],
+    );
+  }
+
+  /// 记忆类型的空消息Widget
+  Widget _buildMemoryNoMessagesWidget() {
+    return Column(
+      children: [
+        const SizedBox(
+          height: 16,
+        ),
+        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+        const Text(
+          '基于记忆提问',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+        ),
+        const Spacer(),
+        const Text(
+          'Ask about your memories',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+        ),
+      ],
+    );
+  }
+
+  /// 模板类型的空消息Widget
+  Widget _buildTemplateNoMessagesWidget() {
+    return Column(
+      children: [
+        const SizedBox(
+          height: 16,
+        ),
+        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+        const Text(
+          '基于模版提问',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+        ),
+        const Spacer(),
+        const Text(
+          'Start a conversation with a template',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+        ),
+      ],
+    );
+  }
+
+  /// 人物类型的空消息Widget
+  Widget _buildSpeakerNoMessagesWidget() {
+    return Column(
+      children: [
+        const SizedBox(
+          height: 16,
+        ),
+        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+        const Text(
+          '基于人物提问',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+        ),
+        const Spacer(),
+        const Text(
+          'Ask about conversations with this person',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+        ),
+      ],
+    );
+  }
+
+  // 自定义卡片区域
   Widget _buildCustomCardWidget() {
     return Consumer<MPMessageProvider>(
       builder: (context, mpProvider, child) {
