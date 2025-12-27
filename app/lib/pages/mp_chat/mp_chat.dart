@@ -126,10 +126,10 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       _staticProvider = null;
     } else {
       debugPrint('-----hj----- initState: create new provider');
-      provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
-      provider.curPageModel?.title = widget.title;
-      _isInit = true;
+      provider = MPMessageProvider();
     }
+    
+    _isInit = true;
 
     scrollController = ScrollController();
     textFieldFocusNode = FocusNode();

@@ -62,13 +62,7 @@ class MPMessagePageModel {
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
   /// 初始化页面信息
-  MPMessageProvider({String chatId = '', String title = '', MPChatPageType type = MPChatPageType.normal}) {
-    curPageModel = MPMessagePageModel(chatId: chatId, conversationId: '', messages: [], type: type);
-    curPageModel?.title = title;
-    pageModels.add(curPageModel!);
-    showTypingIndicator = false;
-    sendingMessage = false;
-  }
+  MPMessageProvider();
 
   /// 页面模型列表
   List<MPMessagePageModel> pageModels = [];
@@ -86,7 +80,7 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 没有消息时的快速问题列表
   List<String> get noMsgQuestions => curPageModel?.noMsgQuestions ?? [];
-  
+
   /// 根据当前页面类型获取快速问题列表
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
@@ -196,8 +190,13 @@ class MPMessageProvider extends ChangeNotifier {
       if (type == MPChatPageType.normal) {
         model.showCustomCard = true;
         final list = await MPQuickQuestionUtil().getAllKeys();
-        model.noMsgQuestions = list.take(4).toList();
-        model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
+        if (list.isNotEmpty) {
+          model.noMsgQuestions = list.take(4).toList();
+          model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
+        } else {
+          model.noMsgQuestions = ['今天我应该怎么做？', '我昨天做了什么？'];
+          model.questions = [];
+        }
       } else {
         model.showCustomCard = true;
         model.noMsgQuestions = [];
