@@ -19,10 +19,6 @@ class _MPSearchPageState extends State<MPSearchPage> {
   void initState() {
     super.initState();
     _provider = MPSearchProvider();
-    // 加载热门搜索
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _provider.loadPopularSearches();
-    });
   }
 
   @override
@@ -55,10 +51,10 @@ class _MPSearchPageState extends State<MPSearchPage> {
                       _buildRecentSearches(provider),
                       const SizedBox(height: 24),
                     ],
-                    // 热门搜索
-                    _buildSectionTitle('热门搜索'),
-                    const SizedBox(height: 12),
-                    _buildPopularSearches(provider),
+                    // // 热门搜索
+                    // _buildSectionTitle('热门搜索'),
+                    // const SizedBox(height: 12),
+                    // _buildPopularSearches(provider),
                   ],
                 ),
               );

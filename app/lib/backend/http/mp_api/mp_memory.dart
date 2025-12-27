@@ -180,3 +180,19 @@ Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest r
   }
   return null;
 }
+
+// GET /api/v1/memory/search
+Future<MPSearchMemoryResponse?> searchMemory(MPSearchMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/search?search_content=${Uri.encodeComponent(req.searchContent)}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('searchMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPSearchMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

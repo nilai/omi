@@ -313,3 +313,31 @@ Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
       'status': instance.status,
       'base_resp': instance.baseResp,
     };
+
+MPSearchMemoryRequest _$MPSearchMemoryRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPSearchMemoryRequest(
+      searchContent: json['search_content'] as String,
+    );
+
+Map<String, dynamic> _$MPSearchMemoryRequestToJson(
+        MPSearchMemoryRequest instance) =>
+    <String, dynamic>{
+      'search_content': instance.searchContent,
+    };
+
+MPSearchMemoryResponse _$MPSearchMemoryResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPSearchMemoryResponse(
+      memorys: (json['memorys'] as List<dynamic>)
+          .map((e) => MPMemoryStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPSearchMemoryResponseToJson(
+        MPSearchMemoryResponse instance) =>
+    <String, dynamic>{
+      'memorys': instance.memorys,
+      'base_resp': instance.baseResp,
+    };

@@ -186,6 +186,21 @@ class MPGetSummaryStatusRequest {
   Map<String, dynamic> toJson() => _$MPGetSummaryStatusRequestToJson(this);
 }
 
+// Search Memory Request
+@JsonSerializable()
+class MPSearchMemoryRequest {
+  @JsonKey(name: 'search_content')
+  final String searchContent;
+
+  MPSearchMemoryRequest({
+    required this.searchContent,
+  });
+
+  factory MPSearchMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPSearchMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSearchMemoryRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Get Memory List Response
@@ -418,8 +433,26 @@ class MPGetSummaryStatusResponse {
     required this.baseResp,
   });
 
-  factory MPGetSummaryStatusResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetSummaryStatusResponseFromJson(json);
+  factory MPGetSummaryStatusResponse.fromJson(Map<String, dynamic> json) => _$MPGetSummaryStatusResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetSummaryStatusResponseToJson(this);
+}
+
+// Search Memory Response
+@JsonSerializable()
+class MPSearchMemoryResponse {
+  @JsonKey(name: 'memorys')
+  final List<MPMemoryStruct> memorys;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPSearchMemoryResponse({
+    required this.memorys,
+    required this.baseResp,
+  });
+
+  factory MPSearchMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPSearchMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSearchMemoryResponseToJson(this);
 }

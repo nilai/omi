@@ -102,30 +102,5 @@ class MPSearchProvider extends ChangeNotifier {
     _loadingPopularSearches = loading;
     notifyListeners();
   }
-
-  /// 加载热门搜索关键词（从API获取）
-  /// @returns 无返回值
-  Future<void> loadPopularSearches() async {
-    _loadingPopularSearches = true;
-    notifyListeners();
-
-    try {
-      final response = await getPopularSearchKeywords();
-      if (response != null && response.baseResp.code == 0) {
-        _popularSearches = response.keywords;
-      } else {
-        // 如果API调用失败，使用默认数据
-        _popularSearches = ['会议', '任务', '总结', '项目', '讨论'];
-      }
-      _loadingPopularSearches = false;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('加载热门搜索失败: $e');
-      // 如果API调用失败，使用默认数据
-      _popularSearches = ['会议', '任务', '总结', '项目', '讨论'];
-      _loadingPopularSearches = false;
-      notifyListeners();
-    }
-  }
 }
 
