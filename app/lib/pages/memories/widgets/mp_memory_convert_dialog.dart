@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../../../backend/http/mp_api/mp_template.dart' as mp_template_api;
+import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../backend/schema/mp/mp_template.dart';
-import '../../../main.dart';
+import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_template _selection/providers/template_selection_provider.dart';
 import '../../mp_template _selection/template_selection_page.dart';
 
@@ -27,14 +27,17 @@ class MPMemoryConvertTemplate {
 }
 
 /// Bottom sheet dialog to configure memory conversion.
+// ignore: must_be_immutable
 class MPMemoryConvertDialog extends StatefulWidget {
   List<MPMemoryConvertTemplate> templates;
   final bool initialSeparateSpeakers;
   final String initialLanguage;
   final String initialModel;
+  final MPMemoryStruct memory;
 
   MPMemoryConvertDialog({
     super.key,
+    required this.memory,
     this.initialSeparateSpeakers = true,
     this.initialLanguage = 'English',
     this.initialModel = 'Auto',
@@ -47,6 +50,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     bool initialSeparateSpeakers = true,
     String initialLanguage = 'English',
     String initialModel = 'Auto',
+    required MPMemoryStruct memory,
   }) async {
     final request = MPGetTemplateListRequest(
       pageSize: 20,
@@ -78,6 +82,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => MPMemoryConvertDialog(
+        memory: memory,
         templates: templates,
         initialSeparateSpeakers: initialSeparateSpeakers,
         initialLanguage: initialLanguage,
@@ -140,7 +145,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Expanded(
+                      Expanded(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -153,18 +158,19 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
-                                children: const [
+                                children: [
                                   Text(
-                                    '2025-10-17 16:14:51',
+                                    MPTimestampUtils.timestampToRelativeDateString(widget.memory.createAt),
                                     style: TextStyle(
                                       fontSize: 17,
                                       fontWeight: FontWeight.w600,
                                       color: Color(0xFF1F1F1F),
                                     ),
                                   ),
-                                  SizedBox(height: 4),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    '24m 29s',
+                                    // secondsToHumanReadable(widget.memory.duration),
+                                    MPTimestampUtils.toMinutesAndSecondsString(widget.memory.duration),
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Color(0xFF6B7280),

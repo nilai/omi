@@ -149,7 +149,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: () => MPMemoryConvertDialog.show(context),
+              onPressed: () => MPMemoryConvertDialog.show(context, memory: widget.memory),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 foregroundColor: Colors.white,
@@ -228,9 +228,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     final createdAt = MPTimestampUtils.timestampMsToDateTime(widget.memory.createAt);
     final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt);
     // 格式化时长为 "2m 6s" 格式
-    final minutes = _duration.inMinutes;
-    final seconds = _duration.inSeconds.remainder(60);
-    final durationText = '${minutes}m ${seconds}s';
+    final durationText = MPTimestampUtils.toMinutesAndSecondsString(widget.memory.duration);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -92,6 +92,15 @@ class MPTimestampUtils {
     }
   }
 
+  /// 将秒级时间转换为分钟和秒.如 "14m 51s"
+  static String toMinutesAndSecondsString(int? second) {
+    if (second == null) {
+      return '0m 0s';
+    }
+    final minutes = second ~/ 60;
+    final seconds = second % 60;
+    return '{$minutes}m {$seconds}s';
+  }
   /// 将 DateTime 转换为秒级时间戳
   ///
   /// [dateTime] DateTime 对象
