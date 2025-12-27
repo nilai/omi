@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:omi/backend/http/mp_api/mp_memory.dart';
+import 'package:omi/backend/schema/mp/mp_memory.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -6,6 +8,7 @@ import '../../../backend/http/mp_api/mp_template.dart' as mp_template_api;
 import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../backend/schema/mp/mp_template.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
+import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_template _selection/providers/template_selection_provider.dart';
 import '../../mp_template _selection/template_selection_page.dart';
 
@@ -37,6 +40,9 @@ class MPMemoryConvertDialog extends StatefulWidget {
   final String initialModel;
   final MPMemoryStruct memory;
 
+  /// 立即生成-成功回调
+  final VoidCallback? onGenerate;
+
   MPMemoryConvertDialog({
     super.key,
     required this.memory,
@@ -44,6 +50,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     this.initialLanguage = 'English',
     this.initialModel = 'Auto',
     required this.templates,
+    this.onGenerate,
   });
 
   /// Shows the dialog using a modal bottom sheet and returns the selection.
@@ -53,6 +60,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     String initialLanguage = 'English',
     String initialModel = 'Auto',
     required MPMemoryStruct memory,
+    VoidCallback? onGenerate,
   }) async {
     final request = MPGetTemplateListRequest(
       pageSize: 20,
@@ -91,6 +99,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
         initialSeparateSpeakers: initialSeparateSpeakers,
         initialLanguage: initialLanguage,
         initialModel: initialModel,
+        onGenerate: onGenerate,
       ),
     );
   }
@@ -342,14 +351,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                     width: double.infinity,
                     child: InkWell(
                       onTap: () {
-                        // Navigator.of(context).pop(
-                        //   MPMemoryConvertResult(
-                        //     template: _selectedTemplate,
-                        //     separateSpeakers: _separateSpeakers,
-                        //     language: _language,
-                        //     model: _model,
-                        //   ),
-                        // );
+                        _onGenerate();
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -387,6 +389,20 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
         ),
       ),
     );
+  }
+
+  void _onGenerate() async {
+    final req = MPSummaryRecordRequest(
+      memoryId: widget.memory.id,
+      recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
+      recordMemoAt: widget.memory.createAt,
+    );
+    final res = await summaryRecord(req);
+    if (res != null) {
+      widget.onGenerate?.call();
+    } else {
+      MPToastUtils.showMessage(res?.baseResp.message ?? '生成失败');
+    }
   }
 
   Widget _buildSwitchTile({
