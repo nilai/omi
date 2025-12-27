@@ -155,16 +155,16 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
+                   Icon(
                     Icons.auto_awesome,
                     size: 20,
                     color: Color(0xFF60A5FA), // 浅蓝色图标
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
+                   SizedBox(width: 8),
+                     Text(
                     'AI总结',
                     style: TextStyle(
                       fontSize: 16,

@@ -9,8 +9,6 @@ import '../../../main.dart';
 import '../../mp_template _selection/providers/template_selection_provider.dart';
 import '../../mp_template _selection/template_selection_page.dart';
 
-
-
 /// Template configuration for the dialog.
 class MPMemoryConvertTemplate {
   final String id;
@@ -335,9 +333,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Row(
+                        child: const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
+                          children: [
                             Icon(
                               Icons.auto_awesome,
                               size: 20,
