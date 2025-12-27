@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:provider/provider.dart';
+import '../../services/mp_home_refresh_event_service.dart';
 import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'provider/mp_memory_transition_provider.dart';
@@ -33,6 +34,7 @@ class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
           completeCallback: () {
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: widget.memory)));
+            MPHomeRefreshEventService().emitRefresh();
           },
         );
         // 创建后立即启动轮询
