@@ -51,6 +51,8 @@ class MPQuickQuestionUtil {
     }
   }
 
+  List<String> get normalQuestions => ['今天我应该怎么做？', '我昨天做了什么？'];
+
   /// 根据 key 获取问题列表（异步版本）
   /// 返回值不能为 null
   /// 判断属性有没有值，有值从属性中取

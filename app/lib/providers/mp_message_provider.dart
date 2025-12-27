@@ -194,7 +194,7 @@ class MPMessageProvider extends ChangeNotifier {
           model.noMsgQuestions = list.take(4).toList();
           model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
         } else {
-          model.noMsgQuestions = ['今天我应该怎么做？', '我昨天做了什么？'];
+          model.noMsgQuestions = MPQuickQuestionUtil().normalQuestions;
           model.questions = [];
         }
       } else {
