@@ -221,15 +221,30 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                       child: TemplateSelectionPage(
                                         type: TemplateSelectionPageType.select,
                                         onUseTemplate: (item) {
-                                          final itemTemplate = MPMemoryConvertTemplate(
+                                          if (_selectedTemplate != null && _selectedTemplate?.id == item.id) {
+                                            return;
+                                          }
+                                          MPMemoryConvertTemplate? temp;
+                                          for (var template in widget.templates) {
+                                            if (template.id == item.id) {
+                                              temp = template;
+                                              break;
+                                            }
+                                          }
+                                          if (temp != null) {
+                                            _selectedTemplate = temp;
+                                            setState(() {});
+                                            return;
+                                          }
+                                          temp = MPMemoryConvertTemplate(
                                             id: item.id,
                                             title: item.title,
                                             description: item.prompt ?? '选中模版的prompt为空',
                                             provider: 'Auto',
                                             icon: item.imageUrl,
                                           );
-                                          widget.templates.insert(0, itemTemplate);
-                                          _selectedTemplate = itemTemplate;
+                                          widget.templates.insert(0, temp);
+                                          _selectedTemplate = temp;
                                           setState(() {});
                                         },
                                       ),
