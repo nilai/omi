@@ -35,10 +35,14 @@ class TemplateSelectionPage extends StatefulWidget {
   const TemplateSelectionPage({
     super.key,
     this.type = TemplateSelectionPageType.community,
+    this.onUseTemplate,
   });
   // AI-generated END - 构造函数
 
   final TemplateSelectionPageType type;
+
+  /// 使用模版回调
+  final Function(HorizontalScrollTemplateItem item)? onUseTemplate;
 
   // AI-generated START - 创建状态
   @override
@@ -134,7 +138,6 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
         // 显示所有横向滑动模版卡片
         return Column(
           children: cardItems.asMap().entries.map((entry) {
-            final cardIndex = entry.key;
             final cardItem = entry.value;
             return HorizontalScrollTemplateCard(
               item: cardItem,
@@ -145,7 +148,7 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
                   return;
                 }
                 if (widget.type == TemplateSelectionPageType.select) {
-                  provider.selectTemplate(cardIndex, cardItem.items.indexOf(item));
+                  provider.selectTemplate(item);
                   return;
                 }
                 await _navigateToTemplateDetail(context, item.id, item.isMyTemplate);
@@ -228,31 +231,24 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
         width: double.infinity,
         child: Consumer<TemplateSelectionProvider>(
           builder: (context, provider, child) {
-            final hasSelection = provider.selectedIndex != null;
-            String? selectedTitle;
-            if (hasSelection && provider.selectedIndex! < provider.templates.length) {
-              final card = provider.templates[provider.selectedIndex!];
-              if (card.items.isNotEmpty) {
-                selectedTitle = card.items[0].title;
-              }
-            }
+            final hasSelection = provider.selectedItem != null;
             return ElevatedButton(
               onPressed: hasSelection
                   ? () {
-                      debugPrint('应用选中模版: $selectedTitle');
-                      // TODO: 实现应用模版逻辑
+                      widget.onUseTemplate?.call(provider.selectedItem!);
+                      Navigator.pop(context);
                     }
                   : null,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16.0),
-                backgroundColor: const Color(0xFF2196F3), // 蓝色
+                backgroundColor: const Color(0xFF1F2937), // 黑色
                 disabledBackgroundColor: Colors.grey[300],
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
               ),
               child: const Text(
-                '应用选中模版',
+                '使用此模版',
                 style: TextStyle(
                   fontSize: 16.0,
                   fontWeight: FontWeight.w500,

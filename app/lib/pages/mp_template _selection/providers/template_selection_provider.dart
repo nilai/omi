@@ -13,7 +13,7 @@ class TemplateSelectionProvider with ChangeNotifier {
   // AI-generated END - 模版列表
 
   // AI-generated START - 当前选中的模版索引
-  int? _selectedIndex;
+  HorizontalScrollTemplateItem? _selectedItem;
   // AI-generated END - 当前选中的模版索引
 
   // AI-generated START - 是否正在加载
@@ -37,7 +37,7 @@ class TemplateSelectionProvider with ChangeNotifier {
   // AI-generated END - 获取模版列表
 
   // AI-generated START - 获取当前选中的模版索引
-  int? get selectedIndex => _selectedIndex;
+  HorizontalScrollTemplateItem? get selectedItem => _selectedItem;
   // AI-generated END - 获取当前选中的模版索引
 
   // AI-generated START - 获取是否正在加载
@@ -226,14 +226,9 @@ class TemplateSelectionProvider with ChangeNotifier {
   // AI-generated END - 获取颜色
 
   // AI-generated START - 选择模版
-  void selectTemplate(int cardIndex, int itemIndex) {
-    if (cardIndex >= 0 && cardIndex < _templates.length) {
-      final card = _templates[cardIndex];
-      if (itemIndex >= 0 && itemIndex < card.items.length) {
-        _selectedIndex = cardIndex;
-        notifyListeners();
-      }
-    }
+  void selectTemplate(HorizontalScrollTemplateItem item) {
+    _selectedItem = item;
+    notifyListeners();
   }
   // AI-generated END - 选择模版
 
@@ -244,19 +239,6 @@ class TemplateSelectionProvider with ChangeNotifier {
   }
   // AI-generated END - 添加模版
 
-  // AI-generated START - 删除模版
-  void removeTemplate(int index) {
-    if (index >= 0 && index < _templates.length) {
-      _templates.removeAt(index);
-      if (_selectedIndex == index) {
-        _selectedIndex = null;
-      } else if (_selectedIndex != null && _selectedIndex! > index) {
-        _selectedIndex = _selectedIndex! - 1;
-      }
-      notifyListeners();
-    }
-  }
-  // AI-generated END - 删除模版
 
   // AI-generated START - 刷新数据
   /// 刷新模版列表
