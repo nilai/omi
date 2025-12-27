@@ -57,6 +57,7 @@ class MPLocalMemoryModel {
   final String fileName;
   final int createAt;
   final String path;
+
   /// 是否已创建
   bool isCreated;
 
@@ -216,7 +217,7 @@ class MPHomePageProvider extends ChangeNotifier {
     });
   }
 
-  // 
+  //
 
   Future<void> refresh() async {
     loading = true;
@@ -368,23 +369,26 @@ class MPHomePageProvider extends ChangeNotifier {
           createAt: element.createAt,
           duration: 0,
         );
-        
+
         final res = await createRecord(req);
         if (res != null) {
           await removeLocalRecord(element.path);
           refresh();
         }
 
-        final summaryReq = MPSummaryRecordRequest(
-          memoryId: res.id,
-          recordUrl: res.recordUrl,
-          recordMemoAt: res.recordMemoAt,
-        );
-        final summaryRes = await summaryRecord(summaryReq);
-        if (summaryRes != null) {
-          await removeLocalRecord(element.path);
-          refresh();
-        }
+        // if (_rightNowTranscribe) {
+        //   // 创建摘要
+        //   final summaryReq = MPSummaryRecordRequest(
+        //     memoryId: res.id,
+        //     recordUrl: res.recordUrl,
+        //     recordMemoAt: res.recordMemoAt,
+        //   );
+        //   final summaryRes = await summaryRecord(summaryReq);
+        //   if (summaryRes != null) {
+        //     await removeLocalRecord(element.path);
+        //     refresh();
+        //   }
+        // }
       }
     }
   }
