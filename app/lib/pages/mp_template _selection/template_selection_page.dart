@@ -142,6 +142,9 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
             return HorizontalScrollTemplateCard(
               item: cardItem,
               selectedItem: provider.selectedItem,
+              onDetailTap: (item) async {
+                await _navigateToTemplateDetail(context, item.id, item.isMyTemplate);
+              },
               onItemTap: (item) async {
                 // 如果是创建模板项，导航到创建模板页面
                 if (item.isCreateItem) {

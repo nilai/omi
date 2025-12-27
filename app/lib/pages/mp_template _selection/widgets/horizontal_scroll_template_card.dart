@@ -68,6 +68,7 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
     this.itemWidth = 150.0,
     this.itemHeight = 120.0,
     this.selectedItem,
+    this.onDetailTap,
   });
   // AI-generated END - 构造函数
 
@@ -78,6 +79,9 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
 
   /// 项点击回调，参数为被点击的项
   final Function(HorizontalScrollTemplateItem item)? onItemTap;
+
+  /// 详情点击回调，参数为被点击的项
+  final Function(HorizontalScrollTemplateItem item)? onDetailTap;
 
   /// 每个项的宽度（默认120.0）
   final double itemWidth;
@@ -216,17 +220,23 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
         Positioned(
           top: 12.0,
           right: 24.0,
-          child: Container(
-            width: 24.0,
-            height: 24.0,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF3F4F6), // 浅灰色背景
-              shape: BoxShape.circle, // 圆形
-            ),
-            child: const Icon(
-              Icons.visibility_outlined,
-              color: Color(0xFF6B7280), // 深灰色图标
-              size: 14.0,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {
+              onDetailTap?.call(item);
+            },
+            child: Container(
+              width: 24.0,
+              height: 24.0,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF3F4F6), // 浅灰色背景
+                shape: BoxShape.circle, // 圆形
+              ),
+              child: const Icon(
+                Icons.visibility_outlined,
+                color: Color(0xFF6B7280), // 深灰色图标
+                size: 14.0,
+              ),
             ),
           ),
         ),
