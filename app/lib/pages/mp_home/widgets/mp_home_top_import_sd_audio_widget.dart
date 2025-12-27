@@ -80,16 +80,14 @@ class MPHomeTopImportSdAudioWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF121212),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                        ),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF121212),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
                       ),
                     ),
                     const SizedBox(height: 4),

@@ -149,7 +149,8 @@ class _MPPageContentState extends State<MPPageContent> {
       // 传完后， 更新本地，
       final provider = context.read<MPHomePageProvider>();
       provider.updateImportAudioType(MPHomeImportAudioType.none);
-      await provider.addLocalRecord(fileDetail.localPath ?? '', duration: fileDetail.durationSeconds, fileName: fileDetail.name);
+      await provider.addLocalRecord(fileDetail.localPath ?? '',
+          duration: fileDetail.durationSeconds, fileName: fileDetail.name);
       provider.uploadLocalRecords();
     });
   }
@@ -375,6 +376,11 @@ class _MPPageContentState extends State<MPPageContent> {
   }
 
   Widget _buildImportAudioTypeWidget(BuildContext context, MPHomePageProvider provider) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: MPHomeTopImportSdAudioWidget(
+          title: '正在从 MemoPin 传输录音至 APP...', percent: 30, speedText: '10.00KB/S', transferredCount: 1, totalCount: 10),
+    );
     debugPrint('-----hj----- _buildImportAudioTypeWidget type: ${provider.importAudioType}');
     if (provider.importAudioType == MPHomeImportAudioType.none) {
       return const SizedBox.shrink();
