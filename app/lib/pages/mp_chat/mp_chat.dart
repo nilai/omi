@@ -128,7 +128,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       debugPrint('-----hj----- initState: create new provider');
       provider = MPMessageProvider();
     }
-    
+
     _isInit = true;
 
     scrollController = ScrollController();
@@ -417,14 +417,17 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         }
         switch (type) {
           case MPChatPageType.memory:
-            return MPChatMemoryCard(
-              onCloseTap: () {
-                mpProvider.setShowCustomCard(false);
-              },
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                    builder: (context) => ConversationDetailPage(memory: MPChatHelper.instance.memory!)));
-              },
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: MPChatMemoryCard(
+                onCloseTap: () {
+                  mpProvider.setShowCustomCard(false);
+                },
+                onTap: () {
+                  Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => ConversationDetailPage(memory: MPChatHelper.instance.memory!)));
+                },
+              ),
             );
           default:
             return const SizedBox.shrink();
