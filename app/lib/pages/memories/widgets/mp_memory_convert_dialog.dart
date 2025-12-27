@@ -3,13 +3,15 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../../backend/http/mp_api/mp_template.dart' as mp_template_api;
+import '../../../backend/schema/mp/mp_template.dart';
 import '../../../main.dart';
 import '../../mp_template _selection/providers/template_selection_provider.dart';
 import '../../mp_template _selection/template_selection_page.dart';
 
 /// Result returned by the convert dialog.
 class MPMemoryConvertResult {
-  final MPMemoryConvertTemplate template;
+  final MPMemoryConvertTemplate? template;
   final bool separateSpeakers;
   final String language;
   final String model;
@@ -41,50 +43,57 @@ class MPMemoryConvertTemplate {
 
 /// Bottom sheet dialog to configure memory conversion.
 class MPMemoryConvertDialog extends StatefulWidget {
-  final List<MPMemoryConvertTemplate> templates;
+  List<MPMemoryConvertTemplate> templates;
   final bool initialSeparateSpeakers;
   final String initialLanguage;
   final String initialModel;
 
-  const MPMemoryConvertDialog({
+  MPMemoryConvertDialog({
     super.key,
-    required this.templates,
     this.initialSeparateSpeakers = true,
     this.initialLanguage = 'English',
     this.initialModel = 'Auto',
+    required this.templates,
   });
 
   /// Shows the dialog using a modal bottom sheet and returns the selection.
-  static Future<MPMemoryConvertResult?> show(
+  static Future<void> show(
     BuildContext context, {
-    List<MPMemoryConvertTemplate>? templates,
     bool initialSeparateSpeakers = true,
     String initialLanguage = 'English',
     String initialModel = 'Auto',
-  }) {
-    final dialogTemplates = templates ??
-        const [
-          MPMemoryConvertTemplate(
-            id: 'meeting_notes',
-            title: '会议秘书',
-            description: '会议执行摘要 + 详细的 会议讨论内容和行动事项拆分',
-            provider: 'Milo',
-            badge: '上次使用',
-          ),
-          MPMemoryConvertTemplate(
-            id: 'smart_summary',
-            title: '智能摘要',
-            description: '自适应结构 全场景适配',
-            provider: 'Auto',
-          ),
-        ];
-
-    return showModalBottomSheet<MPMemoryConvertResult>(
+  }) async {
+    final request = MPGetTemplateListRequest(
+      pageSize: 20,
+      cursor: '',
+    );
+    final response = await mp_template_api.getTemplateList(request);
+    List<MPMemoryConvertTemplate> templates = [];
+    if (response?.recentTemplate != null) {
+      templates.add(MPMemoryConvertTemplate(
+        id: response?.recentTemplate?.id ?? '',
+        title: response?.recentTemplate?.title ?? '',
+        description: response?.recentTemplate?.prompt ?? '',
+        provider: 'Auto',
+      ));
+    }
+    final recommendTemplates = response?.recommendTemplates
+            .map((template) => MPMemoryConvertTemplate(
+                  id: template.id ?? '',
+                  title: template.title ?? '',
+                  description: template.prompt ?? '',
+                  provider: 'Auto',
+                ))
+            .toList() ??
+        [];
+    templates.addAll(recommendTemplates);
+    if (!context.mounted) return;
+    await showModalBottomSheet<MPMemoryConvertResult>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => MPMemoryConvertDialog(
-        templates: dialogTemplates,
+        templates: templates,
         initialSeparateSpeakers: initialSeparateSpeakers,
         initialLanguage: initialLanguage,
         initialModel: initialModel,
@@ -97,7 +106,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
 }
 
 class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
-  late MPMemoryConvertTemplate _selectedTemplate;
+  late MPMemoryConvertTemplate? _selectedTemplate;
   late bool _separateSpeakers;
   late String _language;
   late String _model;
@@ -105,7 +114,8 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
   @override
   void initState() {
     super.initState();
-    _selectedTemplate = widget.templates.first;
+
+    _selectedTemplate = widget.templates.isNotEmpty ? widget.templates.first : null;
     _separateSpeakers = widget.initialSeparateSpeakers;
     _language = widget.initialLanguage;
     _model = widget.initialModel;
@@ -145,7 +155,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -238,9 +248,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                             color: const Color(0xFFF3F4FF),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Row(
+                          child: const Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
+                            children: [
                               Icon(
                                 Icons.card_giftcard,
                                 size: 16,
@@ -270,7 +280,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                     ),
                                     child: _TemplateCard(
                                       template: template,
-                                      selected: _selectedTemplate.id == template.id,
+                                      selected: _selectedTemplate?.id == template.id,
                                       onTap: () => setState(() => _selectedTemplate = template),
                                     ),
                                   ),
