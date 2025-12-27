@@ -42,6 +42,9 @@ class MPMessagePageModel {
   /// 快速问题列表
   List<String>? questions;
 
+  /// 是否显示自定义卡片。记忆卡片、人物卡片
+  bool showCustomCard = false;
+
   MPMessagePageModel(
       {required this.chatId,
       required this.conversationId,
