@@ -214,7 +214,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                     builder: (context) => ChangeNotifierProvider<TemplateSelectionProvider>(
                                       create: (_) => TemplateSelectionProvider(),
                                       child: const TemplateSelectionPage(
-                                        title: '选择模版',
+                                        type: TemplateSelectionPageType.select,
                                       ),
                                     ),
                                   ),

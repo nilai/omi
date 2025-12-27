@@ -94,7 +94,7 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
             ),
           ),
           // 底部应用按钮
-          // _buildApplyButton(context),
+          _buildApplyButton(context),
         ],
       ),
     );
@@ -208,6 +208,9 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
 
   // AI-generated START - 构建应用按钮
   Widget _buildApplyButton(BuildContext context) {
+    if (widget.type != TemplateSelectionPageType.select) {
+      return const SizedBox.shrink();
+    }
     return Container(
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
