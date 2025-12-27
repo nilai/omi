@@ -111,6 +111,7 @@ class MPMessageProvider extends ChangeNotifier {
     if (curPageModel == null) {
       curPageModel = MPMessagePageModel(chatId: chatId, conversationId: '', messages: [], type: type);
       curPageModel?.title = title;
+      curPageModel?.showCustomCard = true;
       pageModels.add(curPageModel!);
       await createConversationIfNeeded();
     } else {
