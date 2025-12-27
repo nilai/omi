@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+import '../mp_chat_helper.dart';
+
 /// 记忆卡片组件
 /// 显示记忆附件信息，包含图标、标题和关闭按钮
 class MPChatMemoryCard extends StatelessWidget {
-  /// 标题文本（粗黑显示）
-  final String title;
-
   /// 点击卡片的回调
   final VoidCallback? onTap;
 
@@ -15,13 +14,16 @@ class MPChatMemoryCard extends StatelessWidget {
 
   const MPChatMemoryCard({
     super.key,
-    required this.title,
     this.onTap,
     this.onCloseTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final memory = MPChatHelper.instance.memory;
+    if (memory == null) {
+      return const SizedBox.shrink();
+    }
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -72,7 +74,7 @@ class MPChatMemoryCard extends StatelessWidget {
                   const SizedBox(height: 4.0),
                   // 第二行：标题（粗黑）
                   Text(
-                    title,
+                    memory.title,
                     style: const TextStyle(
                       fontSize: 16.0,
                       fontWeight: FontWeight.w700, // 粗黑
