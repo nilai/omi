@@ -1,37 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:provider/provider.dart';
-import '../../backend/http/mp_api/mp_memory.dart';
-import '../../backend/schema/mp/mp_memory.dart';
+import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'provider/mp_memory_transition_provider.dart';
 
 /// 记忆转换页面
 /// 显示生成中的状态，包含动态的加载动画
 class MPMemoryTransitionPage extends StatefulWidget {
-  /// 页面标题
-  final String title;
-
-  /// 时间戳（毫秒）
-  final int timestamp;
-
   /// 记忆ID
-  final String memoryId;
-
-  /// 期望的完成状态，默认为 completed
-  final MPMemoryTransitionStatus expectedStatus;
-
-  /// 状态变化回调
-  final void Function(MPMemoryTransitionStatus status)? onStatusChanged;
+  final MPMemoryStruct memory;
 
   const MPMemoryTransitionPage({
     super.key,
-    required this.title,
-    required this.timestamp,
-    required this.memoryId,
-    this.expectedStatus = MPMemoryTransitionStatus.completed,
-    this.onStatusChanged,
+    required this.memory,
   });
 
   @override
@@ -39,31 +23,28 @@ class MPMemoryTransitionPage extends StatefulWidget {
 }
 
 class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
-  bool _hasStartedPolling = false;
-
-  @override
-  void initState() {
-    super.initState();
-  }
-
   @override
   Widget build(BuildContext context) {
     // 如果没有Provider，创建一个
     return ChangeNotifierProvider(
-      create: (_) => MPMemoryTransitionProvider(
-        statusGetter: () async {
-          final res = await getSummaryStatus(MPGetSummaryStatusRequest(memoryId: widget.memoryId));
-          if (res != null && res.baseResp.code == 0) {
-            return res.status == 1 ? MPMemoryTransitionStatus.completed : null;
-          }
-          return null;
-        },
-        expectedStatus: widget.expectedStatus,
-      ),
+      create: (_) {
+        final provider = MPMemoryTransitionProvider(
+          memoryId: widget.memory.id,
+          completeCallback: () {
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: widget.memory)));
+          },
+        );
+        // 创建后立即启动轮询
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          provider.startPolling();
+        });
+        return provider;
+      },
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: MPCommonAppBar(
-          title: widget.title,
+        appBar: const MPCommonAppBar(
+          title: '总结中',
           showBackButton: true,
         ),
         body: Consumer<MPMemoryTransitionProvider>(
@@ -104,7 +85,7 @@ class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
 
   /// 构建时间戳显示
   Widget _buildTimestamp() {
-    final dateTime = DateTime.fromMillisecondsSinceEpoch(widget.timestamp);
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(widget.memory.createAt);
     final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
 
     return Text(
