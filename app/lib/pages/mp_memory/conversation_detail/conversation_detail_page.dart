@@ -190,7 +190,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: 'AI助手',
                 icon: Icons.smart_toy,
                 onTap: () {
-                  MPChatPage.openChatPage(context, chatId: widget.memory.id, title: '', type: MPChatPageType.memory);
+                  MPChatPage.openChatPage(context, chatId: widget.memory.id, title: widget.memory.title, type: MPChatPageType.memory);
                 },
               ),
             ],
