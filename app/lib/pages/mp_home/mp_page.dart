@@ -13,6 +13,7 @@ import '../../backend/schema/mp/mp_memory.dart';
 import '../../gen/assets.gen.dart';
 import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
+import '../../utils/mp_device_file_util.dart';
 import '../../utils/other/temp.dart';
 import '../memories/mp_memory_page_client.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -69,6 +70,8 @@ class MPPageContent extends StatefulWidget {
 class _MPPageContentState extends State<MPPageContent> {
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<MPHomeRefreshEvent>? _refreshEventSubscription;
+  DeviceProvider? _deviceProvider;
+  bool? _previousConnectedState;
 
   @override
   void initState() {
@@ -90,16 +93,63 @@ class _MPPageContentState extends State<MPPageContent> {
       });
       provider.refresh();
       if (mounted) {
-        context.read<DeviceProvider>().periodicConnect(
-              'coming from HomePageWrapper',
-              boundDeviceOnly: true,
-            );
+        final deviceProvider = context.read<DeviceProvider>();
+        _deviceProvider = deviceProvider;
+        _previousConnectedState = deviceProvider.isConnected;
+
+        // 监听设备连接状态变化
+        deviceProvider.addListener(_onDeviceConnectionChanged);
+
+        deviceProvider.periodicConnect(
+          'coming from HomePageWrapper',
+          boundDeviceOnly: true,
+        );
       }
     });
   }
 
+  /// 处理设备连接状态变化
+  void _onDeviceConnectionChanged() {
+    if (!mounted || _deviceProvider == null) return;
+
+    final currentConnectedState = _deviceProvider!.isConnected;
+
+    // 只在状态真正变化时执行操作
+    if (_previousConnectedState != currentConnectedState) {
+      _previousConnectedState = currentConnectedState;
+
+      if (currentConnectedState) {
+        // 设备已连接时的操作
+        _handleDeviceConnected();
+      } else {
+        // 设备断开连接时的操作
+        _handleDeviceDisconnected();
+      }
+    }
+  }
+
+  /// 设备连接时的处理逻辑
+  void _handleDeviceConnected() {
+    MPDeviceFileUtil.instance.testExportAllFiles(onFileListCount: (count) {
+      final provider = context.read<MPHomePageProvider>();
+      provider.updateRecordCountAndIndex(value: count, index: 0);
+    }, onExportProgress: (index, progress, speed) {
+      debugPrint('-----hj----- index: $index, progress: $progress, speed: $speed');
+      final provider = context.read<MPHomePageProvider>();
+      
+      provider.updateUploadPercent(progress);
+      provider.updateRecordIndex(index);
+    }, onFileExported: (index, fileDetail) {
+      debugPrint('-----hj----- index: $index, fileDetail: $fileDetail');
+    });
+  }
+
+  /// 设备断开连接时的处理逻辑
+  void _handleDeviceDisconnected() {}
+
   @override
   void dispose() {
+    _deviceProvider?.removeListener(_onDeviceConnectionChanged);
     _refreshEventSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();

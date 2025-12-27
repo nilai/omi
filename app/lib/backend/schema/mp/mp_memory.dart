@@ -294,11 +294,19 @@ class MPGetInsightListResponse {
 // Create Record Response
 @JsonSerializable()
 class MPCreateRecordResponse {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'record_url')
+  final String recordUrl;
+
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
   MPCreateRecordResponse({
     required this.baseResp,
+    required this.memoryId,
+    required this.recordUrl,
   });
 
   factory MPCreateRecordResponse.fromJson(Map<String, dynamic> json) => _$MPCreateRecordResponseFromJson(json);

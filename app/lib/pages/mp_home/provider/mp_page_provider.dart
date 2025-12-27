@@ -189,14 +189,32 @@ enum MPHomeImportAudioType {
 
 class MPHomePageProvider extends ChangeNotifier {
   String selectedDate = MPTimestampUtils.getCurrentDate();
-  // int uploadedCount = 1;
-  // int totalCount = 1;
+
+  /// 上传进度
   double uploadPercent = 10;
+
+  /// 记录数量
   int recordCount = 0;
+
+  /// 记录索引
+  int recordIndex = 0;
+
+  /// 记录速度
+  double recordSpeed = 0;
+
+  /// 是否正在加载
   bool loading = false;
+
+  /// 是否正在加载更多
   bool loadingMore = false;
+
+  /// 是否有更多
   bool hasMore = true;
+
+  /// 记忆列表
   List<MPMemoryItem> items = [];
+
+  /// 游标
   String _cursor = '';
 
   MPHomeImportAudioType importAudioType = MPHomeImportAudioType.none;
@@ -218,7 +236,6 @@ class MPHomePageProvider extends ChangeNotifier {
   }
 
   //
-
   Future<void> refresh() async {
     loading = true;
     notifyListeners();
@@ -258,14 +275,29 @@ class MPHomePageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateRecordCount(int value) {
-    if (value < 0) return;
+  void updateRecordCountAndIndex({required int value, required int index}) {
+    if (value <= 0 || index < 0 || index >= value) {
+      recordCount = 0;
+      recordIndex = 0;
+      importAudioType = MPHomeImportAudioType.none;
+      notifyListeners();
+      return;
+    }
     recordCount = value;
+    recordIndex = index;
+    importAudioType = MPHomeImportAudioType.sdCard;
     notifyListeners();
   }
 
-  void updateImportAudioType(MPHomeImportAudioType type) {
-    importAudioType = type;
+  void updateRecordIndex(int value) {
+    if (value < 0 || value >= recordCount) {
+      recordIndex = 0;
+      importAudioType = MPHomeImportAudioType.none;
+      notifyListeners();
+      return;
+    }
+    recordIndex = value;
+    importAudioType = MPHomeImportAudioType.sdCard;
     notifyListeners();
   }
 
@@ -370,25 +402,27 @@ class MPHomePageProvider extends ChangeNotifier {
           duration: 0,
         );
 
-        final res = await createRecord(req);
-        if (res != null) {
-          await removeLocalRecord(element.path);
-          refresh();
+        if (_rightNowTranscribe) {
+          final res = await createRecord(req);
+          if (res != null) {
+            final summaryReq = MPSummaryRecordRequest(
+              memoryId: res.memoryId,
+              recordUrl: res.recordUrl,
+              recordMemoAt: element.createAt,
+            );
+            final summaryRes = await summaryRecord(summaryReq);
+            if (summaryRes != null) {
+              await removeLocalRecord(element.path);
+              refresh();
+            }
+          }
+        } else {
+          final res = await createRecord(req);
+          if (res != null) {
+            await removeLocalRecord(element.path);
+            refresh();
+          }
         }
-
-        // if (_rightNowTranscribe) {
-        //   // 创建摘要
-        //   final summaryReq = MPSummaryRecordRequest(
-        //     memoryId: res.id,
-        //     recordUrl: res.recordUrl,
-        //     recordMemoAt: res.recordMemoAt,
-        //   );
-        //   final summaryRes = await summaryRecord(summaryReq);
-        //   if (summaryRes != null) {
-        //     await removeLocalRecord(element.path);
-        //     refresh();
-        //   }
-        // }
       }
     }
   }
