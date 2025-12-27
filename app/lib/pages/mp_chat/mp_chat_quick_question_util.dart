@@ -27,38 +27,28 @@ class MPQuickQuestionUtil {
   /// 获取服务端返回的问题属性
   Map<String, List<String>>? get questionsMap => _questionsMap;
 
-  /// 将枚举值转换为字符串 key
-  /// @param {MPChatPageType} type - 聊天页面类型枚举
-  /// @returns {String} 对应的字符串 key
-  String _typeToKey(MPChatPageType type) {
+  Future<List<String>> getQuestionsByChatType(MPChatPageType type) async {
     switch (type) {
       case MPChatPageType.normal:
-        return 'normal';
+        return await getAllKeys();
       case MPChatPageType.expert:
-        return 'expert';
+        return [];
       case MPChatPageType.memory:
-        return 'memory';
+        return [
+          '有哪些需要跟进的地方?',
+          '和对方沟通的风险点是哪些?',
+          '还有哪些没有解决的问题?',
+          '下次会议需要准备什么材料?',
+        ];
       case MPChatPageType.template:
-        return 'template';
+        return [];
       case MPChatPageType.speaker:
-        return 'speaker';
+        return [
+          '帮我总结一下近半年我们的沟通情况',
+          '我们讨论的最重要三个话题',
+          '前几次讨论我们还有没有没解决的问题',
+        ];
     }
-  }
-
-  /// 根据传入的枚举值获取对应的问题列表（异步版本）
-  /// @param {MPChatPageType} type - 聊天页面类型枚举
-  /// @returns {Future<List<String>>} 问题列表，如果不存在则返回空列表
-  Future<List<String>> getQuestionsByType(MPChatPageType type) async {
-    final key = _typeToKey(type);
-    return await getQuestionsByKey(key);
-  }
-
-  /// 根据传入的枚举值获取对应的问题列表（同步版本）
-  /// @param {MPChatPageType} type - 聊天页面类型枚举
-  /// @returns {List<String>} 问题列表，如果不存在则返回空列表
-  List<String> getQuestionsByTypeSync(MPChatPageType type) {
-    final key = _typeToKey(type);
-    return getQuestionsByKeySync(key);
   }
 
   /// 根据 key 获取问题列表（异步版本）
