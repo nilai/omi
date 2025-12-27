@@ -226,19 +226,15 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                       child: TemplateSelectionPage(
                                         type: TemplateSelectionPageType.select,
                                         onUseTemplate: (item) {
-                                          
-                                          widget.templates.insert(0, MPMemoryConvertTemplate(
+                                          final itemTemplate = MPMemoryConvertTemplate(
                                             id: item.id,
                                             title: item.title,
                                             description: item.prompt ?? '',
                                             provider: 'Auto',
-                                          ));
-                                          setState(() => _selectedTemplate = MPMemoryConvertTemplate(
-                                                id: item.id,
-                                                title: item.title,
-                                                description: item.prompt ?? '',
-                                                provider: 'Auto',
-                                              ));
+                                          );
+                                          widget.templates.insert(0, itemTemplate);
+                                          _selectedTemplate = itemTemplate;
+                                          setState(() {});
                                         },
                                       ),
                                     ),
@@ -295,7 +291,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                     child: _TemplateCard(
                                       template: template,
                                       selected: _selectedTemplate?.id == template.id,
-                                      onTap: () => setState(() => _selectedTemplate = template),
+                                      onTap: () => setState(() {
+                                        _selectedTemplate = template;
+                                      }),
                                     ),
                                   ),
                                 ),
