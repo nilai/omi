@@ -85,7 +85,10 @@ extension MPMemoryStructExtension on MPMemoryStruct {
   /// 解析十六进制颜色字符串为 Color 对象
   /// @param hexString 十六进制颜色字符串，例如：#467db4
   /// @returns 解析后的 Color 对象，如果解析失败则返回默认颜色
-  Color _parseHexColor(String hexString) {
+  Color _parseHexColor(String? hexString) {
+    if (hexString == null) {
+      return const Color(0xFF8D8D8D);
+    }
     try {
       // 移除 # 号（如果存在）
       String hex = hexString.replaceAll('#', '');
@@ -102,6 +105,22 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       // 解析失败时返回默认颜色
       return const Color(0xFF8D8D8D);
     }
+  }
+
+  /// 获取记忆内容
+  /// @param memory 记忆
+  /// @returns 记忆内容
+  String _getContent(MPMemoryStruct memory) {
+    if (memory.type == MPMemoryType.onlyRecord) {
+      return memory.onlyRecordContent?.recordFile ?? '';
+    } else if (memory.type == MPMemoryType.summary) {
+      return memory.summaryContent?.summary ?? '';
+    } else if (memory.type == MPMemoryType.insight) {
+      return memory.insightContent?.content ?? '';
+    } else if (memory.type == MPMemoryType.aiExpert) {
+      return memory.aiExpertContent?.content ?? '';
+    }
+    return '';
   }
 
   /// 将 MPMemoryStruct 转换为 MPMemoryItem
@@ -131,8 +150,10 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     final secondsText = duration > 0 ? '${duration}s' : null;
 
     // 根据 labelColor 或 type 确定 tagColor
-    Color tagColor = _parseHexColor(labelColor!);
-    
+    Color tagColor = _parseHexColor(labelColor);
+
+    final content = _getContent(this);
+
     return MPMemoryItem(
       dateText: dateText,
       tagText: label,
@@ -140,7 +161,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       headerText: title,
       timeText: timeText,
       secondsText: secondsText,
-      description: content.isNotEmpty ? content : null,
+      description: content,
       memory: this,
       createAt: createAt,
     );
