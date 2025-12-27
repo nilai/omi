@@ -92,6 +92,7 @@ class MPQuickQuestionUtil {
   Future<List<String>> getAllKeys() async {
     // 判断属性有没有值，有值从属性中取
     if (_questionsMap != null && _questionsMap!.isNotEmpty) {
+      debugPrint('-----hj----- getAllKeys success: ${_questionsMap!.keys.toList().toString()}');
       return _questionsMap!.keys.toList();
     }
 
@@ -100,10 +101,11 @@ class MPQuickQuestionUtil {
       await loadQuestionsFromServer();
       // 加载后再次尝试获取
       if (_questionsMap != null && _questionsMap!.isNotEmpty) {
+        debugPrint('-----hj----- getAllKeys success: ${_questionsMap!.keys.toList().toString()}');
         return _questionsMap!.keys.toList();
       }
     }
-
+    debugPrint('-----hj----- getAllKeys error: ${_questionsMap?.keys.toList().toString()}');
     // 取不到值，返回空 list
     return [];
   }

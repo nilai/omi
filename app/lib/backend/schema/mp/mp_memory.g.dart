@@ -142,6 +142,18 @@ Map<String, dynamic> _$MPGetSummaryStatusRequestToJson(
       'memory_id': instance.memoryId,
     };
 
+MPSearchMemoryRequest _$MPSearchMemoryRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPSearchMemoryRequest(
+      searchContent: json['search_content'] as String,
+    );
+
+Map<String, dynamic> _$MPSearchMemoryRequestToJson(
+        MPSearchMemoryRequest instance) =>
+    <String, dynamic>{
+      'search_content': instance.searchContent,
+    };
+
 MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetMemoryListResponse(
@@ -312,18 +324,6 @@ Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
     <String, dynamic>{
       'status': instance.status,
       'base_resp': instance.baseResp,
-    };
-
-MPSearchMemoryRequest _$MPSearchMemoryRequestFromJson(
-        Map<String, dynamic> json) =>
-    MPSearchMemoryRequest(
-      searchContent: json['search_content'] as String,
-    );
-
-Map<String, dynamic> _$MPSearchMemoryRequestToJson(
-        MPSearchMemoryRequest instance) =>
-    <String, dynamic>{
-      'search_content': instance.searchContent,
     };
 
 MPSearchMemoryResponse _$MPSearchMemoryResponseFromJson(

@@ -9,6 +9,7 @@ import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/chat/widgets/user_message.dart';
 import 'package:omi/pages/chat/widgets/voice_recorder_widget.dart';
 import 'package:omi/pages/mp_chat/mp_chat_menu_list_page.dart';
+import 'package:omi/pages/mp_chat/mp_chat_quick_question_util.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
 import 'package:omi/providers/mp_message_provider.dart';
@@ -109,6 +110,8 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   @override
   bool get wantKeepAlive => true;
 
+  bool _isInit = true;
+
   @override
   void initState() {
     super.initState();
@@ -125,6 +128,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       debugPrint('-----hj----- initState: create new provider');
       provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
       provider.curPageModel?.title = widget.title;
+      _isInit = true;
     }
 
     scrollController = ScrollController();
@@ -157,7 +161,11 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
       }
     });
     SchedulerBinding.instance.addPostFrameCallback((_) async {
-      await provider.updatePageMessages('');
+      if (!_isInit) {
+        return;
+      }
+      _isInit = false;
+      await provider.updatePageInfo(chatId: widget.chatId, type: widget.type, title: widget.title);
       scrollToBottom();
     });
   }
@@ -274,33 +282,37 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   /// 普通聊天类型的空消息Widget
   Widget _buildNormalNoMessagesWidget() {
-    return Column(
-      children: [
-        const SizedBox(
-          height: 16,
-        ),
-        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
-        const Text(
-          'How can I help you?',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-        ),
-        const SizedBox(
-          height: 24,
-        ),
-        MPChatSuggestionCards(
-          onTodayTap: () {
-            _sendMessageUtil('今天我应该怎么做？');
-          },
-          onYesterdayTap: () {
-            _sendMessageUtil('我昨天做了什么？');
-          },
-        ),
-        const Spacer(),
-        const Text(
-          'Ask about anything you\'ve said or heard',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
-        ),
-      ],
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        final noMsgQuestions = mpProvider.noMsgQuestions;
+        return Column(
+          children: [
+            const SizedBox(
+              height: 16,
+            ),
+            Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+            const Text(
+              'How can I help you?',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            ),
+            const SizedBox(
+              height: 24,
+            ),
+            MPChatSuggestionCards(
+              questions: noMsgQuestions,
+              onQuestionTap: (question) async {
+                final questions = await MPQuickQuestionUtil().getQuestionsByKey(question);
+                mpProvider.setQuestions(questions);
+              },
+            ),
+            const Spacer(),
+            const Text(
+              'Ask about anything you\'ve said or heard',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+            ),
+          ],
+        );
+      },
     );
   }
 

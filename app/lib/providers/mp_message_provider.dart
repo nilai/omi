@@ -84,6 +84,9 @@ class MPMessageProvider extends ChangeNotifier {
   /// 是否正在发送消息
   bool sendingMessage = false;
 
+  /// 没有消息时的快速问题列表
+  List<String> get noMsgQuestions => curPageModel?.noMsgQuestions ?? [];
+  
   /// 根据当前页面类型获取快速问题列表
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
