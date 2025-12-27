@@ -569,6 +569,10 @@ class $AssetsImagesGen {
   AssetGenImage get mpStartRecordingIcon =>
       const AssetGenImage('assets/images/mp_start_recording_icon.png');
 
+  /// File path: assets/images/mp_template_community_icon.png
+  AssetGenImage get mpTemplateCommunityIcon =>
+      const AssetGenImage('assets/images/mp_template_community_icon.png');
+
   /// File path: assets/images/mp_todo_add_canlendar.png
   AssetGenImage get mpTodoAddCanlendar =>
       const AssetGenImage('assets/images/mp_todo_add_canlendar.png');

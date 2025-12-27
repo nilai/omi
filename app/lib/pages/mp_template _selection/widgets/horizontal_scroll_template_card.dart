@@ -173,6 +173,7 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // mpTemplateCommunityIcon
             // 图标或网络图片
             Container(
               width: 48.0,

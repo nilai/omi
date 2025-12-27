@@ -144,11 +144,11 @@ class _TemplateSelectionPageState extends State<TemplateSelectionPage> {
                   await _navigateToCreateTemplate(context);
                   return;
                 }
-
-                // 否则选中模板并导航到详情页
-                provider.selectTemplate(cardIndex, cardItem.items.indexOf(item));
+                if (widget.type == TemplateSelectionPageType.select) {
+                  provider.selectTemplate(cardIndex, cardItem.items.indexOf(item));
+                  return;
+                }
                 await _navigateToTemplateDetail(context, item.id, item.isMyTemplate);
-                debugPrint('选中模版: ${item.title}');
               },
             );
           }).toList(),
