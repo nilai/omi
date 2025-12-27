@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:omi/pages/mp_home/provider/mp_search_provider.dart';
+import 'package:omi/pages/mp_home/widgets/mp_home_card.dart';
+import 'package:omi/pages/memories/mp_memory_page_client.dart';
 
-/// 搜索中间页面
-/// 显示最近搜索和热门搜索
+/// 搜索页面
+/// 包含两种状态：输入状态（显示最近搜索）和搜索结果状态（显示搜索结果卡片列表）
+/// 打开页面默认是输入状态
 class MPSearchPage extends StatefulWidget {
   const MPSearchPage({super.key});
 
@@ -38,30 +41,112 @@ class _MPSearchPageState extends State<MPSearchPage> {
         body: SafeArea(
           child: Consumer<MPSearchProvider>(
             builder: (context, provider, _) {
-              return SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    // 最近搜索
-                    if (provider.recentSearches.isNotEmpty) ...[
-                      _buildSectionTitle('最近搜索'),
-                      const SizedBox(height: 12),
-                      _buildRecentSearches(provider),
-                      const SizedBox(height: 24),
-                    ],
-                    // // 热门搜索
-                    // _buildSectionTitle('热门搜索'),
-                    // const SizedBox(height: 12),
-                    // _buildPopularSearches(provider),
-                  ],
-                ),
-              );
+              // 如果显示搜索结果，显示搜索结果列表
+              if (provider.showResults) {
+                return _buildSearchResults(provider);
+              }
+              // 否则显示输入状态（最近搜索）
+              return _buildInputState(provider);
             },
           ),
         ),
       ),
+    );
+  }
+
+  /// 构建输入状态（最近搜索）
+  /// @param provider 搜索 Provider
+  /// @returns 输入状态组件
+  Widget _buildInputState(MPSearchProvider provider) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          // 最近搜索
+          if (provider.recentSearches.isNotEmpty) ...[
+            _buildSectionTitle('最近搜索'),
+            const SizedBox(height: 12),
+            _buildRecentSearches(provider),
+            const SizedBox(height: 24),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// 构建搜索结果列表
+  /// @param provider 搜索 Provider
+  /// @returns 搜索结果列表组件
+  Widget _buildSearchResults(MPSearchProvider provider) {
+    if (provider.isSearching) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40),
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (provider.searchResults.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.search_off,
+                size: 64,
+                color: Color(0xFFCCCCCC),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '未找到相关结果',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF999999),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '关键词: ${provider.currentKeyword}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFFCCCCCC),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      itemCount: provider.searchResults.length,
+      itemBuilder: (context, index) {
+        final item = provider.searchResults[index];
+        return MPHomeCard(
+          dateText: item.dateText,
+          tagText: item.tagText,
+          tagBackgroundColor: item.tagColor,
+          headerText: item.headerText,
+          timeText: item.timeText,
+          secondsText: item.secondsText,
+          description: item.description,
+          onShare: () => provider.onCardShare(context, item),
+          onDelete: () => provider.onCardDelete(context, item),
+          onViewDetail: () => MPMemoryPageClient.navigateToDetailPage(context, item.memory),
+          isUploading: item.isUploading,
+        );
+      },
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
     );
   }
 
@@ -84,40 +169,63 @@ class _MPSearchPageState extends State<MPSearchPage> {
   /// 构建搜索框
   /// @returns 搜索框组件
   Widget _buildSearchBar() {
-    return Container(
-      height: 40,
-      margin: const EdgeInsets.only(right: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: TextField(
-        controller: _searchController,
-        autofocus: false,
-        decoration: const InputDecoration(
-          hintText: '搜索记忆内容、标题、日期...',
-          hintStyle: TextStyle(
-            color: Color(0xFF999999),
-            fontSize: 14,
+    return Consumer<MPSearchProvider>(
+      builder: (context, provider, _) {
+        return Container(
+          height: 40,
+          margin: const EdgeInsets.only(right: 16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F5),
+            borderRadius: BorderRadius.circular(20),
           ),
-          prefixIcon: Icon(
-            Icons.search,
-            color: Color(0xFF999999),
-            size: 20,
+          child: TextField(
+            controller: _searchController,
+            autofocus: false,
+            decoration: InputDecoration(
+              hintText: '搜索记忆内容、标题、日期...',
+              hintStyle: const TextStyle(
+                color: Color(0xFF999999),
+                fontSize: 14,
+              ),
+              prefixIcon: const Icon(
+                Icons.search,
+                color: Color(0xFF999999),
+                size: 20,
+              ),
+              suffixIcon: provider.showResults
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.clear,
+                        color: Color(0xFF999999),
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        _searchController.clear();
+                        provider.clearSearch();
+                      },
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            ),
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF111111),
+            ),
+            onChanged: (value) {
+              // 如果清空输入框，返回输入状态
+              if (value.trim().isEmpty && provider.showResults) {
+                provider.clearSearch();
+              }
+            },
+            onSubmitted: (value) {
+              if (value.trim().isNotEmpty) {
+                _onSearch(value.trim());
+              }
+            },
           ),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        ),
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF111111),
-        ),
-        onSubmitted: (value) {
-          if (value.trim().isNotEmpty) {
-            _onSearch(value.trim());
-          }
-        },
-      ),
+        );
+      },
     );
   }
 
@@ -188,60 +296,6 @@ class _MPSearchPageState extends State<MPSearchPage> {
     );
   }
 
-  /// 构建热门搜索标签
-  /// @param provider 搜索 Provider
-  /// @returns 热门搜索标签组件
-  Widget _buildPopularSearches(MPSearchProvider provider) {
-    if (provider.loadingPopularSearches) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20),
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        ),
-      );
-    }
-
-    if (provider.popularSearches.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: provider.popularSearches.map((keyword) {
-        return _buildPopularSearchTag(keyword);
-      }).toList(),
-    );
-  }
-
-  /// 构建热门搜索标签
-  /// @param keyword 搜索关键词
-  /// @returns 热门搜索标签组件
-  Widget _buildPopularSearchTag(String keyword) {
-    return InkWell(
-      onTap: () => _onSearch(keyword),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF306CFF),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          keyword,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.white,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 执行搜索
   /// @param keyword 搜索关键词
   /// @returns 无返回值
@@ -254,12 +308,7 @@ class _MPSearchPageState extends State<MPSearchPage> {
     // 添加到搜索历史
     _provider.addSearchHistory(keyword);
 
-    // TODO: 执行搜索操作，跳转到搜索结果页面
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => MPSearchResultPage(keyword: keyword),
-    //   ),
-    // );
+    // 执行搜索操作
+    _provider.search(keyword);
   }
 }
