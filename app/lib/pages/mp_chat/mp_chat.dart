@@ -16,6 +16,8 @@ import 'package:provider/provider.dart';
 
 import '../../backend/schema/conversation.dart';
 import '../chat/widgets/ai_message.dart';
+import '../mp_memory/conversation_detail/conversation_detail_page.dart';
+import 'mp_chat_helper.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_memory_card.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
@@ -299,6 +301,10 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             return MPChatMemoryCard(
               onCloseTap: () {
                 mpProvider.setShowCustomCard(false);
+              },
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => ConversationDetailPage(memory: MPChatHelper.instance.memory!)));
               },
             );
           default:
