@@ -402,8 +402,8 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
     if (res != null && res.baseResp.code == 0) {
       if (context.mounted) {
         Navigator.of(context).pop();
+        widget.onGenerate?.call();
       }
-      widget.onGenerate?.call();
     } else {
       MPToastUtils.showMessage(res?.baseResp.message ?? '生成失败');
     }

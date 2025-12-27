@@ -9,7 +9,9 @@ import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
 import '../mp_custom_utils/mp_toast_utils.dart';
+import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../mp_popup/mp_record_detail_more_popup.dart';
+import 'mp_memory_transition_page.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
 
 /// 记忆详情播放页
@@ -150,14 +152,16 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             height: 52,
             child: ElevatedButton(
               onPressed: () => MPMemoryConvertDialog.show(context, memory: widget.memory, onGenerate: () {
-                setState(() {});
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => MPMemoryPlaybackPage(
-                      memory: widget.memory,
+                Future.delayed(const Duration(milliseconds: 500), () {
+                  if (!context.mounted) return;
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => MPMemoryTransitionPage(
+                        memory: widget.memory,
+                      ),
                     ),
-                  ),
-                );
+                  );
+                });
               }),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
@@ -167,13 +171,13 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                   Icon(
+                  Icon(
                     Icons.auto_awesome,
                     size: 20,
                     color: Color(0xFF60A5FA), // 浅蓝色图标
                   ),
-                   SizedBox(width: 8),
-                     Text(
+                  SizedBox(width: 8),
+                  Text(
                     'AI总结',
                     style: TextStyle(
                       fontSize: 16,
