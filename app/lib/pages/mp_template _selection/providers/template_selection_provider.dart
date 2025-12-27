@@ -68,10 +68,6 @@ class TemplateSelectionProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      
-      // 模拟假数据
-      // final response = _createMockResponse();
-
       //真实API调用（已注释）
       final request = MPGetTemplateListRequest(
         pageSize: 20,
@@ -160,104 +156,6 @@ class TemplateSelectionProvider with ChangeNotifier {
     }
   }
   // AI-generated END - 加载模版列表
-
-  // AI-generated START - 创建模拟响应数据
-  /// 创建模拟的模板列表响应数据
-  MPGetTemplateListResponse _createMockResponse() {
-    // 创建模拟的推荐模板
-    final recommendTemplates = [
-      MPTemplateStruct(
-        id: 'rec_1',
-        title: '投资人Pitch沟通模板',
-        type: '通用',
-        prompt:
-            '**Summary Prompt**\nYou are an expert in fundraising and investor relations. Review the following transcript of a meeting with a prospective investor and extract the most valuable insights, organized into the following sections. Focus on understanding their investment criteria and capturing their level of interest.\n\nIntroductions\nHow did they find out about our company? Do we have any other connections?\n\nTheir fund',
-      ),
-      MPTemplateStruct(
-        id: 'rec_2',
-        title: '会议纪要模板',
-        type: '通用',
-        prompt: '标准会议记录模板',
-      ),
-      MPTemplateStruct(
-        id: 'rec_3',
-        title: '项目总结模板',
-        type: '通用',
-        prompt: '项目复盘总结模板',
-      ),
-      MPTemplateStruct(
-        id: 'rec_4',
-        title: '学习笔记模板',
-        type: '通用',
-        prompt: '学习笔记模板内容...',
-      ),
-    ];
-
-    // 创建模拟的自定义模板
-    final customTemplates = [
-      MPTemplateStruct(
-        id: 'custom_1',
-        title: '我的自定义模板1',
-        icon: '',
-        type: '通用',
-        prompt: '自定义模板内容1...',
-      ),
-      MPTemplateStruct(
-        id: 'custom_2',
-        title: '我的自定义模板2',
-        type: '通用',
-        prompt: '自定义模板内容2...',
-      ),
-    ];
-
-    // 创建模拟的最近使用的模板
-    final recentTemplate = MPTemplateStruct(
-      id: 'recent_1',
-      title: '投资人Pitch沟通模板',
-      icon: '',
-      type: '通用',
-      prompt: '用于投资人路演的沟通模板',
-    );
-
-    // 创建模拟的 templates map（value 是 List）
-    final templatesMap = <String, List<MPTemplateStruct>>{
-      'template_1': [
-        MPTemplateStruct(
-          id: 'template_1',
-          title: '面试记录模板',
-          icon: '',
-          type: '通用',
-          prompt: '面试记录模板内容...',
-        ),
-      ],
-      'template_2': [
-        MPTemplateStruct(
-          id: 'template_2',
-          title: '通话摘要模板',
-          icon: '',
-          type: '通用',
-          prompt: '通话摘要模板内容...',
-        ),
-      ],
-    };
-
-    // 创建模拟的基础响应
-    final baseResp = MPBaseResp(
-      code: 0,
-      message: 'success',
-      logid: 'mock_logid_${DateTime.now().millisecondsSinceEpoch}',
-    );
-
-    return MPGetTemplateListResponse(
-      recommendTemplates: recommendTemplates,
-      customTemplates: customTemplates,
-      recentTemplate: recentTemplate,
-      templates: templatesMap,
-      hasMore: false,
-      baseResp: baseResp,
-    );
-  }
-  // AI-generated END - 创建模拟响应数据
 
   // AI-generated START - 转换数据模型
   /// 将 MPTemplateStruct 转换为 HorizontalScrollTemplateItem
