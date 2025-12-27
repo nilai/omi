@@ -225,7 +225,21 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                       create: (_) => TemplateSelectionProvider(),
                                       child: TemplateSelectionPage(
                                         type: TemplateSelectionPageType.select,
-                                        onUseTemplate: (item) {},
+                                        onUseTemplate: (item) {
+                                          
+                                          widget.templates.insert(0, MPMemoryConvertTemplate(
+                                            id: item.id,
+                                            title: item.title,
+                                            description: item.prompt ?? '',
+                                            provider: 'Auto',
+                                          ));
+                                          setState(() => _selectedTemplate = MPMemoryConvertTemplate(
+                                                id: item.id,
+                                                title: item.title,
+                                                description: item.prompt ?? '',
+                                                provider: 'Auto',
+                                              ));
+                                        },
                                       ),
                                     ),
                                   ),

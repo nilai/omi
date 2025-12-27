@@ -13,6 +13,7 @@ class HorizontalScrollTemplateItem {
     this.backgroundColor,
     this.isCreateItem = false,
     this.isMyTemplate = false,
+    this.prompt,
   });
   // AI-generated END - 构造函数
 
@@ -21,6 +22,9 @@ class HorizontalScrollTemplateItem {
 
   /// 标题文字
   final String title;
+
+  /// 描述文字
+  final String? prompt;
 
   /// 网络图片URL（可选，优先使用）
   final String? imageUrl;
