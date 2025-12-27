@@ -207,6 +207,8 @@ struct CreateRecordRequest {
 }
 
 struct CreateRecordResponse {
+    1: string memory_id,
+    2: string record_url,
     255: BaseResp base_resp,
 }
 
