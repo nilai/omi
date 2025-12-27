@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:omi/providers/mp_message_provider.dart';
-import 'package:omi/env/env.dart';
-import 'package:omi/backend/http/shared.dart';
-import 'dart:convert';
 
 import '../../backend/http/mp_api/mp_chat.dart';
 import '../../backend/schema/mp/mp_chat.dart';
@@ -89,6 +86,31 @@ class MPQuickQuestionUtil {
         if (questions != null && questions.isNotEmpty) {
           return questions;
         }
+      }
+    }
+
+    // 取不到值，返回空 list
+    return [];
+  }
+
+  /// 获取所有 keys（异步版本）
+  /// 返回值不能为 null
+  /// 判断属性有没有值，有值从属性中取
+  /// 属性为 null，先加载，再取值
+  /// 取不到值，返回空 list
+  /// @returns {Future<List<String>>} 所有 keys 列表，如果不存在则返回空列表
+  Future<List<String>> getAllKeys() async {
+    // 判断属性有没有值，有值从属性中取
+    if (_questionsMap != null && _questionsMap!.isNotEmpty) {
+      return _questionsMap!.keys.toList();
+    }
+
+    // 属性为 null，先加载，再取值
+    if (_questionsMap == null && !_isLoading) {
+      await loadQuestionsFromServer();
+      // 加载后再次尝试获取
+      if (_questionsMap != null && _questionsMap!.isNotEmpty) {
+        return _questionsMap!.keys.toList();
       }
     }
 
