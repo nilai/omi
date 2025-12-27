@@ -430,6 +430,14 @@ struct TranscriptResponse {
     255: BaseResp base_resp,
 }
 
+struct GetChatSuggestionResponse {
+    1: map<string, list<string>> suggestion,
+    255: BaseResp base_resp,
+}
+
+struct GetChatSuggestionRequest {
+}
+
 struct AddSpeakerRequest {
     1: string audio_url,
     2: string name,
@@ -712,6 +720,8 @@ service AppService {
     GetConversationDetailResponse GetConversationDetail(1: GetConversationDetailRequest req)
     // POST /api/v1/chat/transcript
     TranscriptResponse Transcript(1: TranscriptRequest req)
+    // GET /api/v1/chat/suggestion
+    GetChatSuggestionResponse GetChatSuggestion(1: GetChatSuggestionRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
