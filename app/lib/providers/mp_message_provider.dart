@@ -84,6 +84,11 @@ class MPMessageProvider extends ChangeNotifier {
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
 
+  void setQuestions(List<String> questions) {
+    curPageModel?.questions = questions;
+    notifyListeners();
+  }
+
   /// 是否显示自定义卡片。记忆卡片、人物卡片
   bool get showCustomCard => curPageModel?.showCustomCard ?? false;
 
