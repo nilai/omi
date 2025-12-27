@@ -23,6 +23,7 @@ import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:omi/utils/upload/mp_upload_client.dart';
 import 'package:provider/provider.dart';
 
+import '../mp_chat/mp_chat_quick_question_util.dart';
 import '../mp_home/widgets/mp_home_tab_item_widget.dart';
 
 class HomePageWrapper extends StatefulWidget {
@@ -90,6 +91,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
     // context.read<AppProvider>().getApps();
     // context.read<AppProvider>().getPopularApps();
     MpUploadClient().getUploadUrl('audio');
+    MPQuickQuestionUtil().loadQuestionsFromServer();
   }
 
   // 跳转到tab制定页面
