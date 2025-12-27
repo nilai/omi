@@ -351,7 +351,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                     width: double.infinity,
                     child: InkWell(
                       onTap: () {
-                        _onGenerate();
+                        _onGenerate(context);
                       },
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
@@ -391,14 +391,17 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
     );
   }
 
-  void _onGenerate() async {
+  void _onGenerate(BuildContext context) async {
     final req = MPSummaryRecordRequest(
       memoryId: widget.memory.id,
       recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
       recordMemoAt: widget.memory.createAt,
     );
     final res = await summaryRecord(req);
-    if (res != null) {
+    if (res != null && res.baseResp.code == 0) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
       widget.onGenerate?.call();
     } else {
       MPToastUtils.showMessage(res?.baseResp.message ?? '生成失败');
