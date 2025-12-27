@@ -232,9 +232,9 @@ MPCreateRecordResponse _$MPCreateRecordResponseFromJson(
 Map<String, dynamic> _$MPCreateRecordResponseToJson(
         MPCreateRecordResponse instance) =>
     <String, dynamic>{
-      'base_resp': instance.baseResp,
       'memory_id': instance.memoryId,
       'record_url': instance.recordUrl,
+      'base_resp': instance.baseResp,
     };
 
 MPGetUploadRecordUrlResponse _$MPGetUploadRecordUrlResponseFromJson(

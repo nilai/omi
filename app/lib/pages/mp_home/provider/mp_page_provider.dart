@@ -278,7 +278,8 @@ class MPHomePageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateRecordCountAndIndex({required int value, required int index}) {
+  void updateSDRecordCountAndIndex({required int value, required int index}) {
+    
     if (value <= 0 || index < 0 || index >= value) {
       sdRecordCount = 0;
       sdRecordIndex = 0;
@@ -292,8 +293,8 @@ class MPHomePageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateRecordIndex(int value) {
-    if (value < 0 || value >= recordCount) {
+  void updateSDRecordIndex(int value) {
+    if (value < 0 || value >= sdRecordCount) {
       sdRecordIndex = 0;
       importAudioType = MPHomeImportAudioType.none;
       notifyListeners();
@@ -314,7 +315,7 @@ class MPHomePageProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateRecordSpeed(double value) {
+  void updateSDRecordSpeed(double value) {
     sdRecordSpeed = value;
     notifyListeners();
   }
@@ -343,7 +344,7 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 添加本地记录
   /// @param item 本地记录
-  Future<void> addLocalRecord(String path) async {
+  Future<void> addLocalRecord(String path, {int? duration, String? fileName}) async {
     // 通过path获取到filename
     final String filename = path.split('/').last;
     final model = MPLocalMemoryModel(fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path);

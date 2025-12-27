@@ -23,6 +23,7 @@ import '../mp_popup/record_audio_option_card.dart';
 import '../onboarding/find_device/mp_page.dart';
 import 'mp_search_page.dart';
 import 'provider/mp_page_provider.dart';
+import 'widgets/mp_home_top_import_sd_audio_widget.dart';
 import 'widgets/mp_home_upload_widget.dart';
 
 class MPPage extends StatefulWidget {
@@ -132,15 +133,24 @@ class _MPPageContentState extends State<MPPageContent> {
   void _handleDeviceConnected() {
     MPDeviceFileUtil.instance.testExportAllFiles(onFileListCount: (count) {
       final provider = context.read<MPHomePageProvider>();
-      provider.updateRecordCountAndIndex(value: count, index: 0);
+      debugPrint('-----hj----- _handleDeviceConnected count: $count');
+      provider.updateSDRecordCountAndIndex(value: count, index: 0);
     }, onExportProgress: (index, progress, speed) {
-      debugPrint('-----hj----- index: $index, progress: $progress, speed: $speed');
+      // 将 progress (0.0~1.0) 转为百分比 (0~100)
+      final percent = (progress * 100);
+      debugPrint('-----hj----- _handleDeviceConnected index: $index, progress: $progress, speed: $speed');
       final provider = context.read<MPHomePageProvider>();
-      
-      provider.updateUploadPercent(progress);
-      provider.updateRecordIndex(index);
-    }, onFileExported: (index, fileDetail) {
-      debugPrint('-----hj----- index: $index, fileDetail: $fileDetail');
+      provider.updateSDRecordSpeed(speed);
+      provider.updateUploadPercent(percent);
+      provider.updateSDRecordIndex(index);
+    }, onFileExported: (index, fileDetail) async {
+      debugPrint('-----hj----- _handleDeviceConnected index: $index, fileDetail: $fileDetail');
+
+      // 传完后， 更新本地，
+      final provider = context.read<MPHomePageProvider>();
+      provider.updateImportAudioType(MPHomeImportAudioType.none);
+      await provider.addLocalRecord(fileDetail.localPath ?? '', duration: fileDetail.durationSeconds, fileName: fileDetail.name);
+      provider.uploadLocalRecords();
     });
   }
 
@@ -365,6 +375,7 @@ class _MPPageContentState extends State<MPPageContent> {
   }
 
   Widget _buildImportAudioTypeWidget(BuildContext context, MPHomePageProvider provider) {
+    debugPrint('-----hj----- _buildImportAudioTypeWidget type: ${provider.importAudioType}');
     if (provider.importAudioType == MPHomeImportAudioType.none) {
       return const SizedBox.shrink();
     }
@@ -381,10 +392,14 @@ class _MPPageContentState extends State<MPPageContent> {
       );
     }
     if (provider.importAudioType == MPHomeImportAudioType.sdCard) {
-      return const Row(
-        children: [
-          Text('SD卡导入音频'),
-        ],
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: MPHomeTopImportSdAudioWidget(
+            title: '正在从 MemoPin 传输录音至 APP...',
+            percent: provider.uploadPercent,
+            speedText: provider.sdRecordSpeed.toStringAsFixed(2),
+            transferredCount: provider.sdRecordIndex,
+            totalCount: provider.sdRecordCount),
       );
     }
     return const SizedBox.shrink();
