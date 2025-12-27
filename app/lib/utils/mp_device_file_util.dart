@@ -709,6 +709,115 @@ class MPDeviceFileUtil {
     }
   }
 
+  /// 测试方法：模拟批量导出文件
+  ///
+  /// 用于测试批量导出功能，使用模拟数据
+  /// - 传输文件数量：10
+  /// - 传输速度：100KB/s
+  /// - 其他信息使用测试数据
+  ///
+  /// [onFileListCount] 文件列表数量回调
+  /// [onExportProgress] 导出进度回调，参数：文件索引、进度(0.0-1.0)、速度(字节/秒)
+  /// [onFileExported] 文件导出完成回调，参数：文件索引、文件详情
+  ///
+  /// 返回所有导出文件的路径列表
+  Future<List<String>> testExportAllFiles({
+    void Function(int count)? onFileListCount,
+    void Function(int index, double progress, double speed)? onExportProgress,
+    void Function(int index, MPDeviceFileDetail fileDetail)? onFileExported,
+  }) async {
+    try {
+      // 1. 创建10个测试文件
+      const int fileCount = 10;
+      const double speedBytesPerSecond = 100 * 1024; // 100KB/s
+
+      print('[MPDeviceFileUtil] 开始测试批量导出，共 $fileCount 个文件');
+
+      // 回调文件列表数量
+      onFileListCount?.call(fileCount);
+
+      final List<String> exportedPaths = [];
+      final baseTime = DateTime.now().subtract(const Duration(days: 10));
+
+      // 2. 遍历文件，逐个模拟导出
+      for (int i = 0; i < fileCount; i++) {
+        // 创建测试文件详情
+        final testFileName = '2024010${i.toString().padLeft(1, '0')}_12000${i.toString().padLeft(2, '0')}_test_$i.opus';
+        final testFileSize = (100 + i * 50) * 1024; // 100KB + i*50KB
+        final testDuration = 30 + i * 10; // 30秒 + i*10秒
+        final testCreateTime = baseTime.add(Duration(days: i));
+
+        final fileDetail = MPDeviceFileDetail(
+          name: testFileName,
+          size: testFileSize,
+          createTime: testCreateTime,
+          durationSeconds: testDuration,
+          index: i,
+          isEstimatedSize: false,
+        );
+
+        print('[MPDeviceFileUtil] 开始导出文件 [$i/$fileCount]: ${fileDetail.name}');
+
+        try {
+          // 模拟导出过程，使用固定速度
+          final totalBytes = testFileSize;
+          int downloadedBytes = 0;
+          const int chunkSize = 10240; // 每次更新10KB
+
+          // 模拟分块下载
+          while (downloadedBytes < totalBytes) {
+            // 计算当前进度
+            downloadedBytes = (downloadedBytes + chunkSize).clamp(0, totalBytes);
+            final progress = (downloadedBytes / totalBytes).clamp(0.0, 1.0);
+
+            // 使用固定速度 100KB/s
+            final speed = speedBytesPerSecond;
+
+            // 回调进度和速度
+            onExportProgress?.call(i, progress, speed);
+
+            // 模拟传输延迟（每10KB需要0.1秒）
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+
+          // 确保进度达到100%
+          onExportProgress?.call(i, 1.0, speedBytesPerSecond);
+
+          // 生成模拟的文件路径
+          final downloadPath = await getDownloadPath();
+          final filePath = '$downloadPath/$testFileName';
+          exportedPaths.add(filePath);
+
+          print('[MPDeviceFileUtil] 文件 [$i/$fileCount] 导出完成: $filePath');
+
+          // 3. 文件导出完成回调
+          // 更新文件详情中的本地路径
+          final updatedDetail = MPDeviceFileDetail(
+            name: fileDetail.name,
+            size: fileDetail.size,
+            createTime: fileDetail.createTime,
+            durationSeconds: fileDetail.durationSeconds,
+            index: fileDetail.index,
+            isEstimatedSize: fileDetail.isEstimatedSize,
+            localPath: filePath,
+            mp3Path: null,
+          );
+
+          onFileExported?.call(i, updatedDetail);
+        } catch (e) {
+          print('[MPDeviceFileUtil] 导出文件 [$i/$fileCount] 失败: $e');
+          // 继续导出下一个文件，不中断整个流程
+        }
+      }
+
+      print('[MPDeviceFileUtil] 测试批量导出完成，共导出 ${exportedPaths.length}/$fileCount 个文件');
+      return exportedPaths;
+    } catch (e) {
+      print('[MPDeviceFileUtil] 测试批量导出失败: $e');
+      rethrow;
+    }
+  }
+
   /// 清理资源
   void dispose() {
     _fileDataSubscription?.cancel();
