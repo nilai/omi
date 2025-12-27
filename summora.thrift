@@ -20,6 +20,7 @@ struct SpeakerStruct {
     4: bool is_temporary, // 是否是已经录入声纹的说话人，false为已经录入
     5: bool myself_voice,
     6: string audio_url,
+    7: i32 duration,  // 声音时长，单位s
 }
 
 struct SpeakerWithDetailStruct {
@@ -71,6 +72,7 @@ struct SummaryMemoryStruct {
     3: string summary, // markdown格式
     4: list<RecordConversationStruct> transcript,
     5: list<TodoStruct> todos,
+    6: i32: status,
 }
 
 struct MemoryStruct {
@@ -79,12 +81,13 @@ struct MemoryStruct {
     3: string title,
     4: MemoryType type,
     5: string label, // 会议纪要、今日运势之类的
-    6: string content,
-    7: i32 duration, // 单位是s
-    7: SummaryMemoryStruct summary_content,
-    8: OnlyRecordMemoryStruct only_record_content,
-    9: InsightMemoryStruct insight_content,
-    10: AiExpertMemoryStruct ai_expert_content,
+    6: string label_color,  // 格式为 #467db4
+    7: string content,
+    8: i32 duration, // 单位是s
+    9: SummaryMemoryStruct summary_content,
+    10: OnlyRecordMemoryStruct only_record_content,
+    11: InsightMemoryStruct insight_content,
+    12: AiExpertMemoryStruct ai_expert_content,
 }
 
 
@@ -221,9 +224,19 @@ struct SummaryRecordRequest {
     1: string memory_id,
     2: string record_url,
     3: i64 record_memo_at,  // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
+    4: optional string template_id,  // 总结需要的模板
 }
 
 struct SummaryRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetSummaryStatusRequest {
+    1: string memory_id,
+}
+
+struct GetSummaryStatusResponse {
+    1: i32: status,
     255: BaseResp base_resp,
 }
 
@@ -348,6 +361,7 @@ struct UpdateTodoRequest {
     2: string title,
     3: string priority,
     4: string deadline,
+    5: string is_completed,
 }
 
 struct UpdateTodoResponse {
@@ -419,6 +433,7 @@ struct AddSpeakerRequest {
     2: string name,
     3: string avatar, // 可以为空
     4: bool myself_voice,
+    5: i32 duration,  // 声音时长，单位s
 }
 
 struct AddSpeakerResponse {
@@ -649,6 +664,8 @@ service AppService {
     GetUploadRecordUrlResponse GetUploadRecordUrl(1: GetUploadRecordUrlRequest req)
     // POST /api/v1/memory/summary_record
     SummaryRecordResponse SummaryRecord(1: SummaryRecordRequest req)
+    // GET /api/v1/memory/summary/get_status
+    GetSummaryStatusResponse GetSummaryStatus(1: GetSummaryStatusRequest req)
     // GET /api/v1/memory/search
     SearchMemoryResponse SearchMemory(1: SearchMemoryRequest req)
     // GET /api/v1/memory/share
