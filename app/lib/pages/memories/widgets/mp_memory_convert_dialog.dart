@@ -213,8 +213,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                   MaterialPageRoute(
                                     builder: (context) => ChangeNotifierProvider<TemplateSelectionProvider>(
                                       create: (_) => TemplateSelectionProvider(),
-                                      child: const TemplateSelectionPage(
+                                      child: TemplateSelectionPage(
                                         type: TemplateSelectionPageType.select,
+                                        onUseTemplate: (item) {},
                                       ),
                                     ),
                                   ),
