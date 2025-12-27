@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 import '../../backend/schema/conversation.dart';
 import '../chat/widgets/ai_message.dart';
 import 'widgets/mp_chat_appbar.dart';
+import 'widgets/mp_chat_memory_card.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
 
 class MPChatPage extends StatefulWidget {
@@ -196,6 +197,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                 Expanded(
                   child: _buildMessagesWidget(),
                 ),
+                _buildCustomCardWidget(),
                 _buildQuickQuestionsWidget(),
                 _buildSendMessageWidget(),
               ],
@@ -279,6 +281,30 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
         ),
       ],
+    );
+  }
+
+  Widget _buildCustomCardWidget() {
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        if (!mpProvider.showCustomCard) {
+          return const SizedBox.shrink();
+        }
+        final type = mpProvider.curPageModel?.type;
+        if (type == null) {
+          return const SizedBox.shrink();
+        }
+        switch (type) {
+          case MPChatPageType.memory:
+            return MPChatMemoryCard(
+              onCloseTap: () {
+                mpProvider.setShowCustomCard(false);
+              },
+            );
+          default:
+            return const SizedBox.shrink();
+        }
+      },
     );
   }
 

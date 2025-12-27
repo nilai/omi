@@ -84,6 +84,16 @@ class MPMessageProvider extends ChangeNotifier {
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
 
+  /// 是否显示自定义卡片。记忆卡片、人物卡片
+  bool get showCustomCard => curPageModel?.showCustomCard ?? false;
+
+  /// 设置是否显示自定义卡片
+  /// @param {bool} value - 是否显示自定义卡片
+  void setShowCustomCard(bool value) {
+    curPageModel?.showCustomCard = value;
+    notifyListeners();
+  }
+
   /// 更新页面信息，通过chatid及type获取页面信息
   Future<void> updatePageInfo(
       {String chatId = '', MPChatPageType type = MPChatPageType.normal, String title = ''}) async {
