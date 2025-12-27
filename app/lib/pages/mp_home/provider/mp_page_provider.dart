@@ -397,8 +397,6 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param context 上下文
   /// @param item 记忆项
   void onCardShare(BuildContext context, MPMemoryItem item) {
-    debugPrint('Share tapped for ${item.headerText}');
-    // TODO: 实现分享功能
     MPShareMemoryDialog.show(context: context, memoryId: item.memory.id);
   }
 
