@@ -16,6 +16,7 @@ class MPMemoryConvertTemplate {
   final String description;
   final String provider;
   final String? badge;
+  final String? icon;
 
   const MPMemoryConvertTemplate({
     required this.id,
@@ -23,6 +24,7 @@ class MPMemoryConvertTemplate {
     required this.description,
     required this.provider,
     this.badge,
+    this.icon,
   });
 }
 
@@ -64,6 +66,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
         title: response?.recentTemplate?.title ?? '',
         description: response?.recentTemplate?.prompt ?? '',
         provider: 'Auto',
+        icon: response?.recentTemplate?.icon,
       ));
     }
     final recommendTemplates = response?.recommendTemplates
@@ -72,6 +75,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
                   title: template.title ?? '',
                   description: template.prompt ?? '',
                   provider: 'Auto',
+                  icon: template.icon,
                 ))
             .toList() ??
         [];
@@ -220,8 +224,9 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                           final itemTemplate = MPMemoryConvertTemplate(
                                             id: item.id,
                                             title: item.title,
-                                            description: item.prompt ?? '',
+                                            description: item.prompt ?? '选中模版的prompt为空',
                                             provider: 'Auto',
+                                            icon: item.imageUrl,
                                           );
                                           widget.templates.insert(0, itemTemplate);
                                           _selectedTemplate = itemTemplate;
@@ -269,29 +274,32 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: widget.templates
-                              .map(
-                                (template) => Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.only(
-                                      right: template.id == widget.templates.first.id ? 6 : 0,
-                                      left: template.id != widget.templates.first.id ? 6 : 0,
-                                    ),
-                                    child: _TemplateCard(
-                                      template: template,
-                                      selected: _selectedTemplate?.id == template.id,
-                                      onTap: () => setState(() {
-                                        _selectedTemplate = template;
-                                      }),
-                                    ),
+                        Visibility(
+                          visible: widget.templates.isNotEmpty,
+                          child: SizedBox(
+                            height: 180,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: widget.templates.length,
+                              itemBuilder: (context, index) {
+                                final template = widget.templates[index];
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    right: index < widget.templates.length - 1 ? 12 : 0,
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                  child: _TemplateCard(
+                                    template: template,
+                                    selected: _selectedTemplate?.id == template.id,
+                                    onTap: () => setState(() {
+                                      _selectedTemplate = template;
+                                    }),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 8),
+                        Visibility(visible: widget.templates.isNotEmpty, child: const SizedBox(height: 8)),
                         _buildSwitchTile(
                           title: '区分说话人',
                           value: _separateSpeakers,
@@ -499,14 +507,6 @@ class _TemplateCard extends StatelessWidget {
     final borderColor = selected ? const Color(0xFF6366F1) : const Color(0xFFE5E7EB);
     final bgColor = selected ? const Color(0xFFF5F7FF) : Colors.white;
 
-    // 根据模板ID选择不同的图标
-    IconData iconData = Icons.auto_awesome;
-    // if (template.id == 'meeting_notes') {
-    //   iconData = Icons.groups;
-    // } else {
-    //   iconData = Icons.auto_awesome;
-    // }
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -524,21 +524,7 @@ class _TemplateCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 图标在左上角
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Icon(
-                      iconData,
-                      size: 20,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                _buildIcon(),
                 const SizedBox(height: 12),
                 // 标题
                 Text(
@@ -558,33 +544,14 @@ class _TemplateCard extends StatelessWidget {
                     height: 1.35,
                     color: Color(0xFF4B5563),
                   ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 // Provider和图标
                 _Chip(text: template.provider),
               ],
             ),
-            // 徽章在右上角
-            if (template.badge != null)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    template.badge!,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
             // 选中标记在右下角
             if (selected)
               Positioned(
@@ -605,6 +572,87 @@ class _TemplateCard extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建图标（支持网络图片和本地asset图片）
+  Widget _buildIcon() {
+    final iconUrl = template.icon;
+
+    if (iconUrl != null && iconUrl.isNotEmpty) {
+      // 如果是网络图片URL
+      if (iconUrl.startsWith('http://') || iconUrl.startsWith('https://')) {
+        return Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              iconUrl,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildDefaultIcon();
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) {
+                  return child;
+                }
+                return _buildDefaultIcon();
+              },
+            ),
+          ),
+        );
+      } else if (iconUrl.startsWith('assets/')) {
+        // 如果是本地asset图片
+        return Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              iconUrl,
+              width: 32,
+              height: 32,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return _buildDefaultIcon();
+              },
+            ),
+          ),
+        );
+      }
+    }
+
+    // 默认图标
+    return _buildDefaultIcon();
+  }
+
+  /// 构建默认图标
+  Widget _buildDefaultIcon() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: selected ? const Color(0xFFEEF2FF) : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Center(
+        child: Icon(
+          Icons.auto_awesome,
+          size: 20,
+          color: Color(0xFF6366F1),
         ),
       ),
     );
