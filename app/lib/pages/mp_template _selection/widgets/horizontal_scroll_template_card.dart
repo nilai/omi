@@ -165,74 +165,73 @@ class HorizontalScrollTemplateCard extends StatelessWidget {
       onTap: () {
         onItemTap?.call(item);
       },
-      child: Container(
-        width: itemWidth,
-        height: itemHeight,
-        margin: const EdgeInsets.only(right: 12.0),
-        decoration: BoxDecoration(
-          color: item.backgroundColor ?? Colors.white,
-          borderRadius: BorderRadius.circular(12.0),
-          border: Border.all(color: isSelected ? const Color(0xFF2DD4BF) : const Color(0xFFE5E7EB), width: 1),
-        ),
-        child: Stack(
-          children: [
-            // 主要内容
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // mpTemplateCommunityIcon
-                // 图标或网络图片
-                Container(
-                  width: 48.0,
-                  height: 48.0,
-                  decoration: BoxDecoration(
-                    // 如果有网络图片URL，不显示背景色；否则显示图标背景色
-                    color: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
-                        ? Colors.transparent
-                        : (item.iconColor ?? const Color(0xFF374151)),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  child: _buildIconOrImage(item),
-                ),
-                const SizedBox(height: 12.0),
-                // 标题文字
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    item.title,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 14.0,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF111827),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            // 右上角查看图标
-            Positioned(
-              top: 8.0,
-              right: 8.0,
-              child: Container(
-                width: 24.0,
-                height: 24.0,
+      child: Stack(children: [
+        Container(
+          width: itemWidth,
+          height: itemHeight,
+          margin: const EdgeInsets.only(right: 12.0),
+          decoration: BoxDecoration(
+            color: item.backgroundColor ?? Colors.white,
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(color: isSelected ? const Color(0xFF2DD4BF) : const Color(0xFFE5E7EB), width: 1),
+          ),
+          child: // 主要内容
+              Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // mpTemplateCommunityIcon
+              // 图标或网络图片
+              Container(
+                width: 48.0,
+                height: 48.0,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6), // 浅灰色背景
-                  shape: BoxShape.circle, // 圆形
+                  // 如果有网络图片URL，不显示背景色；否则显示图标背景色
+                  color: (item.imageUrl != null && item.imageUrl!.isNotEmpty)
+                      ? Colors.transparent
+                      : (item.iconColor ?? const Color(0xFF374151)),
+                  borderRadius: BorderRadius.circular(8.0),
                 ),
-                child: const Icon(
-                  Icons.visibility_outlined,
-                  color: Color(0xFF6B7280), // 深灰色图标
-                  size: 14.0,
+                child: _buildIconOrImage(item),
+              ),
+              const SizedBox(height: 12.0),
+              // 标题文字
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Text(
+                  item.title,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14.0,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+        // 右上角查看图标
+        Positioned(
+          top: 12.0,
+          right: 24.0,
+          child: Container(
+            width: 24.0,
+            height: 24.0,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6), // 浅灰色背景
+              shape: BoxShape.circle, // 圆形
+            ),
+            child: const Icon(
+              Icons.visibility_outlined,
+              color: Color(0xFF6B7280), // 深灰色图标
+              size: 14.0,
+            ),
+          ),
+        ),
+      ]),
+      // 右上角查看图标
     );
   }
   // AI-generated END - 构建单个项
