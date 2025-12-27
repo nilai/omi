@@ -27,10 +27,10 @@ class MPQuickQuestionUtil {
   /// 获取服务端返回的问题属性
   Map<String, List<String>>? get questionsMap => _questionsMap;
 
-  Future<List<String>> getQuestionsByChatType(MPChatPageType type) async {
+  List<String> getQuestionsByChatType(MPChatPageType type) {
     switch (type) {
       case MPChatPageType.normal:
-        return await getAllKeys();
+        return [];
       case MPChatPageType.expert:
         return [];
       case MPChatPageType.memory:
