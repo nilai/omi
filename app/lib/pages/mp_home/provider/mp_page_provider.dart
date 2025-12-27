@@ -193,14 +193,17 @@ class MPHomePageProvider extends ChangeNotifier {
   /// 上传进度
   double uploadPercent = 10;
 
-  /// 记录数量
+  /// 记录数量(顶部数字)
   int recordCount = 0;
 
   /// 记录索引
-  int recordIndex = 0;
+  int sdRecordIndex = 0;
+
+  /// SD卡记录数量
+  int sdRecordCount = 0;
 
   /// 记录速度
-  double recordSpeed = 0;
+  double sdRecordSpeed = 0;
 
   /// 是否正在加载
   bool loading = false;
@@ -277,32 +280,47 @@ class MPHomePageProvider extends ChangeNotifier {
 
   void updateRecordCountAndIndex({required int value, required int index}) {
     if (value <= 0 || index < 0 || index >= value) {
-      recordCount = 0;
-      recordIndex = 0;
+      sdRecordCount = 0;
+      sdRecordIndex = 0;
       importAudioType = MPHomeImportAudioType.none;
       notifyListeners();
       return;
     }
-    recordCount = value;
-    recordIndex = index;
+    sdRecordCount = value;
+    sdRecordIndex = index;
     importAudioType = MPHomeImportAudioType.sdCard;
     notifyListeners();
   }
 
   void updateRecordIndex(int value) {
     if (value < 0 || value >= recordCount) {
-      recordIndex = 0;
+      sdRecordIndex = 0;
       importAudioType = MPHomeImportAudioType.none;
       notifyListeners();
       return;
     }
-    recordIndex = value;
+    sdRecordIndex = value;
     importAudioType = MPHomeImportAudioType.sdCard;
     notifyListeners();
   }
 
   void updateUploadPercent(double value) {
     uploadPercent = value;
+    notifyListeners();
+  }
+
+  void updateImportAudioType(MPHomeImportAudioType type) {
+    importAudioType = type;
+    notifyListeners();
+  }
+
+  void updateRecordSpeed(double value) {
+    sdRecordSpeed = value;
+    notifyListeners();
+  }
+
+  void updateRecordCount(int value) {
+    recordCount = value;
     notifyListeners();
   }
 
