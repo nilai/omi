@@ -38,7 +38,7 @@ class MPTimestampUtils {
   }
 
   /// 将日期字符串（yyyy-MM-dd 或 yyyy-M-d）转换为 MMM d 格式
-  /// 
+  ///
   /// [dateString] 日期字符串，例如：2025-12-8 或 2025-12-08
   /// @returns 格式化后的日期字符串，例如：Dec 8
   static String dateStringToMonthDay(String dateString) {
@@ -48,11 +48,11 @@ class MPTimestampUtils {
       if (parts.length != 3) {
         return dateString; // 如果格式不正确，返回原字符串
       }
-      
+
       final year = int.parse(parts[0]);
       final month = int.parse(parts[1]);
       final day = int.parse(parts[2]);
-      
+
       final dateTime = DateTime(year, month, day);
       return DateFormat('MMM d', 'en_US').format(dateTime);
     } catch (e) {
@@ -60,7 +60,6 @@ class MPTimestampUtils {
       return dateString;
     }
   }
-
 
   /// 将秒级时间戳转换为相对时间格式
   ///
@@ -99,8 +98,9 @@ class MPTimestampUtils {
     }
     final minutes = second ~/ 60;
     final seconds = second % 60;
-    return '{$minutes}m {$seconds}s';
+    return '$minutes' + 'm' + ' ' + '$seconds' + 's';
   }
+
   /// 将 DateTime 转换为秒级时间戳
   ///
   /// [dateTime] DateTime 对象
