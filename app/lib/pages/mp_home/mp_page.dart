@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_home/widgets/mp_home_card.dart';
 import 'package:omi/services/mp_audio_upload.dart';
+import 'package:omi/services/mp_home_refresh_event_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../backend/http/mp_api/mp_memory.dart';
@@ -66,10 +68,19 @@ class MPPageContent extends StatefulWidget {
 
 class _MPPageContentState extends State<MPPageContent> {
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription<MPHomeRefreshEvent>? _refreshEventSubscription;
 
   @override
   void initState() {
     super.initState();
+    // 监听首页刷新事件
+    _refreshEventSubscription = MPHomeRefreshEventService().events.listen((event) {
+      if (event.type == MPHomeRefreshEventType.refresh && mounted) {
+        final provider = context.read<MPHomePageProvider>();
+        provider.refresh();
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<MPHomePageProvider>();
       _scrollController.addListener(() {
@@ -89,6 +100,7 @@ class _MPPageContentState extends State<MPPageContent> {
 
   @override
   void dispose() {
+    _refreshEventSubscription?.cancel();
     _scrollController.dispose();
     super.dispose();
   }
