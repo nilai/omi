@@ -22,6 +22,7 @@ import '../../../providers/mp_message_provider.dart';
 import '../../../services/mp_home_refresh_event_service.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
+import '../../mp_chat/mp_chat_helper.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_popup/mp_record_detail_more_popup.dart';
 
@@ -190,6 +191,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: 'AI助手',
                 icon: Icons.smart_toy,
                 onTap: () {
+                  MPChatHelper.instance.memory = widget.memory;
                   MPChatPage.openChatPage(context, chatId: widget.memory.id, title: widget.memory.title, type: MPChatPageType.memory);
                 },
               ),
