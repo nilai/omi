@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
+import '../../backend/schema/mp/mp_memory.dart';
 import '../../env/env.dart';
 import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import '../../services/mp_home_refresh_event_service.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
 import '../mp_custom_utils/mp_toast_utils.dart';
 import '../mp_memory/conversation_detail/conversation_detail_page.dart';
@@ -153,6 +156,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             child: ElevatedButton(
               onPressed: () => MPMemoryConvertDialog.show(context, memory: widget.memory, onGenerate: () {
                 Future.delayed(const Duration(milliseconds: 500), () {
+                  MPHomeRefreshEventService().emitRefresh();
                   if (!context.mounted) return;
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(
@@ -455,11 +459,25 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
           case MPRecordDetailMoreAction.addTag:
             break;
           case MPRecordDetailMoreAction.deleteMemory:
+            _deleteMemory();
             break;
           default:
             break;
         }
       }
     });
+  }
+
+  Future<void> _deleteMemory() async {
+    final req = MPDeleteMemoryRequest(memoryId: widget.memory.id);
+    final res = await deleteMemory(req);
+    if (res != null && res.baseResp.code == 0) {
+      MPHomeRefreshEventService().emitRefresh();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      MPToastUtils.showMessage(res?.baseResp.message ?? '删除失败');
+    }
   }
 }

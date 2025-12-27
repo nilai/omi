@@ -16,7 +16,10 @@ import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_popup/new_task_popup.dart';
 import 'package:provider/provider.dart';
 
+import '../../../backend/http/mp_api/mp_memory.dart';
+import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../providers/mp_message_provider.dart';
+import '../../../services/mp_home_refresh_event_service.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -572,12 +575,26 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           case MPRecordDetailMoreAction.regenerateSummary:
             break;
           case MPRecordDetailMoreAction.deleteMemory:
+            _deleteMemory();
             break;
           default:
             break;
         }
       }
     });
+  }
+
+  Future<void> _deleteMemory() async {
+    final req = MPDeleteMemoryRequest(memoryId: widget.memory.id);
+    final res = await deleteMemory(req);
+    if (res != null && res.baseResp.code == 0) {
+      MPHomeRefreshEventService().emitRefresh();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      MPToastUtils.showMessage(res?.baseResp.message ?? '删除失败');
+    }
   }
 }
 // AI-generated END - conversation_detail_page.dart
