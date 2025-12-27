@@ -4,6 +4,9 @@ import 'package:omi/env/env.dart';
 import 'package:omi/backend/http/shared.dart';
 import 'dart:convert';
 
+import '../../backend/http/mp_api/mp_chat.dart';
+import '../../backend/schema/mp/mp_chat.dart';
+
 /// 快速问题工具类（单例）
 /// 用于管理从服务端加载的快速问题列表
 class MPQuickQuestionUtil {
@@ -119,34 +122,14 @@ class MPQuickQuestionUtil {
 
     _isLoading = true;
     try {
-      // TODO: 替换为实际的 API 接口
-      // 目前先使用占位实现，等待后端提供具体接口
-      final response = await makeApiCall(
-        url: '${Env.apiBaseUrl}api/v1/chat/quick_questions',
-        headers: {},
-        method: 'GET',
-        body: '',
-      );
+      final response = await getChatSuggestion(MPGetChatSuggestionRequest());
 
-      if (response != null && response.statusCode == 200) {
-        final body = jsonDecode(response.body) as Map<String, dynamic>;
-        final questionsData = body['questions'] as Map<String, dynamic>?;
-
-        if (questionsData != null) {
-          _questionsMap = questionsData.map(
-            (key, value) => MapEntry(
-              key,
-              (value as List<dynamic>).map((e) => e.toString()).toList(),
-            ),
-          );
-        } else {
-          _questionsMap = null;
-        }
-      } else {
-        _questionsMap = null;
+      if (response != null && response.baseResp.code == 0) {
+        final questionsData = response.suggestion;
+        _questionsMap = questionsData;
       }
     } catch (e) {
-      debugPrint('加载快速问题失败: $e');
+      debugPrint('-----hj----- loadQuestionsFromServer error: $e');
       _questionsMap = null;
     } finally {
       _isLoading = false;
