@@ -117,3 +117,19 @@ Future<MPTranscriptResponse?> mpTranscript(MPTranscriptRequest req) async {
   }
   return null;
 }
+
+/// GET /api/v1/chat/suggestion
+Future<MPGetChatSuggestionResponse?> getChatSuggestion(MPGetChatSuggestionRequest req) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/suggestion',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getChatSuggestion response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetChatSuggestionResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

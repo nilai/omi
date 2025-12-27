@@ -1,0 +1,166 @@
+import 'package:flutter/material.dart';
+import 'package:omi/providers/mp_message_provider.dart';
+import 'package:omi/env/env.dart';
+import 'package:omi/backend/http/shared.dart';
+import 'dart:convert';
+
+/// 快速问题工具类（单例）
+/// 用于管理从服务端加载的快速问题列表
+class MPQuickQuestionUtil {
+  /// 单例实例
+  static final MPQuickQuestionUtil _instance = MPQuickQuestionUtil._internal();
+
+  /// 获取单例实例
+  factory MPQuickQuestionUtil() {
+    return _instance;
+  }
+
+  /// 私有构造函数
+  MPQuickQuestionUtil._internal();
+
+  /// 服务端返回的问题属性，类型为 Map<String, List<String>>，可为 null
+  Map<String, List<String>>? _questionsMap;
+
+  /// 是否正在加载
+  bool _isLoading = false;
+
+  /// 获取服务端返回的问题属性
+  Map<String, List<String>>? get questionsMap => _questionsMap;
+
+  /// 将枚举值转换为字符串 key
+  /// @param {MPChatPageType} type - 聊天页面类型枚举
+  /// @returns {String} 对应的字符串 key
+  String _typeToKey(MPChatPageType type) {
+    switch (type) {
+      case MPChatPageType.normal:
+        return 'normal';
+      case MPChatPageType.expert:
+        return 'expert';
+      case MPChatPageType.memory:
+        return 'memory';
+      case MPChatPageType.template:
+        return 'template';
+      case MPChatPageType.speaker:
+        return 'speaker';
+    }
+  }
+
+  /// 根据传入的枚举值获取对应的问题列表（异步版本）
+  /// @param {MPChatPageType} type - 聊天页面类型枚举
+  /// @returns {Future<List<String>>} 问题列表，如果不存在则返回空列表
+  Future<List<String>> getQuestionsByType(MPChatPageType type) async {
+    final key = _typeToKey(type);
+    return await getQuestionsByKey(key);
+  }
+
+  /// 根据传入的枚举值获取对应的问题列表（同步版本）
+  /// @param {MPChatPageType} type - 聊天页面类型枚举
+  /// @returns {List<String>} 问题列表，如果不存在则返回空列表
+  List<String> getQuestionsByTypeSync(MPChatPageType type) {
+    final key = _typeToKey(type);
+    return getQuestionsByKeySync(key);
+  }
+
+  /// 根据 key 获取问题列表（异步版本）
+  /// 返回值不能为 null
+  /// 判断属性有没有值，有值从属性中取
+  /// 属性为 null，先加载，再取值
+  /// 取不到值，返回空 list
+  /// @param {String} key - 问题的 key
+  /// @returns {Future<List<String>>} 问题列表，如果不存在则返回空列表
+  Future<List<String>> getQuestionsByKey(String key) async {
+    // 判断属性有没有值，有值从属性中取
+    if (_questionsMap != null && _questionsMap!.containsKey(key)) {
+      final questions = _questionsMap![key];
+      if (questions != null && questions.isNotEmpty) {
+        return questions;
+      }
+    }
+
+    // 属性为 null，先加载，再取值
+    if (_questionsMap == null && !_isLoading) {
+      await loadQuestionsFromServer();
+      // 加载后再次尝试获取
+      if (_questionsMap != null && _questionsMap!.containsKey(key)) {
+        final questions = _questionsMap![key];
+        if (questions != null && questions.isNotEmpty) {
+          return questions;
+        }
+      }
+    }
+
+    // 取不到值，返回空 list
+    return [];
+  }
+
+  /// 根据 key 获取问题列表（同步版本）
+  /// 如果数据已加载，直接返回；否则返回空列表
+  /// @param {String} key - 问题的 key
+  /// @returns {List<String>} 问题列表，如果不存在则返回空列表
+  List<String> getQuestionsByKeySync(String key) {
+    // 判断属性有没有值，有值从属性中取
+    if (_questionsMap != null && _questionsMap!.containsKey(key)) {
+      final questions = _questionsMap![key];
+      if (questions != null && questions.isNotEmpty) {
+        return questions;
+      }
+    }
+
+    // 取不到值，返回空 list
+    return [];
+  }
+
+  /// 加载服务端返回的问题属性
+  /// @returns {Future<void>} 异步加载完成
+  Future<void> loadQuestionsFromServer() async {
+    if (_isLoading) {
+      return;
+    }
+
+    _isLoading = true;
+    try {
+      // TODO: 替换为实际的 API 接口
+      // 目前先使用占位实现，等待后端提供具体接口
+      final response = await makeApiCall(
+        url: '${Env.apiBaseUrl}api/v1/chat/quick_questions',
+        headers: {},
+        method: 'GET',
+        body: '',
+      );
+
+      if (response != null && response.statusCode == 200) {
+        final body = jsonDecode(response.body) as Map<String, dynamic>;
+        final questionsData = body['questions'] as Map<String, dynamic>?;
+
+        if (questionsData != null) {
+          _questionsMap = questionsData.map(
+            (key, value) => MapEntry(
+              key,
+              (value as List<dynamic>).map((e) => e.toString()).toList(),
+            ),
+          );
+        } else {
+          _questionsMap = null;
+        }
+      } else {
+        _questionsMap = null;
+      }
+    } catch (e) {
+      debugPrint('加载快速问题失败: $e');
+      _questionsMap = null;
+    } finally {
+      _isLoading = false;
+    }
+  }
+
+  /// 手动设置问题映射（用于测试或本地数据）
+  /// @param {Map<String, List<String>>?} questionsMap - 问题映射
+  void setQuestionsMap(Map<String, List<String>>? questionsMap) {
+    _questionsMap = questionsMap;
+  }
+
+  /// 清空问题映射
+  void clearQuestionsMap() {
+    _questionsMap = null;
+  }
+}

@@ -312,3 +312,49 @@ class MPTranscriptResponse {
     };
   }
 }
+
+/// Get Chat Suggestion Request
+class MPGetChatSuggestionRequest {
+  MPGetChatSuggestionRequest();
+
+  factory MPGetChatSuggestionRequest.fromJson(Map<String, dynamic> json) {
+    return MPGetChatSuggestionRequest();
+  }
+
+  Map<String, dynamic> toJson() {
+    return {};
+  }
+}
+
+/// Get Chat Suggestion Response
+class MPGetChatSuggestionResponse {
+  final Map<String, List<String>> suggestion;
+  final MPBaseResp baseResp;
+
+  MPGetChatSuggestionResponse({
+    required this.suggestion,
+    required this.baseResp,
+  });
+
+  factory MPGetChatSuggestionResponse.fromJson(Map<String, dynamic> json) {
+    final suggestionData = json['suggestion'] as Map<String, dynamic>? ?? {};
+    final suggestion = <String, List<String>>{};
+    suggestionData.forEach((key, value) {
+      if (value is List<String>) {
+        suggestion[key] = value.map((e) => e.toString()).toList();
+      }
+    });
+
+    return MPGetChatSuggestionResponse(
+      suggestion: suggestion,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'suggestion': suggestion,
+      'base_resp': baseResp.toJson(),
+    };
+  }
+}
