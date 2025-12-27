@@ -176,7 +176,7 @@ class MPMessageProvider extends ChangeNotifier {
       final model =
           MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       model.title = title;
-      model.questions = await MPQuickQuestionUtil().getQuestionsByChatType(type);
+      model.questions = MPQuickQuestionUtil().getQuestionsByChatType(type);
       pageModels.add(model);
       curPageModel = model;
     }
