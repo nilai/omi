@@ -240,6 +240,9 @@ class MPMemoryStruct {
   @JsonKey(name: 'label')
   final String label;
 
+  @JsonKey(name: 'label_color')
+  final String? labelColor;
+
   @JsonKey(name: 'content')
   final String content;
 
@@ -264,6 +267,7 @@ class MPMemoryStruct {
     required this.title,
     required this.type,
     required this.label,
+    this.labelColor,
     required this.content,
     required this.duration,
     this.summaryContent,

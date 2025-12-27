@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
-import '../../../env/env.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../memories/mp_memory_playback_page.dart';
@@ -83,6 +82,28 @@ class MPLocalMemoryModel {
 /// MPMemoryStruct 扩展方法
 /// 提供将 MPMemoryStruct 转换为 MPMemoryItem 的方法
 extension MPMemoryStructExtension on MPMemoryStruct {
+  /// 解析十六进制颜色字符串为 Color 对象
+  /// @param hexString 十六进制颜色字符串，例如：#467db4
+  /// @returns 解析后的 Color 对象，如果解析失败则返回默认颜色
+  Color _parseHexColor(String hexString) {
+    try {
+      // 移除 # 号（如果存在）
+      String hex = hexString.replaceAll('#', '');
+
+      // 如果是 6 位十六进制，添加 FF 作为 alpha 通道
+      if (hex.length == 6) {
+        hex = 'FF$hex';
+      }
+
+      // 转换为整数
+      final intValue = int.parse(hex, radix: 16);
+      return Color(intValue);
+    } catch (e) {
+      // 解析失败时返回默认颜色
+      return const Color(0xFF8D8D8D);
+    }
+  }
+
   /// 将 MPMemoryStruct 转换为 MPMemoryItem
   /// @returns 转换后的 MPMemoryItem 对象
   MPMemoryItem toMPMemoryItem() {
@@ -109,23 +130,9 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     // 生成 secondsText (从 duration 转换)
     final secondsText = duration > 0 ? '${duration}s' : null;
 
-    // 根据 type 确定 tagColor
-    Color tagColor;
-    switch (type) {
-      case MPMemoryType.summary:
-        tagColor = const Color(0xFFF4B95A); // 任务提醒颜色
-        break;
-      case MPMemoryType.insight:
-        tagColor = const Color(0xFF8D8D8D); // Daily Insight 颜色
-        break;
-      case MPMemoryType.onlyRecord:
-        tagColor = const Color(0xFF3E78F7); //
-        break;
-      case MPMemoryType.aiExpert:
-        tagColor = const Color(0xFF27AE60); // 绿色
-        break;
-    }
-
+    // 根据 labelColor 或 type 确定 tagColor
+    Color tagColor = _parseHexColor(labelColor!);
+    
     return MPMemoryItem(
       dateText: dateText,
       tagText: label,
