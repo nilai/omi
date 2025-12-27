@@ -229,46 +229,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       builder: (context, provider, child) {
         return Column(
           children: [
-            // AI-generated START - 重点内容卡片
-            // TODO: 如果后续有 keyContent 数据，可以从 provider.memory 中获取
-            // KeyContentCard(
-            //   items: const [
-            //     KeyContentItem(
-            //       id: '1',
-            //       time: '15:32',
-            //       isFavorite: true,
-            //       highlightQuote: '用户体验是我们最大的差异化优势,必须做到极致',
-            //       analysis: '这是会议的核心洞察,体现了产品策略的重要转变',
-            //       tags: [
-            //         '用户体验设计原则',
-            //         'AI硬件交互标准',
-            //       ],
-            //     ),
-            //     KeyContentItem(
-            //       id: '2',
-            //       time: '28:45',
-            //       isFavorite: true,
-            //       highlightQuote: '技术门槛很高,但这也是我们的护城河',
-            //       analysis: '识别了技术壁垒作为竞争优势的战略价值',
-            //       tags: [
-            //         'AI芯片技术发展',
-            //         '语音识别算法优化',
-            //       ],
-            //     ),
-            //   ],
-            //   onFavoriteChanged: (id) {
-            //     ScaffoldMessenger.of(context).showSnackBar(
-            //       SnackBar(content: Text('收藏状态变化: $id')),
-            //     );
-            //   },
-            //   onTagTap: (tag) {
-            //     ScaffoldMessenger.of(context).showSnackBar(
-            //       SnackBar(content: Text('标签点击: $tag')),
-            //     );
-            //   },
-            // ),
-            // AI-generated END - 重点内容卡片
-
             // AI-generated START - 会议总结卡片
             MeetingSummaryCard(
               content: provider.summary ?? '暂无总结内容',
