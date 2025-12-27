@@ -94,6 +94,7 @@ MPSummaryRecordRequest _$MPSummaryRecordRequestFromJson(
       memoryId: json['memory_id'] as String,
       recordUrl: json['record_url'] as String,
       recordMemoAt: (json['record_memo_at'] as num).toInt(),
+      templateId: json['template_id'] as String?,
     );
 
 Map<String, dynamic> _$MPSummaryRecordRequestToJson(
@@ -102,6 +103,7 @@ Map<String, dynamic> _$MPSummaryRecordRequestToJson(
       'memory_id': instance.memoryId,
       'record_url': instance.recordUrl,
       'record_memo_at': instance.recordMemoAt,
+      'template_id': instance.templateId,
     };
 
 MPShareMemoryRequest _$MPShareMemoryRequestFromJson(

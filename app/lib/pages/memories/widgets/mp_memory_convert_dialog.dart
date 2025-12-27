@@ -396,6 +396,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
       memoryId: widget.memory.id,
       recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
       recordMemoAt: widget.memory.createAt,
+      templateId: _selectedTemplate?.id,
     );
     final res = await summaryRecord(req);
     if (res != null && res.baseResp.code == 0) {

@@ -126,10 +126,14 @@ class MPSummaryRecordRequest {
   @JsonKey(name: 'record_memo_at')
   final int recordMemoAt; // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
 
+  @JsonKey(name: 'template_id')
+  final String? templateId; // 模板ID
+
   MPSummaryRecordRequest({
     required this.memoryId,
     required this.recordUrl,
     required this.recordMemoAt,
+    this.templateId,
   });
 
   factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordRequestFromJson(json);
