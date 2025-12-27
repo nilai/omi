@@ -49,16 +49,14 @@ class MPMessagePageModel {
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
-  /// 聊天ID
-  String chatId = '';
-
-  /// 聊天标题
-  String title = '';
-
-  /// 聊天页面类型
-  MPChatPageType type = MPChatPageType.normal;
-
-  MPMessageProvider({this.chatId = '', this.title = '', this.type = MPChatPageType.normal});
+  /// 初始化页面信息
+  MPMessageProvider({String chatId = '', String title = '', MPChatPageType type = MPChatPageType.normal}) {
+    curPageModel = MPMessagePageModel(chatId: chatId, conversationId: '', messages: [], type: type);
+    curPageModel?.title = title;
+    pageModels.add(curPageModel!);
+    showTypingIndicator = false;
+    sendingMessage = false;
+  }
 
   /// 页面模型列表
   List<MPMessagePageModel> pageModels = [];
@@ -66,7 +64,7 @@ class MPMessageProvider extends ChangeNotifier {
   MPMessagePageModel? curPageModel;
 
   /// 消息列表，按时间倒序排列（最新的在索引 0）
-  List<ServerMessage> messages = [];
+  List<ServerMessage> get messages => curPageModel?.messages ?? [];
 
   /// 是否显示 AI 正在输入的指示器
   bool showTypingIndicator = false;
@@ -75,7 +73,8 @@ class MPMessageProvider extends ChangeNotifier {
   bool sendingMessage = false;
 
   /// 更新页面信息，通过chatid及type获取页面信息
-  Future<void> updatePageInfo(String chatId, MPChatPageType type) async {
+  Future<void> updatePageInfo(
+      {String chatId = '', MPChatPageType type = MPChatPageType.normal, String title = ''}) async {
     resetPageInfo();
     debugPrint('-----hj----- updatePageInfo: chatId: $chatId, type: $type');
 
@@ -88,8 +87,9 @@ class MPMessageProvider extends ChangeNotifier {
     }
     //curPageModel为空，创建会话
     if (curPageModel == null) {
-      this.chatId = chatId;
-      this.type = type;
+      curPageModel = MPMessagePageModel(chatId: chatId, conversationId: '', messages: [], type: type);
+      curPageModel?.title = title;
+      pageModels.add(curPageModel!);
       await createConversationIfNeeded();
     } else {
       /// 更新页面消息列表
@@ -114,25 +114,27 @@ class MPMessageProvider extends ChangeNotifier {
     final req = MPGetConversationDetailRequest(conversationId: conversationId);
     final response = await getConversationDetail(req);
     if (response != null) {
-      messages = response.contents
+      curPageModel?.messages = response.contents
           .map((e) =>
               ServerMessage('', DateTime.now(), e.content, MessageSender.ai, MessageType.text, '', false, [], [], []))
           .toList();
-      curPageModel?.messages = messages;
+      curPageModel?.title = response.title;
     }
-    messages = curPageModel?.messages ?? [];
     notifyListeners();
   }
 
   /// 如果当前会话ID为空，则创建会话
   Future<void> createConversationIfNeeded() async {
+    final chatId = curPageModel?.chatId ?? '';
+    final type = curPageModel?.type ?? MPChatPageType.normal;
+    final title = curPageModel?.title ?? '';
     debugPrint('-----hj----- createConversationIfNeeded before get conversationId: chatId: $chatId, type: $type');
     final conversationId = curPageModel?.conversationId ?? '';
     if (conversationId.isNotEmpty) {
       return;
     }
     debugPrint('-----hj----- createConversationIfNeeded: conversationId: $conversationId');
-    messages = [];
+    curPageModel?.messages = [];
     notifyListeners();
     final req = MPCreateConversationRequest(
       title: title,
@@ -145,6 +147,7 @@ class MPMessageProvider extends ChangeNotifier {
     if (response != null) {
       final model =
           MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
+      model.title = title;
       pageModels.add(model);
       curPageModel = model;
     }
@@ -264,10 +267,7 @@ class MPMessageProvider extends ChangeNotifier {
   /// 重置页面信息，恢复初始化状态
   void resetPageInfo() {
     debugPrint('-----hj----- resetPageInfo');
-    chatId = '';
-    type = MPChatPageType.normal;
     curPageModel = null;
-    messages.clear();
     notifyListeners();
   }
 }

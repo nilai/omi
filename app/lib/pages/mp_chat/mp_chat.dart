@@ -69,8 +69,7 @@ class MPChatPage extends StatefulWidget {
     Navigator.of(context).popUntil((route) => route.isFirst);
 
     final messageProvider = MPChatPage.getCurrentProvider();
-    messageProvider.title = title;
-    messageProvider.updatePageInfo(chatId, type);
+    messageProvider.updatePageInfo(chatId: chatId, type: type, title: title);
   }
 }
 
@@ -117,16 +116,12 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     if (_staticProvider != null) {
       debugPrint('-----hj----- initState: reuse static provider');
       provider = _staticProvider!;
-      // 更新 provider 的参数
-      provider.chatId = widget.chatId;
-      provider.type = widget.type;
-      provider.title = widget.title;
       // 清除静态引用，因为现在由页面实例管理
       _staticProvider = null;
     } else {
       debugPrint('-----hj----- initState: create new provider');
       provider = MPMessageProvider(chatId: widget.chatId, type: widget.type);
-      provider.title = widget.title;
+      provider.curPageModel?.title = widget.title;
     }
 
     scrollController = ScrollController();
@@ -290,40 +285,23 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   // 快速提问区域
   Widget _buildQuickQuestionsWidget() {
     List<String> questionList = [];
-//     enum MPChatPageType {
-//   // 普通聊天
-//   normal,
-//   // 记忆总结
-//   memory,
-//   // 模板聊天
-//   template,
-//   // AI分析助手
-//   aiAssistant,
-//   // 专家模型
-//   expert,
-// }
-    if (widget.type == MPChatPageType.memory) {
+
+    final type = provider.curPageModel?.type ?? MPChatPageType.normal;
+    if (type == MPChatPageType.memory) {
       questionList = [
         '有哪些需要跟进的地方?',
         '和对方沟通的风险点是哪些?',
         '还有哪些没有解决的问题?',
         '下次会议需要准备什么材料?',
       ];
-    } else if (widget.type == MPChatPageType.expert) {
+    } else if (type == MPChatPageType.speaker) {
       questionList = [
         '帮我总结一下近半年我们的沟通情况',
         '我们讨论的最重要三个话题',
         '前几次讨论我们还有没有没解决的问题',
       ];
     }
-    // else {
-    //   questionList = [
-    //     '今天我应该怎么做？',
-    //     '我昨天做了什么？',
-    //     '最近有什么重要事项？',
-    //     '帮我总结一下',
-    //   ];
-    // }
+    print('-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${type}');
     if (questionList.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -577,13 +555,13 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         provider.createConversationIfNeeded();
       },
       dailyInsightCallback: (String str) async {
-        await provider.updatePageInfo(str, MPChatPageType.memory);
+        await provider.updatePageInfo(chatId: str, type: MPChatPageType.memory);
       },
       peopleMemoryCallback: (String str) async {
-        await provider.updatePageInfo(str, MPChatPageType.memory);
+        await provider.updatePageInfo(chatId: str, type: MPChatPageType.memory);
       },
       conversationCallback: (String str) async {
-        await provider.updatePageMessages(str);
+        await provider.updatePageMessages( str);
       },
     );
   }
