@@ -151,6 +151,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
       title: json['title'] as String,
       type: $enumDecode(_$MPMemoryTypeEnumMap, json['type']),
       label: json['label'] as String,
+      labelColor: json['label_color'] as String?,
       content: json['content'] as String,
       duration: (json['duration'] as num).toInt(),
       summaryContent: json['summary_content'] == null
@@ -178,6 +179,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'title': instance.title,
       'type': _$MPMemoryTypeEnumMap[instance.type]!,
       'label': instance.label,
+      'label_color': instance.labelColor,
       'content': instance.content,
       'duration': instance.duration,
       'summary_content': instance.summaryContent,
