@@ -443,7 +443,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   void _showMoreActionsDialog(BuildContext context) {
     final actions = [
       MPRecordDetailMoreAction.export,
-      MPRecordDetailMoreAction.addTag,
+      // MPRecordDetailMoreAction.addTag,
       MPRecordDetailMoreAction.deleteMemory,
     ];
     MPRecordDetailMorePopup.show(context: context, actions: actions).then((value) {
@@ -452,8 +452,8 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
           case MPRecordDetailMoreAction.export:
             MPToastUtils.showFeatureComingSoon();
             break;
-          case MPRecordDetailMoreAction.addTag:
-            break;
+          // case MPRecordDetailMoreAction.addTag:
+          //   break;
           case MPRecordDetailMoreAction.deleteMemory:
             _deleteMemory();
             break;

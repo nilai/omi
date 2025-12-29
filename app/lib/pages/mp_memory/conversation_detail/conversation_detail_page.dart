@@ -21,6 +21,7 @@ import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../providers/mp_message_provider.dart';
 import '../../../services/mp_home_refresh_event_service.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../memories/widgets/mp_memory_add_tag_dialog.dart';
 import '../../memories/widgets/mp_memory_update_name_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
 import '../../mp_chat/mp_chat_helper.dart';
@@ -557,20 +558,21 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       if (value != null) {
         switch (value) {
           case MPRecordDetailMoreAction.addTag:
+            _showAddTagDialog();
             break;
           case MPRecordDetailMoreAction.export:
             MPToastUtils.showFeatureComingSoon();
             break;
           case MPRecordDetailMoreAction.copyTranscript:
+            MPToastUtils.showFeatureComingSoon();
             break;
           case MPRecordDetailMoreAction.copySummary:
             break;
           case MPRecordDetailMoreAction.regenerateSummary:
+            _regenerateSummary();
             break;
           case MPRecordDetailMoreAction.deleteMemory:
             _deleteMemory();
-            break;
-          default:
             break;
         }
       }
@@ -588,6 +590,22 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     } else {
       MPToastUtils.showMessage(res?.baseResp.message ?? '删除失败');
     }
+  }
+
+  void _showAddTagDialog() {
+    MPMemoryAddTagDialog.show(
+        context: context,
+        memoryId: widget.memory.id,
+        onSuccess: (label) {
+          final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+          provider.reloadDetail();
+        });
+  }
+
+  void _regenerateSummary() async{
+    final req = MPRegenerateSummaryRequest(memoryId: widget.memory.id);
+    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+    provider.regenerateSummary();
   }
 }
 // AI-generated END - conversation_detail_page.dart
