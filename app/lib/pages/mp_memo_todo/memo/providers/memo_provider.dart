@@ -102,20 +102,6 @@ class MemoProvider with ChangeNotifier {
   }
   // AI-generated END - setLoading
 
-  // AI-generated START - 设置获取状态
-  void setFetching(bool fetching) {
-    _isFetching = fetching;
-    notifyListeners();
-  }
-  // AI-generated END - setFetching
-
-  // AI-generated START - 设置错误信息
-  void setError(String? errorMessage) {
-    _error = errorMessage;
-    notifyListeners();
-  }
-  // AI-generated END - setError
-
   // AI-generated START - 设置搜索关键词（暂时空实现）
   void setSearchQuery(String query) {
     _searchQuery = query;
@@ -127,45 +113,27 @@ class MemoProvider with ChangeNotifier {
   // AI-generated START - 加载 Memo 任务列表
   Future<void> loadMemos() async {
     setLoading(true);
-    setError(null);
-    _hasMore = true; // 重置 hasMore 状态
     _cursor = ''; // 重置游标
-    try {
-      // 调用 API 获取 Memo 列表
-      final request = MPGetMemoListRequest(
-        pageSize: 20, // 每页数量
-        cursor: _cursor, // 分页游标，首次加载为空字符串
-      );
+    // 调用 API 获取 Memo 列表
+    final request = MPGetMemoListRequest(
+      pageSize: 20, // 每页数量
+      cursor: _cursor, // 分页游标，首次加载为空字符串
+    );
 
-      final response = await mp_memo_api.getMemoList(request);
+    final response = await mp_memo_api.getMemoList(request);
 
-      if (response != null) {
-        // 检查响应状态
-        if (response.baseResp.code != 0) {
-          setError(response.baseResp.message);
-          _memos = [];
-        } else {
-          // 将 API 返回的数据转换为 MemoTaskItem
-          _memos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
-          _hasMore = response.hasMore;
-          // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
-          // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 memo 的 id 作为 cursor
-          if (_memos.isNotEmpty) {
-            _cursor = _memos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
-          }
-        }
-      } else {
-        setError('获取 Memo 列表失败');
-        _memos = [];
+    if (response != null) {
+      // 将 API 返回的数据转换为 MemoTaskItem
+      _memos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
+      _hasMore = response.hasMore;
+      // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
+      // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 memo 的 id 作为 cursor
+      if (_memos.isNotEmpty) {
+        _cursor = _memos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
       }
-
-      notifyListeners();
-    } catch (e) {
-      setError(e.toString());
-      debugPrint('加载 Memo 列表失败: $e');
-    } finally {
-      setLoading(false);
     }
+    _isLoading = false;
+    notifyListeners();
   }
   // AI-generated END - loadMemos
 
@@ -173,41 +141,29 @@ class MemoProvider with ChangeNotifier {
   Future<void> loadMoreMemos() async {
     if (_isFetching || !_hasMore) return;
 
-    setFetching(true);
+    _isFetching = true;
 
-    try {
-      // 调用 API 加载更多 Memo 数据
-      final request = MPGetMemoListRequest(
-        pageSize: 20, // 每页数量
-        cursor: _cursor, // 使用当前游标
-      );
+    // 调用 API 加载更多 Memo 数据
+    final request = MPGetMemoListRequest(
+      pageSize: 20, // 每页数量
+      cursor: _cursor, // 使用当前游标
+    );
 
-      final response = await mp_memo_api.getMemoList(request);
+    final response = await mp_memo_api.getMemoList(request);
 
-      if (response != null) {
-        // 检查响应状态
-        if (response.baseResp.code != 0) {
-          debugPrint('加载更多 Memo 失败: ${response.baseResp.message}');
-        } else {
-          // 将 API 返回的数据转换为 MemoTaskItem 并追加到列表
-          final moreMemos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
-          _memos.addAll(moreMemos);
-          _hasMore = response.hasMore;
-          // 更新游标
-          if (moreMemos.isNotEmpty) {
-            _cursor = moreMemos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
-          }
-        }
-      } else {
-        debugPrint('加载更多 Memo 失败: 响应为空');
+    if (response != null) {
+      // 将 API 返回的数据转换为 MemoTaskItem 并追加到列表
+      final moreMemos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
+      _memos.addAll(moreMemos);
+      _hasMore = response.hasMore;
+      // 更新游标
+      if (moreMemos.isNotEmpty) {
+        _cursor = moreMemos.last.id; // 使用最后一个 memo 的 id 作为下次请求的 cursor
       }
-
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading more memos: $e');
-    } finally {
-      setFetching(false);
     }
+
+    _isFetching = false;
+    notifyListeners();
   }
   // AI-generated END - loadMoreMemos
 

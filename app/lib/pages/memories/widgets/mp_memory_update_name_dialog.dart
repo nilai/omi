@@ -175,6 +175,7 @@ class _MPMemoryUpdateNameDialogState extends State<MPMemoryUpdateNameDialog> {
               enabled: !_isLoading,
               maxLength: widget.maxLength,
               autofocus: true,
+              cursorColor: Colors.black,
               decoration: InputDecoration(
                 hintText: '请输入记忆标题',
                 hintStyle: const TextStyle(

@@ -528,7 +528,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   /// 如果是编辑模式（有 voiceId），调用删除 API
   /// 如果是新增模式（没有 voiceId），只删除本地文件
   Future<void> deleteVoice({VoidCallback? successCallback}) async {
-    if (_isEditMode && voiceId != null && voiceId!.isNotEmpty) {
+    if (voiceId != null && voiceId!.isNotEmpty) {
       // 编辑模式：调用删除 API
       debugPrint('删除声纹: $voiceId');
       final req = MPDeleteSpeakerRequest(speakerId: voiceId!);

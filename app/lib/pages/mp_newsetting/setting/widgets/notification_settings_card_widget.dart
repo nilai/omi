@@ -1,6 +1,7 @@
 // AI-generated START - 通知设置卡片组件，显示通知设置选项列表
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_custom_widgets/mp_custom_switch.dart';
 
 /// 通知设置项信息数据模型
@@ -36,7 +37,7 @@ class NotificationSettingItem {
 
 /// 通知设置卡片组件
 /// 显示通知设置选项列表，标题和设置项列表分开，便于扩展
-class NotificationSettingsCardWidget extends StatelessWidget {
+class NotificationSettingsCardWidget extends StatefulWidget {
   // AI-generated START - 卡片标题
   final String? title;
   // AI-generated END - title
@@ -51,24 +52,33 @@ class NotificationSettingsCardWidget extends StatelessWidget {
     this.items = const [],
   });
 
+  @override
+  State<NotificationSettingsCardWidget> createState() => _NotificationSettingsCardWidgetState();
+}
+
+class _NotificationSettingsCardWidgetState extends State<NotificationSettingsCardWidget> {
+  // AI-generated START - 默认推送通知状态
+  bool _defaultNotificationValue = true;
+  // AI-generated END - _defaultNotificationValue
+
   // AI-generated START - 获取默认通知设置项列表
-  static List<NotificationSettingItem> getDefaultItems({BuildContext? context}) {
+  List<NotificationSettingItem> _getDefaultItems() {
     return [
       NotificationSettingItem(
         title: '推送通知',
         description: '接收应用推送消息',
         icon: Assets.images.mpSettingNotification,
-        value: true,
+        value: _defaultNotificationValue,
         onChanged: (bool newValue) {
           // AI-generated START - 默认开关变化事件处理
-          if (context != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(newValue ? '已开启推送通知' : '已关闭推送通知'),
-                duration: const Duration(seconds: 1),
-              ),
-            );
-          }
+          setState(() {
+            _defaultNotificationValue = newValue;
+          });
+          MPToastUtils.showMessage(
+            newValue ? '已开启推送通知' : '已关闭推送通知',
+            context: context,
+            duration: const Duration(seconds: 1),
+          );
           // 这里可以添加实际的开关状态保存逻辑
           // 例如：保存到本地存储或发送到服务器
           // AI-generated END - 默认开关变化事件处理
@@ -76,11 +86,11 @@ class NotificationSettingsCardWidget extends StatelessWidget {
       ),
     ];
   }
-  // AI-generated END - getDefaultItems
+  // AI-generated END - _getDefaultItems
 
   @override
   Widget build(BuildContext context) {
-    final itemsList = items.isEmpty ? NotificationSettingsCardWidget.getDefaultItems(context: context) : items;
+    final itemsList = widget.items.isEmpty ? _getDefaultItems() : widget.items;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -99,11 +109,11 @@ class NotificationSettingsCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // AI-generated START - 标题区域（独立）
-          if (title != null)
+          if (widget.title != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0),
               child: Text(
-                title!,
+                widget.title!,
                 style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 14.0,

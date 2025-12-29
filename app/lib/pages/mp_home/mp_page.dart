@@ -504,6 +504,7 @@ class _MPPageContentState extends State<MPPageContent> {
           content: TextField(
             controller: controller,
             keyboardType: TextInputType.number,
+            cursorColor: Colors.black,
             decoration: const InputDecoration(hintText: '请输入记录条数'),
             onSubmitted: (value) {
               final parsed = int.tryParse(value);

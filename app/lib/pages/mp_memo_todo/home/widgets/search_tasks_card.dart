@@ -39,6 +39,7 @@ class _SearchTasksCardState extends State<SearchTasksCard> {
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
       child: TextField(
         controller: _searchController,
+        cursorColor: Colors.black,
         onChanged: (value) {
           widget.onSearchChanged?.call(value);
         },
@@ -48,7 +49,7 @@ class _SearchTasksCardState extends State<SearchTasksCard> {
         ),
         decoration: InputDecoration(
           hintText: widget.placeholder ?? 'Search Tasks',
-          hintStyle: TextStyle(
+          hintStyle: const TextStyle(
             color: Color(0xFF374151),
             fontSize: 14.0,
           ),
@@ -62,7 +63,7 @@ class _SearchTasksCardState extends State<SearchTasksCard> {
             ),
           ),
           filled: true,
-          fillColor: Color(0xFFF3F4F6),
+          fillColor: const Color(0xFFF3F4F6),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30.0),
             borderSide: BorderSide.none,

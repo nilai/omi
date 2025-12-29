@@ -63,7 +63,6 @@ class VoiceRecognitionProvider with ChangeNotifier {
         cursor: '', // 从第一页开始
       );
       final response = await getSpeakerList(request);
-
       if (response != null && response.speakers.isNotEmpty) {
         // 清空现有列表
         _voiceList = [];
@@ -71,6 +70,9 @@ class VoiceRecognitionProvider with ChangeNotifier {
 
         // 根据 myself_voice 字段分类
         for (final speaker in response.speakers) {
+          print('audioUrlloadSpeakerList response11: ${speaker.duration}');
+          print('audioUrlloadSpeakerList response: ${speaker.audioUrl}');
+
           final voiceItem = _convertSpeakerToVoiceItem(speaker);
 
           if (speaker.myselfVoice == true) {
@@ -96,7 +98,6 @@ class VoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 将 MPSpeakerStruct 转换为 MyVoiceItem
   MyVoiceItem _convertSpeakerToVoiceItem(MPSpeakerStruct speaker) {
     // 默认值，因为 API 可能没有提供这些字段
-    const duration = '0秒'; // 可以从 audioUrl 或其他字段获取实际时长
 
     // 使用 createdAt 转换为日期字符串
     String date = '今天';
@@ -107,7 +108,7 @@ class VoiceRecognitionProvider with ChangeNotifier {
     return MyVoiceItem(
       id: speaker.id,
       title: speaker.name.isNotEmpty ? speaker.name : '未命名',
-      duration: duration,
+      duration: speaker.duration != null ? '${speaker.duration}秒' : '0秒',
       date: date,
       icon: speaker.myselfVoice == true ? Assets.images.mpMyVoice.path : null,
       imageUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,

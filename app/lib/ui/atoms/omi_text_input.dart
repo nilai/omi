@@ -105,6 +105,7 @@ class _TextInputInnerState extends State<_TextInputInner> {
         onChanged: widget.onChanged,
         keyboardType: widget.keyboardType,
         maxLength: widget.maxLength,
+        cursorColor: Colors.black,
         style: const TextStyle(
           color: ResponsiveHelper.textPrimary,
           fontSize: 14,

@@ -34,6 +34,7 @@ class OmiMessageInput extends AdaptiveWidget {
         controller: controller,
         maxLines: null,
         keyboardType: TextInputType.multiline,
+        cursorColor: Colors.black,
         style: const TextStyle(
           fontSize: 14,
           color: ResponsiveHelper.textPrimary,

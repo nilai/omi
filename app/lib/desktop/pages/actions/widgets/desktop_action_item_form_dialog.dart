@@ -346,6 +346,7 @@ class _DesktopActionItemFormDialogState extends State<DesktopActionItemFormDialo
           focusNode: _descriptionFocusNode,
           maxLines: 3,
           minLines: 1,
+          cursorColor: Colors.black,
           style: const TextStyle(
             color: ResponsiveHelper.textPrimary,
             fontSize: 16,

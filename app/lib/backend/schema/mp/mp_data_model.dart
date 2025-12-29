@@ -64,10 +64,8 @@ class MPSpeakerStruct {
   @JsonKey(name: 'created_at')
   final int? createdAt;
 
-  
   @JsonKey(name: 'duration')
   final int? duration;
-
 
   MPSpeakerStruct({
     required this.id,

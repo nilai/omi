@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/note_ble_debug_provider.dart';
 import 'package:omi/services/devices/note_commands.dart';
 import 'package:omi/services/devices/note_connection.dart';
 import 'package:omi/services/services.dart';
+import 'package:provider/provider.dart';
+
+import 'note_file_list_page.dart';
+import 'widgets/ble_log_drawer.dart';
 import 'widgets/command_button.dart';
 import 'widgets/command_category_section.dart';
-import 'widgets/ble_log_drawer.dart';
-import 'note_file_list_page.dart';
 
 /// BLE Debug Page for Note devices
 /// Allows sending protocol commands and viewing hex data logs
@@ -37,10 +38,10 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
         if (connection is NoteDeviceConnection) {
           debugProvider.setConnection(connection);
           print('------hjj set connection');
-        }else {
+        } else {
           print('------hjj connection is not NoteDeviceConnection');
         }
-      }else {
+      } else {
         print('------hjj no connected device');
       }
     });
@@ -558,6 +559,7 @@ class _NoteBleDebugPageState extends State<NoteBleDebugPage> {
               Expanded(
                 child: TextField(
                   controller: _customCommandController,
+                  cursorColor: Colors.black,
                   style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'monospace',
