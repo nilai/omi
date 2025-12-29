@@ -5,8 +5,8 @@ import '../../../../backend/schema/mp/mp_memory.dart';
 import '../../../../services/mp_home_refresh_event_service.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 
-/// 重命名记忆对话框
-/// 用于修改记忆的标题
+/// 新增记忆标签
+/// 用于新增记忆标签
 class MPMemoryAddTagDialog extends StatefulWidget {
   final String memoryId;
   final int maxLength;
@@ -20,7 +20,7 @@ class MPMemoryAddTagDialog extends StatefulWidget {
     this.onSuccess,
   });
 
-  /// 显示重命名记忆对话框
+  /// 显示新增记忆标签对话框
   static void show({
     required BuildContext context,
     required String memoryId,
