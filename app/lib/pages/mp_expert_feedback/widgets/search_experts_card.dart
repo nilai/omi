@@ -41,6 +41,7 @@ class _MPExpertSearchCardState extends State<MPExpertSearchCard> {
         height: 46.0,
         child: TextField(
           controller: _searchController,
+          cursorColor: Colors.black,
           onChanged: (value) {
             widget.onSearchChanged?.call(value);
           },

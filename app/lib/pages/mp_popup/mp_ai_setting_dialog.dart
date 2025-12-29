@@ -387,6 +387,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
       ),
       child: TextField(
         controller: controller,
+        cursorColor: Colors.black,
         style: const TextStyle(
           color: Colors.black87,
           fontSize: 14,
@@ -425,6 +426,7 @@ class _MPAISettingDialogState extends State<MPAISettingDialog> {
         maxLines: null,
         minLines: minLines,
         enabled: enabled,
+        cursorColor: Colors.black,
         style: TextStyle(
           color: enabled ? Colors.black87 : Colors.grey[400],
           fontSize: 14,

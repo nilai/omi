@@ -64,6 +64,9 @@ class MPSpeakerStruct {
   @JsonKey(name: 'created_at')
   final int? createdAt;
 
+  @JsonKey(name: 'duration')
+  final int? duration;
+
   MPSpeakerStruct({
     required this.id,
     required this.name,
@@ -72,6 +75,7 @@ class MPSpeakerStruct {
     this.myselfVoice,
     this.audioUrl,
     this.createdAt,
+    this.duration,
   });
 
   factory MPSpeakerStruct.fromJson(Map<String, dynamic> json) => _$MPSpeakerStructFromJson(json);

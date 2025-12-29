@@ -256,6 +256,7 @@ class _DesktopLanguageScreenState extends State<DesktopLanguageScreen> with Tick
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
+                  cursorColor: Colors.black,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,

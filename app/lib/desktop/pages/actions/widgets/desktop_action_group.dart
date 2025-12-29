@@ -304,6 +304,7 @@ class _DesktopActionGroupState extends State<DesktopActionGroup> {
                 ? TextField(
                     controller: _textControllers[item.id],
                     focusNode: _focusNodes[item.id],
+                    cursorColor: Colors.black,
                     style: const TextStyle(
                         color: ResponsiveHelper.textPrimary, fontSize: 14, height: 1.3, fontWeight: FontWeight.w500),
                     decoration:

@@ -96,6 +96,7 @@ class _AdaptiveSearchInnerState extends State<_AdaptiveSearchInner> {
         controller: widget.controller,
         focusNode: widget.focusNode,
         onChanged: widget.onChanged,
+        cursorColor: Colors.black,
         style: const TextStyle(
           color: ResponsiveHelper.textPrimary,
           fontSize: 14,

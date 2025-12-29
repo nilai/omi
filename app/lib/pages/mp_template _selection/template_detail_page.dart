@@ -182,6 +182,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
                 child: TextField(
                   controller: _titleController,
                   readOnly: !widget.isMyTemplate,
+                  cursorColor: Colors.black,
                   onChanged: widget.isMyTemplate
                       ? (value) {
                           provider.updateTitle(value);
@@ -414,6 +415,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
                 readOnly: true,
                 enabled: widget.isMyTemplate,
                 enableInteractiveSelection: false,
+                cursorColor: Colors.black,
                 decoration: InputDecoration(
                   hintText: '请选择类别',
                   hintStyle: const TextStyle(
@@ -494,6 +496,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
             maxLines: null,
             minLines: 10,
             maxLength: _maxPromptLength,
+            cursorColor: Colors.black,
             decoration: const InputDecoration(
               hintText: '请输入Prompt内容',
               hintStyle: TextStyle(

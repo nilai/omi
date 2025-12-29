@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:omi/pages/memories/mp_memory_page_client.dart';
 import 'package:omi/pages/mp_home/provider/mp_search_provider.dart';
 import 'package:omi/pages/mp_home/widgets/mp_home_card.dart';
-import 'package:omi/pages/memories/mp_memory_page_client.dart';
+import 'package:provider/provider.dart';
 
 /// 搜索页面
 /// 包含两种状态：输入状态（显示最近搜索）和搜索结果状态（显示搜索结果卡片列表）
@@ -181,6 +181,7 @@ class _MPSearchPageState extends State<MPSearchPage> {
           child: TextField(
             controller: _searchController,
             autofocus: false,
+            cursorColor: Colors.black,
             decoration: InputDecoration(
               hintText: '搜索记忆内容、标题、日期...',
               hintStyle: const TextStyle(

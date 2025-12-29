@@ -543,6 +543,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                                         obscureText: false,
                                         textAlign: TextAlign.start,
                                         textAlignVertical: TextAlignVertical.center,
+                                        cursorColor: Colors.black,
                                         decoration: const InputDecoration(
                                           hintText: 'Ask Anything',
                                           hintStyle: TextStyle(fontSize: 16.0, color: Colors.white54),

@@ -104,6 +104,7 @@ class _DesktopMemoryDialogState extends State<DesktopMemoryDialog> {
                 controller: _textController,
                 maxLines: 6,
                 autofocus: true,
+                cursorColor: Colors.black,
                 style: const TextStyle(
                   color: ResponsiveHelper.textPrimary,
                   fontSize: 15,

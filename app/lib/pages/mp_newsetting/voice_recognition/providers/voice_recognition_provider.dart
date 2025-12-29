@@ -63,7 +63,6 @@ class VoiceRecognitionProvider with ChangeNotifier {
         cursor: '', // 从第一页开始
       );
       final response = await getSpeakerList(request);
-
       if (response != null && response.speakers.isNotEmpty) {
         // 清空现有列表
         _voiceList = [];
@@ -71,6 +70,9 @@ class VoiceRecognitionProvider with ChangeNotifier {
 
         // 根据 myself_voice 字段分类
         for (final speaker in response.speakers) {
+          print('audioUrlloadSpeakerList response11: ${speaker.duration}');
+          print('audioUrlloadSpeakerList response: ${speaker.audioUrl}');
+
           final voiceItem = _convertSpeakerToVoiceItem(speaker);
 
           if (speaker.myselfVoice == true) {

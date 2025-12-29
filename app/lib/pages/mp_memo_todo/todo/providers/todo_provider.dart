@@ -108,13 +108,6 @@ class TodoProvider with ChangeNotifier {
   }
   // AI-generated END - setLoading
 
-  // AI-generated START - 设置获取状态
-  void setFetching(bool fetching) {
-    _isFetching = fetching;
-    notifyListeners();
-  }
-  // AI-generated END - setFetching
-
   // AI-generated START - 设置错误信息
   void setError(String? errorMessage) {
     _error = errorMessage;
@@ -132,46 +125,32 @@ class TodoProvider with ChangeNotifier {
 
   // AI-generated START - 加载 Todo 任务列表
   Future<void> loadTodos() async {
-    setLoading(true);
-    setError(null);
-    _hasMore = true; // 重置 hasMore 状态
-    _cursor = ''; // 重置游标
-    try {
-      // 调用 API 获取 Todo 列表
-      final request = MPGetTodoListRequest(
-        pageSize: 20, // 每页数量
-        cursor: _cursor, // 分页游标，首次加载为空字符串
-      );
+    _isLoading = true;
+    notifyListeners();
+    _cursor = '';
+    final request = MPGetTodoListRequest(
+      pageSize: 20, // 每页数量
+      cursor: _cursor, // 分页游标，首次加载为空字符串
+    );
 
-      final response = await getTodoList(request);
+    final response = await getTodoList(request);
 
-      if (response != null) {
-        // 检查响应状态
-        if (response.baseResp.code != 0) {
-          setError(response.baseResp.message);
-          _todos = [];
-        } else {
-          // 将 API 返回的数据转换为 TodoTaskItem
-          _todos = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
-          _hasMore = response.hasMore;
-          // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
-          // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 todo 的 id 作为 cursor
-          if (_todos.isNotEmpty) {
-            _cursor = _todos.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
-          }
-        }
-      } else {
-        setError('获取 Todo 列表失败');
-        _todos = [];
+    if (response != null) {
+      // 检查响应状态
+      // 将 API 返回的数据转换为 TodoTaskItem
+      final list = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
+      _hasMore = response.hasMore;
+      _todos.clear();
+      // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
+      // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 todo 的 id 作为 cursor
+      if (list.isNotEmpty) {
+        _cursor = list.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
       }
-
-      notifyListeners();
-    } catch (e) {
-      setError(e.toString());
-      debugPrint('加载 Todo 列表失败: $e');
-    } finally {
-      setLoading(false);
+      _todos = list;
     }
+
+    _isLoading = false;
+    notifyListeners();
   }
   // AI-generated END - loadTodos
 
@@ -179,41 +158,28 @@ class TodoProvider with ChangeNotifier {
   Future<void> loadMoreTodos() async {
     if (_isFetching || !_hasMore) return;
 
-    setFetching(true);
+    _isFetching = true;
 
-    try {
-      // 调用 API 加载更多 Todo 数据
-      final request = MPGetTodoListRequest(
-        pageSize: 20, // 每页数量
-        cursor: _cursor, // 使用当前游标
-      );
+    // 调用 API 加载更多 Todo 数据
+    final request = MPGetTodoListRequest(
+      pageSize: 20, // 每页数量
+      cursor: _cursor, // 使用当前游标
+    );
 
-      final response = await getTodoList(request);
+    final response = await getTodoList(request);
 
-      if (response != null) {
-        // 检查响应状态
-        if (response.baseResp.code != 0) {
-          debugPrint('加载更多 Todo 失败: ${response.baseResp.message}');
-        } else {
-          // 将 API 返回的数据转换为 TodoTaskItem 并追加到列表
-          final moreTodos = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
-          _todos.addAll(moreTodos);
-          _hasMore = response.hasMore;
-          // 更新游标
-          if (moreTodos.isNotEmpty) {
-            _cursor = moreTodos.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
-          }
-        }
-      } else {
-        debugPrint('加载更多 Todo 失败: 响应为空');
+    if (response != null) {
+      // 将 API 返回的数据转换为 TodoTaskItem 并追加到列表
+      final moreTodos = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
+      _todos.addAll(moreTodos);
+      _hasMore = response.hasMore;
+      // 更新游标
+      if (moreTodos.isNotEmpty) {
+        _cursor = moreTodos.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
       }
-
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading more todos: $e');
-    } finally {
-      setFetching(false);
     }
+    _isFetching = false;
+    notifyListeners();
   }
   // AI-generated END - loadMoreTodos
 
