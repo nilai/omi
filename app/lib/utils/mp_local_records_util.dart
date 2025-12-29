@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../env/env.dart';
+import 'audio/mp_record_audio_util.dart';
+
 class MPLocalMemoryModel {
   MPLocalMemoryModel({
     required this.fileName,
@@ -149,5 +152,25 @@ class MPLocalRecordsUtil {
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
     return _localRecords;
+  }
+
+  /// 获取本地记录的文件路径
+  /// @param fileId 文件ID
+  /// @returns 文件路径
+  Future<String> getLocalRecordPath(String recordFile) async {
+    if (recordFile.isEmpty) {
+      return '';
+    }
+    final fileId = MPRecordAudioUtil.getFileId(recordFile);
+    final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
+    for (var el in locaRecords) {
+      if (el.fileId == fileId) {
+        if (el.path.isNotEmpty) {
+          return el.path;
+        }
+        break;
+      }
+    }
+    return '${Env.apiBaseUrl}$recordFile';
   }
 }

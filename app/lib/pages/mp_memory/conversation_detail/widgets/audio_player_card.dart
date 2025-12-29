@@ -1,5 +1,6 @@
 // AI-generated START - 音频播放器卡片组件，显示原始音频播放控件
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -15,7 +16,7 @@ class AudioPlayerCard extends StatefulWidget {
   // AI-generated END - totalDurationSeconds
 
   // AI-generated START - 音频URL
-  final String? audioUrl;
+  final Future<String>? audioUrl;
   // AI-generated END - audioUrl
 
   const AudioPlayerCard({
@@ -69,12 +70,13 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 初始化音频播放器
   Future<void> _setupPlayer() async {
-    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+    final audioUrl = await widget.audioUrl;
+    if (audioUrl == null || audioUrl.isEmpty) {
       return;
     }
 
     try {
-      await _audioPlayer.setUrl(widget.audioUrl!);
+      await _audioPlayer.setUrl(audioUrl);
       _setupPositionTracking();
     } catch (e) {
       debugPrint('初始化音频播放器失败: $e');
@@ -114,7 +116,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 播放音频
   Future<void> play() async {
-    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+    final audioUrl = await widget.audioUrl;
+    if (audioUrl == null || audioUrl.isEmpty) {
       debugPrint('音频URL为空，无法播放');
       return;
     }
@@ -122,7 +125,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
     try {
       // 如果播放器还没有设置URL，先设置
       if (_audioPlayer.audioSource == null) {
-        await _audioPlayer.setUrl(widget.audioUrl!);
+        await _audioPlayer.setUrl(audioUrl);
         _setupPositionTracking();
       }
       await _audioPlayer.play();
@@ -142,7 +145,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 继续播放音频（从暂停位置继续）
   Future<void> resume() async {
-    if (widget.audioUrl == null || widget.audioUrl!.isEmpty) {
+    final audioUrl = await widget.audioUrl;
+    if (audioUrl == null || audioUrl.isEmpty) {
       debugPrint('音频URL为空，无法继续播放');
       return;
     }
@@ -150,7 +154,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
     try {
       // 如果播放器还没有设置URL，先设置
       if (_audioPlayer.audioSource == null) {
-        await _audioPlayer.setUrl(widget.audioUrl!);
+        await _audioPlayer.setUrl(audioUrl);
         _setupPositionTracking();
       }
       await _audioPlayer.play();
@@ -194,7 +198,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
               ),
               Text(
                 _formatDuration(widget.totalDurationSeconds),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.black87,
                   fontSize: 14.0,
                   fontWeight: FontWeight.normal,
@@ -260,8 +264,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                       borderRadius: BorderRadius.circular(4.0),
                       child: LinearProgressIndicator(
                         value: progress,
-                        backgroundColor: Color(0xFFE5E7EB),
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
+                        backgroundColor: const Color(0xFFE5E7EB),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF2563EB)),
                         minHeight: 8.0,
                       ),
                     ),

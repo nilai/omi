@@ -5,14 +5,13 @@ import 'package:just_audio/just_audio.dart';
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
 import '../../backend/schema/mp/mp_memory.dart';
-import '../../env/env.dart';
 import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import '../../services/mp_home_refresh_event_service.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../utils/mp_local_records_util.dart';
 import '../mp_custom_utils/mp_toast_utils.dart';
-import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../mp_popup/mp_record_detail_more_popup.dart';
 import 'mp_memory_transition_page.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
@@ -43,16 +42,15 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   bool _contentOverflow = false;
 
   /// 从 memory 中获取音频 URL
-  String? get _audioUrl {
-    String url = '${Env.apiBaseUrl}';
+  Future<String>? get _audioUrl async {
+    String recordFile = '';
     if (widget.memory.onlyRecordContent != null) {
-      url += widget.memory.onlyRecordContent!.recordFile;
+      recordFile = widget.memory.onlyRecordContent!.recordFile;
+    } else if (widget.memory.summaryContent != null) {
+      recordFile = widget.memory.summaryContent!.recordUrl;
     }
-    if (widget.memory.summaryContent != null) {
-      url += widget.memory.summaryContent!.recordUrl;
-    }
-    debugPrint('-----hj----- _audioUrl: $url');
-    return url;
+    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(recordFile);
+    return localPath;
   }
 
   @override
@@ -64,7 +62,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   Future<void> _setupPlayer() async {
-    final audioUrl = _audioUrl;
+    final audioUrl = await _audioUrl;
     if (audioUrl == null) {
       if (mounted) {
         setState(() {
