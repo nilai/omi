@@ -434,8 +434,9 @@ class _MPPageContentState extends State<MPPageContent> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => MPAudioRecordPage(onSave: (model) {
-              provider.addLocalRecordModel(model);
+            builder: (context) => MPAudioRecordPage(onSave: (model) async {
+              await provider.addLocalRecordModel(model);
+              provider.uploadLocalRecords();
             }),
           ),
         );
