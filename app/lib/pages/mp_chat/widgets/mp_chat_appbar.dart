@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../gen/assets.gen.dart';
 import '../../../providers/mp_message_provider.dart';
@@ -17,14 +18,11 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   final String? title;
 
-  final MPChatBarLeadingType leadingType;
-
   const MPChatAppBar({
     super.key,
     this.onLeftIconTap,
     this.onMenuTap,
     this.title,
-    this.leadingType = MPChatBarLeadingType.battery,
   });
 
   @override
@@ -63,10 +61,17 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildLeading() {
-    if (leadingType == MPChatBarLeadingType.battery) {
-      return const MPBatteryInfoWidget();
-    }
-    return const SizedBox.shrink();
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        if (mpProvider.leadingType == MPChatBarLeadingType.cancel) {
+          return GestureDetector(
+              onTap: () => onLeftIconTap?.call(),
+              child: Text('cancel',
+                  style: TextStyle(color: Colors.grey.shade800, fontSize: 16.0, fontWeight: FontWeight.w500)));
+        }
+        return GestureDetector(onTap: () => onLeftIconTap?.call(), child: const MPBatteryInfoWidget());
+      },
+    );
   }
 
   Widget _buildTitle() {

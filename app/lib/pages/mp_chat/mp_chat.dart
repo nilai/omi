@@ -201,7 +201,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           backgroundColor: Colors.white,
           appBar: MPChatAppBar(
             title: widget.title,
-            leadingType: widget.leadingType,
             onLeftIconTap: () {
               _onLeftIconTap();
             },
@@ -226,13 +225,18 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         ));
   }
 
-  void _onLeftIconTap() {
+  void _onLeftIconTap() async {
     if (widget.leadingType == MPChatBarLeadingType.cancel) {
       provider.setLeadingType(MPChatBarLeadingType.battery);
-      provider.setQuestions([]);
+      provider.setQuestionType(MPChatQuestionType.grid);
+      final list = await MPQuickQuestionUtil().getQuestionsByChatType(MPChatPageType.normal);
+      provider.setQuestions(list);
       return;
     }
-    MPBatteryInfoWidget.pushToFindDevicesPage(context);
+    if (provider.leadingType == MPChatBarLeadingType.battery) {
+      MPBatteryInfoWidget.pushToFindDevicesPage(context);
+      return;
+    }
   }
 
   // 消息列表
