@@ -197,8 +197,6 @@ Future<MPSearchMemoryResponse?> searchMemory(MPSearchMemoryRequest req) async {
   return null;
 }
 
-
-
 // POST /api/v1/memory/rename
 Future<MPRenameMemoryResponse?> renameMemory(MPRenameMemoryRequest req) async {
   var response = await makeApiCall(
@@ -227,6 +225,39 @@ Future<MPMemoryAddTagResponse?> memoryAddTag(MPMemoryAddTagRequest req) async {
   debugPrint('memoryAddTag response: ${response.body}');
   if (response.statusCode == 200) {
     return MPMemoryAddTagResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// GET /api/v1/memory/get_summary_list
+Future<MPGetSummaryListResponse?> getSummaryList(MPGetSummaryListRequest req) async {
+  var response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v1/memory/get_summary_list?page_size=${req.pageSize}&cursor=${Uri.encodeComponent(req.cursor)}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getSummaryList response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetSummaryListResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/memory/append_summary
+Future<MPAppendMemoryResponse?> appendMemory(MPAppendMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/append_summary',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('appendMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPAppendMemoryResponse.fromJson(jsonDecode(response.body));
   }
   return null;
 }

@@ -154,6 +154,34 @@ Map<String, dynamic> _$MPSearchMemoryRequestToJson(
       'search_content': instance.searchContent,
     };
 
+MPGetSummaryListRequest _$MPGetSummaryListRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSummaryListRequest(
+      pageSize: (json['page_size'] as num).toInt(),
+      cursor: json['cursor'] as String,
+    );
+
+Map<String, dynamic> _$MPGetSummaryListRequestToJson(
+        MPGetSummaryListRequest instance) =>
+    <String, dynamic>{
+      'page_size': instance.pageSize,
+      'cursor': instance.cursor,
+    };
+
+MPAppendMemoryRequest _$MPAppendMemoryRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPAppendMemoryRequest(
+      memoryIds: (json['memory_ids'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList(),
+    );
+
+Map<String, dynamic> _$MPAppendMemoryRequestToJson(
+        MPAppendMemoryRequest instance) =>
+    <String, dynamic>{
+      'memory_ids': instance.memoryIds,
+    };
+
 MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
         Map<String, dynamic> json) =>
     MPGetMemoryListResponse(
@@ -421,5 +449,35 @@ Map<String, dynamic> _$MPSearchMemoryResponseToJson(
         MPSearchMemoryResponse instance) =>
     <String, dynamic>{
       'memorys': instance.memorys,
+      'base_resp': instance.baseResp,
+    };
+
+MPGetSummaryListResponse _$MPGetSummaryListResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPGetSummaryListResponse(
+      summarys: (json['summarys'] as List<dynamic>)
+          .map((e) => MPMemoryStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPGetSummaryListResponseToJson(
+        MPGetSummaryListResponse instance) =>
+    <String, dynamic>{
+      'summarys': instance.summarys,
+      'has_more': instance.hasMore,
+      'base_resp': instance.baseResp,
+    };
+
+MPAppendMemoryResponse _$MPAppendMemoryResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPAppendMemoryResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPAppendMemoryResponseToJson(
+        MPAppendMemoryResponse instance) =>
+    <String, dynamic>{
       'base_resp': instance.baseResp,
     };

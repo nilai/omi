@@ -201,6 +201,40 @@ class MPSearchMemoryRequest {
   Map<String, dynamic> toJson() => _$MPSearchMemoryRequestToJson(this);
 }
 
+// Get Summary List Request
+@JsonSerializable()
+class MPGetSummaryListRequest {
+  @JsonKey(name: 'page_size')
+  final int pageSize;
+
+  @JsonKey(name: 'cursor')
+  final String cursor;
+
+  MPGetSummaryListRequest({
+    required this.pageSize,
+    required this.cursor,
+  });
+
+  factory MPGetSummaryListRequest.fromJson(Map<String, dynamic> json) => _$MPGetSummaryListRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryListRequestToJson(this);
+}
+
+// Append Memory Request
+@JsonSerializable()
+class MPAppendMemoryRequest {
+  @JsonKey(name: 'memory_ids')
+  final List<String> memoryIds;
+
+  MPAppendMemoryRequest({
+    required this.memoryIds,
+  });
+
+  factory MPAppendMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPAppendMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAppendMemoryRequestToJson(this);
+}
+
 // ========== Response Classes ==========
 
 // Get Memory List Response
@@ -565,4 +599,42 @@ class MPSearchMemoryResponse {
   factory MPSearchMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPSearchMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPSearchMemoryResponseToJson(this);
+}
+
+// Get Summary List Response
+@JsonSerializable()
+class MPGetSummaryListResponse {
+  @JsonKey(name: 'summarys')
+  final List<MPMemoryStruct> summarys;
+
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSummaryListResponse({
+    required this.summarys,
+    required this.hasMore,
+    required this.baseResp,
+  });
+
+  factory MPGetSummaryListResponse.fromJson(Map<String, dynamic> json) => _$MPGetSummaryListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryListResponseToJson(this);
+}
+
+// Append Memory Response
+@JsonSerializable()
+class MPAppendMemoryResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPAppendMemoryResponse({
+    required this.baseResp,
+  });
+
+  factory MPAppendMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPAppendMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAppendMemoryResponseToJson(this);
 }
