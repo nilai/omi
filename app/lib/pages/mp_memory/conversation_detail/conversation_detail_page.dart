@@ -27,6 +27,7 @@ import '../../mp_chat/mp_chat_helper.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_popup/mp_record_detail_more_popup.dart';
 import '../../mp_popup/speaker_naming_popup.dart';
+import '../merge_memory/mp_merge_memory_page.dart';
 
 /// 对话详情页面
 /// 显示特定对话的详细消息记录
@@ -201,9 +202,21 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: '追加总结',
                 icon: Icons.add_box_outlined,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('追加总结')),
-                  );
+                  // Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //         builder: (context) => MPMergeMemoryPage(
+                  //               currentMemoryId: widget.memory.id,
+                  //               onMergeSuccess: () {
+                  //                 provider.reloadDetail();
+                  //               },
+                  //             )));
+                  MPMergeMemoryPage.pushPage(
+                      context: context,
+                      memoryId: widget.memory.id,
+                      onSuccess: () {
+                        provider.reloadDetail();
+                      });
                 },
               ),
               ActionButton(
