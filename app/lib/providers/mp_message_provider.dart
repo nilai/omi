@@ -47,20 +47,17 @@ class MPMessagePageModel {
   /// 快速问题列表
   List<String>? questions;
 
-  /// 没有消息时的快速问题列表
-  List<String>? noMsgQuestions;
-
   /// 是否显示自定义卡片。记忆卡片、人物卡片
   bool showCustomCard = false;
 
-  MPMessagePageModel(
-      {required this.chatId,
-      required this.conversationId,
-      required this.messages,
-      this.title = '',
-      this.type = MPChatPageType.normal,
-      this.questions,
-      this.noMsgQuestions});
+  MPMessagePageModel({
+    required this.chatId,
+    required this.conversationId,
+    required this.messages,
+    this.title = '',
+    this.type = MPChatPageType.normal,
+    this.questions,
+  });
 }
 
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
@@ -85,9 +82,6 @@ class MPMessageProvider extends ChangeNotifier {
 
   /// 是否正在发送消息
   bool sendingMessage = false;
-
-  /// 没有消息时的快速问题列表
-  List<String> get noMsgQuestions => curPageModel?.noMsgQuestions ?? [];
 
   /// 根据当前页面类型获取快速问题列表
   /// @returns {List<String>} 问题列表
@@ -162,15 +156,8 @@ class MPMessageProvider extends ChangeNotifier {
           .toList();
       curPageModel?.title = response.title;
       curPageModel?.showCustomCard = true;
-      if (curPageModel?.type == MPChatPageType.normal) {
-        final list = await MPQuickQuestionUtil().getAllKeys();
-        curPageModel?.noMsgQuestions = list.take(4).toList();
-        curPageModel?.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
-      } else {
-        curPageModel?.noMsgQuestions = [];
-        curPageModel?.questions =
-            MPQuickQuestionUtil().getQuestionsByChatType(curPageModel?.type ?? MPChatPageType.normal);
-      }
+      final list = await MPQuickQuestionUtil().getQuestionsByChatType(MPChatPageType.normal);
+      curPageModel?.questions = list;
     }
     notifyListeners();
   }
@@ -200,22 +187,9 @@ class MPMessageProvider extends ChangeNotifier {
       final model =
           MPMessagePageModel(chatId: chatId, conversationId: response.conversationId, messages: [], type: type);
       model.title = title;
-
-      if (type == MPChatPageType.normal) {
-        model.showCustomCard = true;
-        final list = await MPQuickQuestionUtil().getAllKeys();
-        if (list.isNotEmpty) {
-          model.noMsgQuestions = list.take(4).toList();
-          model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
-        } else {
-          // model.noMsgQuestions = MPQuickQuestionUtil().normalQuestions;
-          model.questions = [];
-        }
-      } else {
-        model.showCustomCard = true;
-        model.noMsgQuestions = [];
-        model.questions = MPQuickQuestionUtil().getQuestionsByChatType(type);
-      }
+      model.showCustomCard = type != MPChatPageType.normal ? true : false;
+      final list = await MPQuickQuestionUtil().getQuestionsByChatType(type);
+      model.questions = list;
       pageModels.add(model);
       curPageModel = model;
     }

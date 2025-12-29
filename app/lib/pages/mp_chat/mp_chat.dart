@@ -302,7 +302,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   Widget _buildNormalNoMessagesWidget() {
     return Consumer<MPMessageProvider>(
       builder: (context, mpProvider, child) {
-        final noMsgQuestions = mpProvider.noMsgQuestions;
+        final questions = mpProvider.questions;
         return Column(
           children: [
             const SizedBox(
@@ -317,14 +317,15 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
               height: 24,
             ),
             MPChatSuggestionCards(
-              questions: noMsgQuestions,
-              onQuestionTap: (question) async {
-                // if (MPQuickQuestionUtil().normalQuestions.contains(question)) {
-                //   _sendMessageUtil(question);
-                //   return;
-                // }
-                final questions = await MPQuickQuestionUtil().getQuestionsByKey(question);
-                mpProvider.setQuestions(questions);
+              questions: questions,
+              onQuestionTap: (question) {
+                final list = MPQuickQuestionUtil().getQuestionsByKey(question);
+                if (list.isEmpty) {
+                  _sendMessageUtil(question);
+                } else {
+                  mpProvider.setQuestions(list);
+                  mpProvider.setLeadingType(MPChatBarLeadingType.cancel);
+                }
               },
             ),
             const Spacer(),
