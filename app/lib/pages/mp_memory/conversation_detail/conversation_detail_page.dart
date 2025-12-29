@@ -602,10 +602,19 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         });
   }
 
-  void _regenerateSummary() async{
-    final req = MPRegenerateSummaryRequest(memoryId: widget.memory.id);
-    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
-    provider.regenerateSummary();
+  void _regenerateSummary() async {
+    final req = MPSummaryRecordRequest(
+        memoryId: widget.memory.id,
+        recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
+        recordMemoAt: widget.memory.createAt);
+    final res = await summaryRecord(req);
+    if (res != null && res.baseResp.code == 0) {
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } else {
+      MPToastUtils.showMessage(res?.baseResp.message ?? '重新生成失败');
+    }
   }
 }
 // AI-generated END - conversation_detail_page.dart
