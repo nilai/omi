@@ -76,7 +76,6 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.0),
@@ -103,6 +102,8 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
           ),
           const Divider(height: 1.0, color: Color(0xFFF0F0F0)),
           _buildFooter(context),
+          const Text('本文件中的说话人名称将自动更新', style: TextStyle(fontSize: 12.0, color: Color(0xFF8C8C8C))),
+          const SizedBox(height: 16.0),
         ],
       ),
     );
@@ -125,6 +126,7 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
             ),
           ),
           GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: () {
               if (widget.onCancel != null) {
                 widget.onCancel!();
@@ -132,14 +134,10 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
                 Navigator.of(context).pop();
               }
             },
-            child: Container(
+            child: const SizedBox(
               width: 32.0,
               height: 32.0,
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
+              child: Icon(
                 Icons.close,
                 size: 18.0,
                 color: Color(0xFF212121),
@@ -166,29 +164,6 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Icon(Icons.play_arrow, size: 16.0, color: Color(0xFF8C8C8C)),
-              const SizedBox(width: 6.0),
-              Text(
-                item.time,
-                style: const TextStyle(
-                  fontSize: 12.0,
-                  color: Color(0xFF8C8C8C),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                item.speaker.duration == null ? '' : '${item.speaker.duration}s',
-                style: const TextStyle(
-                  fontSize: 12.0,
-                  color: Color(0xFF8C8C8C),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8.0),
           TextField(
             controller: controller,
             decoration: InputDecoration(
@@ -215,6 +190,29 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
               color: Color(0xFF212121),
             ),
             onChanged: (value) {},
+          ),
+          const SizedBox(height: 8.0),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(Icons.play_arrow, size: 16.0, color: Color(0xFF8C8C8C)),
+              const SizedBox(width: 6.0),
+              Text(
+                item.time,
+                style: const TextStyle(
+                  fontSize: 12.0,
+                  color: Color(0xFF8C8C8C),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                item.speaker.duration == null ? 'xx' : '${item.speaker.duration}s',
+                style: const TextStyle(
+                  fontSize: 12.0,
+                  color: Color(0xFF8C8C8C),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8.0),
           Text(
