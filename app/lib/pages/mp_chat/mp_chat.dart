@@ -693,6 +693,9 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
     provider.sendMessageStreamToServer(text);
     // provider.clearSelectedFiles();
     provider.setSendingMessage(false);
+    if (provider.messages.length > 1) {
+      provider.updatePageTitle();
+    }
   }
 
   void _moveListToBottom() {
