@@ -182,31 +182,33 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: '命名发言者',
                 icon: Icons.person_outline,
                 onTap: () {
-//                   struct RecordConversationStruct {
-//     1: string id,
-//     2: SpeakerStruct speaker,
-//     3: string content,
-//     4: string time,
-// }
-
-// struct SummaryMemoryStruct {
-//     1: list<SpeakerStruct> participants,
-//     2: i32: participants_cnt,
-//     2: string record_url, // 录音地址
-//     3: string summary, // markdown格式
-//     4: list<RecordConversationStruct> transcript,
-//     5: list<TodoStruct> todos,
-//     6: i32: status,
-// }
-                  // SpeakerNamingPopup.show(context: context, items: provider.participants, onNameChanged: (id, name) {
-                  //   provider.updateParticipantName(id, name);
-                  // }, onConfirm: (names) {
-                  //   provider.updateParticipantNames(names);
-                  // }, onCancel: () {
-                  //   Navigator.of(context).pop();
-                  // });
-
-                  
+                  final list = provider.summaryContent?.transcript ?? [];
+                  if (list.isEmpty) {
+                    // INSERT_YOUR_CODE
+                    // 这里生成测试数据并弹窗
+                    final List<MPSummaryConversationStruct> testList = List.generate(
+                      4,
+                      (i) => MPSummaryConversationStruct(
+                        id: 'test_$i',
+                        content: '这是第${i + 1}条发言的内容',
+                        speaker: MPSpeakerStruct(
+                          id: 'spk_$i',
+                          name: '发言者${i + 1}',
+                          myselfVoice: i % 2 == 0,
+                          avatar: '',
+                          isTemporary: false,
+                        ),
+                        time: '${i + 1}:00',
+                      ),
+                    );
+                    SpeakerNamingPopup.show(context: context, items: testList);
+                    return;
+                  }
+                  if (list.isNotEmpty) {
+                    SpeakerNamingPopup.show(context: context, items: list);
+                  } else {
+                    MPToastUtils.showMessage('Transcript为空');
+                  }
                 },
               ),
               ActionButton(

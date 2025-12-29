@@ -129,6 +129,8 @@ class ConversationDetailProvider with ChangeNotifier {
   String get searchQuery => _searchQuery;
   // AI-generated END - searchQuery
 
+  MPSummaryMemoryStruct? get summaryContent => _memory?.summaryContent;
+
   // AI-generated START - 设置搜索关键词
   void setSearchQuery(String query) {
     _searchQuery = query;
@@ -264,22 +266,7 @@ class ConversationDetailProvider with ChangeNotifier {
       }).toList();
     } else {
       // 生成假数据
-      _transcripts = List.generate(8, (index) {
-        final isUser = index % 2 == 0;
-        return ConversationMessage(
-          id: 'demo_$index',
-          content: isUser
-              ? '这是一条用户消息示例 ${index + 1}'
-              : '这是AI的回复内容示例 ${index + 1}',
-          createdAt: DateTime.now().subtract(Duration(minutes: (8 - index) * 3)),
-          type: isUser ? MessageType.user : MessageType.ai,
-          duration: 15 + index,
-          senderName: isUser ? '用户$index' : 'AI助手',
-          avatarUrl: isUser
-              ? null
-              : 'https://cdn3.iconfinder.com/data/icons/artificial-intelligence-11/64/ArtificialIntelligence_Line-19-512.png',
-        );
-      });
+      _transcripts = [];
     }
   }
   // AI-generated END - _loadTranscriptData
