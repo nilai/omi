@@ -38,7 +38,7 @@ class MPMemoryItem {
   final String? secondsText;
   final String? description;
   final MPMemoryStruct memory;
-  final String? localPath;
+  String? localPath;
   final int createAt;
   bool isUploading = false;
 }
@@ -308,6 +308,7 @@ class MPHomePageProvider extends ChangeNotifier {
         content: '',
       );
       final item = memory.toMPMemoryItem();
+      item.localPath = element.path;
       item.isUploading = true;
       print('------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}');
       localItems.add(item);
