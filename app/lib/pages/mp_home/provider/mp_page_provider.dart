@@ -283,8 +283,8 @@ class MPHomePageProvider extends ChangeNotifier {
     // 通过path获取到filename
 
     final String name = fileName ?? path.split('/').last;
-    _localRecords =
-        await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: MPTimestampUtils.timestampNow, fileName: name, source: source);
+    _localRecords = await MPLocalRecordsUtil.instance
+        .addLocalRecord(path, createAt: MPTimestampUtils.timestampNow, fileName: name, source: source);
     _updateItems();
   }
 
@@ -401,7 +401,8 @@ class MPHomePageProvider extends ChangeNotifier {
       onConfirm: () async {
         // 执行删除操作
         if (item.isUploading == true) {
-          removeLocalRecord(item.localPath ?? '', fildId: '');
+          await removeLocalRecord(item.localPath ?? '', fildId: '');
+          uploadLocalRecords();
         } else {
           final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
           final response = await deleteMemory(req);
