@@ -183,29 +183,14 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 icon: Icons.person_outline,
                 onTap: () {
                   final list = provider.summaryContent?.transcript ?? [];
-                  if (list.isEmpty) {
-                    // INSERT_YOUR_CODE
-                    // 这里生成测试数据并弹窗
-                    final List<MPSummaryConversationStruct> testList = List.generate(
-                      4,
-                      (i) => MPSummaryConversationStruct(
-                        id: 'test_$i',
-                        content: '这是第${i + 1}条发言的内容',
-                        speaker: MPSpeakerStruct(
-                          id: 'spk_$i',
-                          name: '发言者${i + 1}',
-                          myselfVoice: i % 2 == 0,
-                          avatar: '',
-                          isTemporary: false,
-                        ),
-                        time: '${i + 1}:00',
-                      ),
-                    );
-                    SpeakerNamingPopup.show(context: context, items: testList);
-                    return;
-                  }
                   if (list.isNotEmpty) {
-                    SpeakerNamingPopup.show(context: context, items: list);
+                    SpeakerNamingPopup.show(
+                      context: context,
+                      items: list,
+                      onfirm: () {
+                        provider.reloadDetail();
+                      },
+                    );
                   } else {
                     MPToastUtils.showMessage('Transcript为空');
                   }

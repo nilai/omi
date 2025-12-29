@@ -211,6 +211,10 @@ class ConversationDetailProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void reloadDetail() {
+    _loadMemoryDetail(memory?.id ?? '');
+  }
+
   // AI-generated START - 加载记忆详情
   Future<void> _loadMemoryDetail(String memoryId) async {
     try {
