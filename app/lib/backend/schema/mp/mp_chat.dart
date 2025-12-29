@@ -328,7 +328,7 @@ class MPGetChatSuggestionRequest {
 
 /// Get Chat Suggestion Response
 class MPGetChatSuggestionResponse {
-  final Map<String, List<String>> suggestion;
+  final Map<String, Map<String, List<String?>>> suggestion;
   final MPBaseResp baseResp;
 
   MPGetChatSuggestionResponse({
@@ -338,10 +338,10 @@ class MPGetChatSuggestionResponse {
 
   factory MPGetChatSuggestionResponse.fromJson(Map<String, dynamic> json) {
     final suggestionData = json['suggestion'] as Map<String, dynamic>? ?? {};
-    final suggestion = <String, List<String>>{};
+    final suggestion = <String, Map<String, List<String?>>>{};
     suggestionData.forEach((key, value) {
-      if (value is List<String>) {
-        suggestion[key] = value.map((e) => e.toString()).toList();
+      if (value is Map<String, List<String?>>) {
+        suggestion[key] = value;
       }
     });
 

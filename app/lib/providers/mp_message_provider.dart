@@ -208,7 +208,7 @@ class MPMessageProvider extends ChangeNotifier {
           model.noMsgQuestions = list.take(4).toList();
           model.questions = await MPQuickQuestionUtil().getQuestionsByKey(list.first);
         } else {
-          model.noMsgQuestions = MPQuickQuestionUtil().normalQuestions;
+          // model.noMsgQuestions = MPQuickQuestionUtil().normalQuestions;
           model.questions = [];
         }
       } else {

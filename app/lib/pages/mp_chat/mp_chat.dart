@@ -319,10 +319,10 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             MPChatSuggestionCards(
               questions: noMsgQuestions,
               onQuestionTap: (question) async {
-                if (MPQuickQuestionUtil().normalQuestions.contains(question)) {
-                  _sendMessageUtil(question);
-                  return;
-                }
+                // if (MPQuickQuestionUtil().normalQuestions.contains(question)) {
+                //   _sendMessageUtil(question);
+                //   return;
+                // }
                 final questions = await MPQuickQuestionUtil().getQuestionsByKey(question);
                 mpProvider.setQuestions(questions);
               },
