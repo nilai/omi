@@ -267,7 +267,13 @@ class _MPPageContentState extends State<MPPageContent> {
                             description: item.description,
                             onShare: () => provider.onCardShare(context, item),
                             onDelete: () => provider.onCardDelete(context, item),
-                            onViewDetail: () => MPMemoryPageClient.navigateToDetailPage(context, item.memory),
+                            onViewDetail: () {
+                              if (item.isUploading == true) {
+                                MPToastUtils.showMessage('正在上传，请稍后再试');
+                                return;
+                              }
+                              MPMemoryPageClient.navigateToDetailPage(context, item.memory);
+                            },
                             isUploading: item.isUploading,
                           );
                         },
