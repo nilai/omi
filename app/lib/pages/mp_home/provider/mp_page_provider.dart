@@ -50,7 +50,7 @@ class MPLocalMemoryModel {
     required this.path,
     this.duration,
     this.fileId = '',
-    this.source = '',
+    required this.source,
     this.isRemoved = false,
   });
 
@@ -73,7 +73,7 @@ class MPLocalMemoryModel {
   String fileId;
 
   /// 文件来源(mobile phone or mp)
-  String source;
+  final String source;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
       fileName: json['fileName'],
@@ -357,10 +357,11 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 添加本地记录
   /// @param item 本地记录
-  Future<void> addLocalRecord(String path, {int? duration, String? fileName}) async {
+  Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
     // 通过path获取到filename
-    final String filename = path.split('/').last;
-    final model = MPLocalMemoryModel(fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path);
+    final String filename = fileName ?? path.split('/').last;
+    final model = MPLocalMemoryModel(
+        fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path, source: source);
     _localRecords.add(model);
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();

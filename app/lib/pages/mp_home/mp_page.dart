@@ -429,7 +429,7 @@ class _MPPageContentState extends State<MPPageContent> {
           context,
           MaterialPageRoute(
             builder: (context) => MPAudioRecordPage(onSave: (path) {
-              provider.addLocalRecord(path);
+              provider.addLocalRecord(path, source: 'Mobile Phone');
             }),
           ),
         );
@@ -456,7 +456,7 @@ class _MPPageContentState extends State<MPPageContent> {
           // /// 上传文件，上传完成删除记录信息
           // await _uploadAudioFile(context, File(path));
 
-          await provider.addLocalRecord(path);
+          await provider.addLocalRecord(path, source: 'Mobile Phone');
           provider.uploadLocalRecords();
         }
       },
@@ -476,7 +476,7 @@ class _MPPageContentState extends State<MPPageContent> {
           // /// 上传文件，上传完成删除记录信息
           // await _uploadAudioFile(context, File(path));
 
-          await provider.addLocalRecord(path);
+          await provider.addLocalRecord(path, source: 'Mobile Phone');
           provider.uploadLocalRecords();
         }
       },
