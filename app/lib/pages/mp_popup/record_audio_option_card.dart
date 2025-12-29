@@ -18,7 +18,7 @@ class RecordAudioOptionCard extends StatelessWidget {
   // AI-generated START - 构造函数
   const RecordAudioOptionCard({
     super.key,
-    // this.onStartRecording,
+    this.onRecordAudio,
     this.onImportAudio,
     this.onClose,
     this.autoClose = true,
@@ -26,7 +26,7 @@ class RecordAudioOptionCard extends StatelessWidget {
   // AI-generated END - 构造函数
 
   /// 开始录音回调
-  // final VoidCallback? onStartRecording;
+  final VoidCallback? onRecordAudio;
 
   /// 导入音频回调
   final VoidCallback? onImportAudio;
@@ -63,14 +63,18 @@ class RecordAudioOptionCard extends StatelessWidget {
               title: MPRecordAudioUtil.instance.isRecording ? '停止录音' : '开始录音',
               imagePath: kStartRecordingIcon,
               onTap: () {
+                // if (autoClose) {
+                //   _close(context);
+                // }
+                // if (MPRecordAudioUtil.instance.isRecording) {
+                //   MPRecordAudioUtil.instance.stopRecording(context);
+                // } else {
+                //   MPRecordAudioUtil.instance.startRecording(context);
+                // }
                 if (autoClose) {
                   _close(context);
                 }
-                if (MPRecordAudioUtil.instance.isRecording) {
-                  MPRecordAudioUtil.instance.stopRecording(context);
-                } else {
-                  MPRecordAudioUtil.instance.startRecording(context);
-                }
+                onRecordAudio?.call();
               },
             ),
             const SizedBox(height: 16.0),
@@ -81,7 +85,7 @@ class RecordAudioOptionCard extends StatelessWidget {
               backgroundColor: Colors.blue[50]!,
               title: '导入音频',
               imagePath: kImportAudioIcon,
-              onTap: (){
+              onTap: () {
                 if (autoClose) {
                   _close(context);
                 }
@@ -154,18 +158,18 @@ class RecordAudioOptionCard extends StatelessWidget {
   // AI-generated END - 构建关闭按钮
 
   void _close(BuildContext context) {
-if (onClose != null) {
-          onClose!();
-        } else {
-          Navigator.of(context).pop();
-        }
+    if (onClose != null) {
+      onClose!();
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   // AI-generated START - 显示弹窗静态方法
   /// 显示录音选项弹窗
   static Future<T?> show<T>({
     required BuildContext context,
-    // VoidCallback? onStartRecording,
+    VoidCallback? onRecordAudio,
     VoidCallback? onImportAudio,
     VoidCallback? onClose,
   }) {
@@ -176,7 +180,7 @@ if (onClose != null) {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: RecordAudioOptionCard(
-            // onStartRecording: onStartRecording,
+            onRecordAudio: onRecordAudio,
             onImportAudio: onImportAudio,
             onClose: onClose ?? () => Navigator.of(context).pop(),
           ),

@@ -16,6 +16,7 @@ import '../../utils/audio_picker_utils.dart';
 import '../../utils/mp_device_file_util.dart';
 import '../../utils/other/temp.dart';
 import '../memories/mp_memory_page_client.dart';
+import '../mp_audio_record/mp_audio_record_page.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
@@ -422,6 +423,16 @@ class _MPPageContentState extends State<MPPageContent> {
       context: context,
       onImportAudio: () {
         _showImportAudioDialog(context);
+      },
+      onRecordAudio: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MPAudioRecordPage(onSave: (path) {
+              provider.addLocalRecord(path);
+            }),
+          ),
+        );
       },
     );
   }
