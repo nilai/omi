@@ -45,33 +45,18 @@ class MPMergeMemoryProvider extends ChangeNotifier {
     // 获取所有记忆，使用大的 pageSize 一次性获取
     // 如果数据量很大，可以改为循环请求直到 hasMore 为 false
     final List<MPMemoryStruct> allMemories = [];
-    String cursor = '';
-    bool hasMoreData = true;
 
-    while (hasMoreData) {
-      final req = MPGetMemoryListRequest(
-        pageSize: 100, // 每次获取100条
-        cursor: cursor,
-        date: '', // 传空字符串获取所有日期的记忆
-      );
-      final response = await getMemoryList(req);
-      if (response != null) {
-        allMemories.addAll(response.memorys);
-        hasMoreData = response.hasMore;
-        if (response.memorys.isNotEmpty) {
-          cursor = response.memorys.last.id;
-        } else {
-          hasMoreData = false;
-        }
-      } else {
-        hasMoreData = false;
-      }
+    final req = MPGetSummaryListRequest(
+      pageSize: 1000, // 每次获取100条
+      cursor: '',
+    );
+    final response = await getSummaryList(req);
+    if (response != null) {
+      allMemories.addAll(response.summarys);
     }
 
     // 过滤掉当前记忆
-    final filteredMemories = allMemories
-        .where((memory) => memory.id != currentMemoryId)
-        .toList();
+    final filteredMemories = allMemories.where((memory) => memory.id != currentMemoryId).toList();
     items = filteredMemories.map((memory) => memory.toMPMemoryItem()).toList();
     loading = false;
     notifyListeners();
@@ -102,4 +87,3 @@ class MPMergeMemoryProvider extends ChangeNotifier {
     return items.where((item) => selectedMemoryIds.contains(item.memory.id)).toList();
   }
 }
-
