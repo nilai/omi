@@ -109,6 +109,10 @@ class MPTimestampUtils {
     return dateTime.millisecondsSinceEpoch ~/ 1000;
   }
 
+  /// 秒级时间戳
+  /// 返回秒级时间戳
+  static get timestampNow => DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
   /// 将 DateTime 转换为毫秒级时间戳
   ///
   /// [dateTime] DateTime 对象

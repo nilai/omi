@@ -434,8 +434,8 @@ class _MPPageContentState extends State<MPPageContent> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => MPAudioRecordPage(onSave: (path) {
-              provider.addLocalRecord(path, source: 'Mobile Phone');
+            builder: (context) => MPAudioRecordPage(onSave: (model) {
+              provider.addLocalRecordModel(model);
             }),
           ),
         );
@@ -492,27 +492,6 @@ class _MPPageContentState extends State<MPPageContent> {
     );
   }
 
-  Future<void> _uploadAudioFile(BuildContext context, File? file) async {
-    // 保存 uri 到本地数据库或其他存储方式
-    if (file != null) {
-      final uri = await MPAudioUploadService().uploadMPAudio(file);
-      if (uri != null) {
-        // 保存 uri 到本地数据库或其他存储方式
-        final req = MPCreateRecordRequest(
-          recordFile: uri,
-          createAt: DateTime.now().millisecondsSinceEpoch,
-          duration: 0,
-        );
-        final res = await createRecord(req);
-        if (res != null) {
-          // 保存 res 到本地数据库或其他存储方式
-          // 刷新页面
-          final provider = context.read<MPHomePageProvider>();
-          await provider.refresh();
-        }
-      }
-    }
-  }
 
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
     final controller = TextEditingController(text: provider.recordCount.toString());

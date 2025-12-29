@@ -90,25 +90,10 @@ extension MPMemoryStructExtension on MPMemoryStruct {
   /// 将 MPMemoryStruct 转换为 MPMemoryItem
   /// @returns 转换后的 MPMemoryItem 对象
   MPMemoryItem toMPMemoryItem() {
-    final dateTime = MPTimestampUtils.timestampMsToDateTime(createAt);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
-    final difference = today.difference(date).inDays;
-
-    // 生成 dateText
-    String dateText;
-    if (difference == 0) {
-      dateText = '今天';
-    } else if (difference == 1) {
-      dateText = '昨天';
-    } else {
-      // 格式化为 MM-dd
-      dateText = DateFormat('MM-dd').format(dateTime);
-    }
+    final dateText = MPTimestampUtils.timestampToRelativeDateString(createAt);
 
     // 生成 timeText (yyyy-MM-dd HH:mm:ss)
-    final timeText = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    final timeText = MPTimestampUtils.timestampToDateTime(createAt).toString();
 
     // 生成 secondsText (从 duration 转换)
     final secondsText = duration > 0 ? '${duration}s' : null;
@@ -296,9 +281,16 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 本地记录
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
     // 通过path获取到filename
+
     final String name = fileName ?? path.split('/').last;
-    final int createAt = (DateTime.now().millisecondsSinceEpoch / 1000).toInt();
-    _localRecords = await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: createAt, fileName: name, source: source);
+    _localRecords =
+        await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: MPTimestampUtils.timestampNow, fileName: name, source: source);
+    _updateItems();
+  }
+
+  Future<void> addLocalRecordModel(MPLocalMemoryModel model) async {
+    _localRecords = await MPLocalRecordsUtil.instance.addLocalRecord(model.path,
+        duration: model.duration, createAt: model.createAt, fileName: model.fileName, source: model.source);
     _updateItems();
   }
 
@@ -351,7 +343,9 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
+      debugPrint('------hj------uploadLocalRecords1111 element: ${element.fileName}, isRemoved: ${element.isRemoved}');
       if (element.isRemoved) continue;
+      debugPrint('------hj------uploadLocalRecords222 element: ${element.fileName}, isRemoved: ${element.isRemoved}');
       final file = File(element.path);
       final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {

@@ -125,6 +125,7 @@ class MPLocalRecordsUtil {
       path: path,
       source: source,
       duration: duration,
+      isRemoved: false,
     );
     _localRecords.add(model);
     final prefs = await SharedPreferences.getInstance();
