@@ -6,15 +6,13 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
-import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
+import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../../utils/mp_user_profile_share.dart';
-import '../../memories/mp_memory_playback_page.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
-import '../../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../widgets/mp_delete_memory_dialog.dart';
 
 class MPMemoryItem {
@@ -52,6 +50,7 @@ class MPLocalMemoryModel {
     required this.path,
     this.isCreated = false,
     this.duration,
+    this.fileId = '',
   });
 
   final String fileName;
@@ -64,12 +63,16 @@ class MPLocalMemoryModel {
   /// 时长，单位是秒
   int? duration;
 
+  /// 上传文件时，后端返回的文件id
+  String fileId;
+
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
         fileName: json['fileName'],
         createAt: json['createAt'],
         path: json['path'],
         isCreated: json['isCreated'],
         duration: json['duration'],
+        fileId: json['fileId'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -78,6 +81,7 @@ class MPLocalMemoryModel {
         'path': path,
         'isCreated': isCreated,
         'duration': duration,
+        'fileId': fileId,
       };
 
   /// 将模型转为 json 字符串
@@ -279,7 +283,6 @@ class MPHomePageProvider extends ChangeNotifier {
   }
 
   void updateSDRecordCountAndIndex({required int value, required int index}) {
-    
     if (value <= 0 || index < 0 || index >= value) {
       sdRecordCount = 0;
       sdRecordIndex = 0;
