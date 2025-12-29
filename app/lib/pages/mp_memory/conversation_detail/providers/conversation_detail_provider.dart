@@ -228,6 +228,7 @@ class ConversationDetailProvider with ChangeNotifier {
 
         // 更新摘要
         _summary = response.memory.summaryContent?.summary;
+        _loadTranscriptData(response.memory);
         notifyListeners();
       } else {
         debugPrint('获取记忆详情失败: ${response?.baseResp.message ?? '未知错误'}');
@@ -240,9 +241,11 @@ class ConversationDetailProvider with ChangeNotifier {
 
   // AI-generated START - 加载转录数据
   void _loadTranscriptData(MPMemoryStruct memory) {
+    debugPrint('------hj------ _loadTranscriptData: ${memory.summaryContent?.toJson()}');
     // 从 summaryContent 中提取转录消息
-    if (memory.summaryContent != null && memory.summaryContent!.transcript.isNotEmpty) {
-      _transcripts = memory.summaryContent!.transcript.map((transcript) {
+    final list = memory.summaryContent?.transcript ?? [];
+    if (list.isNotEmpty) {
+      _transcripts = list.map((transcript) {
         // 将时间字符串转换为 DateTime（这里简化处理，实际可能需要更复杂的解析）
         final createdAt = MPTimestampUtils.timestampToDateTime(memory.createAt);
 
@@ -260,7 +263,23 @@ class ConversationDetailProvider with ChangeNotifier {
         );
       }).toList();
     } else {
-      _transcripts = [];
+      // 生成假数据
+      _transcripts = List.generate(8, (index) {
+        final isUser = index % 2 == 0;
+        return ConversationMessage(
+          id: 'demo_$index',
+          content: isUser
+              ? '这是一条用户消息示例 ${index + 1}'
+              : '这是AI的回复内容示例 ${index + 1}',
+          createdAt: DateTime.now().subtract(Duration(minutes: (8 - index) * 3)),
+          type: isUser ? MessageType.user : MessageType.ai,
+          duration: 15 + index,
+          senderName: isUser ? '用户$index' : 'AI助手',
+          avatarUrl: isUser
+              ? null
+              : 'https://cdn3.iconfinder.com/data/icons/artificial-intelligence-11/64/ArtificialIntelligence_Line-19-512.png',
+        );
+      });
     }
   }
   // AI-generated END - _loadTranscriptData

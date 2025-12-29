@@ -26,6 +26,7 @@ import '../../mp_chat/mp_chat.dart';
 import '../../mp_chat/mp_chat_helper.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_popup/mp_record_detail_more_popup.dart';
+import '../../mp_popup/speaker_naming_popup.dart';
 
 /// 对话详情页面
 /// 显示特定对话的详细消息记录
@@ -181,9 +182,31 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: '命名发言者',
                 icon: Icons.person_outline,
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('命名发言者')),
-                  );
+//                   struct RecordConversationStruct {
+//     1: string id,
+//     2: SpeakerStruct speaker,
+//     3: string content,
+//     4: string time,
+// }
+
+// struct SummaryMemoryStruct {
+//     1: list<SpeakerStruct> participants,
+//     2: i32: participants_cnt,
+//     2: string record_url, // 录音地址
+//     3: string summary, // markdown格式
+//     4: list<RecordConversationStruct> transcript,
+//     5: list<TodoStruct> todos,
+//     6: i32: status,
+// }
+                  // SpeakerNamingPopup.show(context: context, items: provider.participants, onNameChanged: (id, name) {
+                  //   provider.updateParticipantName(id, name);
+                  // }, onConfirm: (names) {
+                  //   provider.updateParticipantNames(names);
+                  // }, onCancel: () {
+                  //   Navigator.of(context).pop();
+                  // });
+
+                  
                 },
               ),
               ActionButton(
