@@ -22,6 +22,7 @@ import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import 'mp_chat_helper.dart';
 import 'widgets/mp_chat_appbar.dart';
 import 'widgets/mp_chat_memory_card.dart';
+import 'widgets/mp_chat_question_list_widget.dart';
 import 'widgets/mp_chat_suggestion_cards.dart';
 
 class MPChatPage extends StatefulWidget {
@@ -300,9 +301,46 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   /// 普通聊天类型的空消息Widget
   Widget _buildNormalNoMessagesWidget() {
+    List<Widget> buildQuestionWidget(MPMessageProvider provider) {
+      if (provider.questionType == MPChatQuestionType.grid) {
+        return [
+          MPChatSuggestionCards(
+            questions: provider.questions,
+            onQuestionTap: (question) {
+              final list = MPQuickQuestionUtil().getQuestionsByKey(question);
+              if (list.isEmpty) {
+                _sendMessageUtil(question);
+              } else {
+                provider.setQuestions(list);
+                provider.setLeadingType(MPChatBarLeadingType.cancel);
+                provider.setQuestionType(MPChatQuestionType.list);
+              }
+            },
+          ),
+          const Spacer()
+        ];
+      }
+      return [
+        Expanded(
+          child: MPChatQuestionListWidget(
+            questions: provider.questions,
+            onQuestionTap: (question) {
+              final list = MPQuickQuestionUtil().getQuestionsByKey(question);
+              if (list.isEmpty) {
+                _sendMessageUtil(question);
+              } else {
+                provider.setQuestions(list);
+                provider.setLeadingType(MPChatBarLeadingType.cancel);
+                provider.setQuestionType(MPChatQuestionType.list);
+              }
+            },
+          ),
+        ),
+      ];
+    }
+
     return Consumer<MPMessageProvider>(
       builder: (context, mpProvider, child) {
-        final questions = mpProvider.questions;
         return Column(
           children: [
             const SizedBox(
@@ -316,19 +354,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             const SizedBox(
               height: 24,
             ),
-            MPChatSuggestionCards(
-              questions: questions,
-              onQuestionTap: (question) {
-                final list = MPQuickQuestionUtil().getQuestionsByKey(question);
-                if (list.isEmpty) {
-                  _sendMessageUtil(question);
-                } else {
-                  mpProvider.setQuestions(list);
-                  mpProvider.setLeadingType(MPChatBarLeadingType.cancel);
-                }
-              },
-            ),
-            const Spacer(),
+            ...buildQuestionWidget(mpProvider),
             const Text(
               'Ask about anything you\'ve said or heard',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),

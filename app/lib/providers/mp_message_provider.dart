@@ -30,6 +30,12 @@ enum MPChatPageType {
   speaker,
 }
 
+/// 快速问题类型， 布局用
+enum MPChatQuestionType {
+  list,
+  grid,
+}
+
 class MPMessagePageModel {
   /// 聊天ID
   String chatId;
@@ -86,6 +92,16 @@ class MPMessageProvider extends ChangeNotifier {
   /// 根据当前页面类型获取快速问题列表
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
+
+  /// 快速问题类型
+  /// 默认使用网格布局
+  MPChatQuestionType questionType = MPChatQuestionType.list;
+
+  /// 设置快速问题类型
+  void setQuestionType(MPChatQuestionType questionType) {
+    this.questionType = questionType;
+    notifyListeners();
+  }
 
   /// 设置聊天栏左侧图标类型
   void setLeadingType(MPChatBarLeadingType leadingType) {
@@ -156,7 +172,9 @@ class MPMessageProvider extends ChangeNotifier {
           .toList();
       curPageModel?.title = response.title;
       curPageModel?.showCustomCard = true;
-      final list = await MPQuickQuestionUtil().getQuestionsByChatType(MPChatPageType.normal);
+      final type = curPageModel?.type ?? MPChatPageType.normal;
+      final list = await MPQuickQuestionUtil().getQuestionsByChatType(type);
+      questionType = type == MPChatPageType.normal ? MPChatQuestionType.grid : MPChatQuestionType.list;
       curPageModel?.questions = list;
     }
     notifyListeners();
@@ -190,6 +208,7 @@ class MPMessageProvider extends ChangeNotifier {
       model.showCustomCard = type != MPChatPageType.normal ? true : false;
       final list = await MPQuickQuestionUtil().getQuestionsByChatType(type);
       model.questions = list;
+      questionType = type == MPChatPageType.normal ? MPChatQuestionType.grid : MPChatQuestionType.list;
       pageModels.add(model);
       curPageModel = model;
     }
@@ -310,6 +329,7 @@ class MPMessageProvider extends ChangeNotifier {
   void resetPageInfo() {
     debugPrint('-----hj----- resetPageInfo');
     leadingType = MPChatBarLeadingType.battery;
+    questionType = MPChatQuestionType.list;
     curPageModel = null;
     notifyListeners();
   }

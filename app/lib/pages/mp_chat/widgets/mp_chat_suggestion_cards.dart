@@ -34,30 +34,7 @@ class MPChatSuggestionCards extends StatelessWidget {
 
     // 如果没有问题列表，使用旧的逻辑（向后兼容）
     if (questions.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: Row(
-          children: [
-            Expanded(
-              child: _buildCard(
-                context: context,
-                icon: FontAwesomeIcons.lightbulb,
-                text: '今天我应该怎么做？',
-                onTap: onTodayTap,
-              ),
-            ),
-            const SizedBox(width: spacing),
-            Expanded(
-              child: _buildCard(
-                context: context,
-                icon: FontAwesomeIcons.circleQuestion,
-                text: '我昨天做了什么？',
-                onTap: onYesterdayTap,
-              ),
-            ),
-          ],
-        ),
-      );
+      return const SizedBox.shrink();
     }
 
     // 图标列表
