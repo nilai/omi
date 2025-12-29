@@ -28,96 +28,124 @@ class MPChatSuggestionCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const cardWidth = 160.0;
-    const cardHeight = 80.0;
     const spacing = 12.0;
     const horizontalPadding = 16.0;
+    const verticalSpacing = 12.0;
 
     // 如果没有问题列表，使用旧的逻辑（向后兼容）
     if (questions.isEmpty) {
-      return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
+      return Padding(
         padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
         child: Row(
           children: [
-            _buildCard(
-              context: context,
-              icon: FontAwesomeIcons.lightbulb,
-              text: '今天我应该怎么做？',
-              color: const Color(0xFFFFE066), // 黄色
-              iconColor: const Color(0xFFFFA500), // 橙黄色
-              textColor: const Color(0xFFFFA500), // 橙黄色
-              onTap: onTodayTap,
-              width: cardWidth,
-              height: cardHeight,
+            Expanded(
+              child: _buildCard(
+                context: context,
+                icon: FontAwesomeIcons.lightbulb,
+                text: '今天我应该怎么做？',
+                onTap: onTodayTap,
+              ),
             ),
             const SizedBox(width: spacing),
-            _buildCard(
-              context: context,
-              icon: FontAwesomeIcons.circleQuestion,
-              text: '我昨天做了什么？',
-              color: const Color(0xFF66B3FF), // 蓝色
-              iconColor: const Color(0xFF0066CC), // 深蓝色
-              textColor: const Color(0xFF0066CC), // 深蓝色
-              onTap: onYesterdayTap,
-              width: cardWidth,
-              height: cardHeight,
+            Expanded(
+              child: _buildCard(
+                context: context,
+                icon: FontAwesomeIcons.circleQuestion,
+                text: '我昨天做了什么？',
+                onTap: onYesterdayTap,
+              ),
             ),
           ],
         ),
       );
     }
 
-    // 根据问题列表动态生成卡片
-    final cardColors = [
-      const Color(0xFFFFE066), // 黄色
-      const Color(0xFF66B3FF), // 蓝色
-      const Color(0xFF66FF99), // 绿色
-      const Color(0xFFFF99CC), // 粉色
-    ];
-
-    final iconColors = [
-      const Color(0xFFFFA500), // 橙黄色
-      const Color(0xFF0066CC), // 深蓝色
-      const Color(0xFF00CC66), // 深绿色
-      const Color(0xFFFF66CC), // 深粉色
-    ];
-
+    // 图标列表
     final icons = [
+      FontAwesomeIcons.magnifyingGlass,
       FontAwesomeIcons.lightbulb,
-      FontAwesomeIcons.circleQuestion,
       FontAwesomeIcons.star,
-      FontAwesomeIcons.heart,
+      FontAwesomeIcons.list,
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    // 限制最多显示4个（2行x2列）
+    final displayQuestions = questions.take(4).toList();
+
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: horizontalPadding),
-      child: Row(
-        children: questions.asMap().entries.map((entry) {
-          final index = entry.key;
-          final question = entry.value;
-          return Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 第一行
+          Row(
             children: [
-              _buildCard(
-                context: context,
-                icon: icons[index % icons.length],
-                text: question,
-                color: cardColors[index % cardColors.length],
-                iconColor: iconColors[index % iconColors.length],
-                textColor: iconColors[index % iconColors.length],
-                onTap: () {
-                  if (onQuestionTap != null) {
-                    onQuestionTap!(question);
-                  }
-                },
-                width: cardWidth,
-                height: cardHeight,
+              Expanded(
+                child: _buildCard(
+                  context: context,
+                  icon: icons[0 % icons.length],
+                  text: displayQuestions.isNotEmpty ? displayQuestions[0] : '',
+                  onTap: displayQuestions.isNotEmpty
+                      ? () {
+                          if (onQuestionTap != null) {
+                            onQuestionTap!(displayQuestions[0]);
+                          }
+                        }
+                      : null,
+                ),
               ),
-              if (index < questions.length - 1) const SizedBox(width: spacing),
+              if (displayQuestions.length > 1) ...[
+                const SizedBox(width: spacing),
+                Expanded(
+                  child: _buildCard(
+                    context: context,
+                    icon: icons[1 % icons.length],
+                    text: displayQuestions[1],
+                    onTap: () {
+                      if (onQuestionTap != null) {
+                        onQuestionTap!(displayQuestions[1]);
+                      }
+                    },
+                  ),
+                ),
+              ],
             ],
-          );
-        }).toList(),
+          ),
+          // 第二行（如果存在）
+          if (displayQuestions.length > 2) ...[
+            const SizedBox(height: verticalSpacing),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCard(
+                    context: context,
+                    icon: icons[2 % icons.length],
+                    text: displayQuestions[2],
+                    onTap: () {
+                      if (onQuestionTap != null) {
+                        onQuestionTap!(displayQuestions[2]);
+                      }
+                    },
+                  ),
+                ),
+                if (displayQuestions.length > 3) ...[
+                  const SizedBox(width: spacing),
+                  Expanded(
+                    child: _buildCard(
+                      context: context,
+                      icon: icons[3 % icons.length],
+                      text: displayQuestions[3],
+                      onTap: () {
+                        if (onQuestionTap != null) {
+                          onQuestionTap!(displayQuestions[3]);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -127,20 +155,25 @@ class MPChatSuggestionCards extends StatelessWidget {
     required BuildContext context,
     required IconData icon,
     required String text,
-    required Color color,
-    required Color iconColor,
-    required Color textColor,
-    required VoidCallback? onTap,
-    required double width,
-    required double height,
+    VoidCallback? onTap,
   }) {
+    // 统一的背景色（浅灰色）
+    const backgroundColor = Color(0xFFF5F5F5);
+    // 统一的文字颜色
+    const textColor = Color(0xFF333333);
+    // 统一的图标颜色
+    const iconColor = Color(0xFF666666);
+    // 统一的字号
+    const fontSize = 14.0;
+    // 统一的卡片高度
+    const cardHeight = 60.0;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: width,
-        height: height,
+        height: cardHeight,
         decoration: BoxDecoration(
-          color: color,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(16.0),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
@@ -149,18 +182,18 @@ class MPChatSuggestionCards extends StatelessWidget {
             FaIcon(
               icon,
               color: iconColor,
-              size: 24.0,
+              size: 16.0,
             ),
             const SizedBox(width: 8.0),
             Expanded(
               child: Text(
                 text,
-                style: TextStyle(
+                style: const TextStyle(
                   color: textColor,
-                  fontSize: 14.0,
+                  fontSize: fontSize,
                   fontWeight: FontWeight.w600,
                 ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ),

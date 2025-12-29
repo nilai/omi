@@ -462,7 +462,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
         final questionList = mpProvider.questions;
         print(
             '-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${mpProvider.curPageModel?.type}');
-        if (questionList.isEmpty) {
+        if (questionList.isEmpty || mpProvider.curPageModel?.type == MPChatPageType.normal) {
           return const SizedBox.shrink();
         }
         return Container(
