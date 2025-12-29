@@ -51,20 +51,29 @@ class MPLocalMemoryModel {
     this.isCreated = false,
     this.duration,
     this.fileId = '',
+    this.source = '',
   });
 
+  /// 文件名
   final String fileName;
+
+  /// 创建时间
   final int createAt;
+
+  /// 本地文件路径
   final String path;
 
   /// 是否已创建
   bool isCreated;
 
-  /// 时长，单位是秒
+  /// sdcards记录，中间时间
   int? duration;
 
   /// 上传文件时，后端返回的文件id
   String fileId;
+
+  /// 文件来源(mobile phone or mp)
+  String source;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
         fileName: json['fileName'],
@@ -73,6 +82,7 @@ class MPLocalMemoryModel {
         isCreated: json['isCreated'],
         duration: json['duration'],
         fileId: json['fileId'],
+        source: json['source'],
       );
 
   Map<String, dynamic> toJson() => {
@@ -82,6 +92,7 @@ class MPLocalMemoryModel {
         'isCreated': isCreated,
         'duration': duration,
         'fileId': fileId,
+        'source': source,
       };
 
   /// 将模型转为 json 字符串
