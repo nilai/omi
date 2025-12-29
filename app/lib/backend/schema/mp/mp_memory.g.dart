@@ -289,6 +289,20 @@ Map<String, dynamic> _$MPShareMemoryResponseToJson(
       'base_resp': instance.baseResp,
     };
 
+MPUpdateMemoryNameRequest _$MPUpdateMemoryNameRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateMemoryNameRequest(
+      memoryId: json['memory_id'] as String,
+      title: json['title'] as String,
+    );
+
+Map<String, dynamic> _$MPUpdateMemoryNameRequestToJson(
+        MPUpdateMemoryNameRequest instance) =>
+    <String, dynamic>{
+      'memory_id': instance.memoryId,
+      'title': instance.title,
+    };
+
 MPDeleteMemoryResponse _$MPDeleteMemoryResponseFromJson(
         Map<String, dynamic> json) =>
     MPDeleteMemoryResponse(
@@ -297,6 +311,18 @@ MPDeleteMemoryResponse _$MPDeleteMemoryResponseFromJson(
 
 Map<String, dynamic> _$MPDeleteMemoryResponseToJson(
         MPDeleteMemoryResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPUpdateMemoryNameResponse _$MPUpdateMemoryNameResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPUpdateMemoryNameResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPUpdateMemoryNameResponseToJson(
+        MPUpdateMemoryNameResponse instance) =>
     <String, dynamic>{
       'base_resp': instance.baseResp,
     };

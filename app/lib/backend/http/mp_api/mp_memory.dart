@@ -196,3 +196,19 @@ Future<MPSearchMemoryResponse?> searchMemory(MPSearchMemoryRequest req) async {
   }
   return null;
 }
+
+// POST /api/v1/memory/update_name
+Future<MPUpdateMemoryNameResponse?> updateMemoryName(MPUpdateMemoryNameRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/update_name',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('updateMemoryName response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPUpdateMemoryNameResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

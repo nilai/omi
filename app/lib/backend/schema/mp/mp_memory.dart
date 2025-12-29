@@ -392,6 +392,25 @@ class MPShareMemoryResponse {
   Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
 }
 
+// Update Memory Name Request
+@JsonSerializable()
+class MPUpdateMemoryNameRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  MPUpdateMemoryNameRequest({
+    required this.memoryId,
+    required this.title,
+  });
+
+  factory MPUpdateMemoryNameRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoryNameRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoryNameRequestToJson(this);
+}
+
 // Delete Memory Response
 @JsonSerializable()
 class MPDeleteMemoryResponse {
@@ -405,6 +424,21 @@ class MPDeleteMemoryResponse {
   factory MPDeleteMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoryResponseToJson(this);
+}
+
+// Update Memory Name Response
+@JsonSerializable()
+class MPUpdateMemoryNameResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPUpdateMemoryNameResponse({
+    required this.baseResp,
+  });
+
+  factory MPUpdateMemoryNameResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoryNameResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPUpdateMemoryNameResponseToJson(this);
 }
 
 // Get Popular Search Keywords Response

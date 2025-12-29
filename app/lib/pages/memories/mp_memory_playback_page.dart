@@ -15,6 +15,7 @@ import '../mp_custom_utils/mp_toast_utils.dart';
 import '../mp_popup/mp_record_detail_more_popup.dart';
 import 'mp_memory_transition_page.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
+import 'widgets/mp_memory_update_name_dialog.dart';
 
 /// 记忆详情播放页
 /// - 顶部与底部固定
@@ -450,6 +451,16 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       if (value != null) {
         switch (value) {
           case MPRecordDetailMoreAction.renameMemory:
+            MPMemoryUpdateNameDialog.show(
+              context: context,
+              memoryId: widget.memory.id,
+              currentTitle: widget.memory.title,
+            ).then((success) {
+              if (success == true && mounted) {
+                // 刷新页面数据
+                MPHomeRefreshEventService().emitRefresh();
+              }
+            });
             break;
           case MPRecordDetailMoreAction.export:
             MPToastUtils.showFeatureComingSoon();
