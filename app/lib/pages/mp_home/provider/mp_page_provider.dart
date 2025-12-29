@@ -489,13 +489,17 @@ class MPHomePageProvider extends ChangeNotifier {
       },
       onConfirm: () async {
         // 执行删除操作
-        final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
-        final response = await deleteMemory(req);
-        if (response != null) {
-          if (response.baseResp.code == 0) {
-            refresh();
-          } else {
-            MPToastUtils.showMessage(response.baseResp.message);
+        if (item.isUploading == true) {
+          removeLocalRecord(item.localPath ?? '', fildId: '');
+        } else {
+          final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
+          final response = await deleteMemory(req);
+          if (response != null) {
+            if (response.baseResp.code == 0) {
+              refresh();
+            } else {
+              MPToastUtils.showMessage(response.baseResp.message);
+            }
           }
         }
       },
