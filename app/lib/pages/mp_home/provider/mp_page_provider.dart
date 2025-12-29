@@ -10,6 +10,7 @@ import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../../utils/audio/mp_record_audio_util.dart';
 import '../../../utils/mp_user_profile_share.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -371,10 +372,11 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 删除本地记录
   /// @param item 本地记录
-  Future<void> removeLocalRecord(String path) async {
+  Future<void> removeLocalRecord(String path, {required String fildId}) async {
     for (var element in _localRecords) {
       if (element.path == path) {
         element.isRemoved = true;
+        element.fileId = fildId;
         break;
       }
     }
@@ -452,14 +454,14 @@ class MPHomePageProvider extends ChangeNotifier {
             );
             final summaryRes = await summaryRecord(summaryReq);
             if (summaryRes != null) {
-              await removeLocalRecord(element.path);
+              await removeLocalRecord(element.path, fildId: MPRecordAudioUtil.getFileId(uri));
               refresh();
             }
           }
         } else {
           final res = await createRecord(req);
           if (res != null) {
-            await removeLocalRecord(element.path);
+            await removeLocalRecord(element.path, fildId: MPRecordAudioUtil.getFileId(uri));
             refresh();
           }
         }

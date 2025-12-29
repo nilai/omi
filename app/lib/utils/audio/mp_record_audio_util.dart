@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
-import 'package:provider/provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/services/devices/note_connection.dart';
 import 'package:omi/services/services.dart';
+import 'package:provider/provider.dart';
 
 /// 录音工具类
 ///
@@ -123,5 +123,10 @@ class MPRecordAudioUtil {
   /// 显示Toast
   void _toast(String message) {
     MPToastUtils.showMessage(message);
+  }
+
+  ///
+  static String getFileId(String uri) {
+    return uri.split('/').last;
   }
 }
