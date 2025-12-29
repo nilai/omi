@@ -36,7 +36,6 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
       value: _provider,
       child: Scaffold(
         backgroundColor: Colors.white,
-        appBar: _buildAppBar(context),
         body: SafeArea(
           child: Consumer<MPAudioRecordProvider>(
             builder: (context, provider, _) {
@@ -66,22 +65,10 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
     );
   }
 
-  /// 构建AppBar
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Color(0xFF111111)),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-    );
-  }
-
   /// 构建标题区域
   Widget _buildTitleSection(BuildContext context, MPAudioRecordProvider provider) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -212,21 +199,18 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
         }
       },
       child: Container(
-        width: 72,
-        height: 72,
-        decoration: BoxDecoration(
-          gradient: isRecording || isPaused
-              ? const LinearGradient(
-                  colors: [Color(0xFF9C27B0), Color(0xFF2196F3)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isRecording || isPaused ? null : const Color(0xFFE53935),
+        width: 56,
+        height: 56,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF9C27B0), Color(0xFF2196F3)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           shape: BoxShape.circle,
         ),
         child: Icon(
-          isRecording ? Icons.pause : Icons.fiber_manual_record,
+          isRecording ? Icons.pause : Icons.play_arrow,
           color: Colors.white,
           size: 32,
         ),
@@ -286,8 +270,15 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
             TextField(
               controller: controller,
               autofocus: true,
+              style: const TextStyle(
+                color: Color(0xFF111111),
+                fontSize: 16,
+              ),
               decoration: InputDecoration(
                 hintText: '请输入录音名称',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF999999),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
