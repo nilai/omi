@@ -298,7 +298,7 @@ class MPHomePageProvider extends ChangeNotifier {
     // 通过path获取到filename
     final String name = fileName ?? path.split('/').last;
     final int createAt = (DateTime.now().millisecondsSinceEpoch / 1000).toInt();
-    await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: createAt, fileName: name, source: source);
+    _localRecords = await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: createAt, fileName: name, source: source);
     _updateItems();
   }
 
