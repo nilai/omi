@@ -303,6 +303,34 @@ Map<String, dynamic> _$MPUpdateMemoryNameRequestToJson(
       'title': instance.title,
     };
 
+MPRenameMemoryRequest _$MPRenameMemoryRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPRenameMemoryRequest(
+      memoryId: json['memory_id'] as String,
+      title: json['title'] as String,
+    );
+
+Map<String, dynamic> _$MPRenameMemoryRequestToJson(
+        MPRenameMemoryRequest instance) =>
+    <String, dynamic>{
+      'memory_id': instance.memoryId,
+      'title': instance.title,
+    };
+
+MPMemoryAddTagRequest _$MPMemoryAddTagRequestFromJson(
+        Map<String, dynamic> json) =>
+    MPMemoryAddTagRequest(
+      memoryId: json['memory_id'] as String,
+      label: json['label'] as String,
+    );
+
+Map<String, dynamic> _$MPMemoryAddTagRequestToJson(
+        MPMemoryAddTagRequest instance) =>
+    <String, dynamic>{
+      'memory_id': instance.memoryId,
+      'label': instance.label,
+    };
+
 MPDeleteMemoryResponse _$MPDeleteMemoryResponseFromJson(
         Map<String, dynamic> json) =>
     MPDeleteMemoryResponse(
@@ -323,6 +351,30 @@ MPUpdateMemoryNameResponse _$MPUpdateMemoryNameResponseFromJson(
 
 Map<String, dynamic> _$MPUpdateMemoryNameResponseToJson(
         MPUpdateMemoryNameResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPRenameMemoryResponse _$MPRenameMemoryResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPRenameMemoryResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPRenameMemoryResponseToJson(
+        MPRenameMemoryResponse instance) =>
+    <String, dynamic>{
+      'base_resp': instance.baseResp,
+    };
+
+MPMemoryAddTagResponse _$MPMemoryAddTagResponseFromJson(
+        Map<String, dynamic> json) =>
+    MPMemoryAddTagResponse(
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$MPMemoryAddTagResponseToJson(
+        MPMemoryAddTagResponse instance) =>
     <String, dynamic>{
       'base_resp': instance.baseResp,
     };

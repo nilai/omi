@@ -411,6 +411,44 @@ class MPUpdateMemoryNameRequest {
   Map<String, dynamic> toJson() => _$MPUpdateMemoryNameRequestToJson(this);
 }
 
+// Rename Memory Request
+@JsonSerializable()
+class MPRenameMemoryRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  MPRenameMemoryRequest({
+    required this.memoryId,
+    required this.title,
+  });
+
+  factory MPRenameMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPRenameMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRenameMemoryRequestToJson(this);
+}
+
+// Memory Add Tag Request
+@JsonSerializable()
+class MPMemoryAddTagRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'label')
+  final String label;
+
+  MPMemoryAddTagRequest({
+    required this.memoryId,
+    required this.label,
+  });
+
+  factory MPMemoryAddTagRequest.fromJson(Map<String, dynamic> json) => _$MPMemoryAddTagRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemoryAddTagRequestToJson(this);
+}
+
 // Delete Memory Response
 @JsonSerializable()
 class MPDeleteMemoryResponse {
@@ -439,6 +477,36 @@ class MPUpdateMemoryNameResponse {
   factory MPUpdateMemoryNameResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateMemoryNameResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPUpdateMemoryNameResponseToJson(this);
+}
+
+// Rename Memory Response
+@JsonSerializable()
+class MPRenameMemoryResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPRenameMemoryResponse({
+    required this.baseResp,
+  });
+
+  factory MPRenameMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPRenameMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRenameMemoryResponseToJson(this);
+}
+
+// Memory Add Tag Response
+@JsonSerializable()
+class MPMemoryAddTagResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPMemoryAddTagResponse({
+    required this.baseResp,
+  });
+
+  factory MPMemoryAddTagResponse.fromJson(Map<String, dynamic> json) => _$MPMemoryAddTagResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemoryAddTagResponseToJson(this);
 }
 
 // Get Popular Search Keywords Response

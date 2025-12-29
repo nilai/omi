@@ -212,3 +212,35 @@ Future<MPUpdateMemoryNameResponse?> updateMemoryName(MPUpdateMemoryNameRequest r
   }
   return null;
 }
+
+// POST /api/v1/memory/rename
+Future<MPRenameMemoryResponse?> renameMemory(MPRenameMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/rename',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('renameMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPRenameMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/memory/add_tag
+Future<MPMemoryAddTagResponse?> memoryAddTag(MPMemoryAddTagRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/add_tag',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('memoryAddTag response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPMemoryAddTagResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
