@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../gen/assets.gen.dart';
+import '../../../providers/mp_message_provider.dart';
+import '../../home/widgets/mp_battery_info_widget.dart';
 
 /// 设置页面顶部导航栏
 /// 包含左侧图标、中间空白区域和右侧设置/用户图标
@@ -13,11 +15,16 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onMenuTap;
   // AI-generated END - onMenuTap
 
+  final String? title;
+
+  final MPChatBarLeadingType leadingType;
 
   const MPChatAppBar({
     super.key,
     this.onLeftIconTap,
     this.onMenuTap,
+    this.title,
+    this.leadingType = MPChatBarLeadingType.battery,
   });
 
   @override
@@ -32,31 +39,49 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             // AI-generated START - 左侧：相机图标
             GestureDetector(
               onTap: onLeftIconTap,
-              child: Assets.images.settingCamera.image(
+              child: _buildLeading(),
+            ),
+            // AI-generated END - 左侧：相机图标
+
+            // AI-generated START - 中间：空白区域
+            _buildTitle(),
+            // AI-generated END - 中间：空白区域
+
+            // 设置图标
+            GestureDetector(
+              onTap: onMenuTap,
+              child: Assets.images.mpAiChatMenu.image(
                 width: 32.0,
                 height: 32.0,
                 fit: BoxFit.contain,
               ),
             ),
-            // AI-generated END - 左侧：相机图标
-
-            // AI-generated START - 中间：空白区域
-            const Spacer(),
-            // AI-generated END - 中间：空白区域
-
-            // 设置图标
-                GestureDetector(
-                  onTap: onMenuTap,
-                  child: Assets.images.mpAiChatMenu.image(
-                    width: 32.0,
-                    height: 32.0,
-                    fit: BoxFit.contain,
-                  ),
-                ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildLeading() {
+    if (leadingType == MPChatBarLeadingType.battery) {
+      return const MPBatteryInfoWidget();
+    }
+    return const SizedBox.shrink();
+  }
+
+  Widget _buildTitle() {
+    if (title != null) {
+      return Expanded(
+          child: Text(
+        title!,
+        style: TextStyle(
+          color: Colors.grey.shade800,
+          fontSize: 18.0,
+          fontWeight: FontWeight.w500,
+        ),
+      ));
+    }
+    return const Spacer();
   }
 
   @override

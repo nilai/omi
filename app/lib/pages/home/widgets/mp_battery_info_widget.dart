@@ -3,6 +3,8 @@ import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../onboarding/find_device/mp_page.dart';
+
 /// 电池状态图标 Widget
 /// 根据设备连接状态和电量显示不同的图标
 class MPBatteryInfoWidget extends StatelessWidget {
@@ -54,6 +56,20 @@ class MPBatteryInfoWidget extends StatelessWidget {
           fit: BoxFit.contain,
         );
       },
+    );
+  }
+
+  static void pushToFindDevicesPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MPFindDevicesPage(
+          isFromOnboarding: false,
+          goNext: () {},
+          onSkip: () {},
+          includeSkip: false,
+        ),
+      ),
     );
   }
 }

@@ -17,6 +17,7 @@ import 'package:provider/provider.dart';
 
 import '../../backend/schema/conversation.dart';
 import '../chat/widgets/ai_message.dart';
+import '../home/widgets/mp_battery_info_widget.dart';
 import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import 'mp_chat_helper.dart';
 import 'widgets/mp_chat_appbar.dart';
@@ -36,11 +37,15 @@ class MPChatPage extends StatefulWidget {
   /// 聊天标题
   final String title;
 
+  /// 聊天栏左侧图标类型
+  final MPChatBarLeadingType leadingType;
+
   MPChatPage({
     Key? key,
     this.type = MPChatPageType.normal,
     this.chatId = '',
     this.title = '',
+    this.leadingType = MPChatBarLeadingType.battery,
   }) : super(key: key ?? globalKey);
 
   /// 获取当前MPChatPageState实例
@@ -194,7 +199,11 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           key: scaffoldKey,
           backgroundColor: Colors.white,
           appBar: MPChatAppBar(
-            onLeftIconTap: () => (),
+            title: widget.title,
+            leadingType: widget.leadingType,
+            onLeftIconTap: () {
+              _onLeftIconTap();
+            },
             onMenuTap: () => _showMenuListPage(context),
           ),
           body: GestureDetector(
@@ -214,6 +223,15 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
             ),
           ),
         ));
+  }
+
+  void _onLeftIconTap() {
+    if (widget.leadingType == MPChatBarLeadingType.cancel) {
+      provider.setLeadingType(MPChatBarLeadingType.battery);
+      provider.setQuestions([]);
+      return;
+    }
+    MPBatteryInfoWidget.pushToFindDevicesPage(context);
   }
 
   // 消息列表

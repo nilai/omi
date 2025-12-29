@@ -304,16 +304,7 @@ class _MPPageContentState extends State<MPPageContent> {
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => MPFindDevicesPage(
-                          isFromOnboarding: false,
-                          goNext: () {},
-                          onSkip: () {},
-                          includeSkip: false,
-                        )),
-              );
+              MPBatteryInfoWidget.pushToFindDevicesPage(context);
             },
             // child: Assets.images.settingCamera.image(
             //   width: 32.0,

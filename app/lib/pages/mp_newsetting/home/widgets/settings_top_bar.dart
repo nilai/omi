@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:omi/gen/assets.gen.dart';
 
+import '../../../home/widgets/mp_battery_info_widget.dart';
+
 /// 设置页面顶部导航栏
 /// 包含左侧图标、中间空白区域和右侧设置/用户图标
 class SettingsTopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -36,11 +38,7 @@ class SettingsTopBar extends StatelessWidget implements PreferredSizeWidget {
             // AI-generated START - 左侧：相机图标
             GestureDetector(
               onTap: onLeftIconTap,
-              child: Assets.images.settingCamera.image(
-                width: 32.0,
-                height: 32.0,
-                fit: BoxFit.contain,
-              ),
+              child: const MPBatteryInfoWidget(),
             ),
             // AI-generated END - 左侧：相机图标
 

@@ -1,5 +1,6 @@
 // AI-generated START - Memo/Todo 主页面
 import 'package:flutter/material.dart';
+import 'package:omi/pages/home/widgets/mp_battery_info_widget.dart';
 import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_memo_todo/home/widgets/memo_todo_switch_card.dart';
 import 'package:omi/pages/mp_memo_todo/memo/memo_page.dart';
@@ -126,6 +127,12 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
     return Scaffold(
       backgroundColor: MPConstUtils.backgroundColorGrey,
       appBar: MPCommonAppBar(
+        customLeading: GestureDetector(
+          onTap: () {
+            MPBatteryInfoWidget.pushToFindDevicesPage(context);
+          },
+          child: const MPBatteryInfoWidget(),
+        ),
         title: widget.title,
         showBackButton: false,
       ),

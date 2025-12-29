@@ -102,6 +102,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
           appBar: SettingsTopBar(
             onLeftIconTap: () {
               // 处理左侧图标点击
+              // MPBatteryInfoWidget.pushToFindDevicesPage(context);
               Navigator.of(context).push(MaterialPageRoute(
                 builder: (context) => const NoteBleDebugPage(),
               ));

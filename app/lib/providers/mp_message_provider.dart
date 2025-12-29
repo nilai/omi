@@ -11,6 +11,11 @@ import '../backend/http/mp_api/mp_chat.dart';
 import '../backend/schema/mp/mp_chat.dart';
 import '../pages/mp_chat/mp_chat_quick_question_util.dart';
 
+enum MPChatBarLeadingType {
+  battery,
+  cancel,
+}
+
 // 聊天页面类型。不同类型调用url接口入参不同。
 enum MPChatPageType {
   // 普通聊天
@@ -61,6 +66,9 @@ class MPMessagePageModel {
 /// MP消息提供者，负责管理聊天消息的发送、接收功能
 /// 继承自 ChangeNotifier，用于状态管理和 UI 更新通知
 class MPMessageProvider extends ChangeNotifier {
+  /// 聊天栏左侧图标类型
+  MPChatBarLeadingType leadingType = MPChatBarLeadingType.battery;
+
   /// 初始化页面信息
   MPMessageProvider();
 
@@ -84,6 +92,12 @@ class MPMessageProvider extends ChangeNotifier {
   /// 根据当前页面类型获取快速问题列表
   /// @returns {List<String>} 问题列表
   List<String> get questions => curPageModel?.questions ?? [];
+
+  /// 设置聊天栏左侧图标类型
+  void setLeadingType(MPChatBarLeadingType leadingType) {
+    this.leadingType = leadingType;
+    notifyListeners();
+  }
 
   void setQuestions(List<String> questions) {
     curPageModel?.questions = questions;
@@ -321,6 +335,7 @@ class MPMessageProvider extends ChangeNotifier {
   /// 重置页面信息，恢复初始化状态
   void resetPageInfo() {
     debugPrint('-----hj----- resetPageInfo');
+    leadingType = MPChatBarLeadingType.battery;
     curPageModel = null;
     notifyListeners();
   }

@@ -10,6 +10,9 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   /// 是否显示返回按钮，默认为 true
   final bool showBackButton;
 
+  /// 自定义左侧图标
+  final Widget? customLeading;
+
   /// 返回按钮点击回调，如果为 null 则使用默认的 Navigator.pop()
   final VoidCallback? onBackPressed;
 
@@ -50,6 +53,7 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.titleColor,
     this.iconColor,
+    this.customLeading,
   });
 
   @override
@@ -57,18 +61,7 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       backgroundColor: backgroundColor ?? Colors.white,
       elevation: 0,
-      leading: showBackButton
-          ? IconButton(
-              icon: Icon(
-                Icons.arrow_back,
-                color: iconColor ?? Colors.grey.shade800,
-              ),
-              onPressed: onBackPressed ??
-                  () {
-                    Navigator.of(context).pop();
-                  },
-            )
-          : null,
+      leading: _buildLeading(context),
       automaticallyImplyLeading: false,
       title: Text(
         title,
@@ -80,6 +73,25 @@ class MPCommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: true,
       actions: _buildActions(),
+    );
+  }
+
+  Widget? _buildLeading(BuildContext context) {
+    if (customLeading != null) {
+      return customLeading!;
+    }
+    if (!showBackButton) {
+      return null;
+    }
+    return IconButton(
+      icon: Icon(
+        Icons.arrow_back,
+        color: iconColor ?? Colors.grey.shade800,
+      ),
+      onPressed: onBackPressed ??
+          () {
+            Navigator.of(context).pop();
+          },
     );
   }
 
