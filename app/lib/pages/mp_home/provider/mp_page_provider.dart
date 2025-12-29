@@ -71,22 +71,6 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     }
   }
 
-  /// 获取记忆内容
-  /// @param memory 记忆
-  /// @returns 记忆内容
-  String _getContent(MPMemoryStruct memory) {
-    if (memory.type == MPMemoryType.onlyRecord) {
-      return memory.onlyRecordContent?.recordFile ?? '';
-    } else if (memory.type == MPMemoryType.summary) {
-      return memory.summaryContent?.summary ?? '';
-    } else if (memory.type == MPMemoryType.insight) {
-      return memory.insightContent?.content ?? '';
-    } else if (memory.type == MPMemoryType.aiExpert) {
-      return memory.aiExpertContent?.content ?? '';
-    }
-    return '';
-  }
-
   /// 将 MPMemoryStruct 转换为 MPMemoryItem
   /// @returns 转换后的 MPMemoryItem 对象
   MPMemoryItem toMPMemoryItem() {
@@ -100,8 +84,6 @@ extension MPMemoryStructExtension on MPMemoryStruct {
 
     // 根据 labelColor 或 type 确定 tagColor
     Color tagColor = _parseHexColor(labelColor);
-
-    final content = _getContent(this);
 
     return MPMemoryItem(
       dateText: dateText,
@@ -188,6 +170,9 @@ class MPHomePageProvider extends ChangeNotifier {
       _cursor = response.memorys.last.id;
       recordCount = response.memoryTotal;
       final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      for (var element in response.memorys) {
+        print('------hj----- resonpose memory: ${element.toJson()}');
+      }
       _remoteItems.clear();
       _remoteItems = list;
       _updateItems();
