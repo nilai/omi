@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
+import '../../providers/mp_message_provider.dart';
 import 'mp_chat_people_memory_page.dart';
 import 'mp_insights_list_page.dart';
 import 'providers/mp_chat_menu_list_provider.dart';
@@ -476,7 +477,7 @@ class _MenuContent extends StatelessWidget {
             // 标题
             Expanded(
               child: Text(
-                item.title,
+                item.title.isEmpty ? MPMessageProvider.newConversationTitle : item.title,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w400,

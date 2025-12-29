@@ -182,7 +182,7 @@ class MPMessageProvider extends ChangeNotifier {
 
   Future<void> updatePageTitle() async {
     final title = curPageModel?.title ?? '';
-    if (title.isNotEmpty && title != _newConversationTitle) {
+    if (title.isNotEmpty && title != MPMessageProvider.newConversationTitle) {
       return;
     }
     final conversationId = curPageModel?.conversationId ?? '';
@@ -196,7 +196,7 @@ class MPMessageProvider extends ChangeNotifier {
     }
   }
 
-  final String _newConversationTitle = '新会话';
+  static const String newConversationTitle = '新会话';
 
   /// 如果当前会话ID为空，则创建会话
   Future<void> createConversationIfNeeded() async {
@@ -212,7 +212,7 @@ class MPMessageProvider extends ChangeNotifier {
     curPageModel?.messages = [];
     notifyListeners();
     final req = MPCreateConversationRequest(
-      title: title.isNotEmpty ? title : _newConversationTitle,
+      title: title.isNotEmpty ? title : MPMessageProvider.newConversationTitle,
       expertId: type == MPChatPageType.expert ? chatId : '',
       memoryId: type == MPChatPageType.memory ? chatId : '',
       templateId: type == MPChatPageType.template ? chatId : '',
