@@ -472,12 +472,21 @@ struct TranscriptResponse {
 }
 
 struct GetChatSuggestionResponse {
-    1: map<string, list<string>> suggestion,
+    1: map<map<string, list<string>>> suggestion, // 从记忆仓库进入的AI助理 key为 chat_with_speaker;
+    // 从Memory进入的AI助理 key为chat_with_memory；直接进入AI 助理 key为 normal
     255: BaseResp base_resp,
 }
 
 struct GetChatSuggestionRequest {
-    1: string scene;  // 从记忆仓库进入的AI助理 为 chat_with_speaker; 从Memory进入的AI助理 为chat_with_memory；直接进入AI 助理 为 normal
+}
+
+struct GetConversationTitleResponse {
+    1: string title,
+    255: BaseResp base_resp,
+}
+
+struct GetConversationTitleRequest {
+    1: string conversation_id,
 }
 
 struct AddSpeakerRequest {
@@ -772,6 +781,8 @@ service AppService {
     TranscriptResponse Transcript(1: TranscriptRequest req)
     // GET /api/v1/chat/suggestion
     GetChatSuggestionResponse GetChatSuggestion(1: GetChatSuggestionRequest req)
+    // GET /api/v1/chat/get_title
+    GetConversationTitleResponse GetConversationTitle(1: GetConversationTitleRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
