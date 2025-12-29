@@ -147,31 +147,26 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
   /// @returns 底部按钮Widget
   Widget _buildBottomButton(MPMergeMemoryProvider provider) {
     final selectedCount = provider.selectedCount;
-    final buttonText = selectedCount == 0 ? '请选择要合并的记忆' : '开始合并(${selectedCount + 1}个记忆)';
+    final buttonText = selectedCount == 0 ? '请选择要合并的记忆' : '开始合并($selectedCount个记忆)';
     final isEnabled = selectedCount > 0;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      color: Colors.white,
-      child: SizedBox(
+    return GestureDetector(
+      onTap: isEnabled ? () => _handleMerge(provider) : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: isEnabled ? const Color(0xFF306CFF) : const Color(0xFFE5E5E5),
+          borderRadius: BorderRadius.circular(8),
+        ),
         width: double.infinity,
         height: 48,
-        child: ElevatedButton(
-          onPressed: isEnabled ? () => _handleMerge(provider) : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isEnabled ? const Color(0xFF306CFF) : const Color(0xFFE5E5E5),
-            foregroundColor: isEnabled ? Colors.white : const Color(0xFF999999),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            elevation: 0,
-          ),
+        child: Center(
           child: Text(
             buttonText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
+              color: isEnabled ? Colors.white : const Color(0xFF999999),
             ),
           ),
         ),
