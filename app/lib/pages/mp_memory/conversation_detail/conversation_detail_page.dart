@@ -1,5 +1,6 @@
 // AI-generated START - 对话详情页面
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/pages/mp_custom_utils/mp_const_utils.dart';
 import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
@@ -564,9 +565,10 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             MPToastUtils.showFeatureComingSoon();
             break;
           case MPRecordDetailMoreAction.copyTranscript:
-            MPToastUtils.showFeatureComingSoon();
+            _copyTranscript();
             break;
           case MPRecordDetailMoreAction.copySummary:
+            _copySummary();
             break;
           case MPRecordDetailMoreAction.regenerateSummary:
             _regenerateSummary();
@@ -614,6 +616,36 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       }
     } else {
       MPToastUtils.showMessage(res?.baseResp.message ?? '重新生成失败');
+    }
+  }
+
+  void _copyTranscript() async {
+    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+    final transcript = provider.transcripts;
+    if (transcript.isNotEmpty) {
+      String text = '';
+      for (var message in transcript) {
+        text += '${message.senderName}: ${message.content}\n';
+      }
+      if (text.isNotEmpty) {
+        await Clipboard.setData(ClipboardData(text: text));
+        MPToastUtils.showMessage('转录已复制到剪贴板');
+      } else {
+        MPToastUtils.showMessage('转录为空');
+      }
+    } else {
+      MPToastUtils.showMessage('转录为空');
+    }
+  }
+
+  void _copySummary() async {
+    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+    final summary = provider.summary;
+    if (summary != null) {
+      await Clipboard.setData(ClipboardData(text: summary));
+      MPToastUtils.showMessage('摘要已复制到剪贴板');
+    } else {
+      MPToastUtils.showMessage('摘要为空');
     }
   }
 }
