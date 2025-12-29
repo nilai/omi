@@ -58,44 +58,44 @@ class MPMergeMemoryProvider extends ChangeNotifier {
     // 过滤掉当前记忆
     final filteredMemories = allMemories.where((memory) => memory.id != currentMemoryId).toList();
     items = filteredMemories.map((memory) => memory.toMPMemoryItem()).toList();
-    if (items.isEmpty) {
-      loading = false;
-      // 创建测试数据（仅开发调试用）
-      void createTestData() {
-        items = List.generate(5, (index) {
-          final id = 'test_memory_$index';
-          return MPMemoryItem(
-            dateText: '2024-06-0${index + 1}',
-            tagText: '标签$index',
-            tagColor: const Color(0xFF306CFF),
-            headerText: '记忆标题$index',
-            timeText: '12:0${index}0',
-            secondsText: '${10 + index * 5}秒',
-            description: '这是第$index条测试记忆摘要内容，仅作演示。',
-            memory: MPMemoryStruct(
-              id: id,
-              createAt: DateTime.now().millisecondsSinceEpoch - index * 86400000,
-              // 假设其它字段为必需，但不重要时可填测试数据或空
-              content: '测试摘要$index',
-              title: '记忆标题$index',
-              type: MPMemoryType.summary,
-              label: '标签$index',
-              duration: 10 + index * 5,
-              // 可根据定义添加更多字段
-            ),
-            createAt: DateTime.now().millisecondsSinceEpoch - index * 86400000,
-          );
-        });
-        loading = false;
-        notifyListeners();
-      }
+    // if (items.isEmpty) {
+    //   loading = false;
+    //   // 创建测试数据（仅开发调试用）
+    //   void createTestData() {
+    //     items = List.generate(5, (index) {
+    //       final id = 'test_memory_$index';
+    //       return MPMemoryItem(
+    //         dateText: '2024-06-0${index + 1}',
+    //         tagText: '标签$index',
+    //         tagColor: const Color(0xFF306CFF),
+    //         headerText: '记忆标题$index',
+    //         timeText: '12:0${index}0',
+    //         secondsText: '${10 + index * 5}秒',
+    //         description: '这是第$index条测试记忆摘要内容，仅作演示。',
+    //         memory: MPMemoryStruct(
+    //           id: id,
+    //           createAt: DateTime.now().millisecondsSinceEpoch - index * 86400000,
+    //           // 假设其它字段为必需，但不重要时可填测试数据或空
+    //           content: '测试摘要$index',
+    //           title: '记忆标题$index',
+    //           type: MPMemoryType.summary,
+    //           label: '标签$index',
+    //           duration: 10 + index * 5,
+    //           // 可根据定义添加更多字段
+    //         ),
+    //         createAt: DateTime.now().millisecondsSinceEpoch - index * 86400000,
+    //       );
+    //     });
+    //     loading = false;
+    //     notifyListeners();
+    //   }
 
-      createTestData();
-      loading = false;
-      notifyListeners();
+    //   createTestData();
+    //   loading = false;
+    //   notifyListeners();
 
-      return;
-    }
+    //   return;
+    // }
     loading = false;
     notifyListeners();
   }

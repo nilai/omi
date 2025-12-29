@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
+import '../../../backend/http/mp_api/mp_memory.dart';
+import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'providers/mp_merge_memory_provider.dart';
 import 'widgets/mp_merge_memory_item.dart';
@@ -91,12 +93,12 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.white,
+      color: selectedCount > 0 ? Color(0xFF306CFF).withOpacity(0.1) : Colors.white,
       child: Text(
         hintText,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Color(0xFF666666),
+          color: selectedCount > 0 ? Color(0xFF306CFF) : Color(0xFF666666),
         ),
       ),
     );
@@ -177,10 +179,15 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
 
   /// 处理合并操作
   /// @param provider Provider实例
-  void _handleMerge(MPMergeMemoryProvider provider) {
-    // TODO: 实现合并逻辑
-    MPToastUtils.showMessage('开始合并记忆，选中数量: ${provider.selectedCount}');
-    // 这里可以调用合并接口，然后返回上一页
-    Navigator.of(context).pop();
+  void _handleMerge(MPMergeMemoryProvider provider) async {
+    final req = MPAppendMemoryRequest(memoryIds: provider.selectedMemoryIds.toList());
+    final response = await appendMemory(req);
+    if (response != null && response.baseResp.code == 0) {
+      widget.onMergeSuccess?.call();
+      Navigator.of(context).pop();
+    } else {
+      final message = response?.baseResp.message ?? '合并失败';
+      MPToastUtils.showMessage(message);
+    }
   }
 }
