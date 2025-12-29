@@ -3,7 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 Widget getMarkdownWidget(BuildContext context, String content) {
-  var style = const TextStyle(color: Colors.white, fontSize: 16, height: 1.5);
+  var style = const TextStyle(color: Color(0xFF35343B), fontSize: 16, height: 1.5);
   return MarkdownBody(
     selectable: false,
     shrinkWrap: true,

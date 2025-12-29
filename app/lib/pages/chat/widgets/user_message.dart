@@ -32,7 +32,7 @@ class HumanMessage extends StatelessWidget {
             children: [
               Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1f1f25),
+                  color: Color(0xFF3B82F6),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(16.0),
                     topRight: Radius.circular(16.0),
