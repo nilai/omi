@@ -409,6 +409,26 @@ class $AssetsImagesGen {
   AssetGenImage get mpAppsIntegrationWorkIcon =>
       const AssetGenImage('assets/images/mp_apps_integration_work_icon.png');
 
+  /// File path: assets/images/mp_battery_connect.png
+  AssetGenImage get mpBatteryConnect =>
+      const AssetGenImage('assets/images/mp_battery_connect.png');
+
+  /// File path: assets/images/mp_battery_low_power.png
+  AssetGenImage get mpBatteryLowPower =>
+      const AssetGenImage('assets/images/mp_battery_low_power.png');
+
+  /// File path: assets/images/mp_battery_mid_power.png
+  AssetGenImage get mpBatteryMidPower =>
+      const AssetGenImage('assets/images/mp_battery_mid_power.png');
+
+  /// File path: assets/images/mp_battery_no_connect.png
+  AssetGenImage get mpBatteryNoConnect =>
+      const AssetGenImage('assets/images/mp_battery_no_connect.png');
+
+  /// File path: assets/images/mp_battery_recording.png
+  AssetGenImage get mpBatteryRecording =>
+      const AssetGenImage('assets/images/mp_battery_recording.png');
+
   /// File path: assets/images/mp_chat_no_msg_top_icon.png
   AssetGenImage get mpChatNoMsgTopIcon =>
       const AssetGenImage('assets/images/mp_chat_no_msg_top_icon.png');
@@ -952,6 +972,11 @@ class $AssetsImagesGen {
     mpApps8,
     mpApps9,
     mpAppsIntegrationWorkIcon,
+    mpBatteryConnect,
+    mpBatteryLowPower,
+    mpBatteryMidPower,
+    mpBatteryNoConnect,
+    mpBatteryRecording,
     mpChatNoMsgTopIcon,
     mpFeedbackDetailAdd,
     mpFeedbackDetailAdded,
