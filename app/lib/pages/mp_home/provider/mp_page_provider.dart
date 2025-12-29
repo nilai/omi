@@ -48,10 +48,10 @@ class MPLocalMemoryModel {
     required this.fileName,
     required this.createAt,
     required this.path,
-    this.isCreated = false,
     this.duration,
     this.fileId = '',
     this.source = '',
+    this.isRemoved = false,
   });
 
   /// 文件名
@@ -63,8 +63,8 @@ class MPLocalMemoryModel {
   /// 本地文件路径
   final String path;
 
-  /// 是否已创建
-  bool isCreated;
+  /// 是否已从本地删除
+  bool isRemoved = false;
 
   /// sdcards记录，中间时间
   int? duration;
@@ -76,23 +76,22 @@ class MPLocalMemoryModel {
   String source;
 
   factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
-        fileName: json['fileName'],
-        createAt: json['createAt'],
-        path: json['path'],
-        isCreated: json['isCreated'],
-        duration: json['duration'],
-        fileId: json['fileId'],
-        source: json['source'],
-      );
+      fileName: json['fileName'],
+      createAt: json['createAt'],
+      path: json['path'],
+      duration: json['duration'],
+      fileId: json['fileId'],
+      source: json['source'],
+      isRemoved: json['isRemoved']);
 
   Map<String, dynamic> toJson() => {
         'fileName': fileName,
         'createAt': createAt,
         'path': path,
-        'isCreated': isCreated,
         'duration': duration,
         'fileId': fileId,
         'source': source,
+        'isRemoved': isRemoved,
       };
 
   /// 将模型转为 json 字符串
@@ -372,7 +371,12 @@ class MPHomePageProvider extends ChangeNotifier {
   /// 删除本地记录
   /// @param item 本地记录
   Future<void> removeLocalRecord(String path) async {
-    _localRecords.removeWhere((e) => e.path == path);
+    for (var element in _localRecords) {
+      if (element.path == path) {
+        element.isRemoved = true;
+        break;
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
@@ -396,6 +400,7 @@ class MPHomePageProvider extends ChangeNotifier {
   void _updateItems() {
     List<MPMemoryItem> localItems = [];
     for (var element in _localRecords) {
+      if (element.isRemoved) continue;
       final memory = MPMemoryStruct(
         id: 'local_${element.createAt}',
         createAt: element.createAt,
@@ -426,6 +431,7 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
+      if (element.isRemoved) continue;
       final file = File(element.path);
       final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {
