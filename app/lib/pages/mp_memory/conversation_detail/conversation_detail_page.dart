@@ -21,6 +21,7 @@ import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../providers/mp_message_provider.dart';
 import '../../../services/mp_home_refresh_event_service.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../memories/widgets/mp_memory_update_name_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
 import '../../mp_chat/mp_chat_helper.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -77,7 +78,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
         return Scaffold(
           backgroundColor: MPConstUtils.backgroundColorGrey,
           appBar: MPCommonAppBar(
-            title: provider.title ?? widget.memory.title,
+            title: '',
             showMoreButton: true,
             showShareButton: true,
             onMorePressed: () {
@@ -105,6 +106,15 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
           ConversationHeaderCard(
             title: provider.title ?? widget.memory.title,
             summaryTime: provider.summaryTime ?? '',
+            onTapTitle: () async {
+              MPMemoryUpdateNameDialog.show(
+                  context: context,
+                  memoryId: widget.memory.id,
+                  currentTitle: widget.memory.title,
+                  onSuccess: (title) {
+                    provider.updateTitle(title);
+                  });
+            },
           ),
           // AI-generated END - 对话头部卡片
 
@@ -192,7 +202,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 icon: Icons.smart_toy,
                 onTap: () {
                   MPChatHelper.instance.memory = widget.memory;
-                  MPChatPage.openChatPage(context, chatId: widget.memory.id, title: widget.memory.title, type: MPChatPageType.memory);
+                  MPChatPage.openChatPage(context,
+                      chatId: widget.memory.id, title: widget.memory.title, type: MPChatPageType.memory);
                 },
               ),
             ],

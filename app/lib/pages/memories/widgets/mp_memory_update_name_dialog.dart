@@ -12,27 +12,32 @@ class MPMemoryUpdateNameDialog extends StatefulWidget {
   final String currentTitle;
   final int maxLength;
 
+  final Function(String title)? onSuccess;
+
   const MPMemoryUpdateNameDialog({
     super.key,
     required this.memoryId,
     required this.currentTitle,
     this.maxLength = 100,
+    this.onSuccess,
   });
 
   /// 显示重命名记忆对话框
-  static Future<bool?> show({
+  static void show({
     required BuildContext context,
     required String memoryId,
     required String currentTitle,
     int maxLength = 100,
+    Function(String title)? onSuccess,
   }) {
-    return showDialog<bool>(
+    showDialog<bool>(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) => MPMemoryUpdateNameDialog(
         memoryId: memoryId,
         currentTitle: currentTitle,
         maxLength: maxLength,
+        onSuccess: onSuccess,
       ),
     );
   }
@@ -87,13 +92,12 @@ class _MPMemoryUpdateNameDialogState extends State<MPMemoryUpdateNameDialog> {
         title: newTitle,
       );
       final res = await updateMemoryName(req);
-
       if (res != null && res.baseResp.code == 0) {
         MPHomeRefreshEventService().emitRefresh();
         if (mounted) {
           Navigator.of(context).pop(true);
-          MPToastUtils.showMessage('保存成功');
         }
+        widget.onSuccess?.call(newTitle);
       } else {
         MPToastUtils.showMessage(res?.baseResp.message ?? '保存失败');
       }

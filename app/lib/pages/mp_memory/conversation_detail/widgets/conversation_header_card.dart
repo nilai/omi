@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 /// 对话头部卡片组件
 /// 显示对话标题和总结时间信息
+// ignore: must_be_immutable
 class ConversationHeaderCard extends StatelessWidget {
   // AI-generated START - 对话标题
   final String title;
@@ -12,10 +13,13 @@ class ConversationHeaderCard extends StatelessWidget {
   final String summaryTime;
   // AI-generated END - summaryTime
 
-  const ConversationHeaderCard({
+  VoidCallback? onTapTitle;
+
+  ConversationHeaderCard({
     super.key,
     required this.title,
     required this.summaryTime,
+    this.onTapTitle,
   });
 
   @override
@@ -27,13 +31,18 @@ class ConversationHeaderCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           // AI-generated START - 标题
-          Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 20.0,
-              fontWeight: FontWeight.bold,
-              height: 1.2,
+          GestureDetector(
+            onTap: () {
+              onTapTitle?.call();
+            },
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF1F2937),
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
             ),
           ),
           // AI-generated END - 标题

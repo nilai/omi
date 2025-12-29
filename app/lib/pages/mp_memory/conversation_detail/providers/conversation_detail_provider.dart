@@ -171,6 +171,11 @@ class ConversationDetailProvider with ChangeNotifier {
   }
   // AI-generated END - recordFileUrl
 
+  void updateTitle(String title) {
+    _title = title;
+    notifyListeners();
+  }
+
   // AI-generated START - 根据标签ID加载对应的数据
   void loadDataForTab(String tabId) {
     notifyListeners();

@@ -452,15 +452,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         switch (value) {
           case MPRecordDetailMoreAction.renameMemory:
             MPMemoryUpdateNameDialog.show(
-              context: context,
-              memoryId: widget.memory.id,
-              currentTitle: widget.memory.title,
-            ).then((success) {
-              if (success == true && mounted) {
-                // 刷新页面数据
-                MPHomeRefreshEventService().emitRefresh();
-              }
-            });
+                context: context, memoryId: widget.memory.id, currentTitle: widget.memory.title, onSuccess: (title) {});
             break;
           case MPRecordDetailMoreAction.export:
             MPToastUtils.showFeatureComingSoon();
