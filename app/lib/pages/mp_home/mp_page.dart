@@ -150,9 +150,9 @@ class _MPPageContentState extends State<MPPageContent> {
       // 传完后， 更新本地，
       final provider = context.read<MPHomePageProvider>();
       provider.updateImportAudioType(MPHomeImportAudioType.none);
-      await provider.addLocalRecord(fileDetail.localPath ?? '',
-          duration: fileDetail.durationSeconds, fileName: fileDetail.name);
-      provider.uploadLocalRecords();
+      // await provider.addLocalRecord(fileDetail.localPath ?? '',
+      //     duration: fileDetail.durationSeconds, fileName: fileDetail.name);
+      // provider.uploadLocalRecords();
     });
   }
 
