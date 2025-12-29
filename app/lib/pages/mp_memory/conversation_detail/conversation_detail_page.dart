@@ -523,7 +523,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   void _showMoreActionsDialog(BuildContext context) {
     final actions = [
-      MPRecordDetailMoreAction.renameMemory,
       MPRecordDetailMoreAction.addTag,
       MPRecordDetailMoreAction.export,
       MPRecordDetailMoreAction.copyTranscript,
@@ -534,8 +533,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     MPRecordDetailMorePopup.show(context: context, actions: actions).then((value) {
       if (value != null) {
         switch (value) {
-          case MPRecordDetailMoreAction.renameMemory:
-            break;
           case MPRecordDetailMoreAction.addTag:
             break;
           case MPRecordDetailMoreAction.export:

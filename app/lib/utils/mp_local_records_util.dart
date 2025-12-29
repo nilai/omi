@@ -66,6 +66,17 @@ class MPLocalMemoryModel {
     final Map<String, dynamic> map = jsonDecode(jsonString);
     return MPLocalMemoryModel.fromJson(map);
   }
+
+  /// 获取显示名称
+  String get showName {
+    if (fileName.isEmpty) {
+      return '';
+    }
+    if (fileName.startsWith('mp')) {
+      return fileName.split('_').last;
+    }
+    return fileName;
+  }
 }
 
 /// 本地记录工具类

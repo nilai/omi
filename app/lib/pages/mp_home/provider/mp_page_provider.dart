@@ -304,7 +304,7 @@ class MPHomePageProvider extends ChangeNotifier {
         duration: 0,
         type: MPMemoryType.onlyRecord,
         label: '',
-        title: element.fileName,
+        title: element.showName,
         content: '',
       );
       final item = memory.toMPMemoryItem();
@@ -328,9 +328,7 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
-      debugPrint('------hj------uploadLocalRecords1111 element: ${element.fileName}, isRemoved: ${element.isRemoved}');
       if (element.isRemoved) continue;
-      debugPrint('------hj------uploadLocalRecords222 element: ${element.fileName}, isRemoved: ${element.isRemoved}');
       final file = File(element.path);
       final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {
