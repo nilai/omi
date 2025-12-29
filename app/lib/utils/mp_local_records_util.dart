@@ -121,7 +121,7 @@ class MPLocalRecordsUtil {
     final String filename = fileName ?? path.split('/').last;
     final model = MPLocalMemoryModel(
       fileName: filename,
-      createAt: DateTime.now().millisecondsSinceEpoch,
+      createAt: createAt,
       path: path,
       source: source,
       duration: duration,

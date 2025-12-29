@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -298,8 +297,8 @@ class MPHomePageProvider extends ChangeNotifier {
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
     // 通过path获取到filename
     final String name = fileName ?? path.split('/').last;
-    await MPLocalRecordsUtil.instance
-        .addLocalRecord(path, createAt: DateTime.now().millisecondsSinceEpoch, fileName: name, source: source);
+    final int createAt = (DateTime.now().millisecondsSinceEpoch / 1000).toInt();
+    await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: createAt, fileName: name, source: source);
     _updateItems();
   }
 
