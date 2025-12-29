@@ -19,11 +19,15 @@ class MPAddSpeakerRequest {
   @JsonKey(name: 'myself_voice')
   final bool? myselfVoice;
 
+  @JsonKey(name: 'duration')
+  final int? duration; // 单位是秒
+
   MPAddSpeakerRequest({
     required this.audioUrl,
     required this.name,
     required this.avatar,
     this.myselfVoice,
+    this.duration,
   });
 
   factory MPAddSpeakerRequest.fromJson(Map<String, dynamic> json) => _$MPAddSpeakerRequestFromJson(json);

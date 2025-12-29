@@ -506,6 +506,7 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
         audioUrl: uri,
         avatar: avatarUrl,
         myselfVoice: isMyselfVoice,
+        duration: _totalDuration,
       );
 
       final res = await addSpeaker(req);
