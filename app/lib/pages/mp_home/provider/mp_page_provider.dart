@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
@@ -11,6 +10,7 @@ import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../../utils/audio/mp_record_audio_util.dart';
+import '../../../utils/mp_local_records_util.dart';
 import '../../../utils/mp_user_profile_share.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
@@ -42,69 +42,6 @@ class MPMemoryItem {
   final String? localPath;
   final int createAt;
   bool isUploading = false;
-}
-
-class MPLocalMemoryModel {
-  MPLocalMemoryModel({
-    required this.fileName,
-    required this.createAt,
-    required this.path,
-    this.duration,
-    this.fileId = '',
-    required this.source,
-    this.isRemoved = false,
-  });
-
-  /// 文件名
-  final String fileName;
-
-  /// 创建时间
-  final int createAt;
-
-  /// 本地文件路径
-  final String path;
-
-  /// 是否已从本地删除
-  bool isRemoved = false;
-
-  /// sdcards记录，中间时间
-  int? duration;
-
-  /// 上传文件时，后端返回的文件id
-  String fileId;
-
-  /// 文件来源(mobile phone or mp)
-  final String source;
-
-  factory MPLocalMemoryModel.fromJson(Map<String, dynamic> json) => MPLocalMemoryModel(
-      fileName: json['fileName'],
-      createAt: json['createAt'],
-      path: json['path'],
-      duration: json['duration'],
-      fileId: json['fileId'],
-      source: json['source'],
-      isRemoved: json['isRemoved']);
-
-  Map<String, dynamic> toJson() => {
-        'fileName': fileName,
-        'createAt': createAt,
-        'path': path,
-        'duration': duration,
-        'fileId': fileId,
-        'source': source,
-        'isRemoved': isRemoved,
-      };
-
-  /// 将模型转为 json 字符串
-  String toJsonString() {
-    return jsonEncode(toJson());
-  }
-
-  /// 从 json 字符串解析创建模型
-  static MPLocalMemoryModel fromJsonString(String jsonString) {
-    final Map<String, dynamic> map = jsonDecode(jsonString);
-    return MPLocalMemoryModel.fromJson(map);
-  }
 }
 
 /// MPMemoryStruct 扩展方法
@@ -360,42 +297,23 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 本地记录
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
     // 通过path获取到filename
-    final String filename = fileName ?? path.split('/').last;
-    final model = MPLocalMemoryModel(
-        fileName: filename, createAt: DateTime.now().millisecondsSinceEpoch, path: path, source: source);
-    _localRecords.add(model);
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
-    await prefs.setStringList('mp_local_records', jsonList);
+    final String name = fileName ?? path.split('/').last;
+    await MPLocalRecordsUtil.instance
+        .addLocalRecord(path, createAt: DateTime.now().millisecondsSinceEpoch, fileName: name, source: source);
     _updateItems();
   }
 
   /// 删除本地记录
   /// @param item 本地记录
   Future<void> removeLocalRecord(String path, {required String fildId}) async {
-    for (var element in _localRecords) {
-      if (element.path == path) {
-        element.isRemoved = true;
-        element.fileId = fildId;
-        break;
-      }
-    }
-    final prefs = await SharedPreferences.getInstance();
-    final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
-    await prefs.setStringList('mp_local_records', jsonList);
+    _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(path, fildId: fildId);
     _updateItems();
   }
 
   /// 加载本地记录
   /// @returns 无返回值
   Future<void> loadLocalRecords() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonString = prefs.getStringList('mp_local_records');
-    if (jsonString != null) {
-      _localRecords = jsonString.map((e) => MPLocalMemoryModel.fromJsonString(e)).toList();
-    } else {
-      _localRecords = [];
-    }
+    _localRecords = await MPLocalRecordsUtil.instance.getLocalRecords();
     _updateItems();
   }
 
