@@ -35,12 +35,10 @@ class MPMergeMemoryItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: isSelected
-              ? Border.all(
-                  color: const Color(0xFF306CFF),
-                  width: 2,
-                )
-              : null,
+          border: Border.all(
+            color: isSelected ? const Color(0xFF306CFF) : Colors.white,
+            width: 1,
+          ),
           boxShadow: const [
             BoxShadow(
               color: Color.fromARGB(25, 0, 0, 0),
@@ -179,4 +177,3 @@ class MPMergeMemoryItem extends StatelessWidget {
     );
   }
 }
-
