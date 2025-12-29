@@ -11,6 +11,7 @@ import 'package:omi/pages/mp_memory/conversation_detail/widgets/audio_player_car
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/conversation_header_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/meeting_summary_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/mp_message_card.dart';
+import 'package:omi/pages/mp_memory/conversation_detail/widgets/mp_tags_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/participants_card.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/tab_selector_card.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
@@ -128,6 +129,15 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               participants: provider.participants,
             ),
           // AI-generated END - 参与人卡片
+
+          // AI-generated START - 标签卡片
+          MPTagsCard(
+            tags: provider.memory?.customLabels ?? [],
+            onAddTag: () {
+              _showAddTagDialog();
+            },
+          ),
+          // AI-generated END - 标签卡片
 
           // AI-generated START - 音频播放器卡片
           AudioPlayerCard(
