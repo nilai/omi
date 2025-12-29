@@ -265,6 +265,9 @@ class MPMemoryStruct {
   @JsonKey(name: 'ai_expert_content')
   final MPAiExpertMemoryStruct? aiExpertContent;
 
+  @JsonKey(name: 'custom_labels')
+  final List<String>? customLabels;
+
   MPMemoryStruct({
     required this.id,
     required this.createAt,
@@ -278,6 +281,7 @@ class MPMemoryStruct {
     this.onlyRecordContent,
     this.insightContent,
     this.aiExpertContent,
+    this.customLabels,
   });
 
   factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);

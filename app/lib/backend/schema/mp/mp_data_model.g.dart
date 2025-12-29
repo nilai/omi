@@ -172,6 +172,9 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
           ? null
           : MPAiExpertMemoryStruct.fromJson(
               json['ai_expert_content'] as Map<String, dynamic>),
+      customLabels: (json['custom_labels'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
@@ -188,6 +191,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'only_record_content': instance.onlyRecordContent,
       'insight_content': instance.insightContent,
       'ai_expert_content': instance.aiExpertContent,
+      'custom_labels': instance.customLabels,
     };
 
 const _$MPMemoryTypeEnumMap = {
