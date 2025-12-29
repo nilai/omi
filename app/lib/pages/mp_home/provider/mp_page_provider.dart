@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_data_model.dart';
@@ -156,29 +155,43 @@ class MPHomePageProvider extends ChangeNotifier {
     });
   }
 
-  //
+  /// 刷新记忆列表
+  /// 从服务器获取最新的记忆列表数据
+  /// @returns 无返回值
   Future<void> refresh() async {
-    loading = true;
-    notifyListeners();
-    _cursor = '';
-    final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
-    final response = await getMemoryList(req);
-    if (response != null) {
-      // items.clear();
-      // items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
-      hasMore = response.hasMore;
-      _cursor = response.memorys.last.id;
-      recordCount = response.memoryTotal;
-      final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
-      for (var element in response.memorys) {
-        print('------hj----- resonpose memory: ${element.toJson()}');
+    try {
+      loading = true;
+      notifyListeners();
+      _cursor = '';
+      final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
+      final response = await getMemoryList(req);
+      if (response != null) {
+        // items.clear();
+        // items.addAll(response.memorys.map((memory) => memory.toMPMemoryItem()));
+        hasMore = response.hasMore;
+        if (response.memorys.isNotEmpty) {
+          _cursor = response.memorys.last.id;
+        }
+        recordCount = response.memoryTotal;
+        final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+        for (var element in response.memorys) {
+          print('------hj----- resonpose memory: ${element.toJson()}');
+        }
+        _remoteItems.clear();
+        _remoteItems = list;
+        _updateItems();
+      } else {
+        // 请求失败，但不清空已有数据，保持当前显示状态
+        debugPrint('Failed to refresh memory list: response is null');
       }
-      _remoteItems.clear();
-      _remoteItems = list;
-      _updateItems();
+    } catch (e, stackTrace) {
+      // 捕获异常，确保 loading 状态被重置
+      debugPrint('Error in refresh: $e, $stackTrace');
+    } finally {
+      // 确保 loading 状态总是被重置
+      loading = false;
+      notifyListeners();
     }
-    loading = false;
-    notifyListeners();
   }
 
   Future<void> loadMore() async {
