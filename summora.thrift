@@ -73,6 +73,7 @@ struct SummaryMemoryStruct {
     4: list<RecordConversationStruct> transcript,
     5: list<TodoStruct> todos,
     6: i32: status,
+    7: string: source,
 }
 
 struct MemoryStruct {
@@ -82,12 +83,13 @@ struct MemoryStruct {
     4: MemoryType type,
     5: string label, // 会议纪要、今日运势之类的
     6: string label_color,  // 格式为 #467db4
-    7: string content,
-    8: i32 duration, // 单位是s
-    9: SummaryMemoryStruct summary_content,
-    10: OnlyRecordMemoryStruct only_record_content,
-    11: InsightMemoryStruct insight_content,
-    12: AiExpertMemoryStruct ai_expert_content,
+    7: list<string> custom_labels,
+    8: string content,
+    9: i32 duration, // 单位是s
+    10: SummaryMemoryStruct summary_content,
+    11: OnlyRecordMemoryStruct only_record_content,
+    12: InsightMemoryStruct insight_content,
+    13: AiExpertMemoryStruct ai_expert_content,
 }
 
 
@@ -204,6 +206,7 @@ struct CreateRecordRequest {
     1: string record_file,
     2: i64 create_at,
     3: i32 duration, // 单位是s
+    4: string source,
 }
 
 struct CreateRecordResponse {
@@ -270,6 +273,43 @@ struct DeleteMemoryRequest {
 }
 
 struct DeleteMemoryResponse {
+    255: BaseResp base_resp,
+}
+
+struct RenameMemoryRequest {
+    1: string memory_id,
+    2: string title,
+}
+
+struct RenameMemoryResponse {
+    255: BaseResp base_resp,
+}
+
+struct MemoryAddTagRequest {
+    1: string memory_id,
+    2: string label,
+}
+
+struct MemoryAddTagResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetSummaryListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetSummaryListResponse {
+    1: list<MemoryStruct> summarys,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct AppendMemoryRequest {
+    1: list<string> memory_ids,
+}
+
+struct AppendMemoryResponse {
     255: BaseResp base_resp,
 }
 
@@ -388,6 +428,7 @@ struct CreateConversationRequest {
 
 struct CreateConversationResponse {
     1: string conversation_id,
+    2: string greet,
     255: BaseResp base_resp,
 }
 
@@ -436,6 +477,7 @@ struct GetChatSuggestionResponse {
 }
 
 struct GetChatSuggestionRequest {
+    1: string scene;  // 从记忆仓库进入的AI助理 为 chat_with_speaker; 从Memory进入的AI助理 为chat_with_memory；直接进入AI 助理 为 normal
 }
 
 struct AddSpeakerRequest {
@@ -682,6 +724,14 @@ service AppService {
     ShareMemoryResponse ShareMemory(1: ShareMemoryRequest req)
     // POST /api/v1/memory/delete
     DeleteMemoryResponse DeleteMemory(1: DeleteMemoryRequest req)
+    // POST /api/v1/memory/rename
+    RenameMemoryResponse RenameMemory(1: RenameMemoryRequest req)
+    // POST /api/v1/memory/add_tag
+    MemoryAddTagResponse MemoryAddTag(1: MemoryAddTagRequest req)
+    // GET /api/v1/memory/get_summary_list
+    GetSummaryListResponse GetSummaryList(1: GetSummaryListRequest req)
+    // POST /api/v1/memory/append_summary
+    AppendMemoryResponse AppendMemory(1: AppendMemoryRequest req)
 
     // memo相关接口
     // GET /api/v1/memo/get_list
