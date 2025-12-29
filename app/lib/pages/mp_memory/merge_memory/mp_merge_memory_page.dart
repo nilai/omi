@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
 import '../../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
@@ -178,7 +179,7 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
   /// @param provider Provider实例
   void _handleMerge(MPMergeMemoryProvider provider) {
     // TODO: 实现合并逻辑
-    debugPrint('开始合并记忆，选中数量: ${provider.selectedCount}');
+    MPToastUtils.showMessage('开始合并记忆，选中数量: ${provider.selectedCount}');
     // 这里可以调用合并接口，然后返回上一页
     Navigator.of(context).pop();
   }
