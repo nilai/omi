@@ -100,10 +100,15 @@ class MPQuickQuestionUtil {
 
       if (response != null && response.baseResp.code == 0) {
         _questionsMap = response.suggestion;
+        debugPrint('-----hj----- _questionsMap: $_questionsMap');
         _normalKeys = response.suggestion[KEY_NORMAL]?.keys.toList() ?? [];
+        debugPrint('-----hj----- _normalKeys: $_normalKeys');
         _chatWithMemoryQuestions = response.suggestion[KEY_CHAT_WITH_MEMORY]?.keys.toList() ?? [];
+        debugPrint('-----hj----- _chatWithMemoryQuestions: $_chatWithMemoryQuestions');
         _chatWithSpeakerQuestions = response.suggestion[KEY_CHAT_WITH_SPEAKER]?.keys.toList() ?? [];
+        debugPrint('-----hj----- _chatWithSpeakerQuestions: $_chatWithSpeakerQuestions');
         _normalQuestions = response.suggestion[KEY_NORMAL] ?? {};
+        debugPrint('-----hj----- _normalQuestions: $_normalQuestions');
       }
     } catch (e) {
       debugPrint('-----hj----- loadQuestionsFromServer error: $e');

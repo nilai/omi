@@ -339,9 +339,19 @@ class MPGetChatSuggestionResponse {
   factory MPGetChatSuggestionResponse.fromJson(Map<String, dynamic> json) {
     final suggestionData = json['suggestion'] as Map<String, dynamic>? ?? {};
     final suggestion = <String, Map<String, List<String?>>>{};
+
     suggestionData.forEach((key, value) {
-      if (value is Map<String, List<String?>>) {
-        suggestion[key] = value;
+      if (value is Map<String, dynamic>) {
+        final innerMap = <String, List<String?>>{};
+        value.forEach((innerKey, innerValue) {
+          if (innerValue is List) {
+            // 兼容空list和null值，将List<dynamic>转换为List<String?>
+            innerMap[innerKey] = innerValue.map((item) => item as String?).toList();
+          }
+        });
+        if (innerMap.isNotEmpty) {
+          suggestion[key] = innerMap;
+        }
       }
     });
 
