@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 
 /// 更多操作选项枚举
 enum MPRecordDetailMoreAction {
-  /// 重命名记忆
-  renameMemory,
-
   /// 添加标签
   addTag,
 
@@ -30,8 +27,6 @@ extension MPRecordDetailMoreActionExtension on MPRecordDetailMoreAction {
   /// 获取选项标题（英文）
   String get title {
     switch (this) {
-      case MPRecordDetailMoreAction.renameMemory:
-        return 'Rename Memory';
       case MPRecordDetailMoreAction.addTag:
         return 'Add Tag';
       case MPRecordDetailMoreAction.export:
@@ -50,8 +45,6 @@ extension MPRecordDetailMoreActionExtension on MPRecordDetailMoreAction {
   /// 获取选项图标
   IconData get icon {
     switch (this) {
-      case MPRecordDetailMoreAction.renameMemory:
-        return Icons.edit_outlined;
       case MPRecordDetailMoreAction.addTag:
         return Icons.label_outline;
       case MPRecordDetailMoreAction.export:
@@ -70,8 +63,6 @@ extension MPRecordDetailMoreActionExtension on MPRecordDetailMoreAction {
   /// 获取图标颜色
   Color get iconColor {
     switch (this) {
-      case MPRecordDetailMoreAction.renameMemory:
-        return const Color(0xFF3B82F6); // 蓝色
       case MPRecordDetailMoreAction.addTag:
         return const Color(0xFF9333EA); // 紫色
       case MPRecordDetailMoreAction.export:

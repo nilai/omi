@@ -3,11 +3,13 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_popup/mp_center_popup.dart';
 import 'package:provider/provider.dart';
 
+import '../../utils/mp_local_records_util.dart';
+import '../mp_custom_utils/mp_timestamp_utils.dart';
 import 'providers/mp_audio_record_provider.dart';
 
 /// 音频录制页面
 class MPAudioRecordPage extends StatefulWidget {
-  final Function(String) onSave;
+  final Function(MPLocalMemoryModel) onSave;
 
   const MPAudioRecordPage({super.key, required this.onSave});
 
@@ -419,7 +421,9 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
 
       if (mp3Path != null && mounted) {
         MPToastUtils.showMessage('保存成功');
-        widget.onSave(mp3Path);
+        MPLocalMemoryModel model = MPLocalMemoryModel(
+            fileName: provider.title, createAt: MPTimestampUtils.timestampNow, path: mp3Path, source: 'Mobile Phone');
+        widget.onSave(model);
         Navigator.of(context).pop();
       }
     } catch (e) {

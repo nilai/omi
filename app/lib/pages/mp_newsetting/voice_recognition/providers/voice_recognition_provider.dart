@@ -98,7 +98,6 @@ class VoiceRecognitionProvider with ChangeNotifier {
   // AI-generated START - 将 MPSpeakerStruct 转换为 MyVoiceItem
   MyVoiceItem _convertSpeakerToVoiceItem(MPSpeakerStruct speaker) {
     // 默认值，因为 API 可能没有提供这些字段
-    const duration = '0秒'; // 可以从 audioUrl 或其他字段获取实际时长
 
     // 使用 createdAt 转换为日期字符串
     String date = '今天';
@@ -109,7 +108,7 @@ class VoiceRecognitionProvider with ChangeNotifier {
     return MyVoiceItem(
       id: speaker.id,
       title: speaker.name.isNotEmpty ? speaker.name : '未命名',
-      duration: duration,
+      duration: speaker.duration != null ? '${speaker.duration}秒' : '0秒',
       date: date,
       icon: speaker.myselfVoice == true ? Assets.images.mpMyVoice.path : null,
       imageUrl: speaker.avatar.isNotEmpty ? speaker.avatar : null,

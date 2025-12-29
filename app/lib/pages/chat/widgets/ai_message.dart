@@ -284,7 +284,7 @@ class NormalMessageWidget extends StatelessWidget {
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1f1f25),
+                  color: Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(4.0),
                     topRight: Radius.circular(16.0),
@@ -346,7 +346,7 @@ class NormalMessageWidget extends StatelessWidget {
             : Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF1f1f25),
+                  color: Color(0xFFF9FAFB),
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(4.0),
                     topRight: Radius.circular(16.0),
@@ -605,7 +605,7 @@ class InitialOptionWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10),
         width: double.maxFinite,
         decoration: BoxDecoration(
-          color: const Color(0xFF1F1F25),
+          color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(12.0),
         ),
         child: Text(optionText, style: Theme.of(context).textTheme.bodyMedium),

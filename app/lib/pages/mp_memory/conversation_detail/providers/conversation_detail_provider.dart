@@ -129,6 +129,8 @@ class ConversationDetailProvider with ChangeNotifier {
   String get searchQuery => _searchQuery;
   // AI-generated END - searchQuery
 
+  MPSummaryMemoryStruct? get summaryContent => _memory?.summaryContent;
+
   // AI-generated START - 设置搜索关键词
   void setSearchQuery(String query) {
     _searchQuery = query;
@@ -209,6 +211,10 @@ class ConversationDetailProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  void reloadDetail() {
+    _loadMemoryDetail(memory?.id ?? '');
+  }
+
   // AI-generated START - 加载记忆详情
   Future<void> _loadMemoryDetail(String memoryId) async {
     try {
@@ -228,6 +234,7 @@ class ConversationDetailProvider with ChangeNotifier {
 
         // 更新摘要
         _summary = response.memory.summaryContent?.summary;
+        _loadTranscriptData(response.memory);
         notifyListeners();
       } else {
         debugPrint('获取记忆详情失败: ${response?.baseResp.message ?? '未知错误'}');
@@ -240,9 +247,11 @@ class ConversationDetailProvider with ChangeNotifier {
 
   // AI-generated START - 加载转录数据
   void _loadTranscriptData(MPMemoryStruct memory) {
+    debugPrint('------hj------ _loadTranscriptData: ${memory.summaryContent?.toJson()}');
     // 从 summaryContent 中提取转录消息
-    if (memory.summaryContent != null && memory.summaryContent!.transcript.isNotEmpty) {
-      _transcripts = memory.summaryContent!.transcript.map((transcript) {
+    final list = memory.summaryContent?.transcript ?? [];
+    if (list.isNotEmpty) {
+      _transcripts = list.map((transcript) {
         // 将时间字符串转换为 DateTime（这里简化处理，实际可能需要更复杂的解析）
         final createdAt = MPTimestampUtils.timestampToDateTime(memory.createAt);
 
@@ -260,6 +269,7 @@ class ConversationDetailProvider with ChangeNotifier {
         );
       }).toList();
     } else {
+      // 生成假数据
       _transcripts = [];
     }
   }

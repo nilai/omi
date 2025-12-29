@@ -71,52 +71,19 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     }
   }
 
-  /// 获取记忆内容
-  /// @param memory 记忆
-  /// @returns 记忆内容
-  String _getContent(MPMemoryStruct memory) {
-    if (memory.type == MPMemoryType.onlyRecord) {
-      return memory.onlyRecordContent?.recordFile ?? '';
-    } else if (memory.type == MPMemoryType.summary) {
-      return memory.summaryContent?.summary ?? '';
-    } else if (memory.type == MPMemoryType.insight) {
-      return memory.insightContent?.content ?? '';
-    } else if (memory.type == MPMemoryType.aiExpert) {
-      return memory.aiExpertContent?.content ?? '';
-    }
-    return '';
-  }
-
   /// 将 MPMemoryStruct 转换为 MPMemoryItem
   /// @returns 转换后的 MPMemoryItem 对象
   MPMemoryItem toMPMemoryItem() {
-    final dateTime = MPTimestampUtils.timestampMsToDateTime(createAt);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final date = DateTime(dateTime.year, dateTime.month, dateTime.day);
-    final difference = today.difference(date).inDays;
-
-    // 生成 dateText
-    String dateText;
-    if (difference == 0) {
-      dateText = '今天';
-    } else if (difference == 1) {
-      dateText = '昨天';
-    } else {
-      // 格式化为 MM-dd
-      dateText = DateFormat('MM-dd').format(dateTime);
-    }
+    final dateText = MPTimestampUtils.timestampToRelativeDateString(createAt);
 
     // 生成 timeText (yyyy-MM-dd HH:mm:ss)
-    final timeText = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    final timeText = MPTimestampUtils.timestampToDateTime(createAt).toString();
 
     // 生成 secondsText (从 duration 转换)
     final secondsText = duration > 0 ? '${duration}s' : null;
 
     // 根据 labelColor 或 type 确定 tagColor
     Color tagColor = _parseHexColor(labelColor);
-
-    final content = _getContent(this);
 
     return MPMemoryItem(
       dateText: dateText,
@@ -203,6 +170,9 @@ class MPHomePageProvider extends ChangeNotifier {
       _cursor = response.memorys.last.id;
       recordCount = response.memoryTotal;
       final list = response.memorys.map((memory) => memory.toMPMemoryItem()).toList();
+      for (var element in response.memorys) {
+        print('------hj----- resonpose memory: ${element.toJson()}');
+      }
       _remoteItems.clear();
       _remoteItems = list;
       _updateItems();
@@ -296,9 +266,16 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 本地记录
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
     // 通过path获取到filename
+
     final String name = fileName ?? path.split('/').last;
-    final int createAt = (DateTime.now().millisecondsSinceEpoch / 1000).toInt();
-    await MPLocalRecordsUtil.instance.addLocalRecord(path, createAt: createAt, fileName: name, source: source);
+    _localRecords = await MPLocalRecordsUtil.instance
+        .addLocalRecord(path, createAt: MPTimestampUtils.timestampNow, fileName: name, source: source);
+    _updateItems();
+  }
+
+  Future<void> addLocalRecordModel(MPLocalMemoryModel model) async {
+    _localRecords = await MPLocalRecordsUtil.instance.addLocalRecord(model.path,
+        duration: model.duration, createAt: model.createAt, fileName: model.fileName, source: model.source);
     _updateItems();
   }
 
@@ -327,7 +304,7 @@ class MPHomePageProvider extends ChangeNotifier {
         duration: 0,
         type: MPMemoryType.onlyRecord,
         label: '',
-        title: element.fileName,
+        title: element.showName,
         content: '',
       );
       final item = memory.toMPMemoryItem();
@@ -407,7 +384,8 @@ class MPHomePageProvider extends ChangeNotifier {
       onConfirm: () async {
         // 执行删除操作
         if (item.isUploading == true) {
-          removeLocalRecord(item.localPath ?? '', fildId: '');
+          await removeLocalRecord(item.localPath ?? '', fildId: '');
+          uploadLocalRecords();
         } else {
           final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
           final response = await deleteMemory(req);

@@ -442,7 +442,6 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   void _showMoreActionsDialog(BuildContext context) {
     final actions = [
-      MPRecordDetailMoreAction.renameMemory,
       MPRecordDetailMoreAction.export,
       MPRecordDetailMoreAction.addTag,
       MPRecordDetailMoreAction.deleteMemory,
@@ -450,10 +449,6 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     MPRecordDetailMorePopup.show(context: context, actions: actions).then((value) {
       if (value != null) {
         switch (value) {
-          case MPRecordDetailMoreAction.renameMemory:
-            MPMemoryUpdateNameDialog.show(
-                context: context, memoryId: widget.memory.id, currentTitle: widget.memory.title, onSuccess: (title) {});
-            break;
           case MPRecordDetailMoreAction.export:
             MPToastUtils.showFeatureComingSoon();
             break;
