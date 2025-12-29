@@ -270,6 +270,7 @@ class _MPAudioRecordPageState extends State<MPAudioRecordPage> {
             TextField(
               controller: controller,
               autofocus: true,
+              cursorColor: const Color(0xFF111111),
               style: const TextStyle(
                 color: Color(0xFF111111),
                 fontSize: 16,
