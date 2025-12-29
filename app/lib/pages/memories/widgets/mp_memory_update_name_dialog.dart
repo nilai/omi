@@ -87,11 +87,11 @@ class _MPMemoryUpdateNameDialogState extends State<MPMemoryUpdateNameDialog> {
     });
 
     try {
-      final req = MPUpdateMemoryNameRequest(
+      final req = MPRenameMemoryRequest(
         memoryId: widget.memoryId,
         title: newTitle,
       );
-      final res = await updateMemoryName(req);
+      final res = await renameMemory(req);
       if (res != null && res.baseResp.code == 0) {
         MPHomeRefreshEventService().emitRefresh();
         if (mounted) {
