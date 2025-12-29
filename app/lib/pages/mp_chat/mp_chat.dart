@@ -217,7 +217,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
                   child: _buildMessagesWidget(),
                 ),
                 _buildCustomCardWidget(),
-                _buildQuickQuestionsWidget(),
+                // _buildQuickQuestionsWidget(),
                 _buildSendMessageWidget(),
               ],
             ),
@@ -371,86 +371,56 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
 
   /// 专家类型的空消息Widget
   Widget _buildExpertNoMessagesWidget() {
-    return Column(
-      children: [
-        const SizedBox(
-          height: 16,
-        ),
-        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
-        const Text(
-          '基于专家提问',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-        ),
-        const Spacer(),
-        const Text(
-          'Ask about anything you\'ve said or heard',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
-        ),
-      ],
+    return _buildCommonNoMessagesWidget('基于专家提问');
+  }
+
+  Widget _buildCommonNoMessagesWidget(String title) {
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        return Column(
+          children: [
+            const SizedBox(
+              height: 16,
+            ),
+            Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
+            const Text(
+              'How can I help you?',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
+            ),
+            const SizedBox(
+              height: 24,
+            ),
+            Expanded(
+              child: MPChatQuestionListWidget(
+                questions: provider.questions,
+                onQuestionTap: (question) {
+                  _sendMessageUtil(question);
+                },
+              ),
+            ),
+            const Text(
+              'Ask about anything you\'ve said or heard',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
+            ),
+          ],
+        );
+      },
     );
   }
 
   /// 记忆类型的空消息Widget
   Widget _buildMemoryNoMessagesWidget() {
-    return Column(
-      children: [
-        const SizedBox(
-          height: 16,
-        ),
-        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
-        const Text(
-          '基于记忆提问',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-        ),
-        const Spacer(),
-        const Text(
-          'Ask about your memories',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
-        ),
-      ],
-    );
+    return _buildCommonNoMessagesWidget('基于记忆提问');
   }
 
   /// 模板类型的空消息Widget
   Widget _buildTemplateNoMessagesWidget() {
-    return Column(
-      children: [
-        const SizedBox(
-          height: 16,
-        ),
-        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
-        const Text(
-          '基于模版提问',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-        ),
-        const Spacer(),
-        const Text(
-          'Start a conversation with a template',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
-        ),
-      ],
-    );
+    return _buildCommonNoMessagesWidget('基于模版提问');
   }
 
   /// 人物类型的空消息Widget
   Widget _buildSpeakerNoMessagesWidget() {
-    return Column(
-      children: [
-        const SizedBox(
-          height: 16,
-        ),
-        Assets.images.mpChatNoMsgTopIcon.image(height: 80, width: 80),
-        const Text(
-          '基于人物提问',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
-        ),
-        const Spacer(),
-        const Text(
-          'Ask about conversations with this person',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF9CA3AF)),
-        ),
-      ],
-    );
+    return _buildCommonNoMessagesWidget('基于人物提问');
   }
 
   // 自定义卡片区域
@@ -486,57 +456,57 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   }
 
   // 快速提问区域
-  Widget _buildQuickQuestionsWidget() {
-    return Consumer<MPMessageProvider>(
-      builder: (context, mpProvider, child) {
-        final questionList = mpProvider.questions;
-        print(
-            '-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${mpProvider.curPageModel?.type}');
-        if (questionList.isEmpty || mpProvider.curPageModel?.type == MPChatPageType.normal) {
-          return const SizedBox.shrink();
-        }
-        return Container(
-          height: 40,
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: questionList.length,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: EdgeInsets.only(right: index < questionList.length - 1 ? 12 : 0),
-                child: GestureDetector(
-                  onTap: () {
-                    _sendMessageUtil(questionList[index]);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFFE5E7EB),
-                        width: 1.0,
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        questionList[index],
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF4B5563),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
+  // Widget _buildQuickQuestionsWidget() {
+  //   return Consumer<MPMessageProvider>(
+  //     builder: (context, mpProvider, child) {
+  //       final questionList = mpProvider.questions;
+  //       print(
+  //           '-----hj----- _buildQuickQuestionsWidget: questionList: $questionList --- type: ${mpProvider.curPageModel?.type}');
+  //       if (questionList.isEmpty || mpProvider.curPageModel?.type == MPChatPageType.normal) {
+  //         return const SizedBox.shrink();
+  //       }
+  //       return Container(
+  //         height: 40,
+  //         margin: const EdgeInsets.symmetric(vertical: 8),
+  //         child: ListView.builder(
+  //           scrollDirection: Axis.horizontal,
+  //           padding: const EdgeInsets.symmetric(horizontal: 16),
+  //           itemCount: questionList.length,
+  //           itemBuilder: (context, index) {
+  //             return Container(
+  //               margin: EdgeInsets.only(right: index < questionList.length - 1 ? 12 : 0),
+  //               child: GestureDetector(
+  //                 onTap: () {
+  //                   _sendMessageUtil(questionList[index]);
+  //                 },
+  //                 child: Container(
+  //                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+  //                   decoration: BoxDecoration(
+  //                     color: Colors.white,
+  //                     borderRadius: BorderRadius.circular(20),
+  //                     border: Border.all(
+  //                       color: const Color(0xFFE5E7EB),
+  //                       width: 1.0,
+  //                     ),
+  //                   ),
+  //                   child: Center(
+  //                     child: Text(
+  //                       questionList[index],
+  //                       style: const TextStyle(
+  //                         fontSize: 14,
+  //                         color: Color(0xFF4B5563),
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             );
+  //           },
+  //         ),
+  //       );
+  //     },
+  //   );
+  // }
 
   // 发送消息区域
   Widget _buildSendMessageWidget() {

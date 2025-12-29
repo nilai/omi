@@ -172,11 +172,11 @@ class MPMessageProvider extends ChangeNotifier {
           .toList();
       curPageModel?.title = response.title;
       curPageModel?.showCustomCard = true;
-      final type = curPageModel?.type ?? MPChatPageType.normal;
-      final list = await MPQuickQuestionUtil().getQuestionsByChatType(type);
-      questionType = type == MPChatPageType.normal ? MPChatQuestionType.grid : MPChatQuestionType.list;
-      curPageModel?.questions = list;
     }
+    final type = curPageModel?.type ?? MPChatPageType.normal;
+    final list = await MPQuickQuestionUtil().getQuestionsByChatType(type);
+    questionType = type == MPChatPageType.normal ? MPChatQuestionType.grid : MPChatQuestionType.list;
+    curPageModel?.questions = list;
     notifyListeners();
   }
 
@@ -194,7 +194,7 @@ class MPMessageProvider extends ChangeNotifier {
     curPageModel?.messages = [];
     notifyListeners();
     final req = MPCreateConversationRequest(
-      title: title,
+      title: title.isNotEmpty ? title : '新会话',
       expertId: type == MPChatPageType.expert ? chatId : '',
       memoryId: type == MPChatPageType.memory ? chatId : '',
       templateId: type == MPChatPageType.template ? chatId : '',

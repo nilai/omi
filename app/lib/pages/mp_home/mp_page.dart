@@ -133,28 +133,28 @@ class _MPPageContentState extends State<MPPageContent> {
 
   /// 设备连接时的处理逻辑
   void _handleDeviceConnected() {
-    MPDeviceFileUtil.instance.testExportAllFiles(onFileListCount: (count) {
-      final provider = context.read<MPHomePageProvider>();
-      debugPrint('-----hj----- _handleDeviceConnected count: $count');
-      provider.updateSDRecordCountAndIndex(value: count, index: 0);
-    }, onExportProgress: (index, progress, speed) {
-      // 将 progress (0.0~1.0) 转为百分比 (0~100)
-      final percent = (progress * 100);
-      debugPrint('-----hj----- _handleDeviceConnected index: $index, progress: $progress, speed: $speed');
-      final provider = context.read<MPHomePageProvider>();
-      provider.updateSDRecordSpeed(speed);
-      provider.updateUploadPercent(percent);
-      provider.updateSDRecordIndex(index);
-    }, onFileExported: (index, fileDetail) async {
-      debugPrint('-----hj----- _handleDeviceConnected index: $index, fileDetail: $fileDetail');
+    // MPDeviceFileUtil.instance.testExportAllFiles(onFileListCount: (count) {
+    //   final provider = context.read<MPHomePageProvider>();
+    //   debugPrint('-----hj----- _handleDeviceConnected count: $count');
+    //   provider.updateSDRecordCountAndIndex(value: count, index: 0);
+    // }, onExportProgress: (index, progress, speed) {
+    //   // 将 progress (0.0~1.0) 转为百分比 (0~100)
+    //   final percent = (progress * 100);
+    //   debugPrint('-----hj----- _handleDeviceConnected index: $index, progress: $progress, speed: $speed');
+    //   final provider = context.read<MPHomePageProvider>();
+    //   provider.updateSDRecordSpeed(speed);
+    //   provider.updateUploadPercent(percent);
+    //   provider.updateSDRecordIndex(index);
+    // }, onFileExported: (index, fileDetail) async {
+    //   debugPrint('-----hj----- _handleDeviceConnected index: $index, fileDetail: $fileDetail');
 
-      // 传完后， 更新本地，
-      final provider = context.read<MPHomePageProvider>();
-      provider.updateImportAudioType(MPHomeImportAudioType.none);
-      // await provider.addLocalRecord(fileDetail.localPath ?? '',
-      //     duration: fileDetail.durationSeconds, fileName: fileDetail.name);
-      // provider.uploadLocalRecords();
-    });
+    //   // 传完后， 更新本地，
+    //   final provider = context.read<MPHomePageProvider>();
+    //   provider.updateImportAudioType(MPHomeImportAudioType.none);
+    //   // await provider.addLocalRecord(fileDetail.localPath ?? '',
+    //   //     duration: fileDetail.durationSeconds, fileName: fileDetail.name);
+    //   // provider.uploadLocalRecords();
+    // });
   }
 
   /// 设备断开连接时的处理逻辑
