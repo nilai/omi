@@ -125,7 +125,7 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
       itemCount: provider.items.length,
       itemBuilder: (context, index) {
         final item = provider.items[index];
