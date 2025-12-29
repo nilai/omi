@@ -15,6 +15,7 @@ import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/mp_device_file_util.dart';
 import '../../utils/other/temp.dart';
+import '../home/widgets/mp_battery_info_widget.dart';
 import '../memories/mp_memory_page_client.dart';
 import '../mp_audio_record/mp_audio_record_page.dart';
 import '../mp_canlendar/widgets/calendar_popup.dart';
@@ -314,11 +315,12 @@ class _MPPageContentState extends State<MPPageContent> {
                         )),
               );
             },
-            child: Assets.images.settingCamera.image(
-              width: 32.0,
-              height: 32.0,
-              fit: BoxFit.contain,
-            ),
+            // child: Assets.images.settingCamera.image(
+            //   width: 32.0,
+            //   height: 32.0,
+            //   fit: BoxFit.contain,
+            // ),
+            child: const MPBatteryInfoWidget(),
           ),
           const SizedBox(width: 16),
           // Centered date selector
@@ -492,7 +494,6 @@ class _MPPageContentState extends State<MPPageContent> {
       },
     );
   }
-
 
   Future<void> _showEditRecordCountDialog(BuildContext context, MPHomePageProvider provider) async {
     final controller = TextEditingController(text: provider.recordCount.toString());

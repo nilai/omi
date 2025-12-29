@@ -49,8 +49,8 @@ class MPBatteryInfoWidget extends StatelessWidget {
         );
 
         return icon.image(
-          width: 36,
-          height: 36,
+          width: 24,
+          height: 24,
           fit: BoxFit.contain,
         );
       },
