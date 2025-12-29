@@ -65,6 +65,7 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       builder: (context, mpProvider, child) {
         if (mpProvider.leadingType == MPChatBarLeadingType.cancel) {
           return GestureDetector(
+              behavior: HitTestBehavior.opaque,
               onTap: () => onLeftIconTap?.call(),
               child: Text('cancel',
                   style: TextStyle(color: Colors.grey.shade800, fontSize: 16.0, fontWeight: FontWeight.w500)));

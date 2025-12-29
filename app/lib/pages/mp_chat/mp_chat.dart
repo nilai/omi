@@ -226,7 +226,7 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
   }
 
   void _onLeftIconTap() async {
-    if (widget.leadingType == MPChatBarLeadingType.cancel) {
+    if (provider.leadingType == MPChatBarLeadingType.cancel) {
       provider.setLeadingType(MPChatBarLeadingType.battery);
       provider.setQuestionType(MPChatQuestionType.grid);
       final list = await MPQuickQuestionUtil().getQuestionsByChatType(MPChatPageType.normal);
