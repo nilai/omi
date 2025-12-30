@@ -16,17 +16,22 @@ import 'package:omi/pages/mp_memory/conversation_detail/widgets/participants_car
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/tab_selector_card.dart';
 import 'package:omi/pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'package:omi/pages/mp_popup/new_task_popup.dart';
+import 'package:omi/services/mp_audio_download.dart';
 import 'package:provider/provider.dart';
 
 import '../../../backend/http/mp_api/mp_memory.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../providers/mp_message_provider.dart';
+import '../../../providers/sync_provider.dart';
 import '../../../services/mp_home_refresh_event_service.dart';
+import '../../../utils/alerts/mp_memory_export_dialog.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../../utils/mp_local_records_util.dart';
 import '../../memories/widgets/mp_memory_add_tag_dialog.dart';
 import '../../memories/widgets/mp_memory_update_name_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
 import '../../mp_chat/mp_chat_helper.dart';
+import '../../mp_custom_utils/mp_timestamp_utils.dart';
 import '../../mp_custom_utils/mp_toast_utils.dart';
 import '../../mp_popup/mp_record_detail_more_popup.dart';
 import '../../mp_popup/speaker_naming_popup.dart';
@@ -572,7 +577,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             _showAddTagDialog();
             break;
           case MPRecordDetailMoreAction.export:
-            MPToastUtils.showFeatureComingSoon();
+            _showExportDialog();
             break;
           case MPRecordDetailMoreAction.copyTranscript:
             _copyTranscript();
@@ -657,6 +662,58 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     } else {
       MPToastUtils.showMessage('摘要为空');
     }
+  }
+
+  void _showExportDialog() {
+    MPMemoryExportDialog.show(
+      context: context,
+      onExportSelected: (exportType) {
+        switch (exportType) {
+          case MPMemoryExportType.audio:
+            _exportAudio();
+            break;
+          case MPMemoryExportType.pdf:
+            _exportPDF();
+            break;
+          case MPMemoryExportType.docx:
+            _exportDOCX();
+            break;
+        }
+      },
+    );
+  }
+
+  void _exportAudio() async {
+    final localPath =
+        await MPLocalRecordsUtil.instance.getLocalRecordPath(widget.memory.onlyRecordContent?.recordFile ?? '');
+    if (localPath != null && localPath.isNotEmpty) {
+      final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+      await syncProvider.shareLocalAudioFile(localPath);
+    } else {
+      final result =
+          await MPAudioDownloadService.instance.downloadAndSaveAudio(widget.memory.summaryContent?.recordUrl ?? '');
+      if (result != null) {
+        MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+            createAt: MPTimestampUtils.timestampNow,
+            fileName: result.fileName,
+            source: 'Mobile Phone',
+            isRemoved: true);
+        final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+        await syncProvider.shareLocalAudioFile(result.path);
+      } else {
+        MPToastUtils.showMessage('下载失败');
+      }
+    }
+  }
+
+  void _exportPDF() {
+    // TODO: 实现 PDF 导出功能
+    MPToastUtils.showFeatureComingSoon();
+  }
+
+  void _exportDOCX() {
+    // TODO: 实现 DOCX 导出功能
+    MPToastUtils.showFeatureComingSoon();
   }
 }
 // AI-generated END - conversation_detail_page.dart

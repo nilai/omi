@@ -174,7 +174,7 @@ class MPAudioDownloadService {
   }) async {
     try {
       // 步骤 1: 下载音频
-      debugPrint('MPAudioDownloadService: 步骤 1/4 - 开始下载音频');
+      debugPrint('MPAudioDownloadService: 步骤 1/4 - 开始下载音频 --url: $url');
       final audioBytes = await downloadAudioWithRetry(url, onProgress: onProgress);
       if (audioBytes == null) {
         debugPrint('MPAudioDownloadService: 下载失败');

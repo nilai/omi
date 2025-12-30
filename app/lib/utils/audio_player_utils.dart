@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
@@ -417,6 +418,33 @@ class AudioPlayerUtils extends ChangeNotifier {
     }
 
     return await _getOrCreateAudioFile(wal, forSharing: false);
+  }
+
+  /// 分享本地音频文件（如 mp3）
+  ///
+  /// [filePath] 音频文件的路径
+  /// [shareText] 可选的分享文本，默认为空
+  ///
+  /// 返回分享结果状态
+  Future<ShareResult> shareLocalAudioFile(
+    String filePath, {
+    String? shareText,
+  }) async {
+    final file = File(filePath);
+    if (!file.existsSync()) {
+      throw Exception('Audio file not found: $filePath');
+    }
+
+    final result = await Share.shareXFiles(
+      [XFile(filePath)],
+      text: shareText ?? 'Omi Audio File',
+    );
+
+    if (result.status == ShareResultStatus.success) {
+      debugPrint('Local audio file shared successfully: $filePath');
+    }
+
+    return result;
   }
 
   @override

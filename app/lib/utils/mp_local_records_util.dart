@@ -125,6 +125,7 @@ class MPLocalRecordsUtil {
     String? fileName,
     required String source,
     required int createAt,
+    bool isRemoved = false,
   }) async {
     // 通过path获取到filename
     final String filename = fileName ?? path.split('/').last;
@@ -134,7 +135,7 @@ class MPLocalRecordsUtil {
       path: path,
       source: source,
       duration: duration,
-      isRemoved: false,
+      isRemoved: isRemoved,
     );
     _localRecords.add(model);
     final prefs = await SharedPreferences.getInstance();
