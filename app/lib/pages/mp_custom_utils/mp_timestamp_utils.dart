@@ -30,6 +30,15 @@ class MPTimestampUtils {
     return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')}';
   }
 
+  /// 将秒级时间戳转换为日期时间字符串（yyyy-MM-dd HH:mm:ss）
+  ///
+  /// [timestamp] 秒级时间戳
+  /// @returns 格式化的日期时间字符串，例如：2025-01-15 14:30:45
+  static String timestampToDateTimeString(int timestamp) {
+    final dateTime = timestampToDateTime(timestamp);
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+  }
+
   /// 获取当前日期，格式为 yyyy-MM-dd
   /// @returns 当前日期的字符串，例如：2025-11-11
   static String getCurrentDate() {

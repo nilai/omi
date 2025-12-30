@@ -77,7 +77,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     final dateText = MPTimestampUtils.timestampToRelativeDateString(createAt);
 
     // 生成 timeText (yyyy-MM-dd HH:mm:ss)
-    final timeText = MPTimestampUtils.timestampToDateTime(createAt).toString();
+    final timeText = MPTimestampUtils.timestampToDateTimeString(createAt);
 
     // 生成 secondsText (从 duration 转换)
     final secondsText = duration > 0 ? '${duration}s' : null;
