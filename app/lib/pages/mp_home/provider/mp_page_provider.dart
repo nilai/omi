@@ -96,7 +96,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       description: content,
       memory: this,
       createAt: createAt,
-      source: source,
+      source: type == MPMemoryType.onlyRecord ? source : null,
     );
   }
 }

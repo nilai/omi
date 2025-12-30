@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../gen/assets.gen.dart';
+
 /// 任务提醒卡片，支持多处自定义以适配不同业务数据。
 class MPHomeCard extends StatefulWidget {
   const MPHomeCard({
@@ -227,15 +229,17 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              widget.headerText,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF111111),
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
+            if (widget.headerText.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                widget.headerText,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF111111),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 8),
             Row(
               children: [
@@ -274,14 +278,13 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
                 ),
               ),
             ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (widget.source != null && widget.source!.isNotEmpty) ...[
-                  const Icon(
-                    Icons.note,
-                    color: Color(0xFF7D7D7D),
-                    size: 14,
+            if (widget.source != null && widget.source!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Assets.images.mpRecordNoteIcon.image(
+                    height: 16,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -292,6 +295,11 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
                     ),
                   ),
                 ],
+              )
+            ],
+            const SizedBox(height: 12),
+            Row(
+              children: [
                 const Spacer(),
                 GestureDetector(
                   onTap: () => widget.onViewDetail?.call(),

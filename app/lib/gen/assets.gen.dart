@@ -561,6 +561,10 @@ class $AssetsImagesGen {
   AssetGenImage get mpPersonalUsername =>
       const AssetGenImage('assets/images/mp_personal_username.png');
 
+  /// File path: assets/images/mp_record_note_icon.png
+  AssetGenImage get mpRecordNoteIcon =>
+      const AssetGenImage('assets/images/mp_record_note_icon.png');
+
   /// File path: assets/images/mp_right_arrow_white.png
   AssetGenImage get mpRightArrowWhite =>
       const AssetGenImage('assets/images/mp_right_arrow_white.png');
@@ -1010,6 +1014,7 @@ class $AssetsImagesGen {
     mpPersonalTiktok,
     mpPersonalTwitter,
     mpPersonalUsername,
+    mpRecordNoteIcon,
     mpRightArrowWhite,
     mpSettingNotification,
     mpSettingPrivicy,

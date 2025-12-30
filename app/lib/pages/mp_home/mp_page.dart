@@ -269,6 +269,7 @@ class _MPPageContentState extends State<MPPageContent> {
                               MPMemoryPageClient.navigateToDetailPage(context, item.memory);
                             },
                             isUploading: item.isUploading,
+                            source: item.source,
                           );
                         },
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
