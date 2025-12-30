@@ -205,6 +205,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                     SpeakerNamingPopup.show(
                       context: context,
                       items: list,
+                      memeryId: _memoryId,
                       onfirm: () {
                         provider.reloadDetail();
                       },

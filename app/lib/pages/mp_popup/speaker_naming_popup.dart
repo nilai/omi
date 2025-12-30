@@ -6,13 +6,11 @@ import '../../backend/schema/mp/mp_data_model.dart';
 import '../../backend/schema/mp/mp_speaker.dart';
 
 class SpeakerNamingItemModel {
-  final String id;
   final String name;
   int duration;
   List<MPSummaryConversationStruct> items;
 
   SpeakerNamingItemModel({
-    required this.id,
     required this.name,
     this.items = const [],
     this.duration = 0,
@@ -25,6 +23,7 @@ class SpeakerNamingPopup extends StatefulWidget {
   // AI-generated START - 构造函数
   SpeakerNamingPopup({
     super.key,
+    required this.memoryId,
     required this.items,
     this.confirmSucc,
     this.onCancel,
@@ -36,6 +35,8 @@ class SpeakerNamingPopup extends StatefulWidget {
 
   /// 确认回调：返回所有修改后的名称映射
   VoidCallback? confirmSucc;
+
+  final String memoryId;
 
   /// 取消回调
   final VoidCallback? onCancel;
@@ -52,6 +53,7 @@ class SpeakerNamingPopup extends StatefulWidget {
     void Function(String id, String name)? onNameChanged,
     VoidCallback? onfirm,
     VoidCallback? onCancel,
+    required String memeryId,
   }) {
     return showDialog<T>(
       context: context,
@@ -64,6 +66,7 @@ class SpeakerNamingPopup extends StatefulWidget {
             items: items,
             confirmSucc: onfirm,
             onCancel: onCancel ?? () => Navigator.of(context).pop(),
+            memoryId: memeryId,
           ),
         );
       },
@@ -74,7 +77,7 @@ class SpeakerNamingPopup extends StatefulWidget {
 
 class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
   // AI-generated START - 名称控制器
-  late final Map<String, TextEditingController> _nameControllers;
+  final Map<String, TextEditingController> _nameControllers = {};
   // AI-generated END - 名称控制器
 
   Map<String, SpeakerNamingItemModel> _itemModels = {};
@@ -85,12 +88,13 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
     super.initState();
 
     for (final item in widget.items) {
+      final name = item.speaker.name;
       if (_itemModels.containsKey(item.id)) {
-        _itemModels[item.id]!.duration += item.speaker.duration ?? 0;
-        _itemModels[item.id]!.items.add(item);
+        _itemModels[name]!.duration += item.speaker.duration ?? 0;
+        _itemModels[name]!.items.add(item);
       } else {
-        _itemModels[item.id] = SpeakerNamingItemModel(id: item.id, name: item.speaker.name, items: [item], duration: item.speaker.duration ?? 0);
-        _nameControllers[item.id] = TextEditingController(text: item.speaker.name);
+        _itemModels[name] = SpeakerNamingItemModel(name: name, items: [item], duration: item.speaker.duration ?? 0);
+        _nameControllers[name] = TextEditingController(text: item.speaker.name);
       }
     }
   }
@@ -120,7 +124,7 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                children: widget.items.map((item) => _buildItemCard(item)).toList(),
+                children: _itemModels.values.map((model) => _buildItemCard(model)).toList(),
               ),
             ),
           ),
@@ -175,19 +179,20 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
   // AI-generated END - 构建头部
 
   // AI-generated START - 构建条目卡片
-  Widget _buildItemCard(MPSummaryConversationStruct item) {
-    final controller = _nameControllers[item.id]!;
+  Widget _buildItemCard(SpeakerNamingItemModel model) {
+    final controller = _nameControllers[model.name]!;
     return Container(
       margin: const EdgeInsets.only(bottom: 12.0),
       padding: const EdgeInsets.all(12.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7F7),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12.0),
         border: Border.all(color: const Color(0xFFE6E6E6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 名称输入框
           TextField(
             controller: controller,
             decoration: InputDecoration(
@@ -216,21 +221,49 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
             onChanged: (value) {},
           ),
           const SizedBox(height: 8.0),
+          // 总时长
+          Text(
+            _formatDuration(model.duration),
+            style: const TextStyle(
+              fontSize: 12.0,
+              color: Color(0xFF8C8C8C),
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          // 转录片段列表
+          ...model.items.map((item) => _buildSegmentItem(item)),
+        ],
+      ),
+    );
+  }
+  // AI-generated END - 构建条目卡片
+
+  /// 构建单个转录片段
+  Widget _buildSegmentItem(MPSummaryConversationStruct item) {
+    // 从时间戳字符串中解析时长，格式：00:00:00 - 00:00:24
+    final segmentDuration = _parseDurationFromTime(item.time);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Icon(Icons.play_arrow, size: 16.0, color: Color(0xFF8C8C8C)),
+              const Icon(Icons.play_arrow, size: 16.0, color: Color(0xFF212121)),
               const SizedBox(width: 6.0),
-              Text(
-                item.time,
-                style: const TextStyle(
-                  fontSize: 12.0,
-                  color: Color(0xFF8C8C8C),
+              Expanded(
+                child: Text(
+                  item.time,
+                  style: const TextStyle(
+                    fontSize: 12.0,
+                    color: Color(0xFF8C8C8C),
+                  ),
                 ),
               ),
-              const Spacer(),
               Text(
-                item.speaker.duration == null ? 'xx' : '${item.speaker.duration}s',
+                '${segmentDuration}s',
                 style: const TextStyle(
                   fontSize: 12.0,
                   color: Color(0xFF8C8C8C),
@@ -238,7 +271,7 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
               ),
             ],
           ),
-          const SizedBox(height: 8.0),
+          const SizedBox(height: 6.0),
           Text(
             item.content,
             maxLines: 3,
@@ -253,7 +286,51 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
       ),
     );
   }
-  // AI-generated END - 构建条目卡片
+
+  /// 从时间戳字符串中解析时长（秒数）
+  /// 时间戳格式：00:00:00 - 00:00:24
+  int _parseDurationFromTime(String timeStr) {
+    try {
+      final parts = timeStr.split(' - ');
+      if (parts.length != 2) return 0;
+
+      final startTime = _parseTimeToSeconds(parts[0]);
+      final endTime = _parseTimeToSeconds(parts[1]);
+
+      return endTime - startTime;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// 将时间字符串（HH:MM:SS）转换为秒数
+  int _parseTimeToSeconds(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length != 3) return 0;
+
+      final hours = int.parse(parts[0]);
+      final minutes = int.parse(parts[1]);
+      final seconds = int.parse(parts[2]);
+
+      return hours * 3600 + minutes * 60 + seconds;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  /// 格式化时长：将秒数转换为 "总时长 Xm Ys" 格式
+  String _formatDuration(int seconds) {
+    if (seconds < 60) {
+      return '总时长 ${seconds}s';
+    }
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    if (remainingSeconds == 0) {
+      return '总时长 ${minutes}m';
+    }
+    return '总时长 ${minutes}m ${remainingSeconds}s';
+  }
 
   // AI-generated START - 构建底部操作
   Widget _buildFooter(BuildContext context) {
@@ -321,23 +398,28 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
   /// 使用 Future.wait 并发执行所有更新请求
   Future<void> _updateSpeakName() async {
     // 收集需要更新的请求列表
-    final List<Future<MPUpdateSpeakerResponse?>> updateFutures = [];
+    final List<Future<MPMarkSpeakerResponse?>> updateFutures = [];
 
-    // 遍历所有item
-    for (final item in widget.items) {
-      // 通过item.id从_nameControllers中获取controller
-      final controller = _nameControllers[item.id];
+    // 遍历所有itemModel
+    for (final model in _itemModels.values) {
+      // 通过model.id从_nameControllers中获取controller
+      final controller = _nameControllers[model.name];
       if (controller == null) continue;
 
-      // 比较item.speaker.name与controller文本是否一致
+      // 比较model.name与controller文本是否一致
       final newName = controller.text.trim();
-      if (item.speaker.name != newName && newName.isNotEmpty) {
+      if (model.name != newName && newName.isNotEmpty) {
         // 如果不一致，创建更新请求并添加到列表
-        final request = MPUpdateSpeakerRequest(
-          speakerId: item.speaker.id,
-          name: newName,
-        );
-        updateFutures.add(updateSpeaker(request));
+        // 使用第一个item的speaker.id作为speakerId
+        if (model.items.isNotEmpty) {
+          final request = MPMarkSpeakerRequest(
+            memoryId: widget.memoryId,
+            name: newName,
+            templateSpeakerName: model.name,
+            avatar: '',
+          );
+          updateFutures.add(markSpeaker(request));
+        }
       }
     }
 
