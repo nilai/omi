@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:growthbook_sdk_flutter/growthbook_sdk_flutter.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:provider/provider.dart';
 
@@ -182,7 +183,9 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
   /// 处理合并操作
   /// @param provider Provider实例
   void _handleMerge(MPMergeMemoryProvider provider) async {
-    final req = MPAppendMemoryRequest(memoryIds: provider.selectedMemoryIds.toList());
+    List<String> ids = [widget.currentMemoryId];
+    ids.addAll(provider.selectedMemoryIds.toList());
+    final req = MPAppendMemoryRequest(memoryIds: ids);
     final response = await appendMemory(req);
     if (response != null && response.baseResp.code == 0) {
       widget.onMergeSuccess?.call();
