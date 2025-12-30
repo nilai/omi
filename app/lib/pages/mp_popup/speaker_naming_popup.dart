@@ -218,6 +218,8 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
           const SizedBox(height: 8.0),
           Text(
             item.content,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 14.0,
               color: Color(0xFF4B4B4B),
