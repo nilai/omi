@@ -1,19 +1,13 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import 'package:omi/pages/mp_home/widgets/mp_home_card.dart';
-import 'package:omi/services/mp_audio_upload.dart';
 import 'package:omi/services/mp_home_refresh_event_service.dart';
 import 'package:provider/provider.dart';
 
-import '../../backend/http/mp_api/mp_memory.dart';
-import '../../backend/schema/mp/mp_memory.dart';
-import '../../gen/assets.gen.dart';
 import '../../providers/device_provider.dart';
 import '../../utils/audio_picker_utils.dart';
-import '../../utils/mp_device_file_util.dart';
 import '../../utils/other/temp.dart';
 import '../home/widgets/mp_battery_info_widget.dart';
 import '../memories/mp_memory_page_client.dart';
@@ -22,7 +16,6 @@ import '../mp_canlendar/widgets/calendar_popup.dart';
 import '../mp_popup/import_audio_dialog.dart';
 import '../mp_popup/mp_center_popup.dart';
 import '../mp_popup/record_audio_option_card.dart';
-import '../onboarding/find_device/mp_page.dart';
 import 'mp_search_page.dart';
 import 'provider/mp_page_provider.dart';
 import 'widgets/mp_home_top_import_sd_audio_widget.dart';
@@ -151,9 +144,9 @@ class _MPPageContentState extends State<MPPageContent> {
     //   // 传完后， 更新本地，
     //   final provider = context.read<MPHomePageProvider>();
     //   provider.updateImportAudioType(MPHomeImportAudioType.none);
-    //   // await provider.addLocalRecord(fileDetail.localPath ?? '',
-    //   //     duration: fileDetail.durationSeconds, fileName: fileDetail.name);
-    //   // provider.uploadLocalRecords();
+    //   await provider.addLocalRecord(fileDetail.localPath ?? '',
+    //       duration: fileDetail.durationSeconds, fileName: fileDetail.name, source: 'MemoPin');
+    //   provider.uploadLocalRecords();
     // });
   }
 
@@ -456,7 +449,7 @@ class _MPPageContentState extends State<MPPageContent> {
           // /// 上传文件，上传完成删除记录信息
           // await _uploadAudioFile(context, File(path));
 
-          await provider.addLocalRecord(path, source: 'Mobile Phone');
+          await provider.addLocalRecord(path, source: 'MobilePhone');
           provider.uploadLocalRecords();
         }
       },
@@ -476,7 +469,7 @@ class _MPPageContentState extends State<MPPageContent> {
           // /// 上传文件，上传完成删除记录信息
           // await _uploadAudioFile(context, File(path));
 
-          await provider.addLocalRecord(path, source: 'Mobile Phone');
+          await provider.addLocalRecord(path, source: 'MobilePhone');
           provider.uploadLocalRecords();
         }
       },

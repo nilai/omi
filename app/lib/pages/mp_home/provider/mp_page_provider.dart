@@ -27,6 +27,7 @@ class MPMemoryItem {
     this.localPath,
     this.isUploading = false,
     required this.createAt,
+    this.source,
   });
 
   final String dateText;
@@ -39,6 +40,7 @@ class MPMemoryItem {
   final MPMemoryStruct memory;
   String? localPath;
   final int createAt;
+  String? source;
   bool isUploading = false;
 }
 
@@ -94,6 +96,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       description: content,
       memory: this,
       createAt: createAt,
+      source: source,
     );
   }
 }

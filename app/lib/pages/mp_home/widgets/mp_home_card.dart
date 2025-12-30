@@ -15,6 +15,7 @@ class MPHomeCard extends StatefulWidget {
     this.onDelete,
     this.onViewDetail,
     this.isUploading = false,
+    this.source,
   });
 
   /// 左上角日期文本（例：07-22）。
@@ -49,6 +50,8 @@ class MPHomeCard extends StatefulWidget {
 
   /// 是否正在上传。
   final bool isUploading;
+
+  final String? source;
 
   @override
   State<MPHomeCard> createState() => _MPHomeCardState();
@@ -136,8 +139,8 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
                         final double screenHeight = mediaQuery.size.height;
 
                         // 计算菜单位置：显示在图标底部，右对齐
-                        final double menuWidth = 100.0; // 菜单预估宽度
-                        final double menuHeight = 64.0; // 菜单高度（两个item，每个32px）
+                        const double menuWidth = 100.0; // 菜单预估宽度
+                        const double menuHeight = 64.0; // 菜单高度（两个item，每个32px）
                         final double left = offset.dx + size.width - menuWidth;
                         final double top = offset.dy + size.height;
                         final double right = screenWidth - left - menuWidth;
@@ -272,19 +275,36 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
               ),
             ],
             const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: GestureDetector(
-                onTap: () => widget.onViewDetail?.call(),
-                behavior: HitTestBehavior.opaque,
-                child: Text(
-                  '查看详情',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF2962FF),
-                    fontWeight: FontWeight.w600,
+            Row(
+              children: [
+                if (widget.source != null && widget.source!.isNotEmpty) ...[
+                  const Icon(
+                    Icons.note,
+                    color: Color(0xFF7D7D7D),
+                    size: 14,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    widget.source!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF7D7D7D),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => widget.onViewDetail?.call(),
+                  behavior: HitTestBehavior.opaque,
+                  child: Text(
+                    '查看详情',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF2962FF),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
