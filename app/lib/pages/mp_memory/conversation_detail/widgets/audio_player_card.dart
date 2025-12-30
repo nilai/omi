@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../../utils/mp_local_records_util.dart';
+
 /// 音频播放器卡片组件
 /// 显示原始音频的播放控件，包括播放按钮、进度条和时间显示
 class AudioPlayerCard extends StatefulWidget {
@@ -16,7 +18,7 @@ class AudioPlayerCard extends StatefulWidget {
   // AI-generated END - totalDurationSeconds
 
   // AI-generated START - 音频URL
-  final Future<String>? audioUrl;
+  final String? audioUrl;
   // AI-generated END - audioUrl
 
   const AudioPlayerCard({
@@ -70,8 +72,14 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 初始化音频播放器
   Future<void> _setupPlayer() async {
-    final audioUrl = await widget.audioUrl;
-    if (audioUrl == null || audioUrl.isEmpty) {
+    String audioUrl = widget.audioUrl ?? '';
+    if (audioUrl.isNotEmpty) {
+      final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(audioUrl);
+      if (localPath != null && localPath.isNotEmpty) {
+        audioUrl = localPath;
+      }
+    }
+    if (audioUrl.isEmpty) {
       return;
     }
 
@@ -116,7 +124,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 播放音频
   Future<void> play() async {
-    final audioUrl = await widget.audioUrl;
+    final audioUrl = widget.audioUrl;
     if (audioUrl == null || audioUrl.isEmpty) {
       debugPrint('音频URL为空，无法播放');
       return;
@@ -145,7 +153,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
   /// 继续播放音频（从暂停位置继续）
   Future<void> resume() async {
-    final audioUrl = await widget.audioUrl;
+    final audioUrl = widget.audioUrl;
     if (audioUrl == null || audioUrl.isEmpty) {
       debugPrint('音频URL为空，无法继续播放');
       return;

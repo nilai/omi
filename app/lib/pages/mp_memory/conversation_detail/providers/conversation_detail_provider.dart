@@ -6,8 +6,6 @@ import 'package:omi/backend/schema/mp/mp_memory.dart';
 import 'package:omi/pages/mp_custom_utils/mp_timestamp_utils.dart';
 import 'package:omi/pages/mp_memory/conversation_detail/widgets/participants_card.dart';
 
-import '../../../../utils/mp_local_records_util.dart';
-
 /// 对话消息数据模型
 class ConversationMessage {
   // AI-generated START - 构造函数
@@ -161,16 +159,7 @@ class ConversationDetailProvider with ChangeNotifier {
   // AI-generated END - aiExpertContent
 
   // AI-generated START - 获取录音文件URL
-  Future<String>? get recordFileUrl async {
-    String recordFile = '';
-    if (memory?.onlyRecordContent != null) {
-      recordFile = memory?.onlyRecordContent!.recordFile ?? '';
-    } else if (memory?.summaryContent != null) {
-      recordFile = memory?.summaryContent!.recordUrl ?? '';
-    }
-    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(recordFile);
-    return localPath;
-  }
+  String get recordFileUrl => memory?.summaryContent?.recordUrl ?? '';
   // AI-generated END - recordFileUrl
 
   void updateTitle(String title) {
