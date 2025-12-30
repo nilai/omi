@@ -200,7 +200,6 @@ class MPChatPageState extends State<MPChatPage> with AutomaticKeepAliveClientMix
           key: scaffoldKey,
           backgroundColor: Colors.white,
           appBar: MPChatAppBar(
-            title: widget.title,
             onLeftIconTap: () {
               _onLeftIconTap();
             },

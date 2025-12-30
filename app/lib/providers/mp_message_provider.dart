@@ -163,7 +163,7 @@ class MPMessageProvider extends ChangeNotifier {
         break;
       }
     }
-    final req = MPGetConversationDetailRequest(conversationId: conversationId);
+    final req = MPGetConversationDetailRequest(conversationId: conversationId, pageSize: 1000, cursor: '');
     final response = await getConversationDetail(req);
     if (response != null) {
       curPageModel?.messages = response.contents
@@ -186,7 +186,7 @@ class MPMessageProvider extends ChangeNotifier {
       return;
     }
     final conversationId = curPageModel?.conversationId ?? '';
-    final req = MPGetConversationDetailRequest(conversationId: conversationId);
+    final req = MPGetConversationDetailRequest(conversationId: conversationId, pageSize: 1000, cursor: '');
     final response = await getConversationDetail(req);
     if (response != null) {
       if (curPageModel?.conversationId == conversationId) {

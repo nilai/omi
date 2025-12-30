@@ -85,6 +85,8 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     // 根据 labelColor 或 type 确定 tagColor
     Color tagColor = _parseHexColor(labelColor);
 
+    final source = type == MPMemoryType.onlyRecord ? onlyRecordContent?.source : null;
+
     return MPMemoryItem(
       dateText: dateText,
       tagText: label,
@@ -95,7 +97,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
       description: content,
       memory: this,
       createAt: createAt,
-      source: type == MPMemoryType.onlyRecord ? source : null,
+      source: source,
     );
   }
 }

@@ -114,12 +114,14 @@ MPOnlyRecordMemoryStruct _$MPOnlyRecordMemoryStructFromJson(
         Map<String, dynamic> json) =>
     MPOnlyRecordMemoryStruct(
       recordFile: json['record_file'] as String,
+      source: json['source'] as String?,
     );
 
 Map<String, dynamic> _$MPOnlyRecordMemoryStructToJson(
         MPOnlyRecordMemoryStruct instance) =>
     <String, dynamic>{
       'record_file': instance.recordFile,
+      'source': instance.source,
     };
 
 MPInsightMemoryStruct _$MPInsightMemoryStructFromJson(
@@ -175,7 +177,6 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
       customLabels: (json['custom_labels'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      source: json['source'] as String?,
     );
 
 Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
@@ -193,7 +194,6 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'insight_content': instance.insightContent,
       'ai_expert_content': instance.aiExpertContent,
       'custom_labels': instance.customLabels,
-      'source': instance.source,
     };
 
 const _$MPMemoryTypeEnumMap = {

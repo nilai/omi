@@ -187,8 +187,12 @@ class MPOnlyRecordMemoryStruct {
   @JsonKey(name: 'record_file')
   final String recordFile;
 
+  @JsonKey(name: 'source')
+  final String? source;
+
   MPOnlyRecordMemoryStruct({
     required this.recordFile,
+    this.source,
   });
 
   factory MPOnlyRecordMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPOnlyRecordMemoryStructFromJson(json);
@@ -268,8 +272,6 @@ class MPMemoryStruct {
   @JsonKey(name: 'custom_labels')
   final List<String>? customLabels;
 
-  @JsonKey(name: 'source')
-  final String? source;
 
   MPMemoryStruct({
     required this.id,
@@ -285,7 +287,6 @@ class MPMemoryStruct {
     this.insightContent,
     this.aiExpertContent,
     this.customLabels,
-    this.source,
   });
 
   factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);

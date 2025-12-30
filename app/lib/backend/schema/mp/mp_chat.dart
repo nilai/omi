@@ -219,19 +219,28 @@ class MPGetConversationListResponse {
 class MPGetConversationDetailRequest {
   final String conversationId;
 
+  final int pageSize;
+  final String cursor;
+
   MPGetConversationDetailRequest({
     required this.conversationId,
+    required this.pageSize,
+    required this.cursor,
   });
 
   factory MPGetConversationDetailRequest.fromJson(Map<String, dynamic> json) {
     return MPGetConversationDetailRequest(
       conversationId: json['conversation_id'] as String? ?? '',
+      pageSize: json['page_size'] as int? ?? 0,
+      cursor: json['cursor'] as String? ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'conversation_id': conversationId,
+      'page_size': pageSize,
+      'cursor': cursor,
     };
   }
 }

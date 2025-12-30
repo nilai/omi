@@ -16,13 +16,10 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onMenuTap;
   // AI-generated END - onMenuTap
 
-  final String? title;
-
   const MPChatAppBar({
     super.key,
     this.onLeftIconTap,
     this.onMenuTap,
-    this.title,
   });
 
   @override
@@ -76,18 +73,20 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   Widget _buildTitle() {
-    if (title != null) {
-      return Expanded(
+    return Consumer<MPMessageProvider>(
+      builder: (context, mpProvider, child) {
+        return Expanded(
           child: Text(
-        title!,
-        style: TextStyle(
-          color: Colors.grey.shade800,
-          fontSize: 18.0,
-          fontWeight: FontWeight.w500,
-        ),
-      ));
-    }
-    return const Spacer();
+            mpProvider.curPageModel?.title ?? '',
+            style: TextStyle(
+              color: Colors.grey.shade800,
+              fontSize: 16.0,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override

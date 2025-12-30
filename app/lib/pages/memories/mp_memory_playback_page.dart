@@ -236,7 +236,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     final duration = widget.memory.duration;
     final durationText = duration > 0 ? MPTimestampUtils.toMinutesAndSecondsString(duration) : 'unknown';
 
-    final source = widget.memory.source ?? 'unknown';
+    final source = widget.memory.onlyRecordContent?.source ?? 'unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
