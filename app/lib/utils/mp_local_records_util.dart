@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../env/env.dart';
-
 class MPLocalMemoryModel {
   MPLocalMemoryModel({
     required this.fileName,
@@ -183,7 +181,7 @@ class MPLocalRecordsUtil {
         break;
       }
     }
-    return '${Env.apiBaseUrl}$recordFile';
+    return recordFile;
   }
 
   /// 从URL中获取音频文件名
