@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../env/env.dart';
-import 'audio/mp_record_audio_util.dart';
 
 class MPLocalMemoryModel {
   MPLocalMemoryModel({
@@ -173,7 +173,7 @@ class MPLocalRecordsUtil {
     if (recordFile.isEmpty) {
       return '';
     }
-    final fileId = MPRecordAudioUtil.getFileId(recordFile);
+    final fileId = MPLocalRecordsUtil.getFileIdFromUrl(recordFile);
     final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
     for (var el in locaRecords) {
       if (el.fileId == fileId) {
@@ -184,5 +184,41 @@ class MPLocalRecordsUtil {
       }
     }
     return '${Env.apiBaseUrl}$recordFile';
+  }
+
+  /// 从URL中获取音频文件名
+  ///
+  /// [url] 音频文件的URL地址
+  ///
+  /// 返回文件名，例如从 `audios/44726b9e-ef76-4f89-8e60-fb22b8c9abc8?` 中提取 `44726b9e-ef76-4f89-8e60-fb22b8c9abc8`
+  static String getFileIdFromUrl(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final path = uri.path;
+
+      // 查找 'audios/' 的位置
+      final audiosIndex = path.indexOf('audios/');
+      if (audiosIndex == -1) {
+        debugPrint('MPAudioDownloadService: URL中未找到 audios/ 路径');
+        return url;
+      }
+
+      // 提取 audios/ 后面的部分
+      final afterAudios = path.substring(audiosIndex + 'audios/'.length);
+
+      // 如果后面有 '/' 或 '?'，则截取到该位置
+      final fileName = afterAudios.split('/').first.split('?').first;
+
+      if (fileName.isEmpty) {
+        debugPrint('MPAudioDownloadService: 无法从URL中提取文件名');
+        return url;
+      }
+
+      debugPrint('MPAudioDownloadService: 提取的文件名: $fileName');
+      return fileName;
+    } catch (e) {
+      debugPrint('MPAudioDownloadService: 提取文件名异常: $e');
+      return url;
+    }
   }
 }

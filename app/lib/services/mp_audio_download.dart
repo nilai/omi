@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:omi/utils/audio_picker_utils.dart';
 
+import '../utils/mp_local_records_util.dart';
+
 class MPAudioDownloadResult {
   final String path;
   final String fileName;
@@ -158,42 +160,6 @@ class MPAudioDownloadService {
     return '.m4a';
   }
 
-  /// 从URL中获取音频文件名
-  ///
-  /// [url] 音频文件的URL地址
-  ///
-  /// 返回文件名，例如从 `audios/44726b9e-ef76-4f89-8e60-fb22b8c9abc8?` 中提取 `44726b9e-ef76-4f89-8e60-fb22b8c9abc8`
-  String? getAudioFileName(String url) {
-    try {
-      final uri = Uri.parse(url);
-      final path = uri.path;
-
-      // 查找 'audios/' 的位置
-      final audiosIndex = path.indexOf('audios/');
-      if (audiosIndex == -1) {
-        debugPrint('MPAudioDownloadService: URL中未找到 audios/ 路径');
-        return null;
-      }
-
-      // 提取 audios/ 后面的部分
-      final afterAudios = path.substring(audiosIndex + 'audios/'.length);
-
-      // 如果后面有 '/' 或 '?'，则截取到该位置
-      final fileName = afterAudios.split('/').first.split('?').first;
-
-      if (fileName.isEmpty) {
-        debugPrint('MPAudioDownloadService: 无法从URL中提取文件名');
-        return null;
-      }
-
-      debugPrint('MPAudioDownloadService: 提取的文件名: $fileName');
-      return fileName;
-    } catch (e) {
-      debugPrint('MPAudioDownloadService: 提取文件名异常: $e');
-      return null;
-    }
-  }
-
   /// 整合后的方法：下载音频并保存到本地
   ///
   /// [url] 音频文件的URL地址
@@ -222,8 +188,8 @@ class MPAudioDownloadService {
 
       // 步骤 3: 从URL中提取文件名
       debugPrint('MPAudioDownloadService: 步骤 3/4 - 提取文件名');
-      final fileName = getAudioFileName(url);
-      if (fileName == null) {
+      final fileName = MPLocalRecordsUtil.getFileIdFromUrl(url);
+      if (fileName.isEmpty) {
         debugPrint('MPAudioDownloadService: 无法提取文件名');
         return null;
       }

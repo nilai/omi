@@ -124,9 +124,4 @@ class MPRecordAudioUtil {
   void _toast(String message) {
     MPToastUtils.showMessage(message);
   }
-
-  ///
-  static String getFileId(String uri) {
-    return uri.split('/').last;
-  }
 }
