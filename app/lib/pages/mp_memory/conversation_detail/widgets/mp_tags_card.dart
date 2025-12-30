@@ -66,7 +66,7 @@ class MPTagsCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20.0),
           border: Border.all(
             color: Colors.grey.shade300,
@@ -101,7 +101,7 @@ class MPTagsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
           color: Colors.grey.shade300,

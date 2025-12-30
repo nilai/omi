@@ -95,7 +95,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
               _showMoreActionsDialog(context);
             },
             onSharePressed: () {
-              MPShareMemoryDialog.show(context: context, memoryId: widget.memory.id);
+              MPShareMemoryDialog.show(context: context, memoryId: _memoryId);
             },
           ),
           body: _buildBody(provider),
@@ -119,7 +119,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             onTapTitle: () async {
               MPMemoryUpdateNameDialog.show(
                   context: context,
-                  memoryId: provider.memory?.id ?? widget.memory.id,
+                  memoryId: _memoryId,
                   currentTitle: provider.title ?? widget.memory.title,
                   onSuccess: (title) {
                     provider.updateTitle(title);
@@ -219,18 +219,9 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 label: '追加总结',
                 icon: Icons.add_box_outlined,
                 onTap: () {
-                  // Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //         builder: (context) => MPMergeMemoryPage(
-                  //               currentMemoryId: widget.memory.id,
-                  //               onMergeSuccess: () {
-                  //                 provider.reloadDetail();
-                  //               },
-                  //             )));
                   MPMergeMemoryPage.pushPage(
                       context: context,
-                      memoryId: widget.memory.id,
+                      memoryId: _memoryId,
                       onSuccess: () {
                         provider.reloadDetail();
                       });
@@ -243,7 +234,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
                 onTap: () {
                   MPChatHelper.instance.memory = widget.memory;
                   MPChatPage.openChatPage(context,
-                      chatId: widget.memory.id, title: widget.memory.title, type: MPChatPageType.memory);
+                      chatId: _memoryId, title: widget.memory.title, type: MPChatPageType.memory);
                 },
               ),
             ],
@@ -256,6 +247,11 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     );
   }
   // AI-generated END - _buildBody
+
+  String get _memoryId {
+    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+    return provider.memory?.id ?? widget.memory.id;
+  }
 
   // AI-generated START - 构建标签内容
   Widget _buildTabContent(String tabId) {
@@ -597,7 +593,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   Future<void> _deleteMemory() async {
-    final req = MPDeleteMemoryRequest(memoryId: widget.memory.id);
+    final req = MPDeleteMemoryRequest(memoryId: _memoryId);
     final res = await deleteMemory(req);
     if (res != null && res.baseResp.code == 0) {
       MPHomeRefreshEventService().emitRefresh();
@@ -612,7 +608,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   void _showAddTagDialog() {
     MPMemoryAddTagDialog.show(
         context: context,
-        memoryId: widget.memory.id,
+        memoryId: _memoryId,
         onSuccess: (label) {
           final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
           provider.reloadDetail();
@@ -621,7 +617,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   void _regenerateSummary() async {
     final req = MPSummaryRecordRequest(
-        memoryId: widget.memory.id,
+        memoryId: _memoryId,
         recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
         recordMemoAt: widget.memory.createAt);
     final res = await summaryRecord(req);
