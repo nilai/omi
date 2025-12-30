@@ -1,8 +1,6 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
+import 'package:omi/utils/audio_picker_utils.dart';
 
 class MPAudioDownloadResult {
   final String path;
@@ -24,37 +22,8 @@ class MPAudioDownloadService {
   /// 单例实例
   static final MPAudioDownloadService instance = MPAudioDownloadService._();
 
-  /// 下载目录名称
-  static const String _downloadDirName = 'AudioDownloads';
-
   /// 最大重试次数（用于网络错误）
   static const int _maxRetries = 3;
-
-  /// 获取下载目录路径
-  ///
-  /// Android: External storage directory / AudioDownloads
-  /// iOS: Application Documents Directory / AudioDownloads
-  Future<String> _getDownloadPath() async {
-    Directory? directory;
-
-    if (Platform.isAndroid) {
-      directory = await getExternalStorageDirectory();
-      if (directory != null) {
-        // Use parent path for more accessible location
-        directory = directory.parent;
-      }
-    }
-
-    // Fallback to documents directory for iOS or if external storage unavailable
-    directory ??= await getApplicationDocumentsDirectory();
-
-    final downloadDir = Directory('${directory.path}/$_downloadDirName');
-    if (!await downloadDir.exists()) {
-      await downloadDir.create(recursive: true);
-    }
-
-    return downloadDir.path;
-  }
 
   /// 从URL下载音频文件
   ///
@@ -225,38 +194,6 @@ class MPAudioDownloadService {
     }
   }
 
-  /// 保存音频文件到本地并返回路径
-  ///
-  /// [audioBytes] 音频文件的字节数据
-  /// [fileName] 文件名（不包含扩展名）
-  /// [extension] 文件扩展名，默认为 '.m4a'
-  ///
-  /// 返回保存后的文件路径，失败返回null
-  Future<String?> saveAudioToLocal(
-    List<int> audioBytes,
-    String fileName, {
-    String extension = '.m4a',
-  }) async {
-    try {
-      // 确保文件名包含扩展名
-      final fullFileName = fileName.endsWith(extension) ? fileName : '$fileName$extension';
-
-      // 获取下载目录
-      final downloadPath = await _getDownloadPath();
-      final filePath = '$downloadPath/$fullFileName';
-      final file = File(filePath);
-
-      // 写入文件
-      await file.writeAsBytes(audioBytes);
-
-      debugPrint('MPAudioDownloadService: 文件已保存到: $filePath');
-      return filePath;
-    } catch (e) {
-      debugPrint('MPAudioDownloadService: 保存文件异常: $e');
-      return null;
-    }
-  }
-
   /// 整合后的方法：下载音频并保存到本地
   ///
   /// [url] 音频文件的URL地址
@@ -293,7 +230,7 @@ class MPAudioDownloadService {
 
       // 步骤 4: 保存文件到本地（使用检测到的扩展名）
       debugPrint('MPAudioDownloadService: 步骤 4/4 - 保存文件到本地');
-      final filePath = await saveAudioToLocal(audioBytes, fileName, extension: detectedExtension);
+      final filePath = await AudioPickerUtils.saveAudioToLocal(audioBytes, fileName, extension: detectedExtension);
       if (filePath == null) {
         debugPrint('MPAudioDownloadService: 保存文件失败');
         return null;

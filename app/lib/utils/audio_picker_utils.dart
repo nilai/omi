@@ -443,4 +443,36 @@ class AudioPickerUtils {
     }
     return dir;
   }
+
+  /// 保存音频文件到本地并返回路径
+  ///
+  /// [audioBytes] 音频文件的字节数据
+  /// [fileName] 文件名（不包含扩展名）
+  /// [extension] 文件扩展名，默认为 '.m4a'
+  ///
+  /// 返回保存后的文件路径，失败返回null
+  static Future<String?> saveAudioToLocal(
+    List<int> audioBytes,
+    String fileName, {
+    String extension = '.m4a',
+  }) async {
+    try {
+      // 确保文件名包含扩展名
+      final fullFileName = fileName.endsWith(extension) ? fileName : '$fileName$extension';
+
+      // 获取沙盒持久化音频目录
+      final dir = await _getPersistentAudioDirectory();
+      final filePath = '${dir.path}/$fullFileName';
+      final file = File(filePath);
+
+      // 写入文件
+      await file.writeAsBytes(audioBytes);
+
+      debugPrint('AudioPickerUtils: 文件已保存到: $filePath');
+      return filePath;
+    } catch (e) {
+      debugPrint('AudioPickerUtils: 保存文件异常: $e');
+      return null;
+    }
+  }
 }
