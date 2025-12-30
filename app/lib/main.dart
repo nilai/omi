@@ -364,7 +364,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     labelMedium: TextStyle(fontSize: 12, color: Colors.grey.shade200),
                   ),
                   textSelectionTheme: const TextSelectionThemeData(
-                    cursorColor: Colors.white,
+                    // cursorColor: Colors.white,
+                    cursorColor: Colors.black,
                     selectionColor: Colors.deepPurple,
                     selectionHandleColor: Colors.white,
                   ),
