@@ -89,7 +89,8 @@ Future<MPGetConversationListResponse?> getConversationList(MPGetConversationList
 /// GET /api/v1/chat/get_conversation_detail
 Future<MPGetConversationDetailResponse?> getConversationDetail(MPGetConversationDetailRequest req) async {
   final response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/chat/get_conversation_detail?conversation_id=${req.conversationId}',
+    url:
+        '${Env.apiBaseUrl}api/v1/chat/get_conversation_detail?conversation_id=${req.conversationId}&page_size=${req.pageSize}&cursor=${req.cursor}',
     headers: {},
     method: 'GET',
     body: '',
