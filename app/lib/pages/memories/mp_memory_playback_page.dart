@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
 import '../../backend/schema/mp/mp_memory.dart';
+import '../../gen/assets.gen.dart';
 import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
@@ -15,7 +15,6 @@ import '../mp_custom_utils/mp_toast_utils.dart';
 import '../mp_popup/mp_record_detail_more_popup.dart';
 import 'mp_memory_transition_page.dart';
 import 'widgets/mp_memory_convert_dialog.dart';
-import 'widgets/mp_memory_update_name_dialog.dart';
 
 /// 记忆详情播放页
 /// - 顶部与底部固定
@@ -241,10 +240,12 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   Widget _buildMetaSection() {
     // 从 memory.createAt 获取时间（时间戳，单位可能是毫秒或秒）
-    final createdAt = MPTimestampUtils.timestampMsToDateTime(widget.memory.createAt);
-    final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(createdAt);
+    final dateText = MPTimestampUtils.timestampToDateString(widget.memory.createAt);
     // 格式化时长为 "2m 6s" 格式
-    final durationText = MPTimestampUtils.toMinutesAndSecondsString(widget.memory.duration);
+    final duration = widget.memory.duration;
+    final durationText = duration > 0 ? MPTimestampUtils.toMinutesAndSecondsString(duration) : 'unknown';
+
+    final source = widget.memory.source ?? 'unknown';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,7 +253,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         Row(
           children: [
             const Icon(
-              Icons.calendar_today_outlined,
+              Icons.access_time,
               size: 16,
               color: Color(0xFF6B7280),
             ),
@@ -263,36 +264,38 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            const Icon(
-              Icons.access_time,
-              size: 16,
-              color: Color(0xFF6B7280),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              durationText,
-              style: const TextStyle(color: Color(0xFF6B7280)),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            const Icon(
-              Icons.bookmark_outline,
-              size: 16,
-              color: Color(0xFF6B7280),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              widget.memory.label.isNotEmpty ? widget.memory.label : '记忆',
-              style: const TextStyle(color: Color(0xFF6B7280)),
-            ),
-          ],
-        ),
+        if (durationText.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(
+                Icons.play_circle_outline,
+                size: 16,
+                color: Color(0xFF6B7280),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                durationText,
+                style: const TextStyle(color: Color(0xFF6B7280)),
+              ),
+            ],
+          ),
+        ],
+        if (source.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Assets.images.mpRecordNoteIcon.image(
+                height: 16,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                source,
+                style: const TextStyle(color: Color(0xFF6B7280)),
+              ),
+            ],
+          ),
+        ],
       ],
     );
   }

@@ -286,7 +286,6 @@ class _MPHomeCardState extends State<MPHomeCard> with SingleTickerProviderStateM
                   Assets.images.mpRecordNoteIcon.image(
                     height: 16,
                   ),
-                  const SizedBox(width: 4),
                   Text(
                     widget.source!,
                     style: theme.textTheme.bodySmall?.copyWith(
