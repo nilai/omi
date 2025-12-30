@@ -56,6 +56,7 @@ struct InsightMemoryStruct {
 
 struct OnlyRecordMemoryStruct {
     1: string record_file, // 本地保存的文件名
+    2: string: source,
 }
 
 struct RecordConversationStruct {
@@ -72,6 +73,8 @@ struct SummaryMemoryStruct {
     3: string summary, // markdown格式
     4: list<RecordConversationStruct> transcript,
     5: list<TodoStruct> todos,
+    6: i32: status,
+    7: string: source,
 }
 
 struct MemoryStruct {
@@ -80,12 +83,14 @@ struct MemoryStruct {
     3: string title,
     4: MemoryType type,
     5: string label, // 会议纪要、今日运势之类的
-    6: string content,
-    7: i32 duration, // 单位是s
-    7: SummaryMemoryStruct summary_content,
-    8: OnlyRecordMemoryStruct only_record_content,
-    9: InsightMemoryStruct insight_content,
-    10: AiExpertMemoryStruct ai_expert_content,
+    6: string label_color,  // 格式为 #467db4
+    7: list<string> custom_labels,
+    8: string content,
+    9: i32 duration, // 单位是s
+    10: SummaryMemoryStruct summary_content,
+    11: OnlyRecordMemoryStruct only_record_content,
+    12: InsightMemoryStruct insight_content,
+    13: AiExpertMemoryStruct ai_expert_content,
 }
 
 
@@ -202,9 +207,12 @@ struct CreateRecordRequest {
     1: string record_file,
     2: i64 create_at,
     3: i32 duration, // 单位是s
+    4: string source,
 }
 
 struct CreateRecordResponse {
+    1: string memory_id,
+    2: string record_url,
     255: BaseResp base_resp,
 }
 
@@ -222,9 +230,19 @@ struct SummaryRecordRequest {
     1: string memory_id,
     2: string record_url,
     3: i64 record_memo_at,  // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
+    4: optional string template_id,  // 总结需要的模板
 }
 
 struct SummaryRecordResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetSummaryStatusRequest {
+    1: string memory_id,
+}
+
+struct GetSummaryStatusResponse {
+    1: i32: status,
     255: BaseResp base_resp,
 }
 
@@ -256,6 +274,43 @@ struct DeleteMemoryRequest {
 }
 
 struct DeleteMemoryResponse {
+    255: BaseResp base_resp,
+}
+
+struct RenameMemoryRequest {
+    1: string memory_id,
+    2: string title,
+}
+
+struct RenameMemoryResponse {
+    255: BaseResp base_resp,
+}
+
+struct MemoryAddTagRequest {
+    1: string memory_id,
+    2: string label,
+}
+
+struct MemoryAddTagResponse {
+    255: BaseResp base_resp,
+}
+
+struct GetSummaryListRequest {
+    1: i32 page_size,
+    2: string cursor,
+}
+
+struct GetSummaryListResponse {
+    1: list<MemoryStruct> summarys,
+    2: bool has_more,
+    255: BaseResp base_resp,
+}
+
+struct AppendMemoryRequest {
+    1: list<string> memory_ids,
+}
+
+struct AppendMemoryResponse {
     255: BaseResp base_resp,
 }
 
@@ -374,6 +429,7 @@ struct CreateConversationRequest {
 
 struct CreateConversationResponse {
     1: string conversation_id,
+    2: string greet,
     255: BaseResp base_resp,
 }
 
@@ -399,6 +455,8 @@ struct GetConversationListResponse {
 
 struct GetConversationDetailRequest {
     1: string conversation_id,
+    2: i32 page_size,
+    3: string cursor,
 }
 
 struct GetConversationDetailResponse {
@@ -414,6 +472,24 @@ struct TranscriptRequest {
 struct TranscriptResponse {
     1: string content,
     255: BaseResp base_resp,
+}
+
+struct GetChatSuggestionResponse {
+    1: map<map<string, list<string>>> suggestion, // 从记忆仓库进入的AI助理 key为 chat_with_speaker;
+    // 从Memory进入的AI助理 key为chat_with_memory；直接进入AI 助理 key为 normal
+    255: BaseResp base_resp,
+}
+
+struct GetChatSuggestionRequest {
+}
+
+struct GetConversationTitleResponse {
+    1: string title,
+    255: BaseResp base_resp,
+}
+
+struct GetConversationTitleRequest {
+    1: string conversation_id,
 }
 
 struct AddSpeakerRequest {
@@ -652,12 +728,22 @@ service AppService {
     GetUploadRecordUrlResponse GetUploadRecordUrl(1: GetUploadRecordUrlRequest req)
     // POST /api/v1/memory/summary_record
     SummaryRecordResponse SummaryRecord(1: SummaryRecordRequest req)
+    // GET /api/v1/memory/summary/get_status
+    GetSummaryStatusResponse GetSummaryStatus(1: GetSummaryStatusRequest req)
     // GET /api/v1/memory/search
     SearchMemoryResponse SearchMemory(1: SearchMemoryRequest req)
     // GET /api/v1/memory/share
     ShareMemoryResponse ShareMemory(1: ShareMemoryRequest req)
     // POST /api/v1/memory/delete
     DeleteMemoryResponse DeleteMemory(1: DeleteMemoryRequest req)
+    // POST /api/v1/memory/rename
+    RenameMemoryResponse RenameMemory(1: RenameMemoryRequest req)
+    // POST /api/v1/memory/add_tag
+    MemoryAddTagResponse MemoryAddTag(1: MemoryAddTagRequest req)
+    // GET /api/v1/memory/get_summary_list
+    GetSummaryListResponse GetSummaryList(1: GetSummaryListRequest req)
+    // POST /api/v1/memory/append_summary
+    AppendMemoryResponse AppendMemory(1: AppendMemoryRequest req)
 
     // memo相关接口
     // GET /api/v1/memo/get_list
@@ -696,6 +782,10 @@ service AppService {
     GetConversationDetailResponse GetConversationDetail(1: GetConversationDetailRequest req)
     // POST /api/v1/chat/transcript
     TranscriptResponse Transcript(1: TranscriptRequest req)
+    // GET /api/v1/chat/suggestion
+    GetChatSuggestionResponse GetChatSuggestion(1: GetChatSuggestionRequest req)
+    // GET /api/v1/chat/get_title
+    GetConversationTitleResponse GetConversationTitle(1: GetConversationTitleRequest req)
 
     // 说话人 &  记忆仓库相关接口
     // 输入声纹，主动添加speaker
