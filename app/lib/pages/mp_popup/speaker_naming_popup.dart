@@ -5,6 +5,18 @@ import '../../backend/http/mp_api/mp_speaker.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
 import '../../backend/schema/mp/mp_speaker.dart';
 
+class SpeakerNamingItemModel {
+  final String id;
+  final String name;
+  List<MPSummaryConversationStruct> items;
+
+  SpeakerNamingItemModel({
+    required this.id,
+    required this.name,
+    this.items = const [],
+  });
+}
+
 /// 说话人命名弹窗组件
 // ignore: must_be_immutable
 class SpeakerNamingPopup extends StatefulWidget {
@@ -63,13 +75,21 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
   late final Map<String, TextEditingController> _nameControllers;
   // AI-generated END - 名称控制器
 
+  Map<String, SpeakerNamingItemModel> _itemModels = {};
+
   // AI-generated START - 初始化
   @override
   void initState() {
     super.initState();
-    _nameControllers = {
-      for (final item in widget.items) item.id: TextEditingController(text: item.speaker.name),
-    };
+
+    for (final item in widget.items) {
+      if (_itemModels.containsKey(item.id)) {
+        _itemModels[item.id]!.items.add(item);
+      } else {
+        _itemModels[item.id] = SpeakerNamingItemModel(id: item.id, name: item.speaker.name, items: [item]);
+        _nameControllers[item.id] = TextEditingController(text: item.speaker.name);
+      }
+    }
   }
   // AI-generated END - 初始化
 
