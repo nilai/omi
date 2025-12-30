@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:provider/provider.dart';
 
 import '../../backend/http/mp_api/mp_memory.dart';
 import '../../backend/schema/mp/mp_data_model.dart';
@@ -8,7 +9,10 @@ import '../../gen/assets.gen.dart';
 import '../../pages/mp_custom_utils/mp_const_utils.dart';
 import '../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
+import '../../providers/sync_provider.dart';
+import '../../services/mp_audio_download.dart';
 import '../../services/mp_home_refresh_event_service.dart';
+import '../../utils/alerts/mp_memory_export_dialog.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../utils/mp_local_records_util.dart';
 import '../mp_custom_utils/mp_toast_utils.dart';
@@ -440,7 +444,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       if (value != null) {
         switch (value) {
           case MPRecordDetailMoreAction.export:
-            MPToastUtils.showFeatureComingSoon();
+            _showExportDialog();
             break;
           // case MPRecordDetailMoreAction.addTag:
           //   break;
@@ -465,5 +469,55 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     } else {
       MPToastUtils.showMessage(res?.baseResp.message ?? '删除失败');
     }
+  }
+
+  void _showExportDialog() {
+    MPMemoryExportDialog.show(
+      context: context,
+      onExportSelected: (exportType) {
+        switch (exportType) {
+          case MPMemoryExportType.audio:
+            _exportAudio();
+            break;
+          case MPMemoryExportType.pdf:
+            _exportPDF();
+            break;
+          case MPMemoryExportType.docx:
+            _exportDOCX();
+            break;
+        }
+      },
+    );
+  }
+
+  void _exportAudio() async {
+    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(_audioUrl);
+    if (localPath != null && localPath.isNotEmpty) {
+      final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+      await syncProvider.shareLocalAudioFile(localPath);
+    } else {
+      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(_audioUrl);
+      if (result != null) {
+        MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+            createAt: MPTimestampUtils.timestampNow,
+            fileName: result.fileName,
+            source: 'Mobile Phone',
+            isRemoved: true);
+        final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+        await syncProvider.shareLocalAudioFile(result.path);
+      } else {
+        MPToastUtils.showMessage('下载失败');
+      }
+    }
+  }
+
+  void _exportPDF() {
+    // TODO: 实现 PDF 导出功能
+    MPToastUtils.showFeatureComingSoon();
+  }
+
+  void _exportDOCX() {
+    // TODO: 实现 DOCX 导出功能
+    MPToastUtils.showFeatureComingSoon();
   }
 }

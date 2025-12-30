@@ -684,14 +684,13 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   void _exportAudio() async {
-    final localPath =
-        await MPLocalRecordsUtil.instance.getLocalRecordPath(widget.memory.onlyRecordContent?.recordFile ?? '');
+    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(provider.recordFileUrl);
     if (localPath != null && localPath.isNotEmpty) {
       final syncProvider = Provider.of<SyncProvider>(context, listen: false);
       await syncProvider.shareLocalAudioFile(localPath);
     } else {
-      final result =
-          await MPAudioDownloadService.instance.downloadAndSaveAudio(widget.memory.summaryContent?.recordUrl ?? '');
+      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(provider.recordFileUrl);
       if (result != null) {
         MPLocalRecordsUtil.instance.addLocalRecord(result.path,
             createAt: MPTimestampUtils.timestampNow,
