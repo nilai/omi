@@ -30,6 +30,7 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         color: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // AI-generated START - 左侧：相机图标
             GestureDetector(
@@ -37,11 +38,11 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               child: _buildLeading(),
             ),
             // AI-generated END - 左侧：相机图标
-
+            const Spacer(),
             // AI-generated START - 中间：空白区域
             _buildTitle(),
             // AI-generated END - 中间：空白区域
-
+            const Spacer(),
             // 设置图标
             GestureDetector(
               onTap: onMenuTap,
@@ -75,14 +76,12 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildTitle() {
     return Consumer<MPMessageProvider>(
       builder: (context, mpProvider, child) {
-        return Expanded(
-          child: Text(
-            mpProvider.curPageModel?.title ?? '',
-            style: TextStyle(
-              color: Colors.grey.shade800,
-              fontSize: 16.0,
-              fontWeight: FontWeight.w500,
-            ),
+        return Text(
+          mpProvider.curPageModel?.title ?? '',
+          style: TextStyle(
+            color: Colors.grey.shade800,
+            fontSize: 16.0,
+            fontWeight: FontWeight.w500,
           ),
         );
       },
