@@ -68,26 +68,19 @@ class MPMemoryConvertDialog extends StatefulWidget {
     );
     final response = await mp_template_api.getTemplateList(request);
     List<MPMemoryConvertTemplate> templates = [];
+    debugPrint('response: ${response?.toJson()}');
     if (response?.recentTemplate != null) {
       templates.add(MPMemoryConvertTemplate(
         id: response?.recentTemplate?.id ?? '',
         title: response?.recentTemplate?.title ?? '',
         description: response?.recentTemplate?.prompt ?? '',
-        provider: 'Auto',
-        icon: response?.recentTemplate?.icon,
+        provider: '',
+        icon: null,
       ));
     }
-    final recommendTemplates = response?.recommendTemplates
-            .map((template) => MPMemoryConvertTemplate(
-                  id: template.id ?? '',
-                  title: template.title ?? '',
-                  description: template.prompt ?? '',
-                  provider: 'Auto',
-                  icon: template.icon,
-                ))
-            .toList() ??
-        [];
-    templates.addAll(recommendTemplates);
+
+    templates
+        .add(const MPMemoryConvertTemplate(id: '', title: '智能摘要AutoPilot', description: '自适应结构 全场景适配', provider: ''));
     if (!context.mounted) return;
     await showModalBottomSheet(
       context: context,
@@ -249,7 +242,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                             id: item.id,
                                             title: item.title,
                                             description: item.prompt ?? '选中模版的prompt为空',
-                                            provider: 'Auto',
+                                            provider: '',
                                             icon: item.imageUrl,
                                           );
                                           widget.templates.insert(0, temp);
@@ -331,7 +324,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                         ),
                         const SizedBox(height: 12),
                         _buildSelector(
-                          title: '录音语言',
+                          title: '总结语言',
                           value: _language,
                           onTap: () => _showLanguageSheet(),
                         ),
@@ -495,7 +488,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (_) => _SimpleSelector(
-        title: '录音语言',
+        title: '总结语言',
         options: options,
         selected: _language,
       ),
@@ -564,6 +557,8 @@ class _TemplateCard extends StatelessWidget {
                 // 标题
                 Text(
                   template.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -701,6 +696,7 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (text.isEmpty) return const SizedBox.shrink();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
