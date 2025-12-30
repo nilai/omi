@@ -6,8 +6,10 @@ import 'package:flutter/services.dart';
 enum MPMemoryExportType {
   /// 导出音频
   audio,
+
   /// 导出 PDF
   pdf,
+
   /// 导出 DOCX
   docx,
 }
@@ -16,7 +18,7 @@ enum MPMemoryExportType {
 /// 提供音频、PDF、DOCX 三种导出选项
 class MPMemoryExportDialog {
   /// 显示导出对话框
-  /// 
+  ///
   /// [context] 上下文
   /// [onExportSelected] 导出类型选择回调
   static Future<void> show({
@@ -48,15 +50,10 @@ class _MPMemoryExportDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1F2937) : Colors.white;
-    final cardBackgroundColor = isDark ? const Color(0xFF111827) : const Color(0xFFF9FAFB);
-
     return Container(
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: const BorderRadius.only(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
         ),
@@ -75,7 +72,7 @@ class _MPMemoryExportDialogContent extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Color(0xFF212121),
                     ),
                   ),
                   const Spacer(),
@@ -88,8 +85,6 @@ class _MPMemoryExportDialogContent extends StatelessWidget {
                 ],
               ),
             ),
-
-            const Divider(height: 1, color: Color(0xFF374151)),
 
             // 导出选项
             Padding(
@@ -148,14 +143,14 @@ class _MPMemoryExportDialogContent extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    backgroundColor: cardBackgroundColor,
+                    backgroundColor: Colors.white,
                   ),
                   child: const Text(
                     '取消',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                      color: Color(0xFF212121),
                     ),
                   ),
                 ),
@@ -184,21 +179,16 @@ class _ExportOptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardBackgroundColor = isDark ? const Color(0xFF111827) : const Color(0xFFF9FAFB);
-    final textColor = Colors.white;
-
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: cardBackgroundColor,
+          color: const Color(0xFFF9FAFB),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? const Color(0xFF374151) : const Color(0xFFE5E7EB),
+            color: const Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -225,10 +215,10 @@ class _ExportOptionCard extends StatelessWidget {
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(
+                style: const TextStyle(
+                  color: Color(0xFF212121),
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: textColor,
                 ),
               ),
             ),
@@ -236,7 +226,7 @@ class _ExportOptionCard extends StatelessWidget {
             // 箭头图标
             Icon(
               Icons.chevron_right,
-              color: textColor.withOpacity(0.5),
+              color: Colors.white.withOpacity(0.5),
               size: 24,
             ),
           ],
