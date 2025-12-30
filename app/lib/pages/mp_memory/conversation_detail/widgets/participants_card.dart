@@ -46,18 +46,8 @@ class ParticipantsCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.zero,
+      color: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -90,13 +80,14 @@ class ParticipantsCard extends StatelessWidget {
 
   // AI-generated START - 构建参与者标签
   Widget _buildParticipantChip(Participant participant) {
+    final avatarUrl = participant.avatarUrl ?? '';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20.0),
         border: Border.all(
-          color: Colors.grey.shade300,
+          color: Colors.grey.shade100,
           width: 1.0,
         ),
       ),
@@ -107,10 +98,10 @@ class ParticipantsCard extends StatelessWidget {
           CircleAvatar(
             radius: 16.0,
             backgroundColor: Colors.grey.shade300,
-            backgroundImage: participant.avatarUrl != null ? NetworkImage(participant.avatarUrl!) : null,
-            child: participant.avatarUrl == null
+            backgroundImage: avatarUrl.isNotEmpty ? NetworkImage(avatarUrl) : null,
+            child: avatarUrl.isEmpty
                 ? Text(
-                    participant.name.isNotEmpty ? participant.name[0] : '?',
+                    participant.name.isNotEmpty ? participant.name[0] : '',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14.0,

@@ -193,6 +193,11 @@ class ConversationDetailProvider with ChangeNotifier {
     _summaryTime = MPTimestampUtils.timestampToRelativeDateString(memory.createAt);
 
     _summary = memory.summaryContent?.summary;
+    _participants.clear();
+    _participants.addAll(memory.summaryContent?.participants
+            .map((e) => Participant(id: e.id, name: e.name, avatarUrl: e.avatar))
+            .toList() ??
+        []);
 
     // 如果 memory 数据不完整，调用接口获取详情
     _loadMemoryDetail(memory.id);
@@ -223,6 +228,11 @@ class ConversationDetailProvider with ChangeNotifier {
 
         // 更新摘要
         _summary = response.memory.summaryContent?.summary;
+        _participants.clear();
+        _participants.addAll(response.memory.summaryContent?.participants
+            .map((e) => Participant(id: e.id, name: e.name, avatarUrl: e.avatar))
+            .toList() ??
+        []);
         _loadTranscriptData(response.memory);
         notifyListeners();
       } else {
