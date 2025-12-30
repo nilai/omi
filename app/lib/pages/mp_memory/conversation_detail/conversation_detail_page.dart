@@ -119,8 +119,8 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             onTapTitle: () async {
               MPMemoryUpdateNameDialog.show(
                   context: context,
-                  memoryId: widget.memory.id,
-                  currentTitle: widget.memory.title,
+                  memoryId: provider.memory?.id ?? widget.memory.id,
+                  currentTitle: provider.title ?? widget.memory.title,
                   onSuccess: (title) {
                     provider.updateTitle(title);
                   });
