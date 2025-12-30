@@ -167,9 +167,9 @@ class MPLocalRecordsUtil {
   /// 获取本地记录的文件路径
   /// @param fileId 文件ID
   /// @returns 文件路径
-  Future<String> getLocalRecordPath(String recordFile) async {
+  Future<String?> getLocalRecordPath(String recordFile) async {
     if (recordFile.isEmpty) {
-      return '';
+      return null;
     }
     final fileId = MPLocalRecordsUtil.getFileIdFromUrl(recordFile);
     final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
@@ -181,7 +181,7 @@ class MPLocalRecordsUtil {
         break;
       }
     }
-    return recordFile;
+    return null;
   }
 
   /// 从URL中获取音频文件名

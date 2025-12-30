@@ -42,16 +42,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   bool _contentOverflow = false;
 
   /// 从 memory 中获取音频 URL
-  Future<String>? get _audioUrl async {
-    String recordFile = '';
-    if (widget.memory.onlyRecordContent != null) {
-      recordFile = widget.memory.onlyRecordContent!.recordFile;
-    } else if (widget.memory.summaryContent != null) {
-      recordFile = widget.memory.summaryContent!.recordUrl;
-    }
-    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(recordFile);
-    return localPath;
-  }
+  String get _audioUrl => widget.memory.onlyRecordContent?.recordFile ?? '';
 
   @override
   void initState() {
@@ -62,18 +53,14 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   Future<void> _setupPlayer() async {
-    final audioUrl = await _audioUrl;
-    if (audioUrl == null) {
-      if (mounted) {
-        setState(() {
-          _isBuffering = false;
-        });
-      }
-      return;
+    String audioUrl = _audioUrl;
+    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(audioUrl);
+    if (localPath != null && localPath.isNotEmpty) {
+      audioUrl = localPath;
     }
 
     try {
-      await _player.setUrl(audioUrl);
+      await _player.setAudioSource(AudioSource.uri(Uri.file(audioUrl)));
       _duration = _player.duration ?? Duration(seconds: widget.memory.duration);
     } catch (_) {
       // 失败时仍允许界面显示，播放按钮会被禁用
