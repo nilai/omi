@@ -26,17 +26,7 @@ class MPTagsCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       padding: const EdgeInsets.all(20.0),
       width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 8.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      color: Colors.transparent,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -59,8 +49,7 @@ class MPTagsCard extends StatelessWidget {
             runSpacing: 12.0,
             children: [
               // 添加标签按钮
-              if (onAddTag != null)
-                _buildAddTagButton(context),
+              if (onAddTag != null) _buildAddTagButton(context),
               // 已有标签
               ...tags.map((tag) => _buildTagChip(tag)),
             ],
@@ -132,4 +121,3 @@ class MPTagsCard extends StatelessWidget {
   }
 }
 // AI-generated END - mp_tags_card.dart
-
