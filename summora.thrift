@@ -56,6 +56,7 @@ struct InsightMemoryStruct {
 
 struct OnlyRecordMemoryStruct {
     1: string record_file, // 本地保存的文件名
+    2: string: source,
 }
 
 struct RecordConversationStruct {
@@ -454,6 +455,8 @@ struct GetConversationListResponse {
 
 struct GetConversationDetailRequest {
     1: string conversation_id,
+    2: i32 page_size,
+    3: string cursor,
 }
 
 struct GetConversationDetailResponse {
