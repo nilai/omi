@@ -12,6 +12,8 @@ import 'package:omi/pages/mp_popup/new_memo_popup.dart';
 import 'package:omi/pages/mp_popup/new_task_popup.dart';
 import 'package:provider/provider.dart';
 
+import 'widgets/mp_memo_app_bar.dart';
+
 /// Memo/Todo 主页面
 /// 顶部显示切换卡片，根据选择显示 Memo 或 Todo 页面
 class MemoHomePage extends StatefulWidget {
@@ -126,15 +128,18 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
     super.build(context); // Important! Call super.build
     return Scaffold(
       backgroundColor: MPConstUtils.backgroundColorGrey,
-      appBar: MPCommonAppBar(
-        customLeading: GestureDetector(
-          onTap: () {
-            MPBatteryInfoWidget.pushToFindDevicesPage(context);
-          },
-          child: const MPBatteryInfoWidget(),
-        ),
+      // appBar: MPCommonAppBar(
+      //   customLeading: GestureDetector(
+      //     onTap: () {
+      //       MPBatteryInfoWidget.pushToFindDevicesPage(context);
+      //     },
+      //     child: const MPBatteryInfoWidget(),
+      //   ),
+      //   title: widget.title,
+      //   showBackButton: false,
+      // ),
+      appBar: MPMemoAppBar(
         title: widget.title,
-        showBackButton: false,
       ),
       body: Column(
         children: [
