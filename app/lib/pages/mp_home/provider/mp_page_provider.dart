@@ -7,7 +7,6 @@ import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
-import '../../../utils/audio/mp_record_audio_util.dart';
 import '../../../utils/mp_local_records_util.dart';
 import '../../../utils/mp_user_profile_share.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
@@ -366,14 +365,14 @@ class MPHomePageProvider extends ChangeNotifier {
             );
             final summaryRes = await summaryRecord(summaryReq);
             if (summaryRes != null) {
-              await removeLocalRecord(element.path, fildId: MPRecordAudioUtil.getFileId(uri));
+              await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
               refresh();
             }
           }
         } else {
           final res = await createRecord(req);
           if (res != null) {
-            await removeLocalRecord(element.path, fildId: MPRecordAudioUtil.getFileId(uri));
+            await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
             refresh();
           }
         }
