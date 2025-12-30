@@ -20,6 +20,7 @@ class MPMemoryConvertTemplate {
   final String provider;
   final String? badge;
   final String? icon;
+  final bool isRecent;
 
   const MPMemoryConvertTemplate({
     required this.id,
@@ -28,6 +29,7 @@ class MPMemoryConvertTemplate {
     required this.provider,
     this.badge,
     this.icon,
+    required this.isRecent,
   });
 }
 
@@ -76,11 +78,12 @@ class MPMemoryConvertDialog extends StatefulWidget {
         description: response?.recentTemplate?.prompt ?? '',
         provider: '',
         icon: null,
+        isRecent: true,
       ));
     }
 
-    templates
-        .add(const MPMemoryConvertTemplate(id: '', title: '智能摘要AutoPilot', description: '自适应结构 全场景适配', provider: ''));
+    templates.add(const MPMemoryConvertTemplate(
+        id: '', title: '智能摘要AutoPilot', description: '自适应结构 全场景适配', provider: '', isRecent: false));
     if (!context.mounted) return;
     await showModalBottomSheet(
       context: context,
@@ -244,6 +247,7 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
                                             description: item.prompt ?? '选中模版的prompt为空',
                                             provider: '',
                                             icon: item.imageUrl,
+                                            isRecent: false,
                                           );
                                           widget.templates.insert(0, temp);
                                           _selectedTemplate = temp;
@@ -544,7 +548,8 @@ class _TemplateCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor, width: selected ? 1.6 : 1),
         ),
-        padding: const EdgeInsets.all(14),
+        // padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.only(left: 14, right: 14, top: template.isRecent ? 4 : 14, bottom: 14),
         child: Stack(
           children: [
             Column(
@@ -552,7 +557,7 @@ class _TemplateCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // 图标在左上角
-                _buildIcon(),
+                _buildTopWidget(context),
                 const SizedBox(height: 12),
                 // 标题
                 Text(
@@ -605,6 +610,37 @@ class _TemplateCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildTopWidget(BuildContext context) {
+    // if (!template.isRecent) {
+    //   return _buildIcon();
+    // }
+    return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+      _buildIcon(),
+      // const Spacer(),
+      Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: const Color(0xFF6366F1),
+            ),
+            child: const Text(
+              '上次使用',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          const SizedBox(
+            height: 16,
+          )
+        ],
+      ),
+    ]);
   }
 
   /// 构建图标（支持网络图片和本地asset图片）
