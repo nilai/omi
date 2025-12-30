@@ -350,6 +350,7 @@ class MPHomePageProvider extends ChangeNotifier {
           recordFile: uri,
           createAt: element.createAt,
           duration: 0,
+          source: element.source,
         );
 
         if (_rightNowTranscribe) {

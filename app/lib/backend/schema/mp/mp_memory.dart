@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+
 import 'mp_data_model.dart';
 
 part 'mp_memory.g.dart';
@@ -87,10 +88,14 @@ class MPCreateRecordRequest {
   @JsonKey(name: 'duration')
   final int duration; // 单位是s
 
+  @JsonKey(name: 'source')
+  final String? source;
+
   MPCreateRecordRequest({
     required this.recordFile,
     required this.createAt,
     required this.duration,
+    this.source,
   });
 
   factory MPCreateRecordRequest.fromJson(Map<String, dynamic> json) => _$MPCreateRecordRequestFromJson(json);
