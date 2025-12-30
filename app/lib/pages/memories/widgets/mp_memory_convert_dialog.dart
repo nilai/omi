@@ -548,44 +548,46 @@ class _TemplateCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: borderColor, width: selected ? 1.6 : 1),
         ),
-        // padding: const EdgeInsets.all(14),
         padding: EdgeInsets.only(left: 14, right: 14, top: template.isRecent ? 4 : 14, bottom: 14),
         child: Stack(
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 图标在左上角
-                _buildTopWidget(context),
-                const SizedBox(height: 12),
-                // 标题
-                Text(
-                  template.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF111827),
+            SizedBox(
+              width: 150 - 14 * 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 图标在左上角
+                  _buildTopWidget(context),
+                  const SizedBox(height: 12),
+                  // 标题
+                  Text(
+                    template.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF111827),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                // 描述
-                Text(
-                  template.description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.35,
-                    color: Color(0xFF4B5563),
+                  const SizedBox(height: 6),
+                  // 描述
+                  Text(
+                    template.description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: Color(0xFF4B5563),
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                // Provider和图标
-                _Chip(text: template.provider),
-              ],
+                  const SizedBox(height: 8),
+                  // Provider和图标
+                  _Chip(text: template.provider),
+                ],
+              ),
             ),
             // 选中标记在右下角
             if (selected)
@@ -613,12 +615,12 @@ class _TemplateCard extends StatelessWidget {
   }
 
   Widget _buildTopWidget(BuildContext context) {
-    // if (!template.isRecent) {
-    //   return _buildIcon();
-    // }
+    if (!template.isRecent) {
+      return _buildIcon();
+    }
     return Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
       _buildIcon(),
-      // const Spacer(),
+      const Spacer(),
       Column(
         children: [
           Container(
