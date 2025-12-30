@@ -8,12 +8,14 @@ import '../../backend/schema/mp/mp_speaker.dart';
 class SpeakerNamingItemModel {
   final String id;
   final String name;
+  int duration;
   List<MPSummaryConversationStruct> items;
 
   SpeakerNamingItemModel({
     required this.id,
     required this.name,
     this.items = const [],
+    this.duration = 0,
   });
 }
 
@@ -84,9 +86,10 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
 
     for (final item in widget.items) {
       if (_itemModels.containsKey(item.id)) {
+        _itemModels[item.id]!.duration += item.speaker.duration ?? 0;
         _itemModels[item.id]!.items.add(item);
       } else {
-        _itemModels[item.id] = SpeakerNamingItemModel(id: item.id, name: item.speaker.name, items: [item]);
+        _itemModels[item.id] = SpeakerNamingItemModel(id: item.id, name: item.speaker.name, items: [item], duration: item.speaker.duration ?? 0);
         _nameControllers[item.id] = TextEditingController(text: item.speaker.name);
       }
     }
