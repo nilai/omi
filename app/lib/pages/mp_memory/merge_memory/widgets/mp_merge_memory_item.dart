@@ -108,16 +108,18 @@ class MPMergeMemoryItem extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // 标题
-                  Text(
-                    item.headerText,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF111111),
+                  if (item.headerText.isNotEmpty) // 标题
+                    ...[
+                    Text(
+                      item.headerText,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF111111),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
+                  ],
                   // 时间和时长
                   Row(
                     children: [

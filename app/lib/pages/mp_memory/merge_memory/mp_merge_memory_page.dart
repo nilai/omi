@@ -110,7 +110,9 @@ class _MPMergeMemoryPageState extends State<MPMergeMemoryPage> {
   Widget _buildList(MPMergeMemoryProvider provider) {
     if (provider.loading) {
       return const Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(
+          color: Color(0xFF306CFF),
+        ),
       );
     }
 
