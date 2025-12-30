@@ -45,6 +45,7 @@ class SpeakerNamingPopup extends StatefulWidget {
       builder: (context) {
         return Dialog(
           backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24),
           child: SpeakerNamingPopup(
             items: items,
             confirmSucc: onfirm,
