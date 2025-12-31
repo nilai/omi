@@ -309,6 +309,7 @@ class MPHomePageProvider extends ChangeNotifier {
   Future<void> loadLocalRecords() async {
     _localRecords = await MPLocalRecordsUtil.instance.getLocalRecords();
     _updateItems();
+    uploadLocalRecords();
   }
 
   /// 更新items
@@ -340,7 +341,6 @@ class MPHomePageProvider extends ChangeNotifier {
       print('------hj------list item: ${element.headerText}, isUploading: ${element.isUploading}');
     }
     items = list;
-    uploadLocalRecords();
     notifyListeners();
   }
 
