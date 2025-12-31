@@ -340,6 +340,7 @@ class MPHomePageProvider extends ChangeNotifier {
       print('------hj------list item: ${element.headerText}, isUploading: ${element.isUploading}');
     }
     items = list;
+    uploadLocalRecords();
     notifyListeners();
   }
 
@@ -347,9 +348,12 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
+      debugPrint('------hj------uploadLocalRecords element: ${element.path}');
       if (element.isRemoved) continue;
+      debugPrint('------hj------uploadLocalRecords element is not removed: ${element.path}');
       final file = File(element.path);
       final duration = await AudioPickerUtils.getAudioDuration(file);
+      debugPrint('------hj------uploadLocalRecords duration: $duration');
       final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {
         final req = MPCreateRecordRequest(
