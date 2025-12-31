@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_template.dart' as mp_template_api;
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/backend/schema/mp/mp_template.dart';
-import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 
 /// 模板详情状态管理Provider
@@ -62,23 +61,22 @@ class MPTemplateDetailProvider with ChangeNotifier {
 
       setState(() {
         // 如果还没有初始化过，创建新模板；否则保留已有数据
-        // 默认图标使用 Assets.images.mpApps1
-        final defaultIcon = 'assets/${Assets.images.mpApps1.path}';
+        // 默认图标为空（显示灰色占位图）
         if (!_isInitialized) {
           _template = MPTemplateStruct(
             id: null,
             title: null,
-            icon: defaultIcon,
+            icon: '', // 默认图标为空，显示灰色占位图
             type: '通用',
             prompt: null,
           );
           _category = '通用';
         } else {
-          // 保留已有数据，如果 icon 为空则使用默认图标
+          // 保留已有数据，如果 icon 为空则保持为空
           _template = MPTemplateStruct(
             id: null,
             title: savedTitle,
-            icon: savedIcon ?? defaultIcon,
+            icon: savedIcon ?? '', // 如果为空则保持为空
             type: savedCategory,
             prompt: savedPrompt,
           );

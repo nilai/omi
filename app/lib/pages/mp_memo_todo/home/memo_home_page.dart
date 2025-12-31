@@ -62,17 +62,6 @@ class MemoHomePageState extends State<MemoHomePage> with AutomaticKeepAliveClien
   }
   // AI-generated END - scrollToTop
 
-  // AI-generated START - 下拉刷新方法
-  Future<void> _onRefresh() async {
-    if (_selectedType == MemoTodoType.memo) {
-      final memoProvider = Provider.of<MemoProvider>(context, listen: false);
-      await memoProvider.loadMemos();
-    } else {
-      final todoProvider = Provider.of<TodoProvider>(context, listen: false);
-      await todoProvider.loadTodos();
-    }
-  }
-  // AI-generated END - _onRefresh
 
   // AI-generated START - 处理浮动按钮点击
   void _onFloatingActionButtonPressed() {

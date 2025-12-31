@@ -198,6 +198,7 @@ class MPExpertProvider with ChangeNotifier {
       final request = MPGetExpertListRequest(
         pageSize: 20, // 每页加载20个专家
         cursor: _cursor,
+        type: ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex].label,
       );
       final response = await getExpertList(request);
 
