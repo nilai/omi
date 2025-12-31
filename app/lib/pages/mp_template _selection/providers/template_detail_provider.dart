@@ -322,38 +322,7 @@ class MPTemplateDetailProvider with ChangeNotifier {
     });
 
     try {
-      // 创建新模板
-      final title = _template!.title?.trim() ?? '';
-      final prompt = _template!.prompt?.trim() ?? '';
-      final icon = _template!.icon ?? '';
-      final hasLocalIcon = _tempLocalIconPath != null && _tempLocalIconPath!.isNotEmpty;
-
-      // 验证所有必填字段
-      if (title.isEmpty) {
-        setState(() {
-          _isLoading = false;
-        });
-        MPToastUtils.showMessage('请输入模板名称');
-        return false;
-      }
-
-      // 检查图标：必须有网络图标或本地临时图标
-      if (icon.isEmpty && !hasLocalIcon) {
-        setState(() {
-          _isLoading = false;
-        });
-        MPToastUtils.showMessage('请选择模板图标');
-        return false;
-      }
-
-      if (prompt.isEmpty) {
-        setState(() {
-          _isLoading = false;
-        });
-        MPToastUtils.showMessage('请输入Prompt内容');
-        return false;
-      }
-
+     
       // 调用 API 设置默认模板
       final request = MPSetTemplateDefaultRequest(
         templateId: _template!.id!,
