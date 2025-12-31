@@ -115,8 +115,10 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
       }
     } else {
       // 如果有 id（编辑模式），调用 setAsDefaultTemplate 方法
-      await provider.setAsDefaultTemplate();
-      Navigator.pop(context, true);
+      final success = await provider.setAsDefaultTemplate();
+      if (success) {
+        Navigator.pop(context, true);
+      }
     }
   }
   // AI-generated END - 设置为默认模板
