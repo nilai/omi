@@ -89,7 +89,7 @@ class _SpeakerNamingPopupState extends State<SpeakerNamingPopup> {
 
     for (final item in widget.items) {
       final name = item.speaker.name;
-      if (_itemModels.containsKey(item.id)) {
+      if (_itemModels.containsKey(name)) {
         _itemModels[name]!.duration += item.speaker.duration ?? 0;
         _itemModels[name]!.items.add(item);
       } else {
