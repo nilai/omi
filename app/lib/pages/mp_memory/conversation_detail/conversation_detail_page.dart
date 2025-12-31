@@ -107,144 +107,159 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   // AI-generated START - 构建页面主体
   Widget _buildBody(ConversationDetailProvider provider) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // AI-generated START - 对话头部卡片
-          ConversationHeaderCard(
-            title: provider.title ?? widget.memory.title,
-            summaryTime: provider.summaryTime ?? '',
-            onTapTitle: () async {
-              MPMemoryUpdateNameDialog.show(
-                  context: context,
-                  memoryId: _memoryId,
-                  currentTitle: provider.title ?? widget.memory.title,
-                  onSuccess: (title) {
-                    provider.updateTitle(title);
-                  });
-            },
-          ),
-          // AI-generated END - 对话头部卡片
+    return Column(
+      children: [
+        // AI-generated START - 可滚动内容区域
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // AI-generated START - 对话头部卡片
+                ConversationHeaderCard(
+                  title: provider.title ?? widget.memory.title,
+                  summaryTime: provider.summaryTime ?? '',
+                  onTapTitle: () async {
+                    MPMemoryUpdateNameDialog.show(
+                        context: context,
+                        memoryId: _memoryId,
+                        currentTitle: provider.title ?? widget.memory.title,
+                        onSuccess: (title) {
+                          provider.updateTitle(title);
+                        });
+                  },
+                ),
+                // AI-generated END - 对话头部卡片
 
-          // AI-generated START - 参与人卡片
-          if (provider.participants.isNotEmpty)
-            ParticipantsCard(
-              participants: provider.participants,
+                // AI-generated START - 参与人卡片
+                if (provider.participants.isNotEmpty)
+                  ParticipantsCard(
+                    participants: provider.participants,
+                  ),
+                // AI-generated END - 参与人卡片
+
+                // AI-generated START - 标签卡片
+                MPTagsCard(
+                  tags: provider.memory?.customLabels ?? [],
+                  onAddTag: () {
+                    _showAddTagDialog();
+                  },
+                ),
+                // AI-generated END - 标签卡片
+
+                // AI-generated START - 音频播放器卡片
+                AudioPlayerCard(
+                  title: '原始音频',
+                  totalDurationSeconds: provider.duration ?? 0,
+                  audioUrl: provider.recordFileUrl,
+                ),
+                // AI-generated END - 音频播放器卡片
+
+                // AI-generated START - 标签选择器卡片
+                TabSelectorCard(
+                  options: const [
+                    TabOption(
+                      id: 'summary',
+                      label: 'Summary',
+                      icon: Icons.description,
+                    ),
+                    TabOption(
+                      id: 'mindmap',
+                      label: 'MindMap',
+                      icon: Icons.account_tree,
+                    ),
+                    TabOption(
+                      id: 'transcript',
+                      label: 'Transcript',
+                      icon: Icons.chat_bubble_outline,
+                    ),
+                    TabOption(
+                      id: 'todolist',
+                      label: 'TodoList',
+                      icon: Icons.check_box,
+                    ),
+                  ],
+                  selectedId: _selectedTab,
+                  onTabSelected: (id) {
+                    setState(() {
+                      _selectedTab = id;
+                    });
+                    // 切换标签时加载对应的数据
+                    final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
+                    provider.loadDataForTab(id);
+                  },
+                ),
+                // AI-generated END - 标签选择器卡片
+
+                // AI-generated START - 根据选中的标签显示内容
+                _buildTabContent(_selectedTab),
+                // AI-generated END - 根据选中的标签显示内容
+
+                const SizedBox(height: 16.0),
+              ],
             ),
-          // AI-generated END - 参与人卡片
-
-          // AI-generated START - 标签卡片
-          MPTagsCard(
-            tags: provider.memory?.customLabels ?? [],
-            onAddTag: () {
-              _showAddTagDialog();
-            },
           ),
-          // AI-generated END - 标签卡片
+        ),
+        // AI-generated END - 可滚动内容区域
 
-          // AI-generated START - 音频播放器卡片
-          AudioPlayerCard(
-            title: '原始音频',
-            totalDurationSeconds: provider.duration ?? 0,
-            audioUrl: provider.recordFileUrl,
+        // AI-generated START - 底部操作按钮（固定在底部）
+        SafeArea(
+          top: false,
+          child: Container(
+            color: MPConstUtils.backgroundColorGrey,
+            padding: const EdgeInsets.only(top: 8.0),
+            child: ActionButtonsCard(
+              buttons: [
+                ActionButton(
+                  id: 'name_speaker',
+                  label: '命名发言者',
+                  icon: Icons.person_outline,
+                  onTap: () {
+                    final list = provider.summaryContent?.transcript ?? [];
+                    if (list.isNotEmpty) {
+                      SpeakerNamingPopup.show(
+                        context: context,
+                        items: list,
+                        memeryId: _memoryId,
+                        onfirm: () {
+                          provider.reloadDetail();
+                        },
+                      );
+                    } else {
+                      MPToastUtils.showMessage('Transcript为空');
+                    }
+                  },
+                ),
+                ActionButton(
+                  id: 'add_summary',
+                  label: '追加总结',
+                  icon: Icons.add_box_outlined,
+                  onTap: () {
+                    MPMergeMemoryPage.pushPage(
+                        context: context,
+                        memoryId: _memoryId,
+                        onSuccess: () {
+                          provider.reloadDetail();
+                        });
+                  },
+                ),
+                ActionButton(
+                  id: 'ai_assistant',
+                  label: 'AI助手',
+                  icon: Icons.smart_toy,
+                  onTap: () {
+                    MPChatHelper.instance.memory = widget.memory;
+                    MPChatPage.openChatPage(context,
+                        chatId: _memoryId, title: widget.memory.title, type: MPChatPageType.memory);
+                  },
+                ),
+              ],
+            ),
           ),
-          // AI-generated END - 音频播放器卡片
-
-          // AI-generated START - 标签选择器卡片
-          TabSelectorCard(
-            options: const [
-              TabOption(
-                id: 'summary',
-                label: 'Summary',
-                icon: Icons.description,
-              ),
-              TabOption(
-                id: 'mindmap',
-                label: 'MindMap',
-                icon: Icons.account_tree,
-              ),
-              TabOption(
-                id: 'transcript',
-                label: 'Transcript',
-                icon: Icons.chat_bubble_outline,
-              ),
-              TabOption(
-                id: 'todolist',
-                label: 'TodoList',
-                icon: Icons.check_box,
-              ),
-            ],
-            selectedId: _selectedTab,
-            onTabSelected: (id) {
-              setState(() {
-                _selectedTab = id;
-              });
-              // 切换标签时加载对应的数据
-              final provider = Provider.of<ConversationDetailProvider>(context, listen: false);
-              provider.loadDataForTab(id);
-            },
-          ),
-          // AI-generated END - 标签选择器卡片
-
-          // AI-generated START - 根据选中的标签显示内容
-          _buildTabContent(_selectedTab),
-          // AI-generated END - 根据选中的标签显示内容
-
-          // AI-generated START - 底部操作按钮
-          ActionButtonsCard(
-            buttons: [
-              ActionButton(
-                id: 'name_speaker',
-                label: '命名发言者',
-                icon: Icons.person_outline,
-                onTap: () {
-                  final list = provider.summaryContent?.transcript ?? [];
-                  if (list.isNotEmpty) {
-                    SpeakerNamingPopup.show(
-                      context: context,
-                      items: list,
-                      memeryId: _memoryId,
-                      onfirm: () {
-                        provider.reloadDetail();
-                      },
-                    );
-                  } else {
-                    MPToastUtils.showMessage('Transcript为空');
-                  }
-                },
-              ),
-              ActionButton(
-                id: 'add_summary',
-                label: '追加总结',
-                icon: Icons.add_box_outlined,
-                onTap: () {
-                  MPMergeMemoryPage.pushPage(
-                      context: context,
-                      memoryId: _memoryId,
-                      onSuccess: () {
-                        provider.reloadDetail();
-                      });
-                },
-              ),
-              ActionButton(
-                id: 'ai_assistant',
-                label: 'AI助手',
-                icon: Icons.smart_toy,
-                onTap: () {
-                  MPChatHelper.instance.memory = widget.memory;
-                  MPChatPage.openChatPage(context,
-                      chatId: _memoryId, title: widget.memory.title, type: MPChatPageType.memory);
-                },
-              ),
-            ],
-          ),
-          // AI-generated END - 底部操作按钮
-
-          const SizedBox(height: 16.0),
-        ],
-      ),
+        ),
+        // AI-generated END - 底部操作按钮（固定在底部）
+      ],
     );
   }
   // AI-generated END - _buildBody
