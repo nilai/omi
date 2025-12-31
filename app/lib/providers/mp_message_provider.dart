@@ -327,6 +327,9 @@ class MPMessageProvider extends ChangeNotifier {
       flushBuffer();
       setShowTypingIndicator(false);
       setSendingMessage(false);
+      if (messages.length > 3 && curPageModel?.title.isEmpty == true) {
+        updatePageTitle();
+      }
     }
   }
 
