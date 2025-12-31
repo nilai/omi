@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:provider/provider.dart';
 import '../../services/mp_home_refresh_event_service.dart';
+import '../mp_custom_utils/mp_timestamp_utils.dart';
 import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import '../mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import 'provider/mp_memory_transition_provider.dart';
@@ -87,8 +88,7 @@ class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
 
   /// 构建时间戳显示
   Widget _buildTimestamp() {
-    final dateTime = DateTime.fromMillisecondsSinceEpoch(widget.memory.createAt);
-    final dateText = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    final dateText = MPTimestampUtils.timestampToDateTimeString(widget.memory.createAt);
 
     return Text(
       dateText,
