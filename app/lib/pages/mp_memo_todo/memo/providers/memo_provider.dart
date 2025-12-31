@@ -237,8 +237,20 @@ class MemoProvider with ChangeNotifier {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           MPToastUtils.showMessage('Memo 更新成功');
-          // 更新成功后，刷新列表
-          await loadMemos();
+          // 更新成功后，直接更新本地卡片，不重新加载整个列表
+          final index = _memos.indexWhere((m) => m.id == memoId);
+          if (index != -1) {
+            final existingMemo = _memos[index];
+            // 更新本地 memo 项，保留其他字段，只更新 description (content)
+            _memos[index] = MemoTaskItem(
+              id: existingMemo.id,
+              title: existingMemo.title,
+              description: content, // 更新内容
+              date: existingMemo.date,
+              tags: existingMemo.tags,
+            );
+            notifyListeners();
+          }
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
         }

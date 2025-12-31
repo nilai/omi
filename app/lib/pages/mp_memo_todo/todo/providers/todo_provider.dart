@@ -341,8 +341,66 @@ class TodoProvider with ChangeNotifier {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           MPToastUtils.showMessage('Todo 更新成功');
-          // 更新成功后，刷新列表
-          await loadTodos();
+          
+          // 检查是否是更新为完成状态
+          final index = _todos.indexWhere((t) => t.id == todoId);
+          final wasCompleted = index != -1 && _todos[index].status == 2;
+          final isNowCompleted = isCompleted;
+          
+          // 如果是从未完成变为完成，则刷新整个列表
+          if (!wasCompleted && isNowCompleted) {
+            await loadTodos();
+            return true;
+          }
+          
+          // 其他字段修改（title、priority、deadline）或取消完成，只更新本地卡片
+          if (index != -1) {
+            final existingTodo = _todos[index];
+            // 解析 deadline 日期
+            DateTime deadlineDate;
+            try {
+              if (deadline.contains('-')) {
+                final parts = deadline.split('T')[0].split('-');
+                if (parts.length == 3) {
+                  final year = int.tryParse(parts[0]);
+                  final month = int.tryParse(parts[1]);
+                  final day = int.tryParse(parts[2]);
+                  if (year != null && month != null && day != null) {
+                    deadlineDate = DateTime(year, month, day).toLocal();
+                  } else {
+                    deadlineDate = DateTime.parse(deadline).toLocal();
+                  }
+                } else {
+                  deadlineDate = DateTime.parse(deadline).toLocal();
+                }
+              } else {
+                deadlineDate = DateTime.parse(deadline).toLocal();
+              }
+            } catch (e) {
+              deadlineDate = DateTime.now();
+            }
+            
+            // 格式化 priority
+            String? priorityTag;
+            if (priority.isNotEmpty) {
+              if (priority.length == 1) {
+                priorityTag = priority.toUpperCase();
+              } else {
+                priorityTag = priority.substring(0, 1).toUpperCase() + priority.substring(1).toLowerCase();
+              }
+            }
+            
+            // 更新本地 todo 项，保留原有的 description，更新其他字段
+            _todos[index] = TodoTaskItem(
+              id: existingTodo.id,
+              title: title.trim(),
+              description: existingTodo.description, // 保留原有描述
+              date: _formatDate(deadlineDate),
+              priorityTag: priorityTag,
+              status: isCompleted ? 2 : existingTodo.status, // 如果完成则设为2，否则保留原状态
+            );
+            notifyListeners();
+          }
           return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);

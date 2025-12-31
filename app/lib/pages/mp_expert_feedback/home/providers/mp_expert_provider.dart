@@ -111,12 +111,6 @@ class MPExpertProvider with ChangeNotifier {
   }
   // AI-generated END - setLoading
 
-  // AI-generated START - 设置获取状态
-  void setFetching(bool fetching) {
-    _isFetching = fetching;
-    notifyListeners();
-  }
-  // AI-generated END - setFetching
 
   // AI-generated START - 设置错误信息
   void setError(String? errorMessage) {
@@ -133,9 +127,13 @@ class MPExpertProvider with ChangeNotifier {
   // AI-generated END - setSearchQuery
 
   // AI-generated START - 设置选中的分类索引
-  void setSelectedCategoryIndex(int index) {
+  /// 设置选中的分类索引，并根据分类请求接口刷新页面
+  /// [index] 分类索引
+  Future<void> setSelectedCategoryIndex(int index) async {
     _selectedCategoryIndex = index;
     notifyListeners();
+    // 根据选中的分类请求接口，刷新页面
+    await loadExperts();
   }
   // AI-generated END - setSelectedCategoryIndex
 
@@ -143,7 +141,6 @@ class MPExpertProvider with ChangeNotifier {
   Future<void> loadExperts() async {
     setLoading(true);
     setError(null);
-    _hasMore = true; // 重置 hasMore 状态
     _cursor = ''; // 重置游标
     try {
       final type = ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex].label;
@@ -195,9 +192,7 @@ class MPExpertProvider with ChangeNotifier {
   // AI-generated START - 加载更多专家
   Future<void> loadMoreExperts() async {
     if (_isFetching || !_hasMore) return;
-
-    setFetching(true);
-
+    _isFetching = true;
     try {
       // 使用当前游标加载下一页数据
       final request = MPGetExpertListRequest(
@@ -244,7 +239,7 @@ class MPExpertProvider with ChangeNotifier {
     } catch (e) {
       debugPrint('Error loading more experts: $e');
     } finally {
-      setFetching(false);
+      _isFetching = false;
     }
   }
   // AI-generated END - loadMoreExperts

@@ -141,6 +141,8 @@ android {
         }
     }
 
+    // 使用已安装的 NDK 版本，如果环境变量未设置则使用 28.2.13676358
+    // 如需使用其他版本，可以设置环境变量 NDK_VERSION
     ndkVersion System.getenv()["NDK_VERSION"] ?: "28.2.13676358"
 }
 
