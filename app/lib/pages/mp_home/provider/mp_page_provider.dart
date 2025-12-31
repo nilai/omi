@@ -7,6 +7,7 @@ import '../../../backend/schema/mp/mp_data_model.dart';
 import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../services/mp_audio_upload.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
+import '../../../utils/audio_picker_utils.dart';
 import '../../../utils/mp_local_records_util.dart';
 import '../../../utils/mp_user_profile_share.dart';
 import '../../mp_custom_utils/mp_timestamp_utils.dart';
@@ -348,12 +349,13 @@ class MPHomePageProvider extends ChangeNotifier {
     for (var element in _localRecords) {
       if (element.isRemoved) continue;
       final file = File(element.path);
+      final duration = await AudioPickerUtils.getAudioDuration(file);
       final uri = await MPAudioUploadService().uploadMPAudio(file, onProgress: (current, total) {});
       if (uri != null) {
         final req = MPCreateRecordRequest(
           recordFile: uri,
           createAt: element.createAt,
-          duration: 0,
+          duration: duration ?? 0,
           source: element.source,
         );
 

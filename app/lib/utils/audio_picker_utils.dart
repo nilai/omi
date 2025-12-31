@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:omi/backend/http/api/audio_record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -472,6 +473,50 @@ class AudioPickerUtils {
       return filePath;
     } catch (e) {
       debugPrint('AudioPickerUtils: 保存文件异常: $e');
+      return null;
+    }
+  }
+
+  /// 获取音频文件的时长（秒）
+  ///
+  /// [filePath] 音频文件路径，可以是本地文件路径或 File 对象
+  ///
+  /// 返回音频时长（秒），如果获取失败返回 null
+  /// 注意：此方法不会播放音频，只是读取文件元数据获取时长
+  static Future<int?> getAudioDuration(dynamic filePath) async {
+    try {
+      String path;
+      if (filePath is File) {
+        if (!await filePath.exists()) {
+          debugPrint('AudioPickerUtils: 文件不存在: ${filePath.path}');
+          return null;
+        }
+        path = filePath.path;
+      } else if (filePath is String) {
+        final file = File(filePath);
+        if (!await file.exists()) {
+          debugPrint('AudioPickerUtils: 文件不存在: $filePath');
+          return null;
+        }
+        path = filePath;
+      } else {
+        debugPrint('AudioPickerUtils: 不支持的文件路径类型');
+        return null;
+      }
+
+      final player = AudioPlayer();
+      try {
+        await player.setAudioSource(AudioSource.uri(Uri.file(path)));
+        final duration = player.duration;
+        if (duration != null) {
+          return duration.inSeconds;
+        }
+        return null;
+      } finally {
+        await player.dispose();
+      }
+    } catch (e) {
+      debugPrint('AudioPickerUtils: 获取音频时长失败: $e');
       return null;
     }
   }
