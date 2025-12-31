@@ -114,6 +114,7 @@ MPGetMemoListResponse _$MPGetMemoListResponseFromJson(
           .toList(),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+      totalCount: (json['total_count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPGetMemoListResponseToJson(
@@ -122,6 +123,7 @@ Map<String, dynamic> _$MPGetMemoListResponseToJson(
       'memos': instance.memos,
       'has_more': instance.hasMore,
       'base_resp': instance.baseResp,
+      'total_count': instance.totalCount,
     };
 
 MPGetMemoDetailResponse _$MPGetMemoDetailResponseFromJson(

@@ -85,6 +85,7 @@ MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
           .toList(),
       hasMore: json['has_more'] as bool,
       baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+      totalCount: (json['total_count'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPGetTodoListResponseToJson(
@@ -93,6 +94,7 @@ Map<String, dynamic> _$MPGetTodoListResponseToJson(
       'todos': instance.todos,
       'has_more': instance.hasMore,
       'base_resp': instance.baseResp,
+      'total_count': instance.totalCount,
     };
 
 MPCreateTodoResponse _$MPCreateTodoResponseFromJson(

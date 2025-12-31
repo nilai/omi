@@ -125,10 +125,14 @@ class MPGetTodoListResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
+  @JsonKey(name: 'total_count')
+  final int? totalCount;
+
   MPGetTodoListResponse({
     required this.todos,
     required this.hasMore,
     required this.baseResp,
+    this.totalCount,
   });
 
   factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetTodoListResponseFromJson(json);

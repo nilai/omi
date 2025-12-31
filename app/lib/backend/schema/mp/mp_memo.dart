@@ -164,10 +164,14 @@ class MPGetMemoListResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
+  @JsonKey(name: 'total_count')
+  final int? totalCount;
+
   MPGetMemoListResponse({
     required this.memos,
     required this.hasMore,
     required this.baseResp,
+    this.totalCount,
   });
 
   factory MPGetMemoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoListResponseFromJson(json);

@@ -96,7 +96,7 @@ class _TodoPageState extends State<TodoPage> {
           children: [
             // AI-generated START - 固定的搜索条
             SearchTasksCard(
-              placeholder: 'Search ${todoProvider.todos.length} Todos',
+              placeholder: 'Search ${todoProvider.totalCount} Todos',
               onSearchChanged: (query) {
                 // 搜索功能暂时不实现
                 todoProvider.setSearchQuery(query);

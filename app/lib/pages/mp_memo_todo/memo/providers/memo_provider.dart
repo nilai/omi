@@ -64,9 +64,17 @@ class MemoProvider with ChangeNotifier {
   String _searchQuery = '';
   // AI-generated END - _searchQuery
 
+  // AI-generated START - 总数量
+  int _totalCount = 0;
+  // AI-generated END - _totalCount
+
   // AI-generated START - 获取 Memo 任务列表
   List<MemoTaskItem> get memos => _memos;
   // AI-generated END - memos
+
+  // AI-generated START - 获取总数量
+  int get totalCount => _totalCount;
+  // AI-generated END - totalCount
 
   // AI-generated START - 获取是否正在加载
   bool get isLoading => _isLoading;
@@ -126,6 +134,10 @@ class MemoProvider with ChangeNotifier {
       // 将 API 返回的数据转换为 MemoTaskItem
       _memos = response.memos.map((memo) => _convertToMemoTaskItem(memo)).toList();
       _hasMore = response.hasMore;
+      // 更新总数量
+      if (response.totalCount != null) {
+        _totalCount = response.totalCount!;
+      }
       // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
       // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 memo 的 id 作为 cursor
       if (_memos.isNotEmpty) {
@@ -291,6 +303,10 @@ class MemoProvider with ChangeNotifier {
           MPToastUtils.showMessage('Memo 删除成功');
           // 从本地列表中删除
           _memos.removeWhere((m) => m.id == id);
+          // 总数量减1
+          if (_totalCount > 0) {
+            _totalCount--;
+          }
           notifyListeners();
         } else {
           MPToastUtils.showMessage(response.baseResp.message);

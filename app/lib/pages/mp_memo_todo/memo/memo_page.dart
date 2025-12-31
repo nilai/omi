@@ -117,7 +117,7 @@ class _MemoPageState extends State<MemoPage> {
           children: [
             // AI-generated START - 固定的搜索条
             SearchTasksCard(
-              placeholder: 'Search ${memoProvider.memos.length} Memories',
+              placeholder: 'Search ${memoProvider.totalCount} Memories',
               onSearchChanged: (query) {
                 // 搜索功能暂时不实现
                 memoProvider.setSearchQuery(query);
