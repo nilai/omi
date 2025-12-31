@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/backend/http/mp_api/mp_template.dart' as mp_template_api;
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:omi/backend/schema/mp/mp_template.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 
 /// 模板详情状态管理Provider
@@ -57,24 +58,27 @@ class MPTemplateDetailProvider with ChangeNotifier {
       final savedTitle = _template?.title;
       final savedPrompt = _template?.prompt;
       final savedCategory = _category;
+      final savedIcon = _template?.icon;
 
       setState(() {
         // 如果还没有初始化过，创建新模板；否则保留已有数据
+        // 默认图标使用 Assets.images.mpApps1
+        final defaultIcon = 'assets/${Assets.images.mpApps1.path}';
         if (!_isInitialized) {
           _template = MPTemplateStruct(
             id: null,
             title: null,
-            icon: null,
+            icon: defaultIcon,
             type: '通用',
             prompt: null,
           );
           _category = '通用';
         } else {
-          // 保留已有数据
+          // 保留已有数据，如果 icon 为空则使用默认图标
           _template = MPTemplateStruct(
             id: null,
             title: savedTitle,
-            icon: null,
+            icon: savedIcon ?? defaultIcon,
             type: savedCategory,
             prompt: savedPrompt,
           );
@@ -184,16 +188,17 @@ class MPTemplateDetailProvider with ChangeNotifier {
 
   void updateIcon(String iconUrl) {
     setState(() {
-      // 如果是本地路径（asset路径），保存为临时路径
+      // 如果是本地路径（asset路径），保存为临时路径和 template.icon
       if (iconUrl.startsWith('assets/')) {
-        // 本地路径不保存到 template.icon，因为那是用于网络图片的
+        // 本地路径保存到 template.icon 和临时路径，以便正确显示
         _template = MPTemplateStruct(
           id: _template?.id,
           title: _template?.title,
-          icon: _template?.icon, // 保持原有icon或为空
+          icon: iconUrl, // 保存 assets 路径到 icon
           type: _template?.type ?? _category,
           prompt: _template?.prompt,
         );
+        _tempLocalIconPath = iconUrl; // 同时保存到临时路径
       } else {
         // 网络URL，更新到template.icon并清除临时路径
         _template = MPTemplateStruct(
@@ -203,7 +208,9 @@ class MPTemplateDetailProvider with ChangeNotifier {
           type: _template?.type ?? _category,
           prompt: _template?.prompt,
         );
+        _tempLocalIconPath = null;
       }
+      notifyListeners();
     });
   }
   // AI-generated END - 更新模板图标
@@ -238,7 +245,6 @@ class MPTemplateDetailProvider with ChangeNotifier {
     });
 
     try {
-      if (isCreateMode) {
         // 创建新模板
         final title = _template!.title?.trim() ?? '';
         final prompt = _template!.prompt?.trim() ?? '';
@@ -294,9 +300,7 @@ class MPTemplateDetailProvider with ChangeNotifier {
           MPToastUtils.showMessage(response?.baseResp.message ?? '创建模板失败');
           return false;
         }
-      } else {
-        return false;
-      }
+      
     } catch (e) {
       setState(() {
         MPToastUtils.showMessage(e.toString());
