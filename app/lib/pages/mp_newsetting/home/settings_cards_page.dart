@@ -141,9 +141,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                   totalMinutes: 300,
                   onTrialTap: () {
                     // 处理试用按钮点击
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('开始7天无限免费试用')),
-                    );
+                    MPToastUtils.showFeatureComingSoon(message: '开始7天无限免费试用',context: context);
                   },
                 ),
                 // AI-generated END - 订阅计划卡片
@@ -273,8 +271,9 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                       iconImage: setting.iconImage,
                       onTap: () {
                         // 处理设置项点击
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('打开${setting.title}')),
+                        MPToastUtils.showFeatureComingSoon(
+                          message: '打开${setting.title}',
+                          context: context,
                         );
                       },
                     );
