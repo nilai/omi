@@ -29,6 +29,7 @@ import 'package:omi/pages/mp_template _selection/template_selection_page.dart';
 import 'package:omi/services/voice_recognition_event_service.dart';
 import 'package:provider/provider.dart';
 
+import '../../home/widgets/mp_battery_info_widget.dart';
 import '../../note_debug/note_ble_debug_page.dart';
 
 /// 设置卡片展示页面
@@ -102,10 +103,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
           appBar: SettingsTopBar(
             onLeftIconTap: () {
               // 处理左侧图标点击
-              // MPBatteryInfoWidget.pushToFindDevicesPage(context);
-              Navigator.of(context).push(MaterialPageRoute(
-                builder: (context) => const NoteBleDebugPage(),
-              ));
+              MPBatteryInfoWidget.pushToFindDevicesPage(context);
             },
             onSettingsTap: () {
               // AI-generated START - 打开设置页面
@@ -141,7 +139,7 @@ class SettingsCardsPageState extends State<SettingsCardsPage> with AutomaticKeep
                   totalMinutes: 300,
                   onTrialTap: () {
                     // 处理试用按钮点击
-                    MPToastUtils.showFeatureComingSoon(message: '开始7天无限免费试用',context: context);
+                    MPToastUtils.showFeatureComingSoon(message: '开始7天无限免费试用', context: context);
                   },
                 ),
                 // AI-generated END - 订阅计划卡片
