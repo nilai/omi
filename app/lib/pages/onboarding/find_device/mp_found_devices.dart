@@ -1,12 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
-import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/providers/device_provider.dart';
+import 'package:omi/providers/mp_device_finder_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/gen/assets.gen.dart';
-import 'package:omi/utils/device.dart';
 import 'package:provider/provider.dart';
 
 import '../../../services/devices/note_connection.dart';
@@ -35,13 +33,27 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
       if (mounted) {
         final deviceProvider = context.read<DeviceProvider>();
         final onboardingProvider = context.read<OnboardingProvider>();
-        await deviceProvider.periodicConnect('coming from MPFoundDevices');
-        final deviceId = deviceProvider.connectedDevice?.id ?? '';
-        final connection = await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
-        if (connection != null) {
-          onboardingProvider.sendQueryVersion(connection);
-          onboardingProvider.sendQueryBattery(connection);
-          onboardingProvider.sendQueryStorage(connection);
+        final finderProvider = context.read<MPDeviceFinderProvider>();
+
+        // 设置 Provider 依赖
+        finderProvider.setProviders(
+          deviceProvider: deviceProvider,
+          onboardingProvider: onboardingProvider,
+        );
+
+        // 如果设备已连接，同步设备信息
+        if (deviceProvider.isConnected && deviceProvider.connectedDevice != null) {
+          final deviceId = deviceProvider.connectedDevice!.id;
+          final connection = await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
+          if (connection != null) {
+            await onboardingProvider.sendQueryVersion(connection);
+            await onboardingProvider.sendQueryBattery(connection);
+            await onboardingProvider.sendQueryStorage(connection);
+            finderProvider.syncDeviceInfo();
+          }
+        } else {
+          // 开始扫描并自动连接
+          await finderProvider.startScanAndAutoConnect();
         }
       }
     });
@@ -49,42 +61,30 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<OnboardingProvider>(builder: (context, provider, child) {
-      return MessageListener<OnboardingProvider>(
-        showError: (error) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(error),
-            backgroundColor: Colors.red,
-          ));
-        },
-        showInfo: (info) {
-          if (info == "DEVICE_CONNECTED") {
-            // Navigator.of(context).pushAndRemoveUntil(
-            //   MaterialPageRoute(
-            //     builder: (context) => const mp(),
-            //   ),
-            //   (route) => false,
-            // );
-          }
-        },
-        child: Column(
+    return Consumer3<MPDeviceFinderProvider, DeviceProvider, OnboardingProvider>(
+      builder: (context, finderProvider, deviceProvider, onboardingProvider, child) {
+        // 如果已连接，同步设备信息
+        if (finderProvider.isConnected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            finderProvider.syncDeviceInfo();
+          });
+        }
+
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: provider.isConnected
-                  ? _buildConnected(provider)
-                  : provider.deviceList.isEmpty
-                      ? _buildSearching(context)
-                      : _buildFoundList(provider),
-              // child: _buildConnected(provider),
+              child: finderProvider.isConnected
+                  ? _buildConnected(finderProvider, deviceProvider)
+                  : _buildSearching(context, finderProvider),
             ),
           ],
-        ),
-      );
-    });
+        );
+      },
+    );
   }
 
-  Widget _buildSearching(BuildContext context) {
+  Widget _buildSearching(BuildContext context, MPDeviceFinderProvider provider) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -114,10 +114,10 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             ),
           ),
           const SizedBox(height: 24),
-          const Center(
+          Center(
             child: MPAnimatedDotsText(
-              baseText: '正在搜索设备',
-              style: TextStyle(
+              baseText: provider.connectionStatusText,
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF1D1D1F),
@@ -125,10 +125,10 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             ),
           ),
           const SizedBox(height: 8),
-          const Center(
+          Center(
             child: Text(
-              '请确保设备已开启并在附近',
-              style: TextStyle(
+              provider.isConnecting ? '正在连接设备，请稍候...' : '请确保设备已开启并在附近',
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0x991D1D1F),
                 fontWeight: FontWeight.w400,
@@ -184,135 +184,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
     );
   }
 
-  Widget _buildFoundList(OnboardingProvider provider) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '发现附近的设备',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1D1D1F),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '${provider.deviceList.length} 个设备可用',
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w400,
-            color: Color(0x991D1D1F),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: ListView.separated(
-            itemCount: provider.deviceList.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final device = provider.deviceList[index];
-              final isConnecting = provider.connectingToDeviceId == device.id;
-              return GestureDetector(
-                onTap: !provider.isClicked
-                    ? () async {
-                        await provider.handleTap(
-                          device: device,
-                          isFromOnboarding: widget.isFromOnboarding,
-                          goNext: widget.goNext,
-                        );
-                      }
-                    : null,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: const Color(0x1A4361EE),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0x0F4361EE),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Image.asset(
-                            DeviceUtils.getDeviceImagePath(
-                              deviceType: device.type,
-                              modelNumber: device.modelNumber,
-                              deviceName: device.name,
-                            ),
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              device.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1D1D1F),
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'ID: ${device.getShortId()}',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: Color(0x991D1D1F),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      if (isConnecting)
-                        const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Color(0xFF4361EE)),
-                          ),
-                        )
-                      else
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Color(0xFF1D1D1F),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConnected(OnboardingProvider provider) {
+  Widget _buildConnected(MPDeviceFinderProvider finderProvider, DeviceProvider deviceProvider) {
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -371,7 +243,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             children: [
               _buildStatusBadge(
                 icon: Icons.battery_charging_full,
-                text: '${provider.batteryPercentage}%',
+                text: finderProvider.batteryPercentage >= 0 ? '${finderProvider.batteryPercentage}%' : '--',
                 color: const Color(0xFF34C759),
               ),
               const SizedBox(width: 16),
@@ -388,7 +260,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
               ),
               const SizedBox(width: 16),
               Text(
-                provider.firmwareRevision.isNotEmpty ? provider.firmwareRevision : 'unknown',
+                finderProvider.firmwareRevision.isNotEmpty ? finderProvider.firmwareRevision : 'unknown',
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -440,8 +312,8 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Pendant firmware ${provider.hardwareRevision.isNotEmpty ? provider.hardwareRevision : '1.1.20'}',
-                        style: TextStyle(
+                        'Pendant firmware ${deviceProvider.latestFirmwareVersion.isNotEmpty ? deviceProvider.latestFirmwareVersion : (finderProvider.hardwareRevision.isNotEmpty ? finderProvider.hardwareRevision : '1.1.20')}',
+                        style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
                           color: Color(0x991D1D1F),
@@ -472,9 +344,13 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             ),
             child: Column(
               children: [
-                _buildInfoRow('名称', provider.deviceName.isNotEmpty ? provider.deviceName : 'MemoPin'),
+                _buildInfoRow('名称', finderProvider.deviceName.isNotEmpty ? finderProvider.deviceName : 'MemoPin'),
                 const Divider(height: 24, color: Color(0xFFE5E5EA)),
-                _buildInfoRow('序列号', provider.deviceId.isNotEmpty ? provider.deviceId : 'MP202400${provider.deviceId}'),
+                _buildInfoRow(
+                    '序列号',
+                    finderProvider.deviceId.isNotEmpty
+                        ? finderProvider.deviceId
+                        : 'MP202400${finderProvider.deviceId}'),
               ],
             ),
           ),
@@ -535,7 +411,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                       ),
                     ),
                     Text(
-                      provider.noteUsedKBTitle,
+                      finderProvider.noteUsedKBTitle,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,

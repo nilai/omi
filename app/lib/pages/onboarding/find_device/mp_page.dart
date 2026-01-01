@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:omi/providers/home_provider.dart';
+import 'package:omi/providers/mp_device_finder_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/widgets/dialog.dart';
@@ -108,9 +109,12 @@ class _MPFindDevicesPageState extends State<MPFindDevicesPage> {
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child: MPFoundDevices(
-                      goNext: widget.goNext,
-                      isFromOnboarding: widget.isFromOnboarding,
+                    child: ChangeNotifierProvider(
+                      create: (_) => MPDeviceFinderProvider(),
+                      child: MPFoundDevices(
+                        goNext: widget.goNext,
+                        isFromOnboarding: widget.isFromOnboarding,
+                      ),
                     ),
                   ),
                   if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
