@@ -27,7 +27,9 @@ import '../../../services/mp_home_refresh_event_service.dart';
 import '../../../utils/alerts/mp_memory_export_dialog.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../../utils/mp_local_records_util.dart';
+import '../../memories/mp_memory_transition_page.dart';
 import '../../memories/widgets/mp_memory_add_tag_dialog.dart';
+import '../../memories/widgets/mp_memory_convert_dialog.dart';
 import '../../memories/widgets/mp_memory_update_name_dialog.dart';
 import '../../mp_chat/mp_chat.dart';
 import '../../mp_chat/mp_chat_helper.dart';
@@ -632,18 +634,19 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   void _regenerateSummary() async {
-    final req = MPSummaryRecordRequest(
-        memoryId: _memoryId,
-        recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
-        recordMemoAt: widget.memory.createAt);
-    final res = await summaryRecord(req);
-    if (res != null && res.baseResp.code == 0) {
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } else {
-      MPToastUtils.showMessage(res?.baseResp.message ?? '重新生成失败');
-    }
+    MPMemoryConvertDialog.show(context, memory: widget.memory, onGenerate: () {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        MPHomeRefreshEventService().emitRefresh();
+        if (!context.mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => MPMemoryTransitionPage(
+              memory: widget.memory,
+            ),
+          ),
+        );
+      });
+    });
   }
 
   void _copyTranscript() async {
