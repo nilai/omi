@@ -98,7 +98,15 @@ class _CalendarPopupState extends State<CalendarPopup> {
     _scrollEndTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) {
         final currentMonth = _getMonthByIndex(_currentPageIndex);
-        provider.loadMemoryDays(currentMonth);
+        // 获取今天所在的月份
+        final today = DateTime.now();
+        final todayMonth = DateTime(today.year, today.month, 1);
+
+        // 只有当滑动后的月份小于或等于当前月份时，才请求接口
+        if (currentMonth.year < todayMonth.year ||
+            (currentMonth.year == todayMonth.year && currentMonth.month <= todayMonth.month)) {
+          provider.loadMemoryDays(currentMonth);
+        }
       }
     });
   }

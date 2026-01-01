@@ -132,7 +132,8 @@ class CalendarProvider extends ChangeNotifier {
     final newMonth = DateTime(month.year, month.month, 1);
     if (_currentMonth.year != newMonth.year || _currentMonth.month != newMonth.month) {
       _currentMonth = newMonth;
-      loadMemoryDays(_currentMonth);
+      // 不在这里自动调用接口，由外部控制何时调用
+      notifyListeners();
     }
   }
   // AI-generated END - 设置当前月份
