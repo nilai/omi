@@ -13,13 +13,13 @@ class MPGetMemoryListRequest {
   @JsonKey(name: 'cursor')
   final String cursor;
 
-  @JsonKey(name: 'date')
-  final String date; // 如2025-12-21
+  @JsonKey(name: 'day')
+  final String day; // 如2025-12-21
 
   MPGetMemoryListRequest({
     required this.pageSize,
     required this.cursor,
-    required this.date,
+    required this.day,
   });
 
   factory MPGetMemoryListRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryListRequestFromJson(json);

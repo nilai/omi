@@ -168,7 +168,7 @@ class MPHomePageProvider extends ChangeNotifier {
       loading = true;
       notifyListeners();
       _cursor = '';
-      final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
+      final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, day: selectedDate);
       final response = await getMemoryList(req);
       if (response != null) {
         // items.clear();
@@ -203,7 +203,7 @@ class MPHomePageProvider extends ChangeNotifier {
     if (loadingMore || !hasMore) return;
     loadingMore = true;
     notifyListeners();
-    final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, date: selectedDate);
+    final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, day: selectedDate);
     final response = await getMemoryList(req);
     if (response != null) {
       hasMore = response.hasMore;
