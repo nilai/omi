@@ -263,7 +263,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
               ),
               const SizedBox(width: 16),
               Text(
-                finderProvider.firmwareRevision.isNotEmpty ? finderProvider.firmwareRevision : 'unknown',
+                finderProvider.version,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,

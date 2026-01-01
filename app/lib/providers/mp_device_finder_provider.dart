@@ -49,7 +49,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   int batteryPercentage = -1;
   String deviceName = '';
   String deviceId = '';
-  String firmwareRevision = '';
+  String _firmwareRevision = '';
   String hardwareRevision = '';
   int noteUsedKB = 0;
   int noteTotalKB = 0;
@@ -57,6 +57,16 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   /// 获取已使用存储的显示标题
   String get noteUsedKBTitle {
     return _formatStorageSize(noteUsedKB);
+  }
+
+  String get version {
+    if (_firmwareRevision.isEmpty) {
+      return 'unknown';
+    }
+    if (_firmwareRevision.contains('v')) {
+      return _firmwareRevision;
+    }
+    return 'v$_firmwareRevision';
   }
 
   /// 格式化存储大小
@@ -115,7 +125,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       if (_deviceProvider!.pairedDevice != null) {
         final pairedDevice = _deviceProvider!.pairedDevice!;
         if (pairedDevice.firmwareRevision.isNotEmpty && pairedDevice.firmwareRevision != 'Unknown') {
-          firmwareRevision = pairedDevice.firmwareRevision;
+          _firmwareRevision = pairedDevice.firmwareRevision;
         }
         if (pairedDevice.hardwareRevision.isNotEmpty) {
           hardwareRevision = pairedDevice.hardwareRevision;
@@ -145,7 +155,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
 
       // 恢复固件版本信息
       if (storedDevice.firmwareRevision.isNotEmpty && storedDevice.firmwareRevision != 'Unknown') {
-        firmwareRevision = storedDevice.firmwareRevision;
+        _firmwareRevision = storedDevice.firmwareRevision;
       }
       if (storedDevice.hardwareRevision.isNotEmpty) {
         hardwareRevision = storedDevice.hardwareRevision;
@@ -303,7 +313,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       // 查询固件版本
       final firmwareVersion = await connection.queryFirmwareVersion();
       if (firmwareVersion.isNotEmpty && firmwareVersion != 'Unknown') {
-        firmwareRevision = firmwareVersion;
+        _firmwareRevision = firmwareVersion;
       }
 
       // 查询存储信息
@@ -312,7 +322,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       noteTotalKB = storageInfo.totalKB;
 
       debugPrint(
-          'Device info queried: battery=$batteryPercentage%, firmware=$firmwareRevision, storage=$noteUsedKB/$noteTotalKB KB');
+          'Device info queried: battery=$batteryPercentage%, firmware=$_firmwareRevision, storage=$noteUsedKB/$noteTotalKB KB');
       notifyListeners();
     } catch (e) {
       debugPrint('Error querying device info: $e');
@@ -331,10 +341,10 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     // 从 pairedDevice 恢复固件版本
     if (_deviceProvider!.pairedDevice != null) {
       final pairedDevice = _deviceProvider!.pairedDevice!;
-      if (firmwareRevision.isEmpty &&
+      if (_firmwareRevision.isEmpty &&
           pairedDevice.firmwareRevision.isNotEmpty &&
           pairedDevice.firmwareRevision != 'Unknown') {
-        firmwareRevision = pairedDevice.firmwareRevision;
+        _firmwareRevision = pairedDevice.firmwareRevision;
       }
       if (hardwareRevision.isEmpty && pairedDevice.hardwareRevision.isNotEmpty) {
         hardwareRevision = pairedDevice.hardwareRevision;
@@ -440,7 +450,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     batteryPercentage = -1;
     deviceName = '';
     deviceId = '';
-    firmwareRevision = '';
+    _firmwareRevision = '';
     hardwareRevision = '';
     noteUsedKB = 0;
     noteTotalKB = 0;
