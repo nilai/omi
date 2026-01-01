@@ -22,13 +22,13 @@ class MPBatteryInfoWidget extends StatelessWidget {
     }
 
     // 已连接状态，根据电量选择图标
-    // 电量 <0 或 >20，使用连接完成图标
-    if (batteryLevel < 0 || batteryLevel > 20) {
+    // 电量 <0 或 >=20，使用连接完成图标
+    if (batteryLevel < 0 || batteryLevel >= 20) {
       return Assets.images.mpBatteryConnect;
     }
 
-    // 电量 >10 且 <20，使用中等电量图标
-    if (batteryLevel > 10 && batteryLevel < 20) {
+    // 电量 >=10 且 <20，使用中等电量图标
+    if (batteryLevel >= 10 && batteryLevel < 20) {
       return Assets.images.mpBatteryMidPower;
     }
 
@@ -37,7 +37,7 @@ class MPBatteryInfoWidget extends StatelessWidget {
       return Assets.images.mpBatteryLowPower;
     }
 
-    // 默认返回连接完成图标
+    // 默认返回连接完成图标（batteryLevel == 0 的情况）
     return Assets.images.mpBatteryConnect;
   }
 
