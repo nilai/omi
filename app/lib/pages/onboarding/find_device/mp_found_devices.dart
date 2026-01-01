@@ -255,7 +255,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                 text: '',
                 color: const Color(0xFF007AFF),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 2),
               _buildStatusBadge(
                 icon: Icons.signal_cellular_alt,
                 text: '',
