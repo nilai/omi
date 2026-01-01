@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/mp_device_finder_provider.dart';
@@ -41,14 +42,26 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
           onboardingProvider: onboardingProvider,
         );
 
-        // 如果设备已连接，同步设备信息
+        // 如果设备已连接，刷新设备信息
         if (deviceProvider.isConnected && deviceProvider.connectedDevice != null) {
-          final deviceId = deviceProvider.connectedDevice!.id;
-          final connection = await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
-          if (connection != null) {
-            await onboardingProvider.sendQueryVersion(connection);
-            await onboardingProvider.sendQueryBattery(connection);
-            await onboardingProvider.sendQueryStorage(connection);
+          // Provider 已经在 setProviders 中初始化了连接状态
+          // 这里只需要刷新设备信息
+          try {
+            final deviceId = deviceProvider.connectedDevice!.id;
+            final connection =
+                await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
+            if (connection != null) {
+              await onboardingProvider.sendQueryVersion(connection);
+              await onboardingProvider.sendQueryBattery(connection);
+              await onboardingProvider.sendQueryStorage(connection);
+              finderProvider.syncDeviceInfo();
+            } else {
+              // 连接失败，使用上次的信息
+              finderProvider.syncDeviceInfo();
+            }
+          } catch (e) {
+            debugPrint('Error refreshing device info, using cached: $e');
+            // 获取失败，使用上次的信息
             finderProvider.syncDeviceInfo();
           }
         } else {

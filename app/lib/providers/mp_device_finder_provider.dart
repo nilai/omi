@@ -67,6 +67,40 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   }) {
     _deviceProvider = deviceProvider;
     _onboardingProvider = onboardingProvider;
+
+    // 如果设备已连接，立即初始化连接状态
+    if (deviceProvider.isConnected && deviceProvider.connectedDevice != null) {
+      _initializeConnectedDevice(deviceProvider.connectedDevice!);
+    }
+
+    notifyListeners();
+  }
+
+  /// 初始化已连接设备的状态
+  void _initializeConnectedDevice(BtDevice device) {
+    _isConnected = true;
+    _isScanning = false;
+    _isConnecting = false;
+    _connectionStatusText = '已连接';
+
+    // 从设备对象恢复基本信息
+    deviceId = device.id;
+    deviceName = device.name.isNotEmpty ? device.name : deviceName;
+
+    // 尝试从 OnboardingProvider 恢复设备信息（如果之前有获取过）
+    if (_onboardingProvider != null) {
+      syncDeviceInfo();
+    }
+
+    // 如果设备信息为空，尝试从 SharedPreferences 恢复
+    if (deviceName.isEmpty) {
+      final storedDevice = SharedPreferencesUtil().btDevice;
+      if (storedDevice.id.isNotEmpty) {
+        deviceName = storedDevice.name;
+        deviceId = storedDevice.id;
+      }
+    }
+
     notifyListeners();
   }
 
@@ -142,14 +176,20 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       // 等待连接稳定
       await Future.delayed(const Duration(seconds: 1));
 
-      // 获取设备信息
-      final connection = await ServiceManager.instance().device.ensureConnection(device.id) as NoteDeviceConnection?;
-      if (connection != null && _onboardingProvider != null) {
-        await _onboardingProvider!.sendQueryBattery(connection);
-        await _onboardingProvider!.sendQueryVersion(connection);
-        await _onboardingProvider!.sendQueryStorage(connection);
+      // 获取设备信息（如果失败，使用上次的信息）
+      try {
+        final connection = await ServiceManager.instance().device.ensureConnection(device.id) as NoteDeviceConnection?;
+        if (connection != null && _onboardingProvider != null) {
+          await _onboardingProvider!.sendQueryBattery(connection);
+          await _onboardingProvider!.sendQueryVersion(connection);
+          await _onboardingProvider!.sendQueryStorage(connection);
 
-        // 同步设备信息
+          // 同步设备信息
+          syncDeviceInfo();
+        }
+      } catch (e) {
+        debugPrint('Error fetching device info, using cached info: $e');
+        // 获取失败，使用上次的信息（从 OnboardingProvider 同步）
         syncDeviceInfo();
       }
 
@@ -179,7 +219,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     try {
       // 强制连接设备
       await ServiceManager.instance().device.ensureConnection(device.id, force: true);
-      
+
       // 等待连接完成
       await Future.delayed(const Duration(seconds: 2));
 
@@ -211,9 +251,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     final oldTotalKB = noteTotalKB;
 
     batteryPercentage = _onboardingProvider!.batteryPercentage;
-    deviceName = _onboardingProvider!.deviceName.isNotEmpty 
-        ? _onboardingProvider!.deviceName 
-        : deviceName;
+    deviceName = _onboardingProvider!.deviceName.isNotEmpty ? _onboardingProvider!.deviceName : deviceName;
     firmwareRevision = _onboardingProvider!.firmwareRevision;
     hardwareRevision = _onboardingProvider!.hardwareRevision;
     noteUsedKB = _onboardingProvider!.noteUsedKB;
@@ -300,4 +338,3 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     // 可以在这里处理服务状态变化
   }
 }
-
