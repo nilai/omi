@@ -24,6 +24,9 @@ class CalendarProvider extends ChangeNotifier {
   /// 是否正在加载数据
   bool _isLoading = false;
 
+  /// 月份数据缓存，key为月份字符串（如 "2025-12"），value为日期列表，null表示已查询但为空
+  final Map<String, List<String>?> _monthDataCache = {};
+
   /// 获取当前月份
   DateTime get currentMonth => _currentMonth;
 
@@ -43,51 +46,83 @@ class CalendarProvider extends ChangeNotifier {
     _selectedDate = DateTime(now.year, now.month, now.day);
 
     // 加载当前月份的数据
-    _loadMemoryDays(_currentMonth);
+    loadMemoryDays(_currentMonth);
   }
   // AI-generated END - 初始化日期数据
 
   // AI-generated START - 从接口加载有记忆的日期
   /// 从接口加载指定月份有记忆的日期
-  Future<void> _loadMemoryDays(DateTime month) async {
+  /// 优先从缓存中获取，缓存中没有则调用接口
+  Future<void> loadMemoryDays(DateTime month) async {
+    // 格式化月份为 "2025-12" 格式
+    final monthStr = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+
+    // 优先从缓存中获取
+    if (_monthDataCache.containsKey(monthStr)) {
+      final cachedData = _monthDataCache[monthStr];
+      if (cachedData == null) {
+        // 缓存中标记为空，不需要再次调用接口
+        _updateEventDatesForMonth(month, []);
+        return;
+      } else {
+        // 使用缓存数据
+        _updateEventDatesForMonth(month, cachedData);
+        return;
+      }
+    }
+
+    // 缓存中没有，调用接口获取
     if (_isLoading) return;
 
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 格式化月份为 "2025-12" 格式
-      final monthStr = '${month.year}-${month.month.toString().padLeft(2, '0')}';
-
       final request = MPGetMemoryDaysRequest(month: monthStr);
       final response = await getMemoryDays(request);
 
+      List<String> days = [];
       if (response != null && response.days.isNotEmpty) {
-        // 清空当前月份的事件日期
-        _eventDates.removeWhere((date) => date.year == month.year && date.month == month.month);
-
-        // 将返回的日期字符串转换为 DateTime 对象
-        for (final dayStr in response.days) {
-          try {
-            // 解析日期字符串，格式如 "2025-11-10"
-            final parts = dayStr.split('-');
-            if (parts.length == 3) {
-              final year = int.parse(parts[0]);
-              final monthNum = int.parse(parts[1]);
-              final day = int.parse(parts[2]);
-              _eventDates.add(DateTime(year, monthNum, day));
-            }
-          } catch (e) {
-            debugPrint('Failed to parse date: $dayStr, error: $e');
-          }
-        }
+        days = response.days;
       }
+
+      // 将结果存入缓存（即使是空列表也要缓存，避免重复调用）
+      _monthDataCache[monthStr] = days.isEmpty ? null : days;
+
+      // 更新事件日期
+      _updateEventDatesForMonth(month, days);
     } catch (e) {
       debugPrint('Failed to load memory days: $e');
+      // 接口调用失败，标记为空，避免重复调用
+      _monthDataCache[monthStr] = null;
+      _updateEventDatesForMonth(month, []);
     } finally {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// 更新指定月份的事件日期
+  void _updateEventDatesForMonth(DateTime month, List<String> days) {
+    // 清空当前月份的事件日期
+    _eventDates.removeWhere((date) => date.year == month.year && date.month == month.month);
+
+    // 将返回的日期字符串转换为 DateTime 对象
+    for (final dayStr in days) {
+      try {
+        // 解析日期字符串，格式如 "2025-11-10"
+        final parts = dayStr.split('-');
+        if (parts.length == 3) {
+          final year = int.parse(parts[0]);
+          final monthNum = int.parse(parts[1]);
+          final day = int.parse(parts[2]);
+          _eventDates.add(DateTime(year, monthNum, day));
+        }
+      } catch (e) {
+        debugPrint('Failed to parse date: $dayStr, error: $e');
+      }
+    }
+    notifyListeners();
   }
   // AI-generated END - 从接口加载有记忆的日期
 
@@ -97,7 +132,7 @@ class CalendarProvider extends ChangeNotifier {
     final newMonth = DateTime(month.year, month.month, 1);
     if (_currentMonth.year != newMonth.year || _currentMonth.month != newMonth.month) {
       _currentMonth = newMonth;
-      _loadMemoryDays(_currentMonth);
+      loadMemoryDays(_currentMonth);
     }
   }
   // AI-generated END - 设置当前月份
@@ -117,9 +152,10 @@ class CalendarProvider extends ChangeNotifier {
     final newMonth = DateTime(today.year, today.month, 1);
     if (_currentMonth.year != newMonth.year || _currentMonth.month != newMonth.month) {
       _currentMonth = newMonth;
-      _loadMemoryDays(_currentMonth);
+      loadMemoryDays(_currentMonth);
     }
     _selectedDate = DateTime(today.year, today.month, today.day);
+    notifyListeners();
   }
   // AI-generated END - 回到今天
 
@@ -132,7 +168,7 @@ class CalendarProvider extends ChangeNotifier {
       1,
     );
     _currentMonth = newMonth;
-    _loadMemoryDays(_currentMonth);
+    loadMemoryDays(_currentMonth);
   }
   // AI-generated END - 上一个月
 
@@ -145,7 +181,7 @@ class CalendarProvider extends ChangeNotifier {
       1,
     );
     _currentMonth = newMonth;
-    _loadMemoryDays(_currentMonth);
+    loadMemoryDays(_currentMonth);
   }
   // AI-generated END - 下一个月
 
