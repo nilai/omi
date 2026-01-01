@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:omi/pages/note_debug/note_ble_debug_page.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/mp_device_finder_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
@@ -10,6 +11,7 @@ import 'package:omi/widgets/dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../../mp_custom_utils/mp_toast_utils.dart';
+import '../setting/page.dart';
 import 'mp_found_devices.dart';
 
 class MPFindDevicesPage extends StatefulWidget {
@@ -80,7 +82,7 @@ class _MPFindDevicesPageState extends State<MPFindDevicesPage> {
           backgroundColor: Colors.white,
           body: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: Column(
                 children: [
                   Row(
@@ -105,6 +107,17 @@ class _MPFindDevicesPageState extends State<MPFindDevicesPage> {
                           ),
                         ),
                       ),
+                      IconButton(
+                          onPressed: () {
+                            Navigator.of(context).push(MaterialPageRoute(
+                              builder: (context) => const NoteBleDebugPage(),
+                            ));
+                          },
+                          icon: const Icon(
+                            Icons.settings,
+                            color: Color(0xFF1D1D1F),
+                            size: 20,
+                          ))
                     ],
                   ),
                   const SizedBox(height: 12),
