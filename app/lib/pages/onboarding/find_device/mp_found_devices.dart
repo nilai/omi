@@ -53,11 +53,13 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             } else {
               // 连接失败，使用上次的信息
               finderProvider.loadCachedDeviceInfo();
+              finderProvider.syncFromDeviceProvider();
             }
           } catch (e) {
             debugPrint('Error refreshing device info, using cached: $e');
             // 获取失败，使用上次的信息
             finderProvider.loadCachedDeviceInfo();
+            finderProvider.syncFromDeviceProvider();
           }
         } else {
           // 开始扫描并自动连接

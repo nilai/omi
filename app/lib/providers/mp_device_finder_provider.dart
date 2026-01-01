@@ -106,8 +106,27 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       }
     }
 
-    // 尝试从 SharedPreferences 恢复设备信息（如果之前有保存过）
+    // 尝试从缓存恢复设备信息
     loadCachedDeviceInfo();
+
+    // 从 DeviceProvider 恢复设备信息（如果可用）
+    if (_deviceProvider != null) {
+      // 从 pairedDevice 恢复固件版本
+      if (_deviceProvider!.pairedDevice != null) {
+        final pairedDevice = _deviceProvider!.pairedDevice!;
+        if (pairedDevice.firmwareRevision.isNotEmpty && pairedDevice.firmwareRevision != 'Unknown') {
+          firmwareRevision = pairedDevice.firmwareRevision;
+        }
+        if (pairedDevice.hardwareRevision.isNotEmpty) {
+          hardwareRevision = pairedDevice.hardwareRevision;
+        }
+      }
+
+      // 从 DeviceProvider 恢复电池电量
+      if (_deviceProvider!.batteryLevel >= 0) {
+        batteryPercentage = _deviceProvider!.batteryLevel;
+      }
+    }
 
     notifyListeners();
   }
@@ -115,10 +134,21 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   /// 从缓存加载设备信息
   void loadCachedDeviceInfo() {
     final storedDevice = SharedPreferencesUtil().btDevice;
-    if (storedDevice.id.isNotEmpty && storedDevice.id == deviceId) {
-      // 可以在这里恢复其他缓存的信息，如果有的话
+    if (storedDevice.id.isNotEmpty && (storedDevice.id == deviceId || deviceId.isEmpty)) {
+      // 恢复设备基本信息
       if (deviceName.isEmpty) {
         deviceName = storedDevice.name;
+      }
+      if (deviceId.isEmpty) {
+        deviceId = storedDevice.id;
+      }
+
+      // 恢复固件版本信息
+      if (storedDevice.firmwareRevision.isNotEmpty && storedDevice.firmwareRevision != 'Unknown') {
+        firmwareRevision = storedDevice.firmwareRevision;
+      }
+      if (storedDevice.hardwareRevision.isNotEmpty) {
+        hardwareRevision = storedDevice.hardwareRevision;
       }
     }
   }
@@ -201,11 +231,18 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
         final connection = await ServiceManager.instance().device.ensureConnection(device.id) as NoteDeviceConnection?;
         if (connection != null) {
           await queryDeviceInfo(connection);
+        } else {
+          // 连接为空，尝试从缓存恢复
+          loadCachedDeviceInfo();
+          // 从 DeviceProvider 恢复信息
+          syncFromDeviceProvider();
         }
       } catch (e) {
         debugPrint('Error fetching device info, using cached info: $e');
         // 获取失败，使用上次的信息（从缓存恢复）
         loadCachedDeviceInfo();
+        // 从 DeviceProvider 恢复信息
+        syncFromDeviceProvider();
       }
 
       _isConnected = true;
@@ -274,11 +311,39 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       noteUsedKB = storageInfo.usedKB;
       noteTotalKB = storageInfo.totalKB;
 
+      debugPrint(
+          'Device info queried: battery=$batteryPercentage%, firmware=$firmwareRevision, storage=$noteUsedKB/$noteTotalKB KB');
       notifyListeners();
     } catch (e) {
       debugPrint('Error querying device info: $e');
       // 查询失败，使用缓存信息
       loadCachedDeviceInfo();
+      // 从 DeviceProvider 恢复信息
+      syncFromDeviceProvider();
+      notifyListeners();
+    }
+  }
+
+  /// 从 DeviceProvider 同步设备信息
+  void syncFromDeviceProvider() {
+    if (_deviceProvider == null) return;
+
+    // 从 pairedDevice 恢复固件版本
+    if (_deviceProvider!.pairedDevice != null) {
+      final pairedDevice = _deviceProvider!.pairedDevice!;
+      if (firmwareRevision.isEmpty &&
+          pairedDevice.firmwareRevision.isNotEmpty &&
+          pairedDevice.firmwareRevision != 'Unknown') {
+        firmwareRevision = pairedDevice.firmwareRevision;
+      }
+      if (hardwareRevision.isEmpty && pairedDevice.hardwareRevision.isNotEmpty) {
+        hardwareRevision = pairedDevice.hardwareRevision;
+      }
+    }
+
+    // 从 DeviceProvider 恢复电池电量
+    if (batteryPercentage < 0 && _deviceProvider!.batteryLevel >= 0) {
+      batteryPercentage = _deviceProvider!.batteryLevel;
     }
   }
 
