@@ -1,13 +1,19 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/providers/base_provider.dart';
 import 'package:omi/providers/device_provider.dart';
-import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/services/devices.dart';
 import 'package:omi/services/services.dart';
+import 'package:omi/utils/alerts/app_snackbar.dart';
+import 'package:omi/utils/bluetooth/bluetooth_adapter.dart';
+import 'package:omi/utils/platform/platform_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/devices/note_connection.dart';
 
@@ -15,7 +21,13 @@ import '../services/devices/note_connection.dart';
 /// 负责扫描设备并自动连接第一个发现的设备
 class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsciption {
   DeviceProvider? _deviceProvider;
-  OnboardingProvider? _onboardingProvider;
+
+  /// 蓝牙权限状态
+  bool _hasBluetoothPermission = false;
+  bool get hasBluetoothPermission => _hasBluetoothPermission;
+
+  // Method channel for macOS/Windows permissions
+  static const MethodChannel _screenCaptureChannel = MethodChannel('screenCapturePlatform');
 
   /// 是否正在扫描
   bool _isScanning = false;
@@ -33,7 +45,7 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   String _connectionStatusText = '正在搜索设备';
   String get connectionStatusText => _connectionStatusText;
 
-  /// 设备信息（从 OnboardingProvider 同步）
+  /// 设备信息
   int batteryPercentage = -1;
   String deviceName = '';
   String deviceId = '';
@@ -63,10 +75,8 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   /// 设置依赖的 Provider
   void setProviders({
     required DeviceProvider deviceProvider,
-    required OnboardingProvider onboardingProvider,
   }) {
     _deviceProvider = deviceProvider;
-    _onboardingProvider = onboardingProvider;
 
     // 如果设备已连接，立即初始化连接状态
     if (deviceProvider.isConnected && deviceProvider.connectedDevice != null) {
@@ -87,11 +97,6 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     deviceId = device.id;
     deviceName = device.name.isNotEmpty ? device.name : deviceName;
 
-    // 尝试从 OnboardingProvider 恢复设备信息（如果之前有获取过）
-    if (_onboardingProvider != null) {
-      syncDeviceInfo();
-    }
-
     // 如果设备信息为空，尝试从 SharedPreferences 恢复
     if (deviceName.isEmpty) {
       final storedDevice = SharedPreferencesUtil().btDevice;
@@ -101,7 +106,21 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       }
     }
 
+    // 尝试从 SharedPreferences 恢复设备信息（如果之前有保存过）
+    loadCachedDeviceInfo();
+
     notifyListeners();
+  }
+
+  /// 从缓存加载设备信息
+  void loadCachedDeviceInfo() {
+    final storedDevice = SharedPreferencesUtil().btDevice;
+    if (storedDevice.id.isNotEmpty && storedDevice.id == deviceId) {
+      // 可以在这里恢复其他缓存的信息，如果有的话
+      if (deviceName.isEmpty) {
+        deviceName = storedDevice.name;
+      }
+    }
   }
 
   /// 开始扫描并自动连接设备
@@ -115,9 +134,10 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     notifyListeners();
 
     // 检查权限
-    if (_onboardingProvider != null && !_onboardingProvider!.hasBluetoothPermission) {
-      await _onboardingProvider!.askForBluetoothPermissions();
-      if (!_onboardingProvider!.hasBluetoothPermission) {
+    await _updateBluetoothPermission();
+    if (!_hasBluetoothPermission) {
+      await _askForBluetoothPermissions();
+      if (!_hasBluetoothPermission) {
         _isScanning = false;
         _connectionStatusText = '需要蓝牙权限';
         notifyListeners();
@@ -179,18 +199,13 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
       // 获取设备信息（如果失败，使用上次的信息）
       try {
         final connection = await ServiceManager.instance().device.ensureConnection(device.id) as NoteDeviceConnection?;
-        if (connection != null && _onboardingProvider != null) {
-          await _onboardingProvider!.sendQueryBattery(connection);
-          await _onboardingProvider!.sendQueryVersion(connection);
-          await _onboardingProvider!.sendQueryStorage(connection);
-
-          // 同步设备信息
-          syncDeviceInfo();
+        if (connection != null) {
+          await queryDeviceInfo(connection);
         }
       } catch (e) {
         debugPrint('Error fetching device info, using cached info: $e');
-        // 获取失败，使用上次的信息（从 OnboardingProvider 同步）
-        syncDeviceInfo();
+        // 获取失败，使用上次的信息（从缓存恢复）
+        loadCachedDeviceInfo();
       }
 
       _isConnected = true;
@@ -239,33 +254,108 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     }
   }
 
-  /// 同步设备信息从 OnboardingProvider
-  void syncDeviceInfo() {
-    if (_onboardingProvider == null) return;
+  /// 查询设备信息
+  Future<void> queryDeviceInfo(NoteDeviceConnection connection) async {
+    try {
+      // 查询电池电量
+      final batteryLevel = await connection.performRetrieveBatteryLevel();
+      if (batteryLevel >= 0) {
+        batteryPercentage = batteryLevel;
+      }
 
-    final oldBattery = batteryPercentage;
-    final oldName = deviceName;
-    final oldFirmware = firmwareRevision;
-    final oldHardware = hardwareRevision;
-    final oldUsedKB = noteUsedKB;
-    final oldTotalKB = noteTotalKB;
+      // 查询固件版本
+      final firmwareVersion = await connection.queryFirmwareVersion();
+      if (firmwareVersion.isNotEmpty && firmwareVersion != 'Unknown') {
+        firmwareRevision = firmwareVersion;
+      }
 
-    batteryPercentage = _onboardingProvider!.batteryPercentage;
-    deviceName = _onboardingProvider!.deviceName.isNotEmpty ? _onboardingProvider!.deviceName : deviceName;
-    firmwareRevision = _onboardingProvider!.firmwareRevision;
-    hardwareRevision = _onboardingProvider!.hardwareRevision;
-    noteUsedKB = _onboardingProvider!.noteUsedKB;
-    noteTotalKB = _onboardingProvider!.noteTotalKB;
+      // 查询存储信息
+      final storageInfo = await connection.queryStorage();
+      noteUsedKB = storageInfo.usedKB;
+      noteTotalKB = storageInfo.totalKB;
 
-    // 如果信息有变化，通知监听者
-    if (oldBattery != batteryPercentage ||
-        oldName != deviceName ||
-        oldFirmware != firmwareRevision ||
-        oldHardware != hardwareRevision ||
-        oldUsedKB != noteUsedKB ||
-        oldTotalKB != noteTotalKB) {
       notifyListeners();
+    } catch (e) {
+      debugPrint('Error querying device info: $e');
+      // 查询失败，使用缓存信息
+      loadCachedDeviceInfo();
     }
+  }
+
+  /// 更新蓝牙权限状态
+  Future<void> _updateBluetoothPermission() async {
+    if (PlatformService.isDesktop) {
+      try {
+        String bluetoothStatus = await _screenCaptureChannel.invokeMethod('checkBluetoothPermission');
+        _hasBluetoothPermission = bluetoothStatus == 'granted';
+      } catch (e) {
+        debugPrint('Error checking Bluetooth permission on macOS: $e');
+        _hasBluetoothPermission = await Permission.bluetooth.isGranted;
+      }
+    } else {
+      _hasBluetoothPermission = await Permission.bluetooth.isGranted;
+    }
+    notifyListeners();
+  }
+
+  /// 请求蓝牙权限
+  Future<void> _askForBluetoothPermissions() async {
+    if (!PlatformService.isWindows) {
+      FlutterBluePlus.setLogLevel(LogLevel.info, color: true);
+    }
+
+    if (PlatformService.isDesktop) {
+      try {
+        String bluetoothStatus = await _screenCaptureChannel.invokeMethod('checkBluetoothPermission');
+        if (bluetoothStatus == 'granted') {
+          _hasBluetoothPermission = true;
+          notifyListeners();
+          return;
+        }
+
+        if (bluetoothStatus == 'undetermined') {
+          bool granted = await _screenCaptureChannel.invokeMethod('requestBluetoothPermission');
+          _hasBluetoothPermission = granted;
+          if (!granted) {
+            AppSnackbar.showSnackbarError('Bluetooth permission is required to connect to your device.');
+          }
+        } else if (bluetoothStatus == 'denied' || bluetoothStatus == 'restricted') {
+          _hasBluetoothPermission = false;
+          AppSnackbar.showSnackbarError('Bluetooth permission denied. Please grant permission in System Preferences.');
+        } else {
+          _hasBluetoothPermission = false;
+          AppSnackbar.showSnackbarError(
+              'Bluetooth permission status: $bluetoothStatus. Please check System Preferences.');
+        }
+      } catch (e) {
+        debugPrint('Error checking/requesting Bluetooth permission on macOS: $e');
+        AppSnackbar.showSnackbarError('Failed to check Bluetooth permission: $e');
+        _hasBluetoothPermission = false;
+      }
+    } else if (Platform.isIOS) {
+      PermissionStatus bleStatus = await Permission.bluetooth.request();
+      debugPrint('bleStatus: $bleStatus');
+      _hasBluetoothPermission = bleStatus.isGranted;
+    } else {
+      if (Platform.isAndroid) {
+        if (!(await BluetoothAdapter.isSupported) ||
+            FlutterBluePlus.adapterStateNow != BluetoothAdapterStateHelper.on) {
+          try {
+            await FlutterBluePlus.turnOn();
+          } catch (e) {
+            if (e is FlutterBluePlusException) {
+              if (e.code == 11) {
+                //  onShowDialog();
+              }
+            }
+          }
+        }
+      }
+      PermissionStatus bleScanStatus = await Permission.bluetoothScan.request();
+      PermissionStatus bleConnectStatus = await Permission.bluetoothConnect.request();
+      _hasBluetoothPermission = bleConnectStatus.isGranted && bleScanStatus.isGranted;
+    }
+    notifyListeners();
   }
 
   /// 停止扫描

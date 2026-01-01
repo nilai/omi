@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/mp_device_finder_provider.dart';
-import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/gen/assets.gen.dart';
 import 'package:provider/provider.dart';
 
@@ -33,13 +32,11 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         final deviceProvider = context.read<DeviceProvider>();
-        final onboardingProvider = context.read<OnboardingProvider>();
         final finderProvider = context.read<MPDeviceFinderProvider>();
 
         // 设置 Provider 依赖
         finderProvider.setProviders(
           deviceProvider: deviceProvider,
-          onboardingProvider: onboardingProvider,
         );
 
         // 如果设备已连接，刷新设备信息
@@ -51,18 +48,16 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             final connection =
                 await ServiceManager.instance().device.ensureConnection(deviceId) as NoteDeviceConnection?;
             if (connection != null) {
-              await onboardingProvider.sendQueryVersion(connection);
-              await onboardingProvider.sendQueryBattery(connection);
-              await onboardingProvider.sendQueryStorage(connection);
-              finderProvider.syncDeviceInfo();
+              // 直接通过 finderProvider 查询设备信息
+              await finderProvider.queryDeviceInfo(connection);
             } else {
               // 连接失败，使用上次的信息
-              finderProvider.syncDeviceInfo();
+              finderProvider.loadCachedDeviceInfo();
             }
           } catch (e) {
             debugPrint('Error refreshing device info, using cached: $e');
             // 获取失败，使用上次的信息
-            finderProvider.syncDeviceInfo();
+            finderProvider.loadCachedDeviceInfo();
           }
         } else {
           // 开始扫描并自动连接
@@ -74,15 +69,8 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer3<MPDeviceFinderProvider, DeviceProvider, OnboardingProvider>(
-      builder: (context, finderProvider, deviceProvider, onboardingProvider, child) {
-        // 如果已连接，同步设备信息
-        if (finderProvider.isConnected) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            finderProvider.syncDeviceInfo();
-          });
-        }
-
+    return Consumer2<MPDeviceFinderProvider, DeviceProvider>(
+      builder: (context, finderProvider, deviceProvider, child) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
