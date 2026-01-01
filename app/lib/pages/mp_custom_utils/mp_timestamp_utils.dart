@@ -103,11 +103,21 @@ class MPTimestampUtils {
   /// 将秒级时间转换为分钟和秒.如 "14m 51s"
   static String toMinutesAndSecondsString(int? second) {
     if (second == null) {
-      return '0m 0s';
+      return 'unknown';
+    }
+    final hours = second ~/ 3600;
+    if (hours > 0) {
+      final minutes = second % 3600 ~/ 60;
+      final seconds = second % 60;
+      return '$hours' + 'h' + ' ' + '$minutes' + 'm' + ' ' + '$seconds' + 's';
     }
     final minutes = second ~/ 60;
+    if (minutes > 0) {
+      final seconds = second % 60;
+      return '$minutes' + 'm' + ' ' + '$seconds' + 's';
+    }
     final seconds = second % 60;
-    return '$minutes' + 'm' + ' ' + '$seconds' + 's';
+    return '$seconds' + 's';
   }
 
   /// 将 DateTime 转换为秒级时间戳

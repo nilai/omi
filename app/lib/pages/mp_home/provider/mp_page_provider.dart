@@ -81,7 +81,7 @@ extension MPMemoryStructExtension on MPMemoryStruct {
     final timeText = MPTimestampUtils.timestampToDateTimeString(createAt);
 
     // 生成 secondsText (从 duration 转换)
-    final secondsText = duration > 0 ? '${duration}s' : null;
+    final secondsText = duration > 0 ? MPTimestampUtils.toMinutesAndSecondsString(duration) : null;
 
     // 根据 labelColor 或 type 确定 tagColor
     Color tagColor = _parseHexColor(labelColor);
