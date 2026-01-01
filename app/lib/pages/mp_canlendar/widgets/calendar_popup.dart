@@ -32,6 +32,9 @@ class _CalendarPopupState extends State<CalendarPopup> {
   /// 当前显示的月份索引（相对于基准年份的偏移）
   int _currentPageIndex = 0;
 
+  /// 当前月份需要的行数
+  int _currentRows = 5;
+
   /// 基准年份（2000年1月），用于计算索引，确保索引始终为正数
   static final DateTime _baseMonth = DateTime(2000, 1, 1);
 
@@ -45,6 +48,8 @@ class _CalendarPopupState extends State<CalendarPopup> {
     final currentMonth = provider.currentMonth;
     // 计算当前月份相对于基准月份的索引
     _currentPageIndex = _getIndexFromMonth(currentMonth);
+    // 计算当前月份需要的行数
+    _currentRows = _calculateRowsForMonth(currentMonth);
     _pageController = PageController(initialPage: _currentPageIndex);
   }
 
@@ -65,13 +70,26 @@ class _CalendarPopupState extends State<CalendarPopup> {
     return DateTime(_baseMonth.year, _baseMonth.month + index, 1);
   }
 
+  /// 计算月份需要的行数
+  int _calculateRowsForMonth(DateTime month) {
+    final firstDay = DateTime(month.year, month.month, 1);
+    final firstDayWeekday = firstDay.weekday % 7;
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final totalCells = firstDayWeekday + daysInMonth;
+    return (totalCells / 7).ceil();
+  }
+
   /// 处理页面切换
   void _onPageChanged(int index) {
+    final newMonth = _getMonthByIndex(index);
+    final newRows = _calculateRowsForMonth(newMonth);
+
     setState(() {
       _currentPageIndex = index;
+      _currentRows = newRows;
     });
+
     final provider = Provider.of<CalendarProvider>(context, listen: false);
-    final newMonth = _getMonthByIndex(index);
     provider.setCurrentMonth(newMonth);
 
     // 取消之前的定时器
@@ -92,11 +110,15 @@ class _CalendarPopupState extends State<CalendarPopup> {
       // 同步当前月份显示（当外部改变月份时，如点击"回到今天"）
       final currentMonth = provider.currentMonth;
       final expectedIndex = _getIndexFromMonth(currentMonth);
+      final expectedRows = _calculateRowsForMonth(currentMonth);
       if (expectedIndex != _currentPageIndex && _pageController.hasClients) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_pageController.hasClients) {
             _pageController.jumpToPage(expectedIndex);
-            _currentPageIndex = expectedIndex;
+            setState(() {
+              _currentPageIndex = expectedIndex;
+              _currentRows = expectedRows;
+            });
           }
         });
       }
@@ -220,8 +242,13 @@ class _CalendarPopupState extends State<CalendarPopup> {
   // AI-generated START - 构建日历网格
   /// 构建日历网格（支持左右滑动切换月份）
   Widget _buildCalendarGrid(BuildContext context, CalendarProvider provider) {
+    // 根据当前月份的实际行数动态计算高度
+    // 每行高度 = 单元格高度(40) + 上下边距(8*2) = 56
+    const rowHeight = 56.0; // 40 (单元格高度) + 16 (上下边距)
+    final dynamicHeight = _currentRows * rowHeight;
+
     return SizedBox(
-      height: 280.0, // 固定高度，确保滑动体验一致
+      height: dynamicHeight, // 根据当前月份的行数动态计算高度
       child: PageView.builder(
         controller: _pageController,
         onPageChanged: _onPageChanged,
@@ -353,12 +380,17 @@ class _CalendarPopupState extends State<CalendarPopup> {
       child: ElevatedButton(
         onPressed: () {
           provider.goToToday();
-          // 同步页面索引
+          // 同步页面索引和行数
           final today = DateTime.now();
-          final newIndex = _getIndexFromMonth(DateTime(today.year, today.month, 1));
+          final todayMonth = DateTime(today.year, today.month, 1);
+          final newIndex = _getIndexFromMonth(todayMonth);
+          final newRows = _calculateRowsForMonth(todayMonth);
           if (_pageController.hasClients) {
             _pageController.jumpToPage(newIndex);
-            _currentPageIndex = newIndex;
+            setState(() {
+              _currentPageIndex = newIndex;
+              _currentRows = newRows;
+            });
           }
           if (widget.onDateSelected != null && provider.selectedDate != null) {
             widget.onDateSelected!(provider.selectedDate!);
