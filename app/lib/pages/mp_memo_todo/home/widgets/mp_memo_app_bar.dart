@@ -28,8 +28,12 @@ class MPMemoAppBar extends StatelessWidget implements PreferredSizeWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // AI-generated START - 左侧：相机图标
-            const MPBatteryInfoWidget(),
-            // AI-generated END - 左侧：相机图标
+            GestureDetector(
+                onTap: () {
+                MPBatteryInfoWidget.pushToFindDevicesPage(context);
+              },
+              child: const MPBatteryInfoWidget(),
+            ),
             const Spacer(),
             // AI-generated START - 中间：空白区域
             Text(
