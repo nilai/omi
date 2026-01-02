@@ -59,7 +59,7 @@ class TodoProvider with ChangeNotifier {
   // AI-generated END - _hasMore
 
   // AI-generated START - 页码
-  int _pageNo = 1;
+  int _pageNo = 0;
   // AI-generated END - _pageNo
 
   // AI-generated START - 错误信息
@@ -135,7 +135,7 @@ class TodoProvider with ChangeNotifier {
   Future<void> loadTodos() async {
     _isLoading = true;
     notifyListeners();
-    _pageNo = 1; // 重置页码为第一页
+    _pageNo = 0; // 重置页码为第一页
     final request = MPGetTodoListRequest(
       pageSize: 20, // 每页数量
       pageno: _pageNo, // 页码，首次加载为第一页
