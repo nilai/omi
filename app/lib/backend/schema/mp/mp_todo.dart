@@ -10,12 +10,12 @@ class MPGetTodoListRequest {
   @JsonKey(name: 'page_size')
   final int pageSize;
 
-  @JsonKey(name: 'cursor')
-  final String cursor;
+  @JsonKey(name: 'page_no')
+  final int pageno;
 
   MPGetTodoListRequest({
     required this.pageSize,
-    required this.cursor,
+    required this.pageno,
   });
 
   factory MPGetTodoListRequest.fromJson(Map<String, dynamic> json) => _$MPGetTodoListRequestFromJson(json);

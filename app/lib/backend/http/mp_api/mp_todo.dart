@@ -8,7 +8,7 @@ import 'package:omi/env/env.dart';
 // GET /api/v1/todo/get_list
 Future<MPGetTodoListResponse?> getTodoList(MPGetTodoListRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/todo/get_list?page_size=${req.pageSize}&cursor=${req.cursor}',
+    url: '${Env.apiBaseUrl}api/v1/todo/get_list?page_size=${req.pageSize}&page_no=${req.pageno}',
     headers: {},
     method: 'GET',
     body: '',

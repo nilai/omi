@@ -58,9 +58,9 @@ class TodoProvider with ChangeNotifier {
   bool _hasMore = true;
   // AI-generated END - _hasMore
 
-  // AI-generated START - 分页游标
-  String _cursor = '';
-  // AI-generated END - _cursor
+  // AI-generated START - 页码
+  int _pageNo = 1;
+  // AI-generated END - _pageNo
 
   // AI-generated START - 错误信息
   String? _error;
@@ -135,10 +135,10 @@ class TodoProvider with ChangeNotifier {
   Future<void> loadTodos() async {
     _isLoading = true;
     notifyListeners();
-    _cursor = '';
+    _pageNo = 1; // 重置页码为第一页
     final request = MPGetTodoListRequest(
       pageSize: 20, // 每页数量
-      cursor: _cursor, // 分页游标，首次加载为空字符串
+      pageno: _pageNo, // 页码，首次加载为第一页
     );
 
     final response = await getTodoList(request);
@@ -148,16 +148,12 @@ class TodoProvider with ChangeNotifier {
       // 将 API 返回的数据转换为 TodoTaskItem
       final list = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
       _hasMore = response.hasMore;
+      _pageNo ++;
       // 更新总数量
       if (response.totalCount != null) {
         _totalCount = response.totalCount!;
       }
       _todos.clear();
-      // 更新游标（如果 API 返回了新的游标，需要从响应中获取）
-      // 注意：如果 API 没有返回 cursor，可能需要使用最后一个 todo 的 id 作为 cursor
-      if (list.isNotEmpty) {
-        _cursor = list.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
-      }
       _todos = list;
     }
 
@@ -175,7 +171,7 @@ class TodoProvider with ChangeNotifier {
     // 调用 API 加载更多 Todo 数据
     final request = MPGetTodoListRequest(
       pageSize: 20, // 每页数量
-      cursor: _cursor, // 使用当前游标
+      pageno: _pageNo, // 使用下一页页码
     );
 
     final response = await getTodoList(request);
@@ -185,10 +181,6 @@ class TodoProvider with ChangeNotifier {
       final moreTodos = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
       _todos.addAll(moreTodos);
       _hasMore = response.hasMore;
-      // 更新游标
-      if (moreTodos.isNotEmpty) {
-        _cursor = moreTodos.last.id; // 使用最后一个 todo 的 id 作为下次请求的 cursor
-      }
     }
     _isFetching = false;
     notifyListeners();

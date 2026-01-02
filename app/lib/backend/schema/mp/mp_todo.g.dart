@@ -10,14 +10,14 @@ MPGetTodoListRequest _$MPGetTodoListRequestFromJson(
         Map<String, dynamic> json) =>
     MPGetTodoListRequest(
       pageSize: (json['page_size'] as num).toInt(),
-      cursor: json['cursor'] as String,
+      pageno: (json['page_no'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MPGetTodoListRequestToJson(
         MPGetTodoListRequest instance) =>
     <String, dynamic>{
       'page_size': instance.pageSize,
-      'cursor': instance.cursor,
+      'page_no': instance.pageno,
     };
 
 MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
