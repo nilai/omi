@@ -108,7 +108,7 @@ Map<String, dynamic> _$MPUpdateSpeakerRequestToJson(
     <String, dynamic>{
       'speaker_id': instance.speakerId,
       'name': instance.name,
-      'avatar': instance.avatar ?? '',
+      'avatar': instance.avatar,
     };
 
 MPAddSpeakerResponse _$MPAddSpeakerResponseFromJson(
