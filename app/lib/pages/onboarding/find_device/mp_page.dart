@@ -3,15 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:omi/pages/note_debug/note_ble_debug_page.dart';
+import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/mp_device_finder_provider.dart';
-import 'package:omi/providers/onboarding_provider.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/widgets/dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../../mp_custom_utils/mp_toast_utils.dart';
-import '../setting/page.dart';
 import 'mp_found_devices.dart';
 
 class MPFindDevicesPage extends StatefulWidget {
@@ -28,32 +27,33 @@ class MPFindDevicesPage extends StatefulWidget {
 }
 
 class _MPFindDevicesPageState extends State<MPFindDevicesPage> {
-  OnboardingProvider? _provider;
+  bool _hasScanned = false;
 
   @override
   void initState() {
     super.initState();
-    _provider = Provider.of<OnboardingProvider>(context, listen: false);
 
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (widget.isFromOnboarding) {
         context.read<HomeProvider>().setupHasSpeakerProfile();
       }
-      _scanDevices();
     });
   }
 
-  @override
-  dispose() {
-    _provider = null;
-
-    super.dispose();
-  }
-
   // 开始扫描
-  Future<void> _scanDevices() async {
+  Future<void> _scanDevices(BuildContext context) async {
+    if (_hasScanned) return;
+    _hasScanned = true;
+
     debugPrint('-----hjj-----scanDevices');
-    _provider?.scanDevices(
+    // 从 ChangeNotifierProvider 中获取 MPDeviceFinderProvider
+    final finderProvider = context.read<MPDeviceFinderProvider>();
+
+    // 设置 DeviceProvider 依赖
+    final deviceProvider = context.read<DeviceProvider>();
+    finderProvider.setProviders(deviceProvider: deviceProvider);
+
+    finderProvider.scanDevices(
       onShowDialog: () {
         if (mounted) {
           showDialog(
@@ -76,108 +76,119 @@ class _MPFindDevicesPageState extends State<MPFindDevicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<OnboardingProvider>(
-      builder: (context, provider, child) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              child: Column(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () => Navigator.of(context).maybePop(),
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: Color(0xFF1D1D1F),
-                          size: 20,
-                        ),
-                      ),
-                      const Expanded(
-                        child: Text(
-                          '连接设备',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF1D1D1F),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                          onPressed: () {
-                            Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => const NoteBleDebugPage(),
-                            ));
-                          },
-                          icon: const Icon(
-                            Icons.settings,
-                            color: Color(0xFF1D1D1F),
-                            size: 20,
-                          ))
-                    ],
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Color(0xFF1D1D1F),
+                      size: 20,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ChangeNotifierProvider(
-                      create: (_) => MPDeviceFinderProvider(),
-                      child: MPFoundDevices(
-                        goNext: widget.goNext,
-                        isFromOnboarding: widget.isFromOnboarding,
+                  const Expanded(
+                    child: Text(
+                      '连接设备',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1D1D1F),
                       ),
                     ),
                   ),
-                  if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
-                    const SizedBox(height: 16),
-                    TextButton(
+                  IconButton(
                       onPressed: () {
-                        MPToastUtils.showFeatureComingSoon();
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const NoteBleDebugPage(),
+                        ));
                       },
-                      child: const Text(
-                        '遇到问题？联系支持',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF4361EE),
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (widget.includeSkip) ...[
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 45,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (widget.isFromOnboarding) {
-                            widget.onSkip!();
-                          } else {
-                            widget.goNext();
-                          }
-                          MixpanelManager().useWithoutDeviceOnboardingFindDevices();
-                        },
-                        child: const Text(
-                          '稍后连接',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                      icon: const Icon(
+                        Icons.settings,
+                        color: Color(0xFF1D1D1F),
+                        size: 20,
+                      ))
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ChangeNotifierProvider(
+                  create: (_) => MPDeviceFinderProvider(),
+                  child: Consumer<MPDeviceFinderProvider>(
+                    builder: (context, provider, child) {
+                      // 在 Consumer 中触发扫描
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _scanDevices(context);
+                      });
+
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: MPFoundDevices(
+                              goNext: widget.goNext,
+                              isFromOnboarding: widget.isFromOnboarding,
+                            ),
+                          ),
+                          if (provider.deviceList.isEmpty && provider.enableInstructions) ...[
+                            const SizedBox(height: 16),
+                            TextButton(
+                              onPressed: () {
+                                MPToastUtils.showFeatureComingSoon();
+                              },
+                              child: const Text(
+                                '遇到问题？联系支持',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF4361EE),
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              if (widget.includeSkip) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (widget.isFromOnboarding) {
+                        widget.onSkip!();
+                      } else {
+                        widget.goNext();
+                      }
+                      MixpanelManager().useWithoutDeviceOnboardingFindDevices();
+                    },
+                    child: const Text(
+                      '稍后连接',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }
