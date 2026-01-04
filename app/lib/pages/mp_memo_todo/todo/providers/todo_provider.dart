@@ -447,21 +447,8 @@ class TodoProvider with ChangeNotifier {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           debugPrint('Todo 完成成功');
-          // 直接更新本地状态：将任务状态更新为已完成（2）
-          final index = _todos.indexWhere((t) => t.id == id);
-          if (index != -1) {
-            final todo = _todos[index];
-            // 更新任务状态为已完成（2）
-            _todos[index] = TodoTaskItem(
-              id: todo.id,
-              title: todo.title,
-              description: todo.description,
-              date: todo.date,
-              priorityTag: todo.priorityTag,
-              status: 2, // 2-已完成
-            );
-            notifyListeners();
-          }
+          // 调用接口刷新页面
+          await loadTodos();
           return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);

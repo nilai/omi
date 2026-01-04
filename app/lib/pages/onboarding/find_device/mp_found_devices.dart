@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:omi/gen/assets.gen.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/mp_device_finder_provider.dart';
-import 'package:omi/gen/assets.gen.dart';
 import 'package:provider/provider.dart';
 
 import '../../../services/devices/note_connection.dart';
@@ -305,7 +304,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'Update available',
                         style: TextStyle(
                           fontSize: 15,
@@ -313,7 +312,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
                           color: Color(0xFF1D1D1F),
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
                         'Pendant firmware ${deviceProvider.latestFirmwareVersion.isNotEmpty ? deviceProvider.latestFirmwareVersion : (finderProvider.hardwareRevision.isNotEmpty ? finderProvider.hardwareRevision : '1.1.20')}',
                         style: const TextStyle(
@@ -539,6 +538,7 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
   /// 显示标签和值的水平布局
   Widget _buildInfoRow(String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
@@ -549,12 +549,18 @@ class _MPFoundDevicesState extends State<MPFoundDevices> {
             color: Color(0x991D1D1F),
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF1D1D1F),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            softWrap: true,
+            overflow: TextOverflow.visible,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF1D1D1F),
+            ),
           ),
         ),
       ],
