@@ -97,6 +97,12 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       setState(() {
         _isBuffering =
             state.processingState == ProcessingState.loading || state.processingState == ProcessingState.buffering;
+        // 播放完成时，重置位置到开始
+        if (state.processingState == ProcessingState.completed) {
+          _position = Duration.zero;
+          _player.stop();
+          _player.seek(Duration.zero);
+        }
       });
     });
   }
@@ -112,6 +118,11 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     if (_player.playing) {
       await _player.pause();
     } else {
+      // 如果播放已完成（位置在末尾），从头开始播放
+      if (_position >= _duration && _duration > Duration.zero) {
+        await _player.seek(Duration.zero);
+        _position = Duration.zero;
+      }
       await _player.play();
     }
   }
