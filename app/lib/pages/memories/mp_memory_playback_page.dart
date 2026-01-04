@@ -44,6 +44,8 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   Duration _duration = Duration.zero;
   bool _isBuffering = true;
   bool _contentOverflow = false;
+  bool _isDragging = false;
+  Duration _dragPosition = Duration.zero;
 
   /// 从 memory 中获取音频 URL
   String get _audioUrl => widget.memory.onlyRecordContent?.recordFile ?? '';
@@ -77,7 +79,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     }
 
     _player.positionStream.listen((pos) {
-      if (!mounted) return;
+      if (!mounted || _isDragging) return; // 拖拽时不更新位置
       setState(() {
         _position = pos;
       });
@@ -292,8 +294,11 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   Widget _buildAudioCard(BuildContext context) {
-    final progress =
-        _duration.inMilliseconds == 0 ? 0.0 : (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
+    // 拖拽时使用拖拽位置，否则使用实际播放位置
+    final currentPosition = _isDragging ? _dragPosition : _position;
+    final progress = _duration.inMilliseconds == 0
+        ? 0.0
+        : (currentPosition.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -357,9 +362,31 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                     value: progress.isNaN ? 0 : progress,
                     min: 0,
                     max: 1,
+                    onChangeStart: (value) {
+                      // 拖拽开始：记录当前播放状态，暂停位置更新
+                      setState(() {
+                        _isDragging = true;
+                        // 使用当前实际位置作为初始拖拽位置，保持连续性
+                        _dragPosition = _position;
+                      });
+                    },
                     onChanged: (value) {
+                      // 拖拽中：只更新UI显示，不执行实际seek
                       if (_duration == Duration.zero) return;
-                      _seek(_duration.inSeconds * value);
+                      setState(() {
+                        _dragPosition = Duration(seconds: (_duration.inSeconds * value).round());
+                      });
+                    },
+                    onChangeEnd: (value) async {
+                      // 拖拽结束：执行实际的seek操作
+                      if (_duration == Duration.zero) return;
+                      final targetSeconds = _duration.inSeconds * value;
+                      setState(() {
+                        _isDragging = false;
+                        _position = Duration(seconds: targetSeconds.round());
+                        _dragPosition = Duration.zero;
+                      });
+                      await _seek(targetSeconds);
                     },
                   ),
                 ),
@@ -369,7 +396,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _formatClock(_position),
+                      _formatClock(currentPosition),
                       style: const TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12.0,
