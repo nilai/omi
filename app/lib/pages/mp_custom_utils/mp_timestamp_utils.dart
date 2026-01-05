@@ -109,15 +109,15 @@ class MPTimestampUtils {
     if (hours > 0) {
       final minutes = second % 3600 ~/ 60;
       final seconds = second % 60;
-      return '$hours:$minutes:$seconds';
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     final minutes = second ~/ 60;
     if (minutes > 0) {
       final seconds = second % 60;
-      return '$minutes:$seconds';
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     final seconds = second % 60;
-    return '00:$seconds';
+    return '00:${seconds.toString().padLeft(2, '0')}';
   }
 
   /// 将字符串转换为 double 值，向上取整后返回字符串
