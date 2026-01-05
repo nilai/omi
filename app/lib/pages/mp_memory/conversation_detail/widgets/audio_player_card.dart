@@ -83,20 +83,20 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
   StreamSubscription<PlayerState>? _playerStateSubscription;
   // AI-generated END - 订阅
 
-  @override
-  void initState() {
-    super.initState();
-    _checkLocalFile();
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _checkLocalFile();
+  // }
 
-  @override
-  void didUpdateWidget(AudioPlayerCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // 如果 audioUrl 发生变化，重新检查本地文件
-    if (oldWidget.audioUrl != widget.audioUrl) {
-      _checkLocalFile();
-    }
-  }
+  // @override
+  // void didUpdateWidget(AudioPlayerCard oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   // 如果 audioUrl 发生变化，重新检查本地文件
+  //   if (oldWidget.audioUrl != widget.audioUrl) {
+  //     _checkLocalFile();
+  //   }
+  // }
 
   @override
   void dispose() {
@@ -108,57 +108,22 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
   }
 
   /// 检查本地文件是否存在
-  Future<void> _checkLocalFile() async {
+  Future<String> _getLocalFile() async {
     final audioUrl = widget.audioUrl;
     if (audioUrl == null || audioUrl.isEmpty) {
-      return;
+      return '';
     }
 
     // 检查本地记录
     final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(audioUrl);
-    if (localPath != null && localPath.isNotEmpty) {
-      // 检查文件是否真的存在于文件系统
-      try {
-        final file = File(localPath);
-
-        // 先检查目录是否存在
-        final parentDir = file.parent;
-        final dirExists = await parentDir.exists();
-
-        // 检查文件是否存在
-        final exists = await file.exists();
-
-        if (exists) {
-          // 检查文件大小，确认文件有效
-          final fileSize = await file.length();
-
-          setState(() {
-            _localFilePath = localPath;
-          });
-          await _setupPlayer(localPath, isLocalFile: true);
-          return;
-        } else {
-          // 文件不存在，尝试列出目录中的文件，用于调试
-          if (dirExists) {
-            try {
-              final files = await parentDir.list().toList();
-              for (var f in files.take(5)) {
-                // 调试用
-              }
-            } catch (e) {
-              // 忽略错误
-            }
-          }
-        }
-      } catch (e) {
-        // 忽略错误
-      }
+    if (localPath == null || localPath.isEmpty) {
+      return '';
     }
-
-    // 本地文件不存在
-    setState(() {
-      _localFilePath = null;
-    });
+    final file = File(localPath);
+    if (file.existsSync()) {
+      return localPath;
+    }
+    return '';
   }
 
   /// 初始化音频播放器
@@ -255,23 +220,19 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
       return;
     }
 
+    debugPrint('------hjj------localFilePath: $_localFilePath------');
     // 检查本地文件是否存在
-    if (_localFilePath == null) {
+    if (_localFilePath == null || _localFilePath!.isEmpty) {
       // 本地文件路径为空，先进行一次兜底检查
-      await _checkLocalFile();
-
-      // 兜底检查后再次判断
-      if (_localFilePath == null || _localFilePath!.isEmpty) {
+      _localFilePath = await _getLocalFile();
+      debugPrint('------hjj------localFilePath1111: $_localFilePath------');
+      if (_localFilePath!.isEmpty) {
+        debugPrint('------hjj------localFilePath is empty, audioUrl: $audioUrl------');
         // 本地文件不存在，开始下载
         await _downloadAudio(audioUrl);
-        return;
-      } else {
-        // 兜底检查找到了本地文件，直接开始播放
-        await _startPlayback();
-        return;
       }
     }
-
+    debugPrint('------hjj------localFilePath2222: $_localFilePath------');
     // 本地文件存在，开始播放
     await _startPlayback();
   }

@@ -181,6 +181,7 @@ class MPLocalRecordsUtil {
     final fileId = MPLocalRecordsUtil.getFileIdFromUrl(recordFile);
     final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
     for (var el in locaRecords) {
+      debugPrint('-------hjj------getLocalRecordPath fileId: ${el.fileId}, path: ${el.path}------');
       if (el.fileId == fileId) {
         if (el.path.isNotEmpty) {
           return el.path;
