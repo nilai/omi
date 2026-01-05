@@ -299,10 +299,10 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 删除本地记录
   /// @param item 本地记录
-  Future<void> removeLocalRecord(String path, {required String fildId}) async {
-    _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(path, fildId: fildId);
+  Future<void> removeLocalRecord(MPLocalMemoryModel model) async {
+    _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(model);
     for (var element in _localRecords) {
-      if (element.path == path) {
+      if (element.path == model.path && element.createAt == model.createAt) {
         debugPrint('---------hjj------- removeLocalRecord removed: ${element.isRemoved}');
         break;
       }
@@ -380,14 +380,16 @@ class MPHomePageProvider extends ChangeNotifier {
             );
             final summaryRes = await summaryRecord(summaryReq);
             if (summaryRes != null) {
-              await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+              // await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+              await removeLocalRecord(element);
               refresh();
             }
           }
         } else {
           final res = await createRecord(req);
           if (res != null) {
-            await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+            // await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+            await removeLocalRecord(element);
             refresh();
           }
         }
@@ -417,7 +419,12 @@ class MPHomePageProvider extends ChangeNotifier {
         // 执行删除操作
         if (item.isUploading == true) {
           debugPrint('------hjj------- remove local: ${item.localPath}');
-          await removeLocalRecord(item.localPath ?? '', fildId: '');
+          // await removeLocalRecord(item.localPath ?? '', fildId: '');
+          await removeLocalRecord(MPLocalMemoryModel(
+              path: item.localPath ?? '',
+              createAt: item.memory.createAt,
+              source: item.source ?? '',
+              fileName: item.headerText));
           uploadLocalRecords();
         } else {
           final req = MPDeleteMemoryRequest(memoryId: item.memory.id);

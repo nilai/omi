@@ -152,18 +152,14 @@ class MPLocalRecordsUtil {
   }
 
   /// 删除本地记录
-  /// @param path 文件路径
+  /// @param model 本地记录模型
   /// @param fildId 文件ID
   /// @returns 删除后的本地记录列表
-  Future<List<MPLocalMemoryModel>> removeLocalRecord(
-    String path, {
-    required String fildId,
-  }) async {
+  Future<List<MPLocalMemoryModel>> removeLocalRecord(MPLocalMemoryModel model) async {
     for (var element in _localRecords) {
-      if (element.path == path) {
+      if (element.path == model.path && element.createAt == model.createAt) {
         element.isRemoved = true;
-        element.fileId = fildId;
-        debugPrint('-------hjj------removeLocalRecord path: $path');
+        debugPrint('-------hjj------removeLocalRecord path: ${element.path}');
         break;
       }
     }
