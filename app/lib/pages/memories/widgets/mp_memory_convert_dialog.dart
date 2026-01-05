@@ -389,9 +389,15 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
   }
 
   void _onGenerate(BuildContext context) async {
+    String url;
+    if (widget.memory.type == MPMemoryType.onlyRecord) {
+      url = widget.memory.onlyRecordContent?.recordFile ?? '';
+    } else {
+      url = widget.memory.summaryContent?.recordUrl ?? '';
+    }
     final req = MPSummaryRecordRequest(
       memoryId: widget.memory.id,
-      recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
+      recordUrl: url,
       recordMemoAt: widget.memory.createAt,
       templateId: _selectedTemplate?.id,
     );
