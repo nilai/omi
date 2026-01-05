@@ -117,7 +117,7 @@ class MPTimestampUtils {
       return '$minutes:$seconds';
     }
     final seconds = second % 60;
-    return '$seconds';
+    return '00:$seconds';
   }
 
   /// 将字符串转换为 double 值，向上取整后返回字符串
