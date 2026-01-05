@@ -226,57 +226,59 @@ class _MPPageContentState extends State<MPPageContent> {
                     onRefresh: provider.refresh,
                     color: const Color(0xFF306CFF),
                     backgroundColor: Colors.white,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 60 &&
-                            notification is ScrollUpdateNotification) {
-                          provider.loadMore();
-                        }
-                        return false;
-                      },
-                      child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                        itemCount: provider.items.length + (provider.loadingMore ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= provider.items.length) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            );
-                          }
-                          final item = provider.items[index];
-                          return MPHomeCard(
-                            dateText: item.dateText,
-                            tagText: item.tagText,
-                            tagBackgroundColor: item.tagColor,
-                            headerText: item.headerText,
-                            timeText: item.timeText,
-                            secondsText: item.secondsText,
-                            description: item.description,
-                            onShare: () => provider.onCardShare(context, item),
-                            onDelete: () => provider.onCardDelete(context, item),
-                            onViewDetail: () {
-                              if (item.isUploading == true) {
-                                MPToastUtils.showMessage('正在上传，请稍后再试');
-                                return;
+                    child: provider.items.isEmpty && !provider.loading
+                        ? _buildEmptyState(context, provider)
+                        : NotificationListener<ScrollNotification>(
+                            onNotification: (notification) {
+                              if (notification.metrics.pixels >= notification.metrics.maxScrollExtent - 60 &&
+                                  notification is ScrollUpdateNotification) {
+                                provider.loadMore();
                               }
-                              MPMemoryPageClient.navigateToDetailPage(context, item.memory);
+                              return false;
                             },
-                            isUploading: item.isUploading,
-                            source: item.source,
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      ),
-                    ),
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              controller: _scrollController,
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                              itemCount: provider.items.length + (provider.loadingMore ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index >= provider.items.length) {
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 12),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                final item = provider.items[index];
+                                return MPHomeCard(
+                                  dateText: item.dateText,
+                                  tagText: item.tagText,
+                                  tagBackgroundColor: item.tagColor,
+                                  headerText: item.headerText,
+                                  timeText: item.timeText,
+                                  secondsText: item.secondsText,
+                                  description: item.description,
+                                  onShare: () => provider.onCardShare(context, item),
+                                  onDelete: () => provider.onCardDelete(context, item),
+                                  onViewDetail: () {
+                                    if (item.isUploading == true) {
+                                      MPToastUtils.showMessage('正在上传，请稍后再试');
+                                      return;
+                                    }
+                                    MPMemoryPageClient.navigateToDetailPage(context, item.memory);
+                                  },
+                                  isUploading: item.isUploading,
+                                  source: item.source,
+                                );
+                              },
+                              separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -551,6 +553,81 @@ class _MPPageContentState extends State<MPPageContent> {
           ],
         );
       },
+    );
+  }
+
+  /// 构建空数据页面
+  Widget _buildEmptyState(BuildContext context, MPHomePageProvider provider) {
+    final hasSelectedDate = provider.selectedDate != null;
+    final dateText = hasSelectedDate ? provider.formatDateToMonthDay(provider.selectedDate!) : null;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height - 300,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // 日历图标
+              Container(
+                width: 64,
+                height: 64,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF5F5F5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.calendar_today,
+                  color: Color(0xFF8D8D8D),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 主文本
+              const Text(
+                '暂无记忆',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF111111),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // 次文本
+              Text(
+                hasSelectedDate && dateText != null ? '$dateText 还没有记录任何记忆' : '还没有记录任何记忆',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                ),
+              ),
+              // 底部按钮（仅在选择日期时显示）
+              if (hasSelectedDate) ...[
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () => provider.clearSelectedDate(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF306CFF),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    '查看全部记忆',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
