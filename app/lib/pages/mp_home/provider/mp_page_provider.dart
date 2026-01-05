@@ -110,7 +110,7 @@ enum MPHomeImportAudioType {
 }
 
 class MPHomePageProvider extends ChangeNotifier {
-  String selectedDate = MPTimestampUtils.getCurrentDate();
+  String? selectedDate;
 
   /// 上传进度
   double uploadPercent = 10;
