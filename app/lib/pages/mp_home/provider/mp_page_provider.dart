@@ -301,6 +301,12 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 本地记录
   Future<void> removeLocalRecord(String path, {required String fildId}) async {
     _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(path, fildId: fildId);
+    for (var element in _localRecords) {
+      if (element.path == path) {
+        debugPrint('---------hjj------- removeLocalRecord removed: ${element.isRemoved}');
+        break;
+      }
+    }
     _updateItems();
   }
 
@@ -329,7 +335,8 @@ class MPHomePageProvider extends ChangeNotifier {
       final item = memory.toMPMemoryItem();
       item.localPath = element.path;
       item.isUploading = true;
-      print('------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}');
+      print(
+          '------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}, localPath: ${item.localPath}');
       localItems.add(item);
     }
     List<MPMemoryItem> list = [];
@@ -348,7 +355,7 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
-      debugPrint('------hj------uploadLocalRecords element: ${element.path}');
+      debugPrint('------hj------uploadLocalRecords element: ${element.path} , is remove: ${element.isRemoved}');
       if (element.isRemoved) continue;
       debugPrint('------hj------uploadLocalRecords element is not removed: ${element.path}');
       final file = File(element.path);
@@ -409,6 +416,7 @@ class MPHomePageProvider extends ChangeNotifier {
       onConfirm: () async {
         // 执行删除操作
         if (item.isUploading == true) {
+          debugPrint('------hjj------- remove local: ${item.localPath}');
           await removeLocalRecord(item.localPath ?? '', fildId: '');
           uploadLocalRecords();
         } else {

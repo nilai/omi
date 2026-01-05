@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
-import '../../../../services/mp_audio_download.dart';
-import '../../../../utils/mp_local_records_util.dart';
 import '../../../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../../../pages/mp_custom_utils/mp_toast_utils.dart';
+import '../../../../services/mp_audio_download.dart';
+import '../../../../utils/mp_local_records_util.dart';
 
 /// 音频播放器卡片组件
 /// 显示原始音频的播放控件，包括播放按钮、进度条和时间显示
@@ -148,7 +148,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
       // 判断是本地文件还是网络URL
       final isNetworkUrl = audioPath.startsWith('http://') || audioPath.startsWith('https://');
       print('----hjj----_setupPlayer: isNetworkUrl=$isNetworkUrl');
-      
+
       if (isLocalFile || !isNetworkUrl) {
         // 本地文件，使用 Uri.file
         print('----hjj----_setupPlayer: 使用本地文件路径初始化, path=$audioPath');
@@ -160,7 +160,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
         await _audioPlayer.setAudioSource(AudioSource.uri(Uri.parse(audioPath)));
         print('----hjj----_setupPlayer: 网络URL初始化成功');
       }
-      
+
       _setupPositionTracking();
       setState(() {
         _isInitialized = true;
@@ -198,7 +198,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
     _playerStateSubscription = _audioPlayer.playerStateStream.listen((state) {
       if (mounted) {
-        print('----hjj----_setupPositionTracking: 播放状态更新, playing=${state.playing}, processingState=${state.processingState}');
+        print(
+            '----hjj----_setupPositionTracking: 播放状态更新, playing=${state.playing}, processingState=${state.processingState}');
         setState(() {
           _isPlaying = state.playing;
           _isBuffering =
@@ -225,6 +226,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
     });
     // 重置播放位置
     _audioPlayer.seek(Duration.zero);
+    _audioPlayer.stop();
     print('----hjj----_onPlaybackCompleted: 播放位置已重置');
   }
 
@@ -234,7 +236,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
     final audioUrl = widget.audioUrl;
     if (audioUrl == null || audioUrl.isEmpty) {
       print('----hjj----_handlePlayButtonTap: audioUrl为空');
-      MPToastUtils.showMessage('音频URL为空');
+      MPToastUtils.showMessage('音频文件链接出错');
       return;
     }
     print('----hjj----_handlePlayButtonTap: audioUrl=$audioUrl');
@@ -296,8 +298,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
           result.path,
           createAt: MPTimestampUtils.timestampNow,
           fileName: result.fileName,
-          source: 'Mobile Phone',
-          isRemoved: false,
+          source: '',
+          isRemoved: true,
         );
         print('----hjj----_downloadAudio: 本地记录保存完成');
 
@@ -342,7 +344,7 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
     print('----hjj----_startPlayback: 开始播放');
     print('----hjj----_startPlayback: _localFilePath=$_localFilePath');
     print('----hjj----_startPlayback: _isInitialized=$_isInitialized');
-    
+
     if (_localFilePath == null || _localFilePath!.isEmpty) {
       print('----hjj----_startPlayback: 本地文件路径为空，返回');
       MPToastUtils.showMessage('音频文件不存在');
@@ -393,9 +395,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
   Widget build(BuildContext context) {
     // 计算进度值（如果正在拖拽，使用拖拽位置；否则使用当前播放位置）
     final displayPosition = _isDragging ? _dragPosition : _currentPosition;
-    final progress = widget.totalDurationSeconds > 0
-        ? (displayPosition / widget.totalDurationSeconds).clamp(0.0, 1.0)
-        : 0.0;
+    final progress =
+        widget.totalDurationSeconds > 0 ? (displayPosition / widget.totalDurationSeconds).clamp(0.0, 1.0) : 0.0;
 
     // 确定按钮状态和图标
     IconData buttonIcon;
@@ -538,7 +539,8 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
                         max: 1.0,
                         onChangeStart: (value) {
                           // 拖拽开始：暂停位置更新
-                          print('----hjj----Slider onChangeStart: 开始拖拽, value=$value, _currentPosition=$_currentPosition');
+                          print(
+                              '----hjj----Slider onChangeStart: 开始拖拽, value=$value, _currentPosition=$_currentPosition');
                           setState(() {
                             _isDragging = true;
                             _dragPosition = _currentPosition;

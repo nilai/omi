@@ -129,6 +129,11 @@ class MPLocalRecordsUtil {
   }) async {
     // 通过path获取到filename
     final String filename = fileName ?? path.split('/').last;
+
+    // 检查是否已存在相同路径的记录，如果存在则删除旧记录
+    _localRecords.removeWhere((element) => element.path == path);
+
+    // 添加新记录
     final model = MPLocalMemoryModel(
       fileName: filename,
       createAt: createAt,
@@ -138,6 +143,8 @@ class MPLocalRecordsUtil {
       isRemoved: isRemoved,
     );
     _localRecords.add(model);
+    debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved');
+
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
@@ -156,6 +163,7 @@ class MPLocalRecordsUtil {
       if (element.path == path) {
         element.isRemoved = true;
         element.fileId = fildId;
+        debugPrint('-------hjj------removeLocalRecord path: $path');
         break;
       }
     }
