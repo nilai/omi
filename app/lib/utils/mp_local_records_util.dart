@@ -126,6 +126,7 @@ class MPLocalRecordsUtil {
     required String source,
     required int createAt,
     bool isRemoved = false,
+    String? fileId,
   }) async {
     // 通过path获取到filename
     final String filename = fileName ?? path.split('/').last;
@@ -142,6 +143,7 @@ class MPLocalRecordsUtil {
       duration: duration,
       isRemoved: isRemoved,
     );
+    model.fileId = fileId ?? '';
     _localRecords.add(model);
     debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved');
 

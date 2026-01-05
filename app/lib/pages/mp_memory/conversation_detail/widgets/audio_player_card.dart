@@ -297,13 +297,12 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
 
       if (result != null && mounted) {
         // 保存到本地记录
-        await MPLocalRecordsUtil.instance.addLocalRecord(
-          result.path,
-          createAt: MPTimestampUtils.timestampNow,
-          fileName: result.fileName,
-          source: '',
-          isRemoved: true,
-        );
+        await MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+            createAt: MPTimestampUtils.timestampNow,
+            fileName: result.fileName,
+            source: '',
+            isRemoved: true,
+            fileId: MPLocalRecordsUtil.getFileIdFromUrl(audioUrl));
 
         setState(() {
           _localFilePath = result.path;

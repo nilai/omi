@@ -148,7 +148,7 @@ class MPHomePageProvider extends ChangeNotifier {
   List<MPLocalMemoryModel> _localRecords = [];
 
   /// 上传中的记录列表
-  List<MPLocalMemoryModel> _uploadingRecords = [];
+  final List<MPLocalMemoryModel> _uploadingRecords = [];
 
   /// 远程记录列表
   List<MPMemoryItem> _remoteItems = [];
@@ -390,7 +390,7 @@ class MPHomePageProvider extends ChangeNotifier {
             );
             final summaryRes = await summaryRecord(summaryReq);
             if (summaryRes != null) {
-              // await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+              element.fileId = MPLocalRecordsUtil.getFileIdFromUrl(uri);
               await removeLocalRecord(element);
               refresh();
             }
@@ -398,7 +398,7 @@ class MPHomePageProvider extends ChangeNotifier {
         } else {
           final res = await createRecord(req);
           if (res != null) {
-            // await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+            element.fileId = MPLocalRecordsUtil.getFileIdFromUrl(uri);
             await removeLocalRecord(element);
             refresh();
           }
