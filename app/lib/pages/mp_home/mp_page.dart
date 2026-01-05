@@ -176,9 +176,11 @@ class _MPPageContentState extends State<MPPageContent> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '记忆记录',
-                        style: TextStyle(
+                      Text(
+                        provider.selectedDate == null
+                            ? '记忆记录'
+                            : '${provider.formatDateToMonthDay(provider.selectedDate!)} 的记忆',
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF111111),
