@@ -286,82 +286,113 @@ class _MPPageContentState extends State<MPPageContent> {
   }
 
   AppBar _buildAppBar(BuildContext context, MPHomePageProvider provider) {
+    final hasSelectedDate = provider.selectedDate != null;
+
     return AppBar(
       automaticallyImplyLeading: false,
       backgroundColor: Theme.of(context).colorScheme.primary,
       systemOverlayStyle: getSystemUiOverlayStyle(context),
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
+      title: Stack(
+        alignment: Alignment.center,
         children: [
-          // Left circular icon button
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () {
-              MPBatteryInfoWidget.pushToFindDevicesPage(context);
-            },
-            // child: Assets.images.settingCamera.image(
-            //   width: 32.0,
-            //   height: 32.0,
-            //   fit: BoxFit.contain,
-            // ),
-            child: const MPBatteryInfoWidget(),
-          ),
-          const SizedBox(width: 16),
-          // Centered date selector
-          Expanded(
-            child: Center(
-              child: InkWell(
-                onTap: () => _showDatePicker(context, provider),
-                borderRadius: BorderRadius.circular(8),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        provider.formatDateToMonthDay(provider.selectedDate),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF111111),
+          // 左右两侧的图标，使用 Row 布局
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Left circular icon button
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  MPBatteryInfoWidget.pushToFindDevicesPage(context);
+                },
+                child: const MPBatteryInfoWidget(),
+              ),
+              // Right side icons
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Search icon
+                  IconButton(
+                    icon: const Icon(Icons.search, color: Color(0xFF111111)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MPSearchPage(),
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.keyboard_arrow_down,
-                        color: Color(0xFF111111),
-                        size: 20,
-                      ),
-                    ],
+                      );
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 16),
+                  // Add icon
+                  IconButton(
+                    icon: const Icon(Icons.add, color: Color(0xFF111111)),
+                    onPressed: () => _showAddRecordDialog(context, provider),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 居中的日期选择器或"返回全部"按钮
+          hasSelectedDate
+              ? InkWell(
+                  onTap: () => provider.clearSelectedDate(),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF306CFF).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          color: Color(0xFF306CFF),
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Text(
+                          '返回全部',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF306CFF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : InkWell(
+                  onTap: () => _showDatePicker(context, provider),
+                  borderRadius: BorderRadius.circular(8),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.calendar_today,
+                          color: Color(0xFF111111),
+                          size: 16,
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Color(0xFF111111),
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Search icon
-          IconButton(
-            icon: const Icon(Icons.search, color: Color(0xFF111111)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MPSearchPage(),
-                ),
-              );
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 16),
-          // Add icon
-          IconButton(
-            icon: const Icon(Icons.add, color: Color(0xFF111111)),
-            onPressed: () => _showAddRecordDialog(context, provider),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
         ],
       ),
       elevation: 0,

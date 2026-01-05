@@ -280,6 +280,14 @@ class MPHomePageProvider extends ChangeNotifier {
     refresh();
   }
 
+  /// 清除选中的日期
+  void clearSelectedDate() {
+    if (selectedDate == null) return;
+    selectedDate = null;
+    notifyListeners();
+    refresh();
+  }
+
   /// 添加本地记录
   /// @param item 本地记录
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
