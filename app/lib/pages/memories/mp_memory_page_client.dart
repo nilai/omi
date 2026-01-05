@@ -17,6 +17,7 @@ class MPMemoryPageClient {
     isOpening = true;
     // ConversationDetailPage
     if (memory.type == MPMemoryType.onlyRecord) {
+      isOpening = false;
       Navigator.push(
         context,
         MaterialPageRoute(

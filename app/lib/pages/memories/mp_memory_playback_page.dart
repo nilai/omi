@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
@@ -42,10 +45,24 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
-  bool _isBuffering = true;
+  bool _isBuffering = false;
   bool _contentOverflow = false;
   bool _isDragging = false;
   Duration _dragPosition = Duration.zero;
+
+  // AI-generated START - 本地文件路径
+  String? _localFilePath;
+  // AI-generated END - _localFilePath
+
+  // AI-generated START - 是否已初始化
+  bool _isInitialized = false;
+  // AI-generated END - _isInitialized
+
+  // AI-generated START - 进度监听订阅
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration?>? _durationSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
+  // AI-generated END - 订阅
 
   /// 从 memory 中获取音频 URL
   String get _audioUrl => widget.memory.onlyRecordContent?.recordFile ?? '';
@@ -55,75 +72,221 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
     super.initState();
     // 从 memory.duration 初始化，单位是秒
     _duration = Duration(seconds: widget.memory.duration);
-    _setupPlayer();
   }
 
-  Future<void> _setupPlayer() async {
-    String audioUrl = _audioUrl;
+  /// 检查本地文件是否存在
+  Future<String> _getLocalFile() async {
+    final audioUrl = _audioUrl;
+    if (audioUrl.isEmpty) {
+      return '';
+    }
+
+    // 检查本地记录
     final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(audioUrl);
-    if (localPath != null && localPath.isNotEmpty) {
-      audioUrl = localPath;
+    if (localPath == null || localPath.isEmpty) {
+      return '';
+    }
+    final file = File(localPath);
+    if (file.existsSync()) {
+      return localPath;
+    }
+    return '';
+  }
+
+  /// 初始化音频播放器
+  Future<void> _setupPlayer(String audioPath, {bool isLocalFile = false}) async {
+    if (audioPath.isEmpty) {
+      return;
     }
 
     try {
-      await _player.setAudioSource(AudioSource.uri(Uri.file(audioUrl)));
+      // 判断是本地文件还是网络URL
+      final isNetworkUrl = audioPath.startsWith('http://') || audioPath.startsWith('https://');
+
+      if (isLocalFile || !isNetworkUrl) {
+        // 本地文件，使用 Uri.file
+        await _player.setAudioSource(AudioSource.uri(Uri.file(audioPath)));
+      } else {
+        // 网络URL，使用 Uri.parse
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(audioPath)));
+      }
+
       _duration = _player.duration ?? Duration(seconds: widget.memory.duration);
-    } catch (_) {
-      // 失败时仍允许界面显示，播放按钮会被禁用
-    } finally {
+      _setupPositionTracking();
+      setState(() {
+        _isInitialized = true;
+        _isBuffering = false;
+      });
+    } catch (e) {
+      debugPrint('初始化音频播放器失败: $e');
       if (mounted) {
         setState(() {
           _isBuffering = false;
         });
       }
     }
+  }
 
-    _player.positionStream.listen((pos) {
-      if (!mounted || _isDragging) return; // 拖拽时不更新位置
-      setState(() {
-        _position = pos;
-      });
+  /// 设置播放进度监听
+  void _setupPositionTracking() {
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+
+    _positionSubscription = _player.positionStream.listen((position) {
+      if (mounted && !_isDragging) {
+        setState(() {
+          _position = position;
+        });
+      }
     });
 
-    _player.durationStream.listen((dur) {
-      if (!mounted || dur == null) return;
-      setState(() {
-        _duration = dur;
-      });
+    _durationSubscription = _player.durationStream.listen((duration) {
+      if (mounted && duration != null) {
+        setState(() {
+          _duration = duration;
+        });
+      }
     });
 
-    _player.playerStateStream.listen((state) {
-      if (!mounted) return;
-      setState(() {
-        _isBuffering =
-            state.processingState == ProcessingState.loading || state.processingState == ProcessingState.buffering;
-        // 播放完成时，重置位置到开始
-        if (state.processingState == ProcessingState.completed) {
-          _position = Duration.zero;
-          _player.stop();
-          _player.seek(Duration.zero);
-        }
-      });
+    _playerStateSubscription = _player.playerStateStream.listen((state) {
+      if (mounted) {
+        setState(() {
+          _isBuffering =
+              state.processingState == ProcessingState.loading || state.processingState == ProcessingState.buffering;
+
+          // 播放完成后重置状态
+          if (state.processingState == ProcessingState.completed) {
+            _onPlaybackCompleted();
+          }
+        });
+      }
     });
+  }
+
+  /// 播放完成回调
+  void _onPlaybackCompleted() {
+    setState(() {
+      _position = Duration.zero;
+      _dragPosition = Duration.zero;
+    });
+    // 重置播放位置
+    _player.seek(Duration.zero);
+    _player.stop();
   }
 
   @override
   void dispose() {
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _playerStateSubscription?.cancel();
     _player.dispose();
     super.dispose();
   }
 
   Future<void> _togglePlay() async {
     if (_isBuffering) return;
+
+    final audioUrl = _audioUrl;
+    if (audioUrl.isEmpty) {
+      MPToastUtils.showMessage('音频文件链接出错');
+      return;
+    }
+    debugPrint('---------hjj------ audio url: $audioUrl');
+    // 如果正在播放，则暂停
     if (_player.playing) {
       await _player.pause();
-    } else {
+      return;
+    }
+
+    // 检查本地文件是否存在
+    if (_localFilePath == null || _localFilePath!.isEmpty) {
+      // 本地文件路径为空，先进行一次兜底检查
+      _localFilePath = await _getLocalFile();
+      if (_localFilePath!.isEmpty) {
+        // 本地文件不存在，开始下载
+        await _downloadAudio(audioUrl);
+        return;
+      }
+    }
+
+    // 本地文件存在，开始播放
+    await _startPlayback();
+  }
+
+  /// 下载音频文件
+  Future<void> _downloadAudio(String audioUrl) async {
+    setState(() {
+      _isBuffering = true;
+    });
+
+    try {
+      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(audioUrl);
+
+      if (result != null && mounted) {
+        // 保存到本地记录
+        await MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+            createAt: MPTimestampUtils.timestampNow,
+            fileName: result.fileName,
+            source: '',
+            isRemoved: true,
+            fileId: MPLocalRecordsUtil.getFileIdFromUrl(audioUrl));
+
+        setState(() {
+          _localFilePath = result.path;
+        });
+
+        // 下载完成后初始化播放器并开始播放
+        await _setupPlayer(result.path, isLocalFile: true);
+        await _startPlayback();
+      } else {
+        if (mounted) {
+          setState(() {
+            _isBuffering = false;
+          });
+          MPToastUtils.showMessage('下载失败');
+        }
+      }
+    } catch (e) {
+      debugPrint('下载音频失败: $e');
+      if (mounted) {
+        setState(() {
+          _isBuffering = false;
+        });
+        MPToastUtils.showMessage('下载失败: $e');
+      }
+    }
+  }
+
+  /// 开始播放
+  Future<void> _startPlayback() async {
+    if (_localFilePath == null || _localFilePath!.isEmpty) {
+      MPToastUtils.showMessage('音频文件不存在');
+      return;
+    }
+
+    try {
+      // 如果播放器还没有初始化，先初始化
+      if (!_isInitialized) {
+        await _setupPlayer(_localFilePath!, isLocalFile: true);
+      }
+
       // 如果播放已完成（位置在末尾），从头开始播放
       if (_position >= _duration && _duration > Duration.zero) {
         await _player.seek(Duration.zero);
         _position = Duration.zero;
+      } else if (_position > Duration.zero) {
+        // 如果当前有播放位置，从该位置继续播放
+        await _player.seek(_position);
+      } else {
+        // 否则从头开始
+        await _player.seek(Duration.zero);
       }
+
       await _player.play();
+    } catch (e) {
+      debugPrint('播放音频失败: $e');
+      MPToastUtils.showMessage('播放失败: $e');
     }
   }
 
