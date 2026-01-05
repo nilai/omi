@@ -54,6 +54,18 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
   int noteUsedKB = 0;
   int noteTotalKB = 0;
 
+  /// 设备列表
+  List<BtDevice> deviceList = [];
+
+  /// 是否启用说明
+  bool enableInstructions = false;
+
+  /// 发现的设备映射（用于维护设备顺序）
+  Map<String, BtDevice> foundDevicesMap = {};
+
+  /// 定时器（用于控制 enableInstructions）
+  Timer? _didNotMakeItTimer;
+
   /// 获取已使用存储的显示标题
   String get noteUsedKBTitle {
     return _formatStorageSize(noteUsedKB);
@@ -195,6 +207,48 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
 
     // 检查是否已有已连接的设备
     _checkExistingConnection();
+  }
+
+  /// 扫描设备（兼容 OnboardingProvider 的接口）
+  /// [onShowDialog] 当需要显示蓝牙权限对话框时的回调
+  Future<void> scanDevices({
+    required VoidCallback onShowDialog,
+  }) async {
+    // 检查设备是否已取消配对
+    if (SharedPreferencesUtil().btDevice.id.isEmpty) {
+      deviceAlreadyUnpaired();
+    }
+
+    // 检查蓝牙权限
+    if (!_hasBluetoothPermission) {
+      await _askForBluetoothPermissions();
+      if (!_hasBluetoothPermission) {
+        onShowDialog();
+        return;
+      }
+    }
+
+    // 设置定时器，10秒后启用说明
+    _didNotMakeItTimer?.cancel();
+    _didNotMakeItTimer = Timer(const Duration(seconds: 10), () {
+      enableInstructions = true;
+      notifyListeners();
+    });
+
+    // 订阅设备服务
+    ServiceManager.instance().device.subscribe(this, this);
+
+    // 开始周期性连接（会自动扫描）
+    await _deviceProvider?.periodicConnect("Come from Onboarding");
+  }
+
+  /// 设备已取消配对
+  void deviceAlreadyUnpaired() {
+    batteryPercentage = -1;
+    _isConnected = false;
+    deviceName = '';
+    deviceId = '';
+    notifyListeners();
   }
 
   /// 检查是否已有已连接的设备
@@ -454,11 +508,17 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
     hardwareRevision = '';
     noteUsedKB = 0;
     noteTotalKB = 0;
+    deviceList.clear();
+    enableInstructions = false;
+    foundDevicesMap.clear();
+    _didNotMakeItTimer?.cancel();
+    _didNotMakeItTimer = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _didNotMakeItTimer?.cancel();
     stopScanning();
     super.dispose();
   }
@@ -488,14 +548,35 @@ class MPDeviceFinderProvider extends BaseProvider implements IDeviceServiceSubsc
 
   @override
   void onDevices(List<BtDevice> devices) {
-    if (_isConnected || _isConnecting || devices.isEmpty) {
-      return;
+    List<BtDevice> foundDevices = devices;
+
+    // 更新 foundDevicesMap，添加新设备并移除不再发现的设备
+    Map<String, BtDevice> updatedDevicesMap = {};
+    for (final device in foundDevices) {
+      // 如果是新设备，添加到映射中。如果已存在，则更新条目
+      updatedDevicesMap[device.id] = device;
     }
 
-    // 自动连接第一个发现的设备
-    final firstDevice = devices.first;
-    debugPrint('Found device: ${firstDevice.name}, auto connecting...');
-    _autoConnectDevice(firstDevice);
+    // 移除不再发现的设备
+    foundDevicesMap.keys.where((id) => !updatedDevicesMap.containsKey(id)).toList().forEach(foundDevicesMap.remove);
+
+    // 合并新设备到当前映射以保持顺序
+    foundDevicesMap.addAll(updatedDevicesMap);
+
+    // 将映射的值转换回列表
+    List<BtDevice> orderedDevices = foundDevicesMap.values.toList();
+    if (orderedDevices.isNotEmpty) {
+      deviceList = orderedDevices;
+      notifyListeners();
+      _didNotMakeItTimer?.cancel();
+    }
+
+    // 如果未连接且未在连接中，自动连接第一个发现的设备
+    if (!_isConnected && !_isConnecting && devices.isNotEmpty) {
+      final firstDevice = devices.first;
+      debugPrint('Found device: ${firstDevice.name}, auto connecting...');
+      _autoConnectDevice(firstDevice);
+    }
   }
 
   @override
