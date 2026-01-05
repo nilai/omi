@@ -301,12 +301,6 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @param item 本地记录
   Future<void> removeLocalRecord(MPLocalMemoryModel model) async {
     _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(model);
-    for (var element in _localRecords) {
-      if (element.path == model.path && element.createAt == model.createAt) {
-        debugPrint('---------hjj------- removeLocalRecord removed: ${element.isRemoved}');
-        break;
-      }
-    }
     _updateItems();
   }
 
