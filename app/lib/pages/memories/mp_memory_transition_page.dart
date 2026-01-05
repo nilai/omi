@@ -27,6 +27,13 @@ class MPMemoryTransitionPage extends StatefulWidget {
 
 class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
   @override
+  void dispose() {
+    final provider = context.read<MPMemoryTransitionProvider>();
+    provider.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // 如果没有Provider，创建一个
     return ChangeNotifierProvider(
