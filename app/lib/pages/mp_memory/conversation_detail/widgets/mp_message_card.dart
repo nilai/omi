@@ -20,7 +20,7 @@ class MPMessageCardData {
   /// 消息内容
   final String content;
 
-  /// 时间戳（格式：HH:mm）
+  /// 开始时间，单位s
   final String timestamp;
 
   /// 头像文字（如果提供，将显示在头像中）

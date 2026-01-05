@@ -541,10 +541,6 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
 
   // AI-generated START - 构建消息项
   Widget _buildMessageItem(ConversationMessage message) {
-    // 格式化时间戳为 HH:mm 格式
-    final timestamp =
-        '${message.createdAt.hour.toString().padLeft(2, '0')}:${message.createdAt.minute.toString().padLeft(2, '0')}';
-
     // 获取发送者姓名，如果没有则使用默认值
     final senderName = message.senderName ?? (message.type == MessageType.user ? '我' : 'AI助手');
 
@@ -552,7 +548,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       message: MPMessageCardData(
         senderName: senderName,
         content: message.content,
-        timestamp: timestamp,
+        timestamp: message.time,
         avatarText: senderName.isNotEmpty ? senderName[0] : '?',
         avatarUrl: message.avatarUrl,
       ),
