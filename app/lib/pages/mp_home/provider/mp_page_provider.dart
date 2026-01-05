@@ -144,7 +144,13 @@ class MPHomePageProvider extends ChangeNotifier {
 
   MPHomeImportAudioType importAudioType = MPHomeImportAudioType.none;
 
+  /// 本地记录列表
   List<MPLocalMemoryModel> _localRecords = [];
+
+  /// 上传中的记录列表
+  List<MPLocalMemoryModel> _uploadingRecords = [];
+
+  /// 远程记录列表
   List<MPMemoryItem> _remoteItems = [];
 
   bool _rightNowTranscribe = false;
@@ -359,6 +365,8 @@ class MPHomePageProvider extends ChangeNotifier {
     for (var element in _localRecords) {
       debugPrint('------hj------uploadLocalRecords element: ${element.path} , is remove: ${element.isRemoved}');
       if (element.isRemoved) continue;
+      if (_uploadingRecords.contains(element)) continue;
+      _uploadingRecords.add(element);
       debugPrint('------hj------uploadLocalRecords element is not removed: ${element.path}');
       final file = File(element.path);
       final duration = await AudioPickerUtils.getAudioDuration(file);
