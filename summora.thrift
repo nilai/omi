@@ -56,7 +56,8 @@ struct InsightMemoryStruct {
 
 struct OnlyRecordMemoryStruct {
     1: string record_file, // 本地保存的文件名
-    2: string: source,
+    2: string record_uri, // 录音地址
+    3: string: source,
 }
 
 struct RecordConversationStruct {
@@ -69,12 +70,13 @@ struct RecordConversationStruct {
 struct SummaryMemoryStruct {
     1: list<SpeakerStruct> participants,
     2: i32: participants_cnt,
-    2: string record_url, // 录音地址
-    3: string summary, // markdown格式
-    4: list<RecordConversationStruct> transcript,
-    5: list<TodoStruct> todos,
-    6: i32: status,
-    7: string: source,
+    3: string record_url, // 录音地址
+    4: string record_uri, // 录音地址
+    5: string summary, // markdown格式
+    6: list<RecordConversationStruct> transcript,
+    7: list<TodoStruct> todos,
+    8: i32: status,
+    9: string: source,
 }
 
 struct MemoryStruct {
@@ -231,6 +233,7 @@ struct SummaryRecordRequest {
     2: string record_url,
     3: i64 record_memo_at,  // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
     4: optional string template_id,  // 总结需要的模板
+    5: bool is_regen,
 }
 
 struct SummaryRecordResponse {
@@ -322,6 +325,7 @@ struct GetMemoListRequest {
 struct GetMemoListResponse {
     1: list<MemoStruct> memos,
     2: bool has_more,
+    3: i32 total_count,
     255: BaseResp base_resp,
 }
 
@@ -377,6 +381,7 @@ struct GetTodoListRequest {
 struct GetTodoListResponse {
     1: list<TodoStruct> todos,
     2: bool has_more,
+    3: i32 total_count,
     255: BaseResp base_resp,
 }
 
