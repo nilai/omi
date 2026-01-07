@@ -630,7 +630,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
   }
 
   void _regenerateSummary() async {
-    MPMemoryConvertDialog.show(context, memory: widget.memory, onGenerate: () {
+    MPMemoryConvertDialog.show(context, memory: widget.memory, isRegen: true, onGenerate: () {
       Future.delayed(const Duration(milliseconds: 500), () {
         MPHomeRefreshEventService().emitRefresh();
         if (!context.mounted) return;
