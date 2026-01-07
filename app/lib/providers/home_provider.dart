@@ -20,7 +20,8 @@ class HomeProvider extends ChangeNotifier {
   bool hasSpeakerProfile = true;
   bool isLoading = false;
   String userPrimaryLanguage = SharedPreferencesUtil().userPrimaryLanguage;
-  bool hasSetPrimaryLanguage = SharedPreferencesUtil().hasSetPrimaryLanguage;
+  // bool hasSetPrimaryLanguage = SharedPreferencesUtil().hasSetPrimaryLanguage;
+  bool hasSetPrimaryLanguage = true;
 
   // Available languages ordered by popularity
   final Map<String, String> availableLanguages = {
