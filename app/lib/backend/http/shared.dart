@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as http_io;
 import 'package:omi/backend/preferences.dart';
@@ -12,6 +13,7 @@ import 'package:omi/services/auth_service.dart';
 import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
 import 'package:path/path.dart';
+import 'package:uuid/uuid.dart';
 
 class ApiClient {
   static const Duration requestTimeoutRead = Duration(seconds: 30);
@@ -50,33 +52,93 @@ class ApiTools {
     return _instance!;
   }
 
-  // DeviceInfoPlugin 实例
-  final DeviceInfoPlugin _deviceInfoPlugin = DeviceInfoPlugin();
+  // UUID 生成器
+  static const _uuidGenerator = Uuid();
+
+  // 安全存储实例（使用 Keychain/KeyStore）
+  // iOS: 使用 Keychain
+  // Android: 使用 EncryptedSharedPreferences
+  static const _secureStorage = FlutterSecureStorage();
+
+  // 设备信息插件
+  static final _deviceInfo = DeviceInfoPlugin();
 
   // uuid 缓存
   String? _uuid;
 
-  // 获取 uuid（懒加载）
+  // UUID 存储键
+  static const String _uuidStorageKey = 'device_uuid';
+
+  // 获取 uuid（懒加载，持久化存储）
+  // 使用平台特定的设备标识符确保卸载重装后 UUID 保持不变
+  // iOS: 使用 identifierForVendor（卸载后可能变化，但比随机 UUID 更稳定）
+  // Android: 使用 Android ID（卸载重装后保持不变，除非恢复出厂设置）
   Future<String> get uuid async {
     if (_uuid != null) {
       return _uuid!;
     }
 
     try {
-      if (Platform.isAndroid) {
-        final androidInfo = await _deviceInfoPlugin.androidInfo;
-        _uuid = androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await _deviceInfoPlugin.iosInfo;
-        _uuid = iosInfo.identifierForVendor;
-      } else {
-        _uuid = 'unknown';
+      // 首先尝试从安全存储获取已保存的 UUID
+      final savedUuid = await _secureStorage.read(key: _uuidStorageKey);
+
+      if (savedUuid != null && savedUuid.isNotEmpty && savedUuid != 'unknown') {
+        _uuid = savedUuid;
+        return _uuid!;
       }
 
-      return _uuid ?? 'unknown';
+      // 如果没有保存的 UUID，尝试使用平台特定的设备标识符
+      if (Platform.isAndroid) {
+        // Android: 使用 Android ID（卸载重装后保持不变）
+        try {
+          final androidInfo = await _deviceInfo.androidInfo;
+          final androidId = androidInfo.id; // Android ID
+          if (androidId.isNotEmpty && androidId != '9774d56d682e549c') {
+            // 排除已知的无效 Android ID
+            _uuid = androidId;
+            Logger.log('Using Android ID as device UUID: ${_uuid!.substring(0, 8)}...');
+          }
+        } catch (e) {
+          Logger.error('Failed to get Android ID: $e');
+        }
+      } else if (Platform.isIOS) {
+        // iOS: 使用 identifierForVendor
+        // 注意：identifierForVendor 在卸载重装后可能变化，但比随机 UUID 更稳定
+        try {
+          final iosInfo = await _deviceInfo.iosInfo;
+          final identifierForVendor = iosInfo.identifierForVendor;
+          if (identifierForVendor != null && identifierForVendor.isNotEmpty) {
+            _uuid = identifierForVendor;
+            Logger.log('Using iOS identifierForVendor as device UUID: ${_uuid!.substring(0, 8)}...');
+          }
+        } catch (e) {
+          Logger.error('Failed to get iOS identifierForVendor: $e');
+        }
+      }
+
+      // 如果平台标识符不可用，生成一个新的 UUID
+      if (_uuid == null || _uuid!.isEmpty) {
+        _uuid = _uuidGenerator.v4();
+        Logger.log('Generated new UUID as device identifier');
+      }
+
+      // 保存到安全存储
+      try {
+        await _secureStorage.write(key: _uuidStorageKey, value: _uuid!);
+      } catch (saveError) {
+        Logger.error('Failed to save UUID to secure storage: $saveError');
+      }
+
+      return _uuid!;
     } catch (e) {
       Logger.error('Failed to get device UUID: $e');
-      _uuid = 'unknown';
+      // 如果出错，尝试生成一个临时 UUID
+      _uuid = _uuidGenerator.v4();
+      try {
+        await _secureStorage.write(key: _uuidStorageKey, value: _uuid!);
+      } catch (saveError) {
+        Logger.error('Failed to save UUID to secure storage: $saveError');
+      }
       return _uuid!;
     }
   }
