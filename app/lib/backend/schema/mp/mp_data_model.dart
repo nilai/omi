@@ -191,11 +191,15 @@ class MPOnlyRecordMemoryStruct {
   @JsonKey(name: 'record_file')
   final String recordFile;
 
+  @JsonKey(name: 'record_uri')
+  final String? recordUri;
+
   @JsonKey(name: 'source')
   final String? source;
 
   MPOnlyRecordMemoryStruct({
     required this.recordFile,
+    this.recordUri,
     this.source,
   });
 

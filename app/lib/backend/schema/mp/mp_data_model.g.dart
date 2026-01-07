@@ -99,11 +99,13 @@ Map<String, dynamic> _$MPSummaryMemoryStructToJson(MPSummaryMemoryStruct instanc
 
 MPOnlyRecordMemoryStruct _$MPOnlyRecordMemoryStructFromJson(Map<String, dynamic> json) => MPOnlyRecordMemoryStruct(
       recordFile: json['record_file'] as String,
+      recordUri: json['record_uri'] as String?,
       source: json['source'] as String?,
     );
 
 Map<String, dynamic> _$MPOnlyRecordMemoryStructToJson(MPOnlyRecordMemoryStruct instance) => <String, dynamic>{
       'record_file': instance.recordFile,
+      'record_uri': instance.recordUri,
       'source': instance.source,
     };
 
