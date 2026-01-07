@@ -105,7 +105,6 @@ class _MPPageContentState extends State<MPPageContent> {
 
       // Stream<bool> get onConnectionChange => _connectionChangeController.stream;
       ConnectivityService().onConnectionChange.listen((isConnected) {
-        debugPrint('-----hj----- onConnectionChange: $isConnected');
         if (isConnected && provider.items.isEmpty) {
           provider.refresh();
         }
