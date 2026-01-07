@@ -134,11 +134,15 @@ class MPSummaryRecordRequest {
   @JsonKey(name: 'template_id')
   final String? templateId; // 模板ID
 
+  @JsonKey(name: 'is_regen')
+  final bool isRegen;
+
   MPSummaryRecordRequest({
     required this.memoryId,
     required this.recordUrl,
     required this.recordMemoAt,
     this.templateId,
+    this.isRegen = false,
   });
 
   factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordRequestFromJson(json);
