@@ -7,6 +7,7 @@ import 'package:omi/services/mp_home_refresh_event_service.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/device_provider.dart';
+import '../../services/connectivity_service.dart';
 import '../../utils/audio_picker_utils.dart';
 import '../../utils/other/temp.dart';
 import '../home/widgets/mp_battery_info_widget.dart';
@@ -101,6 +102,14 @@ class _MPPageContentState extends State<MPPageContent> {
           boundDeviceOnly: true,
         );
       }
+
+      // Stream<bool> get onConnectionChange => _connectionChangeController.stream;
+      ConnectivityService().onConnectionChange.listen((isConnected) {
+        debugPrint('-----hj----- onConnectionChange: $isConnected');
+        if (isConnected && provider.items.isEmpty) {
+          provider.refresh();
+        }
+      });
     });
   }
 

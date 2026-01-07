@@ -170,8 +170,9 @@ class MPHomePageProvider extends ChangeNotifier {
   /// 从服务器获取最新的记忆列表数据
   /// @returns 无返回值
   Future<void> refresh() async {
+    if (loading) return;
+    loading = true;
     try {
-      loading = true;
       notifyListeners();
       _cursor = '';
       final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, day: selectedDate);
