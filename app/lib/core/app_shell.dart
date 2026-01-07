@@ -1,29 +1,22 @@
 import 'dart:async';
+
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:omi/mobile/mobile_app.dart';
 import 'package:omi/desktop/desktop_app.dart';
-import 'package:omi/backend/preferences.dart';
+import 'package:omi/mobile/mobile_app.dart';
 import 'package:omi/pages/apps/app_detail/app_detail.dart';
 import 'package:omi/pages/audio_record/page.dart';
 import 'package:omi/pages/settings/asana_settings_page.dart';
 import 'package:omi/pages/settings/clickup_settings_page.dart';
 import 'package:omi/providers/app_provider.dart';
-import 'package:omi/providers/auth_provider.dart';
-import 'package:omi/providers/home_provider.dart';
-import 'package:omi/providers/message_provider.dart';
-import 'package:omi/providers/people_provider.dart';
 import 'package:omi/providers/task_integration_provider.dart';
-import 'package:omi/providers/usage_provider.dart';
-import 'package:omi/providers/user_provider.dart';
 import 'package:omi/services/asana_service.dart';
 import 'package:omi/services/clickup_service.dart';
 import 'package:omi/services/google_tasks_service.dart';
-import 'package:omi/services/notifications.dart';
 import 'package:omi/services/todoist_service.dart';
 import 'package:omi/utils/alerts/app_snackbar.dart';
 import 'package:omi/utils/platform/platform_manager.dart';
+import 'package:provider/provider.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -42,7 +35,7 @@ class _AppShellState extends State<AppShell> {
     // Handle links
     _linkSubscription = _appLinks.uriLinkStream.distinct().listen((uri) {
       debugPrint('onAppLink: $uri');
-      openAppLink(uri);
+      // openAppLink(uri);
     });
   }
 
@@ -67,10 +60,8 @@ class _AppShellState extends State<AppShell> {
       }
     } else if (uri.pathSegments.first == 'audio-records') {
       if (mounted) {
-        PlatformManager.instance.mixpanel.track(
-            'Audio Record Page Opened From DeepLink');
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (context) => const AudioRecordPage()));
+        PlatformManager.instance.mixpanel.track('Audio Record Page Opened From DeepLink');
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AudioRecordPage()));
       }
     } else if (uri.host == 'todoist' && uri.pathSegments.isNotEmpty && uri.pathSegments.first == 'callback') {
       // Handle Todoist OAuth callback
@@ -242,29 +233,29 @@ class _AppShellState extends State<AppShell> {
     initDeepLinks();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (context.read<AuthenticationProvider>().isSignedIn()) {
-        context.read<HomeProvider>().setupHasSpeakerProfile();
-        context.read<HomeProvider>().setupUserPrimaryLanguage();
-        context.read<UserProvider>().initialize();
-        context.read<PeopleProvider>().initialize();
-        try {
-          await PlatformManager.instance.intercom.loginIdentifiedUser(SharedPreferencesUtil().uid);
-        } catch (e) {
-          debugPrint('Failed to login to Intercom: $e');
-        }
+      // if (context.read<AuthenticationProvider>().isSignedIn()) {
+      //   context.read<HomeProvider>().setupHasSpeakerProfile();
+      //   context.read<HomeProvider>().setupUserPrimaryLanguage();
+      //   context.read<UserProvider>().initialize();
+      //   context.read<PeopleProvider>().initialize();
+      //   try {
+      //     await PlatformManager.instance.intercom.loginIdentifiedUser(SharedPreferencesUtil().uid);
+      //   } catch (e) {
+      //     debugPrint('Failed to login to Intercom: $e');
+      //   }
 
-        context.read<MessageProvider>().setMessagesFromCache();
-        context.read<AppProvider>().setAppsFromCache();
-        context.read<MessageProvider>().refreshMessages();
-        context.read<UsageProvider>().fetchSubscription();
+      //   context.read<MessageProvider>().setMessagesFromCache();
+      //   context.read<AppProvider>().setAppsFromCache();
+      //   context.read<MessageProvider>().refreshMessages();
+      //   context.read<UsageProvider>().fetchSubscription();
 
-        NotificationService.instance.saveNotificationToken();
-      } else {
-        if (!PlatformManager.instance.isAnalyticsSupported) {
-          await PlatformManager.instance.intercom.loginUnidentifiedUser();
-        }
-      }
-      PlatformManager.instance.intercom.setUserAttributes();
+      //   NotificationService.instance.saveNotificationToken();
+      // } else {
+      //   if (!PlatformManager.instance.isAnalyticsSupported) {
+      //     await PlatformManager.instance.intercom.loginUnidentifiedUser();
+      //   }
+      // }
+      // PlatformManager.instance.intercom.setUserAttributes();
     });
     super.initState();
   }
