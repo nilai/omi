@@ -1,8 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:omi/backend/schema/mp/mp_data_model.dart';
 import 'package:provider/provider.dart';
+
 import '../../services/mp_home_refresh_event_service.dart';
 import '../mp_custom_utils/mp_timestamp_utils.dart';
 import '../mp_memory/conversation_detail/conversation_detail_page.dart';
@@ -26,6 +27,13 @@ class MPMemoryTransitionPage extends StatefulWidget {
 
 class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
   @override
+  void dispose() {
+    final provider = context.read<MPMemoryTransitionProvider>();
+    provider.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     // 如果没有Provider，创建一个
     return ChangeNotifierProvider(
@@ -33,9 +41,13 @@ class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
         final provider = MPMemoryTransitionProvider(
           memoryId: widget.memory.id,
           completeCallback: () {
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: widget.memory)));
-            MPHomeRefreshEventService().emitRefresh();
+            // INSERT_YOUR_CODE
+            Future.delayed(const Duration(milliseconds: 500), () {
+              MPHomeRefreshEventService().emitRefresh();
+              if (!mounted) return;
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => ConversationDetailPage(memory: widget.memory)));
+            });
           },
         );
         // 创建后立即启动轮询
@@ -135,21 +147,21 @@ class _MPMemoryTransitionPageState extends State<MPMemoryTransitionPage> {
 
   /// 构建生成中消息
   Widget _buildGeneratingMessage() {
-    return Center(
+    return const Center(
       child: Column(
         children: [
           // 生成中文字，带动态点
           _MPAnimatedDotsText(
             baseText: '生成中',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
               color: Color(0xFF1F2937),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           // 说明文字
-          const Text(
+          Text(
             '生成还需几分钟,离开页面不会影响进度。',
             style: TextStyle(
               fontSize: 14,

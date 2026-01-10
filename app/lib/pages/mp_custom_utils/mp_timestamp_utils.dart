@@ -109,15 +109,29 @@ class MPTimestampUtils {
     if (hours > 0) {
       final minutes = second % 3600 ~/ 60;
       final seconds = second % 60;
-      return '$hours' + 'h' + ' ' + '$minutes' + 'm' + ' ' + '$seconds' + 's';
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     final minutes = second ~/ 60;
     if (minutes > 0) {
       final seconds = second % 60;
-      return '$minutes' + 'm' + ' ' + '$seconds' + 's';
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
     }
     final seconds = second % 60;
-    return '$seconds' + 's';
+    return '00:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  /// 将字符串转换为 double 值，向上取整后返回字符串
+  ///
+  /// [value] 输入的字符串
+  /// 返回向上取整后的字符串
+  static int ceilStringToDouble(String value) {
+    try {
+      final doubleValue = double.parse(value);
+      return doubleValue.ceil();
+    } catch (e) {
+      // 如果解析失败，返回原字符串或抛出异常
+      throw FormatException('无法将字符串 "$value" 转换为数字: $e');
+    }
   }
 
   /// 将 DateTime 转换为秒级时间戳

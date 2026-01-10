@@ -181,14 +181,18 @@ class MPMessageProvider extends ChangeNotifier {
   }
 
   Future<void> updatePageTitle() async {
+    debugPrint('-----hj----- updatePageTitle');
     final title = curPageModel?.title ?? '';
-    if (title.isNotEmpty && title != MPMessageProvider.newConversationTitle) {
+    if (title.isEmpty) {
       return;
     }
+
     final conversationId = curPageModel?.conversationId ?? '';
+    debugPrint('-----hj----- updatePageTitle: conversationId: $conversationId');
     final req = MPGetConversationDetailRequest(conversationId: conversationId, pageSize: 1000, cursor: '');
     final response = await getConversationDetail(req);
     if (response != null) {
+      debugPrint('-----hj----- updatePageTitle: response: ${response.title}');
       if (curPageModel?.conversationId == conversationId) {
         curPageModel?.title = response.title;
         notifyListeners();
@@ -212,7 +216,7 @@ class MPMessageProvider extends ChangeNotifier {
     curPageModel?.messages = [];
     notifyListeners();
     final req = MPCreateConversationRequest(
-      title: title.isNotEmpty ? title : MPMessageProvider.newConversationTitle,
+      title: title,
       expertId: type == MPChatPageType.expert ? chatId : '',
       memoryId: type == MPChatPageType.memory ? chatId : '',
       templateId: type == MPChatPageType.template ? chatId : '',

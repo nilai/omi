@@ -12,7 +12,7 @@ class ConversationMessage {
   const ConversationMessage({
     required this.id,
     required this.content,
-    required this.createdAt,
+    required this.time,
     this.type = MessageType.user,
     this.audioUrl,
     this.duration,
@@ -28,7 +28,7 @@ class ConversationMessage {
   final String content;
 
   /// 创建时间
-  final DateTime createdAt;
+  final String time;
 
   /// 消息类型
   final MessageType type;
@@ -230,9 +230,9 @@ class ConversationDetailProvider with ChangeNotifier {
         _summary = response.memory.summaryContent?.summary;
         _participants.clear();
         _participants.addAll(response.memory.summaryContent?.participants
-            .map((e) => Participant(id: e.id, name: e.name, avatarUrl: e.avatar))
-            .toList() ??
-        []);
+                .map((e) => Participant(id: e.id, name: e.name, avatarUrl: e.avatar))
+                .toList() ??
+            []);
         _loadTranscriptData(response.memory);
         notifyListeners();
       } else {
@@ -252,7 +252,8 @@ class ConversationDetailProvider with ChangeNotifier {
     if (list.isNotEmpty) {
       _transcripts = list.map((transcript) {
         // 将时间字符串转换为 DateTime（这里简化处理，实际可能需要更复杂的解析）
-        final createdAt = MPTimestampUtils.timestampToDateTime(memory.createAt);
+        final time = MPTimestampUtils.ceilStringToDouble(transcript.time);
+        final timeString = MPTimestampUtils.toMinutesAndSecondsString(time);
 
         // 根据 speaker 判断消息类型（如果是用户自己的声音，则为 user，否则为 ai）
         final messageType = transcript.speaker.myselfVoice == true ? MessageType.user : MessageType.ai;
@@ -260,7 +261,7 @@ class ConversationDetailProvider with ChangeNotifier {
         return ConversationMessage(
           id: transcript.id,
           content: transcript.content,
-          createdAt: createdAt,
+          time: timeString,
           type: messageType,
           duration: _duration,
           senderName: transcript.speaker.name,

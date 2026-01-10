@@ -148,7 +148,7 @@ class TodoProvider with ChangeNotifier {
       // 将 API 返回的数据转换为 TodoTaskItem
       final list = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
       _hasMore = response.hasMore;
-      _pageNo ++;
+      _pageNo++;
       // 更新总数量
       if (response.totalCount != null) {
         _totalCount = response.totalCount!;
@@ -181,6 +181,7 @@ class TodoProvider with ChangeNotifier {
       final moreTodos = response.todos.map((todo) => _convertToTodoTaskItem(todo)).toList();
       _todos.addAll(moreTodos);
       _hasMore = response.hasMore;
+      _pageNo++;
     }
     _isFetching = false;
     notifyListeners();
@@ -345,18 +346,18 @@ class TodoProvider with ChangeNotifier {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           MPToastUtils.showMessage('Todo 更新成功');
-          
+
           // 检查是否是更新为完成状态
           final index = _todos.indexWhere((t) => t.id == todoId);
           final wasCompleted = index != -1 && _todos[index].status == 2;
           final isNowCompleted = isCompleted;
-          
+
           // 如果是从未完成变为完成，则刷新整个列表
           if (!wasCompleted && isNowCompleted) {
             await loadTodos();
             return true;
           }
-          
+
           // 其他字段修改（title、priority、deadline）或取消完成，只更新本地卡片
           if (index != -1) {
             final existingTodo = _todos[index];
@@ -383,7 +384,7 @@ class TodoProvider with ChangeNotifier {
             } catch (e) {
               deadlineDate = DateTime.now();
             }
-            
+
             // 格式化 priority
             String? priorityTag;
             if (priority.isNotEmpty) {
@@ -393,7 +394,7 @@ class TodoProvider with ChangeNotifier {
                 priorityTag = priority.substring(0, 1).toUpperCase() + priority.substring(1).toLowerCase();
               }
             }
-            
+
             // 更新本地 todo 项，保留原有的 description，更新其他字段
             _todos[index] = TodoTaskItem(
               id: existingTodo.id,

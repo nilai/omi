@@ -14,12 +14,12 @@ class MPGetMemoryListRequest {
   final String cursor;
 
   @JsonKey(name: 'day')
-  final String day; // 如2025-12-21
+  final String? day; // 如2025-12-21
 
   MPGetMemoryListRequest({
     required this.pageSize,
     required this.cursor,
-    required this.day,
+    this.day,
   });
 
   factory MPGetMemoryListRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryListRequestFromJson(json);
@@ -134,11 +134,15 @@ class MPSummaryRecordRequest {
   @JsonKey(name: 'template_id')
   final String? templateId; // 模板ID
 
+  @JsonKey(name: 'is_regen')
+  final bool isRegen;
+
   MPSummaryRecordRequest({
     required this.memoryId,
     required this.recordUrl,
     required this.recordMemoAt,
     this.templateId,
+    this.isRegen = false,
   });
 
   factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordRequestFromJson(json);

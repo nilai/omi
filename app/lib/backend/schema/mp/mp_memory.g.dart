@@ -11,7 +11,7 @@ MPGetMemoryListRequest _$MPGetMemoryListRequestFromJson(
     MPGetMemoryListRequest(
       pageSize: (json['page_size'] as num).toInt(),
       cursor: json['cursor'] as String,
-      day: json['day'] as String,
+      day: json['day'] as String?,
     );
 
 Map<String, dynamic> _$MPGetMemoryListRequestToJson(
@@ -97,6 +97,7 @@ MPSummaryRecordRequest _$MPSummaryRecordRequestFromJson(
       recordUrl: json['record_url'] as String,
       recordMemoAt: (json['record_memo_at'] as num).toInt(),
       templateId: json['template_id'] as String?,
+      isRegen: json['is_regen'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$MPSummaryRecordRequestToJson(
@@ -106,6 +107,7 @@ Map<String, dynamic> _$MPSummaryRecordRequestToJson(
       'record_url': instance.recordUrl,
       'record_memo_at': instance.recordMemoAt,
       'template_id': instance.templateId,
+      'is_regen': instance.isRegen,
     };
 
 MPShareMemoryRequest _$MPShareMemoryRequestFromJson(

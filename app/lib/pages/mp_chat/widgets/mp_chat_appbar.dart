@@ -76,8 +76,10 @@ class MPChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget _buildTitle() {
     return Consumer<MPMessageProvider>(
       builder: (context, mpProvider, child) {
+        final tmpTitle = mpProvider.curPageModel?.title ?? '';
+        final title = tmpTitle.isNotEmpty ? tmpTitle : MPMessageProvider.newConversationTitle;
         return Text(
-          mpProvider.curPageModel?.title ?? '',
+          title,
           style: TextStyle(
             color: Colors.grey.shade800,
             fontSize: 16.0,

@@ -88,6 +88,7 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
           .map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
       recordUrl: json['record_url'] as String,
+      recordUri: json['record_uri'] as String?,
       summary: json['summary'] as String,
       transcript: (json['transcript'] as List<dynamic>)
           .map((e) =>
@@ -96,15 +97,16 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
       todos: (json['todos'] as List<dynamic>)
           .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
-      participants_cnt: (json['participants_cnt'] as num).toInt(),
+      participantsCnt: (json['participants_cnt'] as num).toInt(),
     );
 
 Map<String, dynamic> _$MPSummaryMemoryStructToJson(
         MPSummaryMemoryStruct instance) =>
     <String, dynamic>{
       'participants': instance.participants,
-      'participants_cnt': instance.participants_cnt,
+      'participants_cnt': instance.participantsCnt,
       'record_url': instance.recordUrl,
+      'record_uri': instance.recordUri,
       'summary': instance.summary,
       'transcript': instance.transcript,
       'todos': instance.todos,
@@ -114,6 +116,7 @@ MPOnlyRecordMemoryStruct _$MPOnlyRecordMemoryStructFromJson(
         Map<String, dynamic> json) =>
     MPOnlyRecordMemoryStruct(
       recordFile: json['record_file'] as String,
+      recordUri: json['record_uri'] as String?,
       source: json['source'] as String?,
     );
 
@@ -121,6 +124,7 @@ Map<String, dynamic> _$MPOnlyRecordMemoryStructToJson(
         MPOnlyRecordMemoryStruct instance) =>
     <String, dynamic>{
       'record_file': instance.recordFile,
+      'record_uri': instance.recordUri,
       'source': instance.source,
     };
 

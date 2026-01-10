@@ -8,9 +8,16 @@ import '../mp_memory/conversation_detail/conversation_detail_page.dart';
 import 'mp_memory_playback_page.dart';
 
 class MPMemoryPageClient {
+  static bool isOpening = false;
+
   static Future<void> navigateToDetailPage(BuildContext context, MPMemoryStruct memory) async {
+    if (isOpening) {
+      return;
+    }
+    isOpening = true;
     // ConversationDetailPage
     if (memory.type == MPMemoryType.onlyRecord) {
+      isOpening = false;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -24,6 +31,7 @@ class MPMemoryPageClient {
     final req = MPGetSummaryStatusRequest(memoryId: memory.id);
     final res = await getSummaryStatus(req);
     final status = res?.status ?? 0;
+    isOpening = false;
     if (status == 1) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => MPMemoryTransitionPage(memory: memory)));
       return;

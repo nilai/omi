@@ -126,9 +126,15 @@ class MPLocalRecordsUtil {
     required String source,
     required int createAt,
     bool isRemoved = false,
+    String? fileId,
   }) async {
     // 通过path获取到filename
     final String filename = fileName ?? path.split('/').last;
+
+    // 检查是否已存在相同路径的记录，如果存在则删除旧记录
+    _localRecords.removeWhere((element) => element.path == path);
+
+    // 添加新记录
     final model = MPLocalMemoryModel(
       fileName: filename,
       createAt: createAt,
@@ -137,7 +143,10 @@ class MPLocalRecordsUtil {
       duration: duration,
       isRemoved: isRemoved,
     );
+    model.fileId = fileId ?? '';
     _localRecords.add(model);
+    debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved');
+
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
     await prefs.setStringList('mp_local_records', jsonList);
@@ -145,17 +154,14 @@ class MPLocalRecordsUtil {
   }
 
   /// 删除本地记录
-  /// @param path 文件路径
+  /// @param model 本地记录模型
   /// @param fildId 文件ID
   /// @returns 删除后的本地记录列表
-  Future<List<MPLocalMemoryModel>> removeLocalRecord(
-    String path, {
-    required String fildId,
-  }) async {
+  Future<List<MPLocalMemoryModel>> removeLocalRecord(MPLocalMemoryModel model) async {
     for (var element in _localRecords) {
-      if (element.path == path) {
+      if (element.path == model.path && element.createAt == model.createAt) {
         element.isRemoved = true;
-        element.fileId = fildId;
+        debugPrint('-------hjj------removeLocalRecord path: ${element.path}');
         break;
       }
     }
@@ -175,6 +181,7 @@ class MPLocalRecordsUtil {
     final fileId = MPLocalRecordsUtil.getFileIdFromUrl(recordFile);
     final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
     for (var el in locaRecords) {
+      debugPrint('-------hjj------getLocalRecordPath fileId: ${el.fileId}, path: ${el.path}------');
       if (el.fileId == fileId) {
         if (el.path.isNotEmpty) {
           return el.path;

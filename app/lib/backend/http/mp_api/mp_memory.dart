@@ -8,7 +8,8 @@ import 'package:omi/env/env.dart';
 // GET /api/v1/memory/get_list
 Future<MPGetMemoryListResponse?> getMemoryList(MPGetMemoryListRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/memory/get_list?page_size=${req.pageSize}&cursor=${req.cursor}&day=${req.day}',
+    url:
+        '${Env.apiBaseUrl}api/v1/memory/get_list?page_size=${req.pageSize}&cursor=${req.cursor.isNotEmpty ? req.cursor : ''}${req.day != null ? '&day=${req.day}' : ''}',
     headers: {},
     method: 'GET',
     body: '',

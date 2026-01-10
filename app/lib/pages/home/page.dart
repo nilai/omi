@@ -11,8 +11,6 @@ import 'package:omi/pages/mp_home/mp_page.dart';
 import 'package:omi/pages/mp_memo_todo/home/memo_home_page.dart';
 import 'package:omi/pages/mp_newsetting/home/settings_cards_page.dart';
 import 'package:omi/providers/app_provider.dart';
-import 'package:omi/providers/capture_provider.dart';
-import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/device_provider.dart';
 import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/message_provider.dart';
@@ -135,8 +133,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver, Ticker
 
       // Reload convos
       if (mounted) {
-        Provider.of<ConversationProvider>(context, listen: false).refreshConversations();
-        Provider.of<CaptureProvider>(context, listen: false).refreshInProgressConversations();
+        // Provider.of<ConversationProvider>(context, listen: false).refreshConversations();
+        // Provider.of<CaptureProvider>(context, listen: false).refreshInProgressConversations();
       }
     } else if (state == AppLifecycleState.hidden) {
       event = 'App is hidden';

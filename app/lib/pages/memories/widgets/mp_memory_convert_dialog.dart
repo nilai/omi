@@ -42,6 +42,9 @@ class MPMemoryConvertDialog extends StatefulWidget {
   final String initialModel;
   final MPMemoryStruct memory;
 
+  /// 是否是重新生成
+  final bool isRegen;
+
   /// 立即生成-成功回调
   final VoidCallback? onGenerate;
 
@@ -53,6 +56,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     this.initialModel = 'Auto',
     required this.templates,
     this.onGenerate,
+    this.isRegen = false,
   });
 
   /// Shows the dialog using a modal bottom sheet and returns the selection.
@@ -63,6 +67,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
     String initialModel = 'Auto',
     required MPMemoryStruct memory,
     VoidCallback? onGenerate,
+    bool isRegen = false,
   }) async {
     final request = MPGetTemplateListRequest(
       pageSize: 20,
@@ -91,6 +96,7 @@ class MPMemoryConvertDialog extends StatefulWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => MPMemoryConvertDialog(
         memory: memory,
+        isRegen: isRegen,
         templates: templates,
         initialSeparateSpeakers: initialSeparateSpeakers,
         initialLanguage: initialLanguage,
@@ -389,11 +395,18 @@ class _MPMemoryConvertDialogState extends State<MPMemoryConvertDialog> {
   }
 
   void _onGenerate(BuildContext context) async {
+    String uri;
+    if (widget.memory.type == MPMemoryType.onlyRecord) {
+      uri = widget.memory.onlyRecordContent?.recordUri ?? '';
+    } else {
+      uri = widget.memory.summaryContent?.recordUri ?? '';
+    }
     final req = MPSummaryRecordRequest(
       memoryId: widget.memory.id,
-      recordUrl: widget.memory.onlyRecordContent?.recordFile ?? '',
+      recordUrl: uri,
       recordMemoAt: widget.memory.createAt,
       templateId: _selectedTemplate?.id,
+      isRegen: widget.isRegen,
     );
     final res = await summaryRecord(req);
     if (res != null && res.baseResp.code == 0) {

@@ -110,7 +110,7 @@ enum MPHomeImportAudioType {
 }
 
 class MPHomePageProvider extends ChangeNotifier {
-  String selectedDate = MPTimestampUtils.getCurrentDate();
+  String? selectedDate;
 
   /// 上传进度
   double uploadPercent = 10;
@@ -144,7 +144,13 @@ class MPHomePageProvider extends ChangeNotifier {
 
   MPHomeImportAudioType importAudioType = MPHomeImportAudioType.none;
 
+  /// 本地记录列表
   List<MPLocalMemoryModel> _localRecords = [];
+
+  /// 上传中的记录列表
+  final List<MPLocalMemoryModel> _uploadingRecords = [];
+
+  /// 远程记录列表
   List<MPMemoryItem> _remoteItems = [];
 
   bool _rightNowTranscribe = false;
@@ -164,8 +170,9 @@ class MPHomePageProvider extends ChangeNotifier {
   /// 从服务器获取最新的记忆列表数据
   /// @returns 无返回值
   Future<void> refresh() async {
+    if (loading) return;
+    loading = true;
     try {
-      loading = true;
       notifyListeners();
       _cursor = '';
       final req = MPGetMemoryListRequest(pageSize: 20, cursor: _cursor, day: selectedDate);
@@ -280,6 +287,14 @@ class MPHomePageProvider extends ChangeNotifier {
     refresh();
   }
 
+  /// 清除选中的日期
+  void clearSelectedDate() {
+    if (selectedDate == null) return;
+    selectedDate = null;
+    notifyListeners();
+    refresh();
+  }
+
   /// 添加本地记录
   /// @param item 本地记录
   Future<void> addLocalRecord(String path, {int? duration, String? fileName, required String source}) async {
@@ -299,8 +314,8 @@ class MPHomePageProvider extends ChangeNotifier {
 
   /// 删除本地记录
   /// @param item 本地记录
-  Future<void> removeLocalRecord(String path, {required String fildId}) async {
-    _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(path, fildId: fildId);
+  Future<void> removeLocalRecord(MPLocalMemoryModel model) async {
+    _localRecords = await MPLocalRecordsUtil.instance.removeLocalRecord(model);
     _updateItems();
   }
 
@@ -329,7 +344,8 @@ class MPHomePageProvider extends ChangeNotifier {
       final item = memory.toMPMemoryItem();
       item.localPath = element.path;
       item.isUploading = true;
-      print('------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}');
+      print(
+          '------hj------create localitem: ${item.headerText}, isUploading: ${item.isUploading}, localPath: ${item.localPath}');
       localItems.add(item);
     }
     List<MPMemoryItem> list = [];
@@ -348,8 +364,10 @@ class MPHomePageProvider extends ChangeNotifier {
   /// @returns 无返回值
   void uploadLocalRecords() async {
     for (var element in _localRecords) {
-      debugPrint('------hj------uploadLocalRecords element: ${element.path}');
+      debugPrint('------hj------uploadLocalRecords element: ${element.path} , is remove: ${element.isRemoved}');
       if (element.isRemoved) continue;
+      if (_uploadingRecords.contains(element)) continue;
+      _uploadingRecords.add(element);
       debugPrint('------hj------uploadLocalRecords element is not removed: ${element.path}');
       final file = File(element.path);
       final duration = await AudioPickerUtils.getAudioDuration(file);
@@ -373,14 +391,16 @@ class MPHomePageProvider extends ChangeNotifier {
             );
             final summaryRes = await summaryRecord(summaryReq);
             if (summaryRes != null) {
-              await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+              element.fileId = MPLocalRecordsUtil.getFileIdFromUrl(uri);
+              await removeLocalRecord(element);
               refresh();
             }
           }
         } else {
           final res = await createRecord(req);
           if (res != null) {
-            await removeLocalRecord(element.path, fildId: MPLocalRecordsUtil.getFileIdFromUrl(uri));
+            element.fileId = MPLocalRecordsUtil.getFileIdFromUrl(uri);
+            await removeLocalRecord(element);
             refresh();
           }
         }
@@ -409,7 +429,13 @@ class MPHomePageProvider extends ChangeNotifier {
       onConfirm: () async {
         // 执行删除操作
         if (item.isUploading == true) {
-          await removeLocalRecord(item.localPath ?? '', fildId: '');
+          debugPrint('------hjj------- remove local: ${item.localPath}');
+          // await removeLocalRecord(item.localPath ?? '', fildId: '');
+          await removeLocalRecord(MPLocalMemoryModel(
+              path: item.localPath ?? '',
+              createAt: item.memory.createAt,
+              source: item.source ?? '',
+              fileName: item.headerText));
           uploadLocalRecords();
         } else {
           final req = MPDeleteMemoryRequest(memoryId: item.memory.id);
