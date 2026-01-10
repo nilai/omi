@@ -1,6 +1,7 @@
 package com.friend.ios
 
 import android.content.Intent
+import android.os.Build
 import androidx.annotation.NonNull
 import android.Manifest
 import android.content.pm.PackageManager
@@ -17,18 +18,22 @@ class MainActivity: FlutterActivity() {
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
     
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
-            call, result ->
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call: MethodCall, result: MethodChannel.Result ->
             if(call.method == "setNotificationOnKillService"){
-                 val title = call.argument<String>("title")
-                val description = call.argument<String>("description")
+                val arguments = call.arguments as? Map<*, *>
+                val title = arguments?.get("title") as? String ?: ""
+                val description = arguments?.get("description") as? String ?: ""
 
-                val serviceIntent = Intent(this, NotificationOnKillService::class.java)
-
+                val serviceIntent = Intent(this@MainActivity, NotificationOnKillService::class.java)
                 serviceIntent.putExtra("title", title)
                 serviceIntent.putExtra("description", description)
 
-                startService(serviceIntent)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(serviceIntent)
+                } else {
+                    @Suppress("DEPRECATION")
+                    startService(serviceIntent)
+                }
                 result.success(true)
             }else{
                 result.notImplemented()

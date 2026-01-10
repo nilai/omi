@@ -12,8 +12,9 @@ import android.os.IBinder
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
-import io.flutter.Log
+import android.util.Log
 import android.graphics.BitmapFactory
+import android.content.pm.PackageManager
 
 class NotificationOnKillService: Service() {
     private lateinit var title: String
