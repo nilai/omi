@@ -366,27 +366,38 @@ class _MPVoiceRecognitionDetailPageState extends State<MPVoiceRecognitionDetailP
     return Row(children: [
       // 播放按钮
       GestureDetector(
-        onTap: () async {
-          if (provider.isPlaying) {
-            await provider.pause();
-          } else {
-            await provider.play();
-          }
-        },
+        onTap: provider.isDownloading
+            ? null
+            : () async {
+                if (provider.isPlaying) {
+                  await provider.pause();
+                } else {
+                  await provider.play();
+                }
+              },
         child: Container(
           margin: const EdgeInsets.only(top: 12.0),
           width: 40.0,
           height: 40.0,
           decoration: BoxDecoration(
-            color: Colors.blue.shade600,
+            color: provider.isDownloading ? Colors.grey.shade400 : Colors.blue.shade600,
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: Icon(
-              provider.isPlaying ? Icons.pause : Icons.play_arrow,
-              color: Colors.white,
-              size: 28.0,
-            ),
+            child: provider.isDownloading
+                ? const SizedBox(
+                    width: 20.0,
+                    height: 20.0,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.0,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : Icon(
+                    provider.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: Colors.white,
+                    size: 28.0,
+                  ),
           ),
         ),
       ),

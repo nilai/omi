@@ -9,7 +9,9 @@ import 'package:omi/backend/http/mp_api/mp_speaker.dart';
 import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 
 import '../../../backend/schema/mp/mp_speaker.dart';
+import '../../../services/mp_audio_download.dart';
 import '../../../services/mp_audio_upload.dart';
+import '../../../utils/mp_local_records_util.dart';
 
 /// 声纹详情状态管理Provider
 /// 管理声纹详情页面的状态，包括音频播放、保存、删除等
@@ -25,6 +27,10 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated START - 是否正在播放
   bool _isPlaying = false;
   // AI-generated END - _isPlaying
+
+  // AI-generated START - 是否正在下载
+  bool _isDownloading = false;
+  // AI-generated END - _isDownloading
 
   // AI-generated START - 当前播放时间（秒）
   int _currentTime = 0;
@@ -59,6 +65,15 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   StreamSubscription<PlaybackDisposition>? _progressSubscription;
   // AI-generated END - _progressSubscription
 
+  // AI-generated START - 播放进度定时器（用于主动更新进度）
+  Timer? _progressTimer;
+  // AI-generated END - _progressTimer
+
+  // AI-generated START - 播放开始时间
+  DateTime? _playStartTime;
+  int _playStartPosition = 0;
+  // AI-generated END - 播放开始时间
+
   // AI-generated START - 构造函数
   MPVoiceRecognitionDetailProvider({
     this.voiceId,
@@ -81,6 +96,10 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   // AI-generated START - 获取是否正在播放
   bool get isPlaying => _isPlaying;
   // AI-generated END - isPlaying
+
+  // AI-generated START - 获取是否正在下载
+  bool get isDownloading => _isDownloading;
+  // AI-generated END - isDownloading
 
   // AI-generated START - 获取是否编辑模式
   bool get isEditMode => _isEditMode;
@@ -238,9 +257,70 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   }
   // AI-generated END - pickAvatarImage
 
+  /// 检查本地是否有对应的音频文件
+  /// 如果是网络URL，尝试从本地记录中查找
+  Future<String?> _checkLocalFile(String url) async {
+    // 如果不是网络URL，直接检查文件是否存在
+    if (!url.contains('http')) {
+      if (await _fileExists(url)) {
+        return url;
+      }
+      return null;
+    }
+
+    // 如果是网络URL，尝试从本地记录中查找
+    try {
+      final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(url);
+      if (localPath != null && await _fileExists(localPath)) {
+        debugPrint('找到本地文件: $localPath');
+        return localPath;
+      }
+    } catch (e) {
+      debugPrint('检查本地文件时出错: $e');
+    }
+
+    return null;
+  }
+
+  /// 下载音频文件
+  Future<String?> _downloadAudio(String url) async {
+    _isDownloading = true;
+    notifyListeners();
+
+    try {
+      debugPrint('开始下载音频: $url');
+      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(
+        url,
+        onProgress: (downloaded, total) {
+          // 可以在这里更新下载进度，如果需要的话
+          debugPrint('下载进度: $downloaded / ${total ?? '未知'}');
+        },
+      );
+
+      if (result != null && await _fileExists(result.path)) {
+        debugPrint('下载完成，文件路径: ${result.path}');
+        // 更新 audioPath 为本地路径
+        audioPath = result.path;
+        _isDownloading = false;
+        notifyListeners();
+        return result.path;
+      } else {
+        debugPrint('下载失败或文件不存在');
+        _isDownloading = false;
+        notifyListeners();
+        return null;
+      }
+    } catch (e) {
+      debugPrint('下载音频时出错: $e');
+      _isDownloading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
   // AI-generated START - 播放音频
   Future<void> play() async {
-    if (_isPlaying) return;
+    if (_isPlaying || _isDownloading) return;
 
     if (audioPath == null) {
       debugPrint('play() 被调用但 audioPath 为空');
@@ -248,10 +328,39 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       return;
     }
 
-    _isPlaying = true;
-    notifyListeners();
-
     try {
+      String? playPath = audioPath;
+
+      // 如果是网络URL，先检查本地是否有文件
+      if (audioPath!.contains('http')) {
+        final localPath = await _checkLocalFile(audioPath!);
+        if (localPath != null) {
+          // 本地有文件，直接使用
+          playPath = localPath;
+          debugPrint('使用本地文件播放: $playPath');
+        } else {
+          // 本地没有文件，需要下载
+          debugPrint('本地没有文件，开始下载');
+          playPath = await _downloadAudio(audioPath!);
+          if (playPath == null) {
+            debugPrint('下载失败，无法播放');
+            MPToastUtils.showMessage('下载音频失败');
+            return;
+          }
+        }
+      } else {
+        // 本地文件，检查是否存在
+        if (!await _fileExists(playPath!)) {
+          debugPrint('音频文件不存在: $playPath');
+          MPToastUtils.showMessage('音频文件不存在');
+          return;
+        }
+      }
+
+      // 开始播放
+      _isPlaying = true;
+      notifyListeners();
+
       // 确保播放器已初始化
       await _ensurePlayerInitialized();
 
@@ -263,53 +372,70 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       await _progressSubscription?.cancel();
       _progressSubscription = null;
 
-      if (audioPath!.contains('http')) {
-        // 网络音频，使用 MP3 codec
-        debugPrint('播放网络音频: $audioPath');
+      // 判断音频格式（下载后的文件都是本地文件，使用本地文件格式）
+      // 如果正在播放，先停止
+      if (_audioPlayer!.isPlaying) {
+        await _audioPlayer!.stopPlayer();
+      }
+
+      // 判断是网络URL还是本地文件
+      if (playPath.contains('http')) {
+        // 直接播放网络音频，使用 MP3 codec
+        debugPrint('播放网络音频: $playPath');
         await _audioPlayer!.startPlayer(
-          fromURI: audioPath!,
+          fromURI: playPath,
           codec: Codec.mp3,
           sampleRate: 44100,
           whenFinished: () {
             debugPrint('音频播放完成');
-            _currentTime = _totalDuration;
-            notifyListeners();
-            pause();
+            _onPlaybackFinished();
           },
         );
       } else {
-        // 本地文件，判断文件是否存在
-        if (await _fileExists(audioPath!)) {
-          debugPrint('播放本地音频: $audioPath');
-          // 如果正在播放，先停止
-          if (_audioPlayer!.isPlaying) {
-            await _audioPlayer!.stopPlayer();
-          }
-          await _audioPlayer!.startPlayer(
-            fromURI: audioPath!,
-            codec: Codec.aacADTS,
-            sampleRate: 8000,
-            whenFinished: () {
-              debugPrint('音频播放完成');
-              _currentTime = _totalDuration;
-              notifyListeners();
-              pause();
-            },
-          );
-        } else {
-          debugPrint('音频文件不存在: $audioPath');
-          pause();
-          return;
-        }
+        // 本地文件，使用 AAC ADTS codec
+        debugPrint('播放本地音频: $playPath');
+        await _audioPlayer!.startPlayer(
+          fromURI: playPath,
+          codec: Codec.aacADTS,
+          sampleRate: 8000,
+          whenFinished: () {
+            debugPrint('音频播放完成');
+            _onPlaybackFinished();
+          },
+        );
       }
 
-      // 设置播放进度监听
+      // 等待一小段时间，确保播放器真正开始播放
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      // 检查播放器是否真的在播放
+      if (!_audioPlayer!.isPlaying) {
+        debugPrint('警告: 播放器启动后未处于播放状态');
+        // 即使不在播放状态，也设置监听，因为可能正在缓冲
+      }
+
+      // 设置播放进度监听（在播放器开始播放后）
       _setupPositionTracking();
+
+      // 再次触发 UI 更新，确保初始状态正确显示
+      notifyListeners();
     } catch (err, stackTrace) {
       debugPrint('播放音频时出错: $err');
       debugPrint('错误堆栈: $stackTrace');
-      pause();
+      _isPlaying = false;
+      _isDownloading = false;
+      notifyListeners();
+      MPToastUtils.showMessage('播放音频失败');
     }
+  }
+
+  /// 播放完成回调
+  void _onPlaybackFinished() {
+    _isPlaying = false;
+    // 重置到初始状态
+    _currentTime = 0;
+    notifyListeners();
+    debugPrint('播放完成，已重置到初始状态');
   }
   // AI-generated END - play
 
@@ -329,10 +455,11 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
   /// 取消播放监听
   void cancelPlayerSubscriptions() {
-    if (_progressSubscription != null) {
-      _progressSubscription!.cancel();
-      _progressSubscription = null;
-    }
+    _progressSubscription?.cancel();
+    _progressSubscription = null;
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    _playStartTime = null;
   }
 
   /// 获取播放状态
@@ -379,23 +506,82 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
   /// 设置播放进度监听
   /// 与 audio_player_utils.dart 的 _setupPositionTracking 保持一致
   void _setupPositionTracking() {
+    // 取消之前的监听和定时器
     _progressSubscription?.cancel();
+    _progressSubscription = null;
+    _progressTimer?.cancel();
+    _progressTimer = null;
+
+    // 记录播放开始时间和位置
+    _playStartTime = DateTime.now();
+    _playStartPosition = _currentTime;
+
+    // 设置 onProgress 流监听（用于获取准确的播放位置和总时长）
     _progressSubscription = _audioPlayer?.onProgress?.listen((disposition) {
-      _currentTime = disposition.position.inSeconds;
-      final duration = disposition.duration.inSeconds;
-      // 如果从播放器获取到的时长与当前不同，更新总时长
-      if (duration > 0 && duration != _totalDuration) {
-        _totalDuration = duration;
-        debugPrint('从播放器更新总时长: $_totalDuration 秒');
+      if (_isPlaying) {
+        // 从播放器获取准确的播放位置
+        final positionSeconds = disposition.position.inSeconds;
+        final durationSeconds = disposition.duration.inSeconds;
+
+        // 更新当前时间（使用播放器返回的准确位置）
+        _currentTime = positionSeconds;
+
+        // 同步更新播放开始位置和时间
+        _playStartPosition = _currentTime;
+        _playStartTime = DateTime.now();
+
+        // 如果从播放器获取到的时长与当前不同，更新总时长
+        if (durationSeconds > 0 && durationSeconds != _totalDuration) {
+          _totalDuration = durationSeconds;
+          debugPrint('从播放器更新总时长: $_totalDuration 秒');
+        }
+
+        debugPrint('onProgress 流更新: $_currentTime / $_totalDuration');
+        notifyListeners();
       }
-      debugPrint('播放进度更新: $_currentTime / $_totalDuration');
-      notifyListeners();
     });
+
     if (_progressSubscription == null) {
       debugPrint('警告: onProgress 流为 null，无法设置进度监听');
     } else {
       debugPrint('播放进度监听设置成功');
     }
+
+    // 使用 Timer 主动更新进度（参考 audio_player_utils.dart 的实现）
+    // 每 100ms 更新一次，确保 UI 流畅更新
+    _progressTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (!_isPlaying || _audioPlayer == null || !_audioPlayer!.isPlaying) {
+        timer.cancel();
+        _progressTimer = null;
+        _playStartTime = null;
+        return;
+      }
+
+      // 如果总时长大于0，主动更新进度
+      if (_totalDuration > 0 && _playStartTime != null) {
+        // 计算从播放开始到现在经过的时间（秒）
+        final elapsed = DateTime.now().difference(_playStartTime!).inMilliseconds ~/ 1000;
+        final estimatedTime = _playStartPosition + elapsed;
+
+        if (estimatedTime <= _totalDuration) {
+          // 只有当估算时间大于当前时间时才更新（避免倒退）
+          if (estimatedTime > _currentTime) {
+            _currentTime = estimatedTime;
+            debugPrint('Timer 更新进度: $_currentTime / $_totalDuration');
+            notifyListeners();
+          }
+        } else {
+          // 如果已经到达或超过总时长
+          if (_currentTime < _totalDuration) {
+            _currentTime = _totalDuration;
+            notifyListeners();
+          }
+        }
+      } else {
+        // 如果总时长为0，至少触发一次 UI 更新
+        notifyListeners();
+      }
+    });
   }
 
   /// 暂停播放
@@ -412,6 +598,23 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint('暂停音频时出错: $e');
+    }
+
+    notifyListeners();
+  }
+
+  /// 停止播放并重置到初始状态
+  Future<void> stop() async {
+    _isPlaying = false;
+    _currentTime = 0;
+
+    try {
+      if (_audioPlayer != null && _audioPlayer!.isPlaying) {
+        await _audioPlayer!.stopPlayer();
+        debugPrint('音频已停止');
+      }
+    } catch (e) {
+      debugPrint('停止音频时出错: $e');
     }
 
     notifyListeners();
@@ -565,9 +768,12 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
   @override
   void dispose() {
-    // 取消播放进度监听
+    // 取消播放进度监听和定时器
     _progressSubscription?.cancel();
     _progressSubscription = null;
+    _progressTimer?.cancel();
+    _progressTimer = null;
+    _playStartTime = null;
 
     // 同步释放资源
     try {
