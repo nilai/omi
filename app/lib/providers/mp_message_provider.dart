@@ -183,7 +183,7 @@ class MPMessageProvider extends ChangeNotifier {
   Future<void> updatePageTitle() async {
     debugPrint('-----hj----- updatePageTitle');
     final title = curPageModel?.title ?? '';
-    if (title.isEmpty) {
+    if (title.isNotEmpty) {
       return;
     }
 
