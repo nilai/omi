@@ -11,6 +11,7 @@ import 'package:omi/pages/mp_custom_utils/mp_toast_utils.dart';
 import '../../../backend/schema/mp/mp_speaker.dart';
 import '../../../services/mp_audio_download.dart';
 import '../../../services/mp_audio_upload.dart';
+import '../../../utils/audio_picker_utils.dart';
 import '../../../utils/mp_local_records_util.dart';
 
 /// 声纹详情状态管理Provider
@@ -289,7 +290,9 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
     try {
       debugPrint('开始下载音频: $url');
-      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(
+
+      // 步骤 1: 下载音频（不保存）
+      final audioBytes = await MPAudioDownloadService.instance.downloadAudioWithRetry(
         url,
         onProgress: (downloaded, total) {
           // 可以在这里更新下载进度，如果需要的话
@@ -297,19 +300,42 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
         },
       );
 
-      if (result != null && await _fileExists(result.path)) {
-        debugPrint('下载完成，文件路径: ${result.path}');
-        // 更新 audioPath 为本地路径
-        audioPath = result.path;
-        _isDownloading = false;
-        notifyListeners();
-        return result.path;
-      } else {
-        debugPrint('下载失败或文件不存在');
+      if (audioBytes == null) {
+        debugPrint('下载失败');
         _isDownloading = false;
         notifyListeners();
         return null;
       }
+
+      // 步骤 2: 根据音频数据检测文件格式
+      debugPrint('检测音频格式');
+      final detectedExtension = MPAudioDownloadService.instance.detectAudioFormat(audioBytes);
+      debugPrint('检测到的扩展名: $detectedExtension');
+
+      // 步骤 3: 从URL中提取文件名
+      debugPrint('提取文件名');
+
+      // 步骤 4: 保存文件到本地（使用检测到的扩展名）
+      debugPrint('保存文件到本地');
+      final filePath = await AudioPickerUtils.saveAudioToLocal(
+        audioBytes,
+        'user_voice_tmp',
+        extension: detectedExtension,
+      );
+
+      if (filePath == null) {
+        debugPrint('保存文件失败');
+        _isDownloading = false;
+        notifyListeners();
+        return null;
+      }
+
+      debugPrint('下载并保存完成，文件路径: $filePath');
+      // 更新 audioPath 为本地路径
+      audioPath = filePath;
+      _isDownloading = false;
+      notifyListeners();
+      return filePath;
     } catch (e) {
       debugPrint('下载音频时出错: $e');
       _isDownloading = false;
@@ -333,20 +359,27 @@ class MPVoiceRecognitionDetailProvider with ChangeNotifier {
 
       // 如果是网络URL，先检查本地是否有文件
       if (audioPath!.contains('http')) {
-        final localPath = await _checkLocalFile(audioPath!);
-        if (localPath != null) {
-          // 本地有文件，直接使用
-          playPath = localPath;
-          debugPrint('使用本地文件播放: $playPath');
-        } else {
-          // 本地没有文件，需要下载
-          debugPrint('本地没有文件，开始下载');
-          playPath = await _downloadAudio(audioPath!);
-          if (playPath == null) {
-            debugPrint('下载失败，无法播放');
-            MPToastUtils.showMessage('下载音频失败');
-            return;
-          }
+        // final localPath = await _checkLocalFile(audioPath!);
+        // if (localPath != null) {
+        //   // 本地有文件，直接使用
+        //   playPath = localPath;
+        //   debugPrint('使用本地文件播放: $playPath');
+        // } else {
+        //   // 本地没有文件，需要下载
+        //   debugPrint('本地没有文件，开始下载');
+        //   playPath = await _downloadAudio(audioPath!);
+        //   if (playPath == null) {
+        //     debugPrint('下载失败，无法播放');
+        //     MPToastUtils.showMessage('下载音频失败');
+        //     return;
+        //   }
+        // }
+        debugPrint('本地没有文件，开始下载');
+        playPath = await _downloadAudio(audioPath!);
+        if (playPath == null) {
+          debugPrint('下载失败，无法播放');
+          MPToastUtils.showMessage('下载音频失败');
+          return;
         }
       } else {
         // 本地文件，检查是否存在
