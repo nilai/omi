@@ -99,7 +99,9 @@ class _TodoTaskCardState extends State<TodoTaskCard> with SingleTickerProviderSt
   void didUpdateWidget(TodoTaskCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 如果当前卡片不再是活动卡片，且之前是活动的，则还原位置
-    if (oldWidget.activeCardId == widget.id && widget.activeCardId != widget.id) {
+    if (oldWidget.id != widget.id) {
+      _resetCardPosition();
+    } else if (oldWidget.activeCardId == widget.id && widget.activeCardId != widget.id) {
       if (_dragOffset < 0) {
         _resetCardPosition();
       }
