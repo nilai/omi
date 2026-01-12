@@ -223,7 +223,7 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
   Widget _buildTemplateIcon(MPTemplateDetailProvider provider) {
     final iconUrl = provider.template?.icon;
     final tempLocalPath = provider.tempLocalIconPath;
-    final isCreateMode = widget.isMyTemplate && provider.template?.id == null;
+    final isCreateMode = widget.isMyTemplate;
 
     Widget iconWidget;
 
@@ -355,14 +355,17 @@ class _MPTemplateDetailPageState extends State<MPTemplateDetailPage> {
         return MPTemplateIconSelectionPopup(
           onIconSelected: (result) {
             // 先使用本地图片路径显示（立即显示）
-            provider.updateLocalIconPath(result.localPath);
 
-            // 如果上传成功，更新为URL；否则保持为空（显示灰色占位图）
+            // 只有result.url存在时，才更新icon；其他情况icon传null
             if (result.url != null && result.url!.isNotEmpty) {
-              provider.updateIcon(result.url!);
+              provider.updateTempLocalIconUrl(result.url!);
+              // provider.updateIcon(result.url!);
+              provider.updateLocalIconPath(result.localPath);
+
             } else {
-              // 如果没有选择图标，保持为空（显示灰色占位图）
-              provider.updateIcon('');
+              // 如果没有url，将icon设置为null
+              provider.updateTempLocalIconUrl(null);
+              // provider.updateIcon(null);
             }
           },
         );

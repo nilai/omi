@@ -69,6 +69,10 @@ class ExpertCategoryTabsCard extends StatelessWidget {
         label: '创意',
         icon: Icons.palette,
       ),
+      ExpertCategoryTab(
+        label: '生活',
+        icon: Icons.home,
+      ),
     ];
   }
   // AI-generated END - getDefaultCategories

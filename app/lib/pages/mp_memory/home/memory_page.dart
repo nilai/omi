@@ -160,7 +160,9 @@ class _MemoryPageState extends State<MemoryPage> {
                 return MemoryConversationCard(
                   name: memory.name,
                   avatarUrl: memory.avatarUrl,
-                  timestamp: MPTimestampUtils.timestampToRelativeDateString(memory.createdAt ?? 0),
+                  timestamp: (memory.createdAt != null && memory.createdAt! > 0)
+                      ? MPTimestampUtils.timestampToRelativeDateString(memory.createdAt!)
+                      : null,
                   description: memory.description ?? '',
                   conversationCount: memory.conversationCount,
                   onTap: () {

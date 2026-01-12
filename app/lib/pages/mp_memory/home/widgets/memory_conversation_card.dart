@@ -22,7 +22,7 @@ class MemoryConversationCard extends StatelessWidget {
   // AI-generated END - name
 
   // AI-generated START - 时间戳文本
-  final String timestamp;
+  final String? timestamp;
   // AI-generated END - timestamp
 
   // AI-generated START - 活动描述
@@ -43,7 +43,7 @@ class MemoryConversationCard extends StatelessWidget {
     this.avatarBackgroundColor,
     this.avatarBadge,
     required this.name,
-    required this.timestamp,
+    this.timestamp,
     required this.description,
     required this.conversationCount,
     this.onTap,
@@ -124,13 +124,14 @@ class MemoryConversationCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        timestamp,
-                        style: const TextStyle(
-                          color: Color(0xFF9CA3AF),
-                          fontSize: 12.0,
+                      if (timestamp != null && timestamp!.isNotEmpty)
+                        Text(
+                          timestamp!,
+                          style: const TextStyle(
+                            color: Color(0xFF9CA3AF),
+                            fontSize: 12.0,
+                          ),
                         ),
-                      ),
                     ],
                   ),
                   // AI-generated END - 姓名和时间戳

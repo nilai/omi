@@ -143,7 +143,9 @@ class MPExpertProvider with ChangeNotifier {
     setError(null);
     _cursor = ''; // 重置游标
     try {
-      final type = ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex].label;
+      // 如果是"全部"（索引0），则不传type参数
+      final category = ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex];
+      final type = _selectedCategoryIndex == 0 ? null : category.label;
       final request = MPGetExpertListRequest(
         pageSize: 20, // 每页加载20个专家
         cursor: _cursor,
@@ -195,10 +197,13 @@ class MPExpertProvider with ChangeNotifier {
     _isFetching = true;
     try {
       // 使用当前游标加载下一页数据
+      // 如果是"全部"（索引0），则不传type参数
+      final category = ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex];
+      final type = _selectedCategoryIndex == 0 ? null : category.label;
       final request = MPGetExpertListRequest(
         pageSize: 20, // 每页加载20个专家
         cursor: _cursor,
-        type: ExpertCategoryTabsCard.getDefaultCategories()[_selectedCategoryIndex].label,
+        type: type,
       );
       final response = await getExpertList(request);
 

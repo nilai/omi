@@ -86,7 +86,7 @@ class MPCreateTemplateRequest {
   final String title;
 
   @JsonKey(name: 'icon')
-  final String icon;
+  final String? icon;
 
   @JsonKey(name: 'prompt')
   final String prompt;
@@ -99,7 +99,7 @@ class MPCreateTemplateRequest {
 
   MPCreateTemplateRequest({
     required this.title,
-    required this.icon,
+    this.icon,
     required this.prompt,
     required this.type,
     required this.setDefault,

@@ -175,6 +175,14 @@ class MPTemplateDetailProvider with ChangeNotifier {
   String? get tempLocalIconPath => _tempLocalIconPath;
   // AI-generated END - tempLocalIconPath
 
+   String? _tempLocalIconUrl; 
+   String? get tempLocalIconUrl => _tempLocalIconUrl; 
+
+   void updateTempLocalIconUrl(String? localIconUrl) {
+    setState(() {
+      _tempLocalIconUrl = localIconUrl;
+    });
+   }
   // AI-generated START - 更新模板图标
   /// 更新模板图标URL
   /// [iconUrl] 图标URL，如果以 'assets/' 开头则为本地路径
@@ -184,8 +192,22 @@ class MPTemplateDetailProvider with ChangeNotifier {
     });
   }
 
-  void updateIcon(String iconUrl) {
+  void updateIcon(String? iconUrl) {
     setState(() {
+      // 如果iconUrl为null，将icon设置为null
+      if (iconUrl == null) {
+        _template = MPTemplateStruct(
+          id: _template?.id,
+          title: _template?.title,
+          icon: null,
+          type: _template?.type ?? _category,
+          prompt: _template?.prompt,
+        );
+        _tempLocalIconPath = null;
+        notifyListeners();
+        return;
+      }
+
       // 如果是本地路径（asset路径），保存为临时路径和 template.icon
       if (iconUrl.startsWith('assets/')) {
         // 本地路径保存到 template.icon 和临时路径，以便正确显示
@@ -275,9 +297,13 @@ class MPTemplateDetailProvider with ChangeNotifier {
           return false;
         }
 
+        // 只有icon有值且不为空时，才传icon；其他情况传null
+        final iconValue = _tempLocalIconUrl != null && _tempLocalIconUrl!.isNotEmpty
+            ? _tempLocalIconUrl
+            : null;
         final request = MPCreateTemplateRequest(
           title: title,
-          icon: _template!.icon ?? '',
+          icon: iconValue,
           prompt: prompt,
           type: _category,
           setDefault: setDefault,
