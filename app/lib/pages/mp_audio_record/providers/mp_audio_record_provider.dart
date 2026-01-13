@@ -12,8 +12,10 @@ import '../../../utils/audio_converter_utils.dart';
 enum MPAudioRecordState {
   /// 未开始
   idle,
+
   /// 正在录制
   recording,
+
   /// 已暂停
   paused,
 }
@@ -23,25 +25,25 @@ enum MPAudioRecordState {
 class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
   /// 录制状态
   MPAudioRecordState _state = MPAudioRecordState.idle;
-  
+
   /// 录制时长（秒）
   int _duration = 0;
-  
+
   /// 标题
   String _title = '新建音频文件';
-  
+
   /// 定时器
   Timer? _timer;
-  
+
   /// FlutterSoundRecorder实例
   FlutterSoundRecorder? _recorder;
-  
+
   /// 录音文件路径
   String? _audioPath;
-  
+
   /// 是否已初始化
   bool _isInitialized = false;
-  
+
   /// 音频转换工具
   final AudioConverterUtils _audioConverter = AudioConverterUtils();
 
@@ -51,20 +53,20 @@ class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
 
   /// 获取录制状态
   MPAudioRecordState get state => _state;
-  
+
   /// 获取录制时长（秒）
   int get duration => _duration;
-  
+
   /// 获取格式化的时长（mm:ss）
   String get formattedDuration {
     final minutes = _duration ~/ 60;
     final seconds = _duration % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
-  
+
   /// 获取标题
   String get title => _title;
-  
+
   /// 获取状态文本
   String get statusText {
     switch (_state) {
@@ -88,7 +90,7 @@ class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
   /// 初始化录音器
   Future<void> _initializeRecorder() async {
     if (_isInitialized) return;
-    
+
     _recorder = FlutterSoundRecorder();
     await _recorder!.openRecorder(isBGService: false);
     _isInitialized = true;
@@ -96,7 +98,7 @@ class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
 
   /// 开始录制
   Future<void> startRecording() async {
-    // 请求麦克风权限
+    // 请求麦克风权限（与聊天场景保持一致）
     final permission = await Permission.microphone.request();
     if (!permission.isGranted) {
       throw Exception('麦克风权限未授予');
@@ -230,7 +232,7 @@ class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
       _deleteAudioFile();
       rethrow;
     }
-    
+
     // 删除临时WAV文件
     _deleteAudioFile();
 
@@ -249,7 +251,7 @@ class MPAudioRecordProvider with ChangeNotifier, WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     if (state == AppLifecycleState.paused) {
       // 应用退到后台，暂停录制
       if (_state == MPAudioRecordState.recording) {

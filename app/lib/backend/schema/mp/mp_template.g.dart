@@ -48,7 +48,7 @@ MPCreateTemplateRequest _$MPCreateTemplateRequestFromJson(
         Map<String, dynamic> json) =>
     MPCreateTemplateRequest(
       title: json['title'] as String,
-      icon: json['icon'] as String,
+      icon: json['icon'] as String?,
       prompt: json['prompt'] as String,
       type: json['type'] as String,
       setDefault: json['set_default'] as bool?,
