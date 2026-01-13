@@ -581,14 +581,16 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _formatClock(currentPosition),
+                      // _formatClock(currentPosition),
+                      MPTimestampUtils.toMinutesAndSecondsString(currentPosition.inSeconds),
                       style: const TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12.0,
                       ),
                     ),
                     Text(
-                      _formatClock(_duration),
+                      // _formatClock(_duration),
+                      MPTimestampUtils.toMinutesAndSecondsString(_duration.inSeconds),
                       style: const TextStyle(
                         color: Color(0xFF6B7280),
                         fontSize: 12.0,
@@ -638,12 +640,6 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         ],
       ),
     );
-  }
-
-  String _formatClock(Duration value) {
-    final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = value.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
   }
 
   void _showMoreActionsDialog(BuildContext context) {
@@ -709,7 +705,7 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
         // 检查文件是否真实存在（iOS 26 上需要异步检查）
         final file = File(localPath);
         final fileExists = await file.exists();
-        
+
         if (fileExists) {
           // 文件存在，直接分享
           final syncProvider = Provider.of<SyncProvider>(context, listen: false);

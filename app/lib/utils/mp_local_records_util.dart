@@ -148,7 +148,7 @@ class MPLocalRecordsUtil {
       fileId: fileId ?? '',
     );
     _localRecords.add(model);
-    debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved');
+    debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved , fileId: $fileId');
 
     final prefs = await SharedPreferences.getInstance();
     final jsonList = _localRecords.map((e) => e.toJsonString()).toList();
@@ -245,7 +245,6 @@ class MPLocalRecordsUtil {
     final fileId = MPLocalRecordsUtil.getFileIdFromUrl(recordFile);
     final locaRecords = await MPLocalRecordsUtil.instance.loadLocalRecords();
     for (var el in locaRecords) {
-      debugPrint('-------hjj------getLocalRecordPath fileId: ${el.fileId}, path: ${el.path}------');
       if (el.fileId == fileId) {
         if (el.path.isNotEmpty) {
           final originalPath = el.path;
@@ -266,7 +265,6 @@ class MPLocalRecordsUtil {
               final updatedFile = File(updatedPath);
               final updatedFileExists = await updatedFile.exists();
               if (updatedFileExists) {
-                debugPrint('-------hjj------getLocalRecordPath 找到更新容器ID后的路径: $updatedPath------');
                 // 更新记录中的路径
                 final updatedModel = MPLocalMemoryModel(
                   fileName: el.fileName,
@@ -292,13 +290,11 @@ class MPLocalRecordsUtil {
             // 即使文件名不包含非ASCII字符，也可能因为保存时使用了MD5编码
             final md5Path = _convertToMd5Path(originalPath);
             if (md5Path != originalPath) {
-              debugPrint('-------hjj------getLocalRecordPath 尝试 MD5 路径: $md5Path------');
               final md5File = File(md5Path);
               final md5FileExists = await md5File.exists();
 
               if (md5FileExists) {
                 // 找到 MD5 路径的文件，更新记录中的路径
-                debugPrint('-------hjj------getLocalRecordPath 找到 MD5 路径文件，更新记录------');
                 final updatedModel = MPLocalMemoryModel(
                   fileName: el.fileName,
                   createAt: el.createAt,
@@ -326,7 +322,6 @@ class MPLocalRecordsUtil {
                 final updatedMd5File = File(updatedMd5Path);
                 final updatedMd5FileExists = await updatedMd5File.exists();
                 if (updatedMd5FileExists) {
-                  debugPrint('-------hjj------getLocalRecordPath 找到更新容器ID后的MD5路径: $updatedMd5Path------');
                   final updatedModel = MPLocalMemoryModel(
                     fileName: el.fileName,
                     createAt: el.createAt,
