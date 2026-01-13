@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,6 +25,35 @@ typedef SyncProgressCallback = void Function(
 /// 提供从文件、相册选择音频文件的功能，包含权限检查
 class AudioPickerUtils {
   static const String _sandboxAudioDirName = 'mp_audio_storage';
+
+  /// 生成安全的文件名（iOS 26+ 兼容）
+  /// 在 iOS 上，如果文件名包含非 ASCII 字符，使用 MD5 编码
+  /// 在 Android 上，保持原文件名
+  ///
+  /// [fileName] 原始文件名（可能包含扩展名）
+  /// 返回安全的文件名
+  static String _generateSafeFileName(String fileName) {
+    if (Platform.isIOS) {
+      // 检查文件名是否包含非 ASCII 字符
+      final hasNonAscii = fileName.runes.any((rune) => rune > 127);
+      if (hasNonAscii) {
+        // 提取文件名和扩展名
+        final lastDotIndex = fileName.lastIndexOf('.');
+        final nameWithoutExt = lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
+        final extension = lastDotIndex > 0 ? fileName.substring(lastDotIndex) : '';
+
+        // 生成 MD5 哈希
+        final bytes = utf8.encode(nameWithoutExt);
+        final digest = md5.convert(bytes);
+        final md5Hash = digest.toString();
+
+        // 返回 MD5 值 + 扩展名
+        return '$md5Hash$extension';
+      }
+    }
+    // Android 或其他平台，保持原文件名
+    return fileName;
+  }
 
   /// 从文件选择音频并同步到沙盒持久目录
   /// @param onProgress 同步进度回调
@@ -408,8 +439,10 @@ class AudioPickerUtils {
 
       final totalBytes = await sourceFile.length();
       final dir = await _getPersistentAudioDirectory();
-      final fileName = sourceFile.path.split('/').last;
-      final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileName';
+      final originalFileName = sourceFile.path.split('/').last;
+      // 使用 MD5 编码文件名（iOS 26+ 兼容）
+      final safeFileName = _generateSafeFileName(originalFileName);
+      final targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
       final targetFile = File(targetPath);
 
       if (await targetFile.exists()) {
@@ -452,6 +485,7 @@ class AudioPickerUtils {
   /// [extension] 文件扩展名，默认为 '.m4a'
   ///
   /// 返回保存后的文件路径，失败返回null
+  /// 文件路径格式：时间戳_md5值.扩展名
   static Future<String?> saveAudioToLocal(
     List<int> audioBytes,
     String fileName, {
@@ -461,15 +495,20 @@ class AudioPickerUtils {
       // 确保文件名包含扩展名
       final fullFileName = fileName.endsWith(extension) ? fileName : '$fileName$extension';
 
+      // 使用 MD5 编码文件名（iOS 26+ 兼容）
+      final safeFileName = _generateSafeFileName(fullFileName);
+
       // 获取沙盒持久化音频目录
       final dir = await _getPersistentAudioDirectory();
-      final filePath = '${dir.path}/$fullFileName';
+      // 统一使用 时间戳_md5值.扩展名 格式
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = '${dir.path}/${timestamp}_$safeFileName';
       final file = File(filePath);
 
       // 写入文件
       await file.writeAsBytes(audioBytes);
 
-      debugPrint('AudioPickerUtils: 文件已保存到: $filePath');
+      debugPrint('AudioPickerUtils: 文件已保存到: $filePath (原始文件名: $fullFileName)');
       return filePath;
     } catch (e) {
       debugPrint('AudioPickerUtils: 保存文件异常: $e');
