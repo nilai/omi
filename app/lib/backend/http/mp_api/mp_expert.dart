@@ -8,7 +8,8 @@ import 'package:omi/env/env.dart';
 // GET /api/v1/expert/get_list
 Future<MPGetExpertListResponse?> getExpertList(MPGetExpertListRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/expert/get_list?page_size=${req.pageSize}&cursor=${req.cursor}&type=${req.type}',
+    url:
+        '${Env.apiBaseUrl}api/v1/expert/get_list?page_size=${req.pageSize}&cursor=${req.cursor}${req.type != null ? '&type=${req.type}' : ''}',
     headers: {},
     method: 'GET',
     body: '',
