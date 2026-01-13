@@ -15,6 +15,7 @@ import '../../pages/mp_newsetting/home/widgets/mp_common_app_bar.dart';
 import '../../providers/sync_provider.dart';
 import '../../services/mp_audio_download.dart';
 import '../../services/mp_home_refresh_event_service.dart';
+import '../../utils/alerts/mp_loading_dialog.dart';
 import '../../utils/alerts/mp_memory_export_dialog.dart';
 import '../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../utils/mp_local_records_util.dart';
@@ -220,8 +221,16 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       _isBuffering = true;
     });
 
+    // 显示loading对话框
+    MPLoadingDialog.show(context, message: '下载中...');
+
     try {
       final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(audioUrl);
+
+      // 关闭loading对话框
+      if (mounted) {
+        MPLoadingDialog.hide(context);
+      }
 
       if (result != null && mounted) {
         // 保存到本地记录
@@ -249,7 +258,9 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
       }
     } catch (e) {
       debugPrint('下载音频失败: $e');
+      // 关闭loading对话框
       if (mounted) {
+        MPLoadingDialog.hide(context);
         setState(() {
           _isBuffering = false;
         });
@@ -726,17 +737,33 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
 
   /// 下载音频并分享
   Future<void> _downloadAndShareAudio() async {
-    final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(_audioUrl);
-    if (result != null) {
-      MPLocalRecordsUtil.instance.addLocalRecord(result.path,
-          createAt: MPTimestampUtils.timestampNow,
-          fileName: result.fileName,
-          source: 'Mobile Phone',
-          isRemoved: true);
-      final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-      await syncProvider.shareLocalAudioFile(result.path, context: context);
-    } else {
-      MPToastUtils.showMessage('下载失败');
+    // 显示loading对话框
+    MPLoadingDialog.show(context, message: '下载中...');
+    try {
+      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(_audioUrl);
+      // 关闭loading对话框
+      if (mounted) {
+        MPLoadingDialog.hide(context);
+      }
+      if (result != null) {
+        MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+            createAt: MPTimestampUtils.timestampNow,
+            fileName: result.fileName,
+            source: 'Mobile Phone',
+            isRemoved: true);
+        final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+        await syncProvider.shareLocalAudioFile(result.path, context: context);
+      } else {
+        if (mounted) {
+          MPToastUtils.showMessage('下载失败');
+        }
+      }
+    } catch (e) {
+      // 关闭loading对话框
+      if (mounted) {
+        MPLoadingDialog.hide(context);
+        MPToastUtils.showMessage('下载失败');
+      }
     }
   }
 

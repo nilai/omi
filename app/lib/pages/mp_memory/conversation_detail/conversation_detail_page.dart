@@ -24,6 +24,7 @@ import '../../../backend/schema/mp/mp_memory.dart';
 import '../../../providers/mp_message_provider.dart';
 import '../../../providers/sync_provider.dart';
 import '../../../services/mp_home_refresh_event_service.dart';
+import '../../../utils/alerts/mp_loading_dialog.dart';
 import '../../../utils/alerts/mp_memory_export_dialog.dart';
 import '../../../utils/alerts/mp_share_memory_dialog.dart';
 import '../../../utils/mp_local_records_util.dart';
@@ -701,17 +702,33 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
       final syncProvider = Provider.of<SyncProvider>(context, listen: false);
       await syncProvider.shareLocalAudioFile(localPath, context: context);
     } else {
-      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(provider.recordFileUrl);
-      if (result != null) {
-        MPLocalRecordsUtil.instance.addLocalRecord(result.path,
-            createAt: MPTimestampUtils.timestampNow,
-            fileName: result.fileName,
-            source: 'Mobile Phone',
-            isRemoved: true);
-        final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-        await syncProvider.shareLocalAudioFile(result.path, context: context);
-      } else {
-        MPToastUtils.showMessage('下载失败');
+      // 显示loading对话框
+      MPLoadingDialog.show(context, message: '下载中...');
+      try {
+        final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(provider.recordFileUrl);
+        // 关闭loading对话框
+        if (mounted) {
+          MPLoadingDialog.hide(context);
+        }
+        if (result != null) {
+          MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+              createAt: MPTimestampUtils.timestampNow,
+              fileName: result.fileName,
+              source: 'Mobile Phone',
+              isRemoved: true);
+          final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+          await syncProvider.shareLocalAudioFile(result.path, context: context);
+        } else {
+          if (mounted) {
+            MPToastUtils.showMessage('下载失败');
+          }
+        }
+      } catch (e) {
+        // 关闭loading对话框
+        if (mounted) {
+          MPLoadingDialog.hide(context);
+          MPToastUtils.showMessage('下载失败');
+        }
       }
     }
   }

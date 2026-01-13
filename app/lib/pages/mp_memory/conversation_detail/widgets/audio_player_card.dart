@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import '../../../../pages/mp_custom_utils/mp_timestamp_utils.dart';
 import '../../../../pages/mp_custom_utils/mp_toast_utils.dart';
 import '../../../../services/mp_audio_download.dart';
+import '../../../../utils/alerts/mp_loading_dialog.dart';
 import '../../../../utils/mp_local_records_util.dart';
 
 /// 音频播放器卡片组件
@@ -244,6 +245,9 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
       _downloadProgress = 0.0;
     });
 
+    // 显示loading对话框
+    MPLoadingDialog.show(context, message: '下载中...');
+
     try {
       final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(
         audioUrl,
@@ -255,6 +259,11 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
           }
         },
       );
+
+      // 关闭loading对话框
+      if (mounted) {
+        MPLoadingDialog.hide(context);
+      }
 
       if (result != null && mounted) {
         // 保存到本地记录
@@ -285,7 +294,9 @@ class _AudioPlayerCardState extends State<AudioPlayerCard> {
       }
     } catch (e) {
       debugPrint('下载音频失败: $e');
+      // 关闭loading对话框
       if (mounted) {
+        MPLoadingDialog.hide(context);
         setState(() {
           _isDownloading = false;
           _downloadProgress = 0.0;
