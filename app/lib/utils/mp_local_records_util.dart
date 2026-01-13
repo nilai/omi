@@ -145,8 +145,8 @@ class MPLocalRecordsUtil {
       source: source,
       duration: duration,
       isRemoved: isRemoved,
+      fileId: fileId ?? '',
     );
-    model.fileId = fileId ?? '';
     _localRecords.add(model);
     debugPrint('-------hjj------addLocalRecord path: $path, isRemoved: $isRemoved');
 
