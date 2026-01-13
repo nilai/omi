@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:omi/backend/schema/conversation.dart';
 import 'package:omi/services/services.dart';
 import 'package:omi/services/wals.dart';
@@ -213,15 +214,18 @@ class SyncProvider extends ChangeNotifier implements IWalServiceListener, IWalSy
   ///
   /// [filePath] 音频文件的路径
   /// [shareText] 可选的分享文本
+  /// [context] 可选的 BuildContext，用于在 iOS 上获取屏幕尺寸以设置 sharePositionOrigin
   ///
   /// 返回分享结果状态
   Future<ShareResult> shareLocalAudioFile(
     String filePath, {
     String? shareText,
+    BuildContext? context,
   }) async {
     return await _audioPlayerUtils.shareLocalAudioFile(
       filePath,
       shareText: shareText,
+      context: context,
     );
   }
 

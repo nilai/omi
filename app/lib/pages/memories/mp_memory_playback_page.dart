@@ -692,23 +692,51 @@ class _MPMemoryPlaybackPageState extends State<MPMemoryPlaybackPage> {
   }
 
   void _exportAudio() async {
-    final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(_audioUrl);
-    if (localPath != null && localPath.isNotEmpty) {
-      final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-      await syncProvider.shareLocalAudioFile(localPath);
-    } else {
-      final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(_audioUrl);
-      if (result != null) {
-        MPLocalRecordsUtil.instance.addLocalRecord(result.path,
-            createAt: MPTimestampUtils.timestampNow,
-            fileName: result.fileName,
-            source: 'Mobile Phone',
-            isRemoved: true);
-        final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-        await syncProvider.shareLocalAudioFile(result.path);
+    try {
+      final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(_audioUrl);
+      if (localPath != null && localPath.isNotEmpty) {
+        // 检查文件是否真实存在（iOS 26 上需要异步检查）
+        final file = File(localPath);
+        final fileExists = await file.exists();
+        
+        if (fileExists) {
+          // 文件存在，直接分享
+          final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+          await syncProvider.shareLocalAudioFile(localPath, context: context);
+        } else {
+          // 文件不存在，尝试重新下载
+          debugPrint('_exportAudio: 本地文件不存在，尝试重新下载: $localPath');
+          await _downloadAndShareAudio();
+        }
       } else {
-        MPToastUtils.showMessage('下载失败');
+        // 没有本地路径，直接下载
+        await _downloadAndShareAudio();
       }
+    } catch (e) {
+      debugPrint('_exportAudio: 分享音频失败: $e');
+      // 如果分享失败，尝试重新下载
+      try {
+        await _downloadAndShareAudio();
+      } catch (downloadError) {
+        debugPrint('_exportAudio: 重新下载也失败: $downloadError');
+        MPToastUtils.showMessage('分享失败，请重试');
+      }
+    }
+  }
+
+  /// 下载音频并分享
+  Future<void> _downloadAndShareAudio() async {
+    final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(_audioUrl);
+    if (result != null) {
+      MPLocalRecordsUtil.instance.addLocalRecord(result.path,
+          createAt: MPTimestampUtils.timestampNow,
+          fileName: result.fileName,
+          source: 'Mobile Phone',
+          isRemoved: true);
+      final syncProvider = Provider.of<SyncProvider>(context, listen: false);
+      await syncProvider.shareLocalAudioFile(result.path, context: context);
+    } else {
+      MPToastUtils.showMessage('下载失败');
     }
   }
 

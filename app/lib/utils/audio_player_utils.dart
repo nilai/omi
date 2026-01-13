@@ -4,9 +4,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:omi/backend/schema/bt_device/bt_device.dart';
 import 'package:omi/services/wals.dart';
+import 'package:omi/utils/platform/platform_service.dart';
 import 'package:opus_dart/opus_dart.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -424,27 +426,77 @@ class AudioPlayerUtils extends ChangeNotifier {
   ///
   /// [filePath] 音频文件的路径
   /// [shareText] 可选的分享文本，默认为空
+  /// [context] 可选的 BuildContext，用于在 iOS 上获取屏幕尺寸以设置 sharePositionOrigin
   ///
   /// 返回分享结果状态
   Future<ShareResult> shareLocalAudioFile(
     String filePath, {
     String? shareText,
+    BuildContext? context,
   }) async {
-    final file = File(filePath);
-    if (!file.existsSync()) {
-      throw Exception('Audio file not found: $filePath');
+    try {
+      // 使用异步方法检查文件存在性，在 iOS 26 上更可靠
+      // iOS 26 对文件系统访问更严格，同步的 existsSync() 可能因权限或编码问题返回 false
+      final file = File(filePath);
+      final fileExists = await file.exists();
+
+      if (!fileExists) {
+        debugPrint('AudioPlayerUtils: 文件不存在: $filePath');
+        // iOS 26 上，如果文件路径包含中文字符，可能存在编码问题
+        // 尝试检查父目录是否存在
+        final parentDir = file.parent;
+        final parentExists = await parentDir.exists();
+        debugPrint('AudioPlayerUtils: 父目录存在: $parentExists, 路径: ${parentDir.path}');
+
+        throw Exception('Audio file not found: $filePath');
+      }
+
+      // 获取分享位置（仅用于 iOS）
+      // iOS 26+ 要求 sharePositionOrigin 必须设置且有效（非零尺寸）
+      Rect? sharePositionOrigin;
+      if (PlatformService.isIOS) {
+        if (context != null) {
+          final MediaQueryData mediaQuery = MediaQuery.of(context);
+          final double screenWidth = mediaQuery.size.width;
+          final double screenHeight = mediaQuery.size.height;
+          // 使用屏幕中心的一个小区域（44x44，iOS 标准触摸目标大小）
+          const double defaultSize = 44.0;
+          sharePositionOrigin = Rect.fromLTWH(
+            (screenWidth - defaultSize) / 2,
+            (screenHeight - defaultSize) / 2,
+            defaultSize,
+            defaultSize,
+          );
+        } else {
+          // 如果没有 context，使用一个合理的默认值（假设屏幕尺寸为 400x800）
+          const double defaultSize = 44.0;
+          sharePositionOrigin = Rect.fromLTWH(
+            (400 - defaultSize) / 2,
+            (800 - defaultSize) / 2,
+            defaultSize,
+            defaultSize,
+          );
+        }
+      }
+
+      // 文件存在，执行分享
+      // iOS 上需要提供 sharePositionOrigin 参数
+      final result = await Share.shareXFiles(
+        [XFile(filePath)],
+        text: shareText ?? 'Omi Audio File',
+        sharePositionOrigin: sharePositionOrigin,
+      );
+
+      if (result.status == ShareResultStatus.success) {
+        debugPrint('Local audio file shared successfully: $filePath');
+      }
+
+      return result;
+    } catch (e) {
+      debugPrint('AudioPlayerUtils: 分享音频文件失败: $e');
+      debugPrint('AudioPlayerUtils: 文件路径: $filePath');
+      rethrow;
     }
-
-    final result = await Share.shareXFiles(
-      [XFile(filePath)],
-      text: shareText ?? 'Omi Audio File',
-    );
-
-    if (result.status == ShareResultStatus.success) {
-      debugPrint('Local audio file shared successfully: $filePath');
-    }
-
-    return result;
   }
 
   @override

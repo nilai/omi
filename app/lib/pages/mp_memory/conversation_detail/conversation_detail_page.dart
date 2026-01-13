@@ -699,7 +699,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
     final localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(provider.recordFileUrl);
     if (localPath != null && localPath.isNotEmpty) {
       final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-      await syncProvider.shareLocalAudioFile(localPath);
+      await syncProvider.shareLocalAudioFile(localPath, context: context);
     } else {
       final result = await MPAudioDownloadService.instance.downloadAndSaveAudio(provider.recordFileUrl);
       if (result != null) {
@@ -709,7 +709,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> {
             source: 'Mobile Phone',
             isRemoved: true);
         final syncProvider = Provider.of<SyncProvider>(context, listen: false);
-        await syncProvider.shareLocalAudioFile(result.path);
+        await syncProvider.shareLocalAudioFile(result.path, context: context);
       } else {
         MPToastUtils.showMessage('下载失败');
       }
