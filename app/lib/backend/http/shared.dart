@@ -66,8 +66,11 @@ class ApiTools {
   // uuid 缓存
   String? _uuid;
 
-  // UUID 存储键
+  // UUID 存储键(后续可以删除，使用 _tingxiaUuidStorageKey 代替)
   static const String _uuidStorageKey = 'device_uuid';
+
+  // 听夏 UUID 存储键
+  static const String _tingxiaUuidStorageKey = 'tingxia_device_uuid';
 
   // 获取 uuid（懒加载，持久化存储）
   // 使用平台特定的设备标识符确保卸载重装后 UUID 保持不变
@@ -79,11 +82,28 @@ class ApiTools {
     }
 
     try {
-      // 首先尝试从安全存储获取已保存的 UUID
-      final savedUuid = await _secureStorage.read(key: _uuidStorageKey);
+      // 首先尝试从 SharedPreferences 获取已保存的 UUID
+      String? savedUuid = SharedPreferencesUtil().getString(_tingxiaUuidStorageKey);
+      if (savedUuid != null && savedUuid.isNotEmpty && savedUuid != 'unknown') {
+        _uuid = savedUuid;
+        return _uuid!;
+      }
+
+      // 然后尝试从安全存储获取已保存的 UUID
+      savedUuid = await _secureStorage.read(key: _tingxiaUuidStorageKey);
 
       if (savedUuid != null && savedUuid.isNotEmpty && savedUuid != 'unknown') {
         _uuid = savedUuid;
+        SharedPreferencesUtil().saveString(_tingxiaUuidStorageKey, _uuid!);
+        return _uuid!;
+      }
+
+      // 最后尝试从安全存储获取已保存的 UUID
+      savedUuid = await _secureStorage.read(key: _uuidStorageKey);
+      if (savedUuid != null && savedUuid.isNotEmpty && savedUuid != 'unknown') {
+        _uuid = savedUuid;
+        SharedPreferencesUtil().saveString(_tingxiaUuidStorageKey, _uuid!);
+        await _secureStorage.write(key: _tingxiaUuidStorageKey, value: _uuid!);
         return _uuid!;
       }
 
@@ -124,7 +144,7 @@ class ApiTools {
 
       // 保存到安全存储
       try {
-        await _secureStorage.write(key: _uuidStorageKey, value: _uuid!);
+        await _secureStorage.write(key: _tingxiaUuidStorageKey, value: _uuid!);
       } catch (saveError) {
         Logger.error('Failed to save UUID to secure storage: $saveError');
       }
@@ -135,7 +155,7 @@ class ApiTools {
       // 如果出错，尝试生成一个临时 UUID
       _uuid = _uuidGenerator.v4();
       try {
-        await _secureStorage.write(key: _uuidStorageKey, value: _uuid!);
+        await _secureStorage.write(key: _tingxiaUuidStorageKey, value: _uuid!);
       } catch (saveError) {
         Logger.error('Failed to save UUID to secure storage: $saveError');
       }
