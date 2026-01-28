@@ -173,12 +173,12 @@ Future<Map<String, String>> buildHeaders({
   required bool requireAuthCheck,
   Map<String, String> fromHeaders = const {},
 }) async {
-  final uuid = await ApiTools.instance.uuid;
+  // final uuid = await ApiTools.instance.uuid;
   final headers = <String, String>{
     'X-Request-Start-Time': (DateTime.now().millisecondsSinceEpoch / 1000).toString(),
     'X-App-Platform': PlatformManager.instance.platform,
     'X-App-Version': PlatformManager.instance.appVersion,
-    'X-User-ID': uuid,
+    'X-User-ID': '249B0CBF-BFD1-46E5-8368-17C64F6387E0',
     ...fromHeaders,
   };
 
