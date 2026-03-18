@@ -778,16 +778,16 @@ class _ActionItemTileWidgetState extends State<ActionItemTileWidget> {
       if (!hasPermission) {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
+            const SnackBar(
               content: Row(
                 children: [
                   Icon(Icons.error, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text('Permission denied for Apple Reminders'),
                 ],
               ),
               backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
+              duration: Duration(seconds: 3),
             ),
           );
         }
@@ -798,7 +798,7 @@ class _ActionItemTileWidgetState extends State<ActionItemTileWidget> {
     // Show loading state
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Row(
             children: [
               SizedBox(
@@ -809,12 +809,12 @@ class _ActionItemTileWidgetState extends State<ActionItemTileWidget> {
                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Text('Adding to Apple Reminders...'),
             ],
           ),
           backgroundColor: Colors.blue,
-          duration: const Duration(seconds: 3),
+          duration: Duration(seconds: 3),
         ),
       );
     }
@@ -867,7 +867,7 @@ class _ActionItemTileWidgetState extends State<ActionItemTileWidget> {
       color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
+        side: const BorderSide(
           color: Colors.transparent,
           width: 0,
         ),

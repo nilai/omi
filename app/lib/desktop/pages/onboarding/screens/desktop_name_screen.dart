@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/responsive/responsive_helper.dart';
 import 'package:omi/backend/preferences.dart';
 import 'package:omi/ui/atoms/omi_text_input.dart';
 import 'package:omi/ui/atoms/omi_button.dart';
@@ -153,7 +152,7 @@ class _DesktopNameScreenState extends State<DesktopNameScreen> with SingleTicker
                     constraints: const BoxConstraints(maxWidth: 480),
                     padding: const EdgeInsets.symmetric(horizontal: 40),
                     child: const Text(
-                      'Tell us how you\'d like to be addressed. This helps personalize your Omi experience.',
+                      'Tell us how you\'d like to be addressed. This helps personalize your MemoPin experience.',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w400,

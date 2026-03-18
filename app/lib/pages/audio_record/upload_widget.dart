@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:omi/providers/audio_record_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../../backend/http/api/audio_record.dart';
+
 /// 音频上传组件
 ///
 /// 提供文件选择和上传功能的UI组件
@@ -19,7 +21,7 @@ class AudioUploadWidget extends StatelessWidget {
       // 使用 file_picker 选择文件
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['m4a', 'wav', 'mp3', 'aac'],
+        allowedExtensions: audioExtensions,
       );
 
       if (result != null && result.files.single.path != null) {

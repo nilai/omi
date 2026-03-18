@@ -415,7 +415,7 @@ class MixpanelManager {
 
   void setUserProperties(String whatDoYouDo, String whereDoYouPlanToUseYourFriend, String ageRange) {
     setUserProperty('What the user does', whatDoYouDo);
-    setUserProperty('Using Omi At', whereDoYouPlanToUseYourFriend);
+    setUserProperty('Using MemoPin At', whereDoYouPlanToUseYourFriend);
     setUserProperty('Age Range', ageRange);
   }
 
@@ -611,7 +611,7 @@ class MixpanelManager {
   }
 
   void personaOmiConnectionToggled({required String personaId, required bool omiConnected}) {
-    track('Persona OMI Connection Toggled', properties: {
+    track('Persona MemoPin Connection Toggled', properties: {
       'persona_id': personaId,
       'omi_connected': omiConnected,
     });

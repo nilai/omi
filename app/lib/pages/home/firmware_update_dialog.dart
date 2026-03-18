@@ -42,12 +42,12 @@ class _FirmwareUpdateDialogState extends State<FirmwareUpdateDialog> {
       'no_usb': FirmwareUpdateStep(
         title: 'No USB',
         description:
-            "Disconnect your Omi device from any USB connection. USB connection during updates may damage your device.",
+            "Disconnect your MemoPin device from any USB connection. USB connection during updates may damage your device.",
         icon: Icons.usb_off,
       ),
       'battery': FirmwareUpdateStep(
         title: 'Battery > 15%',
-        description: "Ensure your Omi device has at least 15% battery remaining for a safe update.",
+        description: "Ensure your MemoPin device has at least 15% battery remaining for a safe update.",
         icon: Icons.battery_5_bar,
       ),
       'internet': FirmwareUpdateStep(
@@ -102,9 +102,9 @@ class _FirmwareUpdateDialogState extends State<FirmwareUpdateDialog> {
                   Theme(
                     data: Theme.of(context).copyWith(
                       checkboxTheme: CheckboxThemeData(
-                        fillColor: MaterialStateProperty.resolveWith<Color>(
-                          (Set<MaterialState> states) {
-                            if (states.contains(MaterialState.selected)) {
+                        fillColor: WidgetStateProperty.resolveWith<Color>(
+                          (Set<WidgetState> states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.deepPurple;
                             }
                             return Colors.grey.shade700;
@@ -158,7 +158,7 @@ class _FirmwareUpdateDialogState extends State<FirmwareUpdateDialog> {
                     : null,
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: isConfirmed ? Colors.deepPurple : Color(0xFF35343B),
+                  backgroundColor: isConfirmed ? Colors.deepPurple : const Color(0xFF35343B),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),

@@ -12,6 +12,7 @@ import 'package:omi/widgets/device_widget.dart';
 import 'package:provider/provider.dart';
 
 import '../conversations/sync_page.dart';
+import '../note_debug/note_ble_debug_page.dart';
 import 'firmware_update.dart';
 
 class ConnectedDevice extends StatefulWidget {
@@ -74,7 +75,7 @@ class _ConnectedDeviceState extends State<ConnectedDevice> {
           border: Border(
             bottom: isLast
                 ? BorderSide.none
-                : BorderSide(
+                : const BorderSide(
                     color: Color(0xFF35343B),
                     width: 0.5,
                   ),
@@ -295,6 +296,19 @@ class _ConnectedDeviceState extends State<ConnectedDevice> {
                                     );
                                   },
                                 ),
+                              // BLE Debug for AI Note devices
+                              _buildSectionRow(
+                                'BLE Debug',
+                                'Send raw commands to device',
+                                hasArrow: true,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const NoteBleDebugPage(),
+                                    ),
+                                  );
+                                },
+                              ),
                               _buildSectionRow(
                                 'Issues charging the device?',
                                 'Tap to see the guide',
@@ -312,7 +326,7 @@ class _ConnectedDeviceState extends State<ConnectedDevice> {
                                 isRedBackground: true,
                                 onTap: () async {
                                   await SharedPreferencesUtil()
-                                      .btDeviceSet(BtDevice(id: '', name: '', type: DeviceType.omi, rssi: 0));
+                                      .btDeviceSet(BtDevice(id: '', name: '', type: DeviceType.aiNote, rssi: 0));
                                   SharedPreferencesUtil().deviceName = '';
                                   if (provider.connectedDevice != null) {
                                     await _bleDisconnectDevice(provider.connectedDevice!);

@@ -514,13 +514,13 @@ class _AppDetailPageState extends State<AppDetailPage> {
 
                             if (app.isNotPersona()) {
                               await Share.share(
-                                'Check out this app on Omi AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://h.omi.me/apps/${app.id}',
+                                'Check out this app on MemoPin AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://h.omi.me/apps/${app.id}',
                                 subject: app.name,
                                 sharePositionOrigin: sharePositionOrigin,
                               );
                             } else {
                               await Share.share(
-                                'Check out this Persona on Omi AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://personas.omi.me/u/${app.username}',
+                                'Check out this Persona on MemoPin AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://personas.omi.me/u/${app.username}',
                                 subject: app.name,
                                 sharePositionOrigin: sharePositionOrigin,
                               );
@@ -771,7 +771,7 @@ class _AppDetailPageState extends State<AppDetailPage> {
                                               return ConfirmationDialog(
                                                 title: 'Data Access Notice',
                                                 description:
-                                                    'This app will access your data. Omi AI is not responsible for how your data is used, modified, or deleted by this app',
+                                                    'This app will access your data. MemoPin AI is not responsible for how your data is used, modified, or deleted by this app',
                                                 onConfirm: () {
                                                   _toggleApp(app.id, true);
                                                   Navigator.pop(context);

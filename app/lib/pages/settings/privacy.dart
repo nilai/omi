@@ -108,7 +108,7 @@ class PrivacyInfoPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'We are committed to using the data we collect only to make Omi a better product for you. Your privacy and trust are paramount to us.',
+              'We are committed to using the data we collect only to make MemoPin a better product for you. Your privacy and trust are paramount to us.',
               style: TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),

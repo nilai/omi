@@ -205,7 +205,7 @@ class ChatAppsDropdownWidget extends StatelessWidget {
         height: 1,
         child: Divider(height: 1),
       ),
-      // Add Omi option to the dropdown
+      // Add MemoPin option to the dropdown
       PopupMenuItem<String>(
         height: 40,
         value: 'no_selected',
@@ -269,7 +269,7 @@ class ChatAppsDropdownWidget extends StatelessWidget {
             ],
           ),
         );
-      }).toList(),
+      }),
     ];
   }
 
@@ -397,7 +397,7 @@ class ChatAppsDropdownWidget extends StatelessWidget {
             ],
           ),
         );
-      }).toList(),
+      }),
     ];
   }
 }

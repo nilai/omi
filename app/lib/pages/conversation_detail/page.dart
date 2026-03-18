@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_provider_utilities/flutter_provider_utilities.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:omi/backend/http/api/conversations.dart';
 // import 'package:omi/backend/preferences.dart';
 import 'package:omi/backend/schema/conversation.dart';
@@ -19,17 +20,16 @@ import 'package:omi/utils/other/temp.dart';
 import 'package:omi/widgets/conversation_bottom_bar.dart';
 import 'package:omi/widgets/dialog.dart';
 import 'package:omi/widgets/expandable_text.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:omi/widgets/extensions/string.dart';
 import 'package:provider/provider.dart';
+import 'package:pull_down_button/pull_down_button.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:tuple/tuple.dart';
-import 'package:pull_down_button/pull_down_button.dart';
 
 import 'conversation_detail_provider.dart';
-import 'widgets/name_speaker_sheet.dart';
 // import 'share.dart';
 import 'test_prompts.dart';
+import 'widgets/name_speaker_sheet.dart';
 // import 'package:omi/pages/settings/developer.dart';
 // import 'package:omi/backend/http/webhooks.dart';
 
@@ -60,7 +60,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> with Ti
   final FocusNode _searchFocusNode = FocusNode();
   int _currentSearchIndex = 0;
   int _totalSearchResults = 0;
-  List<int> _searchResultPositions = []; // Track positions of search results
+  final List<int> _searchResultPositions = []; // Track positions of search results
 
   // TODO: use later for onboarding transcript segment edits
   // late AnimationController _animationController;
@@ -517,12 +517,12 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> with Ti
                           itemBuilder: (context) => [
                             PullDownMenuItem(
                               title: 'Copy Transcript',
-                              iconWidget: FaIcon(FontAwesomeIcons.copy, size: 16),
+                              iconWidget: const FaIcon(FontAwesomeIcons.copy, size: 16),
                               onTap: () => _handleMenuSelection(context, 'copy_transcript', provider),
                             ),
                             PullDownMenuItem(
                               title: 'Copy Summary',
-                              iconWidget: FaIcon(FontAwesomeIcons.clone, size: 16),
+                              iconWidget: const FaIcon(FontAwesomeIcons.clone, size: 16),
                               onTap: () => _handleMenuSelection(context, 'copy_summary', provider),
                             ),
                             // PullDownMenuItem(
@@ -532,18 +532,18 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> with Ti
                             // ),
                             PullDownMenuItem(
                               title: 'Test Prompt',
-                              iconWidget: FaIcon(FontAwesomeIcons.commentDots, size: 16),
+                              iconWidget: const FaIcon(FontAwesomeIcons.commentDots, size: 16),
                               onTap: () => _handleMenuSelection(context, 'test_prompt', provider),
                             ),
                             if (!provider.conversation.discarded)
                               PullDownMenuItem(
                                 title: 'Reprocess Conversation',
-                                iconWidget: FaIcon(FontAwesomeIcons.arrowsRotate, size: 16),
+                                iconWidget: const FaIcon(FontAwesomeIcons.arrowsRotate, size: 16),
                                 onTap: () => _handleMenuSelection(context, 'reprocess', provider),
                               ),
                             PullDownMenuItem(
                               title: 'Delete Conversation',
-                              iconWidget: FaIcon(FontAwesomeIcons.trashCan, size: 16, color: Colors.red),
+                              iconWidget: const FaIcon(FontAwesomeIcons.trashCan, size: 16, color: Colors.red),
                               onTap: () => _handleMenuSelection(context, 'delete', provider),
                             ),
                           ],
@@ -626,7 +626,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> with Ti
                                   }
                                 },
                               ),
-                              ActionItemsTab(),
+                              const ActionItemsTab(),
                             ],
                           );
                         }),
@@ -805,7 +805,7 @@ class _ConversationDetailPageState extends State<ConversationDetailPage> with Ti
                                 hintStyle: TextStyle(color: Colors.grey[400]),
                                 prefixIcon: const Icon(Icons.search, color: Colors.white70),
                                 suffixIcon: _searchQuery.isNotEmpty
-                                    ? Container(
+                                    ? SizedBox(
                                         width: _searchQuery.isNotEmpty ? 150 : 40,
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,

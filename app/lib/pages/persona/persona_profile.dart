@@ -316,7 +316,7 @@ class _PersonaProfilePageState extends State<PersonaProfilePage> {
                                           onChanged: (value) {
                                             provider.setPersonaPublic(value);
                                           },
-                                          activeColor: Colors.deepPurple,
+                                          activeThumbColor: Colors.deepPurple,
                                         );
                                       },
                                     ),
@@ -603,7 +603,7 @@ class _PersonaProfilePageState extends State<PersonaProfilePage> {
                 const Spacer(),
                 const SizedBox(height: 24),
                 const Text(
-                  'Get Omi Device',
+                  'Get MemoPin Device',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -655,7 +655,7 @@ class _PersonaProfilePageState extends State<PersonaProfilePage> {
                           routeToPage(context, const OnboardingWrapper());
                         },
                         child: Text(
-                          'I have Omi device',
+                          'I have MemoPin device',
                           style: TextStyle(
                             fontSize: 18,
                             color: Colors.white.withOpacity(0.6),

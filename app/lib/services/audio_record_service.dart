@@ -84,7 +84,7 @@ class AudioRecordService {
         debugPrint('AudioRecordService: getPresignedUrl attempt ${i + 1} failed: $e');
         if (i == _maxRetries) return null;
         // 简单的延迟重试
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
     return null;
@@ -104,7 +104,7 @@ class AudioRecordService {
         debugPrint('AudioRecordService: uploadToS3 attempt ${i + 1} failed: $e');
         if (i == _maxRetries) return false;
         // 简单的延迟重试
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
     return false;
@@ -123,7 +123,7 @@ class AudioRecordService {
         debugPrint('AudioRecordService: createRecord attempt ${i + 1} failed: $e');
         if (i == _maxRetries) return null;
         // 简单的延迟重试
-        await Future.delayed(Duration(seconds: 1));
+        await Future.delayed(const Duration(seconds: 1));
       }
     }
     return null;
@@ -147,14 +147,13 @@ class AudioRecordService {
         return false;
       }
       if (fileSize > 100 * 1024 * 1024) {
-        debugPrint('AudioRecordService: file is too large (${fileSize} bytes)');
+        debugPrint('AudioRecordService: file is too large ($fileSize bytes)');
         return false;
       }
 
       // 检查文件扩展名
       final filename = audioFile.path.toLowerCase();
-      final supportedExtensions = ['.m4a', '.wav', '.mp3', '.aac'];
-      final hasValidExtension = supportedExtensions.any((ext) => filename.endsWith(ext));
+      final hasValidExtension = audioExtensions.any((ext) => filename.endsWith(ext));
       if (!hasValidExtension) {
         debugPrint('AudioRecordService: unsupported file format');
         return false;

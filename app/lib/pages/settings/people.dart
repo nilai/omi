@@ -224,7 +224,7 @@ class _UserPeoplePageState extends State<_UserPeoplePage> {
                             () => Navigator.pop(context),
                             singleButton: true,
                             'How it works?',
-                            'Once a person is created, you can go to a conversation transcript, and assign them their corresponding segments, that way Omi will be able to recognize their speech too!',
+                            'Once a person is created, you can go to a conversation transcript, and assign them their corresponding segments, that way MemoPin will be able to recognize their speech too!',
                             okButtonText: 'Got it',
                           ),
                         );
@@ -248,7 +248,7 @@ class _UserPeoplePageState extends State<_UserPeoplePage> {
                           SizedBox(height: 24),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 32),
-                            child: Text('Create a new person and train Omi to recognize their speech too!',
+                            child: Text('Create a new person and train MemoPin to recognize their speech too!',
                                 style: TextStyle(color: Colors.white, fontSize: 24), textAlign: TextAlign.center),
                           ),
                           SizedBox(height: 64),

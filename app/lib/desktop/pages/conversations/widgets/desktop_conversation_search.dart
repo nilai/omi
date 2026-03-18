@@ -85,6 +85,7 @@ class _DesktopConversationSearchState extends State<DesktopConversationSearch> w
           controller: widget.controller,
           focusNode: _focusNode,
           onChanged: widget.onSearchChanged,
+          cursorColor: Colors.black,
           style: TextStyle(
             fontSize: responsive.responsiveFontSize(baseFontSize: 16),
             fontWeight: FontWeight.w500,

@@ -181,7 +181,7 @@
 
 //             // Subtitle
 //             Text(
-//               _isScanning ? 'Scanning for devices...' : 'Find and connect your Omi device',
+//               _isScanning ? 'Scanning for devices...' : 'Find and connect your MemoPin device',
 //               style: TextStyle(
 //                 fontSize: 16,
 //                 color: Colors.grey.shade400,
@@ -325,7 +325,7 @@
 //                 ),
 //               ),
 //               Text(
-//                 'Turn on your Omi device first',
+//                 'Turn on your MemoPin device first',
 //                 style: TextStyle(
 //                   fontSize: 12,
 //                   color: Colors.grey.shade500,

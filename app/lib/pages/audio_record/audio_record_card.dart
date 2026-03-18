@@ -54,7 +54,7 @@ class AudioRecordCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (audioRecord.isSuccess)
-              Icon(
+              const Icon(
                 Icons.check_circle,
                 color: Colors.green,
                 size: 20,

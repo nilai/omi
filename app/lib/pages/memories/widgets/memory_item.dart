@@ -3,20 +3,19 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:omi/backend/schema/memory.dart';
 import 'package:omi/backend/http/api/conversations.dart';
-import 'package:omi/pages/conversation_detail/page.dart';
+import 'package:omi/backend/schema/memory.dart';
 import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
-import 'package:omi/providers/app_provider.dart';
-import 'package:omi/providers/conversation_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:omi/pages/conversation_detail/page.dart';
 import 'package:omi/pages/memories/page.dart';
 import 'package:omi/pages/settings/usage_page.dart';
+import 'package:omi/providers/conversation_provider.dart';
 import 'package:omi/providers/memories_provider.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
 import 'package:omi/utils/other/temp.dart';
 import 'package:omi/utils/ui_guidelines.dart';
 import 'package:omi/widgets/extensions/string.dart';
+import 'package:provider/provider.dart';
 
 import 'delete_confirmation.dart';
 
@@ -241,107 +240,4 @@ class MemoryItem extends StatelessWidget {
       ),
     );
   }
-
-  // Widget _buildVisibilityButton(BuildContext context) {
-  //   return PopupMenuButton<MemoryVisibility>(
-  //     padding: EdgeInsets.zero,
-  //     position: PopupMenuPosition.under,
-  //     surfaceTintColor: Colors.transparent,
-  //     color: AppStyles.backgroundTertiary,
-  //     shape: RoundedRectangleBorder(
-  //       borderRadius: BorderRadius.circular(AppStyles.radiusLarge),
-  //     ),
-  //     offset: const Offset(0, 4),
-  //     child: Container(
-  //       height: 36,
-  //       width: 56,
-  //       decoration: BoxDecoration(
-  //         color: Colors.white.withValues(alpha: 0.1),
-  //         borderRadius: BorderRadius.circular(AppStyles.radiusMedium),
-  //       ),
-  //       child: Row(
-  //         mainAxisSize: MainAxisSize.min,
-  //         mainAxisAlignment: MainAxisAlignment.center,
-  //         children: [
-  //           Icon(
-  //             memory.visibility == MemoryVisibility.private ? Icons.lock_outline : Icons.public,
-  //             size: 16,
-  //             color: Colors.white70,
-  //           ),
-  //           const SizedBox(width: 6),
-  //           const Icon(
-  //             Icons.keyboard_arrow_down,
-  //             size: 18,
-  //             color: Colors.white70,
-  //           ),
-  //         ],
-  //       ),
-  //     ),
-  //     itemBuilder: (context) => [
-  //       _buildVisibilityItem(
-  //         context,
-  //         MemoryVisibility.private,
-  //         Icons.lock_outline,
-  //         'Will not be used for personas',
-  //       ),
-  //       _buildVisibilityItem(
-  //         context,
-  //         MemoryVisibility.public,
-  //         Icons.public,
-  //         'Will be used for personas',
-  //       ),
-  //     ],
-  //     onSelected: (visibility) {
-  //       provider.updateMemoryVisibility(memory, visibility);
-  //       MixpanelManager().memoryVisibilityChanged(memory, visibility);
-  //     },
-  //   );
-  // }
-
-  // PopupMenuItem<MemoryVisibility> _buildVisibilityItem(
-  //   BuildContext context,
-  //   MemoryVisibility visibility,
-  //   IconData icon,
-  //   String description,
-  // ) {
-  //   final isSelected = memory.visibility == visibility;
-  //   return PopupMenuItem<MemoryVisibility>(
-  //     value: visibility,
-  //     child: Container(
-  //       padding: const EdgeInsets.symmetric(vertical: 4),
-  //       child: Row(
-  //         children: [
-  //           Icon(
-  //             icon,
-  //             size: 18,
-  //             color: isSelected ? Colors.white : Colors.white70,
-  //           ),
-  //           const SizedBox(width: 12),
-  //           Expanded(
-  //             child: Column(
-  //               crossAxisAlignment: CrossAxisAlignment.start,
-  //               children: [
-  //                 Text(
-  //                   visibility.name[0].toUpperCase() + visibility.name.substring(1),
-  //                   style: TextStyle(
-  //                     color: isSelected ? Colors.white : Colors.white70,
-  //                     fontSize: 14,
-  //                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-  //                   ),
-  //                 ),
-  //                 Text(
-  //                   description,
-  //                   style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-  //                   maxLines: 2,
-  //                   overflow: TextOverflow.ellipsis,
-  //                 ),
-  //               ],
-  //             ),
-  //           ),
-  //           if (isSelected) const Icon(Icons.check, size: 18, color: Colors.white),
-  //         ],
-  //       ),
-  //     ),
-  //   );
-  // }
 }

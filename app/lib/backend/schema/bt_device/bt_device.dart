@@ -13,6 +13,8 @@ import 'package:omi/services/devices/fieldy_connection.dart';
 import 'package:omi/utils/logger.dart';
 import 'package:omi/services/devices/discovery/device_locator.dart';
 
+import '../../../services/devices/note_connection.dart';
+
 enum ImageOrientation {
   orientation0, // 0 degrees
   orientation90, // 90 degrees clockwise
@@ -182,9 +184,12 @@ Future<DeviceType?> getTypeOfBluetoothDevice(BluetoothDevice device) async {
         .expand((s) => s.characteristics)
         .any((c) => c.uuid.toString().toLowerCase() == imageDataStreamCharacteristicUuid.toLowerCase());
     deviceType = hasImageStream ? DeviceType.openglass : DeviceType.omi;
+  } else if (BtDevice.isAiNoteDeviceFromDevice(device)) {
+    deviceType = DeviceType.aiNote;
   } else if (BtDevice.isFrameDeviceFromDevice(device)) {
     deviceType = DeviceType.frame;
   }
+  debugPrint('getTypeOfBluetoothDevice: $deviceType');
   if (deviceType != null) {
     cachedDevicesMap[device.remoteId.toString()] = deviceType;
   }
@@ -199,7 +204,7 @@ enum DeviceType {
   plaud,
   bee,
   fieldy,
-  aiNote,  // AI Note device with new BLE protocol
+  aiNote, // AI Note device with new BLE protocol
   friendPendant,
 }
 
@@ -237,7 +242,7 @@ class BtDevice {
   BtDevice.empty()
       : name = '',
         id = '',
-        type = DeviceType.omi,
+        type = DeviceType.aiNote,
         rssi = 0,
         locator = null,
         _modelNumber = '',
@@ -304,6 +309,7 @@ class BtDevice {
     if (conn == null) {
       if (SharedPreferencesUtil().btDevice.id.isNotEmpty) {
         var device = SharedPreferencesUtil().btDevice;
+        debugPrint('------hjj -getDeviceInfo: $device ---- type: ${device.type}');
         return copyWith(
           id: device.id,
           name: device.name,
@@ -319,6 +325,7 @@ class BtDevice {
       }
     }
 
+    debugPrint('------hjj -getDeviceInfo: $type');
     if (type == DeviceType.bee) {
       return await _getDeviceInfoFromBee(conn);
     } else if (type == DeviceType.plaud) {
@@ -335,6 +342,8 @@ class BtDevice {
       return await _getDeviceInfoFromFrame(conn as FrameDeviceConnection);
     } else if (type == DeviceType.appleWatch) {
       return await _getDeviceInfoFromAppleWatch(conn as AppleWatchDeviceConnection);
+    } else if (type == DeviceType.aiNote) {
+      return await _getDeviceInfoFromAiNote(conn as NoteDeviceConnection);
     } else {
       return await _getDeviceInfoFromOmi(conn);
     }
@@ -366,7 +375,7 @@ class BtDevice {
     } on PlatformException catch (e) {
       Logger.error('Device Disconnected while getting device info: $e');
     } catch (e) {
-      Logger.error('Error getting Omi device info: $e');
+      Logger.error('Error getting MemoPin device info: $e');
     }
 
     return copyWith(
@@ -375,6 +384,37 @@ class BtDevice {
       hardwareRevision: hardwareRevision,
       manufacturerName: manufacturerName,
       type: t,
+    );
+  }
+
+  /// 从 AI Note 设备获取设备信息
+  ///
+  /// conn: NoteDeviceConnection 连接实例
+  /// 返回: 更新后的 BtDevice 实例
+  Future _getDeviceInfoFromAiNote(NoteDeviceConnection conn) async {
+    var modelNumber = 'AI Note';
+    var firmwareRevision = 'Unknown';
+    var hardwareRevision = 'AI Note Hardware';
+    var manufacturerName = 'AI Note';
+
+    try {
+      // 查询固件版本
+      final version = await conn.queryFirmwareVersion();
+      if (version.isNotEmpty && version != 'Unknown') {
+        firmwareRevision = version;
+      }
+    } on PlatformException catch (e) {
+      Logger.error('Device Disconnected while getting device info: $e');
+    } catch (e) {
+      Logger.error('Error getting AI Note device info: $e');
+    }
+
+    return copyWith(
+      modelNumber: modelNumber,
+      firmwareRevision: firmwareRevision,
+      hardwareRevision: hardwareRevision,
+      manufacturerName: manufacturerName,
+      type: DeviceType.aiNote,
     );
   }
 
@@ -582,10 +622,11 @@ class BtDevice {
   // from BluetoothDevice
   Future fromBluetoothDevice(BluetoothDevice device) async {
     var rssi = await device.readRssi();
+    debugPrint('------hjj -fromBluetoothDevice: $device');
     return BtDevice(
       name: device.platformName,
       id: device.remoteId.str,
-      type: DeviceType.omi,
+      type: DeviceType.aiNote,
       rssi: rssi,
     );
   }
@@ -728,6 +769,7 @@ class BtDevice {
     } else if (cachedDevicesMap.containsKey(result.device.remoteId.toString())) {
       deviceType = cachedDevicesMap[result.device.remoteId.toString()];
     }
+    debugPrint('------hjj -fromScanResult: $deviceType');
     return BtDevice(
       name: result.device.platformName,
       id: result.device.remoteId.str,

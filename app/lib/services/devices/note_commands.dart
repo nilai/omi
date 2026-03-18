@@ -1,5 +1,6 @@
 /// Note 设备 BLE 协议定义
 /// 包含 UUID、命令常量、枚举类型等
+library;
 
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 

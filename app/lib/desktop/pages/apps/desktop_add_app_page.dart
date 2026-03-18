@@ -260,7 +260,7 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Build and submit your custom Omi app',
+                  'Build and submit your custom MemoPin app',
                   style: TextStyle(
                     fontSize: 12,
                     color: ResponsiveHelper.textSecondary.withValues(alpha: 0.5),
@@ -612,8 +612,8 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
           scrollDirection: Axis.horizontal,
           itemCount: provider.thumbnailUrls.length + 1,
           itemBuilder: (context, index) {
-            final width = 120.0;
-            final height = width * 1.5; // 2:3 ratio
+            const width = 120.0;
+            const height = width * 1.5; // 2:3 ratio
 
             if (index == provider.thumbnailUrls.length) {
               return GestureDetector(
@@ -808,7 +808,7 @@ class _DesktopAddAppPageState extends State<DesktopAddAppPage> with TickerProvid
               ),
               const Expanded(
                 child: Text(
-                  'By submitting this app, I agree to the Omi AI Terms of Service and Privacy Policy',
+                  'By submitting this app, I agree to the MemoPin AI Terms of Service and Privacy Policy',
                   style: TextStyle(
                     color: ResponsiveHelper.textPrimary,
                     fontSize: 14,

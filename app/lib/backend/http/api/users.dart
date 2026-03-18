@@ -138,7 +138,7 @@ Future<bool> deletePermissionAndRecordings() async {
   return response.statusCode == 200;
 }
 
-/**/
+/// /
 
 Future<bool> setPrivateCloudSyncEnabled(bool value) async {
   var response = await makeApiCall(
@@ -328,6 +328,7 @@ Future<String?> getUserPrimaryLanguage() async {
 }
 
 Future<bool> setUserPrimaryLanguage(String languageCode) async {
+  return true;
   var response = await makeApiCall(
     url: '${Env.apiBaseUrl}v1/users/language',
     headers: {},

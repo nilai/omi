@@ -29,6 +29,7 @@ class DeviceConnectionFactory {
     final locator = device.locator;
     if (locator == null) return null;
 
+    debugPrint('------hjj -create: ${device.id} --- type: ${device.type} --- name: ${device.name}');
     // Note device uses flutter_reactive_ble, special handling
     if (device.type == DeviceType.aiNote) {
       transport = NoteBleTransport(device);

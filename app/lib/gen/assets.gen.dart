@@ -175,6 +175,10 @@ class $AssetsImagesGen {
   /// File path: assets/images/ic_setting_persona.svg
   String get icSettingPersona => 'assets/images/ic_setting_persona.svg';
 
+  /// File path: assets/images/icon_more_deletemp_.png
+  AssetGenImage get iconMoreDeletemp =>
+      const AssetGenImage('assets/images/icon_more_deletemp_.png');
+
   /// File path: assets/images/imessage_logo.svg
   String get imessageLogo => 'assets/images/imessage_logo.svg';
 
@@ -208,6 +212,434 @@ class $AssetsImagesGen {
   /// File path: assets/images/logo_transparent_v2.png
   AssetGenImage get logoTransparentV2 =>
       const AssetGenImage('assets/images/logo_transparent_v2.png');
+
+  /// File path: assets/images/mp_add_ai_export.png
+  AssetGenImage get mpAddAiExport =>
+      const AssetGenImage('assets/images/mp_add_ai_export.png');
+
+  /// File path: assets/images/mp_add_export_camera.png
+  AssetGenImage get mpAddExportCamera =>
+      const AssetGenImage('assets/images/mp_add_export_camera.png');
+
+  /// File path: assets/images/mp_add_export_chat.png
+  AssetGenImage get mpAddExportChat =>
+      const AssetGenImage('assets/images/mp_add_export_chat.png');
+
+  /// File path: assets/images/mp_add_export_chat_unselect.png
+  AssetGenImage get mpAddExportChatUnselect =>
+      const AssetGenImage('assets/images/mp_add_export_chat_unselect.png');
+
+  /// File path: assets/images/mp_add_export_choose.png
+  AssetGenImage get mpAddExportChoose =>
+      const AssetGenImage('assets/images/mp_add_export_choose.png');
+
+  /// File path: assets/images/mp_add_export_feedback.png
+  AssetGenImage get mpAddExportFeedback =>
+      const AssetGenImage('assets/images/mp_add_export_feedback.png');
+
+  /// File path: assets/images/mp_add_export_feedback_unselect.png
+  AssetGenImage get mpAddExportFeedbackUnselect =>
+      const AssetGenImage('assets/images/mp_add_export_feedback_unselect.png');
+
+  /// File path: assets/images/mp_add_export_robot.png
+  AssetGenImage get mpAddExportRobot =>
+      const AssetGenImage('assets/images/mp_add_export_robot.png');
+
+  /// File path: assets/images/mp_add_export_unchoose.png
+  AssetGenImage get mpAddExportUnchoose =>
+      const AssetGenImage('assets/images/mp_add_export_unchoose.png');
+
+  /// File path: assets/images/mp_add_integration_default.png
+  AssetGenImage get mpAddIntegrationDefault =>
+      const AssetGenImage('assets/images/mp_add_integration_default.png');
+
+  /// File path: assets/images/mp_ai_chat_menu.png
+  AssetGenImage get mpAiChatMenu =>
+      const AssetGenImage('assets/images/mp_ai_chat_menu.png');
+
+  /// File path: assets/images/mp_app_integration_help.png
+  AssetGenImage get mpAppIntegrationHelp =>
+      const AssetGenImage('assets/images/mp_app_integration_help.png');
+
+  /// File path: assets/images/mp_apps_1.png
+  AssetGenImage get mpApps1 =>
+      const AssetGenImage('assets/images/mp_apps_1.png');
+
+  /// File path: assets/images/mp_apps_10.png
+  AssetGenImage get mpApps10 =>
+      const AssetGenImage('assets/images/mp_apps_10.png');
+
+  /// File path: assets/images/mp_apps_11.png
+  AssetGenImage get mpApps11 =>
+      const AssetGenImage('assets/images/mp_apps_11.png');
+
+  /// File path: assets/images/mp_apps_12.png
+  AssetGenImage get mpApps12 =>
+      const AssetGenImage('assets/images/mp_apps_12.png');
+
+  /// File path: assets/images/mp_apps_13.png
+  AssetGenImage get mpApps13 =>
+      const AssetGenImage('assets/images/mp_apps_13.png');
+
+  /// File path: assets/images/mp_apps_14.png
+  AssetGenImage get mpApps14 =>
+      const AssetGenImage('assets/images/mp_apps_14.png');
+
+  /// File path: assets/images/mp_apps_15.png
+  AssetGenImage get mpApps15 =>
+      const AssetGenImage('assets/images/mp_apps_15.png');
+
+  /// File path: assets/images/mp_apps_16.png
+  AssetGenImage get mpApps16 =>
+      const AssetGenImage('assets/images/mp_apps_16.png');
+
+  /// File path: assets/images/mp_apps_17.png
+  AssetGenImage get mpApps17 =>
+      const AssetGenImage('assets/images/mp_apps_17.png');
+
+  /// File path: assets/images/mp_apps_18.png
+  AssetGenImage get mpApps18 =>
+      const AssetGenImage('assets/images/mp_apps_18.png');
+
+  /// File path: assets/images/mp_apps_19.png
+  AssetGenImage get mpApps19 =>
+      const AssetGenImage('assets/images/mp_apps_19.png');
+
+  /// File path: assets/images/mp_apps_2.png
+  AssetGenImage get mpApps2 =>
+      const AssetGenImage('assets/images/mp_apps_2.png');
+
+  /// File path: assets/images/mp_apps_20.png
+  AssetGenImage get mpApps20 =>
+      const AssetGenImage('assets/images/mp_apps_20.png');
+
+  /// File path: assets/images/mp_apps_21.png
+  AssetGenImage get mpApps21 =>
+      const AssetGenImage('assets/images/mp_apps_21.png');
+
+  /// File path: assets/images/mp_apps_22.png
+  AssetGenImage get mpApps22 =>
+      const AssetGenImage('assets/images/mp_apps_22.png');
+
+  /// File path: assets/images/mp_apps_23.png
+  AssetGenImage get mpApps23 =>
+      const AssetGenImage('assets/images/mp_apps_23.png');
+
+  /// File path: assets/images/mp_apps_24.png
+  AssetGenImage get mpApps24 =>
+      const AssetGenImage('assets/images/mp_apps_24.png');
+
+  /// File path: assets/images/mp_apps_25.png
+  AssetGenImage get mpApps25 =>
+      const AssetGenImage('assets/images/mp_apps_25.png');
+
+  /// File path: assets/images/mp_apps_26.png
+  AssetGenImage get mpApps26 =>
+      const AssetGenImage('assets/images/mp_apps_26.png');
+
+  /// File path: assets/images/mp_apps_27.png
+  AssetGenImage get mpApps27 =>
+      const AssetGenImage('assets/images/mp_apps_27.png');
+
+  /// File path: assets/images/mp_apps_28.png
+  AssetGenImage get mpApps28 =>
+      const AssetGenImage('assets/images/mp_apps_28.png');
+
+  /// File path: assets/images/mp_apps_29.png
+  AssetGenImage get mpApps29 =>
+      const AssetGenImage('assets/images/mp_apps_29.png');
+
+  /// File path: assets/images/mp_apps_3.png
+  AssetGenImage get mpApps3 =>
+      const AssetGenImage('assets/images/mp_apps_3.png');
+
+  /// File path: assets/images/mp_apps_30.png
+  AssetGenImage get mpApps30 =>
+      const AssetGenImage('assets/images/mp_apps_30.png');
+
+  /// File path: assets/images/mp_apps_31.png
+  AssetGenImage get mpApps31 =>
+      const AssetGenImage('assets/images/mp_apps_31.png');
+
+  /// File path: assets/images/mp_apps_32.png
+  AssetGenImage get mpApps32 =>
+      const AssetGenImage('assets/images/mp_apps_32.png');
+
+  /// File path: assets/images/mp_apps_33.png
+  AssetGenImage get mpApps33 =>
+      const AssetGenImage('assets/images/mp_apps_33.png');
+
+  /// File path: assets/images/mp_apps_34.png
+  AssetGenImage get mpApps34 =>
+      const AssetGenImage('assets/images/mp_apps_34.png');
+
+  /// File path: assets/images/mp_apps_35.png
+  AssetGenImage get mpApps35 =>
+      const AssetGenImage('assets/images/mp_apps_35.png');
+
+  /// File path: assets/images/mp_apps_36.png
+  AssetGenImage get mpApps36 =>
+      const AssetGenImage('assets/images/mp_apps_36.png');
+
+  /// File path: assets/images/mp_apps_4.png
+  AssetGenImage get mpApps4 =>
+      const AssetGenImage('assets/images/mp_apps_4.png');
+
+  /// File path: assets/images/mp_apps_5.png
+  AssetGenImage get mpApps5 =>
+      const AssetGenImage('assets/images/mp_apps_5.png');
+
+  /// File path: assets/images/mp_apps_6.png
+  AssetGenImage get mpApps6 =>
+      const AssetGenImage('assets/images/mp_apps_6.png');
+
+  /// File path: assets/images/mp_apps_7.png
+  AssetGenImage get mpApps7 =>
+      const AssetGenImage('assets/images/mp_apps_7.png');
+
+  /// File path: assets/images/mp_apps_8.png
+  AssetGenImage get mpApps8 =>
+      const AssetGenImage('assets/images/mp_apps_8.png');
+
+  /// File path: assets/images/mp_apps_9.png
+  AssetGenImage get mpApps9 =>
+      const AssetGenImage('assets/images/mp_apps_9.png');
+
+  /// File path: assets/images/mp_apps_integration_work_icon.png
+  AssetGenImage get mpAppsIntegrationWorkIcon =>
+      const AssetGenImage('assets/images/mp_apps_integration_work_icon.png');
+
+  /// File path: assets/images/mp_battery_connect.png
+  AssetGenImage get mpBatteryConnect =>
+      const AssetGenImage('assets/images/mp_battery_connect.png');
+
+  /// File path: assets/images/mp_battery_low_power.png
+  AssetGenImage get mpBatteryLowPower =>
+      const AssetGenImage('assets/images/mp_battery_low_power.png');
+
+  /// File path: assets/images/mp_battery_mid_power.png
+  AssetGenImage get mpBatteryMidPower =>
+      const AssetGenImage('assets/images/mp_battery_mid_power.png');
+
+  /// File path: assets/images/mp_battery_no_connect.png
+  AssetGenImage get mpBatteryNoConnect =>
+      const AssetGenImage('assets/images/mp_battery_no_connect.png');
+
+  /// File path: assets/images/mp_battery_recording.png
+  AssetGenImage get mpBatteryRecording =>
+      const AssetGenImage('assets/images/mp_battery_recording.png');
+
+  /// File path: assets/images/mp_chat_no_msg_top_icon.png
+  AssetGenImage get mpChatNoMsgTopIcon =>
+      const AssetGenImage('assets/images/mp_chat_no_msg_top_icon.png');
+
+  /// File path: assets/images/mp_feedback_detail_add.png
+  AssetGenImage get mpFeedbackDetailAdd =>
+      const AssetGenImage('assets/images/mp_feedback_detail_add.png');
+
+  /// File path: assets/images/mp_feedback_detail_added.png
+  AssetGenImage get mpFeedbackDetailAdded =>
+      const AssetGenImage('assets/images/mp_feedback_detail_added.png');
+
+  /// File path: assets/images/mp_icon_more_add_tag.png
+  AssetGenImage get mpIconMoreAddTag =>
+      const AssetGenImage('assets/images/mp_icon_more_add_tag.png');
+
+  /// File path: assets/images/mp_icon_more_copy_summary.png
+  AssetGenImage get mpIconMoreCopySummary =>
+      const AssetGenImage('assets/images/mp_icon_more_copy_summary.png');
+
+  /// File path: assets/images/mp_icon_more_copy_transcript.png
+  AssetGenImage get mpIconMoreCopyTranscript =>
+      const AssetGenImage('assets/images/mp_icon_more_copy_transcript.png');
+
+  /// File path: assets/images/mp_icon_more_regenerate.png
+  AssetGenImage get mpIconMoreRegenerate =>
+      const AssetGenImage('assets/images/mp_icon_more_regenerate.png');
+
+  /// File path: assets/images/mp_icon_more_rename.png
+  AssetGenImage get mpIconMoreRename =>
+      const AssetGenImage('assets/images/mp_icon_more_rename.png');
+
+  /// File path: assets/images/mp_import_audio_close.png
+  AssetGenImage get mpImportAudioClose =>
+      const AssetGenImage('assets/images/mp_import_audio_close.png');
+
+  /// File path: assets/images/mp_import_audio_icon.png
+  AssetGenImage get mpImportAudioIcon =>
+      const AssetGenImage('assets/images/mp_import_audio_icon.png');
+
+  /// File path: assets/images/mp_memo_add.png
+  AssetGenImage get mpMemoAdd =>
+      const AssetGenImage('assets/images/mp_memo_add.png');
+
+  /// File path: assets/images/mp_memo_edit.png
+  AssetGenImage get mpMemoEdit =>
+      const AssetGenImage('assets/images/mp_memo_edit.png');
+
+  /// File path: assets/images/mp_memo_search.png
+  AssetGenImage get mpMemoSearch =>
+      const AssetGenImage('assets/images/mp_memo_search.png');
+
+  /// File path: assets/images/mp_memory_add.png
+  AssetGenImage get mpMemoryAdd =>
+      const AssetGenImage('assets/images/mp_memory_add.png');
+
+  /// File path: assets/images/mp_memory_detail_add_memory.png
+  AssetGenImage get mpMemoryDetailAddMemory =>
+      const AssetGenImage('assets/images/mp_memory_detail_add_memory.png');
+
+  /// File path: assets/images/mp_memory_detail_history.png
+  AssetGenImage get mpMemoryDetailHistory =>
+      const AssetGenImage('assets/images/mp_memory_detail_history.png');
+
+  /// File path: assets/images/mp_memory_detail_people.png
+  AssetGenImage get mpMemoryDetailPeople =>
+      const AssetGenImage('assets/images/mp_memory_detail_people.png');
+
+  /// File path: assets/images/mp_memory_detail_radio.png
+  AssetGenImage get mpMemoryDetailRadio =>
+      const AssetGenImage('assets/images/mp_memory_detail_radio.png');
+
+  /// File path: assets/images/mp_memory_detail_time.png
+  AssetGenImage get mpMemoryDetailTime =>
+      const AssetGenImage('assets/images/mp_memory_detail_time.png');
+
+  /// File path: assets/images/mp_memory_imessage.png
+  AssetGenImage get mpMemoryImessage =>
+      const AssetGenImage('assets/images/mp_memory_imessage.png');
+
+  /// File path: assets/images/mp_my_voice.png
+  AssetGenImage get mpMyVoice =>
+      const AssetGenImage('assets/images/mp_my_voice.png');
+
+  /// File path: assets/images/mp_my_voice_delete.png
+  AssetGenImage get mpMyVoiceDelete =>
+      const AssetGenImage('assets/images/mp_my_voice_delete.png');
+
+  /// File path: assets/images/mp_my_voice_edit.png
+  AssetGenImage get mpMyVoiceEdit =>
+      const AssetGenImage('assets/images/mp_my_voice_edit.png');
+
+  /// File path: assets/images/mp_personal_changepassword.png
+  AssetGenImage get mpPersonalChangepassword =>
+      const AssetGenImage('assets/images/mp_personal_changepassword.png');
+
+  /// File path: assets/images/mp_personal_down.png
+  AssetGenImage get mpPersonalDown =>
+      const AssetGenImage('assets/images/mp_personal_down.png');
+
+  /// File path: assets/images/mp_personal_email.png
+  AssetGenImage get mpPersonalEmail =>
+      const AssetGenImage('assets/images/mp_personal_email.png');
+
+  /// File path: assets/images/mp_personal_facebook.png
+  AssetGenImage get mpPersonalFacebook =>
+      const AssetGenImage('assets/images/mp_personal_facebook.png');
+
+  /// File path: assets/images/mp_personal_feedback.png
+  AssetGenImage get mpPersonalFeedback =>
+      const AssetGenImage('assets/images/mp_personal_feedback.png');
+
+  /// File path: assets/images/mp_personal_instagram.png
+  AssetGenImage get mpPersonalInstagram =>
+      const AssetGenImage('assets/images/mp_personal_instagram.png');
+
+  /// File path: assets/images/mp_personal_net.png
+  AssetGenImage get mpPersonalNet =>
+      const AssetGenImage('assets/images/mp_personal_net.png');
+
+  /// File path: assets/images/mp_personal_tiktok.png
+  AssetGenImage get mpPersonalTiktok =>
+      const AssetGenImage('assets/images/mp_personal_tiktok.png');
+
+  /// File path: assets/images/mp_personal_twitter.png
+  AssetGenImage get mpPersonalTwitter =>
+      const AssetGenImage('assets/images/mp_personal_twitter.png');
+
+  /// File path: assets/images/mp_personal_username.png
+  AssetGenImage get mpPersonalUsername =>
+      const AssetGenImage('assets/images/mp_personal_username.png');
+
+  /// File path: assets/images/mp_record_note_icon.png
+  AssetGenImage get mpRecordNoteIcon =>
+      const AssetGenImage('assets/images/mp_record_note_icon.png');
+
+  /// File path: assets/images/mp_right_arrow_white.png
+  AssetGenImage get mpRightArrowWhite =>
+      const AssetGenImage('assets/images/mp_right_arrow_white.png');
+
+  /// File path: assets/images/mp_setting_notification.png
+  AssetGenImage get mpSettingNotification =>
+      const AssetGenImage('assets/images/mp_setting_notification.png');
+
+  /// File path: assets/images/mp_setting_privicy.png
+  AssetGenImage get mpSettingPrivicy =>
+      const AssetGenImage('assets/images/mp_setting_privicy.png');
+
+  /// File path: assets/images/mp_setting_service.png
+  AssetGenImage get mpSettingService =>
+      const AssetGenImage('assets/images/mp_setting_service.png');
+
+  /// File path: assets/images/mp_setting_voice.png
+  AssetGenImage get mpSettingVoice =>
+      const AssetGenImage('assets/images/mp_setting_voice.png');
+
+  /// File path: assets/images/mp_setting_voice_time.png
+  AssetGenImage get mpSettingVoiceTime =>
+      const AssetGenImage('assets/images/mp_setting_voice_time.png');
+
+  /// File path: assets/images/mp_start_recording_icon.png
+  AssetGenImage get mpStartRecordingIcon =>
+      const AssetGenImage('assets/images/mp_start_recording_icon.png');
+
+  /// File path: assets/images/mp_template_detail_icon.png
+  AssetGenImage get mpTemplateDetailIcon =>
+      const AssetGenImage('assets/images/mp_template_detail_icon.png');
+
+  /// File path: assets/images/mp_todo_add_canlendar.png
+  AssetGenImage get mpTodoAddCanlendar =>
+      const AssetGenImage('assets/images/mp_todo_add_canlendar.png');
+
+  /// File path: assets/images/mp_todo_add_priority.png
+  AssetGenImage get mpTodoAddPriority =>
+      const AssetGenImage('assets/images/mp_todo_add_priority.png');
+
+  /// File path: assets/images/mp_todo_cancendar.png
+  AssetGenImage get mpTodoCancendar =>
+      const AssetGenImage('assets/images/mp_todo_cancendar.png');
+
+  /// File path: assets/images/mp_todo_edit.png
+  AssetGenImage get mpTodoEdit =>
+      const AssetGenImage('assets/images/mp_todo_edit.png');
+
+  /// File path: assets/images/mp_transcription_check.png
+  AssetGenImage get mpTranscriptionCheck =>
+      const AssetGenImage('assets/images/mp_transcription_check.png');
+
+  /// File path: assets/images/mp_voice_add_mark.png
+  AssetGenImage get mpVoiceAddMark =>
+      const AssetGenImage('assets/images/mp_voice_add_mark.png');
+
+  /// File path: assets/images/mp_voice_dialog_close.png
+  AssetGenImage get mpVoiceDialogClose =>
+      const AssetGenImage('assets/images/mp_voice_dialog_close.png');
+
+  /// File path: assets/images/mp_voice_help.png
+  AssetGenImage get mpVoiceHelp =>
+      const AssetGenImage('assets/images/mp_voice_help.png');
+
+  /// File path: assets/images/mp_voice_new.png
+  AssetGenImage get mpVoiceNew =>
+      const AssetGenImage('assets/images/mp_voice_new.png');
+
+  /// File path: assets/images/mp_voice_tip_icon.png
+  AssetGenImage get mpVoiceTipIcon =>
+      const AssetGenImage('assets/images/mp_voice_tip_icon.png');
+
+  /// File path: assets/images/mp_voice_waiting_add.png
+  AssetGenImage get mpVoiceWaitingAdd =>
+      const AssetGenImage('assets/images/mp_voice_waiting_add.png');
 
   /// File path: assets/images/new_background.png
   AssetGenImage get newBackground =>
@@ -280,6 +712,102 @@ class $AssetsImagesGen {
   AssetGenImage get recordingGreenCircleIcon =>
       const AssetGenImage('assets/images/recording_green_circle_icon.png');
 
+  /// File path: assets/images/setting_about.png
+  AssetGenImage get settingAbout =>
+      const AssetGenImage('assets/images/setting_about.png');
+
+  /// File path: assets/images/setting_aiperfect.png
+  AssetGenImage get settingAiperfect =>
+      const AssetGenImage('assets/images/setting_aiperfect.png');
+
+  /// File path: assets/images/setting_calendar.png
+  AssetGenImage get settingCalendar =>
+      const AssetGenImage('assets/images/setting_calendar.png');
+
+  /// File path: assets/images/setting_camera.png
+  AssetGenImage get settingCamera =>
+      const AssetGenImage('assets/images/setting_camera.png');
+
+  /// File path: assets/images/setting_check.png
+  AssetGenImage get settingCheck =>
+      const AssetGenImage('assets/images/setting_check.png');
+
+  /// File path: assets/images/setting_download.png
+  AssetGenImage get settingDownload =>
+      const AssetGenImage('assets/images/setting_download.png');
+
+  /// File path: assets/images/setting_feedback.png
+  AssetGenImage get settingFeedback =>
+      const AssetGenImage('assets/images/setting_feedback.png');
+
+  /// File path: assets/images/setting_help.png
+  AssetGenImage get settingHelp =>
+      const AssetGenImage('assets/images/setting_help.png');
+
+  /// File path: assets/images/setting_integrated.png
+  AssetGenImage get settingIntegrated =>
+      const AssetGenImage('assets/images/setting_integrated.png');
+
+  /// File path: assets/images/setting_language.png
+  AssetGenImage get settingLanguage =>
+      const AssetGenImage('assets/images/setting_language.png');
+
+  /// File path: assets/images/setting_memopin.png
+  AssetGenImage get settingMemopin =>
+      const AssetGenImage('assets/images/setting_memopin.png');
+
+  /// File path: assets/images/setting_notification.png
+  AssetGenImage get settingNotification =>
+      const AssetGenImage('assets/images/setting_notification.png');
+
+  /// File path: assets/images/setting_notion.png
+  AssetGenImage get settingNotion =>
+      const AssetGenImage('assets/images/setting_notion.png');
+
+  /// File path: assets/images/setting_privicy.png
+  AssetGenImage get settingPrivicy =>
+      const AssetGenImage('assets/images/setting_privicy.png');
+
+  /// File path: assets/images/setting_referral.png
+  AssetGenImage get settingReferral =>
+      const AssetGenImage('assets/images/setting_referral.png');
+
+  /// File path: assets/images/setting_right_arrow_1.png
+  AssetGenImage get settingRightArrow1 =>
+      const AssetGenImage('assets/images/setting_right_arrow_1.png');
+
+  /// File path: assets/images/setting_right_arrow_2.png
+  AssetGenImage get settingRightArrow2 =>
+      const AssetGenImage('assets/images/setting_right_arrow_2.png');
+
+  /// File path: assets/images/setting_service.png
+  AssetGenImage get settingService =>
+      const AssetGenImage('assets/images/setting_service.png');
+
+  /// File path: assets/images/setting_set.png
+  AssetGenImage get settingSet =>
+      const AssetGenImage('assets/images/setting_set.png');
+
+  /// File path: assets/images/setting_subscription.png
+  AssetGenImage get settingSubscription =>
+      const AssetGenImage('assets/images/setting_subscription.png');
+
+  /// File path: assets/images/setting_template.png
+  AssetGenImage get settingTemplate =>
+      const AssetGenImage('assets/images/setting_template.png');
+
+  /// File path: assets/images/setting_user.png
+  AssetGenImage get settingUser =>
+      const AssetGenImage('assets/images/setting_user.png');
+
+  /// File path: assets/images/setting_voice_time.png
+  AssetGenImage get settingVoiceTime =>
+      const AssetGenImage('assets/images/setting_voice_time.png');
+
+  /// File path: assets/images/setting_voiceprint.png
+  AssetGenImage get settingVoiceprint =>
+      const AssetGenImage('assets/images/setting_voiceprint.png');
+
   /// File path: assets/images/slack_logo.png
   AssetGenImage get slackLogo =>
       const AssetGenImage('assets/images/slack_logo.png');
@@ -304,6 +832,38 @@ class $AssetsImagesGen {
 
   /// File path: assets/images/stripe_logo.svg
   String get stripeLogo => 'assets/images/stripe_logo.svg';
+
+  /// File path: assets/images/tab_ai_normal.png
+  AssetGenImage get tabAiNormal =>
+      const AssetGenImage('assets/images/tab_ai_normal.png');
+
+  /// File path: assets/images/tab_ai_select.png
+  AssetGenImage get tabAiSelect =>
+      const AssetGenImage('assets/images/tab_ai_select.png');
+
+  /// File path: assets/images/tab_memo_normal.png
+  AssetGenImage get tabMemoNormal =>
+      const AssetGenImage('assets/images/tab_memo_normal.png');
+
+  /// File path: assets/images/tab_memo_select.png
+  AssetGenImage get tabMemoSelect =>
+      const AssetGenImage('assets/images/tab_memo_select.png');
+
+  /// File path: assets/images/tab_memory_normal.png
+  AssetGenImage get tabMemoryNormal =>
+      const AssetGenImage('assets/images/tab_memory_normal.png');
+
+  /// File path: assets/images/tab_memory_select.png
+  AssetGenImage get tabMemorySelect =>
+      const AssetGenImage('assets/images/tab_memory_select.png');
+
+  /// File path: assets/images/tab_set_normal.png
+  AssetGenImage get tabSetNormal =>
+      const AssetGenImage('assets/images/tab_set_normal.png');
+
+  /// File path: assets/images/tab_set_select.png
+  AssetGenImage get tabSetSelect =>
+      const AssetGenImage('assets/images/tab_set_select.png');
 
   /// File path: assets/images/telegram_logo.png
   AssetGenImage get telegramLogo =>
@@ -357,6 +917,7 @@ class $AssetsImagesGen {
     icDollar,
     icPersonaProfile,
     icSettingPersona,
+    iconMoreDeletemp,
     imessageLogo,
     instagramLogo,
     instruction1,
@@ -366,6 +927,113 @@ class $AssetsImagesGen {
     linkedinLogo,
     logoTransparent,
     logoTransparentV2,
+    mpAddAiExport,
+    mpAddExportCamera,
+    mpAddExportChat,
+    mpAddExportChatUnselect,
+    mpAddExportChoose,
+    mpAddExportFeedback,
+    mpAddExportFeedbackUnselect,
+    mpAddExportRobot,
+    mpAddExportUnchoose,
+    mpAddIntegrationDefault,
+    mpAiChatMenu,
+    mpAppIntegrationHelp,
+    mpApps1,
+    mpApps10,
+    mpApps11,
+    mpApps12,
+    mpApps13,
+    mpApps14,
+    mpApps15,
+    mpApps16,
+    mpApps17,
+    mpApps18,
+    mpApps19,
+    mpApps2,
+    mpApps20,
+    mpApps21,
+    mpApps22,
+    mpApps23,
+    mpApps24,
+    mpApps25,
+    mpApps26,
+    mpApps27,
+    mpApps28,
+    mpApps29,
+    mpApps3,
+    mpApps30,
+    mpApps31,
+    mpApps32,
+    mpApps33,
+    mpApps34,
+    mpApps35,
+    mpApps36,
+    mpApps4,
+    mpApps5,
+    mpApps6,
+    mpApps7,
+    mpApps8,
+    mpApps9,
+    mpAppsIntegrationWorkIcon,
+    mpBatteryConnect,
+    mpBatteryLowPower,
+    mpBatteryMidPower,
+    mpBatteryNoConnect,
+    mpBatteryRecording,
+    mpChatNoMsgTopIcon,
+    mpFeedbackDetailAdd,
+    mpFeedbackDetailAdded,
+    mpIconMoreAddTag,
+    mpIconMoreCopySummary,
+    mpIconMoreCopyTranscript,
+    mpIconMoreRegenerate,
+    mpIconMoreRename,
+    mpImportAudioClose,
+    mpImportAudioIcon,
+    mpMemoAdd,
+    mpMemoEdit,
+    mpMemoSearch,
+    mpMemoryAdd,
+    mpMemoryDetailAddMemory,
+    mpMemoryDetailHistory,
+    mpMemoryDetailPeople,
+    mpMemoryDetailRadio,
+    mpMemoryDetailTime,
+    mpMemoryImessage,
+    mpMyVoice,
+    mpMyVoiceDelete,
+    mpMyVoiceEdit,
+    mpPersonalChangepassword,
+    mpPersonalDown,
+    mpPersonalEmail,
+    mpPersonalFacebook,
+    mpPersonalFeedback,
+    mpPersonalInstagram,
+    mpPersonalNet,
+    mpPersonalTiktok,
+    mpPersonalTwitter,
+    mpPersonalUsername,
+    mpRecordNoteIcon,
+    mpRightArrowWhite,
+    mpSettingNotification,
+    mpSettingPrivicy,
+    mpSettingService,
+    mpSettingVoice,
+    mpSettingVoiceTime,
+    mpStartRecordingIcon,
+    mpTemplateDetailIcon,
+    mpTodoAddCanlendar,
+    mpTodoAddPriority,
+    mpTodoCancendar,
+    mpTodoEdit,
+    mpTranscriptionCheck,
+    mpVoiceAddMark,
+    mpVoiceDialogClose,
+    mpVoiceHelp,
+    mpVoiceNew,
+    mpVoiceTipIcon,
+    mpVoiceWaitingAdd,
     newBackground,
     notionLogo,
     omiDevkitWithoutRope,
@@ -384,6 +1052,30 @@ class $AssetsImagesGen {
     onboarding,
     plaudNotePin,
     recordingGreenCircleIcon,
+    settingAbout,
+    settingAiperfect,
+    settingCalendar,
+    settingCamera,
+    settingCheck,
+    settingDownload,
+    settingFeedback,
+    settingHelp,
+    settingIntegrated,
+    settingLanguage,
+    settingMemopin,
+    settingNotification,
+    settingNotion,
+    settingPrivicy,
+    settingReferral,
+    settingRightArrow1,
+    settingRightArrow2,
+    settingService,
+    settingSet,
+    settingSubscription,
+    settingTemplate,
+    settingUser,
+    settingVoiceTime,
+    settingVoiceprint,
     slackLogo,
     speaker0Icon,
     speaker1Icon,
@@ -391,6 +1083,14 @@ class $AssetsImagesGen {
     splashIcon,
     stars,
     stripeLogo,
+    tabAiNormal,
+    tabAiSelect,
+    tabMemoNormal,
+    tabMemoSelect,
+    tabMemoryNormal,
+    tabMemorySelect,
+    tabSetNormal,
+    tabSetSelect,
     telegramLogo,
     whatsappLogo,
     xLogo,

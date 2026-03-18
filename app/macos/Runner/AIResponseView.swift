@@ -2,7 +2,7 @@
 //  AIResponseView.swift
 //  Runner
 //
-//  Created by Omi on 2025-09-26.
+//  Created by MemoPin on 2025-09-26.
 //
 
 import Cocoa

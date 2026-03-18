@@ -8,17 +8,20 @@ import 'package:omi/env/env.dart';
 import 'package:http/http.dart' as http;
 
 /// 音频文件扩展名到MIME类型的映射
-Map<String, String> _audioMimeTypes = {
+Map<String, String> audioMimeTypes = {
   '.m4a': 'audio/m4a',
   '.wav': 'audio/wav',
   '.mp3': 'audio/mpeg',
   '.aac': 'audio/aac',
 };
 
+/// 支持的音频文件扩展名列表
+List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac'];
+
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {
   final extension = filename.toLowerCase().substring(filename.lastIndexOf('.'));
-  return _audioMimeTypes[extension] ?? 'audio/wav';
+  return audioMimeTypes[extension] ?? 'audio/wav';
 }
 
 /// 获取预签名上传URL
@@ -89,6 +92,44 @@ Future<bool> uploadAudioToS3(
     }
   } catch (e) {
     debugPrint('uploadAudioToS3 exception: $e');
+    return false;
+  }
+}
+
+/// 上传音频字节到S3
+///
+/// [uploadUrl] 预签名的S3上传URL
+/// [audioBytes] 要上传的音频字节数组
+/// [contentType] 音频文件的MIME类型
+///
+/// 返回 true 表示上传成功，false 表示失败
+Future<bool> uploadAudioToS3Bytes(
+  String uploadUrl,
+  List<int> audioBytes,
+  String contentType,
+) async {
+  try {
+    // 直接使用 PUT 方法上传到 S3 预签名 URL
+    final response = await http.put(
+      Uri.parse(uploadUrl),
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': audioBytes.length.toString(),
+      },
+      body: audioBytes,
+    );
+
+    debugPrint('uploadAudioToS3Bytes: status ${response.statusCode}');
+
+    // S3 返回 200 或 204 表示成功
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      return true;
+    } else {
+      debugPrint('uploadAudioToS3Bytes error ${response.statusCode}: ${response.body}');
+      return false;
+    }
+  } catch (e) {
+    debugPrint('uploadAudioToS3Bytes exception: $e');
     return false;
   }
 }

@@ -1,5 +1,6 @@
 /// Note 设备存储管理器
 /// 管理设备绑定信息、SNID、设备类型等本地文件存储
+library;
 
 import 'dart:io';
 import 'dart:typed_data';

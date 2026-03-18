@@ -767,7 +767,7 @@ class _AppSelectionItem extends StatelessWidget {
                       ] else ...[
                         const SizedBox(height: 2),
                         const Text(
-                          'Let Omi choose the best app automatically',
+                          'Let MemoPin choose the best app automatically',
                           style: TextStyle(
                             color: ResponsiveHelper.textTertiary,
                             fontSize: 12,

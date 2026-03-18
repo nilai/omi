@@ -1,16 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:omi/backend/http/api/conversations.dart';
 import 'package:omi/backend/schema/conversation.dart';
 import 'package:omi/services/services.dart';
 import 'package:omi/services/wals.dart';
 import 'package:omi/utils/other/time_utils.dart';
+import 'package:share_plus/share_plus.dart';
 
-import '../utils/audio_player_utils.dart';
-import '../utils/waveform_utils.dart';
 import '../models/sync_state.dart';
+import '../utils/audio_player_utils.dart';
 import '../utils/conversation_sync_utils.dart';
+import '../utils/waveform_utils.dart';
 
 class SyncProvider extends ChangeNotifier implements IWalServiceListener, IWalSyncProgressListener {
   // Services
@@ -207,6 +208,25 @@ class SyncProvider extends ChangeNotifier implements IWalServiceListener, IWalSy
 
   Future<void> shareWalAsWav(Wal wal) async {
     await _audioPlayerUtils.shareAsAudio(wal);
+  }
+
+  /// 分享本地音频文件（如 mp3）
+  ///
+  /// [filePath] 音频文件的路径
+  /// [shareText] 可选的分享文本
+  /// [context] 可选的 BuildContext，用于在 iOS 上获取屏幕尺寸以设置 sharePositionOrigin
+  ///
+  /// 返回分享结果状态
+  Future<ShareResult> shareLocalAudioFile(
+    String filePath, {
+    String? shareText,
+    BuildContext? context,
+  }) async {
+    return await _audioPlayerUtils.shareLocalAudioFile(
+      filePath,
+      shareText: shareText,
+      context: context,
+    );
   }
 
   Future<void> seekToPosition(Duration position) async {

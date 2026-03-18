@@ -1,5 +1,6 @@
 /// Note 设备连接层
 /// 实现设备级别的命令控制、响应处理、状态管理
+library;
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -39,7 +40,7 @@ class NoteDeviceConnection extends DeviceConnection {
   // ============ #2: 分包拼接相关 ============
 
   /// 分包数据缓存
-  List<int> _packetCache = [];
+  final List<int> _packetCache = [];
 
   /// 分包超时定时器
   Timer? _packetTimeoutTimer;
@@ -61,8 +62,7 @@ class NoteDeviceConnection extends DeviceConnection {
   /// 连接状态回调
   void Function(String deviceId, DeviceConnectionState state)? _connectionStateCallback;
 
-  NoteDeviceConnection(BtDevice device, this._transport)
-      : super(device, _transport) {
+  NoteDeviceConnection(BtDevice device, this._transport) : super(device, _transport) {
     _setupResponseListener();
     _setupConnectionStateListener();
   }
@@ -138,7 +138,7 @@ class NoteDeviceConnection extends DeviceConnection {
 
   /// #2: 开始分包超时计时
   void _startPacketTimeout() {
-    _packetTimeoutTimer = Timer(Duration(milliseconds: _kPacketTimeoutMs), () {
+    _packetTimeoutTimer = Timer(const Duration(milliseconds: _kPacketTimeoutMs), () {
       // 超时后，将已缓存的数据作为最终数据返回
       if (_packetCache.isNotEmpty) {
         print('[NoteConnection] 分包超时，返回已缓存数据，长度: ${_packetCache.length}');
@@ -196,10 +196,10 @@ class NoteDeviceConnection extends DeviceConnection {
     }
 
     _stopAutoReconnect();
-    print('[NoteConnection] 启动自动重连定时器 (${_kAutoReconnectIntervalSec}秒间隔)');
+    print('[NoteConnection] 启动自动重连定时器 ($_kAutoReconnectIntervalSec秒间隔)');
 
     _autoReconnectTimer = Timer.periodic(
-      Duration(seconds: _kAutoReconnectIntervalSec),
+      const Duration(seconds: _kAutoReconnectIntervalSec),
       (timer) async {
         if (!_autoReconnectEnabled) {
           timer.cancel();
@@ -244,7 +244,7 @@ class NoteDeviceConnection extends DeviceConnection {
 
       // 1. RTC 时间同步
       await syncRTC();
-      await Future.delayed(Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 50));
 
       // 2. 检查绑定状态
       final isBound = await _storage.isDeviceBound();

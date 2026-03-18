@@ -64,7 +64,8 @@ class SharedPreferencesUtil {
 
   BtDevice get btDevice {
     final String device = getString('btDevice') ?? '';
-    if (device.isEmpty) return BtDevice(id: '', name: '', type: DeviceType.omi, rssi: 0);
+    // if (device.isEmpty) return BtDevice(id: '', name: '', type: DeviceType.omi, rssi: 0);
+    if (device.isEmpty) return BtDevice(id: '', name: '', type: DeviceType.aiNote, rssi: 0);
     return BtDevice.fromJson(jsonDecode(device));
   }
 
@@ -165,7 +166,8 @@ class SharedPreferencesUtil {
 
   set transcriptionModel(String value) => saveString('transcriptionModel3', value);
 
-  bool get onboardingCompleted => getBool('onboardingCompleted') ?? false;
+  // bool get onboardingCompleted => getBool('onboardingCompleted') ?? false;
+  bool get onboardingCompleted => true;
 
   set onboardingCompleted(bool value) => saveBool('onboardingCompleted', value);
 
@@ -214,6 +216,11 @@ class SharedPreferencesUtil {
   bool get hasSetPrimaryLanguage => getBool('hasSetPrimaryLanguage') ?? false;
 
   set hasSetPrimaryLanguage(bool value) => saveBool('hasSetPrimaryLanguage', value);
+
+  // Audio retention period
+  String get audioRetentionPeriod => getString('audioRetentionPeriod') ?? '1 month';
+
+  set audioRetentionPeriod(String value) => saveString('audioRetentionPeriod', value);
 
   int get currentStorageBytes => getInt('currentStorageBytes') ?? 0;
 

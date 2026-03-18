@@ -40,7 +40,7 @@ class _PlansSheetState extends State<PlansSheet> {
   String selectedPlan = 'yearly'; // 'yearly' or 'monthly'
   bool _isCancelling = false;
   bool _isUpgrading = false;
-  bool _showTrainingDataOptIn = false; // Control visibility of training data opt-in
+  final bool _showTrainingDataOptIn = false; // Control visibility of training data opt-in
 
   Future<void> _loadAvailablePlans() async {
     final provider = context.read<UsageProvider>();
@@ -94,7 +94,7 @@ class _PlansSheetState extends State<PlansSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Get Omi Unlimited for free by contributing your data to train AI models.',
+                  'Get MemoPin Unlimited for free by contributing your data to train AI models.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 14,
@@ -164,8 +164,8 @@ class _PlansSheetState extends State<PlansSheet> {
                               isChecked = value ?? false;
                             });
                           },
-                          fillColor: MaterialStateProperty.resolveWith((states) {
-                            if (states.contains(MaterialState.selected)) {
+                          fillColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
                               return Colors.white;
                             }
                             return Colors.transparent;
@@ -936,7 +936,7 @@ class _PlansSheetState extends State<PlansSheet> {
                           const SizedBox(height: 16),
                           _buildFeatureItem(
                             faIcon: FontAwesomeIcons.solidComments,
-                            text: 'Ask Omi anything about your life',
+                            text: 'Ask MemoPin anything about your life',
                           ),
                           const SizedBox(height: 16),
                           _buildFeatureItem(

@@ -452,6 +452,7 @@ class _DesktopActionItemState extends State<DesktopActionItem> with AutomaticKee
                         ? TextField(
                             controller: _textController,
                             focusNode: _focusNode,
+                            cursorColor: Colors.black,
                             style: const TextStyle(
                                 color: ResponsiveHelper.textPrimary,
                                 fontSize: 15,

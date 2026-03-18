@@ -735,19 +735,17 @@ class AddAppProvider extends ChangeNotifier {
         }
       }
 
-      if (thumbnailFile != null) {
-        setIsUploadingThumbnail(true);
+      setIsUploadingThumbnail(true);
 
-        // Upload thumbnail
-        debugPrint('🖼️ Uploading thumbnail...');
-        var result = await uploadAppThumbnail(thumbnailFile);
-        if (result.isNotEmpty) {
-          thumbnailUrls.add(result['thumbnail_url']!);
-          thumbnailIds.add(result['thumbnail_id']!);
-          debugPrint('🖼️ Thumbnail uploaded successfully');
-        }
-        setIsUploadingThumbnail(false);
+      // Upload thumbnail
+      debugPrint('🖼️ Uploading thumbnail...');
+      var result = await uploadAppThumbnail(thumbnailFile);
+      if (result.isNotEmpty) {
+        thumbnailUrls.add(result['thumbnail_url']!);
+        thumbnailIds.add(result['thumbnail_id']!);
+        debugPrint('🖼️ Thumbnail uploaded successfully');
       }
+      setIsUploadingThumbnail(false);
     } on PlatformException catch (e) {
       debugPrint('🖼️ PlatformException during thumbnail picking: ${e.code} - ${e.message}');
       if (e.code == 'photo_access_denied') {

@@ -155,7 +155,7 @@ class _DataProtectionSectionState extends State<DataProtectionSection> {
       padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: Color(0xFF35343B).withOpacity(0.5),
+        color: const Color(0xFF35343B).withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.deepPurple.shade300),
       ),
@@ -255,7 +255,7 @@ class _DataProtectionSectionState extends State<DataProtectionSection> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your data is encrypted with a key unique to you on our servers, hosted on Google Cloud. This means your raw content is inaccessible to anyone, including Omi staff or Google, directly from the database.',
+                  'Your data is encrypted with a key unique to you on our servers, hosted on Google Cloud. This means your raw content is inaccessible to anyone, including MemoPin staff or Google, directly from the database.',
                   style: TextStyle(color: Colors.grey.shade400, fontSize: 14, height: 1.4),
                 ),
               ],
@@ -275,7 +275,7 @@ class _DataProtectionSectionState extends State<DataProtectionSection> {
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Color(0xFF35343B)),
+          border: Border.all(color: const Color(0xFF35343B)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

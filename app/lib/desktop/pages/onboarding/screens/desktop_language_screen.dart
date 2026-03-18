@@ -90,7 +90,7 @@ class _DesktopLanguageScreenState extends State<DesktopLanguageScreen> with Tick
       final homeProvider = Provider.of<HomeProvider>(context, listen: false);
       // Only set selected language if user has previously saved one
       final savedLanguage = homeProvider.userPrimaryLanguage;
-      if (savedLanguage != null && savedLanguage.isNotEmpty) {
+      if (savedLanguage.isNotEmpty) {
         setState(() {
           selectedLanguage = savedLanguage;
         });
@@ -218,7 +218,7 @@ class _DesktopLanguageScreenState extends State<DesktopLanguageScreen> with Tick
                   ),
                   SizedBox(height: responsive.spacing(baseSpacing: 8)),
                   const Text(
-                    'Select your preferred language for the best Omi experience',
+                    'Select your preferred language for the best MemoPin experience',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
@@ -256,6 +256,7 @@ class _DesktopLanguageScreenState extends State<DesktopLanguageScreen> with Tick
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
+                  cursorColor: Colors.black,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,

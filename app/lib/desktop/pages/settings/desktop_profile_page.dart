@@ -14,7 +14,6 @@ import 'package:omi/providers/home_provider.dart';
 import 'package:omi/ui/atoms/omi_checkbox.dart';
 import 'package:omi/ui/atoms/omi_icon_button.dart';
 import 'package:omi/ui/atoms/omi_info_card.dart';
-import 'package:omi/ui/atoms/omi_profile_avatar.dart';
 import 'package:omi/ui/atoms/omi_section.dart';
 import 'package:omi/ui/atoms/omi_settings_tile.dart';
 import 'package:omi/utils/analytics/mixpanel.dart';
@@ -327,7 +326,7 @@ class _DesktopProfilePageState extends State<DesktopProfilePage> with TickerProv
               ),
               OmiSettingsTile(
                 title: 'Persona',
-                subtitle: 'Manage your Omi persona',
+                subtitle: 'Manage your MemoPin persona',
                 icon: FontAwesomeIcons.userGear,
                 onTap: () {
                   Navigator.of(context).push(
@@ -351,7 +350,7 @@ class _DesktopProfilePageState extends State<DesktopProfilePage> with TickerProv
             children: [
               OmiSettingsTile(
                 title: 'Speech Profile',
-                subtitle: 'Teach Omi your voice',
+                subtitle: 'Teach MemoPin your voice',
                 icon: FontAwesomeIcons.waveSquare,
                 onTap: () {
                   routeToPage(context, const SpeechProfilePage());
@@ -360,7 +359,7 @@ class _DesktopProfilePageState extends State<DesktopProfilePage> with TickerProv
               ),
               OmiSettingsTile(
                 title: 'Identifying Others',
-                subtitle: 'Tell Omi who said it 🗣️',
+                subtitle: 'Tell MemoPin who said it 🗣️',
                 icon: FontAwesomeIcons.users,
                 onTap: () {
                   routeToPage(context, const UserPeoplePage());
@@ -395,7 +394,7 @@ class _DesktopProfilePageState extends State<DesktopProfilePage> with TickerProv
             icon: FontAwesomeIcons.sliders,
             children: [
               _buildPreferenceTile(
-                title: 'Help improve Omi by sharing anonymized analytics data',
+                title: 'Help improve MemoPin by sharing anonymized analytics data',
                 value: SharedPreferencesUtil().optInAnalytics,
                 onChanged: (value) {
                   setState(() {

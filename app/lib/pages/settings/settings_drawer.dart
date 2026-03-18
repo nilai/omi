@@ -409,7 +409,7 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
             children: [
               if (PlatformService.isIOS)
                 _buildSettingsItem(
-                  title: 'Share Omi for iPhone',
+                  title: 'Share MemoPin for iPhone',
                   icon: const FaIcon(FontAwesomeIcons.solidShareFromSquare, color: Colors.white, size: 20),
                   onTap: () async {
                     Navigator.pop(context);
@@ -418,7 +418,7 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                 ),
               if (PlatformService.isAndroid)
                 _buildSettingsItem(
-                  title: 'Share Omi for Android',
+                  title: 'Share MemoPin for Android',
                   icon: const FaIcon(FontAwesomeIcons.googlePlay, color: Color(0xFF8E8E93), size: 20),
                   onTap: () async {
                     Navigator.pop(context);
@@ -427,7 +427,7 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
                 ),
               const Divider(height: 1, color: Color(0xFF3C3C43)),
               _buildSettingsItem(
-                title: 'Share Omi for Mac',
+                title: 'Share MemoPin for Mac',
                 icon: const FaIcon(FontAwesomeIcons.desktop, color: Color(0xFF8E8E93), size: 20),
                 onTap: () async {
                   Navigator.pop(context);
@@ -673,8 +673,8 @@ class _SettingsDrawerState extends State<SettingsDrawer> {
             child: Stack(
               children: [
                 // Centered title
-                Center(
-                  child: const Text(
+                const Center(
+                  child: Text(
                     'Settings',
                     style: TextStyle(
                       color: Colors.white,

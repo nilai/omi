@@ -1,4 +1,4 @@
-# Set up the Omi Mobile Project(iOS/Android).
+# Set up the MemoPin Mobile Project(iOS/Android).
 #
 # Prerequisites (stable versions, use these or higher):
 #
@@ -21,7 +21,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Write-Host "👋 Yo folks! Welcome to the OMI Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
+Write-Host "👋 Yo folks! Welcome to the MemoPin Mobile Project - We're hiring! Join us on Discord: http://discord.omi.me"
 Write-Host "Prerequisites (stable versions, use these or higher):"
 Write-Host ""
 Write-Host "Common for all developers:"
@@ -66,7 +66,7 @@ function SetupFirebaseWithServiceAccount {
     flutterfire config `
         --platforms="android,ios,web" `
         --out="lib/firebase_options_dev.dart" `
-        --ios-bundle-id="com.friend-app-with-wearable.ios12.development" `
+        --ios-bundle-id="com.asksky.fitness" `
         --android-app-id="com.friend.ios.dev" `
         --android-out="android/app/src/dev/" `
         --ios-out="ios/Config/Dev/" `
@@ -79,7 +79,7 @@ function SetupFirebaseWithServiceAccount {
     flutterfire config `
         --platforms="android,ios,web" `
         --out="lib/firebase_options_prod.dart" `
-        --ios-bundle-id="com.friend-app-with-wearable.ios12" `
+        --ios-bundle-id="com.asksky.fitness" `
         --android-app-id="com.friend.ios.dev" `
         --android-out="android/app/src/prod/" `
         --ios-out="ios/Config/Prod/" `
@@ -98,7 +98,7 @@ function SetupProvisioningProfile {
     
     $env:MATCH_PASSWORD = "omi"
     fastlane match development --readonly `
-        --app_identifier "com.friend-app-with-wearable.ios12.development" `
+        --app_identifier "com.asksky.fitness" `
         --git_url "git@github.com:BasedHardware/omi-community-certs.git"
 }
 

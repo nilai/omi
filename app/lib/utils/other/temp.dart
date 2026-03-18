@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 String dateTimeFormat(String format, DateTime? dateTime, {String? locale}) {
@@ -46,4 +47,13 @@ String countryFlagFromCode(String countryCode) {
   final secondChar = countryCode.codeUnitAt(1) - asciiOffset + flagOffset;
 
   return String.fromCharCode(firstChar) + String.fromCharCode(secondChar);
+}
+
+
+SystemUiOverlayStyle getSystemUiOverlayStyle(BuildContext context) {
+  return SystemUiOverlayStyle(
+        statusBarColor: Theme.of(context).colorScheme.primary,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      );
 }

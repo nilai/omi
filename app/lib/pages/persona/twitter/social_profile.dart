@@ -79,7 +79,7 @@ class _SocialHandleScreenState extends State<SocialHandleScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'We will pre-train your Omi clone\nbased on your account\'s activity',
+                          'We will pre-train your MemoPin clone\nbased on your account\'s activity',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             color: Colors.white.withValues(alpha: 0.55),
                             shadows: [
@@ -221,7 +221,7 @@ class _SocialHandleScreenState extends State<SocialHandleScreen> {
                                   routeToPage(context, const OnboardingWrapper());
                                 },
                                 child: const Text(
-                                  'Connect Omi Device',
+                                  'Connect MemoPin Device',
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,

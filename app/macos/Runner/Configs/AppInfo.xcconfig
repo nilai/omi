@@ -15,4 +15,4 @@ PRODUCT_NAME = MemoPin
 PRODUCT_BUNDLE_IDENTIFIER = $(APP_BUNDLE_IDENTIFIER)
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2024 Omi AI. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2024 MemoPin AI. All rights reserved.

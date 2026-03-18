@@ -1,5 +1,6 @@
 /// Note 设备状态管理 Provider
 /// 负责设备连接、信息查询和设备操作
+library;
 
 import 'package:flutter/foundation.dart';
 import '../backend/schema/bt_device/bt_device.dart';
@@ -227,7 +228,7 @@ class NoteDeviceProvider extends BaseProvider {
       await _connection!.reboot();
       print('[NoteDeviceProvider] 设备重启命令已发送');
       // 设备重启后会断开连接
-      await Future.delayed(Duration(seconds: 1));
+      await Future.delayed(const Duration(seconds: 1));
       await disconnectDevice();
     } catch (e) {
       print('[NoteDeviceProvider] 设备重启失败: $e');

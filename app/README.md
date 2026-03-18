@@ -1,6 +1,6 @@
-# Omi App
+# MemoPin App
 
-The Omi App is a Flutter-based mobile application that serves as the companion app for Omi devices. This app enables users to interact with their Omi device, manage apps, and customize their experience.
+The MemoPin App is a Flutter-based mobile application that serves as the companion app for MemoPin devices. This app enables users to interact with their MemoPin device, manage apps, and customize their experience.
 
 ## 📚 **[View Full App setup instructions in the documentation](https://docs.omi.me/doc/developer/AppSetup)**
 

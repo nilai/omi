@@ -550,7 +550,7 @@ class _DesktopAppDetailState extends State<DesktopAppDetail> with SingleTickerPr
                   return ConfirmationDialog(
                     title: 'Data Access Notice',
                     description:
-                        'This app will access your data. Omi AI is not responsible for how your data is used, modified, or deleted by this app',
+                        'This app will access your data. MemoPin AI is not responsible for how your data is used, modified, or deleted by this app',
                     onConfirm: () {
                       _toggleApp(app.id, true);
                       Navigator.pop(context);
@@ -744,7 +744,7 @@ class _DesktopAppDetailState extends State<DesktopAppDetail> with SingleTickerPr
               ),
             ),
           );
-        }).toList(),
+        }),
         SizedBox(height: responsive.spacing(baseSpacing: 24)),
       ],
     );
@@ -1148,60 +1148,56 @@ class _DesktopAppDetailState extends State<DesktopAppDetail> with SingleTickerPr
                     SizedBox(height: responsive.spacing(baseSpacing: 16)),
                     const Divider(color: ResponsiveHelper.backgroundTertiary),
                     SizedBox(height: responsive.spacing(baseSpacing: 16)),
-                    ...app.reviews
-                        .sorted((a, b) => b.ratedAt.compareTo(a.ratedAt))
-                        .take(2)
-                        .map((review) => Container(
-                              margin: EdgeInsets.only(bottom: responsive.spacing(baseSpacing: 12)),
-                              padding: EdgeInsets.all(responsive.spacing(baseSpacing: 12)),
-                              decoration: BoxDecoration(
-                                color: ResponsiveHelper.backgroundTertiary.withValues(alpha: 0.3),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    ...app.reviews.sorted((a, b) => b.ratedAt.compareTo(a.ratedAt)).take(2).map((review) => Container(
+                          margin: EdgeInsets.only(bottom: responsive.spacing(baseSpacing: 12)),
+                          padding: EdgeInsets.all(responsive.spacing(baseSpacing: 12)),
+                          decoration: BoxDecoration(
+                            color: ResponsiveHelper.backgroundTertiary.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Row(
-                                    children: [
-                                      RatingBar.builder(
-                                        initialRating: review.score.toDouble(),
-                                        minRating: 1,
-                                        ignoreGestures: true,
-                                        direction: Axis.horizontal,
-                                        allowHalfRating: true,
-                                        itemCount: 5,
-                                        itemSize: 12,
-                                        tapOnlyMode: false,
-                                        itemPadding: EdgeInsets.zero,
-                                        itemBuilder: (context, _) => const Icon(
-                                          Icons.star,
-                                          color: ResponsiveHelper.purplePrimary,
-                                        ),
-                                        maxRating: 5.0,
-                                        onRatingUpdate: (rating) {},
-                                      ),
-                                      SizedBox(width: responsive.spacing(baseSpacing: 8)),
-                                      Text(
-                                        timeago.format(review.ratedAt),
-                                        style: responsive.bodySmall.copyWith(
-                                          color: ResponsiveHelper.textQuaternary,
-                                        ),
-                                      ),
-                                    ],
+                                  RatingBar.builder(
+                                    initialRating: review.score.toDouble(),
+                                    minRating: 1,
+                                    ignoreGestures: true,
+                                    direction: Axis.horizontal,
+                                    allowHalfRating: true,
+                                    itemCount: 5,
+                                    itemSize: 12,
+                                    tapOnlyMode: false,
+                                    itemPadding: EdgeInsets.zero,
+                                    itemBuilder: (context, _) => const Icon(
+                                      Icons.star,
+                                      color: ResponsiveHelper.purplePrimary,
+                                    ),
+                                    maxRating: 5.0,
+                                    onRatingUpdate: (rating) {},
                                   ),
-                                  SizedBox(height: responsive.spacing(baseSpacing: 8)),
+                                  SizedBox(width: responsive.spacing(baseSpacing: 8)),
                                   Text(
-                                    review.review.length > 100
-                                        ? '${review.review.characters.take(100).toString().decodeString.trim()}...'
-                                        : review.review.decodeString,
-                                    style: responsive.bodyMedium.copyWith(
-                                      color: ResponsiveHelper.textSecondary,
+                                    timeago.format(review.ratedAt),
+                                    style: responsive.bodySmall.copyWith(
+                                      color: ResponsiveHelper.textQuaternary,
                                     ),
                                   ),
                                 ],
                               ),
-                            ))
-                        .toList(),
+                              SizedBox(height: responsive.spacing(baseSpacing: 8)),
+                              Text(
+                                review.review.length > 100
+                                    ? '${review.review.characters.take(100).toString().decodeString.trim()}...'
+                                    : review.review.decodeString,
+                                style: responsive.bodyMedium.copyWith(
+                                  color: ResponsiveHelper.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                   ],
                 ],
               ),
@@ -1248,12 +1244,12 @@ class _DesktopAppDetailState extends State<DesktopAppDetail> with SingleTickerPr
     MixpanelManager().track('App Shared', properties: {'appId': app.id});
     if (app.isNotPersona()) {
       Share.share(
-        'Check out this app on Omi AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://h.omi.me/apps/${app.id}',
+        'Check out this app on MemoPin AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://h.omi.me/apps/${app.id}',
         subject: app.name,
       );
     } else {
       Share.share(
-        'Check out this Persona on Omi AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://personas.omi.me/u/${app.username}',
+        'Check out this Persona on MemoPin AI: ${app.name} by ${app.author} \n\n${app.description.decodeString}\n\n\nhttps://personas.omi.me/u/${app.username}',
         subject: app.name,
       );
     }

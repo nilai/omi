@@ -22,7 +22,13 @@ import 'package:omi/firebase_options_dev.dart' as dev;
 import 'package:omi/firebase_options_prod.dart' as prod;
 import 'package:omi/flavors.dart';
 import 'package:omi/pages/apps/providers/add_app_provider.dart';
-import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+// import 'package:omi/pages/conversation_detail/conversation_detail_provider.dart';
+import 'package:omi/pages/mp_memory/conversation_detail/providers/conversation_detail_provider.dart';
+import 'package:omi/pages/mp_canlendar/providers/calendar_provider.dart';
+import 'package:omi/pages/mp_expert_feedback/home/providers/mp_expert_provider.dart';
+import 'package:omi/pages/mp_memo_todo/memo/providers/memo_provider.dart';
+import 'package:omi/pages/mp_memo_todo/todo/providers/todo_provider.dart';
+import 'package:omi/pages/mp_newsetting/home/providers/settings_provider.dart';
 import 'package:omi/pages/payments/payment_method_provider.dart';
 import 'package:omi/pages/persona/persona_provider.dart';
 import 'package:omi/providers/action_items_provider.dart';
@@ -38,16 +44,18 @@ import 'package:omi/providers/home_provider.dart';
 import 'package:omi/providers/mcp_provider.dart';
 import 'package:omi/providers/memories_provider.dart';
 import 'package:omi/providers/message_provider.dart';
+import 'package:omi/providers/note_ble_debug_provider.dart';
+import 'package:omi/providers/note_device_provider.dart';
+import 'package:omi/providers/note_file_list_provider.dart';
+import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/providers/onboarding_provider.dart';
-import 'package:omi/providers/task_integration_provider.dart';
 import 'package:omi/providers/people_provider.dart';
 import 'package:omi/providers/speech_profile_provider.dart';
 import 'package:omi/providers/summary_provider.dart';
 import 'package:omi/providers/sync_provider.dart';
+import 'package:omi/providers/task_integration_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/providers/user_provider.dart';
-import 'package:omi/providers/note_device_provider.dart';
-import 'package:omi/providers/note_ota_provider.dart';
 import 'package:omi/services/auth_service.dart';
 import 'package:omi/services/notifications.dart';
 import 'package:omi/services/notifications/action_item_notification_handler.dart';
@@ -63,6 +71,9 @@ import 'package:opus_flutter/opus_flutter.dart' as opus_flutter;
 import 'package:provider/provider.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import 'package:window_manager/window_manager.dart';
+
+import 'pages/mp_memory/memory_detail/providers/memory_detail_provider.dart';
+import 'pages/mp_newsetting/personal/providers/personal_provider.dart';
 
 /// Background message handler for FCM data messages
 @pragma('vm:entry-point')
@@ -282,11 +293,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             update: (BuildContext context, device, SpeechProfileProvider? previous) =>
                 (previous?..setProviders(device)) ?? SpeechProfileProvider(),
           ),
-          ChangeNotifierProxyProvider2<AppProvider, ConversationProvider, ConversationDetailProvider>(
-            create: (context) => ConversationDetailProvider(),
-            update: (BuildContext context, app, conversation, ConversationDetailProvider? previous) =>
-                (previous?..setProviders(app, conversation)) ?? ConversationDetailProvider(),
-          ),
+          // ChangeNotifierProxyProvider2<AppProvider, ConversationProvider, ConversationDetailProvider>(
+          //   create: (context) => ConversationDetailProvider(),
+          //   update: (BuildContext context, app, conversation, ConversationDetailProvider? previous) =>
+          //       (previous?..setProviders(app, conversation)) ?? ConversationDetailProvider(),
+          // ),
           ChangeNotifierProvider(create: (context) => DeveloperModeProvider()),
           ChangeNotifierProvider(create: (context) => McpProvider()),
           ChangeNotifierProxyProvider<AppProvider, AddAppProvider>(
@@ -302,14 +313,25 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => AudioRecordProvider()),
           ChangeNotifierProvider(create: (context) => SummaryProvider()),
           ChangeNotifierProvider(create: (context) => SyncProvider()),
-          // Note 设备相关 Providers
+          // Note 设备相关 Providers start
           ChangeNotifierProvider(create: (context) => NoteDeviceProvider()),
+          ChangeNotifierProvider(create: (context) => NoteBleDebugProvider()),
+          ChangeNotifierProvider(create: (context) => NoteFileListProvider()),
           ChangeNotifierProxyProvider<NoteDeviceProvider, NoteOtaProvider>(
             create: (context) => NoteOtaProvider(context.read<NoteDeviceProvider>()),
             update: (BuildContext context, deviceProvider, NoteOtaProvider? previous) =>
                 previous ?? NoteOtaProvider(deviceProvider),
           ),
+          // Note 设备相关 Providers end
           ChangeNotifierProvider(create: (context) => TaskIntegrationProvider()),
+          ChangeNotifierProvider(create: (context) => SettingsProvider()),
+          ChangeNotifierProvider(create: (context) => MemoProvider()),
+          ChangeNotifierProvider(create: (context) => TodoProvider()),
+          ChangeNotifierProvider(create: (context) => MPExpertProvider()),
+          ChangeNotifierProvider(create: (context) => CalendarProvider()),
+          ChangeNotifierProvider(create: (context) => PersonalProvider()),
+          ChangeNotifierProvider(create: (context) => MemoryDetailProvider()),
+          ChangeNotifierProvider(create: (context) => ConversationDetailProvider()),
         ],
         builder: (context, child) {
           return WithForegroundTask(
@@ -326,7 +348,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               theme: ThemeData(
                   useMaterial3: false,
                   colorScheme: const ColorScheme.dark(
-                    primary: Colors.black,
+                    // primary: Colors.black,
+                    primary: Color(0xFFF9FAFB),
                     secondary: Colors.deepPurple,
                     surface: Colors.black38,
                   ),
@@ -341,7 +364,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                     labelMedium: TextStyle(fontSize: 12, color: Colors.grey.shade200),
                   ),
                   textSelectionTheme: const TextSelectionThemeData(
-                    cursorColor: Colors.white,
+                    // cursorColor: Colors.white,
+                    cursorColor: Colors.black,
                     selectionColor: Colors.deepPurple,
                     selectionHandleColor: Colors.white,
                   ),

@@ -12,7 +12,10 @@ abstract class Env {
   static String? get mixpanelProjectToken => _instance.mixpanelProjectToken;
 
   // static String? get apiBaseUrl => 'https://omi-backend.ngrok.app/';
-  static String? get apiBaseUrl => _instance.apiBaseUrl;
+
+  // static String? get apiBaseUrl => _instance.apiBaseUrl; // omi
+
+  static String? get apiBaseUrl => 'https://meetsummertech.com/'; // mp
 
   static String? get noteBaseUrl => _instance.noteBaseUrl;
 

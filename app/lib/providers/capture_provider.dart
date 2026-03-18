@@ -20,7 +20,6 @@ import 'package:omi/providers/message_provider.dart';
 import 'package:omi/providers/people_provider.dart';
 import 'package:omi/providers/usage_provider.dart';
 import 'package:omi/services/connectivity_service.dart';
-import 'package:omi/services/devices/models.dart';
 import 'package:omi/services/services.dart';
 import 'package:omi/services/sockets/transcription_connection.dart';
 import 'package:omi/services/wals.dart';
@@ -33,68 +32,134 @@ import 'package:omi/utils/logger.dart';
 import 'package:omi/utils/platform/platform_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+/// 音频捕获提供者
+/// 管理来自不同源的音频录制，包括蓝牙设备、系统音频和麦克风
+/// 同时处理转录服务连接和WebSocket通信
+/// 实现消息通知混入和应用生命周期观察者
 class CaptureProvider extends ChangeNotifier
     with MessageNotifierMixin, WidgetsBindingObserver
     implements ITransctipSegmentSocketServiceListener {
+  /// 会话提供者
   ConversationProvider? conversationProvider;
+  
+  /// 消息提供者
   MessageProvider? messageProvider;
+  
+  /// 人员提供者
   PeopleProvider? peopleProvider;
+  
+  /// 使用情况提供者
   UsageProvider? usageProvider;
 
+  /// 转录段套接字服务
   TranscriptSegmentSocketService? _socket;
+  
+  /// 保活定时器
   Timer? _keepAliveTimer;
+  
+  /// 上次执行保活的时间
   DateTime? _keepAliveLastExecutedAt;
 
   // Method channel for system audio permissions
+  /// 系统音频权限的方法通道
   static late MethodChannel _screenCaptureChannel;
+  
+  /// 控制栏的方法通道
   static late MethodChannel _controlBarChannel;
 
+  /// 获取WAL服务实例
   IWalService get _wal => ServiceManager.instance().wal;
 
+  /// 是否支持WAL
   bool _isWalSupported = false;
 
+  /// 获取是否支持WAL
   bool get isWalSupported => _isWalSupported;
 
+  /// 连接状态监听器
   StreamSubscription<bool>? _connectionStateListener;
+  
+  /// 是否已连接
   bool _isConnected = ConnectivityService().isConnected;
 
+  /// 获取连接状态
   get isConnected => _isConnected;
 
+  /// 麦克风名称
   String? microphoneName;
+  
+  /// 麦克风级别
   double microphoneLevel = 0.0;
+  
+  /// 系统音频级别
   double systemAudioLevel = 0.0;
 
+  /// 是否正在自动重连
   bool _isAutoReconnecting = false;
+  
+  /// 获取是否正在自动重连
   bool get isAutoReconnecting => _isAutoReconnecting;
 
+  /// 是否超出信用额度
   bool get outOfCredits => usageProvider?.isOutOfCredits ?? false;
 
+  /// 重连定时器
   Timer? _reconnectTimer;
+  
+  /// 重连倒计时
   int _reconnectCountdown = 5;
+  
+  /// 获取重连倒计时
   int get reconnectCountdown => _reconnectCountdown;
 
+  /// 录制定时器
   Timer? _recordingTimer;
+  
+  /// 录制持续时间（秒）
   int _recordingDuration = 0; // in seconds
 
+  /// 获取录制持续时间
   int _getRecordingDuration() => _recordingDuration;
 
+  /// 转录服务状态列表
   List<MessageEvent> _transcriptionServiceStatuses = [];
+  
+  /// 获取转录服务状态列表
   List<MessageEvent> get transcriptionServiceStatuses => _transcriptionServiceStatuses;
 
+  /// 系统音频缓冲区
   List<int> _systemAudioBuffer = [];
+  
+  /// 是否缓存系统音频
   bool _systemAudioCaching = true;
 
   // BLE streaming metrics
+  /// BLE接收字节数
   int _blesBytesReceived = 0;
+  
+  /// WebSocket发送字节数
   int _wsSocketBytesSent = 0;
+  
+  /// BLE接收速率（kbps）
   double _bleReceiveRateKbps = 0.0;
+  
+  /// WebSocket发送速率（kbps）
   double _wsSendRateKbps = 0.0;
+  
+  /// 上次计算指标的时间
   DateTime? _metricsLastCalculated;
+  
+  /// 指标定时器
   Timer? _metricsTimer;
 
+  /// 获取BLE接收速率
   double get bleReceiveRateKbps => _bleReceiveRateKbps;
+  
+  /// 获取WebSocket发送速率
   double get wsSendRateKbps => _wsSendRateKbps;
 
+  /// 构造函数
+  /// 初始化连接状态监听器和平台特定功能
   CaptureProvider() {
     _connectionStateListener = ConnectivityService().onConnectionChange.listen((bool isConnected) {
       onConnectionStateChanged(isConnected);
@@ -112,11 +177,13 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 初始化应用生命周期监听器
   void _initializeAppLifecycleListener() {
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
+  /// 应用生命周期状态改变回调
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
@@ -124,14 +191,15 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 处理应用恢复事件
   void _handleAppResumed() async {
     if (recordingState == RecordingState.systemAudioRecord) {
       try {
-        // Check if native recording is still active
+        // 检查原生录制是否仍在活动
         bool nativeRecording = await _screenCaptureChannel.invokeMethod('isRecording') ?? false;
 
         if (nativeRecording && recordingState != RecordingState.systemAudioRecord) {
-          // Will be handled by existing logic in streamSystemAudioRecording error handling
+          // 将由streamSystemAudioRecording错误处理中的现有逻辑处理
         } else if (!nativeRecording && recordingState == RecordingState.systemAudioRecord) {
           updateRecordingState(RecordingState.stop);
           await _socket?.stop(reason: 'native recording stopped during sleep');
@@ -143,6 +211,8 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 更新提供者实例
+  /// 设置会话、消息、人员和使用情况提供者的引用
   void updateProviderInstances(ConversationProvider? cp, MessageProvider? mp, PeopleProvider? pp, UsageProvider? up) {
     conversationProvider = cp;
     messageProvider = mp;
@@ -152,8 +222,10 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 当前录制设备
   BtDevice? _recordingDevice;
 
+  /// 根据设备类型获取会话来源
   String? _getConversationSourceFromDevice() {
     if (_recordingDevice == null) {
       return null;
@@ -180,66 +252,103 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 当前会话
   ServerConversation? _conversation;
+  
+  /// 转录段列表
   List<TranscriptSegment> segments = [];
+  
+  /// 会话照片列表
   List<ConversationPhoto> photos = [];
+  
+  /// 按段ID建议的说话者标签映射
   Map<String, SpeakerLabelSuggestionEvent> suggestionsBySegmentId = {};
+  
+  /// 正在标记的段ID列表
   List<String> taggingSegmentIds = [];
 
+  /// 是否有转录内容
   bool hasTranscripts = false;
 
+  /// BLE字节流订阅
   StreamSubscription? _bleBytesStream;
+  
+  /// BLE照片流订阅
   StreamSubscription? _blePhotoStream;
 
+  /// 获取BLE字节流
   get bleBytesStream => _bleBytesStream;
 
+  /// BLE按钮流订阅
   StreamSubscription? _bleButtonStream;
+  
+  /// 语音命令会话时间
   DateTime? _voiceCommandSession;
+  
+  /// 命令字节列表
   List<List<int>> _commandBytes = [];
+  
+  /// 是否正在处理按钮事件（防止重叠操作的保护标志）
   bool _isProcessingButtonEvent = false; // Guard to prevent overlapping button operations
 
+  /// 存储流订阅
   StreamSubscription? _storageStream;
 
+  /// 获取存储流
   get storageStream => _storageStream;
 
+  /// 录制状态
   RecordingState recordingState = RecordingState.stop;
 
+  /// 是否暂停
   bool _isPaused = false;
+  
+  /// 获取是否暂停
   bool get isPaused => _isPaused;
 
+  /// 转录服务是否就绪
   bool _transcriptServiceReady = false;
 
+  /// 获取转录服务是否就绪
   bool get transcriptServiceReady => _transcriptServiceReady && _isConnected;
 
   // having a connected device or using the phone's mic for recording
+  /// 录制设备服务是否就绪
+  /// 拥有连接的设备或使用手机麦克风进行录制
   bool get recordingDeviceServiceReady =>
       _recordingDevice != null ||
       recordingState == RecordingState.record ||
       recordingState == RecordingState.systemAudioRecord;
 
+  /// 是否拥有录制设备
   bool get havingRecordingDevice => _recordingDevice != null;
 
+  /// 设置是否有转录内容
   void setHasTranscripts(bool value) {
     hasTranscripts = value;
     notifyListeners();
   }
 
+  /// 设置会话创建状态
   void setConversationCreating(bool value) {
     debugPrint('set Conversation creating $value');
     // ConversationCreating = value;
     notifyListeners();
   }
 
+  /// 更新录制设备
   void _updateRecordingDevice(BtDevice? device) {
     debugPrint('connected device changed from ${_recordingDevice?.id} to ${device?.id}');
     _recordingDevice = device;
     notifyListeners();
   }
 
+  /// 公开的更新录制设备方法
   void updateRecordingDevice(BtDevice? device) {
     _updateRecordingDevice(device);
   }
 
+  /// 重置状态变量
   Future _resetStateVariables() async {
     segments = [];
     photos = [];
@@ -250,10 +359,12 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 录制配置更改时的回调
   Future<void> onRecordProfileSettingChanged() async {
     await _resetState();
   }
 
+  /// 更改音频录制配置
   Future<void> changeAudioRecordProfile({
     required BleAudioCodec audioCodec,
     int? sampleRate,
@@ -266,6 +377,7 @@ class CaptureProvider extends ChangeNotifier
         audioCodec: audioCodec, sampleRate: sampleRate, channels: channels, isPcm: isPcm, source: source);
   }
 
+  /// 初始化WebSocket连接
   Future<void> _initiateWebsocket({
     required BleAudioCodec audioCodec,
     int? sampleRate,
@@ -303,6 +415,7 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 处理语音命令字节数据
   void _processVoiceCommandBytes(String deviceId, List<List<int>> data) async {
     if (data.isEmpty) {
       debugPrint("voice frames is empty");
@@ -322,6 +435,7 @@ class CaptureProvider extends ChangeNotifier
   }
 
   // Just incase the ble connection get loss
+  /// 监视语音命令（防止BLE连接丢失）
   void _watchVoiceCommands(String deviceId, DateTime session) {
     Timer.periodic(const Duration(seconds: 3), (t) async {
       debugPrint("voice command watch");
@@ -344,6 +458,7 @@ class CaptureProvider extends ChangeNotifier
     });
   }
 
+  /// 流式传输按钮事件
   Future streamButton(String deviceId) async {
     debugPrint('streamButton in capture_provider');
     _bleButtonStream?.cancel();
@@ -408,6 +523,7 @@ class CaptureProvider extends ChangeNotifier
     });
   }
 
+  /// 流式传输音频到WebSocket
   Future streamAudioToWs(String deviceId, BleAudioCodec codec) async {
     debugPrint('streamAudioToWs in capture_provider');
     _bleBytesStream?.cancel();
@@ -458,6 +574,7 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 重置状态
   Future<void> _resetState() async {
     debugPrint('resetState');
     await _cleanupCurrentState();
@@ -477,11 +594,13 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 清理当前状态
   Future _cleanupCurrentState() async {
     await _closeBleStream();
     notifyListeners();
   }
 
+  /// 获取音频编解码器
   Future<BleAudioCodec> _getAudioCodec(String deviceId) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -490,6 +609,7 @@ class CaptureProvider extends ChangeNotifier
     return connection.getAudioCodec();
   }
 
+  /// 播放扬声器触觉反馈
   Future<bool> _playSpeakerHaptic(String deviceId, int level) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -498,6 +618,7 @@ class CaptureProvider extends ChangeNotifier
     return connection.performPlayToSpeakerHaptic(level);
   }
 
+  /// 获取BLE音频字节监听器
   Future<StreamSubscription?> _getBleAudioBytesListener(
     String deviceId, {
     required void Function(List<int>) onAudioBytesReceived,
@@ -509,6 +630,7 @@ class CaptureProvider extends ChangeNotifier
     return connection.getBleAudioBytesListener(onAudioBytesReceived: onAudioBytesReceived);
   }
 
+  /// 获取BLE按钮监听器
   Future<StreamSubscription?> _getBleButtonListener(
     String deviceId, {
     required void Function(List<int>) onButtonReceived,
@@ -520,6 +642,7 @@ class CaptureProvider extends ChangeNotifier
     return connection.getBleButtonListener(onButtonReceived: onButtonReceived);
   }
 
+  /// 获取BLE按钮状态
   Future<List<int>> _getBleButtonState(String deviceId) async {
     var connection = await ServiceManager.instance().device.ensureConnection(deviceId);
     if (connection == null) {
@@ -528,6 +651,7 @@ class CaptureProvider extends ChangeNotifier
     return connection.getBleButtonState();
   }
 
+  /// 确保设备套接字连接
   Future<void> _ensureDeviceSocketConnection() async {
     if (_recordingDevice == null) {
       return;
@@ -540,6 +664,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 启动设备音频流
   Future<void> _initiateDeviceAudioStreaming() async {
     if (_recordingDevice == null) {
       return;
@@ -562,6 +687,7 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 启动设备照片流
   Future<void> _initiateDevicePhotoStreaming() async {
     if (_recordingDevice == null) return;
     final deviceId = _recordingDevice!.id;
@@ -605,12 +731,14 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 清除转录内容
   void clearTranscripts() {
     segments = [];
     hasTranscripts = false;
     notifyListeners();
   }
 
+  /// 开始指标跟踪
   void _startMetricsTracking() {
     _blesBytesReceived = 0;
     _wsSocketBytesSent = 0;
@@ -624,6 +752,7 @@ class CaptureProvider extends ChangeNotifier
     });
   }
 
+  /// 计算指标速率
   void _calculateMetricsRates() {
     final now = DateTime.now();
     if (_metricsLastCalculated == null) {
@@ -646,6 +775,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 停止指标跟踪
   void _stopMetricsTracking() {
     _metricsTimer?.cancel();
     _metricsTimer = null;
@@ -657,6 +787,7 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 关闭BLE流
   Future _closeBleStream() async {
     await _bleBytesStream?.cancel();
     await _blePhotoStream?.cancel();
@@ -671,6 +802,7 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 销毁资源
   void dispose() {
     _bleBytesStream?.cancel();
     _blePhotoStream?.cancel();
@@ -688,12 +820,14 @@ class CaptureProvider extends ChangeNotifier
     super.dispose();
   }
 
+  /// 更新录制状态
   void updateRecordingState(RecordingState state) {
     recordingState = state;
     notifyListeners();
     _broadcastRecordingState();
   }
 
+  /// 流式录制音频
   streamRecording() async {
     updateRecordingState(RecordingState.initialising);
     await Permission.microphone.request();
@@ -715,6 +849,7 @@ class CaptureProvider extends ChangeNotifier
     });
   }
 
+  /// 停止流式录制音频
   stopStreamRecording() async {
     await _cleanupCurrentState();
     ServiceManager.instance().mic.stop();
@@ -722,6 +857,7 @@ class CaptureProvider extends ChangeNotifier
     await _socket?.stop(reason: 'stop stream recording');
   }
 
+  /// 流式录制设备音频
   Future streamDeviceRecording({BtDevice? device}) async {
     debugPrint("streamDeviceRecording $device");
     if (device != null) _updateRecordingDevice(device);
@@ -736,6 +872,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 停止流式录制设备音频
   Future stopStreamDeviceRecording({bool cleanDevice = false}) async {
     await _cleanupCurrentState();
     if (cleanDevice) {
@@ -745,6 +882,7 @@ class CaptureProvider extends ChangeNotifier
     await _socket?.stop(reason: 'stop stream device recording');
   }
 
+  /// 流式录制系统音频
   Future<void> streamSystemAudioRecording() async {
     if (!PlatformService.isDesktop) {
       notifyError('System audio recording is only available on macOS and Windows.');
@@ -768,6 +906,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 启动系统音频捕获
   Future<void> _startSystemAudioCapture() async {
     await changeAudioRecordProfile(audioCodec: BleAudioCodec.pcm16, sampleRate: 16000);
 
@@ -822,6 +961,7 @@ class CaptureProvider extends ChangeNotifier
         );
   }
 
+  /// 检查并请求系统音频权限
   Future<bool> _checkAndRequestSystemAudioPermissions() async {
     // Check microphone permission first
     String micStatus = await _screenCaptureChannel.invokeMethod('checkMicrophonePermission');
@@ -856,6 +996,7 @@ class CaptureProvider extends ChangeNotifier
     return true;
   }
 
+  /// 处理麦克风设备变更
   Future<void> _onMicrophoneDeviceChanged() async {
     debugPrint('Microphone device changed. Restarting recording in 5 seconds...');
     bool nativeRecording = await _screenCaptureChannel.invokeMethod('isRecording') ?? false;
@@ -885,6 +1026,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 处理麦克风状态
   void _onMicrophoneStatus(String deviceName, double micLevel, double systemAudioLevel) {
     final bool needsUpdate = microphoneName != deviceName ||
         (microphoneLevel - micLevel).abs() > 0.001 ||
@@ -898,6 +1040,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 刷新系统音频缓冲区
   void _flushSystemAudioBuffer() {
     if (_socket?.state == SocketServiceState.connected) {
       while (_systemAudioBuffer.length >= 320) {
@@ -908,6 +1051,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 停止系统音频录制
   Future<void> stopSystemAudioRecording() async {
     if (!PlatformService.isDesktop) return;
     _isAutoReconnecting = false;
@@ -920,6 +1064,7 @@ class CaptureProvider extends ChangeNotifier
     await _cleanupCurrentState();
   }
 
+  /// 暂停系统音频录制
   Future<void> pauseSystemAudioRecording({bool isAuto = false}) async {
     if (!PlatformService.isDesktop) return;
     if (!isAuto) {
@@ -934,6 +1079,7 @@ class CaptureProvider extends ChangeNotifier
     _broadcastRecordingState();
   }
 
+  /// 恢复系统音频录制
   Future<void> resumeSystemAudioRecording() async {
     if (!PlatformService.isDesktop) return;
     _isPaused = false; // Clear paused state
@@ -942,6 +1088,7 @@ class CaptureProvider extends ChangeNotifier
     _broadcastRecordingState();
   }
 
+  /// 处理浮动控制栏方法调用
   Future<void> _handleFloatingControlBarMethodCall(MethodCall call) async {
     if (!PlatformService.isDesktop) return;
 
@@ -961,6 +1108,7 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 套接字关闭回调
   void onClosed([int? closeCode]) {
     _transcriptionServiceStatuses = [];
     _transcriptServiceReady = false;
@@ -975,6 +1123,7 @@ class CaptureProvider extends ChangeNotifier
     _startKeepAliveServices();
   }
 
+  /// 启动保活服务
   void _startKeepAliveServices() {
     _keepAliveTimer?.cancel();
     _keepAliveTimer = Timer.periodic(const Duration(seconds: 15), (t) async {
@@ -1012,6 +1161,7 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 套接字错误回调
   void onError(Object err) {
     _transcriptionServiceStatuses = [];
     _transcriptServiceReady = false;
@@ -1032,16 +1182,19 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 套接字连接成功回调
   void onConnected() {
     _transcriptServiceReady = true;
     debugPrint('Socket connected');
     notifyListeners();
   }
 
+  /// 刷新进行中的会话
   Future refreshInProgressConversations() async {
     _loadInProgressConversation();
   }
 
+  /// 加载进行中的会话
   Future _loadInProgressConversation() async {
     var convos = await getConversations(statuses: [ConversationStatus.in_progress], limit: 1);
     _conversation = convos.isNotEmpty ? convos.first : null;
@@ -1057,6 +1210,7 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 接收到消息事件
   void onMessageEventReceived(MessageEvent event) {
     if (event is ConversationProcessingStartedEvent) {
       conversationProvider!.addProcessingConversation(event.memory);
@@ -1118,6 +1272,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 强制处理当前会话
   Future<void> forceProcessingCurrentConversation() async {
     _resetStateVariables();
     conversationProvider!.addProcessingConversation(
@@ -1137,12 +1292,14 @@ class CaptureProvider extends ChangeNotifier
     return;
   }
 
+  /// 处理会话创建
   Future<void> _processConversationCreated(ServerConversation? conversation, List<ServerMessage> messages) async {
     if (conversation == null) return;
     conversationProvider?.upsertConversation(conversation);
     MixpanelManager().conversationCreated(conversation);
   }
 
+  /// 处理最后的会话事件
   Future<void> _handleLastConvoEvent(String memoryId) async {
     bool conversationExists =
         conversationProvider?.conversations.any((conversation) => conversation.id == memoryId) ?? false;
@@ -1158,6 +1315,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 处理翻译事件
   void _handleTranslationEvent(List<TranscriptSegment> translatedSegments) {
     try {
       if (translatedSegments.isEmpty) return;
@@ -1176,6 +1334,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 处理说话者标签建议事件
   void _handleSpeakerLabelSuggestionEvent(SpeakerLabelSuggestionEvent event) {
     // Tagging
     if (taggingSegmentIds.contains(event.segmentId)) {
@@ -1197,6 +1356,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 为会话分配说话者
   Future<void> assignSpeakerToConversation(
       int speakerId, String personId, String personName, List<String> segmentIds) async {
     if (segmentIds.isEmpty) return;
@@ -1257,10 +1417,12 @@ class CaptureProvider extends ChangeNotifier
   }
 
   @override
+  /// 接收到转录段
   void onSegmentReceived(List<TranscriptSegment> newSegments) {
     _processNewSegmentReceived(newSegments);
   }
 
+  /// 处理新接收到的转录段
   void _processNewSegmentReceived(List<TranscriptSegment> newSegments) async {
     if (newSegments.isEmpty) return;
 
@@ -1278,17 +1440,20 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 连接状态改变
   void onConnectionStateChanged(bool isConnected) {
     debugPrint("[CaptureProvider] Internet connection changed $isConnected");
     _isConnected = isConnected;
     notifyListeners();
   }
 
+  /// 设置是否支持WAL
   void setIsWalSupported(bool value) {
     _isWalSupported = value;
     notifyListeners();
   }
 
+  /// 处理系统音频字节接收
   void _processSystemAudioByteReceived(Uint8List bytes) {
     _systemAudioBuffer.addAll(bytes);
     if (!_systemAudioCaching) {
@@ -1296,6 +1461,7 @@ class CaptureProvider extends ChangeNotifier
     }
   }
 
+  /// 广播录制状态
   void _broadcastRecordingState() {
     if (!PlatformService.isDesktop) return;
 
@@ -1310,6 +1476,7 @@ class CaptureProvider extends ChangeNotifier
     _controlBarChannel.invokeMethod('updateRecordingState', stateData);
   }
 
+  /// 启动录制定时器
   void _startRecordingTimer() {
     _recordingDuration = 0;
     _recordingTimer?.cancel();
@@ -1321,12 +1488,14 @@ class CaptureProvider extends ChangeNotifier
     });
   }
 
+  /// 停止录制定时器
   void _stopRecordingTimer() {
     _recordingTimer?.cancel();
     _recordingTimer = null;
     _recordingDuration = 0;
   }
 
+  /// 暂停设备录制
   Future<void> pauseDeviceRecording() async {
     if (_recordingDevice == null) return;
 
@@ -1337,6 +1506,7 @@ class CaptureProvider extends ChangeNotifier
     notifyListeners();
   }
 
+  /// 恢复设备录制
   Future<void> resumeDeviceRecording() async {
     if (_recordingDevice == null) return;
     _isPaused = false;
