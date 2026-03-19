@@ -1,8 +1,0 @@
-#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
-#include "Generated.xcconfig"
-#include "Base.xcconfig"
-#include "Custom.xcconfig"
-
-ASSET_PREFIX=prod
-BUNDLE_NAME=MemoPin
-BUNDLE_DISPLAY_NAME=MemoPin
