@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_color_utils.dart';
-import '../permission/omi_microphone_manager.dart';
+
+import '../../permission/omi_microphone_manager.dart';
 
 class OmiAskAIPage extends StatefulWidget {
   const OmiAskAIPage({super.key});

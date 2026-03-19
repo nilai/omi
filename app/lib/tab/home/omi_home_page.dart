@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/omi_color_utils.dart';
+import 'package:omi/utils/omi_color_utils.dart';
 
 class OmiHomePage extends StatefulWidget {
  const OmiHomePage({super.key});
