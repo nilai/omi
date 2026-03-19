@@ -1,4 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:omi/utils/omi_color_utils.dart';
+import '../permission/omi_microphone_manager.dart';
 
 class OmiAskAIPage extends StatefulWidget {
   const OmiAskAIPage({super.key});
@@ -9,7 +11,24 @@ class OmiAskAIPage extends StatefulWidget {
 
 class _OmiAskAIPageState extends State<OmiAskAIPage> {
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container();
+    return Scaffold(
+      body: Center(
+        child: GestureDetector(
+          onTap: () async {
+            await OmiMicrophoneManager.ensureMicrophonePermission(context);
+          },
+          child: const Text(
+            '申请麦克风权限',
+            style: TextStyle(color: mainTextColor),
+          ),
+        ),
+      ),
+    );
   }
 }

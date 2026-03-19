@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 class OmiMinePage extends StatefulWidget {
   const OmiMinePage({super.key});
@@ -10,9 +10,9 @@ class OmiMinePage extends StatefulWidget {
 class _OmiMinePageState extends State<OmiMinePage> {
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      child: Center(
-        child: Text('omi_mine_page'),
+    return Scaffold(
+      body: Center(
+        child: Text('omi_mine_page11'),
       ),
     );
   }

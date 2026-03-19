@@ -1,7 +1,7 @@
 import 'dart:ui';
 
 ///主标题文本颜色
- const Color mainTextColor = Color(0xFFFFFFFF);
+ const Color mainTextColor = Color(0xFF000000);
 ///次标题文本颜色
  const Color secondTextColor = Color(0xFF000000);
 ///绿色文本颜色
