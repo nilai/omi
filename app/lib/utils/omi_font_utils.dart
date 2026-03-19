@@ -29,7 +29,7 @@ class OmiFontSize {
   static double smallTextFontSize = 12.0;
 }
 
-class OmiFontUtils {
+class OmiFontWeight {
   static FontWeight regular = FontWeight.w400;
   static FontWeight get medium =>
       Platform.isIOS ? FontWeight.w500 : FontWeight.w600;
