@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:omi/cache/omi_server_cache.dart';
 import 'package:omi/tab/omi_main_tab_page.dart';
 
-
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await OmiServerCache().initialize();
   runApp(const MyApp());
 }
 
