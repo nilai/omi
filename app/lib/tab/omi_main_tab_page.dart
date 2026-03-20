@@ -4,6 +4,9 @@ import 'package:omi/tab/home/omi_home_page.dart';
 import 'package:omi/tab/memory/omi_memory_page.dart';
 import 'package:omi/tab/mine/omi_mine_page.dart';
 
+import '../assets.dart';
+import '../utils/omi_image_loader.dart';
+
 class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key});
 
@@ -12,6 +15,9 @@ class MainTabPage extends StatefulWidget {
 }
 
 class _MainTabPageState extends State<MainTabPage> {
+  static const Color _selectedColor = Color(0xFF2D5A47);
+  static const Color _unselectedColor = Color(0xFF79796F);
+
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
@@ -37,19 +43,60 @@ class _MainTabPageState extends State<MainTabPage> {
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
           type: BottomNavigationBarType.fixed,
+          selectedItemColor: _selectedColor,
+          unselectedItemColor: _unselectedColor,
           onTap: (index) {
             setState(() {
               _currentIndex = index;
             });
           },
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: '首页'),
-            BottomNavigationBarItem(icon: Icon(Icons.memory), label: '记忆'),
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.auto_awesome),
+              icon: OmiImageLoader.localImg(
+                Assets.tabHome,
+                color: _unselectedColor,
+              ),
+              activeIcon: OmiImageLoader.localImg(
+                Assets.tabHome,
+                color: _selectedColor,
+              ),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: OmiImageLoader.localImg(
+                Assets.tabBook,
+                color: _unselectedColor,
+              ),
+              activeIcon: OmiImageLoader.localImg(
+                Assets.tabBook,
+                color: _selectedColor,
+              ),
+              label: 'Memory',
+            ),
+
+            BottomNavigationBarItem(
+              icon: OmiImageLoader.localImg(
+                Assets.tabAskAi,
+                color: _unselectedColor,
+              ),
+              activeIcon: OmiImageLoader.localImg(
+                Assets.tabAskAi,
+                color: _selectedColor,
+              ),
               label: 'Ask AI',
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: '我的'),
+
+            BottomNavigationBarItem(
+              icon: OmiImageLoader.localImg(
+                Assets.tabSetting,
+                color: _unselectedColor,
+              ),
+              activeIcon: OmiImageLoader.localImg(
+                Assets.tabSetting,
+                color: _selectedColor,
+              ),
+              label: 'Preferences',
+            ),
           ],
         ),
       ),
