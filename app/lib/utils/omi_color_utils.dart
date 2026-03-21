@@ -17,6 +17,6 @@ import 'dart:ui';
 ///主标题背景颜色
  const Color pageColor = Color(0xFFF5F6F7);
 /// 线背景色
- const Color lineColor = Color(0xFFE0E0E0);
+ const Color lineColor = Color(0xFFEEEEEE);
  /// 边框颜色
  const Color borderColor = Color(0xFFE8E8E6);

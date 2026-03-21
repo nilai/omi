@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
+import 'package:omi/utils/omi_image_loader.dart';
 import 'package:omi/utils/omi_textstyle.dart';
+
+import '../generated/assets.dart';
 
 /// Memory 页顶部分段：All / People / Projects
 class MPMemoryTopTabs extends StatelessWidget {
@@ -16,16 +19,17 @@ class MPMemoryTopTabs extends StatelessWidget {
 
   final ValueChanged<int> onChanged;
 
-  static const List<_TabItem> _items = <_TabItem>[
-    _TabItem(label: 'All', icon: Icons.list_rounded),
-    _TabItem(label: 'People', icon: Icons.person_outline_rounded),
-    _TabItem(label: 'Projects', icon: Icons.folder_outlined),
+  static final List<_TabItem> _items = <_TabItem>[
+    _TabItem(label: 'All', icon: Assets.imagesOmiAll),
+    _TabItem(label: 'People', icon: Assets.imagesOmiUsers),
+    _TabItem(label: 'Projects', icon: Assets.imagesOmiProjects),
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Row(
         children: List<Widget>.generate(_items.length, (int i) {
           final _TabItem item = _items[i];
@@ -53,7 +57,7 @@ class _TabItem {
   const _TabItem({required this.label, required this.icon});
 
   final String label;
-  final IconData icon;
+  final String icon;
 }
 
 class _SegmentButton extends StatelessWidget {
@@ -65,7 +69,7 @@ class _SegmentButton extends StatelessWidget {
   });
 
   final String label;
-  final IconData icon;
+  final String icon;
   final bool selected;
   final VoidCallback onTap;
 
@@ -73,37 +77,42 @@ class _SegmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      child: InkWell(
+      child: GestureDetector(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Container(
           decoration: BoxDecoration(
-            color: selected ? blueTextColor : Colors.white,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: selected ? blueTextColor : borderColor,
-              width: 1,
-            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: selected ? Colors.white : mainTextColor,
+          child: Ink(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: selected ? blueTextColor : Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: selected ? blueTextColor : borderColor,
+                width: 1,
               ),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.medium,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OmiImageLoader.localImg(
+                  icon,
+                  width: 16,
+                  height: 16,
                   color: selected ? Colors.white : mainTextColor,
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t5_14,
+                    fontWeight: OmiFontWeight.medium,
+                    color: selected ? Colors.white : mainTextColor,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

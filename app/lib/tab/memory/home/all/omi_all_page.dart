@@ -4,7 +4,7 @@ import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
-import '../../../../assets.dart';
+import '../../../../generated/assets.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
 import 'omi_all_cubit.dart';
@@ -75,7 +75,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
               type: MPTristateType.empty,
               data: MPTristatePageData(
                 icon: OmiImageLoader.localImg(
-                  Assets.omiBrain,
+                  Assets.imagesOmiBrain,
                   width: 60,
                   height: 60,
                   color: blueTextColor,

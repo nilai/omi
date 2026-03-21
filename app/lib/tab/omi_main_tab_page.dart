@@ -4,7 +4,7 @@ import 'package:omi/tab/home/omi_home_page.dart';
 import 'package:omi/tab/memory/home/omi_memory_page.dart';
 import 'package:omi/tab/mine/omi_mine_page.dart';
 
-import '../assets.dart';
+import '../generated/assets.dart';
 import '../utils/omi_image_loader.dart';
 
 class MainTabPage extends StatefulWidget {
@@ -53,22 +53,22 @@ class _MainTabPageState extends State<MainTabPage> {
           items: [
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.tabHome,
+                Assets.imagesTabHome,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.tabHome,
+                Assets.imagesTabHome,
                 color: _selectedColor,
               ),
               label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.tabBook,
+                Assets.imagesTabBook,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.tabBook,
+                Assets.imagesTabBook,
                 color: _selectedColor,
               ),
               label: 'Memory',
@@ -76,11 +76,11 @@ class _MainTabPageState extends State<MainTabPage> {
 
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.tabAskAi,
+                Assets.imagesTabAskAi,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.tabAskAi,
+                Assets.imagesTabAskAi,
                 color: _selectedColor,
               ),
               label: 'Ask AI',
@@ -88,11 +88,11 @@ class _MainTabPageState extends State<MainTabPage> {
 
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.tabSetting,
+                Assets.imagesTabSetting,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.tabSetting,
+                Assets.imagesTabSetting,
                 color: _selectedColor,
               ),
               label: 'Preferences',

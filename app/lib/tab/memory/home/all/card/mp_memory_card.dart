@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
-import '../../../../../assets.dart';
+import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_color_utils.dart';
 import '../../../../../utils/omi_font_utils.dart';
 import '../../../../../utils/omi_textstyle.dart';
@@ -265,12 +265,12 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _FooterChip(icon: OmiImageLoader.localImg(Assets.omiAudio,width: 16, height: 16, color: _kFooter), label: 'Audio'),
+        _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiAudio,width: 16, height: 16, color: _kFooter), label: 'Audio'),
         const SizedBox(width: 20),
-        _FooterChip(icon: OmiImageLoader.localImg(Assets.omiSparkles,width: 16, height: 16, color: _kFooter), label: 'Summary'),
+        _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiSparkles,width: 16, height: 16, color: _kFooter), label: 'Summary'),
         if (showActivity) ...[
           const SizedBox(width: 20),
-          _FooterChip(icon: OmiImageLoader.localImg(Assets.omiActivity,width: 16, height: 16, color: _kFooter), label: 'Activity'),
+          _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiActivity,width: 16, height: 16, color: _kFooter), label: 'Activity'),
         ],
       ],
     );

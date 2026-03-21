@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
-import '../assets.dart';
+import '../generated/assets.dart';
 import '../utils/omi_font_utils.dart';
 import '../utils/omi_image_loader.dart';
 import '../utils/omi_space_utils.dart';
@@ -94,7 +94,7 @@ class MPTristatePage extends StatelessWidget {
         color: redColor.withValues(alpha: 0.12),
       ),
       child: OmiImageLoader.localImg(
-        Assets.omiWarning,
+        Assets.imagesOmiWarning,
         color: redColor,
         width: 30,
       ),

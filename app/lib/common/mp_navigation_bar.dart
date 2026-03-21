@@ -4,7 +4,8 @@ import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
-import '../assets.dart';
+import '../generated/assets.dart';
+
 
 /// 顶部导航栏样式类型（覆盖设计图中的 4 种头部）
 enum MPNavigationBarVariant {
@@ -140,7 +141,7 @@ class MPNavigationBar extends StatelessWidget {
         return _buildCircleButton(
           onTap: onLeadingTap,
           child: OmiImageLoader.localImg(
-            Assets.omiSparkles,
+            Assets.imagesOmiSparkles,
             width: 16,
             height: 16,
             color: const Color(0xFF8D6EF9),
@@ -172,7 +173,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.memory:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.omiSearch,
+            icon: Assets.imagesOmiSearch,
             onTap: onPrimaryActionTap,
             color: blueTextColor,
           ),
@@ -180,7 +181,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.askAi:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.omiMore,
+            icon: Assets.imagesOmiMore,
             onTap: onPrimaryActionTap,
             color: secondTextColor,
           ),
@@ -188,13 +189,13 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.preferences:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.tabSetting,
+            icon: Assets.imagesTabSetting,
             onTap: onPrimaryActionTap,
             color: secondTextColor,
           ),
           const SizedBox(width: 16),
           _buildIconAction(
-            icon: Assets.omiUser,
+            icon: Assets.imagesOmiUser,
             onTap: onSecondaryActionTap,
             color: secondTextColor,
           ),
@@ -202,7 +203,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.memoPin:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.omiCalendar,
+            icon: Assets.imagesOmiCalendar,
             onTap: onPrimaryActionTap,
             color: blueTextColor,
           ),
@@ -211,7 +212,7 @@ class MPNavigationBar extends StatelessWidget {
             onTap: onSecondaryActionTap,
             size: 30,
             bgColor: blueTextColor,
-            child: OmiImageLoader.localImg(Assets.omiPlus, width: 20, height: 20, color: Colors.white),
+            child: OmiImageLoader.localImg(Assets.imagesOmiPlus, width: 20, height: 20, color: Colors.white),
           ),
         ];
     }
