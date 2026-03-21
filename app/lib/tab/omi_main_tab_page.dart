@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/tab/askai/omi_ask_ai_page.dart';
 import 'package:omi/tab/home/omi_home_page.dart';
-import 'package:omi/tab/memory/omi_memory_page.dart';
+import 'package:omi/tab/memory/home/omi_memory_page.dart';
 import 'package:omi/tab/mine/omi_mine_page.dart';
 
 import '../assets.dart';

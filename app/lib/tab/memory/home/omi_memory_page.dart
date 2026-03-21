@@ -4,7 +4,8 @@ import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
-import '../../assets.dart';
+import '../../../assets.dart';
+import 'card/mp_memory_card.dart';
 import 'mp_memory_cubit.dart';
 
 /// Memory Tab：Cubit 管理状态；空/无网/错误用 [MPTristatePage]；列表用 [SingleChildScrollView]
@@ -14,7 +15,7 @@ class OmiMemoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => MPMemoryCubit()..load(),
+      create: (_) => MPMemoryCubit()..initData(),
       child: const _OmiMemoryView(),
     );
   }
@@ -71,19 +72,51 @@ class _OmiMemoryView extends StatelessWidget {
             case MPMemoryPhase.loaded:
               return RefreshIndicator(
                 onRefresh: () => context.read<MPMemoryCubit>().load(),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: state.items
-                        .map(
-                          (String text) => ListTile(
-                            title: Text(text),
-                            subtitle: const Text('示例副标题'),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification n) {
+                    final ScrollMetrics m = n.metrics;
+                    // 内容不足一屏不误触；下拉刷新顶部 overscroll 不误触
+                    if (m.maxScrollExtent <= 0) return false;
+                    if (m.pixels < 0) return false;
+                    if (m.pixels < m.maxScrollExtent - 120) return false;
+                    context.read<MPMemoryCubit>().loadMore();
+                    return false;
+                  },
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                    children: [
+                      for (int i = 0; i < state.items.length; i++) ...[
+                        if (i > 0) const SizedBox(height: 12),
+                        MPMemoryCard(
+                          variant: state.items[i].variant,
+                          data: state.items[i].data,
+                          onTap: () {},
+                        ),
+                      ],
+                      if (state.isLoadingMore) ...[
+                        const SizedBox(height: 16),
+                        const Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
-                        )
-                        .toList(),
+                        ),
+                      ],
+                      if (!state.hasMore && state.items.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Center(
+                          child: Text(
+                            '没有更多了',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               );
