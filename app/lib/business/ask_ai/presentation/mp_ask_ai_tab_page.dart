@@ -95,7 +95,7 @@ class MPAskAiTabPage extends StatelessWidget {
                     ),
                   );
                 },
-                separatorBuilder: (context, index) => const Divider(height: 1),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
                 itemCount: conversations.length,
               ),
             ),
