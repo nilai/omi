@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_tristate_page.dart';
+import 'package:omi/tab/memory/detail/memory/omi_memory_detail_page.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
+import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
 import 'omi_all_cubit.dart';
@@ -63,6 +65,26 @@ class _OmiAllViewState extends State<_OmiAllView> {
     await context.read<OmiAllCubit>().load();
   }
 
+  /// 按 [MPMemoryEntry.kind] 区分跳转或埋点（示例：`[entry.id]` + `kind`）
+  void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
+    switch (entry.kind) {
+      case MPMemoryEntryKind.conversation:
+        //打开会话记忆详情
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => const OmiMemoryDetailPage(),
+          ),
+        );
+        break;
+      case MPMemoryEntryKind.memoGroup:
+        // TODO: 打开 Memos 分组详情
+        break;
+      case MPMemoryEntryKind.audioRecording:
+        // TODO: 打开录音详情
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OmiAllCubit, OmiAllState>(
@@ -75,7 +97,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
               type: MPTristateType.empty,
               data: MPTristatePageData(
                 icon: OmiImageLoader.localImg(
-                  Assets.imagesOmiBrain,
+                  Assets.omiBrain,
                   width: 60,
                   height: 60,
                   color: blueTextColor,
@@ -138,12 +160,16 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     MPMemoryEntryKind.conversation => MPMemoryCard(
                         variant: entry.variant!,
                         data: entry.data!,
-                        onTap: () {},
+                        onTap: () => _onMemoryEntryTap(context, entry),
                       ),
                     MPMemoryEntryKind.memoGroup => MPMemoGroupCard(
                         variant: entry.memoVariant!,
                         data: entry.memoData!,
-                        onTap: () {},
+                        onTap: () => _onMemoryEntryTap(context, entry),
+                      ),
+                    MPMemoryEntryKind.audioRecording => MPAudioRecordingCard(
+                        data: entry.audioData!,
+                        onTap: () => _onMemoryEntryTap(context, entry),
                       ),
                   };
                   return Padding(

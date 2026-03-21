@@ -43,7 +43,7 @@ class _OmiPeopleView extends StatelessWidget {
               type: MPTristateType.empty,
               data: MPTristatePageData(
                 icon: OmiImageLoader.localImg(
-                  Assets.imagesOmiUsers,
+                  Assets.omiUsers,
                   width: 60,
                   height: 60,
                   color: blueTextColor,

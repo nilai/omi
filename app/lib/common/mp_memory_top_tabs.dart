@@ -20,9 +20,9 @@ class MPMemoryTopTabs extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   static final List<_TabItem> _items = <_TabItem>[
-    _TabItem(label: 'All', icon: Assets.imagesOmiAll),
-    _TabItem(label: 'People', icon: Assets.imagesOmiUsers),
-    _TabItem(label: 'Projects', icon: Assets.imagesOmiProjects),
+    _TabItem(label: 'All', icon: Assets.omiAll),
+    _TabItem(label: 'People', icon: Assets.omiUsers),
+    _TabItem(label: 'Projects', icon: Assets.omiProjects),
   ];
 
   @override

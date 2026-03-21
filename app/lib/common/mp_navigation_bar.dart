@@ -141,7 +141,7 @@ class MPNavigationBar extends StatelessWidget {
         return _buildCircleButton(
           onTap: onLeadingTap,
           child: OmiImageLoader.localImg(
-            Assets.imagesOmiSparkles,
+            Assets.omiSparkles,
             width: 16,
             height: 16,
             color: const Color(0xFF8D6EF9),
@@ -173,7 +173,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.memory:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.imagesOmiSearch,
+            icon: Assets.omiSearch,
             onTap: onPrimaryActionTap,
             color: blueTextColor,
           ),
@@ -181,7 +181,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.askAi:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.imagesOmiMore,
+            icon: Assets.omiMore,
             onTap: onPrimaryActionTap,
             color: secondTextColor,
           ),
@@ -189,13 +189,13 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.preferences:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.imagesTabSetting,
+            icon: Assets.tabSetting,
             onTap: onPrimaryActionTap,
             color: secondTextColor,
           ),
           const SizedBox(width: 16),
           _buildIconAction(
-            icon: Assets.imagesOmiUser,
+            icon: Assets.omiUser,
             onTap: onSecondaryActionTap,
             color: secondTextColor,
           ),
@@ -203,7 +203,7 @@ class MPNavigationBar extends StatelessWidget {
       case MPNavigationBarVariant.memoPin:
         return <Widget>[
           _buildIconAction(
-            icon: Assets.imagesOmiCalendar,
+            icon: Assets.omiCalendar,
             onTap: onPrimaryActionTap,
             color: blueTextColor,
           ),
@@ -212,7 +212,7 @@ class MPNavigationBar extends StatelessWidget {
             onTap: onSecondaryActionTap,
             size: 30,
             bgColor: blueTextColor,
-            child: OmiImageLoader.localImg(Assets.imagesOmiPlus, width: 20, height: 20, color: Colors.white),
+            child: OmiImageLoader.localImg(Assets.omiPlus, width: 20, height: 20, color: Colors.white),
           ),
         ];
     }

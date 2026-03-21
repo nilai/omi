@@ -94,7 +94,7 @@ class MPTristatePage extends StatelessWidget {
         color: redColor.withValues(alpha: 0.12),
       ),
       child: OmiImageLoader.localImg(
-        Assets.imagesOmiWarning,
+        Assets.omiWarning,
         color: redColor,
         width: 30,
       ),

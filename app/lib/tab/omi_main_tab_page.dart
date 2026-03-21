@@ -53,22 +53,22 @@ class _MainTabPageState extends State<MainTabPage> {
           items: [
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.imagesTabHome,
+                Assets.tabHome,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.imagesTabHome,
+                Assets.tabHome,
                 color: _selectedColor,
               ),
               label: 'Home',
             ),
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.imagesTabBook,
+                Assets.tabBook,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.imagesTabBook,
+                Assets.tabBook,
                 color: _selectedColor,
               ),
               label: 'Memory',
@@ -76,11 +76,11 @@ class _MainTabPageState extends State<MainTabPage> {
 
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.imagesTabAskAi,
+                Assets.tabAskAi,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.imagesTabAskAi,
+                Assets.tabAskAi,
                 color: _selectedColor,
               ),
               label: 'Ask AI',
@@ -88,11 +88,11 @@ class _MainTabPageState extends State<MainTabPage> {
 
             BottomNavigationBarItem(
               icon: OmiImageLoader.localImg(
-                Assets.imagesTabSetting,
+                Assets.tabSetting,
                 color: _unselectedColor,
               ),
               activeIcon: OmiImageLoader.localImg(
-                Assets.imagesTabSetting,
+                Assets.tabSetting,
                 color: _selectedColor,
               ),
               label: 'Preferences',

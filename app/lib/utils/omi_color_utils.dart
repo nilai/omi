@@ -5,9 +5,11 @@ import 'dart:ui';
 ///次标题文本颜色
  const Color secondTextColor = Color(0xFF79796F);
 ///绿色文本颜色
- const Color greenTextColor = Color(0xFF00FF00);
+ const Color greenTextColor = Color(0xFF34c759);
+/// 深绿色
+ const Color greenDeepColor = Color(0xFF2d5a47);
 ///蓝色文本颜色
- const Color blueTextColor = Color(0xFF1E88E5);
+ const Color blueTextColor = Color(0xFF007aff);
 ///橙色文本颜色
  const Color orangeTextColor = Color(0xFFFF9800);
 ///紫色文本颜色

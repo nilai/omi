@@ -178,7 +178,7 @@ class _HeaderRow extends StatelessWidget {
         SizedBox(
           width: 18,
           height: 18,
-          child: OmiImageLoader.localImg(Assets.imagesOmiBookText, width: 18, height: 18, color: orangeTextColor,fit: BoxFit.cover,),
+          child: OmiImageLoader.localImg(Assets.omiBookText, width: 18, height: 18, color: orangeTextColor,fit: BoxFit.cover,),
         ),
         const SizedBox(width: 10),
         Flexible(
@@ -277,7 +277,7 @@ class _ExpandFooter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            OmiImageLoader.localImg(expanded ? Assets.imagesOmiArrowUp : Assets.imagesOmiArrowDown, color: blueTextColor, width: 14, height: 14),
+            OmiImageLoader.localImg(expanded ? Assets.omiArrowUp : Assets.omiArrowDown, color: blueTextColor, width: 14, height: 14),
             const SizedBox(width: 4),
             Text(
               expanded ? 'Show less' : '+ $moreCount more',

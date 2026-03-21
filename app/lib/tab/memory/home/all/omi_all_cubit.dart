@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
 
@@ -256,6 +257,15 @@ class OmiAllCubit extends Cubit<OmiAllState> {
             'Discussed timeline for migrating legacy API to new microservices architecture. Team agreed...',
             badgeCount: 1,
             statusLabel: 'New updates',
+          ),
+        ),
+        const MPMemoryEntry.audioRecording(
+          id: 'mem_audio_001',
+          audioData: MPAudioRecordingCardData(
+            primaryTimeLabel: 'Jan 18, 2026, 11:20 AM',
+            secondaryTimeLabel: 'January 18, 2026 at 11:20 AM',
+            sourceLabel: 'MobilePhone',
+            durationLabel: '3m47s',
           ),
         ),
         const MPMemoryEntry.memoGroup(

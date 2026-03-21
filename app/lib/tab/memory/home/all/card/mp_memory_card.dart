@@ -6,15 +6,19 @@ import '../../../../../utils/omi_color_utils.dart';
 import '../../../../../utils/omi_font_utils.dart';
 import '../../../../../utils/omi_textstyle.dart';
 
+import 'mp_audio_recording_card.dart';
 import 'mp_memo_group_card.dart';
 
-/// 列表行类型：会话卡片 / Memos 分组卡片
+/// 列表行类型：会话卡片 / Memos 分组 / 录音记忆卡片
 enum MPMemoryEntryKind {
   /// [MPMemoryCard]
   conversation,
 
   /// [MPMemoGroupCard]
   memoGroup,
+
+  /// [MPAudioRecordingCard]
+  audioRecording,
 }
 
 /// Memory 列表卡片三种展示形态（对应设计稿）
@@ -50,7 +54,7 @@ class MPMemoryCardData {
   final String? statusLabel;
 }
 
-/// Cubit / 列表行：会话卡片或 Memos 分组卡片
+/// Cubit / 列表行：会话、Memos 分组或录音记忆卡片
 ///
 /// [id] 用于游标分页（下一页请求携带上页最后一条 id，与 [MemoryProvider] 一致）
 class MPMemoryEntry {
@@ -60,7 +64,8 @@ class MPMemoryEntry {
     required this.data,
   })  : kind = MPMemoryEntryKind.conversation,
         memoVariant = null,
-        memoData = null;
+        memoData = null,
+        audioData = null;
 
   const MPMemoryEntry.memoGroup({
     required this.id,
@@ -68,7 +73,17 @@ class MPMemoryEntry {
     required this.memoData,
   })  : kind = MPMemoryEntryKind.memoGroup,
         variant = null,
-        data = null;
+        data = null,
+        audioData = null;
+
+  const MPMemoryEntry.audioRecording({
+    required this.id,
+    required this.audioData,
+  })  : kind = MPMemoryEntryKind.audioRecording,
+        variant = null,
+        data = null,
+        memoVariant = null,
+        memoData = null;
 
   /// 业务唯一 id，作为服务端 cursor 传递
   final String id;
@@ -82,6 +97,9 @@ class MPMemoryEntry {
   /// [kind] 为 [MPMemoryEntryKind.memoGroup] 时使用
   final MPMemoGroupCardVariant? memoVariant;
   final MPMemoGroupCardData? memoData;
+
+  /// [kind] 为 [MPMemoryEntryKind.audioRecording] 时使用
+  final MPAudioRecordingCardData? audioData;
 }
 
 /// 设计色（与设计稿对齐，可按主题再抽）
@@ -265,12 +283,12 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiAudio,width: 16, height: 16, color: _kFooter), label: 'Audio'),
+        _FooterChip(icon: OmiImageLoader.localImg(Assets.omiAudio,width: 16, height: 16, color: _kFooter), label: 'Audio'),
         const SizedBox(width: 20),
-        _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiSparkles,width: 16, height: 16, color: _kFooter), label: 'Summary'),
+        _FooterChip(icon: OmiImageLoader.localImg(Assets.omiSparkles,width: 16, height: 16, color: _kFooter), label: 'Summary'),
         if (showActivity) ...[
           const SizedBox(width: 20),
-          _FooterChip(icon: OmiImageLoader.localImg(Assets.imagesOmiActivity,width: 16, height: 16, color: _kFooter), label: 'Activity'),
+          _FooterChip(icon: OmiImageLoader.localImg(Assets.omiActivity,width: 16, height: 16, color: _kFooter), label: 'Activity'),
         ],
       ],
     );
