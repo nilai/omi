@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
+import '../generated/assets.dart';
+import '../utils/omi_font_utils.dart';
+import '../utils/omi_image_loader.dart';
+import '../utils/omi_space_utils.dart';
+import '../utils/omi_textstyle.dart';
 import 'omi_button.dart';
 
 /// 三态图页面类型
@@ -18,92 +23,152 @@ enum MPTristateType {
   error,
 }
 
-/// 三态图页面配置（icon/标题/描述/按钮）
+/// 可选覆盖配置：未传的字段由 [MPTristateType] 对应的内置默认文案/图标补齐
 class MPTristatePageData {
-  final Widget icon;
-  final String title;
-  final String description;
-  final bool showButton;
-  final String buttonText;
+  final Widget? icon;
+  final String? title;
+  final String? description;
+  final bool? showButton;
+  final String? buttonText;
+  final Color? buttonColor;
+  final Color? buttonBgColor;
+
   final VoidCallback? onButtonPressed;
 
   const MPTristatePageData({
-    required this.icon,
-    this.title = '',
-    this.description = '',
+    this.icon,
+    this.title,
+    this.description,
     this.showButton = true,
-    this.buttonText = '重试',
+    this.buttonText,
+    this.buttonColor,
+    this.buttonBgColor,
     this.onButtonPressed,
   });
 }
 
-/// 三态图页面：用于在加载/空/错误时展示统一的 UI
+/// 合并后的展示数据（内部使用）
+class _ResolvedTristate {
+  const _ResolvedTristate({
+    this.icon,
+    required this.title,
+    required this.description,
+    required this.showButton,
+    required this.buttonText,
+    this.buttonColor,
+    this.buttonBgColor,
+    this.onButtonPressed,
+  });
+
+  final Widget? icon;
+  final String title;
+  final String description;
+  final bool showButton;
+  final String buttonText;
+  final Color? buttonBgColor;
+  final Color? buttonColor;
+  final VoidCallback? onButtonPressed;
+}
+
+/// 三态图页面：根据 [type] 选择默认文案；[data] 仅用于覆盖部分字段
 class MPTristatePage extends StatelessWidget {
   final MPTristateType type;
-  final MPTristatePageData loadingData;
-  final MPTristatePageData emptyData;
-  final MPTristatePageData noNetworkData;
-  final MPTristatePageData errorData;
+
+  /// 可选：覆盖当前 [type] 下的标题、描述、按钮等；无需区分 loading/empty 等不同参数
+  final MPTristatePageData? data;
 
   const MPTristatePage({
     super.key,
     this.type = MPTristateType.loading,
-    MPTristatePageData? loadingData,
-    MPTristatePageData? emptyData,
-    MPTristatePageData? noNetworkData,
-    MPTristatePageData? errorData,
-  })  : loadingData = loadingData ??
-            const MPTristatePageData(
-              icon: SizedBox(
-                width: 48,
-                height: 48,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-              title: '加载中',
-              description: '请稍候',
-              showButton: false,
-            ),
-        emptyData = emptyData ??
-            const MPTristatePageData(
-              icon: Icon(Icons.inbox_outlined, size: 48),
-              title: '暂无内容',
-              description: '当前没有数据',
-              showButton: true,
-              buttonText: '刷新',
-            ),
-        noNetworkData = noNetworkData ??
-            const MPTristatePageData(
-              icon: Icon(Icons.wifi_off_outlined, size: 48),
-              title: '无网络',
-              description: '请检查网络连接后重试',
-              showButton: true,
-              buttonText: '重试',
-            ),
-        errorData = errorData ??
-            const MPTristatePageData(
-              icon: Icon(Icons.error_outline, size: 48),
-              title: '出错了',
-              description: '请稍后重试',
-              showButton: true,
-              buttonText: '重试',
-            );
+    this.data,
+  });
 
-  MPTristatePageData get _currentData {
+  /// 默认插图：`redColor` 浅底、圆角容器内放 [Assets.omiWarning]
+  static Widget _buildOmiWarningIcon() {
+    return Container(
+      width: 60,
+      height: 60,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        color: redColor.withValues(alpha: 0.12),
+      ),
+      child: OmiImageLoader.localImg(
+        Assets.omiWarning,
+        color: redColor,
+        width: 30,
+      ),
+    );
+  }
+
+  static _ResolvedTristate _defaultsFor(MPTristateType type) {
     switch (type) {
       case MPTristateType.loading:
-        return loadingData;
+        return const _ResolvedTristate(
+          icon: SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          title: 'Loading',
+          description: 'Please wait...',
+          showButton: false,
+          buttonText: 'Retry',
+          buttonBgColor: blueTextColor,
+            buttonColor: Colors.white
+        );
       case MPTristateType.empty:
-        return emptyData;
+        return _ResolvedTristate(
+          icon: _buildOmiWarningIcon(),
+          title: '暂无内容',
+          description: '当前没有数据',
+          showButton: true,
+          buttonText: 'Refresh',
+            buttonBgColor: blueTextColor,
+            buttonColor: Colors.white
+        );
       case MPTristateType.noNetwork:
-        return noNetworkData;
+        return _ResolvedTristate(
+          icon: _buildOmiWarningIcon(),
+          title: 'Not connected',
+          description: 'Please check your connection and try again.',
+          showButton: true,
+          buttonText: 'Retry',
+            buttonBgColor: blueTextColor,
+            buttonColor: Colors.white
+        );
       case MPTristateType.error:
-        return errorData;
+        return _ResolvedTristate(
+          icon: _buildOmiWarningIcon(),
+          title: '出错了',
+          description: '请稍后重试',
+          showButton: true,
+          buttonText: 'Retry',
+            buttonBgColor: blueTextColor,
+            buttonColor: Colors.white
+        );
     }
   }
 
+  static _ResolvedTristate _merge(_ResolvedTristate base, MPTristatePageData? o) {
+    if (o == null) return base;
+    return _ResolvedTristate(
+      icon: o.icon ?? base.icon,
+      title: o.title ?? base.title,
+      description: o.description ?? base.description,
+      showButton: o.showButton ?? base.showButton,
+      buttonText: o.buttonText ?? base.buttonText,
+      buttonBgColor: o.buttonBgColor ?? base.buttonBgColor,
+      buttonColor: o.buttonColor ?? base.buttonColor,
+      onButtonPressed: o.onButtonPressed ?? base.onButtonPressed,
+    );
+  }
+
+  _ResolvedTristate get _resolved => _merge(_defaultsFor(type), data);
+
   @override
   Widget build(BuildContext context) {
-    final MPTristatePageData data = _currentData;
+    final _ResolvedTristate d = _resolved;
 
     return Center(
       child: Padding(
@@ -111,10 +176,10 @@ class MPTristatePage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            data.icon,
-            const SizedBox(height: 12),
+            d.icon ?? _buildOmiWarningIcon(),
+            SizedBox(height: textLargePadding),
             Text(
-              data.title,
+              d.title,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: mainTextColor,
@@ -122,21 +187,24 @@ class MPTristatePage extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: textSmallPadding),
             Text(
-              data.description,
+              d.description,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: OmiTextStyle.create(
                 color: secondTextColor.withValues(alpha: 0.7),
-                fontSize: 14,
+                fontSize: OmiFontSize.smallTextFontSize,
               ),
             ),
-            if (data.showButton) ...[
-              const SizedBox(height: 16),
+            if (d.showButton) ...[
+              SizedBox(height: textLargePadding),
               SizedBox(
                 child: OmiButton(
-                  text: data.buttonText,
-                  onPressed: data.onButtonPressed,
+                  textFontSize: OmiFontSize.secondTextFontSize,
+                  bgColor: d.buttonBgColor ?? blueTextColor,
+                  textColor: d.buttonColor,
+                  text: d.buttonText,
+                  onPressed: d.onButtonPressed,
                 ),
               ),
             ],
@@ -146,4 +214,3 @@ class MPTristatePage extends StatelessWidget {
     );
   }
 }
-

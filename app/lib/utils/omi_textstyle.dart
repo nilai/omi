@@ -12,7 +12,7 @@ class OmiTextStyle {
   /// fontFamily：默认 iOS：PingFang SC， android以及鸿蒙：跟随系统
   static TextStyle create({
     required Color color,
-    required double fontSize,
+    double? fontSize = 13,
     FontWeight? fontWeight,
     double? height,
     String? fontFamily,

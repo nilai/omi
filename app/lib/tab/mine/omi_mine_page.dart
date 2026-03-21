@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../common/mp_navigation_bar.dart';
+import '../../utils/omi_color_utils.dart';
+
 class OmiMinePage extends StatefulWidget {
   const OmiMinePage({super.key});
 
@@ -11,8 +14,13 @@ class _OmiMinePageState extends State<OmiMinePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Text('omi_mine_page11'),
+      backgroundColor: pageColor,
+      appBar: PreferredSize(
+        preferredSize: MPNavigationBar.preferredSizeOf(context),
+        child: MPNavigationBar(
+          backgroundColor: Colors.white,
+          variant: MPNavigationBarVariant.preferences,
+        ),
       ),
     );
   }
