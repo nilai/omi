@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:omi/tab/askai/omi_ask_ai_page.dart';
-import 'package:omi/tab/home/omi_home_page.dart';
-import 'package:omi/tab/memory/home/omi_memory_page.dart';
-import 'package:omi/tab/mine/omi_mine_page.dart';
+import 'package:omi/business/ask_ai/presentation/mp_ask_ai_tab_page.dart';
+import 'package:omi/business/home/presentation/mp_home_tab_page.dart';
+import 'package:omi/business/memory/presentation/mp_memory_tab_page.dart';
+import 'package:omi/business/preferences/presentation/mp_preferences_tab_page.dart';
+import 'package:omi/business/shared/data/mp_business_repository.dart';
+import 'package:omi/business/shared/state/mp_business_controller.dart';
 
 import '../generated/assets.dart';
 import '../utils/omi_image_loader.dart';
@@ -19,13 +21,28 @@ class _MainTabPageState extends State<MainTabPage> {
   static const Color _unselectedColor = Color(0xFF79796F);
 
   int _currentIndex = 0;
+  late final MPBusinessController _businessController;
 
-  final List<Widget> _pages = const [
-    OmiHomePage(),
-    OmiMemoryPage(),
-    OmiAskAIPage(),
-    OmiMinePage(),
-  ];
+  List<Widget> get _pages => [
+        MPHomeTabPage(controller: _businessController),
+        MPMemoryTabPage(controller: _businessController),
+        MPAskAiTabPage(controller: _businessController),
+        MPPreferencesTabPage(controller: _businessController),
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    _businessController = MPBusinessController(
+      repository: const MPBusinessRepository(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _businessController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
