@@ -7,15 +7,15 @@ import 'dart:ui';
 ///绿色文本颜色
  const Color greenTextColor = Color(0xFF00FF00);
 ///蓝色文本颜色
- const Color blueTextColor = Color(0xFF007aff);
+ const Color blueTextColor = Color(0xFF1E88E5);
 ///橙色文本颜色
- const Color orangeTextColor = Color(0xFFFFA500);
+ const Color orangeTextColor = Color(0xFFFF9800);
 ///紫色文本颜色
  const Color purpleTextColor = Color(0xFF6D28D9);
  /// 红色颜色
  const Color redColor = Color(0xFFd4183d);
 ///主标题背景颜色
- const Color pageColor = Color(0xFF999999);
+ const Color pageColor = Color(0xFFF5F6F7);
 /// 线背景色
  const Color lineColor = Color(0xFFE0E0E0);
  /// 边框颜色

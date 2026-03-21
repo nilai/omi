@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
-import '../../../../assets.dart';
-import '../../../../utils/omi_color_utils.dart';
-import '../../../../utils/omi_font_utils.dart';
-import '../../../../utils/omi_textstyle.dart';
+import '../../../../../assets.dart';
+import '../../../../../utils/omi_color_utils.dart';
+import '../../../../../utils/omi_font_utils.dart';
+import '../../../../../utils/omi_textstyle.dart';
+
+import 'mp_memo_group_card.dart';
+
+/// 列表行类型：会话卡片 / Memos 分组卡片
+enum MPMemoryEntryKind {
+  /// [MPMemoryCard]
+  conversation,
+
+  /// [MPMemoGroupCard]
+  memoGroup,
+}
 
 /// Memory 列表卡片三种展示形态（对应设计稿）
 enum MPMemoryCardVariant {
@@ -39,15 +50,38 @@ class MPMemoryCardData {
   final String? statusLabel;
 }
 
-/// Cubit / 列表用的「变体 + 数据」组合
+/// Cubit / 列表行：会话卡片或 Memos 分组卡片
+///
+/// [id] 用于游标分页（下一页请求携带上页最后一条 id，与 [MemoryProvider] 一致）
 class MPMemoryEntry {
-  const MPMemoryEntry({
+  const MPMemoryEntry.conversation({
+    required this.id,
     required this.variant,
     required this.data,
-  });
+  })  : kind = MPMemoryEntryKind.conversation,
+        memoVariant = null,
+        memoData = null;
 
-  final MPMemoryCardVariant variant;
-  final MPMemoryCardData data;
+  const MPMemoryEntry.memoGroup({
+    required this.id,
+    required this.memoVariant,
+    required this.memoData,
+  })  : kind = MPMemoryEntryKind.memoGroup,
+        variant = null,
+        data = null;
+
+  /// 业务唯一 id，作为服务端 cursor 传递
+  final String id;
+
+  final MPMemoryEntryKind kind;
+
+  /// [kind] 为 [MPMemoryEntryKind.conversation] 时使用
+  final MPMemoryCardVariant? variant;
+  final MPMemoryCardData? data;
+
+  /// [kind] 为 [MPMemoryEntryKind.memoGroup] 时使用
+  final MPMemoGroupCardVariant? memoVariant;
+  final MPMemoGroupCardData? memoData;
 }
 
 /// 设计色（与设计稿对齐，可按主题再抽）
