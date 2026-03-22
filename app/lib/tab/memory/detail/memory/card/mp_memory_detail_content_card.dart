@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:omi/common/omi_button.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_overview_content.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_edit_speaker_sheet.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
 import 'package:omi/utils/omi_color_utils.dart';
@@ -90,11 +91,16 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   Duration _elapsed = Duration.zero;
   Duration _total = Duration.zero;
 
+  /// 可编辑的 transcript 列表（保存说话人名后更新；与 [MPMemoryDetailCardData.transcriptItems] 同步自父级）
+  late List<MPMemoryTranscriptItemData> _transcriptItems;
+
   @override
   void initState() {
     super.initState();
     _segment = widget.data.initialSegment;
     _syncDurationFromData(widget.data);
+    _transcriptItems =
+        List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
   }
 
   @override
@@ -106,6 +112,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     if (oldWidget.data.audioTimeStart != widget.data.audioTimeStart ||
         oldWidget.data.audioTimeEnd != widget.data.audioTimeEnd) {
       _syncDurationFromData(widget.data);
+    }
+    if (oldWidget.data.transcriptItems != widget.data.transcriptItems) {
+      _transcriptItems =
+          List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
     }
   }
 
@@ -142,7 +152,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       }
       _playing = !_playing;
       _playingTranscriptIndex ??=
-          widget.data.transcriptItems.isNotEmpty ? 0 : null;
+          _transcriptItems.isNotEmpty ? 0 : null;
     });
     _syncTimerByPlayingState();
     widget.onPlayTap?.call();
@@ -154,7 +164,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       if (isSameIndex && _playing) {
         _playing = false;
       } else {
-        final String ts = widget.data.transcriptItems[index].timestamp;
+        final String ts = _transcriptItems[index].timestamp;
         final Duration fromTranscript = Duration(seconds: _parseToSeconds(ts));
         if (fromTranscript <= _total) {
           _elapsed = fromTranscript;
@@ -214,7 +224,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   }
 
   int? _selectedTranscriptIndex() {
-    final List<MPMemoryTranscriptItemData> items = widget.data.transcriptItems;
+    final List<MPMemoryTranscriptItemData> items = _transcriptItems;
     if (items.isEmpty) return null;
     final int nowSec = _elapsed.inSeconds;
     int selected = 0;
@@ -227,6 +237,33 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       }
     }
     return selected;
+  }
+
+  /// 点击某条 transcript 的编辑图标：弹出「Edit Speaker Name」底部弹窗
+  Future<void> _onTranscriptEditTap(int index) async {
+    final MPMemoryTranscriptItemData item = _transcriptItems[index];
+    final MPMemoryEditSpeakerResult? result = await showMPMemoryEditSpeakerSheet(
+      context: context,
+      currentSpeakerName: item.speakerName,
+    );
+    if (!mounted || result == null) return;
+    setState(() {
+      if (result.applyToAll) {
+        final String oldName = item.speakerName;
+        _transcriptItems = _transcriptItems
+            .map(
+              (MPMemoryTranscriptItemData e) => e.speakerName == oldName
+                  ? e.copyWith(speakerName: result.newName)
+                  : e,
+            )
+            .toList();
+      } else {
+        final List<MPMemoryTranscriptItemData> next =
+            List<MPMemoryTranscriptItemData>.from(_transcriptItems);
+        next[index] = item.copyWith(speakerName: result.newName);
+        _transcriptItems = next;
+      }
+    });
   }
 
   @override
@@ -334,7 +371,17 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           ),
           const SizedBox(height: 12),
           SizedBox(height: 330, child: _buildSegmentBody(),),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          /// 分段区与「Generate Resummary」之间的浅灰分隔线（约 0.5 逻辑像素）
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              height: 0.5,
+              color: Colors.white.withValues(alpha: 0.28),
+            ),
+          ),
+          const SizedBox(height: 16),
           OmiButton(
             textColor: Colors.white,
             bgColor: Colors.white.withValues(alpha: 0.15),
@@ -359,10 +406,11 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       case MPMemoryDetailSegment.transcript:
         final int? selectedIndex = _selectedTranscriptIndex();
         return MPMemoryTranscriptContent(
-          items: d.transcriptItems,
+          items: _transcriptItems,
           isPlaying: _playing,
           playingIndex: _playingTranscriptIndex,
           selectedIndex: selectedIndex,
+          onItemEditTap: _onTranscriptEditTap,
           onItemPlayTap: _onTranscriptPlayTap,
         );
       case MPMemoryDetailSegment.actions:

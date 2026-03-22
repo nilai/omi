@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
@@ -23,6 +24,21 @@ class MPMemoryTranscriptItemData {
 
   /// 波形高度 0~1，不传则内部生成占位
   final List<double>? waveformHeights;
+
+  /// 复制并覆盖部分字段（用于编辑说话人等）
+  MPMemoryTranscriptItemData copyWith({
+    String? timestamp,
+    String? speakerName,
+    String? transcriptText,
+    List<double>? waveformHeights,
+  }) {
+    return MPMemoryTranscriptItemData(
+      timestamp: timestamp ?? this.timestamp,
+      speakerName: speakerName ?? this.speakerName,
+      transcriptText: transcriptText ?? this.transcriptText,
+      waveformHeights: waveformHeights ?? this.waveformHeights,
+    );
+  }
 }
 
 /// Transcript 列表项：左侧时间戳 + 右侧说话人 / 编辑 / 播放 / 播放中波形 + 正文
@@ -50,86 +66,89 @@ class MPMemoryTranscriptItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MPMemoryTranscriptItemData d = data;
-    final Color textColor = isSelected
-        ? const Color(0xFF1F3A31)
-        : Colors.white.withValues(alpha: 0.92);
+    final Color textColor = Colors.white.withValues(alpha: 0.92);
     final Color subTextColor = isSelected
-        ? const Color(0xFF2B4A3F)
+        ? mainTextColor
         : Colors.white.withValues(alpha: 0.72);
-    final Color timeColor = isSelected
-        ? const Color(0xFF2B4A3F)
-        : Colors.white.withValues(alpha: 0.55);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(
-              width: 48,
-              child: Text(
-                d.timestamp,
-                style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t4_13,
-                  fontWeight: OmiFontWeight.regular,
-                  color: timeColor,
-                  height: 1.35,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Expanded(
-                        child: Text(
-                          d.speakerName,
-                          style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t5_14,
-                            fontWeight: OmiFontWeight.medium,
-                            color: textColor,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                      _MPTranscriptIconButton(
-                        asset: Assets.omiDetailEdit,
-                        onTap: onEditTap,
-                        darkIcon: isSelected,
-                      ),
-                      const SizedBox(width: 6),
-                      _MPTranscriptIconButton(
-                        asset: isPlaying ? Assets.omiPause : Assets.omiPlay,
-                        onTap: onPlayTap,
-                        darkIcon: isSelected,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    d.transcriptText,
+    final Color timeColor =  Colors.white.withValues(alpha: 0.8);
+    return GestureDetector(
+      onTap: onPlayTap,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.transparent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.only(top:2.0),
+                child: SizedBox(
+                  width: 52,
+                  child: Text(
+                    d.timestamp,
                     style: OmiTextStyle.create(
                       fontSize: OmiFontSize.t4_13,
-                      fontWeight: OmiFontWeight.regular,
-                      color: subTextColor,
-                      height: 1.45,
+                      fontWeight: OmiFontWeight.medium,
+                      color: timeColor,
+                      height: 1.35,
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              const SizedBox(width: 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: <Widget>[
+                        Flexible(
+                          child: Text(
+                            d.speakerName,
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t5_14,
+                              fontWeight: OmiFontWeight.medium,
+                              color: textColor,
+                              height: 1.35,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 8,),
+                        _MPTranscriptIconButton(
+                          asset: Assets.omiDetailEdit,
+                          onTap: onEditTap,
+                          darkIcon: false,
+                        ),
+                        const SizedBox(width: 6),
+                        _MPTranscriptIconButton(
+                          asset: isPlaying ? Assets.omiPause : Assets.omiPlay,
+                          onTap: onPlayTap,
+                          darkIcon: false,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      d.transcriptText,
+                      style: OmiTextStyle.create(
+                        fontSize: OmiFontSize.t4_13,
+                        fontWeight: OmiFontWeight.regular,
+                        color: subTextColor,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -156,22 +175,22 @@ class _MPTranscriptIconButton extends StatelessWidget {
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Ink(
-          width: 32,
-          height: 32,
+          width: 18,
+          height: 18,
           decoration: BoxDecoration(
             color: darkIcon
                 ? const Color(0xFF1F3A31).withValues(alpha: 0.12)
-                : Colors.white.withValues(alpha: 0.15),
+                : Colors.white,
             shape: BoxShape.circle,
           ),
           child: Center(
             child: OmiImageLoader.localImg(
               asset,
-              width: 16,
-              height: 16,
+              width: 10,
+              height: 10,
               color: darkIcon
                   ? const Color(0xFF1F3A31)
-                  : Colors.white.withValues(alpha: 0.9),
+                  : Color(0xFF1F3A31),
               fit: BoxFit.contain,
             ),
           ),

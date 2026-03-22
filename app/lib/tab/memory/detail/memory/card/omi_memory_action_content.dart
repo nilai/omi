@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
@@ -70,7 +71,7 @@ class MPMemoryActionContent extends StatelessWidget {
           headerTitle,
           style: OmiTextStyle.create(
             fontSize: OmiFontSize.t4_13,
-            fontWeight: OmiFontWeight.regular,
+            fontWeight: OmiFontWeight.medium,
             color: Colors.white.withValues(alpha: 0.72),
             height: 1.35,
           ),
@@ -119,8 +120,6 @@ class _MPMemoryActionCard extends StatelessWidget {
   /// 仅 pending 时非空
   final VoidCallback? onCreateTodo;
 
-  static const Color _kCardFill = Color(0xFF355E4C);
-
   static const Color _kCreatedBtn = Color(0xFF4FA06B);
 
   @override
@@ -128,10 +127,10 @@ class _MPMemoryActionCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: _kCardFill,
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.28),
+          color: Colors.white.withValues(alpha: 0.6),
           width: 0.5,
         ),
       ),
@@ -144,7 +143,7 @@ class _MPMemoryActionCard extends StatelessWidget {
             data.title,
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t4_13,
-              fontWeight: OmiFontWeight.regular,
+              fontWeight: OmiFontWeight.medium,
               color: Colors.white.withValues(alpha: 0.92),
               height: 1.45,
             ),
@@ -192,11 +191,11 @@ class _MPActionPillButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool enabled = onPressed != null;
     final Widget child = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: filledColor ??
             Colors.white.withValues(alpha: enabled ? 0.14 : 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -208,7 +207,7 @@ class _MPActionPillButton extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.95),
             fit: BoxFit.cover,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           Text(
             label,
             style: OmiTextStyle.create(

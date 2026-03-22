@@ -33,4 +33,6 @@ class OmiFontWeight {
   static FontWeight regular = FontWeight.w400;
   static FontWeight get medium =>
       Platform.isIOS ? FontWeight.w500 : FontWeight.w600;
+  static FontWeight get bold =>
+      Platform.isIOS ? FontWeight.w600 : FontWeight.w700;
 }
