@@ -2,6 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_todos_created_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
 
@@ -57,6 +62,20 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   Future<MPMemoryDetailCardData> _mockFetchDetail() async {
     await Future<void>.delayed(const Duration(milliseconds: 900));
     return MPMemoryDetailCardData(
+      insightItems: const <MPMemoryInsightItemData>[
+        MPMemoryInsightItemData(
+          tone: MPInsightCardTone.business,
+          timeLabel: '2 min later',
+          bodyText:
+              'Product discussions repeatedly circle around interaction behavior and hardware constraints, suggesting product definition is still evolving while engineering implementation is already underway.',
+        ),
+        MPMemoryInsightItemData(
+          tone: MPInsightCardTone.execution,
+          timeLabel: '10 min later',
+          bodyText:
+              'Several implementation blockers surfaced: recording start/stop logic still conflicts between press timing and user expectation, timestamp behavior during recording not fully aligned across teams, and sleep mode and LED states confuse usage.',
+        ),
+      ],
       title: 'Investor meeting - Series A funding discussion',
       metaLine: 'Yesterday, 4:30 PM • 45m52s • MemoPin',
       audioTimeStart: '0:00',
@@ -97,6 +116,70 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         MPMemoryActionItemData(
           title: 'Document rollout risks and mitigation strategies',
           status: MPMemoryActionItemStatus.pending,
+        ),
+      ],
+      todosCreated: MPMemoryTodosCreatedCardData(
+        headerTimeLabel: 'Just now',
+        items: const <MPMemoryCreatedTodoLineData>[
+          MPMemoryCreatedTodoLineData(
+            title: 'Review migration milestones with infrastructure team',
+            priority: MPMemoryTodoPriorityKind.high,
+            deadlineLabel: 'Tomorrow',
+          ),
+          MPMemoryCreatedTodoLineData(
+            title: 'Update API documentation for v2 endpoints',
+            priority: MPMemoryTodoPriorityKind.high,
+            deadlineLabel: 'This week',
+          ),
+          MPMemoryCreatedTodoLineData(
+            title: 'eee',
+            priority: MPMemoryTodoPriorityKind.medium,
+            deadlineLabel: 'No deadline',
+          ),
+          MPMemoryCreatedTodoLineData(
+            title: 'Review migration milestones with infrastructure team',
+            priority: MPMemoryTodoPriorityKind.normal,
+            deadlineLabel: 'Today',
+          ),
+          MPMemoryCreatedTodoLineData(
+            title: 'Schedule authentication service testing session',
+            priority: MPMemoryTodoPriorityKind.normal,
+            deadlineLabel: 'No deadline',
+          ),
+        ],
+      ),
+      myMemos: MPMemoryMyMemosCardData(
+        headerTimeLabel: 'Just now',
+        lines: const <String>[
+          'Infra team seems overloaded. Maybe we should loop in Sarah from the platform team to help?',
+          'www',
+        ],
+      ),
+      youAsked: const MPMemoryYouAskedCardData(
+        headerTimeLabel: 'Just now',
+        userMessage: 'eeee',
+        aiReply:
+            'I can help you understand your recent work, identify patterns, clarify decisions, or surface potential risks. What would you like to explore?',
+      ),
+      resummaryItems: const <MPMemoryResummaryCardData>[
+        MPMemoryResummaryCardData(
+          headerTimeLabel: 'Just now',
+          badgeLabel: 'Autopilot mode',
+          mainTitle: 'Strategic Investment Analysis',
+          sectionTitle: 'Executive Summary',
+          bodyText:
+              'From an investment standpoint, this API migration discussion reveals both opportunities and red flags that warrant careful attention. The technical debt being addressed represents necessary infrastructure modernization, but execution risks appear higher than currently acknowledged.',
+          expandedSectionTitle: 'Bottom Line',
+          expandedSectionBody:
+              'This is necessary technical work, but execution risk appears higher than team currently acknowledges. Consider whether additional infrastructure investment could derisk timeline and improve long-term operational leverage.',
+        ),
+        MPMemoryResummaryCardData(
+          headerTimeLabel: '5 min ago',
+          badgeLabel: 'Meeting secretary',
+          mainTitle: 'Stakeholder alignment',
+          sectionTitle: 'Key takeaways',
+          bodyText:
+              'Participants aligned on phased rollout timelines and agreed to revisit auth migration checkpoints weekly. Open items include load testing ownership and customer communication templates.',
         ),
       ],
     );

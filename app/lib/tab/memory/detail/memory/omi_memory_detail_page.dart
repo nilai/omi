@@ -7,6 +7,11 @@ import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
 import 'card/mp_memory_detail_content_card.dart';
+import 'card/mp_memory_insight_card.dart';
+import 'card/mp_memory_todos_created_card.dart';
+import 'card/mp_memory_my_memos_card.dart';
+import 'card/mp_memory_you_asked_card.dart';
+import 'card/mp_memory_resummary_card.dart';
 import 'card/mp_memory_detail_bottom_bar.dart';
 import 'omi_memory_detail_cubit.dart';
 
@@ -75,12 +80,91 @@ class _OmiMemoryDetailView extends StatelessWidget {
               final MPMemoryDetailCardData data = state.data!;
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: MPMemoryDetailContentCard(
-                  data: data,
-                  onSegmentChanged: (MPMemoryDetailSegment s) {},
-                  onPlayTap: () {
-                    // TODO: 播放
-                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: MPMemoryDetailContentCard(
+                        data: data,
+                        onSegmentChanged: (MPMemoryDetailSegment s) {},
+                        onPlayTap: () {
+                          // TODO: 播放
+                        },
+                      ),
+                    ),
+                    for (final MPMemoryInsightItemData item in data.insightItems)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MPMemoryInsightCard(
+                          data: item,
+                          onReadMore: () {
+                            // TODO: Insight 全文 / 展开
+                          },
+                          onAddFollowUpTodo: () {
+                            // TODO: 创建 follow-up todo
+                          },
+                        ),
+                      ),
+                    if (data.todosCreated != null &&
+                        data.todosCreated!.items.isNotEmpty) ...<Widget>[
+                      if (data.insightItems.isEmpty)
+                        const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MPMemoryTodosCreatedCard(
+                          data: data.todosCreated!,
+                        ),
+                      ),
+                    ],
+                    if (data.myMemos != null &&
+                        data.myMemos!.lines.isNotEmpty) ...<Widget>[
+                      if (data.insightItems.isEmpty &&
+                          (data.todosCreated == null ||
+                              data.todosCreated!.items.isEmpty))
+                        const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MPMemoryMyMemosCard(
+                          data: data.myMemos!,
+                        ),
+                      ),
+                    ],
+                    if (data.youAsked != null) ...<Widget>[
+                      if (data.insightItems.isEmpty &&
+                          (data.todosCreated == null ||
+                              data.todosCreated!.items.isEmpty) &&
+                          (data.myMemos == null ||
+                              data.myMemos!.lines.isEmpty))
+                        const SizedBox(height: 12),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: MPMemoryYouAskedCard(
+                          data: data.youAsked!,
+                        ),
+                      ),
+                    ],
+                    if (data.resummaryItems.isNotEmpty) ...<Widget>[
+                      if (data.insightItems.isEmpty &&
+                          (data.todosCreated == null ||
+                              data.todosCreated!.items.isEmpty) &&
+                          (data.myMemos == null ||
+                              data.myMemos!.lines.isEmpty) &&
+                          data.youAsked == null)
+                        const SizedBox(height: 12),
+                      for (final MPMemoryResummaryCardData item
+                          in data.resummaryItems)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: MPMemoryResummaryCard(
+                            data: item,
+                            onExpansionChanged: (bool expanded) {
+                              // TODO: 埋点 / 同步展开状态
+                            },
+                          ),
+                        ),
+                    ],
+                  ],
                 ),
               );
           }

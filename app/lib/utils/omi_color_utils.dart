@@ -11,7 +11,7 @@ import 'dart:ui';
 ///蓝色文本颜色
  const Color blueTextColor = Color(0xFF007aff);
 ///橙色文本颜色
- const Color orangeTextColor = Color(0xFFFF9800);
+ const Color orangeTextColor = Color(0xFFE67E22);
 ///紫色文本颜色
  const Color purpleTextColor = Color(0xFF6D28D9);
  /// 红色颜色

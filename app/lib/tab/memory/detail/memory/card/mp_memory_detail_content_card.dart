@@ -4,6 +4,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:omi/common/omi_add_todo_popup.dart';
 import 'package:omi/common/omi_button.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_generate_summary_sheet.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_todos_created_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_overview_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_edit_speaker_sheet.dart';
@@ -36,6 +42,11 @@ class MPMemoryDetailCardData {
     required this.transcriptItems,
     required this.actionItems,
     this.initialSegment = MPMemoryDetailSegment.transcript,
+    this.insightItems = const <MPMemoryInsightItemData>[],
+    this.todosCreated,
+    this.myMemos,
+    this.youAsked,
+    this.resummaryItems = const <MPMemoryResummaryCardData>[],
   });
 
   final String title;
@@ -55,6 +66,21 @@ class MPMemoryDetailCardData {
   final List<MPMemoryActionItemData> actionItems;
 
   final MPMemoryDetailSegment initialSegment;
+
+  /// 主卡片上方的 Insight 活动卡片（由详情页列表渲染）
+  final List<MPMemoryInsightItemData> insightItems;
+
+  /// 「TODOS CREATED」列表卡数据；为 `null` 时不展示该卡
+  final MPMemoryTodosCreatedCardData? todosCreated;
+
+  /// 「MY MEMOS」列表卡数据；为 `null` 时不展示该卡
+  final MPMemoryMyMemosCardData? myMemos;
+
+  /// 「YOU ASKED」问答卡数据；为 `null` 时不展示该卡
+  final MPMemoryYouAskedCardData? youAsked;
+
+  /// 多条 RESUMMARY 活动卡片（按顺序渲染在列表底部区域）
+  final List<MPMemoryResummaryCardData> resummaryItems;
 }
 
 const Color _kCardBg = greenDeepColor;
@@ -433,6 +459,17 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             icon: OmiImageLoader.localImg(Assets.omiRefreshGenerateSummary, width: 20, height: 20, color: Colors.white,fit: BoxFit.cover),
             text: 'Generate Resummary',
             width: double.infinity,height: 50,
+            onPressed: () {
+              showMPMemoryGenerateSummarySheet(
+                context,
+                onGenerateResummary: () {
+                  // TODO: 调用生成 resummary 接口
+                },
+                onChangeMode: () {
+                  // TODO: 切换 Autopilot / 其它模式
+                },
+              );
+            },
           ),
           const SizedBox(height: 12),
         ],
