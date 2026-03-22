@@ -14,10 +14,14 @@ class Assets {
   static const String omiDetailEdit = 'assets/images/3x/omi_detail_edit.png';
   static const String omiDetailMessage = 'assets/images/3x/omi_detail_message.png';
   static const String omiLeftBack = 'assets/images/3x/omi_left_back.png';
+  static const String omiMemoryDetailCheck = 'assets/images/3x/omi_memory_detail_check.png';
   static const String omiMemoryDetialMore = 'assets/images/3x/omi_memory_detial_more.png';
   static const String omiMore = 'assets/images/3x/omi_more.png';
+  static const String omiPause = 'assets/images/3x/omi_pause.png';
+  static const String omiPlay = 'assets/images/3x/omi_play.png';
   static const String omiPlus = 'assets/images/3x/omi_plus.png';
   static const String omiProjects = 'assets/images/3x/omi_projects.png';
+  static const String omiRefreshGenerateSummary = 'assets/images/3x/omi_refresh_generate_summary.png';
   static const String omiSearch = 'assets/images/3x/omi_search.png';
   static const String omiShare = 'assets/images/3x/omi_share.png';
   static const String omiSparkles = 'assets/images/3x/omi_sparkles.png';
