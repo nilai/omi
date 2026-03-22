@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:omi/business/ask_ai/presentation/mp_ask_ai_tab_page.dart';
 import 'package:omi/business/home/presentation/mp_home_tab_page.dart';
-import 'package:omi/business/memory/presentation/mp_memory_tab_page.dart';
 import 'package:omi/business/preferences/presentation/mp_preferences_tab_page.dart';
 import 'package:omi/business/shared/data/mp_business_repository.dart';
 import 'package:omi/business/shared/state/mp_business_controller.dart';
 
 import '../generated/assets.dart';
 import '../utils/omi_image_loader.dart';
+import 'memory/home/omi_memory_page.dart';
 
 class MainTabPage extends StatefulWidget {
   const MainTabPage({super.key});
@@ -25,7 +25,7 @@ class _MainTabPageState extends State<MainTabPage> {
 
   List<Widget> get _pages => [
         MPHomeTabPage(controller: _businessController),
-        MPMemoryTabPage(controller: _businessController),
+        OmiMemoryPage(controller: _businessController),
         MPAskAiTabPage(controller: _businessController),
         MPPreferencesTabPage(controller: _businessController),
       ];
