@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
+import 'package:omi/common/omi_add_todo_popup.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
@@ -30,6 +30,16 @@ class MPMemoryActionItemData {
   final String title;
 
   final MPMemoryActionItemStatus status;
+
+  MPMemoryActionItemData copyWith({
+    String? title,
+    MPMemoryActionItemStatus? status,
+  }) {
+    return MPMemoryActionItemData(
+      title: title ?? this.title,
+      status: status ?? this.status,
+    );
+  }
 }
 
 /// Actions 分段：标题 + **固定高度**可滑动列表（每条为圆角描边卡片 + 底部操作钮）
@@ -37,7 +47,8 @@ class MPMemoryActionContent extends StatelessWidget {
   /// {@template MPMemoryActionContent}
   /// - [items]：列表数据（示例为 3 条：1 条已创建 + 2 条待创建）
   /// - [height]：列表可视高度，默认 `300`，超出可滑动
-  /// - [onCreateTodo]：仅 [MPMemoryActionItemStatus.pending] 的项会触发，参数为下标
+  /// - [onCreateTodo]：用户在 [showMPAddTodoPopup] 中点击 **Save** 后回调（带下标与表单结果）
+  /// - [onActionContextTap]：弹窗内 CONTEXT 卡片点击（可选）
   /// {@endtemplate}
   const MPMemoryActionContent({
     super.key,
@@ -46,6 +57,7 @@ class MPMemoryActionContent extends StatelessWidget {
     this.headerTitle = 'Possible follow-ups (suggested by AI)',
     this.padding,
     this.onCreateTodo,
+    this.onActionContextTap,
   });
 
   final List<MPMemoryActionItemData> items;
@@ -58,8 +70,12 @@ class MPMemoryActionContent extends StatelessWidget {
 
   final EdgeInsetsGeometry? padding;
 
-  /// 点击「Create Todo」回调，`index` 对应 [items]
-  final void Function(int index)? onCreateTodo;
+  /// 弹窗保存成功后的回调（可 `await` 调接口），`index` 对应 [items]
+  final Future<void> Function(int index, MPAddTodoPopupResult result)?
+      onCreateTodo;
+
+  /// 弹窗内「From memory」区域点击
+  final VoidCallback? onActionContextTap;
 
   @override
   Widget build(BuildContext context) {
@@ -93,9 +109,12 @@ class MPMemoryActionContent extends StatelessWidget {
                   padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
                   child: _MPMemoryActionCard(
                     data: item,
-                    onCreateTodo: item.status == MPMemoryActionItemStatus.pending &&
-                            onCreateTodo != null
-                        ? () => onCreateTodo!(index)
+                    onCreateTodo: item.status == MPMemoryActionItemStatus.pending
+                        ? () => _openCreateTodoPopup(
+                              context,
+                              index: index,
+                              item: item,
+                            )
                         : null,
                   ),
                 );
@@ -105,6 +124,27 @@ class MPMemoryActionContent extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// 打开 [showMPAddTodoPopup]，预填当前条 [MPMemoryActionItemData.title]
+  Future<void> _openCreateTodoPopup(
+    BuildContext context, {
+    required int index,
+    required MPMemoryActionItemData item,
+  }) async {
+    final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+      context,
+      params: MPAddTodoPopupParams(
+        initialTitle: item.title,
+      ),
+      onContextTap: onActionContextTap,
+    );
+    if (!context.mounted || result == null) {
+      return;
+    }
+    if (onCreateTodo != null) {
+      await onCreateTodo!(index, result);
+    }
   }
 }
 

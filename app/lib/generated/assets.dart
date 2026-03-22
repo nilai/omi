@@ -10,6 +10,7 @@ class Assets {
   static const String omiBookText = 'assets/images/3x/omi_book_text.png';
   static const String omiBrain = 'assets/images/3x/omi_brain.png';
   static const String omiCalendar = 'assets/images/3x/omi_calendar.png';
+  static const String omiClose = 'assets/images/3x/omi_close.png';
   static const String omiDetailCheck = 'assets/images/3x/omi_detail_check.png';
   static const String omiDetailEdit = 'assets/images/3x/omi_detail_edit.png';
   static const String omiDetailMessage = 'assets/images/3x/omi_detail_message.png';
@@ -22,6 +23,7 @@ class Assets {
   static const String omiPlus = 'assets/images/3x/omi_plus.png';
   static const String omiProjects = 'assets/images/3x/omi_projects.png';
   static const String omiRefreshGenerateSummary = 'assets/images/3x/omi_refresh_generate_summary.png';
+  static const String omiRightArrow = 'assets/images/3x/omi_right_arrow.png';
   static const String omiSearch = 'assets/images/3x/omi_search.png';
   static const String omiShare = 'assets/images/3x/omi_share.png';
   static const String omiSparkles = 'assets/images/3x/omi_sparkles.png';

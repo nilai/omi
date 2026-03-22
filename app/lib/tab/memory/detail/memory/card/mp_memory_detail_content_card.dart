@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:omi/common/omi_add_todo_popup.dart';
 import 'package:omi/common/omi_button.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_overview_content.dart';
@@ -94,6 +95,9 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   /// 可编辑的 transcript 列表（保存说话人名后更新；与 [MPMemoryDetailCardData.transcriptItems] 同步自父级）
   late List<MPMemoryTranscriptItemData> _transcriptItems;
 
+  /// 可变的 Actions 列表（创建 Todo 成功后对应项变为 [MPMemoryActionItemStatus.created]）
+  late List<MPMemoryActionItemData> _actionItems;
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +105,8 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     _syncDurationFromData(widget.data);
     _transcriptItems =
         List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
+    _actionItems =
+        List<MPMemoryActionItemData>.from(widget.data.actionItems);
   }
 
   @override
@@ -116,6 +122,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     if (oldWidget.data.transcriptItems != widget.data.transcriptItems) {
       _transcriptItems =
           List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
+    }
+    if (oldWidget.data.actionItems != widget.data.actionItems) {
+      _actionItems =
+          List<MPMemoryActionItemData>.from(widget.data.actionItems);
     }
   }
 
@@ -263,6 +273,41 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
         next[index] = item.copyWith(speakerName: result.newName);
         _transcriptItems = next;
       }
+    });
+  }
+
+  /// 创建 Todo 接口（占位：延迟模拟网络；成功后由 [_onCreateTodoFromAction] 将条目置为 [MPMemoryActionItemStatus.created]）
+  Future<bool> _submitActionTodoToBackend({
+    required int index,
+    required MPAddTodoPopupResult r,
+  }) async {
+    // TODO: 替换为真实请求，例如 POST /todos
+    // 可提交：index、r.title、r.notes、r.priority、r.when、r.time、memoryId 等
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    return true;
+  }
+
+  /// Actions 里「Save Todo」后：先调接口，成功则更新本地列表为已创建
+  Future<void> _onCreateTodoFromAction(
+    int index,
+    MPAddTodoPopupResult r,
+  ) async {
+    final bool ok = await _submitActionTodoToBackend(index: index, r: r);
+    if (!mounted || !ok) {
+      return;
+    }
+    if (index < 0 || index >= _actionItems.length) {
+      return;
+    }
+    setState(() {
+      final List<MPMemoryActionItemData> next =
+          List<MPMemoryActionItemData>.from(_actionItems);
+      final MPMemoryActionItemData cur = next[index];
+      next[index] = cur.copyWith(
+        title: r.title.isNotEmpty ? r.title : cur.title,
+        status: MPMemoryActionItemStatus.created,
+      );
+      _actionItems = next;
     });
   }
 
@@ -415,7 +460,8 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
         );
       case MPMemoryDetailSegment.actions:
         return MPMemoryActionContent(
-          items: d.actionItems,
+          items: _actionItems,
+          onCreateTodo: _onCreateTodoFromAction,
         );
     }
   }
