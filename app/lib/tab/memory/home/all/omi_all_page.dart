@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_tristate_page.dart';
+import 'package:omi/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:omi/tab/memory/detail/memory/omi_memory_detail_page.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -77,7 +78,12 @@ class _OmiAllViewState extends State<_OmiAllView> {
         );
         break;
       case MPMemoryEntryKind.memoGroup:
-        // TODO: 打开 Memos 分组详情
+        // 打开 Memos 分组详情
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => const OmiMemoDetailPage(),
+          ),
+        );
         break;
       case MPMemoryEntryKind.audioRecording:
         // TODO: 打开录音详情

@@ -15,6 +15,8 @@ class MPMemoryTranscriptContent extends StatefulWidget {
     required this.selectedIndex,
     required this.isPlaying,
     this.height = 300,
+    this.scrollWithParent = false,
+    this.useMemoStyle = false,
     this.padding,
     this.onItemEditTap,
     this.onItemPlayTap,
@@ -28,6 +30,8 @@ class MPMemoryTranscriptContent extends StatefulWidget {
 
   /// 列表可视高度（固定）
   final double height;
+  final bool scrollWithParent;
+  final bool useMemoStyle;
 
   /// 外层内边距（默认左右与卡片对齐时可由父级控制，此处仅上下留 0）
   final EdgeInsetsGeometry? padding;
@@ -58,6 +62,7 @@ class _MPMemoryTranscriptContentState extends State<MPMemoryTranscriptContent> {
   }
 
   void _scrollToIndex(int index) {
+    if (widget.scrollWithParent) return;
     if (index < 0 || index >= _itemKeys.length) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -83,36 +88,44 @@ class _MPMemoryTranscriptContentState extends State<MPMemoryTranscriptContent> {
     if (_itemKeys.length != widget.items.length) {
       _itemKeys
         ..clear()
-        ..addAll(List<GlobalKey>.generate(widget.items.length, (_) => GlobalKey()));
+        ..addAll(
+          List<GlobalKey>.generate(widget.items.length, (_) => GlobalKey()),
+        );
+    }
+    final Widget listView = ListView.builder(
+      controller: widget.scrollWithParent ? null : _scrollController,
+      padding: widget.padding ?? EdgeInsets.zero,
+      physics: widget.scrollWithParent
+          ? const NeverScrollableScrollPhysics()
+          : const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics(),
+            ),
+      shrinkWrap: widget.scrollWithParent,
+      itemCount: widget.items.length,
+      itemBuilder: (BuildContext context, int index) {
+        return KeyedSubtree(
+          key: _itemKeys[index],
+          child: MPMemoryTranscriptItem(
+            data: widget.items[index],
+            isPlaying: widget.isPlaying && widget.playingIndex == index,
+            isSelected: widget.selectedIndex == index,
+            useMemoStyle: widget.useMemoStyle,
+            onEditTap: widget.onItemEditTap == null
+                ? null
+                : () => widget.onItemEditTap!(index),
+            onPlayTap: widget.onItemPlayTap == null
+                ? null
+                : () => widget.onItemPlayTap!(index),
+          ),
+        );
+      },
+    );
+    if (widget.scrollWithParent) {
+      return listView;
     }
     return SizedBox(
       height: widget.height,
-      child: ClipRect(
-        child: ListView.builder(
-          controller: _scrollController,
-          padding: widget.padding ?? EdgeInsets.zero,
-          physics: const BouncingScrollPhysics(
-            parent: AlwaysScrollableScrollPhysics(),
-          ),
-          itemCount: widget.items.length,
-          itemBuilder: (BuildContext context, int index) {
-            return KeyedSubtree(
-              key: _itemKeys[index],
-              child: MPMemoryTranscriptItem(
-                data: widget.items[index],
-                isPlaying: widget.isPlaying && widget.playingIndex == index,
-                isSelected: widget.selectedIndex == index,
-                onEditTap: widget.onItemEditTap == null
-                  ? null
-                  : () => widget.onItemEditTap!(index),
-                onPlayTap: widget.onItemPlayTap == null
-                  ? null
-                  : () => widget.onItemPlayTap!(index),
-              ),
-            );
-          },
-        ),
-      ),
+      child: ClipRect(child: listView),
     );
   }
 }

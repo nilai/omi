@@ -23,11 +23,12 @@ import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
 
 /// 底部分段：Overview / Transcript / Actions
-enum MPMemoryDetailSegment {
-  overview,
-  transcript,
-  actions,
-}
+enum MPMemoryDetailSegment { overview, transcript, actions }
+
+/// 详情卡片类型：
+/// - [memory]：展示完整区块（含 Generate Resummary 按钮）
+/// - [memo]：隐藏 Generate Resummary 按钮
+enum MPMemoryDetailCardType { memory, memo }
 
 /// Memory 详情主卡片数据
 class MPMemoryDetailCardData {
@@ -94,6 +95,9 @@ class MPMemoryDetailContentCard extends StatefulWidget {
     required this.data,
     this.onSegmentChanged,
     this.onPlayTap,
+    this.showBackground = true,
+    this.segmentBodyScrollWithParent = false,
+    this.cardType = MPMemoryDetailCardType.memory,
   });
 
   final MPMemoryDetailCardData data;
@@ -102,6 +106,9 @@ class MPMemoryDetailContentCard extends StatefulWidget {
   final ValueChanged<MPMemoryDetailSegment>? onSegmentChanged;
 
   final VoidCallback? onPlayTap;
+  final bool showBackground;
+  final bool segmentBodyScrollWithParent;
+  final MPMemoryDetailCardType cardType;
 
   @override
   State<MPMemoryDetailContentCard> createState() =>
@@ -123,16 +130,17 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
 
   /// 可变的 Actions 列表（创建 Todo 成功后对应项变为 [MPMemoryActionItemStatus.created]）
   late List<MPMemoryActionItemData> _actionItems;
+  bool get _isMemoCard => widget.cardType == MPMemoryDetailCardType.memo;
 
   @override
   void initState() {
     super.initState();
     _segment = widget.data.initialSegment;
     _syncDurationFromData(widget.data);
-    _transcriptItems =
-        List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
-    _actionItems =
-        List<MPMemoryActionItemData>.from(widget.data.actionItems);
+    _transcriptItems = List<MPMemoryTranscriptItemData>.from(
+      widget.data.transcriptItems,
+    );
+    _actionItems = List<MPMemoryActionItemData>.from(widget.data.actionItems);
   }
 
   @override
@@ -146,12 +154,12 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       _syncDurationFromData(widget.data);
     }
     if (oldWidget.data.transcriptItems != widget.data.transcriptItems) {
-      _transcriptItems =
-          List<MPMemoryTranscriptItemData>.from(widget.data.transcriptItems);
+      _transcriptItems = List<MPMemoryTranscriptItemData>.from(
+        widget.data.transcriptItems,
+      );
     }
     if (oldWidget.data.actionItems != widget.data.actionItems) {
-      _actionItems =
-          List<MPMemoryActionItemData>.from(widget.data.actionItems);
+      _actionItems = List<MPMemoryActionItemData>.from(widget.data.actionItems);
     }
   }
 
@@ -167,10 +175,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       return widget.data.waveformHeights!;
     }
     final math.Random r = math.Random(42);
-    return List<double>.generate(
-      80,
-      (_) => 0.15 + r.nextDouble() * 0.85,
-    );
+    return List<double>.generate(80, (_) => 0.15 + r.nextDouble() * 0.85);
   }
 
   void _syncDurationFromData(MPMemoryDetailCardData data) {
@@ -187,8 +192,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
         _elapsed = Duration.zero;
       }
       _playing = !_playing;
-      _playingTranscriptIndex ??=
-          _transcriptItems.isNotEmpty ? 0 : null;
+      _playingTranscriptIndex ??= _transcriptItems.isNotEmpty ? 0 : null;
     });
     _syncTimerByPlayingState();
     widget.onPlayTap?.call();
@@ -278,10 +282,11 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   /// 点击某条 transcript 的编辑图标：弹出「Edit Speaker Name」底部弹窗
   Future<void> _onTranscriptEditTap(int index) async {
     final MPMemoryTranscriptItemData item = _transcriptItems[index];
-    final MPMemoryEditSpeakerResult? result = await showMPMemoryEditSpeakerSheet(
-      context: context,
-      currentSpeakerName: item.speakerName,
-    );
+    final MPMemoryEditSpeakerResult? result =
+        await showMPMemoryEditSpeakerSheet(
+          context: context,
+          currentSpeakerName: item.speakerName,
+        );
     if (!mounted || result == null) return;
     setState(() {
       if (result.applyToAll) {
@@ -344,8 +349,8 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
-        color: _kCardBg,
-        borderRadius: BorderRadius.circular(16),
+        color: widget.showBackground ? _kCardBg : Colors.transparent,
+        borderRadius: widget.showBackground ? BorderRadius.circular(16) : null,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,7 +360,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t9_18,
               fontWeight: OmiFontWeight.medium,
-              color: Colors.white,
+              color: _isMemoCard ? const Color(0xFF1C1C1E) : Colors.white,
               height: 1.3,
             ),
           ),
@@ -365,7 +370,9 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.regular,
-              color: Colors.white.withValues(alpha: 0.75),
+              color: _isMemoCard
+                  ? const Color(0xFF8E8E93)
+                  : Colors.white.withValues(alpha: 0.75),
               height: 1.35,
             ),
           ),
@@ -373,20 +380,22 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Expanded(child: Text(
-                _formatMmSs(_elapsed),
-                style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t4_13,
-                  color: Colors.white,
-                  fontWeight: OmiFontWeight.medium
+              Expanded(
+                child: Text(
+                  _formatMmSs(_elapsed),
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t4_13,
+                    color: _isMemoCard ? const Color(0xFF1C1C1E) : Colors.white,
+                    fontWeight: OmiFontWeight.medium,
+                  ),
                 ),
-              ),),
+              ),
               const SizedBox(width: 8),
               Text(
                 _formatMmSs(_total),
                 style: OmiTextStyle.create(
                   fontSize: OmiFontSize.t4_13,
-                  color: Colors.white,
+                  color: _isMemoCard ? const Color(0xFF8E8E93) : Colors.white,
                   fontWeight: OmiFontWeight.medium,
                 ),
               ),
@@ -400,6 +409,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
                 child: _WaveformBar(
                   heights: _heights,
                   isPlaying: _playing,
+                  useMemoStyle: _isMemoCard,
                   progress: _total.inMilliseconds <= 0
                       ? 0
                       : _elapsed.inMilliseconds / _total.inMilliseconds,
@@ -408,6 +418,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
               const SizedBox(width: 10),
               _PlayButton(
                 isPlaying: _playing,
+                useMemoStyle: _isMemoCard,
                 onTap: _togglePlayFromHeader,
               ),
             ],
@@ -418,7 +429,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t3_12,
               fontWeight: OmiFontWeight.medium,
-              color: Colors.white,
+              color: _isMemoCard ? const Color(0xFF8E8E93) : Colors.white,
               letterSpacing: 0.8,
             ),
           ),
@@ -428,50 +439,65 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             runSpacing: 8,
             children: d.speakerLabels
                 .map(
-                  (String s) => _SpeakerChip(label: s),
+                  (String s) =>
+                      _SpeakerChip(label: s, useMemoStyle: _isMemoCard),
                 )
                 .toList(),
           ),
           const SizedBox(height: 16),
           _SegmentSwitcher(
             selected: _segment,
+            useMemoStyle: _isMemoCard,
             onChanged: (MPMemoryDetailSegment v) {
               setState(() => _segment = v);
               widget.onSegmentChanged?.call(v);
             },
           ),
           const SizedBox(height: 12),
-          SizedBox(height: 330, child: _buildSegmentBody(),),
-          const SizedBox(height: 16),
-          /// 分段区与「Generate Resummary」之间的浅灰分隔线（约 0.5 逻辑像素）
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: double.infinity,
-              height: 0.5,
-              color: Colors.white.withValues(alpha: 0.28),
+          if (widget.segmentBodyScrollWithParent)
+            _buildSegmentBody()
+          else
+            SizedBox(height: 330, child: _buildSegmentBody()),
+          if (widget.cardType == MPMemoryDetailCardType.memory) ...<Widget>[
+            const SizedBox(height: 16),
+
+            /// 分段区与「Generate Resummary」之间的浅灰分隔线（约 0.5 逻辑像素）
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                width: double.infinity,
+                height: 0.5,
+                color: Colors.white.withValues(alpha: 0.28),
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          OmiButton(
-            textColor: Colors.white,
-            bgColor: Colors.white.withValues(alpha: 0.15),
-            icon: OmiImageLoader.localImg(Assets.omiRefreshGenerateSummary, width: 20, height: 20, color: Colors.white,fit: BoxFit.cover),
-            text: 'Generate Resummary',
-            width: double.infinity,height: 50,
-            onPressed: () {
-              showMPMemoryGenerateSummarySheet(
-                context,
-                onGenerateResummary: () {
-                  // TODO: 调用生成 resummary 接口
-                },
-                onChangeMode: () {
-                  // TODO: 切换 Autopilot / 其它模式
-                },
-              );
-            },
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            OmiButton(
+              textColor: Colors.white,
+              bgColor: Colors.white.withValues(alpha: 0.15),
+              icon: OmiImageLoader.localImg(
+                Assets.omiRefreshGenerateSummary,
+                width: 20,
+                height: 20,
+                color: Colors.white,
+                fit: BoxFit.cover,
+              ),
+              text: 'Generate Resummary',
+              width: double.infinity,
+              height: 50,
+              onPressed: () {
+                showMPMemoryGenerateSummarySheet(
+                  context,
+                  onGenerateResummary: () {
+                    // TODO: 调用生成 resummary 接口
+                  },
+                  onChangeMode: () {
+                    // TODO: 切换 Autopilot / 其它模式
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+          ],
         ],
       ),
     );
@@ -484,6 +510,8 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       case MPMemoryDetailSegment.overview:
         return MPMemoryOverviewContent(
           content: d.overviewText,
+          scrollWithParent: widget.segmentBodyScrollWithParent,
+          useMemoStyle: _isMemoCard,
         );
       case MPMemoryDetailSegment.transcript:
         final int? selectedIndex = _selectedTranscriptIndex();
@@ -494,11 +522,15 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           selectedIndex: selectedIndex,
           onItemEditTap: _onTranscriptEditTap,
           onItemPlayTap: _onTranscriptPlayTap,
+          scrollWithParent: widget.segmentBodyScrollWithParent,
+          useMemoStyle: _isMemoCard,
         );
       case MPMemoryDetailSegment.actions:
         return MPMemoryActionContent(
           items: _actionItems,
           onCreateTodo: _onCreateTodoFromAction,
+          scrollWithParent: widget.segmentBodyScrollWithParent,
+          useMemoStyle: _isMemoCard,
         );
     }
   }
@@ -509,11 +541,13 @@ class _WaveformBar extends StatefulWidget {
     required this.heights,
     required this.isPlaying,
     required this.progress,
+    required this.useMemoStyle,
   });
 
   final List<double> heights;
   final bool isPlaying;
   final double progress;
+  final bool useMemoStyle;
 
   @override
   State<_WaveformBar> createState() => _WaveformBarState();
@@ -526,14 +560,15 @@ class _WaveformBarState extends State<_WaveformBar>
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 480),
-    )..addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
+    _pulse =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 480),
+        )..addListener(() {
+          if (mounted) {
+            setState(() {});
+          }
+        });
     if (widget.isPlaying) {
       _pulse.repeat();
     }
@@ -576,7 +611,9 @@ class _WaveformBarState extends State<_WaveformBar>
       clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: widget.useMemoStyle
+            ? const Color(0xFFF0F0F5)
+            : Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: LayoutBuilder(
@@ -585,13 +622,11 @@ class _WaveformBarState extends State<_WaveformBar>
           if (n == 0) {
             return const SizedBox.shrink();
           }
+
           /// 波形竖线宽度（逻辑像素）
           const double barW = 0.5;
           final double gap = n > 1
-              ? math.max(
-                  0.0,
-                  (c.maxWidth - n * barW) / (n - 1),
-                )
+              ? math.max(0.0, (c.maxWidth - n * barW) / (n - 1))
               : 0.0;
           final double maxInnerH = (c.maxHeight - 8).clamp(4.0, 40.0);
           return Row(
@@ -602,14 +637,15 @@ class _WaveformBarState extends State<_WaveformBar>
                 Builder(
                   builder: (BuildContext context) {
                     final double clamped = widget.progress.clamp(0.0, 1.0);
-                    final bool isPlayed =
-                        (i + 1) / n <= clamped;
+                    final bool isPlayed = (i + 1) / n <= clamped;
                     return Container(
                       width: barW,
                       height: _barHeight(i, maxInnerH),
                       color: isPlayed
                           ? Colors.black
-                          : Colors.white,
+                          : (widget.useMemoStyle
+                                ? const Color(0xFFD0D1D8)
+                                : Colors.white),
                     );
                   },
                 ),
@@ -625,10 +661,12 @@ class _WaveformBarState extends State<_WaveformBar>
 class _PlayButton extends StatelessWidget {
   const _PlayButton({
     required this.isPlaying,
+    required this.useMemoStyle,
     this.onTap,
   });
 
   final bool isPlaying;
+  final bool useMemoStyle;
   final VoidCallback? onTap;
 
   @override
@@ -642,15 +680,26 @@ class _PlayButton extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
+            color: useMemoStyle
+                ? Colors.white
+                : Colors.white.withValues(alpha: 0.15),
             shape: BoxShape.circle,
+            boxShadow: useMemoStyle
+                ? const <BoxShadow>[
+                    BoxShadow(
+                      color: Color(0x1A000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Center(
             child: OmiImageLoader.localImg(
               isPlaying ? Assets.omiPause : Assets.omiPlay,
               width: 20,
               height: 20,
-              color: Colors.white,
+              color: useMemoStyle ? const Color(0xFF1C1C1E) : Colors.white,
               fit: BoxFit.contain,
             ),
           ),
@@ -661,9 +710,10 @@ class _PlayButton extends StatelessWidget {
 }
 
 class _SpeakerChip extends StatelessWidget {
-  const _SpeakerChip({required this.label});
+  const _SpeakerChip({required this.label, required this.useMemoStyle});
 
   final String label;
+  final bool useMemoStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -671,15 +721,21 @@ class _SpeakerChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-        color: Colors.white.withValues(alpha: 0.08),
+        border: Border.all(
+          color: useMemoStyle
+              ? const Color(0xFFE5E5EA)
+              : Colors.white.withValues(alpha: 0.35),
+        ),
+        color: useMemoStyle
+            ? const Color(0xFFF3F3F6)
+            : Colors.white.withValues(alpha: 0.08),
       ),
       child: Text(
         label,
         style: OmiTextStyle.create(
           fontSize: OmiFontSize.t4_13,
           fontWeight: OmiFontWeight.medium,
-          color: Colors.white,
+          color: useMemoStyle ? const Color(0xFF1C1C1E) : Colors.white,
         ),
       ),
     );
@@ -690,10 +746,12 @@ class _SegmentSwitcher extends StatelessWidget {
   const _SegmentSwitcher({
     required this.selected,
     required this.onChanged,
+    required this.useMemoStyle,
   });
 
   final MPMemoryDetailSegment selected;
   final ValueChanged<MPMemoryDetailSegment> onChanged;
+  final bool useMemoStyle;
 
   static const List<MPMemoryDetailSegment> _tabs = <MPMemoryDetailSegment>[
     MPMemoryDetailSegment.overview,
@@ -717,7 +775,7 @@ class _SegmentSwitcher extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: _kSegmentTrack,
+        color: useMemoStyle ? Colors.transparent : _kSegmentTrack,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -729,13 +787,29 @@ class _SegmentSwitcher extends StatelessWidget {
               child: InkWell(
                 onTap: () => onChanged(s),
                 borderRadius: BorderRadius.circular(12),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOut,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                overlayColor: const WidgetStatePropertyAll<Color>(
+                  Colors.transparent,
+                ),
+                child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSel ? _kSegmentSelected : Colors.transparent,
+                    color: isSel
+                        ? (useMemoStyle ? Colors.white : _kSegmentSelected)
+                        : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: isSel && useMemoStyle
+                        ? const <BoxShadow>[
+                            BoxShadow(
+                              color: Color(0x14000000),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ]
+                        : null,
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -745,7 +819,11 @@ class _SegmentSwitcher extends StatelessWidget {
                     style: OmiTextStyle.create(
                       fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.medium,
-                      color: Colors.white,
+                      color: useMemoStyle
+                          ? (isSel
+                                ? const Color(0xFF1C1C1E)
+                                : const Color(0xFF8E8E93))
+                          : Colors.white,
                     ),
                   ),
                 ),

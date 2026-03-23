@@ -8,13 +8,34 @@ class MPMemoryOverviewContent extends StatelessWidget {
     super.key,
     required this.content,
     this.height = 300,
+    this.scrollWithParent = false,
+    this.useMemoStyle = false,
   });
 
   final String content;
   final double height;
+  final bool scrollWithParent;
+  final bool useMemoStyle;
 
   @override
   Widget build(BuildContext context) {
+    final Widget contentView = Align(
+      alignment: Alignment.topLeft,
+      child: Text(
+        content,
+        style: OmiTextStyle.create(
+          fontSize: OmiFontSize.t4_13,
+          fontWeight: OmiFontWeight.regular,
+          color: useMemoStyle
+              ? const Color(0xFF2C2C2E)
+              : Colors.white.withValues(alpha: 0.75),
+          height: 1.4,
+        ),
+      ),
+    );
+    if (scrollWithParent) {
+      return contentView;
+    }
     return SizedBox(
       height: height,
       child: ClipRect(
@@ -22,18 +43,7 @@ class MPMemoryOverviewContent extends StatelessWidget {
           physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics(),
           ),
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: Text(
-              content,
-              style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t4_13,
-                fontWeight: OmiFontWeight.regular,
-                color: Colors.white.withValues(alpha: 0.75),
-                height: 1.4,
-              ),
-            ),
-          ),
+          child: contentView,
         ),
       ),
     );

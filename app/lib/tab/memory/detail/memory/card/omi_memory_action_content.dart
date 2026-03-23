@@ -22,10 +22,7 @@ class MPMemoryActionItemData {
   /// [status]：[MPMemoryActionItemStatus.pending] 显示可点的 Create Todo；
   /// [MPMemoryActionItemStatus.created] 显示已完成态且不可点。
   /// {@endtemplate}
-  const MPMemoryActionItemData({
-    required this.title,
-    required this.status,
-  });
+  const MPMemoryActionItemData({required this.title, required this.status});
 
   final String title;
 
@@ -54,6 +51,8 @@ class MPMemoryActionContent extends StatelessWidget {
     super.key,
     required this.items,
     this.height = 300,
+    this.scrollWithParent = false,
+    this.useMemoStyle = false,
     this.headerTitle = 'Possible follow-ups (suggested by AI)',
     this.padding,
     this.onCreateTodo,
@@ -64,6 +63,8 @@ class MPMemoryActionContent extends StatelessWidget {
 
   /// 列表区域高度（固定）
   final double height;
+  final bool scrollWithParent;
+  final bool useMemoStyle;
 
   /// 顶部说明标题
   final String headerTitle;
@@ -72,13 +73,29 @@ class MPMemoryActionContent extends StatelessWidget {
 
   /// 弹窗保存成功后的回调（可 `await` 调接口），`index` 对应 [items]
   final Future<void> Function(int index, MPAddTodoPopupResult result)?
-      onCreateTodo;
+  onCreateTodo;
 
   /// 弹窗内「From memory」区域点击
   final VoidCallback? onActionContextTap;
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> actionCards = List<Widget>.generate(items.length, (
+      int index,
+    ) {
+      final MPMemoryActionItemData item = items[index];
+      final bool isLast = index == items.length - 1;
+      return Padding(
+        padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+        child: _MPMemoryActionCard(
+          data: item,
+          useMemoStyle: useMemoStyle,
+          onCreateTodo: item.status == MPMemoryActionItemStatus.pending
+              ? () => _openCreateTodoPopup(context, index: index, item: item)
+              : null,
+        ),
+      );
+    });
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -88,40 +105,31 @@ class MPMemoryActionContent extends StatelessWidget {
           style: OmiTextStyle.create(
             fontSize: OmiFontSize.t4_13,
             fontWeight: OmiFontWeight.medium,
-            color: Colors.white.withValues(alpha: 0.72),
+            color: useMemoStyle
+                ? const Color(0xFF8E8E93)
+                : Colors.white.withValues(alpha: 0.72),
             height: 1.35,
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: height,
-          child: ClipRect(
-            child: ListView.builder(
-              padding: padding ?? EdgeInsets.zero,
-              physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics(),
+        if (scrollWithParent)
+          Padding(
+            padding: padding ?? EdgeInsets.zero,
+            child: Column(children: actionCards),
+          )
+        else
+          SizedBox(
+            height: height,
+            child: ClipRect(
+              child: ListView(
+                padding: padding ?? EdgeInsets.zero,
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                children: actionCards,
               ),
-              itemCount: items.length,
-              itemBuilder: (BuildContext context, int index) {
-                final MPMemoryActionItemData item = items[index];
-                final bool isLast = index == items.length - 1;
-                return Padding(
-                  padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
-                  child: _MPMemoryActionCard(
-                    data: item,
-                    onCreateTodo: item.status == MPMemoryActionItemStatus.pending
-                        ? () => _openCreateTodoPopup(
-                              context,
-                              index: index,
-                              item: item,
-                            )
-                        : null,
-                  ),
-                );
-              },
             ),
           ),
-        ),
       ],
     );
   }
@@ -134,9 +142,7 @@ class MPMemoryActionContent extends StatelessWidget {
   }) async {
     final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
       context,
-      params: MPAddTodoPopupParams(
-        initialTitle: item.title,
-      ),
+      params: MPAddTodoPopupParams(initialTitle: item.title),
       onContextTap: onActionContextTap,
     );
     if (!context.mounted || result == null) {
@@ -152,10 +158,12 @@ class MPMemoryActionContent extends StatelessWidget {
 class _MPMemoryActionCard extends StatelessWidget {
   const _MPMemoryActionCard({
     required this.data,
+    required this.useMemoStyle,
     this.onCreateTodo,
   });
 
   final MPMemoryActionItemData data;
+  final bool useMemoStyle;
 
   /// 仅 pending 时非空
   final VoidCallback? onCreateTodo;
@@ -167,10 +175,14 @@ class _MPMemoryActionCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: useMemoStyle
+            ? const Color(0xFFF5F5F7)
+            : Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.6),
+          color: useMemoStyle
+              ? const Color(0xFFE5E5EA)
+              : Colors.white.withValues(alpha: 0.6),
           width: 0.5,
         ),
       ),
@@ -184,7 +196,9 @@ class _MPMemoryActionCard extends StatelessWidget {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.medium,
-              color: Colors.white.withValues(alpha: 0.92),
+              color: useMemoStyle
+                  ? const Color(0xFF1C1C1E)
+                  : Colors.white.withValues(alpha: 0.92),
               height: 1.45,
             ),
           ),
@@ -193,7 +207,8 @@ class _MPMemoryActionCard extends StatelessWidget {
             _MPActionPillButton(
               label: 'Todo Created',
               icon: Assets.omiMemoryDetailCheck,
-              filledColor: _kCreatedBtn,
+              filledColor: useMemoStyle ? null : _kCreatedBtn,
+              useMemoStyle: useMemoStyle,
               onPressed: null,
             )
           else
@@ -201,6 +216,7 @@ class _MPMemoryActionCard extends StatelessWidget {
               label: 'Create Todo',
               icon: Assets.omiPlus,
               filledColor: null,
+              useMemoStyle: useMemoStyle,
               onPressed: onCreateTodo,
             ),
         ],
@@ -215,6 +231,7 @@ class _MPActionPillButton extends StatelessWidget {
     required this.label,
     required this.icon,
     required this.onPressed,
+    required this.useMemoStyle,
     this.filledColor,
   });
 
@@ -223,6 +240,7 @@ class _MPActionPillButton extends StatelessWidget {
   final String icon;
 
   final VoidCallback? onPressed;
+  final bool useMemoStyle;
 
   /// 非空为实心强调（Todo Created）；空为半透明底（Create Todo）
   final Color? filledColor;
@@ -233,9 +251,15 @@ class _MPActionPillButton extends StatelessWidget {
     final Widget child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: filledColor ??
-            Colors.white.withValues(alpha: enabled ? 0.14 : 0.1),
+        color:
+            filledColor ??
+            (useMemoStyle
+                ? (enabled ? Colors.white : Colors.transparent)
+                : Colors.white.withValues(alpha: enabled ? 0.14 : 0.1)),
         borderRadius: BorderRadius.circular(999),
+        border: useMemoStyle && enabled
+            ? Border.all(color: const Color(0xFFE5E5EA), width: 0.5)
+            : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -244,7 +268,9 @@ class _MPActionPillButton extends StatelessWidget {
             icon,
             width: 18,
             height: 18,
-            color: Colors.white.withValues(alpha: 0.95),
+            color: useMemoStyle
+                ? const Color(0xFF6BBF8E)
+                : Colors.white.withValues(alpha: 0.95),
             fit: BoxFit.cover,
           ),
           const SizedBox(width: 4),
@@ -253,7 +279,9 @@ class _MPActionPillButton extends StatelessWidget {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t3_12,
               fontWeight: OmiFontWeight.medium,
-              color: Colors.white.withValues(alpha: 0.95),
+              color: useMemoStyle
+                  ? const Color(0xFF6BBF8E)
+                  : Colors.white.withValues(alpha: 0.95),
               height: 1.2,
             ),
           ),
@@ -262,10 +290,7 @@ class _MPActionPillButton extends StatelessWidget {
     );
 
     if (!enabled) {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: child,
-      );
+      return Align(alignment: Alignment.centerLeft, child: child);
     }
 
     return Align(

@@ -51,6 +51,7 @@ class MPMemoryTranscriptItem extends StatelessWidget {
     required this.data,
     this.isPlaying = false,
     this.isSelected = false,
+    this.useMemoStyle = false,
     this.onEditTap,
     this.onPlayTap,
   });
@@ -58,6 +59,7 @@ class MPMemoryTranscriptItem extends StatelessWidget {
   final MPMemoryTranscriptItemData data;
   final bool isPlaying;
   final bool isSelected;
+  final bool useMemoStyle;
 
   final VoidCallback? onEditTap;
 
@@ -66,11 +68,15 @@ class MPMemoryTranscriptItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final MPMemoryTranscriptItemData d = data;
-    final Color textColor = Colors.white.withValues(alpha: 0.92);
-    final Color subTextColor = isSelected
-        ? mainTextColor
-        : Colors.white.withValues(alpha: 0.72);
-    final Color timeColor =  Colors.white.withValues(alpha: 0.8);
+    final Color textColor = useMemoStyle
+        ? const Color(0xFF007AFF)
+        : Colors.white.withValues(alpha: 0.92);
+    final Color subTextColor = useMemoStyle
+        ? const Color(0xFF1C1C1E)
+        : (isSelected ? mainTextColor : Colors.white.withValues(alpha: 0.72));
+    final Color timeColor = useMemoStyle
+        ? const Color(0xFF8E8E93)
+        : Colors.white.withValues(alpha: 0.8);
     return GestureDetector(
       onTap: onPlayTap,
       child: Padding(
@@ -80,14 +86,21 @@ class MPMemoryTranscriptItem extends StatelessWidget {
           curve: Curves.easeOut,
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white.withValues(alpha: 0.25) : Colors.transparent,
+            color: isSelected
+                ? (useMemoStyle
+                      ? const Color(0xFFEAF4FF)
+                      : Colors.white.withValues(alpha: 0.25))
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(2),
+            border: isSelected && useMemoStyle
+                ? Border.all(color: const Color(0xFFD3E7FF), width: 1)
+                : null,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.only(top:2.0),
+                padding: const EdgeInsets.only(top: 2.0),
                 child: SizedBox(
                   width: 52,
                   child: Text(
@@ -120,17 +133,17 @@ class MPMemoryTranscriptItem extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(width: 8,),
+                        SizedBox(width: 8),
                         _MPTranscriptIconButton(
                           asset: Assets.omiDetailEdit,
                           onTap: onEditTap,
-                          darkIcon: false,
+                          darkIcon: useMemoStyle,
                         ),
                         const SizedBox(width: 6),
                         _MPTranscriptIconButton(
                           asset: isPlaying ? Assets.omiPause : Assets.omiPlay,
                           onTap: onPlayTap,
-                          darkIcon: false,
+                          darkIcon: useMemoStyle,
                         ),
                       ],
                     ),
@@ -178,9 +191,7 @@ class _MPTranscriptIconButton extends StatelessWidget {
           width: 18,
           height: 18,
           decoration: BoxDecoration(
-            color: darkIcon
-                ? const Color(0xFF1F3A31).withValues(alpha: 0.12)
-                : Colors.white,
+            color: darkIcon ? const Color(0xFFF2F2F7) : Colors.white,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -189,8 +200,8 @@ class _MPTranscriptIconButton extends StatelessWidget {
               width: 10,
               height: 10,
               color: darkIcon
-                  ? const Color(0xFF1F3A31)
-                  : Color(0xFF1F3A31),
+                  ? const Color(0xFF8E8E93)
+                  : const Color(0xFF1F3A31),
               fit: BoxFit.contain,
             ),
           ),

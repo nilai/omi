@@ -70,7 +70,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                 type: MPTristateType.error,
                 data: MPTristatePageData(
                   title: 'Unable to load memory detail',
-                  description: state.errorMessage ?? '请稍后重试',
+                  description: state.errorMessage ?? 'Please try again',
                   onButtonPressed: () {
                     context.read<OmiMemoryDetailCubit>().retry();
                   },
