@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/common/omi_add_todo_popup.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
@@ -107,6 +108,19 @@ class MPMemoryInsightCard extends StatelessWidget {
   /// 点击底部「+ Add follow-up todo」
   final VoidCallback? onAddFollowUpTodo;
 
+  /// 从正文提取 Todo 预填标题，避免过长内容直接进入输入框。
+  String _buildInitialTodoTitle() {
+    final String text = data.bodyText.trim();
+    if (text.isEmpty) {
+      return 'Follow up on insight';
+    }
+    final int maxLen = 64;
+    if (text.length <= maxLen) {
+      return text;
+    }
+    return '${text.substring(0, maxLen).trimRight()}...';
+  }
+
   @override
   Widget build(BuildContext context) {
     final _MPInsightVisual v = _MPInsightVisual.of(data.tone);
@@ -201,7 +215,17 @@ class MPMemoryInsightCard extends StatelessWidget {
               color: v.buttonBg,
               borderRadius: BorderRadius.circular(22),
               child: InkWell(
-                onTap: onAddFollowUpTodo,
+                onTap: () async {
+                  final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                    context,
+                    params: MPAddTodoPopupParams(
+                      initialTitle: _buildInitialTodoTitle(),
+                    ),
+                  );
+                  if (result != null) {
+                    onAddFollowUpTodo?.call();
+                  }
+                },
                 borderRadius: BorderRadius.circular(22),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12),

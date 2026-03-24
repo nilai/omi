@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
+import 'package:omi/common/omi_quick_add_todo_popup.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
 import 'package:omi/tab/memory/detail/memory/omi_memory_detail_cubit.dart';
@@ -101,8 +102,28 @@ class _OmiMemoDetailView extends StatelessWidget {
         },
       ),
       bottomNavigationBar: MPMemoryDetailBottomBar(
-        onAddTodo: () {},
-        onAddMemo: () {},
+        onAddTodo: () async {
+          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
+            context,
+          );
+          if (result == null) return;
+          context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(
+            result.text,
+          );
+        },
+        onAddMemo: () async {
+          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
+            context,
+            params: const OmiQuickInputPopupParams(
+              headerTitle: 'ADD MEMO',
+              hintText: 'What would you like to remember?',
+            ),
+          );
+          if (result == null) return;
+          context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(
+            result.text,
+          );
+        },
         onAskAi: () {},
       ),
     );

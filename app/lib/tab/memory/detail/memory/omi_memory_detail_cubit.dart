@@ -10,11 +10,7 @@ import 'package:omi/tab/memory/detail/memory/card/mp_memory_resummary_card.dart'
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
 
-enum OmiMemoryDetailPhase {
-  loading,
-  loaded,
-  error,
-}
+enum OmiMemoryDetailPhase { loading, loaded, error }
 
 class OmiMemoryDetailState {
   const OmiMemoryDetailState({
@@ -30,7 +26,7 @@ class OmiMemoryDetailState {
 
 class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   OmiMemoryDetailCubit()
-      : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
+    : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
 
   Future<void> initData() => load();
 
@@ -39,10 +35,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     try {
       final MPMemoryDetailCardData data = await _mockFetchDetail();
       emit(
-        OmiMemoryDetailState(
-          phase: OmiMemoryDetailPhase.loaded,
-          data: data,
-        ),
+        OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: data),
       );
     } catch (e) {
       emit(
@@ -55,6 +48,101 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   Future<void> retry() => load();
+
+  /// 快捷输入新增 Todo：更新「TODOS CREATED」卡片列表。
+  void addTodoFromQuickInput(String text) {
+    final String title = text.trim();
+    if (title.isEmpty) return;
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
+
+    final MPMemoryDetailCardData d = cur.data!;
+    final MPMemoryTodosCreatedCardData currentTodos =
+        d.todosCreated ??
+        const MPMemoryTodosCreatedCardData(
+          headerTimeLabel: 'Just now',
+          items: <MPMemoryCreatedTodoLineData>[],
+        );
+
+    final List<MPMemoryCreatedTodoLineData> nextItems =
+        <MPMemoryCreatedTodoLineData>[
+          ...currentTodos.items,
+          MPMemoryCreatedTodoLineData(
+            title: title,
+            priority: MPMemoryTodoPriorityKind.medium,
+            deadlineLabel: 'No deadline',
+          ),
+        ];
+
+    final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+      title: d.title,
+      metaLine: d.metaLine,
+      audioTimeStart: d.audioTimeStart,
+      audioTimeEnd: d.audioTimeEnd,
+      waveformHeights: d.waveformHeights,
+      speakerLabels: d.speakerLabels,
+      overviewText: d.overviewText,
+      transcriptItems: d.transcriptItems,
+      actionItems: d.actionItems,
+      initialSegment: d.initialSegment,
+      insightItems: d.insightItems,
+      todosCreated: MPMemoryTodosCreatedCardData(
+        headerTimeLabel: 'Just now',
+        items: nextItems,
+      ),
+      myMemos: d.myMemos,
+      youAsked: d.youAsked,
+      resummaryItems: d.resummaryItems,
+    );
+
+    emit(
+      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
+    );
+  }
+
+  /// 快捷输入新增 Memo：更新「MY MEMOS」卡片列表（追加到最底部）。
+  void addMemoFromQuickInput(String text) {
+    final String line = text.trim();
+    if (line.isEmpty) return;
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
+
+    final MPMemoryDetailCardData d = cur.data!;
+    final MPMemoryMyMemosCardData currentMemos =
+        d.myMemos ??
+        const MPMemoryMyMemosCardData(
+          headerTimeLabel: 'Just now',
+          lines: <String>[],
+        );
+
+    final MPMemoryMyMemosCardData nextMemos = MPMemoryMyMemosCardData(
+      headerTimeLabel: 'Just now',
+      sourceLine: currentMemos.sourceLine,
+      lines: <String>[...currentMemos.lines, line],
+    );
+
+    final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+      title: d.title,
+      metaLine: d.metaLine,
+      audioTimeStart: d.audioTimeStart,
+      audioTimeEnd: d.audioTimeEnd,
+      waveformHeights: d.waveformHeights,
+      speakerLabels: d.speakerLabels,
+      overviewText: d.overviewText,
+      transcriptItems: d.transcriptItems,
+      actionItems: d.actionItems,
+      initialSegment: d.initialSegment,
+      insightItems: d.insightItems,
+      todosCreated: d.todosCreated,
+      myMemos: nextMemos,
+      youAsked: d.youAsked,
+      resummaryItems: d.resummaryItems,
+    );
+
+    emit(
+      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
+    );
+  }
 
   /// 模拟详情请求：
   /// - 延迟 900ms
@@ -82,8 +170,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       audioTimeEnd: '45m52s',
       speakerLabels: const <String>['Investor', 'You'],
       initialSegment: MPMemoryDetailSegment.transcript,
-      overviewText:
-          'Investors认可近期增长，但要求在基础设施稳定性、鉴权安全测试和灰度发布计划上给出更明确里程碑。',
+      overviewText: 'Investors认可近期增长，但要求在基础设施稳定性、鉴权安全测试和灰度发布计划上给出更明确里程碑。',
       transcriptItems: const <MPMemoryTranscriptItemData>[
         MPMemoryTranscriptItemData(
           timestamp: '00:00',

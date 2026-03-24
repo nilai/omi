@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/omi_quick_add_todo_popup.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/utils/omi_color_utils.dart';
@@ -41,20 +42,30 @@ class _OmiMemoryDetailView extends StatelessWidget {
           title: 'Memory',
           actions: <Widget>[
             GestureDetector(
-              onTap: () { // 分享
-
+              onTap: () {
+                // 分享
               },
               child: Container(
-                child: OmiImageLoader.localImg(Assets.omiShare, width: 20, height: 20, color: blueTextColor),
+                child: OmiImageLoader.localImg(
+                  Assets.omiShare,
+                  width: 20,
+                  height: 20,
+                  color: blueTextColor,
+                ),
               ),
             ),
-            SizedBox(width: 16.0,),
+            SizedBox(width: 16.0),
             GestureDetector(
-              onTap: () { // 更多
-
+              onTap: () {
+                // 更多
               },
               child: Container(
-                child: OmiImageLoader.localImg(Assets.omiMemoryDetialMore, width: 20, height: 20, color: blueTextColor),
+                child: OmiImageLoader.localImg(
+                  Assets.omiMemoryDetialMore,
+                  width: 20,
+                  height: 20,
+                  color: blueTextColor,
+                ),
               ),
             ),
           ],
@@ -93,7 +104,8 @@ class _OmiMemoryDetailView extends StatelessWidget {
                         },
                       ),
                     ),
-                    for (final MPMemoryInsightItemData item in data.insightItems)
+                    for (final MPMemoryInsightItemData item
+                        in data.insightItems)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: MPMemoryInsightCard(
@@ -108,8 +120,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                       ),
                     if (data.todosCreated != null &&
                         data.todosCreated!.items.isNotEmpty) ...<Widget>[
-                      if (data.insightItems.isEmpty)
-                        const SizedBox(height: 12),
+                      if (data.insightItems.isEmpty) const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: MPMemoryTodosCreatedCard(
@@ -125,23 +136,18 @@ class _OmiMemoryDetailView extends StatelessWidget {
                         const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryMyMemosCard(
-                          data: data.myMemos!,
-                        ),
+                        child: MPMemoryMyMemosCard(data: data.myMemos!),
                       ),
                     ],
                     if (data.youAsked != null) ...<Widget>[
                       if (data.insightItems.isEmpty &&
                           (data.todosCreated == null ||
                               data.todosCreated!.items.isEmpty) &&
-                          (data.myMemos == null ||
-                              data.myMemos!.lines.isEmpty))
+                          (data.myMemos == null || data.myMemos!.lines.isEmpty))
                         const SizedBox(height: 12),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryYouAskedCard(
-                          data: data.youAsked!,
-                        ),
+                        child: MPMemoryYouAskedCard(data: data.youAsked!),
                       ),
                     ],
                     if (data.resummaryItems.isNotEmpty) ...<Widget>[
@@ -171,11 +177,27 @@ class _OmiMemoryDetailView extends StatelessWidget {
         },
       ),
       bottomNavigationBar: MPMemoryDetailBottomBar(
-        onAddTodo: () {
-          // TODO: Add Todo
+        onAddTodo: () async {
+          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
+            context,
+          );
+          if (result == null) return;
+          context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(
+            result.text,
+          );
         },
-        onAddMemo: () {
-          // TODO: Add Memo
+        onAddMemo: () async {
+          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
+            context,
+            params: const OmiQuickInputPopupParams(
+              headerTitle: 'ADD MEMO',
+              hintText: 'What would you like to remember?',
+            ),
+          );
+          if (result == null) return;
+          context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(
+            result.text,
+          );
         },
         onAskAi: () {
           // TODO: Ask AI

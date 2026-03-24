@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/common/omi_edit_todo_popup.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -48,10 +49,7 @@ class MPMemoryTodosCreatedCardData {
 
 /// 左侧深绿竖条 + 白底圆角，展示已生成的 Todo 列表
 class MPMemoryTodosCreatedCard extends StatelessWidget {
-  const MPMemoryTodosCreatedCard({
-    super.key,
-    required this.data,
-  });
+  const MPMemoryTodosCreatedCard({super.key, required this.data});
 
   final MPMemoryTodosCreatedCardData data;
 
@@ -63,9 +61,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: const Border(
-          left: BorderSide(color: _kLeftStripe, width: 4),
-        ),
+        border: const Border(left: BorderSide(color: _kLeftStripe, width: 4)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -83,11 +79,12 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: OmiImageLoader.localImg(Assets.omiDetailCheck,
-                    width: 12,
-                    height: 12,
-                    color: greenDeepColor,
-                        fit: BoxFit.contain
+                    child: OmiImageLoader.localImg(
+                      Assets.omiDetailCheck,
+                      width: 12,
+                      height: 12,
+                      color: greenDeepColor,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
@@ -129,19 +126,48 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
               ],
-              _MPCreatedTodoRow(item: data.items[i]),
+              _MPCreatedTodoRow(
+                item: data.items[i],
+                onTap: () {
+                  showOmiEditTodoPopup(
+                    context,
+                    params: OmiEditTodoPopupParams(
+                      title: data.items[i].title,
+                      notes:
+                          'Need to confirm their availability for next sprint, focus on timeline alignment.',
+                      priorityLabel: _priorityLabelByKind(
+                        data.items[i].priority,
+                      ),
+                      whenLabel: data.items[i].deadlineLabel,
+                      timeLabel: '01:02',
+                    ),
+                  );
+                },
+              ),
             ],
           ],
         ),
       ),
     );
   }
+
+  String _priorityLabelByKind(MPMemoryTodoPriorityKind kind) {
+    switch (kind) {
+      case MPMemoryTodoPriorityKind.high:
+        return 'High priority';
+      case MPMemoryTodoPriorityKind.medium:
+        return 'Medium';
+      case MPMemoryTodoPriorityKind.normal:
+        return 'Normal';
+    }
+  }
 }
 
 class _MPCreatedTodoRow extends StatelessWidget {
-  const _MPCreatedTodoRow({required this.item});
+  const _MPCreatedTodoRow({required this.item, this.onTap});
 
   final MPMemoryCreatedTodoLineData item;
+  final VoidCallback? onTap;
 
   Color _priorityColor() {
     switch (item.priority) {
@@ -167,54 +193,61 @@ class _MPCreatedTodoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Text(
-          item.title,
-          style: OmiTextStyle.create(
-            fontSize: OmiFontSize.t4_13,
-            fontWeight: OmiFontWeight.bold,
-            color: mainTextColor,
-            height: 1.35,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 0,
-          runSpacing: 4,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              _priorityLabel(),
+              item.title,
               style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t3_12,
-                fontWeight: OmiFontWeight.regular,
-                color: _priorityColor(),
-                height: 1.3,
+                fontSize: OmiFontSize.t4_13,
+                fontWeight: OmiFontWeight.bold,
+                color: mainTextColor,
+                height: 1.35,
               ),
             ),
-            Text(
-              ' • ',
-              style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t3_12,
-                fontWeight: OmiFontWeight.regular,
-                color: secondTextColor,
-                height: 1.3,
-              ),
-            ),
-            Text(
-              item.deadlineLabel,
-              style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t3_12,
-                fontWeight: OmiFontWeight.regular,
-                color: secondTextColor,
-                height: 1.3,
-              ),
+            const SizedBox(height: 6),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 0,
+              runSpacing: 4,
+              children: <Widget>[
+                Text(
+                  _priorityLabel(),
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t3_12,
+                    fontWeight: OmiFontWeight.regular,
+                    color: _priorityColor(),
+                    height: 1.3,
+                  ),
+                ),
+                Text(
+                  ' • ',
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t3_12,
+                    fontWeight: OmiFontWeight.regular,
+                    color: secondTextColor,
+                    height: 1.3,
+                  ),
+                ),
+                Text(
+                  item.deadlineLabel,
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t3_12,
+                    fontWeight: OmiFontWeight.regular,
+                    color: secondTextColor,
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }

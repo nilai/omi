@@ -13,6 +13,7 @@ class Assets {
   static const String omiCalendar = 'assets/images/3x/omi_calendar.png';
   static const String omiClose = 'assets/images/3x/omi_close.png';
   static const String omiDetailCheck = 'assets/images/3x/omi_detail_check.png';
+  static const String omiDetailDelete = 'assets/images/3x/omi_detail_delete.png';
   static const String omiDetailEdit = 'assets/images/3x/omi_detail_edit.png';
   static const String omiDetailGift = 'assets/images/3x/omi_detail_gift.png';
   static const String omiDetailMessage = 'assets/images/3x/omi_detail_message.png';
