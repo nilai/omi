@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
@@ -7,6 +5,7 @@ import 'package:omi/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
+import '../mp_analyze_suggested_tasks_sheet.dart';
 
 /// 「MY MEMOS」整卡数据
 class MPMemoryMyMemosCardData {
@@ -37,7 +36,6 @@ class MPMemoryMyMemosCard extends StatefulWidget {
 }
 
 class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
-
   static const Color _kLeftStripe = blueTextColor;
   static const Color _kIconCircleBg = Color(0xFFE8F4FF);
   bool _isDeleted = false;
@@ -63,7 +61,14 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
   /// 请求 AI 分析结果（占位实现，后续替换真实接口）。
   Future<List<String>> _analyzeMemoActions(String memoText) async {
     await Future<void>.delayed(const Duration(milliseconds: 1600));
-    return <String>[memoText.trim().replaceFirst(RegExp(r'[.?!]\s*$'), '')];
+    final String t = memoText.trim();
+    final String first = t.replaceFirst(RegExp(r'[.?!]\s*$'), '');
+    return <String>[
+      first,
+      if (t.length > 8)
+        'Follow up on: ${first.length > 48 ? '${first.substring(0, 48)}…' : first}',
+      'Schedule a short sync to confirm next steps.',
+    ];
   }
 
   /// 显示「Suggested tasks」分析弹窗。
@@ -71,21 +76,10 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
     BuildContext context, {
     required String memoText,
   }) {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (BuildContext context) {
-        return _MPAnalyzeActionsSheet(
-          memoText: memoText,
-          onAnalyze: _analyzeMemoActions,
-        );
-      },
+    showMPAnalyzeSuggestedTasksSheet(
+      context,
+      memoText: memoText,
+      onAnalyze: _analyzeMemoActions,
     );
   }
 
@@ -142,10 +136,8 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
                           ),
                         ),
                         InkWell(
-                          onTap: () => _onDeleteTap(
-                            context,
-                            memoText: memoText,
-                          ),
+                          onTap: () =>
+                              _onDeleteTap(context, memoText: memoText),
                           borderRadius: BorderRadius.circular(999),
                           child: Padding(
                             padding: EdgeInsets.all(8),
@@ -369,379 +361,6 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _MPAnalyzeActionsSheet extends StatefulWidget {
-  const _MPAnalyzeActionsSheet({
-    required this.memoText,
-    required this.onAnalyze,
-  });
-
-  final String memoText;
-  final Future<List<String>> Function(String memoText) onAnalyze;
-
-  @override
-  State<_MPAnalyzeActionsSheet> createState() => _MPAnalyzeActionsSheetState();
-}
-
-class _MPAnalyzeActionsSheetState extends State<_MPAnalyzeActionsSheet> {
-  bool _loading = true;
-  List<String> _suggestions = <String>[];
-  int? _selectedIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    final List<String> result = await widget.onAnalyze(widget.memoText);
-    if (!mounted) return;
-    setState(() {
-      _loading = false;
-      _suggestions = result;
-      _selectedIndex = result.isEmpty ? null : 0;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final double bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return Container(
-      width: double.infinity,
-      color: Colors.white,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(0, 0, 0, bottomInset),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 6, 12, 6),
-                child: Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: Text(
-                        'Suggested tasks',
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t9_18,
-                          fontWeight: OmiFontWeight.bold,
-                          color: mainTextColor,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(999),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: OmiImageLoader.localImg(
-                          Assets.omiClose,
-                          width: 24,
-                          height: 24,
-                          color: secondTextColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-              if (_loading) ...<Widget>[
-                SizedBox(
-                  height: 220,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const _MPAnalyzeLoadingDots(),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Analyzing your memo...',
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t7_16,
-                          fontWeight: OmiFontWeight.medium,
-                          color: secondTextColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...<Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                  child: Text(
-                    'FROM YOUR MEMO',
-                    style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t3_12,
-                      fontWeight: OmiFontWeight.medium,
-                      color: secondTextColor.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3F3F7),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFEAEAEE)),
-                    ),
-                    child: Text(
-                      widget.memoText,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.regular,
-                        color: mainTextColor,
-                        height: 1.35,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                  child: Text(
-                    'SUGGESTIONS',
-                    style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t3_12,
-                      fontWeight: OmiFontWeight.medium,
-                      color: secondTextColor.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF4F8FF),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFD8E7FF)),
-                    ),
-                    child: Column(
-                      children: List<Widget>.generate(_suggestions.length, (
-                        int i,
-                      ) {
-                        final bool isSelected = i == _selectedIndex;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: i == _suggestions.length - 1 ? 0 : 8,
-                          ),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                _selectedIndex = isSelected ? null : i;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(14),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFFCFE0FF)
-                                      : const Color(0xFFEAEAEE),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: <Widget>[
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? const Color(0xFF1A73E8)
-                                          : Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: const Color(0xFF1A73E8),
-                                        width: 1.5,
-                                      ),
-                                    ),
-                                    child: isSelected
-                                        ? const Icon(
-                                            Icons.check,
-                                            size: 14,
-                                            color: Colors.white,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      _suggestions[i],
-                                      style: OmiTextStyle.create(
-                                        fontSize: OmiFontSize.t5_14,
-                                        fontWeight: OmiFontWeight.medium,
-                                        color: mainTextColor,
-                                        height: 1.3,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: TextButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            style: TextButton.styleFrom(
-                              backgroundColor: const Color(0xFFF0F0F4),
-                              foregroundColor: mainTextColor,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: Text(
-                              'Cancel',
-                              style: OmiTextStyle.create(
-                                fontSize: OmiFontSize.t8_17,
-                                fontWeight: OmiFontWeight.medium,
-                                color: mainTextColor,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: TextButton(
-                            onPressed: _selectedIndex == null
-                                ? null
-                                : () {
-                              // TODO: 调用创建 tasks 接口（使用 _suggestions[_selectedIndex]）
-                              Navigator.of(context).pop();
-                            },
-                            style: TextButton.styleFrom(
-                              backgroundColor: blueTextColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: Text(
-                              'Create tasks',
-                              style: OmiTextStyle.create(
-                                fontSize: OmiFontSize.t8_17,
-                                fontWeight: OmiFontWeight.medium,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MPAnalyzeDot extends StatelessWidget {
-  const _MPAnalyzeDot({required this.opacity, required this.scale});
-
-  final double opacity;
-  final double scale;
-
-  @override
-  Widget build(BuildContext context) {
-    return Transform.scale(
-      scale: scale,
-      child: Container(
-        width: 10,
-        height: 10,
-        decoration: BoxDecoration(
-          color: blueTextColor.withValues(alpha: opacity),
-          shape: BoxShape.circle,
-        ),
-      ),
-    );
-  }
-}
-
-class _MPAnalyzeLoadingDots extends StatefulWidget {
-  const _MPAnalyzeLoadingDots();
-
-  @override
-  State<_MPAnalyzeLoadingDots> createState() => _MPAnalyzeLoadingDotsState();
-}
-
-class _MPAnalyzeLoadingDotsState extends State<_MPAnalyzeLoadingDots>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  double _dotWave(int index) {
-    final double t = _controller.value * 2 * math.pi;
-    final double phase = index * (2 * math.pi / 3);
-    return 0.5 + 0.5 * math.sin(t - phase);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (BuildContext context, Widget? child) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List<Widget>.generate(3, (int index) {
-            final double wave = _dotWave(index);
-            final double opacity = 0.35 + wave * 0.65;
-            final double scale = 0.78 + wave * 0.32;
-            return Padding(
-              padding: EdgeInsets.only(right: index == 2 ? 0 : 8),
-              child: _MPAnalyzeDot(opacity: opacity, scale: scale),
-            );
-          }),
-        );
-      },
     );
   }
 }

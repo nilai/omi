@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/mp_memory_options_sheet.dart';
+import 'package:omi/common/mp_share_sheet.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/omi_quick_add_todo_popup.dart';
@@ -40,7 +42,13 @@ class _OmiMemoDetailView extends StatelessWidget {
           title: 'Memo',
           actions: <Widget>[
             GestureDetector(
-              onTap: () {},
+              onTap: () async {
+                final MPShareSheetResult? result = await showMPShareSheet(
+                  context,
+                );
+                if (result == null) return;
+                // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
+              },
               child: OmiImageLoader.localImg(
                 Assets.omiShare,
                 width: 20,
@@ -50,7 +58,27 @@ class _OmiMemoDetailView extends StatelessWidget {
             ),
             const SizedBox(width: 16),
             GestureDetector(
-              onTap: () {},
+              onTap: () async {
+                final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
+                  context,
+                  params: const MPMemoryOptionsSheetParams(),
+                );
+                if (kind == null) return;
+                switch (kind) {
+                  case MPMemoryOptionKind.manageProjects:
+                    // TODO: Manage projects
+                    break;
+                  case MPMemoryOptionKind.editTitle:
+                    // TODO: Edit title
+                    break;
+                  case MPMemoryOptionKind.modifyDate:
+                    // TODO: Modify date
+                    break;
+                  case MPMemoryOptionKind.delete:
+                    // TODO: Delete
+                    break;
+                }
+              },
               child: OmiImageLoader.localImg(
                 Assets.omiMemoryDetialMore,
                 width: 20,

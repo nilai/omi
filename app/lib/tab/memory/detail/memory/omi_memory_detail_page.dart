@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/mp_memory_options_sheet.dart';
+import 'package:omi/common/mp_share_sheet.dart';
 import 'package:omi/common/omi_quick_add_todo_popup.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
@@ -42,8 +44,12 @@ class _OmiMemoryDetailView extends StatelessWidget {
           title: 'Memory',
           actions: <Widget>[
             GestureDetector(
-              onTap: () {
-                // 分享
+              onTap: () async {
+                final MPShareSheetResult? result = await showMPShareSheet(
+                  context,
+                );
+                if (result == null) return;
+                // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
               },
               child: Container(
                 child: OmiImageLoader.localImg(
@@ -56,8 +62,28 @@ class _OmiMemoryDetailView extends StatelessWidget {
             ),
             SizedBox(width: 16.0),
             GestureDetector(
-              onTap: () {
-                // 更多
+              onTap: () async {
+                final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
+                  context,
+                  params: const MPMemoryOptionsSheetParams(
+                    manageProjectsCount: 1,
+                  ),
+                );
+                if (kind == null) return;
+                switch (kind) {
+                  case MPMemoryOptionKind.manageProjects:
+                    // TODO: Manage projects
+                    break;
+                  case MPMemoryOptionKind.editTitle:
+                    // TODO: Edit title
+                    break;
+                  case MPMemoryOptionKind.modifyDate:
+                    // TODO: Modify date
+                    break;
+                  case MPMemoryOptionKind.delete:
+                    // TODO: Delete
+                    break;
+                }
               },
               child: Container(
                 child: OmiImageLoader.localImg(
