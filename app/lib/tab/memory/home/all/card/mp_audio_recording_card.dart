@@ -3,6 +3,8 @@ import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
+import '../../../detail/audio/omi_audio_detail_page.dart';
+
 /// 录音记忆卡片数据（与设计稿：主/副时间、来源、时长）
 class MPAudioRecordingCardData {
   const MPAudioRecordingCardData({
@@ -29,11 +31,7 @@ const Color _kBorder = Color(0xFFE8E8E6);
 
 /// 录音类 Memory 卡片：圆角白底、双时间 + 底栏「麦克风+来源 | 时长」
 class MPAudioRecordingCard extends StatelessWidget {
-  const MPAudioRecordingCard({
-    super.key,
-    required this.data,
-    this.onTap,
-  });
+  const MPAudioRecordingCard({super.key, required this.data, this.onTap});
 
   final MPAudioRecordingCardData data;
 
@@ -44,7 +42,15 @@ class MPAudioRecordingCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap:
+            onTap ??
+            () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const OmiAudioDetailPage(),
+                ),
+              );
+            },
         borderRadius: BorderRadius.circular(20),
         child: Ink(
           decoration: BoxDecoration(

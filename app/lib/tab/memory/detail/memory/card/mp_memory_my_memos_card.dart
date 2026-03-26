@@ -5,7 +5,7 @@ import 'package:omi/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
-import '../mp_analyze_suggested_tasks_sheet.dart';
+import '../mp_memo_detail_sheet.dart';
 
 /// 「MY MEMOS」整卡数据
 class MPMemoryMyMemosCardData {
@@ -46,18 +46,6 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
     return true;
   }
 
-  Future<void> _onDeleteTap(
-    BuildContext sheetContext, {
-    required String memoText,
-  }) async {
-    final bool ok = await _deleteMemo(memoText);
-    if (!mounted || !ok) return;
-    Navigator.of(sheetContext).pop();
-    setState(() {
-      _isDeleted = true;
-    });
-  }
-
   /// 请求 AI 分析结果（占位实现，后续替换真实接口）。
   Future<List<String>> _analyzeMemoActions(String memoText) async {
     await Future<void>.delayed(const Duration(milliseconds: 1600));
@@ -71,190 +59,20 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
     ];
   }
 
-  /// 显示「Suggested tasks」分析弹窗。
-  void _showAnalyzeTasksSheet(
-    BuildContext context, {
-    required String memoText,
-  }) {
-    showMPAnalyzeSuggestedTasksSheet(
-      context,
-      memoText: memoText,
-      onAnalyze: _analyzeMemoActions,
-    );
-  }
-
   /// 显示 Memo 详情底部弹窗。
   void _showMemoSheet(BuildContext context, String memoText) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        final double bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-        return Container(
-          width: double.infinity,
-          child: Container(
-            clipBehavior: Clip.antiAlias,
-            decoration: const BoxDecoration(
-              color: pageColor,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(0, 0, 0, 20 + bottomInset),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Container(
-                    height: 50,
-                    color: Colors.white,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: <Widget>[
-                        InkWell(
-                          onTap: () => Navigator.of(context).pop(),
-                          borderRadius: BorderRadius.circular(999),
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: OmiImageLoader.localImg(
-                              Assets.omiLeftBack,
-                              width: 24,
-                              height: 24,
-                              color: blueTextColor,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            'Memo',
-                            textAlign: TextAlign.center,
-                            style: OmiTextStyle.create(
-                              fontSize: OmiFontSize.t8_17,
-                              fontWeight: OmiFontWeight.medium,
-                              color: mainTextColor,
-                            ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () =>
-                              _onDeleteTap(context, memoText: memoText),
-                          borderRadius: BorderRadius.circular(999),
-                          child: Padding(
-                            padding: EdgeInsets.all(8),
-                            child: OmiImageLoader.localImg(
-                              Assets.omiDetailDelete,
-                              width: 18,
-                              height: 18,
-                              color: redColor,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    child: Row(
-                      children: <Widget>[
-                        OmiImageLoader.localImg(
-                          Assets.omiSparkles,
-                          width: 16,
-                          height: 16,
-                          color: const Color(0xFFFFB340),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Highlight',
-                          style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t5_14,
-                            fontWeight: OmiFontWeight.medium,
-                            color: const Color(0xFFFFB340),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Padding(
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    child: Text(
-                      widget.data.sourceLine,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.medium,
-                        color: blueTextColor,
-                        height: 1.3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    child: Text(
-                      memoText,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.regular,
-                        color: mainTextColor,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    child: Text(
-                      'Actions',
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.medium,
-                        color: secondTextColor,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: EdgeInsets.only(left: 16, right: 16),
-                    child: InkWell(
-                      onTap: () {
-                        _showAnalyzeTasksSheet(context, memoText: memoText);
-                      },
-                      borderRadius: BorderRadius.circular(8),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            OmiImageLoader.localImg(
-                              Assets.omiSparkles,
-                              width: 16,
-                              height: 16,
-                              color: blueTextColor,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Analyze actions',
-                              style: OmiTextStyle.create(
-                                fontSize: OmiFontSize.t6_15,
-                                fontWeight: OmiFontWeight.medium,
-                                color: blueTextColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+    showMPMemoDetailSheet(
+      context,
+      memoText: memoText,
+      sourceLine: widget.data.sourceLine,
+      onAnalyze: _analyzeMemoActions,
+      onDelete: (String t) async {
+        final bool ok = await _deleteMemo(t);
+        if (!mounted || !ok) return false;
+        setState(() {
+          _isDeleted = true;
+        });
+        return true;
       },
     );
   }

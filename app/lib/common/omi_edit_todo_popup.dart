@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:omi/common/omi_button.dart';
+import 'package:omi/common/omi_todo_more_sheet.dart';
+import 'package:omi/common/mp_confirm_delete_dialog.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -33,6 +35,7 @@ Future<void> showOmiEditTodoPopup(
   BuildContext context, {
   required OmiEditTodoPopupParams params,
   VoidCallback? onMarkAsDone,
+  Future<bool> Function()? onDelete,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -43,16 +46,28 @@ Future<void> showOmiEditTodoPopup(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
     ),
     builder: (BuildContext sheetContext) {
-      return _OmiEditTodoPopupSheet(params: params, onMarkAsDone: onMarkAsDone);
+      return _OmiEditTodoPopupSheet(
+        params: params,
+        onMarkAsDone: onMarkAsDone,
+        rootContext: context,
+        onDelete: onDelete,
+      );
     },
   );
 }
 
 class _OmiEditTodoPopupSheet extends StatefulWidget {
-  const _OmiEditTodoPopupSheet({required this.params, this.onMarkAsDone});
+  const _OmiEditTodoPopupSheet({
+    required this.params,
+    required this.rootContext,
+    this.onMarkAsDone,
+    this.onDelete,
+  });
 
   final OmiEditTodoPopupParams params;
   final VoidCallback? onMarkAsDone;
+  final BuildContext rootContext;
+  final Future<bool> Function()? onDelete;
 
   @override
   State<_OmiEditTodoPopupSheet> createState() => _OmiEditTodoPopupSheetState();
@@ -360,7 +375,36 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                       ),
                     ),
                     InkWell(
-                      onTap: () {},
+                      onTapDown: (TapDownDetails details) async {
+                        final OmiTodoMoreAction? action =
+                            await showOmiTodoMoreMenu(
+                              context,
+                              details: details,
+                            );
+                        if (action == null) return;
+                        switch (action) {
+                          case OmiTodoMoreAction.exportToCalendar:
+                            // TODO: Export to calendar
+                            break;
+                          case OmiTodoMoreAction.shareTask:
+                            // TODO: Share task
+                            break;
+                          case OmiTodoMoreAction.delete:
+                            Navigator.of(context).pop();
+                            WidgetsBinding.instance.addPostFrameCallback((
+                              _,
+                            ) async {
+                              final bool ok = await showMPConfirmDeleteDialog(
+                                widget.rootContext,
+                              );
+                              if (!ok) return;
+                              if (widget.onDelete != null) {
+                                await widget.onDelete!.call();
+                              }
+                            });
+                            break;
+                        }
+                      },
                       borderRadius: BorderRadius.circular(999),
                       child: Padding(
                         padding: const EdgeInsets.all(8),

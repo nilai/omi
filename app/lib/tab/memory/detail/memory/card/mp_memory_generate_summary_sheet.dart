@@ -273,7 +273,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
                         OmiButton(
-                          text: 'Generate resummary',
+                          text: 'Generate summary',
                           width: double.infinity,
                           height: 50,
                           bgColor: blueTextColor,

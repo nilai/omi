@@ -144,6 +144,57 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     );
   }
 
+  Future<bool> _deleteTodoApi(MPMemoryCreatedTodoLineData item) async {
+    // TODO: 替换为真实删除接口
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+    return true;
+  }
+
+  /// 删除「TODOS CREATED」里的指定条目（接口成功后更新 UI）。
+  Future<bool> deleteCreatedTodoAt(int index) async {
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+      return false;
+    }
+    final MPMemoryDetailCardData d = cur.data!;
+    final MPMemoryTodosCreatedCardData? todos = d.todosCreated;
+    if (todos == null) return false;
+    if (index < 0 || index >= todos.items.length) return false;
+
+    final MPMemoryCreatedTodoLineData target = todos.items[index];
+    final bool ok = await _deleteTodoApi(target);
+    if (!ok) return false;
+
+    final List<MPMemoryCreatedTodoLineData> nextItems =
+        List<MPMemoryCreatedTodoLineData>.from(todos.items)..removeAt(index);
+
+    final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+      title: d.title,
+      metaLine: d.metaLine,
+      audioTimeStart: d.audioTimeStart,
+      audioTimeEnd: d.audioTimeEnd,
+      waveformHeights: d.waveformHeights,
+      speakerLabels: d.speakerLabels,
+      overviewText: d.overviewText,
+      transcriptItems: d.transcriptItems,
+      actionItems: d.actionItems,
+      initialSegment: d.initialSegment,
+      insightItems: d.insightItems,
+      todosCreated: MPMemoryTodosCreatedCardData(
+        headerTimeLabel: todos.headerTimeLabel,
+        items: nextItems,
+      ),
+      myMemos: d.myMemos,
+      youAsked: d.youAsked,
+      resummaryItems: d.resummaryItems,
+    );
+
+    emit(
+      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
+    );
+    return true;
+  }
+
   /// 模拟详情请求：
   /// - 延迟 900ms
   /// - 返回头部信息 + overview/transcript/actions 三段数据

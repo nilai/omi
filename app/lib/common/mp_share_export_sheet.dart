@@ -125,8 +125,8 @@ class _MPShareExportSheet extends StatelessWidget {
                       params.title,
                       textAlign: TextAlign.center,
                       style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t9_18,
-                        fontWeight: OmiFontWeight.bold,
+                        fontSize: OmiFontSize.t6_15,
+                        fontWeight: OmiFontWeight.medium,
                         color: mainTextColor,
                       ),
                     ),
@@ -135,7 +135,7 @@ class _MPShareExportSheet extends StatelessWidget {
                       params.subtitle,
                       textAlign: TextAlign.center,
                       style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t6_15,
+                        fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.regular,
                         color: secondTextColor,
                       ),
@@ -167,7 +167,7 @@ class _MPShareExportSheet extends StatelessWidget {
                         child: Text(
                           params.cancelText,
                           style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t8_17,
+                            fontSize: OmiFontSize.t7_16,
                             fontWeight: OmiFontWeight.medium,
                             color: blueTextColor,
                           ),
@@ -242,8 +242,8 @@ class _MPExportTile extends StatelessWidget {
           Text(
             data.label,
             style: OmiTextStyle.create(
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t3_12,
+              fontWeight: OmiFontWeight.regular,
               color: mainTextColor,
             ),
           ),

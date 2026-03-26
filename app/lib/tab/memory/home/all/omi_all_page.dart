@@ -7,6 +7,7 @@ import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
+import '../../detail/audio/omi_audio_detail_page.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
@@ -87,6 +88,11 @@ class _OmiAllViewState extends State<_OmiAllView> {
         break;
       case MPMemoryEntryKind.audioRecording:
         // TODO: 打开录音详情
+        Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            builder: (BuildContext context) => const OmiAudioDetailPage(),
+          ),
+        );
         break;
     }
   }

@@ -8,6 +8,7 @@ import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
+import '../../../../common/mp_custom_nav_bar.dart';
 import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';
 import 'mp_audio_detail_cubit.dart';
@@ -31,37 +32,58 @@ class _OmiAudioDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: pageColor,
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56),
-        child: _AudioDetailNavBar(
-          title: 'Audio Memory',
-          onShareTap: () async {
-            final MPShareSheetResult? result = await showMPShareSheet(context);
-            if (result == null) return;
-            // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
-          },
-          onMoreTap: () async {
-            final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
-              context,
-              params: const MPMemoryOptionsSheetParams(),
-            );
-            if (kind == null) return;
-            switch (kind) {
-              case MPMemoryOptionKind.manageProjects:
-                // TODO: Manage projects
-                break;
-              case MPMemoryOptionKind.editTitle:
-                // TODO: Edit title
-                break;
-              case MPMemoryOptionKind.modifyDate:
-                // TODO: Modify date
-                break;
-              case MPMemoryOptionKind.delete:
-                // TODO: Delete
-                break;
-            }
-          },
+        preferredSize: MPCustomNavBar.preferredSizeOf(context),
+        child: MPCustomNavBar(
+          title: 'Memo',
+          actions: <Widget>[
+            GestureDetector(
+              onTap: () async {
+                final MPShareSheetResult? result = await showMPShareSheet(
+                  context,
+                );
+                if (result == null) return;
+                // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
+              },
+              child: OmiImageLoader.localImg(
+                Assets.omiShare,
+                width: 20,
+                height: 20,
+                color: blueTextColor,
+              ),
+            ),
+            const SizedBox(width: 16),
+            GestureDetector(
+              onTap: () async {
+                final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
+                  context,
+                  params: const MPMemoryOptionsSheetParams(),
+                );
+                if (kind == null) return;
+                switch (kind) {
+                  case MPMemoryOptionKind.manageProjects:
+                    // TODO: Manage projects
+                    break;
+                  case MPMemoryOptionKind.editTitle:
+                    // TODO: Edit title
+                    break;
+                  case MPMemoryOptionKind.modifyDate:
+                    // TODO: Modify date
+                    break;
+                  case MPMemoryOptionKind.delete:
+                    // TODO: Delete
+                    break;
+                }
+              },
+              child: OmiImageLoader.localImg(
+                Assets.omiMemoryDetialMore,
+                width: 20,
+                height: 20,
+                color: blueTextColor,
+              ),
+            ),
+          ],
         ),
       ),
       body: BlocBuilder<MPAudioDetailCubit, MPAudioDetailState>(
@@ -90,26 +112,115 @@ class _OmiAudioDetailView extends StatelessWidget {
               final MPAudioDetailData d = state.data!;
               return SafeArea(
                 top: false,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Text(
-                        d.title,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t21_30,
-                          fontWeight: OmiFontWeight.bold,
-                          color: mainTextColor,
-                          height: 1.15,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: <Widget>[
-                          Expanded(
-                            child: Text(
-                              d.subtitle,
+                child: Column(
+                  children: <Widget>[
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Text(
+                              d.title,
+                              style: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t21_30,
+                                fontWeight: OmiFontWeight.bold,
+                                color: mainTextColor,
+                                height: 1.15,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: <Widget>[
+                                Expanded(
+                                  child: Text(
+                                    d.subtitle,
+                                    style: OmiTextStyle.create(
+                                      fontSize: OmiFontSize.t6_15,
+                                      fontWeight: OmiFontWeight.regular,
+                                      color: secondTextColor,
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: <Widget>[
+                                Text(
+                                  d.leftTime,
+                                  style: OmiTextStyle.create(
+                                    fontSize: OmiFontSize.t6_15,
+                                    fontWeight: OmiFontWeight.medium,
+                                    color: secondTextColor,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  d.rightTime,
+                                  style: OmiTextStyle.create(
+                                    fontSize: OmiFontSize.t6_15,
+                                    fontWeight: OmiFontWeight.medium,
+                                    color: secondTextColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            _AudioWaveform(
+                              isPlaying: state.isPlaying,
+                              progress: state.progress,
+                            ),
+                            const SizedBox(height: 22),
+                            Center(
+                              child: _PlayButton(
+                                isPlaying: state.isPlaying,
+                                onTap: () {
+                                  context
+                                      .read<MPAudioDetailCubit>()
+                                      .onPlayTap();
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            Container(
+                              height: 1,
+                              color: lineColor.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(height: 40),
+                            Center(
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F0FF),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Center(
+                                  child: OmiImageLoader.localImg(
+                                    Assets.tabAskAi,
+                                    color: blueTextColor,
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Text(
+                              'Want a quick overview?',
+                              textAlign: TextAlign.center,
+                              style: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t9_18,
+                                fontWeight: OmiFontWeight.bold,
+                                color: mainTextColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Generate an AI summary of this conversation',
+                              textAlign: TextAlign.center,
                               style: OmiTextStyle.create(
                                 fontSize: OmiFontSize.t6_15,
                                 fontWeight: OmiFontWeight.regular,
@@ -117,99 +228,34 @@ class _OmiAudioDetailView extends StatelessWidget {
                                 height: 1.2,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        children: <Widget>[
-                          Text(
-                            d.leftTime,
-                            style: OmiTextStyle.create(
-                              fontSize: OmiFontSize.t6_15,
-                              fontWeight: OmiFontWeight.medium,
-                              color: secondTextColor,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            d.rightTime,
-                            style: OmiTextStyle.create(
-                              fontSize: OmiFontSize.t6_15,
-                              fontWeight: OmiFontWeight.medium,
-                              color: secondTextColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      const _AudioWaveform(),
-                      const SizedBox(height: 22),
-                      Center(
-                        child: _PlayButton(
-                          onTap: () {
-                            context.read<MPAudioDetailCubit>().onPlayTap();
-                          },
+                            const SizedBox(height: 110),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 22),
-                      Container(
-                        height: 1,
-                        color: lineColor.withValues(alpha: 0.6),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        18,
+                        0,
+                        18,
+                        MediaQuery.viewPaddingOf(context).bottom,
                       ),
-                      const SizedBox(height: 28),
-                      Center(
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F0FF),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.auto_awesome_rounded,
-                              size: 24,
-                              color: blueTextColor,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Text(
-                        'Want a quick overview?',
-                        textAlign: TextAlign.center,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t9_18,
-                          fontWeight: OmiFontWeight.bold,
-                          color: mainTextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Generate an AI summary of this conversation',
-                        textAlign: TextAlign.center,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t6_15,
-                          fontWeight: OmiFontWeight.regular,
-                          color: secondTextColor,
-                          height: 1.2,
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      SizedBox(
+                      child: SizedBox(
                         height: 56,
+                        width: 240,
                         child: TextButton(
                           onPressed: () {
-                            context.read<MPAudioDetailCubit>().onSummarizeTap();
+                            context.read<MPAudioDetailCubit>().onSummarizeTap(
+                              context,
+                            );
                           },
                           style: TextButton.styleFrom(
                             backgroundColor: const Color(0xFFE8F0FF),
                             foregroundColor: blueTextColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(18),
-                              side: BorderSide(
-                                color: const Color(0xFFD8E7FF),
+                              side: const BorderSide(
+                                color: Color(0xFFD8E7FF),
                                 width: 1,
                               ),
                             ),
@@ -217,10 +263,11 @@ class _OmiAudioDetailView extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: <Widget>[
-                              Icon(
-                                Icons.auto_awesome_rounded,
-                                size: 20,
+                              OmiImageLoader.localImg(
+                                Assets.tabAskAi,
                                 color: blueTextColor,
+                                width: 20,
+                                height: 20,
                               ),
                               const SizedBox(width: 10),
                               Text(
@@ -235,8 +282,8 @@ class _OmiAudioDetailView extends StatelessWidget {
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
           }
@@ -246,126 +293,103 @@ class _OmiAudioDetailView extends StatelessWidget {
   }
 }
 
-class _AudioDetailNavBar extends StatelessWidget {
-  const _AudioDetailNavBar({
-    required this.title,
-    this.onShareTap,
-    this.onMoreTap,
-  });
+class _AudioWaveform extends StatefulWidget {
+  const _AudioWaveform({required this.isPlaying, required this.progress});
 
-  final String title;
-  final VoidCallback? onShareTap;
-  final VoidCallback? onMoreTap;
+  final bool isPlaying;
+  final double progress;
 
   @override
-  Widget build(BuildContext context) {
-    final double topSafe = MediaQuery.viewPaddingOf(context).top;
-    return Container(
-      height: 56 + topSafe,
-      padding: EdgeInsets.only(top: topSafe),
-      color: const Color(0xFFF2F2F7),
-      child: Row(
-        children: <Widget>[
-          const SizedBox(width: 10),
-          InkWell(
-            onTap: () => Navigator.of(context).maybePop(),
-            borderRadius: BorderRadius.circular(999),
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 20,
-                color: mainTextColor,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              title,
-              textAlign: TextAlign.center,
-              style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t8_17,
-                fontWeight: OmiFontWeight.bold,
-                color: mainTextColor,
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: onShareTap,
-            borderRadius: BorderRadius.circular(999),
-            child: Padding(
-              padding: const EdgeInsets.all(10),
-              child: OmiImageLoader.localImg(
-                Assets.omiShare,
-                width: 20,
-                height: 20,
-                color: blueTextColor,
-              ),
-            ),
-          ),
-          InkWell(
-            onTap: onMoreTap,
-            borderRadius: BorderRadius.circular(999),
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Icon(
-                Icons.more_horiz_rounded,
-                size: 22,
-                color: blueTextColor,
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-        ],
-      ),
-    );
-  }
+  State<_AudioWaveform> createState() => _AudioWaveformState();
 }
 
-class _AudioWaveform extends StatelessWidget {
-  const _AudioWaveform();
+class _AudioWaveformState extends State<_AudioWaveform>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  static const int _n = 86;
+  static const double _h = 74;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    if (widget.isPlaying) {
+      _pulse.repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _AudioWaveform oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isPlaying != oldWidget.isPlaying) {
+      if (widget.isPlaying) {
+        _pulse.repeat();
+      } else {
+        _pulse.stop();
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 仅用于视觉占位：固定的伪波形（不依赖随机，保证每次一致）。
-    const int n = 86;
-    const double h = 74;
     return SizedBox(
-      height: h,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List<Widget>.generate(n, (int i) {
-          final double t = i / (n - 1);
-          final double v =
-              0.28 +
-              0.52 *
-                  (0.5 +
-                      0.5 *
-                          math.sin((t * 5.6 + 0.35) * 2 * math.pi) *
-                          math.sin((t * 2.1 + 0.1) * 2 * math.pi));
-          final double barH = 10 + v * (h - 10);
-          return Expanded(
-            child: Align(
-              alignment: Alignment.center,
-              child: Container(
-                width: 2,
-                height: barH,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD1D1D6),
-                  borderRadius: BorderRadius.circular(999),
+      height: _h,
+      child: AnimatedBuilder(
+        animation: _pulse,
+        builder: (BuildContext context, Widget? child) {
+          final double p = widget.isPlaying ? _pulse.value : 0.0;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: List<Widget>.generate(_n, (int i) {
+              final bool isPlayed = (i + 1) / _n <= widget.progress;
+              final double t = i / (_n - 1);
+              final double base =
+                  0.28 +
+                  0.52 *
+                      (0.5 +
+                          0.5 *
+                              math.sin((t * 5.6 + 0.35) * 2 * math.pi) *
+                              math.sin((t * 2.1 + 0.1) * 2 * math.pi));
+              final double wobble = widget.isPlaying
+                  ? (0.92 + 0.12 * math.sin((p * 2 * math.pi) + t * 10.0))
+                  : 1.0;
+              final double v = (base * wobble).clamp(0.0, 1.0);
+              final double barH = 10 + v * (_h - 10);
+              return Expanded(
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                    width: 2,
+                    height: barH,
+                    decoration: BoxDecoration(
+                      color: isPlayed ? Colors.black : const Color(0xFFD1D1D6),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+              );
+            }),
           );
-        }),
+        },
       ),
     );
   }
 }
 
 class _PlayButton extends StatelessWidget {
-  const _PlayButton({this.onTap});
+  const _PlayButton({required this.isPlaying, this.onTap});
 
+  final bool isPlaying;
   final VoidCallback? onTap;
 
   @override
@@ -378,8 +402,8 @@ class _PlayButton extends StatelessWidget {
         customBorder: const CircleBorder(),
         onTap: onTap,
         child: Container(
-          width: 74,
-          height: 74,
+          width: 60,
+          height: 60,
           decoration: const BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
@@ -391,11 +415,13 @@ class _PlayButton extends StatelessWidget {
               ),
             ],
           ),
-          child: const Center(
-            child: Icon(
-              Icons.play_arrow_rounded,
-              size: 34,
+          child: Center(
+            child: OmiImageLoader.localImg(
+              isPlaying ? Assets.omiPause : Assets.omiPlay,
+              width: 26,
+              height: 26,
               color: mainTextColor,
+              fit: BoxFit.contain,
             ),
           ),
         ),

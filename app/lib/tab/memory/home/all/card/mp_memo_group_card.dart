@@ -5,6 +5,7 @@ import 'package:omi/utils/omi_image_loader.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_font_utils.dart';
 import '../../../../../utils/omi_textstyle.dart';
+import '../../../detail/memory/mp_memo_detail_sheet.dart';
 
 /// Memos 分组卡片展示形态（对应设计稿）
 enum MPMemoGroupCardVariant {
@@ -35,7 +36,6 @@ class MPMemoGroupCardData {
 
   /// 与 [items] 等长；`true` 表示该行用灰色弱化（如已读）
   final List<bool>? itemMuted;
-
 }
 
 /// 设计色
@@ -88,8 +88,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
     return _kCollapsedPreviewCount.clamp(0, _total);
   }
 
-  int get _moreCount =>
-      (_total - _kCollapsedPreviewCount).clamp(0, _total);
+  int get _moreCount => (_total - _kCollapsedPreviewCount).clamp(0, _total);
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +98,22 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: widget.onTap,
+        onTap:
+            // widget.onTap ??
+            () {
+              if (d.items.isEmpty) return;
+              showMPMemoDetailSheet(
+                context,
+                memoText: d.items.first,
+                sourceLine: '${d.categoryLabel} · ${d.dateLabel}',
+                onAnalyze: (String memoText) async {
+                  // TODO: 替换真实 analyze 接口
+                  await Future<void>.delayed(const Duration(milliseconds: 500));
+                  final String first = memoText.trim();
+                  return <String>[first];
+                },
+              );
+            },
         borderRadius: BorderRadius.circular(12),
         child: Container(
           decoration: BoxDecoration(
@@ -107,12 +121,12 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _kMemoBorder),
             boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -124,11 +138,14 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
               ),
               const SizedBox(height: 12),
               ...List<Widget>.generate(_visibleCount, (int i) {
-                final bool muted = d.itemMuted != null &&
+                final bool muted =
+                    d.itemMuted != null &&
                     i < d.itemMuted!.length &&
                     d.itemMuted![i];
                 return Padding(
-                  padding: EdgeInsets.only(bottom: i < _visibleCount - 1 ? 8 : 8),
+                  padding: EdgeInsets.only(
+                    bottom: i < _visibleCount - 1 ? 8 : 8,
+                  ),
                   child: _BulletLine(
                     text: d.items[i],
                     maxLines: widget.variant == MPMemoGroupCardVariant.single
@@ -162,10 +179,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
 }
 
 class _HeaderRow extends StatelessWidget {
-  const _HeaderRow({
-    required this.title,
-    required this.countLabel,
-  });
+  const _HeaderRow({required this.title, required this.countLabel});
 
   final String title;
   final String countLabel;
@@ -178,7 +192,13 @@ class _HeaderRow extends StatelessWidget {
         SizedBox(
           width: 18,
           height: 18,
-          child: OmiImageLoader.localImg(Assets.omiBookText, width: 18, height: 18, color: orangeTextColor,fit: BoxFit.cover,),
+          child: OmiImageLoader.localImg(
+            Assets.omiBookText,
+            width: 18,
+            height: 18,
+            color: orangeTextColor,
+            fit: BoxFit.cover,
+          ),
         ),
         const SizedBox(width: 10),
         Flexible(
@@ -195,10 +215,7 @@ class _HeaderRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           countLabel,
-          style: OmiTextStyle.create(
-            fontSize: 13,
-            color: secondTextColor,
-          ),
+          style: OmiTextStyle.create(fontSize: 13, color: secondTextColor),
         ),
       ],
     );
@@ -206,11 +223,7 @@ class _HeaderRow extends StatelessWidget {
 }
 
 class _BulletLine extends StatelessWidget {
-  const _BulletLine({
-    required this.text,
-    this.maxLines,
-    this.muted = false,
-  });
+  const _BulletLine({required this.text, this.maxLines, this.muted = false});
 
   final String text;
   final int? maxLines;
@@ -277,7 +290,12 @@ class _ExpandFooter extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            OmiImageLoader.localImg(expanded ? Assets.omiArrowUp : Assets.omiArrowDown, color: blueTextColor, width: 14, height: 14),
+            OmiImageLoader.localImg(
+              expanded ? Assets.omiArrowUp : Assets.omiArrowDown,
+              color: blueTextColor,
+              width: 14,
+              height: 14,
+            ),
             const SizedBox(width: 4),
             Text(
               expanded ? 'Show less' : '+ $moreCount more',

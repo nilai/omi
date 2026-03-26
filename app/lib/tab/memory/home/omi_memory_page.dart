@@ -4,6 +4,7 @@ import '../../../business/shared/state/mp_business_controller.dart';
 import '../../../common/mp_memory_top_tabs.dart';
 import '../../../common/mp_navigation_bar.dart';
 import '../../../utils/omi_color_utils.dart';
+import '../search/mp_memory_search_page.dart';
 import 'all/omi_all_page.dart';
 import 'people/omi_people_page.dart';
 import 'projects/omi_projects_page.dart';
@@ -30,7 +31,11 @@ class _OmiMemoryPageState extends State<OmiMemoryPage> {
           variant: MPNavigationBarVariant.memory,
           backgroundColor: Colors.white,
           onPrimaryActionTap: () {
-            // TODO: 打开搜索
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const MPMemorySearchPage(),
+              ),
+            );
           },
         ),
       ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:omi/common/omi_edit_todo_popup.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 import 'package:omi/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
+import '../omi_memory_detail_cubit.dart';
 
 /// 已创建 Todo 条目的优先级（决定文案与颜色）
 enum MPMemoryTodoPriorityKind {
@@ -141,6 +143,11 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                       whenLabel: data.items[i].deadlineLabel,
                       timeLabel: '01:02',
                     ),
+                    onDelete: () {
+                      return context
+                          .read<OmiMemoryDetailCubit>()
+                          .deleteCreatedTodoAt(i);
+                    },
                   );
                 },
               ),

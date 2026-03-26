@@ -435,8 +435,8 @@ class _MPSummaryTile extends StatelessWidget {
                       Text(
                         title,
                         style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t7_16,
-                          fontWeight: OmiFontWeight.bold,
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.medium,
                           color: mainTextColor,
                         ),
                       ),
