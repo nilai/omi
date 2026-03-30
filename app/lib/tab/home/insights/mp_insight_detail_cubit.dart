@@ -129,8 +129,10 @@ class MPMonthlyInsightDetailData {
     required this.keyPeopleThisMonthSummary,
     required this.topicsSurfacingSummary,
     required this.longRunningOpenThreads,
+    required this.longRunningOpenThreadsSummary,
     required this.monthToMonthTrend,
     required this.decisionsThatCannotSlipAgain,
+    required this.decisionsThatCannotSlipAgainSummary,
     required this.suggestedFocusNextMonth,
     required this.askAiButtonText,
   });
@@ -162,11 +164,17 @@ class MPMonthlyInsightDetailData {
   /// Long-running Open Threads
   final List<String> longRunningOpenThreads;
 
+  /// Long-running Open Threads 底部说明
+  final String longRunningOpenThreadsSummary;
+
   /// Month-to-Month Trend
   final List<String> monthToMonthTrend;
 
   /// Decisions That Cannot Slip Again
   final List<MPMonthlyDecisionItem> decisionsThatCannotSlipAgain;
+
+  /// Decisions That Cannot Slip Again 底部说明
+  final String decisionsThatCannotSlipAgainSummary;
 
   /// Suggested Focus Next Month
   final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth;
@@ -321,8 +329,12 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             topicsSurfacingSummary:
                 'These topics appeared across multiple weeks without clear resolution.',
             longRunningOpenThreads: longRunningOpenThreads,
+            longRunningOpenThreadsSummary:
+                'These issues repeatedly delayed progress.',
             monthToMonthTrend: monthToMonthTrend,
             decisionsThatCannotSlipAgain: decisionsCannotSlip,
+            decisionsThatCannotSlipAgainSummary:
+                'If unresolved next month, these will continue to slow execution.',
             suggestedFocusNextMonth: suggestedFocusNextMonth,
             askAiButtonText: 'Ask AI about this month',
           ),
