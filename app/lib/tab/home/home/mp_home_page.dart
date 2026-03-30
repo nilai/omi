@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/tab/home/mp_device_connection_stub_page.dart';
+import 'package:omi/tab/home/connect_device/mp_connect_device_page.dart';
 import 'package:omi/tab/home/home/mp_home_cubit.dart';
 import 'package:omi/tab/home/insights/mp_home_insights_list_page.dart';
 import 'package:omi/tab/home/todayFocus/mp_today_focus_page.dart';
@@ -180,7 +180,7 @@ class _MPHomePageState extends State<MPHomePage> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute<void>(
-                                  builder: (_) => const MPDeviceConnectionStubPage(),
+                                  builder: (_) => const MPConnectDevicePage(),
                                 ),
                               );
                             },
