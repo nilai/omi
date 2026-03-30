@@ -327,9 +327,9 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7FA),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
+        color: Colors.transparent,
+        // borderRadius: BorderRadius.circular(12),
+        // border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
       child: Column(
@@ -390,9 +390,13 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                         ),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF4A82E8),
+                          backgroundColor: const Color(0xFFEAF0FA),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           minimumSize: const Size(0, 0),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                         child: const Text(
                           'Add to Todo',
