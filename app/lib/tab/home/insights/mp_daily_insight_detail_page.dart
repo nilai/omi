@@ -107,6 +107,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                 title: daily.narrativeTitle,
                 icon: Icons.radar_outlined,
                 iconColor: const Color(0xFF3C7BEE),
+                iconBgColor: const Color(0xFFEAF0FE),
+                contentBgColor: const Color(0xFFF2F6FF),
                 child: Text(
                   daily.narrativeBody,
                   style: OmiTextStyle.create(
@@ -123,6 +125,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                   title: 'Decisions made',
                   icon: Icons.check_box_outlined,
                   iconColor: const Color(0xFF3FB26E),
+                  iconBgColor: const Color(0xFFE8F7EE),
+                  contentBgColor: const Color(0xFFF2FAF4),
                   child: _MPDotTextList(
                     items: daily.decisionsMade,
                     dotColor: const Color(0xFF8FA76D),
@@ -135,6 +139,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                   title: 'Open questions',
                   icon: Icons.error_outline,
                   iconColor: const Color(0xFFDA8A3F),
+                  iconBgColor: const Color(0xFFFFF1E3),
+                  contentBgColor: const Color(0xFFFFF7EE),
                   child: _MPDotTextList(
                     items: daily.openQuestions,
                     dotColor: const Color(0xFFDA8A3F),
@@ -147,6 +153,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                   title: 'Patterns emerging',
                   icon: Icons.auto_awesome_outlined,
                   iconColor: const Color(0xFF9C5CE4),
+                  iconBgColor: const Color(0xFFF2EAFE),
+                  contentBgColor: const Color(0xFFF7F1FF),
                   child: Text(
                     daily.patternsEmerging,
                     style: OmiTextStyle.create(
@@ -164,6 +172,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                   title: 'Ideas captured',
                   icon: Icons.lightbulb_outline,
                   iconColor: const Color(0xFFD39F3E),
+                  iconBgColor: const Color(0xFFFFF5E0),
+                  contentBgColor: const Color(0xFFFFF9EB),
                   child: _MPDotTextList(
                     items: daily.ideasCaptured,
                     dotColor: const Color(0xFFD39F3E),
@@ -201,21 +211,25 @@ class _MPDailyCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.iconColor,
+    required this.iconBgColor,
+    required this.contentBgColor,
     required this.child,
   });
 
   final String title;
   final IconData icon;
   final Color iconColor;
+  final Color iconBgColor;
+  final Color contentBgColor;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F7FA),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
+        color: Colors.transparent,
+        // borderRadius: BorderRadius.circular(12),
+        // border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       child: Column(
@@ -223,7 +237,16 @@ class _MPDailyCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(icon, color: iconColor, size: 16),
+              Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: iconBgColor,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                alignment: Alignment.center,
+                child: Icon(icon, color: iconColor, size: 14),
+              ),
               const SizedBox(width: 8),
               Text(
                 title,
@@ -239,7 +262,14 @@ class _MPDailyCard extends StatelessWidget {
           const SizedBox(height: 10),
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 10),
-          child,
+          Container(
+            decoration: BoxDecoration(
+              color: contentBgColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+            child: child,
+          ),
         ],
       ),
     );
@@ -317,58 +347,67 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
           const SizedBox(height: 10),
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 8),
-          ...items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
-            final MPDailyFocusItem focus = entry.value;
-            return Container(
-              padding: const EdgeInsets.symmetric(vertical: 9),
-              decoration: BoxDecoration(
-                border: entry.key == items.length - 1
-                    ? null
-                    : const Border(
-                        bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
-                      ),
-              ),
-              child: Row(
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Icon(Icons.circle, size: 5, color: Color(0xFF8FA76D)),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF2F6FF),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
+            child: Column(
+              children: items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
+                final MPDailyFocusItem focus = entry.value;
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
+                    border: entry.key == items.length - 1
+                        ? null
+                        : const Border(
+                            bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
+                          ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      focus.text,
-                      style: OmiTextStyle.create(
-                        color: secondTextColor,
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.regular,
-                        height: 1.4,
+                  child: Row(
+                    children: <Widget>[
+                      const Padding(
+                        padding: EdgeInsets.only(top: 2),
+                        child: Icon(Icons.circle, size: 5, color: Color(0xFF8FA76D)),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Add to Todo: ${focus.text}',
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF4A82E8),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: const Text(
-                      'Add to Todo',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          focus.text,
+                          style: OmiTextStyle.create(
+                            color: secondTextColor,
+                            fontSize: OmiFontSize.t5_14,
+                            fontWeight: OmiFontWeight.regular,
+                            height: 1.4,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      TextButton(
+                        onPressed: () => MPToastUtils.showFeatureComingSoon(
+                          message: 'Add to Todo: ${focus.text}',
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xFF4A82E8),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Add to Todo',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            );
-          }),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
