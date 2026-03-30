@@ -71,32 +71,16 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
   void _onCardTap(MPInsightListItem item) {
     switch (item.type) {
       case MPInsightCardType.daily:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => MPDailyInsightDetailPage(item: item),
-          ),
-        );
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MPDailyInsightDetailPage(item: item)));
         break;
       case MPInsightCardType.weekly:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => MPWeeklyInsightDetailPage(item: item),
-          ),
-        );
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MPWeeklyInsightDetailPage(item: item)));
         break;
       case MPInsightCardType.monthly:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => MPMonthlyInsightDetailPage(item: item),
-          ),
-        );
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MPMonthlyInsightDetailPage(item: item)));
         break;
       case MPInsightCardType.pattern:
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (_) => MPPatternInsightDetailPage(item: item),
-          ),
-        );
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MPPatternInsightDetailPage(item: item)));
         break;
     }
   }
@@ -151,8 +135,7 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
                           controller: _scrollController,
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                          itemCount: state.items.length +
-                              (state.hasMore && state.isLoadingMore ? 1 : 0),
+                          itemCount: state.items.length + (state.hasMore && state.isLoadingMore ? 1 : 0),
                           itemBuilder: (BuildContext context, int index) {
                             if (index == state.items.length) {
                               return const Padding(
@@ -168,13 +151,8 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
                             }
                             final MPInsightListItem item = state.items[index];
                             return Padding(
-                              padding: EdgeInsets.only(
-                                bottom: index < state.items.length - 1 ? 12 : 0,
-                              ),
-                              child: _MPInsightCard(
-                                item: item,
-                                onTap: () => _onCardTap(item),
-                              ),
+                              padding: EdgeInsets.only(bottom: index < state.items.length - 1 ? 12 : 0),
+                              child: _MPInsightCard(item: item, onTap: () => _onCardTap(item)),
                             );
                           },
                         ),
@@ -191,10 +169,7 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
 }
 
 class _MPInsightCard extends StatelessWidget {
-  const _MPInsightCard({
-    required this.item,
-    required this.onTap,
-  });
+  const _MPInsightCard({required this.item, required this.onTap});
 
   final MPInsightListItem item;
   final VoidCallback onTap;
@@ -295,15 +270,7 @@ class _MPInsightCard extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               if (item.type == MPInsightCardType.pattern)
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 4,
-                    color: accent,
-                  ),
-                ),
+                Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 4, color: accent)),
               Padding(
                 padding: EdgeInsets.only(
                   left: item.type == MPInsightCardType.pattern ? 8 : 0,
@@ -314,76 +281,90 @@ class _MPInsightCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: accent,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Stack(
-                        children: <Widget>[
-                          Align(
-                            alignment: Alignment.topLeft,
-                            child: Padding(
-                              padding: const EdgeInsets.only(right: 44),
-                              child: Text.rich(
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
-                                TextSpan(
-                                  children: <InlineSpan>[
-                                    TextSpan(
-                                      text: item.periodLabel,
-                                      style: OmiTextStyle.create(
-                                        color: const Color(0xFF1F2937),
-                                        fontSize: OmiFontSize.t9_18,
-                                        fontWeight: OmiFontWeight.bold,
-                                        height: 1.2,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            color: accent,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Icon(icon, color: Colors.white, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              SizedBox(
+                                width: double.infinity,
+                                child: Stack(
+                                  children: <Widget>[
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(right: 44),
+                                      child: Align(
+                                        alignment: Alignment.topLeft,
+                                        child: Text.rich(
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: false,
+                                          TextSpan(
+                                            children: <InlineSpan>[
+                                              TextSpan(
+                                                text: item.periodLabel,
+                                                style: OmiTextStyle.create(
+                                                  color: const Color(0xFF1F2937),
+                                                  fontSize: OmiFontSize.t9_18,
+                                                  fontWeight: OmiFontWeight.bold,
+                                                  height: 1.2,
+                                                ),
+                                              ),
+                                              TextSpan(
+                                                text: '  ·  ${_typeLabel()}',
+                                                style: OmiTextStyle.create(
+                                                  color: const Color(0xFF8A8A93),
+                                                  fontSize: OmiFontSize.t6_15,
+                                                  fontWeight: OmiFontWeight.medium,
+                                                  height: 1.2,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                    TextSpan(
-                                      text: '  ·  ${_typeLabel()}',
-                                      style: OmiTextStyle.create(
-                                        color: const Color(0xFF8A8A93),
-                                        fontSize: OmiFontSize.t6_15,
-                                        fontWeight: OmiFontWeight.medium,
-                                        height: 1.2,
+                                    Align(
+                                      alignment: Alignment.topRight,
+                                      child: Icon(
+                                        Icons.chevron_right_rounded,
+                                        size: 24,
+                                        color: accent,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
+                              const SizedBox(height: 6),
+                              Text(
+                                item.subtitle,
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF7B7E86),
+                                  fontSize: OmiFontSize.t6_15,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.25,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          Align(
-                            alignment: Alignment.topRight,
-                            child: Icon(
-                              Icons.chevron_right_rounded,
-                              size: 24,
-                              color: accent,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.subtitle,
-                      style: OmiTextStyle.create(
-                        color: const Color(0xFF7B7E86),
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.medium,
-                        height: 1.25,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+
                     const SizedBox(height: 10),
                     Text(
                       item.summary,
@@ -397,41 +378,36 @@ class _MPInsightCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 10),
-                    ..._bullets().map(
-                      (String b) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 7),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              Padding(
-                                padding: const EdgeInsets.only(top: 9),
-                                child: Container(
-                                  width: 4,
-                                  height: 4,
-                                  decoration: BoxDecoration(
-                                    color: accent,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
+                    ..._bullets().map((String b) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 7),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.only(top: 9),
+                              child: Container(
+                                width: 4,
+                                height: 4,
+                                decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(999)),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                b,
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF2F3542),
+                                  fontSize: OmiFontSize.t8_17,
+                                  fontWeight: OmiFontWeight.regular,
+                                  height: 1.4,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  b,
-                                  style: OmiTextStyle.create(
-                                    color: const Color(0xFF2F3542),
-                                    fontSize: OmiFontSize.t8_17,
-                                    fontWeight: OmiFontWeight.regular,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
                 ),
               ),
