@@ -72,10 +72,27 @@ class MPMonthlyKeyPersonItem {
   const MPMonthlyKeyPersonItem({
     required this.name,
     required this.count,
+    required this.value,
   });
 
   final String name;
   final int count;
+
+  /// 进度条长度 0-100
+  final int value;
+}
+
+/// Monthly 详情页卡片中的条目：Topics
+class MPMonthlyTopicItem {
+  const MPMonthlyTopicItem({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+
+  /// 进度条长度 0-100
+  final int value;
 }
 
 /// Monthly 详情页卡片中的条目：决策项
@@ -108,6 +125,9 @@ class MPMonthlyInsightDetailData {
     required this.attentionDistribution,
     required this.keyPeopleThisMonth,
     required this.topicsSurfacing,
+    required this.attentionDistributionSummary,
+    required this.keyPeopleThisMonthSummary,
+    required this.topicsSurfacingSummary,
     required this.longRunningOpenThreads,
     required this.monthToMonthTrend,
     required this.decisionsThatCannotSlipAgain,
@@ -128,7 +148,16 @@ class MPMonthlyInsightDetailData {
   final List<MPMonthlyKeyPersonItem> keyPeopleThisMonth;
 
   /// Topics Surfacing
-  final List<String> topicsSurfacing;
+  final List<MPMonthlyTopicItem> topicsSurfacing;
+
+  /// Attention Distribution 底部说明
+  final String attentionDistributionSummary;
+
+  /// Key People 底部说明
+  final String keyPeopleThisMonthSummary;
+
+  /// Topics 底部说明
+  final String topicsSurfacingSummary;
 
   /// Long-running Open Threads
   final List<String> longRunningOpenThreads;
@@ -205,22 +234,34 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       case MPInsightCardType.monthly:
         final List<MPMonthlyBarItem> attentionDistribution =
             <MPMonthlyBarItem>[
-          const MPMonthlyBarItem(label: 'Product Engineering', value: 62),
-          const MPMonthlyBarItem(label: 'Hiring', value: 38),
-          const MPMonthlyBarItem(label: 'Operations', value: 54),
+          const MPMonthlyBarItem(label: 'Product', value: 70),
+          const MPMonthlyBarItem(label: 'Engineering', value: 55),
+          const MPMonthlyBarItem(label: 'Hiring', value: 35),
         ];
 
         final List<MPMonthlyKeyPersonItem> keyPeople =
             <MPMonthlyKeyPersonItem>[
-          MPMonthlyKeyPersonItem(name: 'Jordan', count: 12 + (seed % 3)),
-          MPMonthlyKeyPersonItem(name: 'Sarah', count: 9 + (seed % 4)),
-          MPMonthlyKeyPersonItem(name: 'Alex', count: 7 + (seed % 5)),
+          MPMonthlyKeyPersonItem(
+            name: 'Jordan',
+            count: 12 + (seed % 3),
+            value: 72,
+          ),
+          MPMonthlyKeyPersonItem(
+            name: 'Alex',
+            count: 10 + (seed % 4),
+            value: 58,
+          ),
+          MPMonthlyKeyPersonItem(
+            name: 'Sarah',
+            count: 8 + (seed % 5),
+            value: 42,
+          ),
         ];
 
-        final List<String> topicsSurfacing = <String>[
-          'API migration',
-          'Hiring ongoing',
-          'Pricing inquiry',
+        final List<MPMonthlyTopicItem> topicsSurfacing = <MPMonthlyTopicItem>[
+          const MPMonthlyTopicItem(label: 'API migration', value: 68),
+          const MPMonthlyTopicItem(label: 'Hiring bandwidth', value: 52),
+          const MPMonthlyTopicItem(label: 'Pricing strategy', value: 32),
         ];
 
         final List<String> longRunningOpenThreads = <String>[
@@ -273,6 +314,12 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             attentionDistribution: attentionDistribution,
             keyPeopleThisMonth: keyPeople,
             topicsSurfacing: topicsSurfacing,
+            attentionDistributionSummary:
+                'Most effort went into execution, while hiring constraints continued to slow delivery.',
+            keyPeopleThisMonthSummary:
+                'Conversations repeatedly involved delivery ownership and coordination.',
+            topicsSurfacingSummary:
+                'These topics appeared across multiple weeks without clear resolution.',
             longRunningOpenThreads: longRunningOpenThreads,
             monthToMonthTrend: monthToMonthTrend,
             decisionsThatCannotSlipAgain: decisionsCannotSlip,

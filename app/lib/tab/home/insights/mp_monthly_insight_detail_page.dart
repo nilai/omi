@@ -174,45 +174,27 @@ class _MPMonthlyInsightBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _MPMonthlyOverviewCard(
+              _MPMonthlyMonthOverviewCard(
                 summary: monthly.monthOverviewSummary,
               ),
               const SizedBox(height: 12),
               if (monthly.attentionDistribution.isNotEmpty)
-                _MPMonthlyCard(
-                  title: 'Attention Distribution',
-                  icon: Icons.bar_chart_outlined,
-                  accent: blueTextColor,
-                  child: _MPMonthlyBars(
-                    items: monthly.attentionDistribution,
-                    valueColor: (String label) {
-                      final String s = label.toLowerCase();
-                      if (s.contains('product')) {
-                        return blueTextColor;
-                      }
-                      if (s.contains('hiring')) {
-                        return orangeTextColor;
-                      }
-                      return purpleTextColor;
-                    },
-                  ),
+                _MPMonthlyAttentionDistributionCard(
+                  items: monthly.attentionDistribution,
+                  summary: monthly.attentionDistributionSummary,
                 ),
               if (monthly.keyPeopleThisMonth.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlyCard(
-                  title: 'Key People This Month',
-                  icon: Icons.people_alt_outlined,
-                  accent: orangeTextColor,
-                  child: _MPMonthlyPeopleList(items: monthly.keyPeopleThisMonth),
+                _MPMonthlyKeyPeopleCard(
+                  items: monthly.keyPeopleThisMonth,
+                  summary: monthly.keyPeopleThisMonthSummary,
                 ),
               ],
               if (monthly.topicsSurfacing.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlyCard(
-                  title: 'Topics Surfacing',
-                  icon: Icons.turn_sharp_right_outlined,
-                  accent: purpleTextColor,
-                  child: _MPMonthlyTopics(topics: monthly.topicsSurfacing),
+                _MPMonthlyTopicsSurfacingCard(
+                  items: monthly.topicsSurfacing,
+                  summary: monthly.topicsSurfacingSummary,
                 ),
               ],
               if (monthly.longRunningOpenThreads.isNotEmpty) ...<Widget>[
@@ -278,38 +260,370 @@ class _MPMonthlyInsightBody extends StatelessWidget {
   }
 }
 
-class _MPMonthlyOverviewCard extends StatelessWidget {
-  const _MPMonthlyOverviewCard({required this.summary});
+class _MPMonthlyMonthOverviewCard extends StatelessWidget {
+  const _MPMonthlyMonthOverviewCard({required this.summary});
 
   final String summary;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: greenDeepColor.withValues(alpha: 26),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: greenDeepColor.withValues(alpha: 70)),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+          width: 1,
+        ),
       ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Month Overview',
-            style: OmiTextStyle.create(
-              color: greenDeepColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.medium,
-              height: 1.3,
-            ),
+          Row(
+            children: <Widget>[
+              Icon(
+                Icons.check_circle_outline,
+                color: orangeTextColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Month Overview',
+                style: OmiTextStyle.create(
+                  color: mainTextColor,
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Divider(
+            color: const Color(0xFFE6E6E6),
+            height: 1,
+          ),
+          const SizedBox(height: 12),
           Text(
             summary,
             style: OmiTextStyle.create(
-              color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
+  const _MPMonthlyAttentionDistributionCard({
+    required this.items,
+    required this.summary,
+  });
+
+  final List<MPMonthlyBarItem> items;
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(
+                Icons.bar_chart_outlined,
+                color: blueTextColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Attention Distribution',
+                style: OmiTextStyle.create(
+                  color: mainTextColor,
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(
+            color: const Color(0xFFE6E6E6),
+            height: 1,
+          ),
+          const SizedBox(height: 12),
+          Column(
+            children: items.map((MPMonthlyBarItem i) {
+              final double v = (i.value / 100.0).clamp(0, 1);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: 112,
+                      child: Text(
+                        i.label,
+                        style: OmiTextStyle.create(
+                          color: secondTextColor,
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.regular,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: v,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFF2F2F7),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(blueTextColor),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            summary,
+            style: OmiTextStyle.create(
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPMonthlyKeyPeopleCard extends StatelessWidget {
+  const _MPMonthlyKeyPeopleCard({
+    required this.items,
+    required this.summary,
+  });
+
+  final List<MPMonthlyKeyPersonItem> items;
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(
+                Icons.people_alt_outlined,
+                color: blueTextColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Key People This Month',
+                style: OmiTextStyle.create(
+                  color: mainTextColor,
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(
+            color: const Color(0xFFE6E6E6),
+            height: 1,
+          ),
+          const SizedBox(height: 12),
+          Column(
+            children: items.map((MPMonthlyKeyPersonItem p) {
+              final double v = (p.value / 100.0).clamp(0, 1);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: <Widget>[
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        p.name,
+                        style: OmiTextStyle.create(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.regular,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: v,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFF2F2F7),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(blueTextColor),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      '${p.count} memories',
+                      style: OmiTextStyle.create(
+                        color: secondTextColor,
+                        fontSize: OmiFontSize.t5_14,
+                        fontWeight: OmiFontWeight.regular,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          Text(
+            summary,
+            style: OmiTextStyle.create(
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.55,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
+  const _MPMonthlyTopicsSurfacingCard({
+    required this.items,
+    required this.summary,
+  });
+
+  final List<MPMonthlyTopicItem> items;
+  final String summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFEAEAEA),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(
+                Icons.auto_awesome_outlined,
+                color: purpleTextColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Topics Resurfacing',
+                style: OmiTextStyle.create(
+                  color: mainTextColor,
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Divider(
+            color: const Color(0xFFE6E6E6),
+            height: 1,
+          ),
+          const SizedBox(height: 12),
+          Column(
+            children: items.map((MPMonthlyTopicItem t) {
+              final double v = (t.value / 100.0).clamp(0, 1);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Row(
+                  children: <Widget>[
+                    SizedBox(
+                      width: 112,
+                      child: Text(
+                        t.label,
+                        style: OmiTextStyle.create(
+                          color: secondTextColor,
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.regular,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(999),
+                        child: LinearProgressIndicator(
+                          value: v,
+                          minHeight: 8,
+                          backgroundColor: const Color(0xFFF2F2F7),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            purpleTextColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          Text(
+            summary,
+            style: OmiTextStyle.create(
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
             ),
@@ -377,136 +691,6 @@ class _MPMonthlyCard extends StatelessWidget {
           child,
         ],
       ),
-    );
-  }
-}
-
-class _MPMonthlyBars extends StatelessWidget {
-  const _MPMonthlyBars({
-    required this.items,
-    required this.valueColor,
-  });
-
-  final List<MPMonthlyBarItem> items;
-  final Color Function(String label) valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: items.map((MPMonthlyBarItem i) {
-        final double v = (i.value / 100.0).clamp(0, 1);
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                i.label,
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t4_13,
-                  fontWeight: OmiFontWeight.regular,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  value: v,
-                  minHeight: 6,
-                  backgroundColor: const Color(0xFFF2F2F7),
-                  valueColor: AlwaysStoppedAnimation<Color>(valueColor(i.label)),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _MPMonthlyPeopleList extends StatelessWidget {
-  const _MPMonthlyPeopleList({required this.items});
-
-  final List<MPMonthlyKeyPersonItem> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: items.map((MPMonthlyKeyPersonItem p) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  p.name,
-                  style: OmiTextStyle.create(
-                    color: mainTextColor,
-                    fontSize: OmiFontSize.t6_15,
-                    fontWeight: OmiFontWeight.regular,
-                  ),
-                ),
-              ),
-              Text(
-                '${p.count}',
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t5_14,
-                  fontWeight: OmiFontWeight.regular,
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-}
-
-class _MPMonthlyTopics extends StatelessWidget {
-  const _MPMonthlyTopics({required this.topics});
-
-  final List<String> topics;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: topics.map((String t) {
-        final String s = t.toLowerCase();
-        final Color c = s.contains('api')
-            ? blueTextColor
-            : s.contains('pricing')
-                ? orangeTextColor
-                : purpleTextColor;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
-            children: <Widget>[
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: c,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  t,
-                  style: OmiTextStyle.create(
-                    color: secondTextColor,
-                    fontSize: OmiFontSize.t5_14,
-                    fontWeight: OmiFontWeight.regular,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 }
