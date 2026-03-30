@@ -10,6 +10,8 @@ import 'package:omi/utils/omi_textstyle.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
+const Color _kDailyPageBgColor = Color(0xFFF2F2F7);
+
 /// Daily Insight 详情页
 class MPDailyInsightDetailPage extends StatelessWidget {
   const MPDailyInsightDetailPage({
@@ -26,12 +28,12 @@ class MPDailyInsightDetailPage extends StatelessWidget {
       child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
         builder: (BuildContext context, MPInsightDetailState state) {
           return Scaffold(
-            backgroundColor: pageColor,
+            backgroundColor: _kDailyPageBgColor,
             appBar: PreferredSize(
               preferredSize: MPCustomNavBar.preferredSizeOf(context),
               child: MPCustomNavBar(
                 title: 'Daily Insight',
-                backgroundColor: pageColor,
+                backgroundColor: Colors.white,
                 onBack: () => Navigator.of(context).maybePop(),
                 actions: <Widget>[
                   IconButton(
