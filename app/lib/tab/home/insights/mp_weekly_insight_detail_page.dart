@@ -166,6 +166,10 @@ class _MPWeeklyInsightBody extends StatelessWidget {
             .pendingItemCards
             .where((MPWeeklyPendingItem e) => e.visible)
             .toList();
+        final List<MPWeeklyPriorityItem> visiblePriorities = weekly
+            .nextWeekPriorities
+            .where((MPWeeklyPriorityItem e) => e.visible)
+            .toList();
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(10, 12, 10, 24),
           child: Column(
@@ -207,9 +211,9 @@ class _MPWeeklyInsightBody extends StatelessWidget {
                 ),
               ],
               // 6. Next Week Priorities
-              if (weekly.nextWeekPriorities.isNotEmpty) ...<Widget>[
+              if (visiblePriorities.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyPrioritiesCard(items: weekly.nextWeekPriorities),
+                _MPWeeklyPrioritiesCard(items: visiblePriorities),
               ],
               // 7. Expert Weekly Feedback
               if (weekly.expertWeeklyFeedback.isNotEmpty) ...<Widget>[
@@ -676,11 +680,11 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
               fontWeight: OmiFontWeight.medium,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           ...items.asMap().entries.map((MapEntry<int, MPWeeklyPriorityItem> e) {
             final MPWeeklyPriorityItem item = e.value;
             return Container(
-              padding: const EdgeInsets.symmetric(vertical: 9),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
                 border: e.key == items.length - 1
                     ? null
@@ -698,25 +702,46 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.check,
-                      size: 12,
-                      color: Color(0xFF2D8EA0),
+                    child: Text(
+                      '${e.key + 1}',
+                      style: OmiTextStyle.create(
+                        color: Colors.white,
+                        fontSize: OmiFontSize.t3_12,
+                        fontWeight: OmiFontWeight.bold,
+                        height: 1,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      item.text,
-                      style: OmiTextStyle.create(
-                        color: secondTextColor,
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.regular,
-                        height: 1.4,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          item.text,
+                          style: OmiTextStyle.create(
+                            color: mainTextColor,
+                            fontSize: OmiFontSize.t6_15,
+                            fontWeight: OmiFontWeight.medium,
+                            height: 1.35,
+                          ),
+                        ),
+                        if (item.subtitle.isNotEmpty) ...<Widget>[
+                          const SizedBox(height: 2),
+                          Text(
+                            item.subtitle,
+                            style: OmiTextStyle.create(
+                              color: secondTextColor,
+                              fontSize: OmiFontSize.t5_14,
+                              fontWeight: OmiFontWeight.regular,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   TextButton(
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Add to Todo: ${item.text}',
@@ -724,11 +749,11 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF4A82E8),
                       backgroundColor: const Color(0xFFEAF0FA),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       minimumSize: const Size(0, 0),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                       ),
                     ),
                     child: const Text(

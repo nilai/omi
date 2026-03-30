@@ -127,9 +127,13 @@ class MPWeeklyMetricItem {
 class MPWeeklyPriorityItem {
   const MPWeeklyPriorityItem({
     required this.text,
+    required this.subtitle,
+    this.visible = true,
   });
 
   final String text;
+  final String subtitle;
+  final bool visible;
 }
 
 /// Weekly 详情页中的完成项
@@ -490,9 +494,21 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         ];
         final List<MPWeeklyPriorityItem> nextWeekPriorities =
             <MPWeeklyPriorityItem>[
-          const MPWeeklyPriorityItem(text: 'Launch Mobile Beta'),
-          const MPWeeklyPriorityItem(text: 'Q1 Planning Session'),
-          const MPWeeklyPriorityItem(text: 'Performance Optimization'),
+          const MPWeeklyPriorityItem(
+            text: 'Launch Mobile Beta',
+            subtitle: 'Target: Thursday EOD',
+            visible: true,
+          ),
+          const MPWeeklyPriorityItem(
+            text: 'Q1 Planning Session',
+            subtitle: 'All-hands meeting on Tuesday',
+            visible: true,
+          ),
+          const MPWeeklyPriorityItem(
+            text: 'Performance Optimization',
+            subtitle: 'Focus on API response times',
+            visible: true,
+          ),
         ];
         final List<MPWeeklyExpertFeedbackItem> expertFeedback =
             <MPWeeklyExpertFeedbackItem>[
