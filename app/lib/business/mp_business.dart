@@ -1,5 +1,5 @@
 export 'app_shell/presentation/mp_business_shell_page.dart';
-export 'auth/presentation/mp_legal_document_page.dart';
+export '../login/mp_legal_document_page.dart';
 export 'auth/presentation/mp_login_page.dart';
 export 'ask_ai/presentation/mp_ask_ai_tab_page.dart';
 export 'ask_ai/presentation/pages/mp_chat_page.dart';

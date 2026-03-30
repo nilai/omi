@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'login/mp_login_page.dart';
+import 'login/mp_user.dart';
 import 'package:omi/cache/omi_server_cache.dart';
 import 'package:omi/tab/omi_main_tab_page.dart';
 
@@ -15,11 +17,15 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'omi',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MainTabPage(),
+      theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
+      home: _buildHomePage(context),
     );
   }
-}
 
+  Widget _buildHomePage(BuildContext context) {
+    if (MPUser.isLoggedIn) {
+      return const MainTabPage();
+    }
+    return const MPLoginPage();
+  }
+}

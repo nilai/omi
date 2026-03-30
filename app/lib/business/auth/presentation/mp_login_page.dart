@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Icon, Icons;
-import 'package:omi/business/auth/presentation/mp_legal_document_page.dart';
+import 'package:omi/login/mp_legal_document_page.dart';
 import 'package:omi/business/shared/state/mp_business_controller.dart';
 
 /// 与 React `LoginModal` 对齐：Apple/Google、邮箱密码、注册切换、忘记密码、条款与隐私。
