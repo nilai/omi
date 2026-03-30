@@ -182,13 +182,10 @@ class _MPWeeklyInsightBody extends StatelessWidget {
                 ),
               ],
               // 3. Accomplishments
-              if (weekly.accomplishments.isNotEmpty) ...<Widget>[
+              if (weekly.accomplishmentItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyBulletCard(
-                  title: 'Accomplishments',
-                  icon: Icons.task_alt_outlined,
-                  iconColor: const Color(0xFF37B58A),
-                  items: weekly.accomplishments,
+                _MPWeeklyAccomplishmentsCard(
+                  items: weekly.accomplishmentItems,
                 ),
               ],
               // 4. Challenges & Learnings
@@ -501,6 +498,86 @@ class _MPWeeklyBulletCard extends StatelessWidget {
                         fontWeight: OmiFontWeight.regular,
                         height: 1.4,
                       ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
+  const _MPWeeklyAccomplishmentsCard({required this.items});
+
+  final List<MPWeeklyAccomplishmentItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MPWeeklyCardShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Accomplishments',
+            style: OmiTextStyle.create(
+              color: mainTextColor,
+              fontSize: OmiFontSize.t11_20,
+              fontWeight: OmiFontWeight.bold,
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...items.asMap().entries.map((MapEntry<int, MPWeeklyAccomplishmentItem> e) {
+            final MPWeeklyAccomplishmentItem item = e.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: e.key == items.length - 1 ? 0 : 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    width: 18,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDDEFF5),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.circle,
+                      size: 7,
+                      color: Color(0xFF339CC1),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Text(
+                          item.title,
+                          style: OmiTextStyle.create(
+                            color: mainTextColor,
+                            fontSize: OmiFontSize.t6_15,
+                            fontWeight: OmiFontWeight.medium,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.description,
+                          style: OmiTextStyle.create(
+                            color: secondTextColor,
+                            fontSize: OmiFontSize.t5_14,
+                            fontWeight: OmiFontWeight.regular,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],

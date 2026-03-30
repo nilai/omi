@@ -132,6 +132,17 @@ class MPWeeklyPriorityItem {
   final String text;
 }
 
+/// Weekly 详情页中的完成项
+class MPWeeklyAccomplishmentItem {
+  const MPWeeklyAccomplishmentItem({
+    required this.title,
+    required this.description,
+  });
+
+  final String title;
+  final String description;
+}
+
 /// Weekly 详情页中的专家反馈条目
 class MPWeeklyExpertFeedbackItem {
   const MPWeeklyExpertFeedbackItem({
@@ -151,6 +162,7 @@ class MPWeeklyInsightDetailData {
     required this.headerSummary,
     required this.weekSummaryText,
     required this.metrics,
+    required this.accomplishmentItems,
     required this.accomplishments,
     required this.challengesAndLearnings,
     required this.pendingItems,
@@ -164,6 +176,7 @@ class MPWeeklyInsightDetailData {
   final String headerSummary;
   final String weekSummaryText;
   final List<MPWeeklyMetricItem> metrics;
+  final List<MPWeeklyAccomplishmentItem> accomplishmentItems;
   final List<String> accomplishments;
   final String challengesAndLearnings;
   final List<String> pendingItems;
@@ -382,6 +395,23 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
           const MPWeeklyMetricItem(value: '5', label: 'decisions'),
           const MPWeeklyMetricItem(value: '12', label: 'meetings'),
         ];
+        final List<MPWeeklyAccomplishmentItem> accomplishmentItems =
+            <MPWeeklyAccomplishmentItem>[
+          const MPWeeklyAccomplishmentItem(
+            title: 'API Migration Completed',
+            description:
+                'Successfully migrated 3 core endpoints to new architecture',
+          ),
+          const MPWeeklyAccomplishmentItem(
+            title: 'Design System Updates',
+            description: 'Shipped 12 new components with documentation',
+          ),
+          const MPWeeklyAccomplishmentItem(
+            title: 'Client Onboarding',
+            description: 'Completed onboarding for 2 new enterprise clients',
+          ),
+        ];
+
         final List<String> accomplishments = <String>[
           'API Migration Completed',
           'Design System Updates',
@@ -437,6 +467,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             weekSummaryText:
                 'Product development, team coordination, and client engagement dominated this week. You spent approximately 60% of time in execution and 40% in delivery/meetings.',
             metrics: metrics,
+            accomplishmentItems: accomplishmentItems,
             accomplishments: accomplishments,
             challengesAndLearnings:
                 'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
