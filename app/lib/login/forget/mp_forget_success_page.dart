@@ -4,6 +4,7 @@ import 'package:omi/login/home/mp_login_page.dart';
 import 'package:omi/login/legal/mp_legal_document_page.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
+import 'package:omi/utils/omi_font_utils.dart';
 
 /// 忘记密码发送成功页。
 class MPForgetSuccessPage extends StatelessWidget {
@@ -23,13 +24,13 @@ class MPForgetSuccessPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            const Padding(
+            Padding(
               padding: EdgeInsets.fromLTRB(24, 20, 24, 24),
               child: Text(
                 'Check Your Email',
                 style: TextStyle(
-                  fontSize: 44,
-                  fontWeight: FontWeight.w800,
+                  fontSize: OmiFontSize.t16_25,
+                  fontWeight: OmiFontWeight.bold,
                   color: mainTextColor,
                   height: 1.05,
                   letterSpacing: -1.0,
@@ -46,35 +47,35 @@ class MPForgetSuccessPage extends StatelessWidget {
                   children: <Widget>[
                     const _SuccessIcon(),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Reset Link Sent!',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 40,
-                        fontWeight: FontWeight.w800,
+                        fontSize: OmiFontSize.t16_25,
+                        fontWeight: OmiFontWeight.bold,
                         color: mainTextColor,
                         letterSpacing: -0.8,
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Text(
+                    Text(
                       "We've sent a password reset link to",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: OmiFontSize.t6_15,
                         color: secondTextColor,
                         height: 1.4,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: OmiFontWeight.medium,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       email,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t8_17,
                         color: mainTextColor,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: OmiFontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -86,11 +87,11 @@ class MPForgetSuccessPage extends StatelessWidget {
                       ),
                       child: Text.rich(
                         TextSpan(
-                          style: const TextStyle(
-                            fontSize: 15,
+                          style: TextStyle(
+                            fontSize: OmiFontSize.t6_15,
                             color: secondTextColor,
                             height: 1.5,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: OmiFontWeight.medium,
                           ),
                           children: <InlineSpan>[
                             const TextSpan(text: "Didn't receive the email? Check your spam folder or "),
@@ -100,9 +101,9 @@ class MPForgetSuccessPage extends StatelessWidget {
                                 ..onTap = () {
                                   MPToastUtils.showFeatureComingSoon(message: '重新发送');
                                 },
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: blueTextColor,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: OmiFontWeight.bold,
                               ),
                             ),
                           ],
@@ -125,9 +126,13 @@ class MPForgetSuccessPage extends StatelessWidget {
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Back to Sign In',
-                          style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700, letterSpacing: -0.4),
+                          style: TextStyle(
+                            fontSize: OmiFontSize.t8_17,
+                            fontWeight: OmiFontWeight.bold,
+                            letterSpacing: -0.4,
+                          ),
                         ),
                       ),
                     ),
@@ -217,24 +222,24 @@ class _LegalFooterState extends State<_LegalFooter> {
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(
-        style: const TextStyle(
-          fontSize: 12,
+        style: TextStyle(
+          fontSize: OmiFontSize.t3_12,
           color: secondTextColor,
           height: 1.5,
-          fontWeight: FontWeight.w500,
+          fontWeight: OmiFontWeight.medium,
         ),
         children: <InlineSpan>[
           const TextSpan(text: "By continuing, you agree to MemoPin's "),
           TextSpan(
             text: 'Terms of Service',
             recognizer: _termsRecognizer,
-            style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w700),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
           ),
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Privacy Policy',
             recognizer: _privacyRecognizer,
-            style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w700),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
           ),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/cupertino.dart';
+import 'package:omi/utils/omi_color_utils.dart';
+import 'package:omi/utils/omi_font_utils.dart';
 
 /// 
 enum MPLegalDocumentKind {
@@ -28,6 +30,11 @@ class MPLegalDocumentPage extends StatelessWidget {
           title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: OmiFontSize.t7_16,
+            color: mainTextColor,
+            fontWeight: OmiFontWeight.medium,
+          ),
         ),
       ),
       child: SafeArea(
@@ -36,17 +43,19 @@ class MPLegalDocumentPage extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
+              style: TextStyle(
+                fontSize: OmiFontSize.t13_22,
+                fontWeight: OmiFontWeight.bold,
+                color: mainTextColor,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               subtitle,
               style: TextStyle(
-                color: CupertinoColors.systemGrey,
-                fontSize: 15,
+                color: secondTextColor,
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.regular,
               ),
             ),
             const SizedBox(height: 16),
@@ -55,19 +64,22 @@ class MPLegalDocumentPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   p,
-                  style: const TextStyle(
-                    fontSize: 15,
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t6_15,
                     height: 1.35,
+                    color: mainTextColor,
+                    fontWeight: OmiFontWeight.regular,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text(
+            Text(
               'Contact: support@memopin.ai · https://www.memopin.ai',
               style: TextStyle(
-                fontSize: 13,
-                color: CupertinoColors.systemGrey,
+                fontSize: OmiFontSize.t4_13,
+                color: secondTextColor,
+                fontWeight: OmiFontWeight.regular,
               ),
             ),
           ],

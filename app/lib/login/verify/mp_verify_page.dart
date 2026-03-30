@@ -1,76 +1,82 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/login/forget/mp_forget_cubit.dart';
-import 'package:omi/login/forget/mp_forget_success_page.dart';
-import 'package:omi/login/forget/mp_forget_state.dart';
 import 'package:omi/login/legal/mp_legal_document_page.dart';
+import 'package:omi/login/verify/mp_verify_cubit.dart';
+import 'package:omi/login/verify/mp_verify_state.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 
-/// 忘记密码页面。
-class MPForgetPage extends StatelessWidget {
-  const MPForgetPage({super.key});
+/// 邮箱验证码页面。
+class MPVerifyPage extends StatelessWidget {
+  const MPVerifyPage({
+    super.key,
+    required this.email,
+  });
+
+  /// 待验证邮箱。
+  final String email;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => MPForgetCubit(),
-      child: const _MPForgetScaffold(),
+      create: (_) => MPVerifyCubit(),
+      child: _MPVerifyScaffold(email: email),
     );
   }
 }
 
-class _MPForgetScaffold extends StatelessWidget {
-  const _MPForgetScaffold();
+class _MPVerifyScaffold extends StatelessWidget {
+  const _MPVerifyScaffold({required this.email});
+
+  final String email;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: const SafeArea(child: _MPForgetBody()),
+      body: SafeArea(child: _MPVerifyBody(email: email)),
     );
   }
 }
 
-class _MPForgetBody extends StatefulWidget {
-  const _MPForgetBody();
+class _MPVerifyBody extends StatefulWidget {
+  const _MPVerifyBody({required this.email});
+
+  final String email;
 
   @override
-  State<_MPForgetBody> createState() => _MPForgetBodyState();
+  State<_MPVerifyBody> createState() => _MPVerifyBodyState();
 }
 
-class _MPForgetBodyState extends State<_MPForgetBody> {
-  late final TextEditingController _emailController;
+class _MPVerifyBodyState extends State<_MPVerifyBody> {
+  late final TextEditingController _codeController;
 
   @override
   void initState() {
     super.initState();
-    _emailController = TextEditingController(text: context.read<MPForgetCubit>().state.email);
+    _codeController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<MPForgetCubit, MPForgetState>(
-      listenWhen: (previous, current) =>
-          previous.isSubmitted != current.isSubmitted && current.isSubmitted,
+    return BlocListener<MPVerifyCubit, MPVerifyState>(
+      listenWhen: (p, c) => p.isSubmitted != c.isSubmitted && c.isSubmitted,
       listener: (context, state) {
-        Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (_) => MPForgetSuccessPage(email: state.email.trim()),
-          ),
-        );
+        MPToastUtils.showFeatureComingSoon(message: '验证码验证');
       },
-      child: BlocBuilder<MPForgetCubit, MPForgetState>(
+      child: BlocBuilder<MPVerifyCubit, MPVerifyState>(
         builder: (context, state) {
-          final MPForgetCubit cubit = context.read<MPForgetCubit>();
-          final String? emailErr = MPForgetState.normalizeError(state.emailError);
+          final MPVerifyCubit cubit = context.read<MPVerifyCubit>();
+          final String? codeErr = MPVerifyState.normalizeError(state.codeError);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -86,17 +92,18 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Reset Password',
+                  'Verify Your Email',
                   style: TextStyle(
                     fontSize: OmiFontSize.t16_25,
+                    fontWeight: OmiFontWeight.bold,
                     color: mainTextColor,
-                    letterSpacing: -1.0,
                     height: 1.05,
+                    letterSpacing: -1.0,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Enter your email and we'll send you a link to\nreset your password.",
+                  "We've sent a verification code to",
                   style: TextStyle(
                     fontSize: OmiFontSize.t6_15,
                     color: secondTextColor,
@@ -104,37 +111,52 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                     fontWeight: OmiFontWeight.medium,
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  widget.email,
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t11_20,
+                    fontWeight: OmiFontWeight.bold,
+                    color: mainTextColor,
+                    letterSpacing: -0.2,
+                  ),
+                ),
                 const SizedBox(height: 28),
                 const Divider(color: lineColor, height: 1),
                 const SizedBox(height: 28),
                 Text(
-                  'Email',
+                  'Verification Code',
                   style: TextStyle(
                     fontWeight: OmiFontWeight.bold,
                     fontSize: OmiFontSize.t6_15,
                     color: mainTextColor,
-                    letterSpacing: -0.4,
+                    letterSpacing: -0.3,
                   ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  onChanged: cubit.setEmail,
+                  controller: _codeController,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  inputFormatters: <TextInputFormatter>[
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                  onChanged: cubit.setCode,
                   style: TextStyle(
-                    fontSize: OmiFontSize.t6_15,
+                    fontSize: OmiFontSize.t8_17,
                     color: mainTextColor,
-                    fontWeight: OmiFontWeight.medium,
+                    fontWeight: OmiFontWeight.bold,
+                    letterSpacing: 8,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'your@email.com',
+                    hintText: 'Enter 4-digit code',
                     hintStyle: TextStyle(
                       color: secondTextColor,
-                      fontSize: OmiFontSize.t6_15,
+                      fontSize: OmiFontSize.t8_17,
                       fontWeight: OmiFontWeight.medium,
+                      letterSpacing: 6,
                     ),
-                    prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 30),
                     filled: true,
                     fillColor: const Color(0xFFF2F2F7),
                     border: OutlineInputBorder(
@@ -152,10 +174,10 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
                   ),
                 ),
-                if (emailErr != null) ...<Widget>[
+                if (codeErr != null) ...<Widget>[
                   const SizedBox(height: 8),
                   Text(
-                    emailErr,
+                    codeErr,
                     style: TextStyle(
                       fontSize: OmiFontSize.t5_14,
                       color: redColor,
@@ -169,17 +191,46 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                   child: FilledButton(
                     onPressed: state.isPrimaryButtonEnabled ? cubit.submit : null,
                     style: FilledButton.styleFrom(
-                      backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFD1D1D6),
+                      backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFA1CCFF),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                     child: Text(
-                      'Send Reset Link',
+                      'Verify Code',
                       style: TextStyle(
                         fontSize: OmiFontSize.t8_17,
                         fontWeight: OmiFontWeight.bold,
-                        letterSpacing: -0.4,
+                        letterSpacing: -0.3,
                       ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Center(
+                  child: GestureDetector(
+                    onTap: () => MPToastUtils.showFeatureComingSoon(message: '重新发送验证码'),
+                    child: Text.rich(
+                      TextSpan(
+                        children: <InlineSpan>[
+                          TextSpan(
+                            text: "Didn't receive the code? ",
+                            style: TextStyle(
+                              fontSize: OmiFontSize.t5_14,
+                              color: blueTextColor,
+                              fontWeight: OmiFontWeight.medium,
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'Resend',
+                            style: TextStyle(
+                              fontSize: OmiFontSize.t5_14,
+                              color: blueTextColor,
+                              fontWeight: OmiFontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
@@ -253,13 +304,19 @@ class _LegalFooterState extends State<_LegalFooter> {
           TextSpan(
             text: 'Terms of Service',
             recognizer: _termsRecognizer,
-            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
+            style: TextStyle(
+              color: blueTextColor,
+              fontWeight: OmiFontWeight.bold,
+            ),
           ),
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Privacy Policy',
             recognizer: _privacyRecognizer,
-            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
+            style: TextStyle(
+              color: blueTextColor,
+              fontWeight: OmiFontWeight.bold,
+            ),
           ),
         ],
       ),

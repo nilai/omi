@@ -6,8 +6,10 @@ import 'package:omi/login/forget/mp_forget_page.dart';
 import 'package:omi/login/home/mp_login_cubit.dart';
 import 'package:omi/login/home/mp_login_state.dart';
 import 'package:omi/utils/omi_color_utils.dart';
+import 'package:omi/utils/omi_font_utils.dart';
 
 import '../legal/mp_legal_document_page.dart';
+import '../verify/mp_verify_page.dart';
 
 /// MemoPin 登录 / 注册页（BlocProvider + [MPLoginCubit]）。
 class MPLoginPage extends StatelessWidget {
@@ -81,14 +83,23 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 const SizedBox(height: 8),
                 Text(
                   state.mode == MPLoginMode.login ? 'Welcome to MemoPin' : 'Create Account',
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: mainTextColor),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t16_25,
+                    fontWeight: OmiFontWeight.bold,
+                    color: mainTextColor,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   state.mode == MPLoginMode.login
                       ? 'Sign in to continue capturing and organizing your memories.'
                       : 'Start capturing and organizing your memories.',
-                  style: const TextStyle(fontSize: 15, color: secondTextColor, height: 1.35),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t6_15,
+                    color: secondTextColor,
+                    height: 1.35,
+                    fontWeight: OmiFontWeight.regular,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 _SocialButton(
@@ -96,7 +107,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                   foregroundColor: Colors.white,
                   icon: FaIcon(FontAwesomeIcons.apple, size: 20, color: Colors.white),
                   label: 'Continue with Apple',
-                  onTap: () => _toast(context, 'Continue with Apple'),
+                  // onTap: () => _toast(context, 'Continue with Apple'),
+                  onTap: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(builder: (_) => const MPVerifyPage(email: 'test@memopin.com')),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 _SocialButton(
@@ -110,9 +124,13 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 const SizedBox(height: 24),
                 const _OrDivider(),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Email',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: mainTextColor),
+                  style: TextStyle(
+                    color: mainTextColor,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 _AuthTextField(
@@ -125,15 +143,26 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 ),
                 if (emailErr != null) ...<Widget>[
                   const SizedBox(height: 6),
-                  Text(emailErr, style: const TextStyle(fontSize: 13, color: redColor)),
+                  Text(
+                    emailErr,
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t4_13,
+                      color: redColor,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 18),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: <Widget>[
-                    const Text(
+                    Text(
                       'Password',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: mainTextColor),
+                      style: TextStyle(
+                        color: mainTextColor,
+                        fontSize: OmiFontSize.t6_15,
+                        fontWeight: OmiFontWeight.bold,
+                      ),
                     ),
                     if (state.mode == MPLoginMode.login) ...<Widget>[
                       const Spacer(),
@@ -141,9 +170,13 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                         onTap: () => Navigator.of(context).push<void>(
                           MaterialPageRoute<void>(builder: (_) => const MPForgetPage()),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Forgot Password?',
-                          style: TextStyle(fontSize: 14, color: blueTextColor, fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            color: blueTextColor,
+                            fontSize: OmiFontSize.t5_14,
+                            fontWeight: OmiFontWeight.medium,
+                          ),
                         ),
                       ),
                     ],
@@ -166,7 +199,14 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 ),
                 if (passwordErr != null) ...<Widget>[
                   const SizedBox(height: 6),
-                  Text(passwordErr, style: const TextStyle(fontSize: 13, color: redColor)),
+                  Text(
+                    passwordErr,
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t4_13,
+                      color: redColor,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 28),
                 SizedBox(
@@ -182,7 +222,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                     ),
                     child: Text(
                       state.mode == MPLoginMode.login ? 'Sign In' : 'Create Account',
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t8_17,
+                        fontWeight: OmiFontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -192,7 +235,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                     onTap: cubit.toggleAuthMode,
                     child: Text.rich(
                       TextSpan(
-                        style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                          color: blueTextColor,
+                          fontWeight: OmiFontWeight.bold,
+                        ),
                         children: <InlineSpan>[
                           TextSpan(
                             text: state.mode == MPLoginMode.login
@@ -201,7 +247,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                           ),
                           TextSpan(
                             text: state.mode == MPLoginMode.login ? 'Sign Up' : 'Sign In',
-                            style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: blueTextColor,
+                              fontWeight: OmiFontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -267,7 +316,11 @@ class _SocialButton extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 label,
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: foregroundColor),
+                style: TextStyle(
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.bold,
+                  color: foregroundColor,
+                ),
               ),
             ],
           ),
@@ -287,7 +340,14 @@ class _OrDivider extends StatelessWidget {
         Expanded(child: Divider(color: lineColor, height: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('or', style: TextStyle(fontSize: 14, color: secondTextColor.withValues(alpha: 0.8))),
+          child: Text(
+            'or',
+            style: TextStyle(
+              fontSize: OmiFontSize.t5_14,
+              color: secondTextColor.withValues(alpha: 0.8),
+              fontWeight: OmiFontWeight.regular,
+            ),
+          ),
         ),
         Expanded(child: Divider(color: lineColor, height: 1)),
       ],
@@ -324,10 +384,18 @@ class _AuthTextField extends StatelessWidget {
       keyboardType: keyboardType,
       autocorrect: autocorrect,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 16, color: mainTextColor),
+      style: TextStyle(
+        fontSize: OmiFontSize.t7_16,
+        color: mainTextColor,
+        fontWeight: OmiFontWeight.regular,
+      ),
       decoration: InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(color: secondTextColor),
+        hintStyle: TextStyle(
+          color: secondTextColor,
+          fontSize: OmiFontSize.t7_16,
+          fontWeight: OmiFontWeight.regular,
+        ),
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
@@ -376,18 +444,23 @@ class _LegalFooterState extends State<_LegalFooter> {
   Widget build(BuildContext context) {
     return Text.rich(
       TextSpan(
-        style: const TextStyle(fontSize: 12, color: secondTextColor, height: 1.4),
+        style: TextStyle(
+          fontSize: OmiFontSize.t3_12,
+          color: secondTextColor,
+          height: 1.4,
+          fontWeight: OmiFontWeight.regular,
+        ),
         children: <InlineSpan>[
           const TextSpan(text: "By continuing, you agree to MemoPin's "),
           TextSpan(
             text: 'Terms of Service',
-            style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w600),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
             recognizer: _termsRecognizer,
           ),
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Privacy Policy',
-            style: const TextStyle(color: blueTextColor, fontWeight: FontWeight.w600),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
             recognizer: _privacyRecognizer,
           ),
         ],
