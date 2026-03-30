@@ -43,6 +43,7 @@ class MPInsightDetailData {
     required this.paragraphs,
     required this.tips,
     this.daily,
+    this.weekly,
     this.monthly,
   });
 
@@ -52,6 +53,9 @@ class MPInsightDetailData {
 
   /// Daily 详情页专用结构化数据（其它类型为 null）
   final MPDailyInsightDetailData? daily;
+
+  /// Weekly 详情页专用结构化数据（其它类型为 null）
+  final MPWeeklyInsightDetailData? weekly;
 
   /// Monthly 详情页专用结构化数据（其它类型为 null）
   final MPMonthlyInsightDetailData? monthly;
@@ -105,6 +109,66 @@ class MPDailyInsightDetailData {
   final List<MPDailyFocusItem> tomorrowFocus;
 
   /// 底部按钮文案
+  final String askAiButtonText;
+}
+
+/// Weekly 详情页中的统计项
+class MPWeeklyMetricItem {
+  const MPWeeklyMetricItem({
+    required this.value,
+    required this.label,
+  });
+
+  final String value;
+  final String label;
+}
+
+/// Weekly 详情页中的优先事项
+class MPWeeklyPriorityItem {
+  const MPWeeklyPriorityItem({
+    required this.text,
+  });
+
+  final String text;
+}
+
+/// Weekly 详情页中的专家反馈条目
+class MPWeeklyExpertFeedbackItem {
+  const MPWeeklyExpertFeedbackItem({
+    required this.title,
+    required this.content,
+  });
+
+  final String title;
+  final String content;
+}
+
+/// Weekly 详情页结构化数据
+class MPWeeklyInsightDetailData {
+  const MPWeeklyInsightDetailData({
+    required this.titleLabel,
+    required this.subLabel,
+    required this.headerSummary,
+    required this.weekSummaryText,
+    required this.metrics,
+    required this.accomplishments,
+    required this.challengesAndLearnings,
+    required this.pendingItems,
+    required this.nextWeekPriorities,
+    required this.expertWeeklyFeedback,
+    required this.askAiButtonText,
+  });
+
+  final String titleLabel;
+  final String subLabel;
+  final String headerSummary;
+  final String weekSummaryText;
+  final List<MPWeeklyMetricItem> metrics;
+  final List<String> accomplishments;
+  final String challengesAndLearnings;
+  final List<String> pendingItems;
+  final List<MPWeeklyPriorityItem> nextWeekPriorities;
+  final List<MPWeeklyExpertFeedbackItem> expertWeeklyFeedback;
   final String askAiButtonText;
 }
 
@@ -313,6 +377,46 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         );
 
       case MPInsightCardType.weekly:
+        final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
+          const MPWeeklyMetricItem(value: '8', label: 'tasks'),
+          const MPWeeklyMetricItem(value: '5', label: 'decisions'),
+          const MPWeeklyMetricItem(value: '12', label: 'meetings'),
+        ];
+        final List<String> accomplishments = <String>[
+          'API Migration Completed',
+          'Design System Updates',
+          'Client Onboarding',
+        ];
+        final List<String> pendingItems = <String>[
+          'Resolve migration bottlenecks with infra team',
+          'Update API documentation for V2 endpoints',
+          'Schedule follow-up with sales thread',
+        ];
+        final List<MPWeeklyPriorityItem> nextWeekPriorities =
+            <MPWeeklyPriorityItem>[
+          const MPWeeklyPriorityItem(text: 'Launch Mobile Beta'),
+          const MPWeeklyPriorityItem(text: 'Q1 Planning Session'),
+          const MPWeeklyPriorityItem(text: 'Performance Optimization'),
+        ];
+        final List<MPWeeklyExpertFeedbackItem> expertFeedback =
+            <MPWeeklyExpertFeedbackItem>[
+          const MPWeeklyExpertFeedbackItem(
+            title: 'Business Expert',
+            content:
+                'Pricing strategy shows strong signal, but decision checkpoints should tighten across stakeholders.',
+          ),
+          const MPWeeklyExpertFeedbackItem(
+            title: 'Growth Expert',
+            content:
+                'Weekly activation dipped in onboarding; simplify the first-session flow and instrument drop-off.',
+          ),
+          const MPWeeklyExpertFeedbackItem(
+            title: 'Execution Expert',
+            content:
+                'Team absorbed high context-switch cost; protect one deep-work block each day for core delivery.',
+          ),
+        ];
+
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
@@ -325,6 +429,22 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             '每周复盘一次，删掉低价值任务',
             if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
           ],
+          weekly: MPWeeklyInsightDetailData(
+            titleLabel: 'Week of ${item.periodLabel}',
+            subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
+            headerSummary:
+                'A productive week with strong momentum on the product roadmap. You balanced strategic planning with hands-on execution, improving delivery for key initiatives.',
+            weekSummaryText:
+                'Product development, team coordination, and client engagement dominated this week. You spent approximately 60% of time in execution and 40% in delivery/meetings.',
+            metrics: metrics,
+            accomplishments: accomplishments,
+            challengesAndLearnings:
+                'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
+            pendingItems: pendingItems,
+            nextWeekPriorities: nextWeekPriorities,
+            expertWeeklyFeedback: expertFeedback,
+            askAiButtonText: 'Ask AI about this week',
+          ),
         );
 
       case MPInsightCardType.monthly:
