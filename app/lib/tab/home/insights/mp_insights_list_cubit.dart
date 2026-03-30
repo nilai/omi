@@ -21,6 +21,7 @@ class MPInsightListItem {
     required this.summary,
     this.unreadCount = 0,
     this.bullets = const <String>[],
+    this.showPatternDeepLine = false,
     this.decisionsCount,
     this.followUpsCount,
     this.risksCount,
@@ -51,6 +52,9 @@ class MPInsightListItem {
 
   /// 卡片底部 bullet 列表（与截图对齐）
   final List<String> bullets;
+
+  /// pattern 卡片左侧深色竖线开关（用于区分两种状态）
+  final bool showPatternDeepLine;
 
   /// Daily counts
   final int? decisionsCount;
@@ -328,6 +332,7 @@ Future<_PageResult> _fetchPage({
         final String period = '$month ${d.day}';
         final int discussions = 4 + (globalIndex % 5);
         final String time = _timeLabelFromIndex(globalIndex);
+        final bool showDeepLine = globalIndex % 2 == 1;
 
         list.add(
           MPInsightListItem(
@@ -339,6 +344,7 @@ Future<_PageResult> _fetchPage({
             summary:
                 'MemoPin noticed recurring themes across multiple memories and turns them into actionable insights.',
             unreadCount: unread,
+            showPatternDeepLine: showDeepLine,
             bullets: <String>[
               'Appeared in $discussions discussions this week',
               'Issue still unresolved',

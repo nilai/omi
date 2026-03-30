@@ -268,9 +268,18 @@ class _MPInsightCard extends StatelessWidget {
             border: Border.all(color: borderColor, width: 1.2),
           ),
           child: Stack(
+            clipBehavior: Clip.none,
             children: <Widget>[
-              if (item.type == MPInsightCardType.pattern)
-                Positioned(left: 0, top: 0, bottom: 0, child: Container(width: 4, color: accent)),
+              if (item.type == MPInsightCardType.pattern && item.showPatternDeepLine)
+                Positioned(
+                  left: -16,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 4,
+                    color: orangeTextColor,
+                  ),
+                ),
               Padding(
                 padding: EdgeInsets.only(
                   left: item.type == MPInsightCardType.pattern ? 8 : 0,
