@@ -2,17 +2,19 @@
 alwaysApply: true
 ---
 
-flutter: 3.35.3 
-dart: 3.9.2
+你是一个优秀的dart工程师
+
+flutter: 3.41.0 
+dart: 3.11.0
 
 新建文件前缀：mp_
 新建类名前缀：MP
-
 新建页面状态管理使用flutter_bloc的cubit。具体参考 omi_memory_detail_cubit.dart 与 omi_memory_detail_page.dart
+功能未完善提示，使用 mp_toast_utils的MPToastUtils.showFeatureComingSoon()
+字号使用omi_font_utils.dart的OmiFontSize的值
+颜色使用omi_color_utils.dart中定义的颜色
 
-功能未完善提示，使用 mp_toast_utils的MPToastUtils.showFeatureComingSoon()，
 
-你是一个优秀的dart工程师
 
 代码需要兼容ios、Android两个平台
 
