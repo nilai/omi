@@ -42,6 +42,7 @@ class MPInsightDetailData {
     required this.item,
     required this.paragraphs,
     required this.tips,
+    this.daily,
     this.monthly,
   });
 
@@ -49,8 +50,62 @@ class MPInsightDetailData {
   final List<String> paragraphs;
   final List<String> tips;
 
+  /// Daily 详情页专用结构化数据（其它类型为 null）
+  final MPDailyInsightDetailData? daily;
+
   /// Monthly 详情页专用结构化数据（其它类型为 null）
   final MPMonthlyInsightDetailData? monthly;
+}
+
+/// Daily 详情页中的可执行建议（Tomorrow's focus）
+class MPDailyFocusItem {
+  const MPDailyFocusItem({
+    required this.text,
+  });
+
+  final String text;
+}
+
+/// Daily 详情页结构化数据
+class MPDailyInsightDetailData {
+  const MPDailyInsightDetailData({
+    required this.dateLabel,
+    required this.narrativeTitle,
+    required this.narrativeBody,
+    required this.decisionsMade,
+    required this.openQuestions,
+    required this.patternsEmerging,
+    required this.ideasCaptured,
+    required this.tomorrowFocus,
+    required this.askAiButtonText,
+  });
+
+  /// 顶部提示，如 `Daily Insight · Jan 28`
+  final String dateLabel;
+
+  /// Today's narrative 标题
+  final String narrativeTitle;
+
+  /// Today's narrative 正文
+  final String narrativeBody;
+
+  /// Decisions made
+  final List<String> decisionsMade;
+
+  /// Open questions
+  final List<String> openQuestions;
+
+  /// Patterns emerging
+  final String patternsEmerging;
+
+  /// Ideas captured
+  final List<String> ideasCaptured;
+
+  /// Tomorrow's focus（支持 Add to Todo）
+  final List<MPDailyFocusItem> tomorrowFocus;
+
+  /// 底部按钮文案
+  final String askAiButtonText;
 }
 
 /// Monthly 详情页卡片中的条目：注意力分布
@@ -210,6 +265,26 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
     switch (item.type) {
       case MPInsightCardType.daily:
+        final List<String> decisionsMade = <String>[
+          'Delay external rollout until recording is stable',
+          'Prioritize audio reliability over new features',
+          'Proceed with phased API migration to reduce risk',
+        ];
+        final List<String> openQuestions = <String>[
+          'Migration timeline still unclear under infra limits',
+          'User segmentation strategy not aligned yet',
+          'Who owns onboarding improvements is undefined',
+        ];
+        final List<String> ideasCaptured = <String>[
+          'Simplify onboarding steps for ADHD users',
+          'Add a lightweight daily review loop',
+          'Improve hardware status feedback clarity',
+        ];
+        final List<MPDailyFocusItem> tomorrowFocus = <MPDailyFocusItem>[
+          const MPDailyFocusItem(text: 'Review migration milestones'),
+          const MPDailyFocusItem(text: 'Align infrastructure support priorities'),
+        ];
+
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
@@ -222,6 +297,19 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             '将后续提醒合并到同一个时间窗口',
             if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
           ],
+          daily: MPDailyInsightDetailData(
+            dateLabel: 'Daily Insight · ${item.periodLabel}',
+            narrativeTitle: 'Today\'s narrative',
+            narrativeBody:
+                'Today\'s conversations centered on API architecture and product positioning. Several threads returned to the same tension: shipping fast vs. stabilizing recording reliability. Concerns about scalability and team bandwidth kept resurfacing.',
+            decisionsMade: decisionsMade,
+            openQuestions: openQuestions,
+            patternsEmerging:
+                'Architecture concerns have surfaced repeatedly for several days, suggesting systemic friction rather than isolated implementation issues.',
+            ideasCaptured: ideasCaptured,
+            tomorrowFocus: tomorrowFocus,
+            askAiButtonText: 'Ask AI about today',
+          ),
         );
 
       case MPInsightCardType.weekly:

@@ -6,12 +6,11 @@ import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
-import 'package:omi/utils/omi_space_utils.dart';
 
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
-/// Daily Insight 详情页（不同类型详情页在样式与内容上保持差异）
+/// Daily Insight 详情页
 class MPDailyInsightDetailPage extends StatelessWidget {
   const MPDailyInsightDetailPage({
     super.key,
@@ -34,6 +33,20 @@ class MPDailyInsightDetailPage extends StatelessWidget {
                 title: 'Daily Insight',
                 backgroundColor: pageColor,
                 onBack: () => Navigator.of(context).maybePop(),
+                actions: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: () => MPToastUtils.showFeatureComingSoon(
+                      message: 'Share daily insight',
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.more_vert),
+                    onPressed: () => MPToastUtils.showFeatureComingSoon(
+                      message: 'Daily options',
+                    ),
+                  ),
+                ],
               ),
             ),
             body: _MPDailyInsightBody(state: state),
@@ -53,7 +66,7 @@ class _MPDailyInsightBody extends StatelessWidget {
   Widget build(BuildContext context) {
     switch (state.phase) {
       case MPInsightDetailPhase.loading:
-        return const Center(child: MPTristatePage(type: MPTristateType.loading));
+        return const MPTristatePage(type: MPTristateType.loading);
       case MPInsightDetailPhase.error:
         return MPTristatePage(
           type: MPTristateType.error,
@@ -61,88 +74,118 @@ class _MPDailyInsightBody extends StatelessWidget {
             title: 'Unable to load Daily insight',
             description: state.errorMessage ?? '请稍后重试',
             buttonText: 'Retry',
-            onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
+            onButtonPressed: () =>
+                context.read<MPInsightDetailCubit>().initData(),
           ),
         );
       case MPInsightDetailPhase.loaded:
-        final MPInsightListItem item = state.data!.item;
-        final int decisions = item.decisionsCount ?? 0;
-        final int followUps = item.followUpsCount ?? 0;
-        final int risks = item.risksCount ?? 0;
+        final MPDailyInsightDetailData? daily = state.data?.daily;
+        if (daily == null) {
+          return const MPTristatePage(type: MPTristateType.empty);
+        }
+
         return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _HeaderBlock(
-                periodLabel: item.periodLabel,
-                title: item.title,
-                subtitle: item.subtitle,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                item.summary,
-                style: OmiTextStyle.create(
-                  color: mainTextColor,
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.regular,
-                  height: 1.55,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+                child: Text(
+                  daily.dateLabel,
+                  style: OmiTextStyle.create(
+                    color: mainTextColor,
+                    fontSize: OmiFontSize.t11_20,
+                    fontWeight: OmiFontWeight.bold,
+                    height: 1.2,
+                  ),
                 ),
               ),
-              const SizedBox(height: 18),
-              _CountGrid(
-                blocks: <_CountBlock>[
-                  _CountBlock(
-                    label: 'Decisions',
-                    value: decisions,
-                    color: greenTextColor,
+              _MPDailyCard(
+                title: daily.narrativeTitle,
+                icon: Icons.radar_outlined,
+                iconColor: const Color(0xFF3C7BEE),
+                child: Text(
+                  daily.narrativeBody,
+                  style: OmiTextStyle.create(
+                    color: secondTextColor,
+                    fontSize: OmiFontSize.t5_14,
+                    fontWeight: OmiFontWeight.regular,
+                    height: 1.52,
                   ),
-                  _CountBlock(
-                    label: 'Follow-ups',
-                    value: followUps,
-                    color: blueTextColor,
-                  ),
-                  _CountBlock(
-                    label: 'Risks',
-                    value: risks,
-                    color: purpleTextColor,
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 18),
-              _SectionTitle('What stood out'),
-              const SizedBox(height: 10),
-              ...List<Widget>.generate(state.data!.paragraphs.length, (int i) {
-                return Padding(
-                  padding: EdgeInsets.only(top: i == 0 ? 0 : textSmallPadding),
+              if (daily.decisionsMade.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                _MPDailyCard(
+                  title: 'Decisions made',
+                  icon: Icons.check_box_outlined,
+                  iconColor: const Color(0xFF3FB26E),
+                  child: _MPDotTextList(
+                    items: daily.decisionsMade,
+                    dotColor: const Color(0xFF8FA76D),
+                  ),
+                ),
+              ],
+              if (daily.openQuestions.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                _MPDailyCard(
+                  title: 'Open questions',
+                  icon: Icons.error_outline,
+                  iconColor: const Color(0xFFDA8A3F),
+                  child: _MPDotTextList(
+                    items: daily.openQuestions,
+                    dotColor: const Color(0xFFDA8A3F),
+                  ),
+                ),
+              ],
+              if (daily.patternsEmerging.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                _MPDailyCard(
+                  title: 'Patterns emerging',
+                  icon: Icons.auto_awesome_outlined,
+                  iconColor: const Color(0xFF9C5CE4),
                   child: Text(
-                    state.data!.paragraphs[i],
+                    daily.patternsEmerging,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
                       fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.regular,
-                      height: 1.6,
+                      height: 1.52,
                     ),
                   ),
-                );
-              }),
-              const SizedBox(height: 18),
-              _SectionTitle('Suggested next steps'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: state.data!.tips.map((String t) {
-                  return _TipChip(
-                    text: t,
-                    onTap: () => MPToastUtils.showFeatureComingSoon(message: 'Apply tip'),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 22),
+                ),
+              ],
+              if (daily.ideasCaptured.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                _MPDailyCard(
+                  title: 'Ideas captured',
+                  icon: Icons.lightbulb_outline,
+                  iconColor: const Color(0xFFD39F3E),
+                  child: _MPDotTextList(
+                    items: daily.ideasCaptured,
+                    dotColor: const Color(0xFFD39F3E),
+                  ),
+                ),
+              ],
+              if (daily.tomorrowFocus.isNotEmpty) ...<Widget>[
+                const SizedBox(height: 12),
+                _MPDailyTomorrowFocusCard(items: daily.tomorrowFocus),
+              ],
+              const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Create follow-up todo'),
-                child: const Text('Create follow-up todo'),
+                onPressed: () => MPToastUtils.showFeatureComingSoon(
+                  message: daily.askAiButtonText,
+                ),
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF7436E7),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('Ask AI about today'),
               ),
             ],
           ),
@@ -151,180 +194,180 @@ class _MPDailyInsightBody extends StatelessWidget {
   }
 }
 
-class _HeaderBlock extends StatelessWidget {
-  const _HeaderBlock({
-    required this.periodLabel,
+class _MPDailyCard extends StatelessWidget {
+  const _MPDailyCard({
     required this.title,
-    required this.subtitle,
+    required this.icon,
+    required this.iconColor,
+    required this.child,
   });
 
-  final String periodLabel;
   final String title;
-  final String subtitle;
+  final IconData icon;
+  final Color iconColor;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: greenTextColor.withValues(alpha: 25),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: greenTextColor.withValues(alpha: 60)),
+        color: const Color(0xFFF7F7FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            periodLabel,
-            style: OmiTextStyle.create(
-              color: greenDeepColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.medium,
-              height: 1.3,
-            ),
+          Row(
+            children: <Widget>[
+              Icon(icon, color: iconColor, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: OmiTextStyle.create(
+                  color: mainTextColor,
+                  fontSize: OmiFontSize.t6_15,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: OmiTextStyle.create(
-              color: mainTextColor,
-              fontSize: OmiFontSize.t8_17,
-              fontWeight: OmiFontWeight.bold,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.3,
-            ),
-          ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFE7E7E7)),
+          const SizedBox(height: 10),
+          child,
         ],
       ),
     );
   }
 }
 
-class _CountBlock {
-  const _CountBlock({
-    required this.label,
-    required this.value,
-    required this.color,
+class _MPDotTextList extends StatelessWidget {
+  const _MPDotTextList({
+    required this.items,
+    required this.dotColor,
   });
 
-  final String label;
-  final int value;
-  final Color color;
-}
-
-class _CountGrid extends StatelessWidget {
-  const _CountGrid({required this.blocks});
-
-  final List<_CountBlock> blocks;
+  final List<String> items;
+  final Color dotColor;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: blocks.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 1.7,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
-      ),
-      itemBuilder: (BuildContext context, int index) {
-        final _CountBlock b = blocks[index];
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: b.color.withValues(alpha: 25),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: b.color.withValues(alpha: 60)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      children: items.map((String text) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                '${b.value}',
-                style: OmiTextStyle.create(
-                  color: b.color,
-                  fontSize: OmiFontSize.t11_20,
-                  fontWeight: OmiFontWeight.bold,
-                  height: 1,
-                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 7),
+                child: Icon(Icons.circle, size: 5, color: dotColor),
               ),
-              const SizedBox(height: 6),
-              Text(
-                b.label,
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t4_13,
-                  fontWeight: OmiFontWeight.regular,
-                  height: 1.2,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  text,
+                  style: OmiTextStyle.create(
+                    color: secondTextColor,
+                    fontSize: OmiFontSize.t5_14,
+                    fontWeight: OmiFontWeight.regular,
+                    height: 1.45,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
             ],
           ),
         );
-      },
+      }).toList(),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
+class _MPDailyTomorrowFocusCard extends StatelessWidget {
+  const _MPDailyTomorrowFocusCard({required this.items});
 
-  final String text;
+  final List<MPDailyFocusItem> items;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: OmiTextStyle.create(
-        color: secondTextColor,
-        fontSize: OmiFontSize.t4_13,
-        fontWeight: OmiFontWeight.medium,
-        letterSpacing: 0.5,
-        height: 1.3,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
-    );
-  }
-}
-
-class _TipChip extends StatelessWidget {
-  const _TipChip({required this.text, required this.onTap});
-
-  final String text;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: blueTextColor.withValues(alpha: 25),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: blueTextColor.withValues(alpha: 60)),
-        ),
-        child: Text(
-          text,
-          style: OmiTextStyle.create(
-            color: blueTextColor,
-            fontSize: OmiFontSize.t5_14,
-            fontWeight: OmiFontWeight.medium,
-            height: 1.2,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Tomorrow\'s focus',
+            style: OmiTextStyle.create(
+              color: mainTextColor,
+              fontSize: OmiFontSize.t6_15,
+              fontWeight: OmiFontWeight.medium,
+              height: 1.2,
+            ),
           ),
-        ),
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFE7E7E7)),
+          const SizedBox(height: 8),
+          ...items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
+            final MPDailyFocusItem focus = entry.value;
+            return Container(
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              decoration: BoxDecoration(
+                border: entry.key == items.length - 1
+                    ? null
+                    : const Border(
+                        bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
+                      ),
+              ),
+              child: Row(
+                children: <Widget>[
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(Icons.circle, size: 5, color: Color(0xFF8FA76D)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      focus.text,
+                      style: OmiTextStyle.create(
+                        color: secondTextColor,
+                        fontSize: OmiFontSize.t5_14,
+                        fontWeight: OmiFontWeight.regular,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () => MPToastUtils.showFeatureComingSoon(
+                      message: 'Add to Todo: ${focus.text}',
+                    ),
+                    style: TextButton.styleFrom(
+                      foregroundColor: const Color(0xFF4A82E8),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Text(
+                      'Add to Todo',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
