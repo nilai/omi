@@ -25,7 +25,7 @@ class MPUser {
 
   /// 当前用户是否已登录
   // static bool get isLoggedIn => instance.accessToken != null && instance.accessToken!.isNotEmpty;
-  static bool get isLoggedIn => false;
+  static bool get isLoggedIn => true;
 
   /// 清空用户信息（登出）
   void clear() {
