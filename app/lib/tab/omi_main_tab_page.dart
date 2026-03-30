@@ -4,6 +4,7 @@ import 'package:omi/business/home/presentation/mp_home_tab_page.dart';
 import 'package:omi/business/preferences/presentation/mp_preferences_tab_page.dart';
 import 'package:omi/business/shared/data/mp_business_repository.dart';
 import 'package:omi/business/shared/state/mp_business_controller.dart';
+import 'package:omi/tab/home/omi_home_page.dart';
 
 import '../generated/assets.dart';
 import '../utils/omi_image_loader.dart';
@@ -24,7 +25,7 @@ class _MainTabPageState extends State<MainTabPage> {
   late final MPBusinessController _businessController;
 
   List<Widget> get _pages => [
-        MPHomeTabPage(controller: _businessController),
+        OmiHomePage(),
         OmiMemoryPage(controller: _businessController),
         MPAskAiTabPage(controller: _businessController),
         MPPreferencesTabPage(controller: _businessController),

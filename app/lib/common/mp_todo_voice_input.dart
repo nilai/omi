@@ -22,6 +22,7 @@ class MPTodoVoiceInput extends StatefulWidget {
     this.onSubmitted,
     this.onChanged,
     this.transcribeDelay = const Duration(milliseconds: 1400),
+    this.showOutline = true,
   });
 
   final String hintText;
@@ -29,6 +30,9 @@ class MPTodoVoiceInput extends StatefulWidget {
   final ValueChanged<MPTodoVoiceInputResult>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final Duration transcribeDelay;
+
+  /// 为 `false` 时无外描边，适合外包一层带投影的圆角卡片（如首页 ALL TO DOS）。
+  final bool showOutline;
 
   @override
   State<MPTodoVoiceInput> createState() => _MPTodoVoiceInputState();
@@ -70,6 +74,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   }
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
+
+  double get _cornerRadius => widget.showOutline ? 18.0 : 20.0;
 
   void _submitTyped() {
     final String t = _controller.text.trim();
@@ -152,8 +158,10 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFEAEAEE)),
+        borderRadius: BorderRadius.circular(_cornerRadius),
+        border: widget.showOutline
+            ? Border.all(color: const Color(0xFFEAEAEE))
+            : null,
       ),
       child: Row(
         children: <Widget>[
@@ -199,7 +207,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
               child: const Icon(
                 Icons.mic_none_rounded,
                 size: 20,
-                color: const Color(0xFF2E5E49),
+                color: Color(0xFF2E5E49),
               ),
             ),
         ],
@@ -213,7 +221,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(_cornerRadius),
         border: Border.all(color: blueTextColor, width: 2),
       ),
       child: Row(
@@ -250,7 +258,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(_cornerRadius),
         border: Border.all(color: blueTextColor, width: 2),
       ),
       child: Row(

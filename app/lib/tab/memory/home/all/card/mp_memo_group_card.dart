@@ -104,8 +104,9 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
               if (d.items.isEmpty) return;
               showMPMemoDetailSheet(
                 context,
-                memoText: d.items.first,
-                sourceLine: '${d.categoryLabel} · ${d.dateLabel}',
+                variant: MPMemoDetailSheetVariant.manual,
+                manualMemoText: d.items.first,
+                linkedMemoryText: '${d.categoryLabel} · ${d.dateLabel}',
                 onAnalyze: (String memoText) async {
                   // TODO: 替换真实 analyze 接口
                   await Future<void>.delayed(const Duration(milliseconds: 500));

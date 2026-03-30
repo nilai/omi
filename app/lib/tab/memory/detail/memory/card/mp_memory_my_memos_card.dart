@@ -63,8 +63,9 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
   void _showMemoSheet(BuildContext context, String memoText) {
     showMPMemoDetailSheet(
       context,
-      memoText: memoText,
-      sourceLine: widget.data.sourceLine,
+      variant: MPMemoDetailSheetVariant.highlight,
+      highlightSourceLine: widget.data.sourceLine,
+      highlightMemoText: memoText,
       onAnalyze: _analyzeMemoActions,
       onDelete: (String t) async {
         final bool ok = await _deleteMemo(t);
