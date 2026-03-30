@@ -354,7 +354,13 @@ class _MPWeeklySummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _MPWeeklyCardShell(
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F7FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -366,51 +372,71 @@ class _MPWeeklySummaryCard extends StatelessWidget {
               fontWeight: OmiFontWeight.medium,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
-            summary,
+            'Focus Areas',
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            summary,
+            style: OmiTextStyle.create(
+              color: const Color(0xFF3F4750),
+              fontSize: OmiFontSize.t6_15,
               fontWeight: OmiFontWeight.regular,
               height: 1.45,
             ),
           ),
           if (metrics.isNotEmpty) ...<Widget>[
-            const SizedBox(height: 10),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F6FF),
-                borderRadius: BorderRadius.circular(8),
+            const SizedBox(height: 12),
+            Text(
+              'Key Metrics',
+              style: OmiTextStyle.create(
+                color: secondTextColor,
+                fontSize: OmiFontSize.t5_14,
+                fontWeight: OmiFontWeight.regular,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                children: metrics.map((MPWeeklyMetricItem m) {
-                  return Expanded(
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: metrics.asMap().entries.map((MapEntry<int, MPWeeklyMetricItem> e) {
+                final MPWeeklyMetricItem m = e.value;
+                return Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(right: e.key == metrics.length - 1 ? 0 : 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF1F5),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Column(
                       children: <Widget>[
                         Text(
                           m.value,
                           style: OmiTextStyle.create(
-                            color: const Color(0xFF4A82E8),
-                            fontSize: OmiFontSize.t11_20,
+                            color: const Color(0xFF3A8FBB),
+                            fontSize: OmiFontSize.t13_22,
                             fontWeight: OmiFontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 4),
                         Text(
                           m.label,
                           style: OmiTextStyle.create(
                             color: secondTextColor,
-                            fontSize: OmiFontSize.t3_12,
+                            fontSize: OmiFontSize.t4_13,
                             fontWeight: OmiFontWeight.regular,
                           ),
                         ),
                       ],
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ],
         ],
