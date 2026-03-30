@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home/omi_home_page.dart';
+import 'home/home/mp_home_page.dart';
 
 import '../generated/assets.dart';
 import '../utils/omi_image_loader.dart';
@@ -21,7 +21,7 @@ class _MainTabPageState extends State<MainTabPage> {
   int _currentIndex = 0;
 
   List<Widget> get _pages => <Widget>[
-        OmiHomePage(
+        MPHomePage(
           onViewAllMemories: () {
             setState(() => _currentIndex = 1);
           },
