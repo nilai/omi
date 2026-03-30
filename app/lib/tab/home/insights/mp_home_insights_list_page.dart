@@ -335,7 +335,7 @@ class _MPInsightCard extends StatelessWidget {
                                                 text: '  ·  ${_typeLabel()}',
                                                 style: OmiTextStyle.create(
                                                   color: const Color(0xFF8A8A93),
-                                                  fontSize: OmiFontSize.t6_15,
+                                                  fontSize: OmiFontSize.t4_13,
                                                   fontWeight: OmiFontWeight.medium,
                                                   height: 1.2,
                                                 ),
@@ -361,7 +361,7 @@ class _MPInsightCard extends StatelessWidget {
                                 item.subtitle,
                                 style: OmiTextStyle.create(
                                   color: const Color(0xFF7B7E86),
-                                  fontSize: OmiFontSize.t6_15,
+                                  fontSize: OmiFontSize.t4_13,
                                   fontWeight: OmiFontWeight.medium,
                                   height: 1.25,
                                 ),
@@ -379,7 +379,7 @@ class _MPInsightCard extends StatelessWidget {
                       item.summary,
                       style: OmiTextStyle.create(
                         color: const Color(0xFF2F3542),
-                        fontSize: OmiFontSize.t9_18,
+                        fontSize: OmiFontSize.t7_16,
                         fontWeight: OmiFontWeight.regular,
                         height: 1.45,
                       ),
@@ -407,7 +407,7 @@ class _MPInsightCard extends StatelessWidget {
                                 b,
                                 style: OmiTextStyle.create(
                                   color: const Color(0xFF2F3542),
-                                  fontSize: OmiFontSize.t8_17,
+                                  fontSize: OmiFontSize.t6_15,
                                   fontWeight: OmiFontWeight.regular,
                                   height: 1.4,
                                 ),
