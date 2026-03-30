@@ -781,6 +781,9 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final List<MPWeeklyExpertFeedbackItem> visibleItems = items
+        .where((MPWeeklyExpertFeedbackItem e) => e.visible)
+        .toList();
     return _MPWeeklyCardShell(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -793,26 +796,33 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
               fontWeight: OmiFontWeight.medium,
             ),
           ),
-          const SizedBox(height: 8),
-          ...items.asMap().entries.map((MapEntry<int, MPWeeklyExpertFeedbackItem> e) {
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: Color(0xFFE7E7E7)),
+          const SizedBox(height: 10),
+          ...visibleItems.asMap().entries.map((MapEntry<int, MPWeeklyExpertFeedbackItem> e) {
             final MPWeeklyExpertFeedbackItem item = e.value;
-            return Container(
-              margin: EdgeInsets.only(bottom: e.key == items.length - 1 ? 0 : 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF2F6FF),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+            return Padding(
+              padding: EdgeInsets.only(bottom: e.key == visibleItems.length - 1 ? 0 : 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    item.title,
-                    style: OmiTextStyle.create(
-                      color: mainTextColor,
-                      fontSize: OmiFontSize.t5_14,
-                      fontWeight: OmiFontWeight.medium,
-                    ),
+                  Row(
+                    children: <Widget>[
+                      Icon(
+                        _iconDataOf(item.iconKey),
+                        size: 15,
+                        color: Color(item.iconColorValue),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        item.title,
+                        style: OmiTextStyle.create(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.medium,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -831,6 +841,21 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _iconDataOf(String iconKey) {
+    switch (iconKey) {
+      case 'business':
+        return Icons.business_center_outlined;
+      case 'creative':
+        return Icons.palette_outlined;
+      case 'execution':
+        return Icons.build_outlined;
+      case 'wellness':
+        return Icons.favorite_border;
+      default:
+        return Icons.lightbulb_outline;
+    }
   }
 }
 

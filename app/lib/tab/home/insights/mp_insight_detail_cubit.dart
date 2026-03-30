@@ -152,10 +152,16 @@ class MPWeeklyExpertFeedbackItem {
   const MPWeeklyExpertFeedbackItem({
     required this.title,
     required this.content,
+    required this.iconKey,
+    required this.iconColorValue,
+    this.visible = true,
   });
 
   final String title;
   final String content;
+  final String iconKey;
+  final int iconColorValue;
+  final bool visible;
 }
 
 /// Weekly 详情页中的 Challenges/Learnings 子项
@@ -515,17 +521,30 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
           const MPWeeklyExpertFeedbackItem(
             title: 'Business Expert',
             content:
-                'Pricing strategy shows strong signal, but decision checkpoints should tighten across stakeholders.',
+                'Pricing direction remains unclear across multiple conversations. Aligning ownership and decision checkpoints could prevent strategic drift next month.',
+            iconKey: 'business',
+            iconColorValue: 0xFF3A75F0,
           ),
           const MPWeeklyExpertFeedbackItem(
-            title: 'Growth Expert',
+            title: 'Creative Expert',
             content:
-                'Weekly activation dipped in onboarding; simplify the first-session flow and instrument drop-off.',
+                'Recurring discussions suggest onboarding simplification and user education may offer untapped differentiation opportunities. Exploration here could unlock growth.',
+            iconKey: 'creative',
+            iconColorValue: 0xFFB061F0,
           ),
           const MPWeeklyExpertFeedbackItem(
             title: 'Execution Expert',
             content:
-                'Team absorbed high context-switch cost; protect one deep-work block each day for core delivery.',
+                'Delivery risk persists due to infrastructure dependencies and cross-team coordination. Earlier escalation of blockers may help avoid timeline slippage.',
+            iconKey: 'execution',
+            iconColorValue: 0xFFE89A2F,
+          ),
+          const MPWeeklyExpertFeedbackItem(
+            title: 'Wellness Expert',
+            content:
+                'Energy dipped mid-week as workload peaked. Protecting recovery windows and avoiding stacked deadlines could sustain performance.',
+            iconKey: 'wellness',
+            iconColorValue: 0xFF33B95F,
           ),
         ];
 
