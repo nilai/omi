@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/mp_navigation_bar.dart';
+import 'mp_account_page.dart';
 import '../../utils/mp_toast_utils.dart';
 import '../../utils/omi_color_utils.dart';
 
@@ -27,7 +28,11 @@ class _OmiMinePageState extends State<OmiMinePage> {
           backgroundColor: Colors.white,
           variant: MPNavigationBarVariant.preferences,
           onPrimaryActionTap: _showComingSoon,
-          onSecondaryActionTap: _showComingSoon,
+          onSecondaryActionTap: () {
+            Navigator.of(context).push<void>(
+              MaterialPageRoute<void>(builder: (_) => const MPAccountPage()),
+            );
+          },
         ),
       ),
       body: SingleChildScrollView(

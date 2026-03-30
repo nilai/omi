@@ -1,0 +1,433 @@
+import 'package:flutter/material.dart';
+import 'package:omi/login/mp_user.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
+import 'package:omi/utils/omi_color_utils.dart';
+
+/// Account & Data：账户资料、订阅、数据管理、帮助与支持
+class MPAccountPage extends StatelessWidget {
+  const MPAccountPage({super.key});
+
+  /// 功能未完善提示（项目约定）
+  static void _comingSoon(BuildContext context) {
+    MPToastUtils.showFeatureComingSoon(context: context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final MPUser user = MPUser.instance;
+    final String displayName = (user.name != null && user.name!.trim().isNotEmpty)
+        ? user.name!.trim()
+        : 'MemoPin User';
+    final String displayEmail =
+        (user.email != null && user.email!.trim().isNotEmpty) ? user.email!.trim() : 'user@memopin.com';
+
+    return Scaffold(
+      backgroundColor: pageColor,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          padding: const EdgeInsets.only(left: 8),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: blueTextColor, size: 20),
+          onPressed: () => Navigator.maybePop(context),
+        ),
+        title: Text(
+          'Account & Data',
+          style: TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+            color: mainTextColor,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildProfileCard(context, displayName: displayName, displayEmail: displayEmail),
+            const SizedBox(height: 24),
+            _buildSectionTitle('SUBSCRIPTION'),
+            const SizedBox(height: 10),
+            _buildSubscriptionCard(context),
+            const SizedBox(height: 24),
+            _buildSectionTitle('DATA MANAGEMENT'),
+            const SizedBox(height: 10),
+            _buildDataManagementCard(context),
+            const SizedBox(height: 24),
+            _buildSectionTitle('HELP & SUPPORT'),
+            const SizedBox(height: 10),
+            _buildHelpSupportCard(context),
+            const SizedBox(height: 28),
+            Text(
+              'MemoPin v1.0.0',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: secondTextColor.withValues(alpha: 0.85),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.6,
+        color: secondTextColor.withValues(alpha: 0.85),
+      ),
+    );
+  }
+
+  /// 顶部：头像、用户信息、退出登录
+  Widget _buildProfileCard(
+    BuildContext context, {
+    required String displayName,
+    required String displayEmail,
+  }) {
+    return _whiteCard(
+      radius: 16,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    color: blueTextColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: mainTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayEmail,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: secondTextColor.withValues(alpha: 0.95),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Member since January 2024',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: secondTextColor.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Material(
+              color: const Color(0xFFF0F1F3),
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => _comingSoon(context),
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.logout_rounded, color: redColor, size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Sign Out',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: redColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 订阅：Basic Plan
+  Widget _buildSubscriptionCard(BuildContext context) {
+    return _whiteCard(
+      radius: 16,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _comingSoon(context),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFC940),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Basic Plan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: mainTextColor,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Upgrade for more features',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: secondTextColor.withValues(alpha: 0.95),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: secondTextColor.withValues(alpha: 0.45), size: 26),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 数据管理：存储、清理缓存、注销账号
+  Widget _buildDataManagementCard(BuildContext context) {
+    return _whiteCard(
+      radius: 16,
+      child: Column(
+        children: [
+          _buildDataRow(
+            context,
+            circleColor: greenTextColor,
+            icon: Icons.storage_rounded,
+            title: 'Storage',
+            subtitle: '2.3 GB used',
+            showChevron: false,
+            titleColor: mainTextColor,
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 48 + 14, endIndent: 16),
+          _buildDataRow(
+            context,
+            circleColor: const Color(0xFFFF9500),
+            icon: Icons.delete_outline_rounded,
+            title: 'Clear Cache',
+            subtitle: 'Free up storage space',
+            showChevron: true,
+            titleColor: mainTextColor,
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 48 + 14, endIndent: 16),
+          _buildDataRow(
+            context,
+            circleColor: redColor,
+            icon: Icons.delete_outline_rounded,
+            title: 'Delete Account',
+            subtitle: 'Permanently remove your data',
+            showChevron: true,
+            titleColor: redColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDataRow(
+    BuildContext context, {
+    required Color circleColor,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool showChevron,
+    required Color titleColor,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _comingSoon(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: titleColor,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: secondTextColor.withValues(alpha: 0.95),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (showChevron)
+                Icon(Icons.chevron_right_rounded, color: secondTextColor.withValues(alpha: 0.45), size: 26),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 帮助与支持（含第二张图全部入口）
+  Widget _buildHelpSupportCard(BuildContext context) {
+    return _whiteCard(
+      radius: 16,
+      child: Column(
+        children: [
+          _buildHelpRow(
+            context,
+            circleColor: const Color(0xFFFF9500),
+            icon: Icons.help_outline_rounded,
+            title: 'FAQ',
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          _buildHelpRow(
+            context,
+            circleColor: const Color(0xFF8D6EF9),
+            icon: Icons.menu_book_rounded,
+            title: 'User Guide',
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          _buildHelpRow(
+            context,
+            circleColor: blueTextColor,
+            icon: Icons.chat_bubble_outline_rounded,
+            title: 'Contact Support',
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          _buildHelpRow(
+            context,
+            circleColor: const Color(0xFF6B7280),
+            icon: Icons.description_outlined,
+            title: 'Terms & Privacy',
+          ),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          _buildHelpRow(
+            context,
+            circleColor: const Color(0xFF007AFF),
+            icon: Icons.upload_file_rounded,
+            title: 'Submit Diagnostic Logs',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpRow(
+    BuildContext context, {
+    required Color circleColor,
+    required IconData icon,
+    required String title,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _comingSoon(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: mainTextColor,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: secondTextColor.withValues(alpha: 0.45), size: 26),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _whiteCard({required double radius, required Widget child}) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
