@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../business/shared/state/mp_business_controller.dart';
 import '../../../common/mp_memory_top_tabs.dart';
 import '../../../common/mp_navigation_bar.dart';
 import '../../../utils/omi_color_utils.dart';
@@ -11,8 +10,7 @@ import 'projects/omi_projects_page.dart';
 
 /// Memory 根页：顶部导航 + All / People / Projects 分段内容
 class OmiMemoryPage extends StatefulWidget {
-  const OmiMemoryPage({super.key, required this.controller});
-  final MPBusinessController controller;
+  const OmiMemoryPage({super.key});
 
   @override
   State<OmiMemoryPage> createState() => _OmiMemoryPageState();
