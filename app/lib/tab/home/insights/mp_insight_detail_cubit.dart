@@ -42,11 +42,108 @@ class MPInsightDetailData {
     required this.item,
     required this.paragraphs,
     required this.tips,
+    this.monthly,
   });
 
   final MPInsightListItem item;
   final List<String> paragraphs;
   final List<String> tips;
+
+  /// Monthly 详情页专用结构化数据（其它类型为 null）
+  final MPMonthlyInsightDetailData? monthly;
+}
+
+/// Monthly 详情页卡片中的条目：注意力分布
+class MPMonthlyBarItem {
+  const MPMonthlyBarItem({
+    required this.label,
+    required this.value,
+  });
+
+  /// 左侧标签，如 `Product`
+  final String label;
+
+  /// 数值 0-100，用于渲染条形长度
+  final int value;
+}
+
+/// Monthly 详情页卡片中的条目：关键人物
+class MPMonthlyKeyPersonItem {
+  const MPMonthlyKeyPersonItem({
+    required this.name,
+    required this.count,
+  });
+
+  final String name;
+  final int count;
+}
+
+/// Monthly 详情页卡片中的条目：决策项
+class MPMonthlyDecisionItem {
+  const MPMonthlyDecisionItem({
+    required this.rank,
+    required this.text,
+  });
+
+  final int rank;
+  final String text;
+}
+
+/// Monthly 详情页卡片中的条目：下月关注建议
+class MPMonthlySuggestedFocusItem {
+  const MPMonthlySuggestedFocusItem({
+    required this.rank,
+    required this.text,
+  });
+
+  final int rank;
+  final String text;
+}
+
+/// Monthly 详情页结构化数据
+class MPMonthlyInsightDetailData {
+  const MPMonthlyInsightDetailData({
+    required this.monthSubtitle,
+    required this.monthOverviewSummary,
+    required this.attentionDistribution,
+    required this.keyPeopleThisMonth,
+    required this.topicsSurfacing,
+    required this.longRunningOpenThreads,
+    required this.monthToMonthTrend,
+    required this.decisionsThatCannotSlipAgain,
+    required this.suggestedFocusNextMonth,
+    required this.askAiButtonText,
+  });
+
+  /// 顶部 bar 第二行，如 `Jan 2026`
+  final String monthSubtitle;
+
+  /// Month Overview 文案
+  final String monthOverviewSummary;
+
+  /// Attention Distribution
+  final List<MPMonthlyBarItem> attentionDistribution;
+
+  /// Key People This Month
+  final List<MPMonthlyKeyPersonItem> keyPeopleThisMonth;
+
+  /// Topics Surfacing
+  final List<String> topicsSurfacing;
+
+  /// Long-running Open Threads
+  final List<String> longRunningOpenThreads;
+
+  /// Month-to-Month Trend
+  final List<String> monthToMonthTrend;
+
+  /// Decisions That Cannot Slip Again
+  final List<MPMonthlyDecisionItem> decisionsThatCannotSlipAgain;
+
+  /// Suggested Focus Next Month
+  final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth;
+
+  /// 底部按钮文案
+  final String askAiButtonText;
 }
 
 /// 详情页 Cubit：根据列表项类型模拟后台拉取详情
@@ -106,18 +203,82 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         );
 
       case MPInsightCardType.monthly:
+        final List<MPMonthlyBarItem> attentionDistribution =
+            <MPMonthlyBarItem>[
+          const MPMonthlyBarItem(label: 'Product Engineering', value: 62),
+          const MPMonthlyBarItem(label: 'Hiring', value: 38),
+          const MPMonthlyBarItem(label: 'Operations', value: 54),
+        ];
+
+        final List<MPMonthlyKeyPersonItem> keyPeople =
+            <MPMonthlyKeyPersonItem>[
+          MPMonthlyKeyPersonItem(name: 'Jordan', count: 12 + (seed % 3)),
+          MPMonthlyKeyPersonItem(name: 'Sarah', count: 9 + (seed % 4)),
+          MPMonthlyKeyPersonItem(name: 'Alex', count: 7 + (seed % 5)),
+        ];
+
+        final List<String> topicsSurfacing = <String>[
+          'API migration',
+          'Hiring ongoing',
+          'Pricing inquiry',
+        ];
+
+        final List<String> longRunningOpenThreads = <String>[
+          'Hiring planning reflects ongoing bottlenecks',
+          'Pricing model needs alignment with unit economics',
+          'API ownership still unclear since December',
+        ];
+
+        final List<String> monthToMonthTrend = <String>[
+          'Execution spent improved vs last month',
+          'Team coordination reduced after decisions stabilized',
+          'Still track unresolved follow-ups from early month',
+        ];
+
+        final List<MPMonthlyDecisionItem> decisionsCannotSlip =
+            <MPMonthlyDecisionItem>[
+          MPMonthlyDecisionItem(rank: 1, text: 'Stabilize hiring capacity'),
+          MPMonthlyDecisionItem(rank: 2, text: 'Record pricing decision'),
+          MPMonthlyDecisionItem(rank: 3, text: 'Clarify API ownership'),
+        ];
+
+        final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth =
+            <MPMonthlySuggestedFocusItem>[
+          MPMonthlySuggestedFocusItem(
+            rank: 1,
+            text: 'Close ownership loop this month to unblock delivery',
+          ),
+          MPMonthlySuggestedFocusItem(
+            rank: 2,
+            text: 'Reduce hiring friction with weekly checkpoints',
+          ),
+          MPMonthlySuggestedFocusItem(
+            rank: 3,
+            text: 'Align pricing assumptions with unit economics early',
+          ),
+        ];
+
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
             item.summary,
-            'Across the month, you improved reliability by maintaining a steady capture habit.',
-            'Your best outcomes came from aligning tasks with your natural attention cycles.',
+            'The month showed stable capture habits paired with improved execution focus.',
           ],
           tips: <String>[
-            '每月选 3 个“最重要的持续改进”',
-            '将长期目标拆成每周可执行的子任务',
-            if (r.nextBool()) '减少重复确认，增加一次性记录',
+            'Use suggested focus items to generate action todos for next month.',
           ],
+          monthly: MPMonthlyInsightDetailData(
+            monthSubtitle: item.periodLabel,
+            monthOverviewSummary: item.summary,
+            attentionDistribution: attentionDistribution,
+            keyPeopleThisMonth: keyPeople,
+            topicsSurfacing: topicsSurfacing,
+            longRunningOpenThreads: longRunningOpenThreads,
+            monthToMonthTrend: monthToMonthTrend,
+            decisionsThatCannotSlipAgain: decisionsCannotSlip,
+            suggestedFocusNextMonth: suggestedFocusNextMonth,
+            askAiButtonText: 'Ask AI about this month',
+          ),
         );
 
       case MPInsightCardType.pattern:
