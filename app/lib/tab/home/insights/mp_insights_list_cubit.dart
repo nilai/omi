@@ -333,6 +333,18 @@ Future<_PageResult> _fetchPage({
         final int discussions = 4 + (globalIndex % 5);
         final String time = _timeLabelFromIndex(globalIndex);
         final bool showDeepLine = globalIndex % 2 == 1;
+        final int memoryCount = 3 + (globalIndex % 2 == 0 ? 1 : 0); // 3~4 条，模拟动态个数
+
+        const List<String> memoryPool = <String>[
+          'Team standup — Jan 18',
+          'Infra sync — Jan 20',
+          'Product review — Jan 23',
+          'Hiring discussion — Jan 25',
+          'Sprint planning — Jan 26',
+          'Design retro — Feb 1',
+        ];
+
+        final List<String> selectedMemories = memoryPool.take(memoryCount).toList();
 
         list.add(
           MPInsightListItem(
@@ -340,9 +352,9 @@ Future<_PageResult> _fetchPage({
             type: type,
             periodLabel: period,
             title: 'Pattern detected',
-            subtitle: 'Cross-memory insight - Emerging pattern · $time',
+            subtitle: 'Cross-memory insight · Emerging pattern · $time',
             summary:
-                'MemoPin noticed recurring themes across multiple memories and turns them into actionable insights.',
+                'API migration blockers resurfacing across multiple conversations.',
             unreadCount: unread,
             showPatternDeepLine: showDeepLine,
             bullets: <String>[
@@ -356,8 +368,7 @@ Future<_PageResult> _fetchPage({
               if (globalIndex % 2 == 0) 'Authentication risks',
             ],
             patternMemoryTitles: <String>[
-              'Team standup discussion on API migration',
-              'Client feedback call about new dashboard features',
+              ...selectedMemories,
             ],
           ),
         );

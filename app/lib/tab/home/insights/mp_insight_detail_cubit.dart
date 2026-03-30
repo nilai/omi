@@ -124,14 +124,12 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
-            item.summary,
-            'This pattern suggests your workflow benefits from tighter time windows and clearer “start conditions”.',
-            'When you do less at once, your brain can stay oriented and tasks become easier to finish.',
+            'API migration blockers have resurfaced across multiple conversations over the past two weeks. Ownership and delivery sequencing remain unclear, causing repeated execution friction.',
+            'Continued ambiguity may delay rollout and increase cross-team coordination costs, affecting delivery confidence.',
           ],
           tips: <String>[
-            '为高压时段准备“轻任务集合”',
-            '在任务开头加上 1 句话的起步提示（start cue）',
-            if (r.nextBool()) '把风险点写成检查清单',
+            'Clarify API ownership and rollout sequence in next infrastructure sync.',
+            if (r.nextBool()) 'Capture the outcome of each meeting and connect it back to this pattern.',
           ],
         );
     }

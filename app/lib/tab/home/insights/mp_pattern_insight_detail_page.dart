@@ -33,6 +33,15 @@ class MPPatternInsightDetailPage extends StatelessWidget {
                 title: 'Pattern Insight',
                 backgroundColor: pageColor,
                 onBack: () => Navigator.of(context).maybePop(),
+                actions: <Widget>[
+                  IconButton(
+                    icon: const Icon(Icons.share_outlined),
+                    tooltip: 'Share',
+                    onPressed: () => MPToastUtils.showFeatureComingSoon(
+                      message: 'Share pattern',
+                    ),
+                  ),
+                ],
               ),
             ),
             body: _MPPatternInsightBody(state: state),
@@ -66,158 +75,115 @@ class _MPPatternInsightBody extends StatelessWidget {
         );
       case MPInsightDetailPhase.loaded:
         final MPInsightListItem item = state.data!.item;
-        final List<String> themes = item.recurringThemes;
-        final List<String> memos = item.patternMemoryTitles;
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              _PatternHero(
-                periodLabel: item.periodLabel,
-                title: item.title,
-                subtitle: item.subtitle,
-                summary: item.summary,
-              ),
-              const SizedBox(height: 16),
-              _SectionTitle('Recurring themes'),
-              const SizedBox(height: 10),
-              ...themes.map((String t) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _ThemeCard(
-                    text: t,
-                    onTap: () => MPToastUtils.showFeatureComingSoon(
-                        message: 'Open theme details'),
-                  ),
-                );
-              }),
-              const SizedBox(height: 6),
-              _SectionTitle('Related memories'),
-              const SizedBox(height: 10),
-              ...memos.map((String m) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => MPToastUtils.showFeatureComingSoon(
-                          message: 'Open memory'),
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: blueTextColor.withValues(alpha: 18),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: blueTextColor.withValues(alpha: 50),
-                          ),
+        final int appearedCount = item.patternMemoryTitles.length;
+        final String topDescription =
+            state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
+        final String whyText = state.data!.paragraphs.length > 1
+            ? state.data!.paragraphs[1]
+            : '';
+        final String nextStepText =
+            state.data!.tips.isNotEmpty ? state.data!.tips.first : '';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _EmergingPatternHeader(
+              label: 'Emerging pattern detected',
+              isFloating: true,
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(0),
+                child: Container(
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        _PatternDetectedTitle(
+                          icon: Icons.handyman,
                         ),
-                        child: Text(
-                          m,
+                        const SizedBox(height: 12),
+                        Text(
+                          topDescription,
                           style: OmiTextStyle.create(
                             color: mainTextColor,
-                            fontSize: OmiFontSize.t5_14,
+                            fontSize: OmiFontSize.t6_15,
                             fontWeight: OmiFontWeight.regular,
-                            height: 1.55,
+                            height: 1.6,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 16),
+                        _AppearedSection(
+                          appearedItems: item.patternMemoryTitles,
+                          onItemTap: (String title) {
+                            MPToastUtils.showFeatureComingSoon(
+                              message: 'Open memory: $title',
+                            );
+                          },
+                          appearedCount: appearedCount,
+                        ),
+                        const SizedBox(height: 16),
+                        _WhyThisMattersSection(
+                          whyText: whyText,
+                        ),
+                        const SizedBox(height: 16),
+                        _SuggestedNextStepSection(
+                          nextStepText: nextStepText,
+                        ),
+                        const SizedBox(height: 18),
+                        _AskAiButton(),
+                        const SizedBox(height: 24),
+                      ],
                     ),
                   ),
-                );
-              }),
-              const SizedBox(height: 12),
-              _SectionTitle('Suggested actions'),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: state.data!.tips.map((String tip) {
-                  return _TipChip(
-                    text: tip,
-                    onTap: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Apply action',
-                    ),
-                  );
-                }).toList(),
+                ),
               ),
-              const SizedBox(height: 22),
-              FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(
-                    message: 'Create pattern todo'),
-                child: const Text('Create pattern todo'),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
     }
   }
 }
 
-class _PatternHero extends StatelessWidget {
-  const _PatternHero({
-    required this.periodLabel,
-    required this.title,
-    required this.subtitle,
-    required this.summary,
+class _EmergingPatternHeader extends StatelessWidget {
+  const _EmergingPatternHeader({
+    required this.label,
+    this.isFloating = false,
   });
 
-  final String periodLabel;
-  final String title;
-  final String subtitle;
-  final String summary;
+  final String label;
+  final bool isFloating;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       decoration: BoxDecoration(
-        color: purpleTextColor.withValues(alpha: 26),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: purpleTextColor.withValues(alpha: 70)),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: <Color>[
+            Color(0xFFFFF3D9),
+            Color(0xFFFFFBF0),
+          ],
+        ),
+        borderRadius: isFloating
+            ? BorderRadius.zero
+            : const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Row(
         children: <Widget>[
           Text(
-            periodLabel,
+            label,
             style: OmiTextStyle.create(
-              color: purpleTextColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.medium,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: OmiTextStyle.create(
-              color: mainTextColor,
-              fontSize: OmiFontSize.t8_17,
+              color: orangeTextColor,
+              fontSize: OmiFontSize.t7_16,
               fontWeight: OmiFontWeight.bold,
               height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            summary,
-            style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.6,
             ),
           ),
         ],
@@ -226,89 +192,308 @@ class _PatternHero extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
+class _PatternDetectedTitle extends StatelessWidget {
+  const _PatternDetectedTitle({required this.icon});
+
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: OmiTextStyle.create(
-        color: secondTextColor,
-        fontSize: OmiFontSize.t4_13,
-        fontWeight: OmiFontWeight.medium,
-        height: 1.3,
-        letterSpacing: 0.4,
-      ),
-    );
-  }
-}
-
-class _ThemeCard extends StatelessWidget {
-  const _ThemeCard({required this.text, required this.onTap});
-
-  final String text;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(14),
+    return Row(
+      children: <Widget>[
+        Container(
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
-            color: orangeTextColor.withValues(alpha: 18),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: orangeTextColor.withValues(alpha: 50),
-            ),
+            color: purpleTextColor.withValues(alpha: 16),
+            shape: BoxShape.circle,
           ),
-          child: Text(
-            text,
-            style: OmiTextStyle.create(
-              color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.6,
-            ),
-          ),
+          child: Icon(icon, color: purpleTextColor, size: 16),
         ),
-      ),
-    );
-  }
-}
-
-class _TipChip extends StatelessWidget {
-  const _TipChip({required this.text, required this.onTap});
-
-  final String text;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(999),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: blueTextColor.withValues(alpha: 25),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: blueTextColor.withValues(alpha: 60)),
-        ),
-        child: Text(
-          text,
+        const SizedBox(width: 10),
+        Text(
+          'Pattern Detected',
           style: OmiTextStyle.create(
-            color: blueTextColor,
-            fontSize: OmiFontSize.t5_14,
-            fontWeight: OmiFontWeight.medium,
+            color: mainTextColor,
+            fontSize: OmiFontSize.t8_17,
+            fontWeight: OmiFontWeight.bold,
             height: 1.2,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _AppearedSection extends StatelessWidget {
+  const _AppearedSection({
+    required this.appearedItems,
+    required this.onItemTap,
+    required this.appearedCount,
+  });
+
+  final List<String> appearedItems;
+  final ValueChanged<String> onItemTap;
+  final int appearedCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.place_outlined, color: orangeTextColor, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              'Where This Appeared',
+              style: OmiTextStyle.create(
+                color: mainTextColor,
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.bold,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Divider(color: const Color(0xFFEDEDED), height: 1),
+        const SizedBox(height: 12),
+        Text(
+          'Appeared in recent memories:',
+          style: OmiTextStyle.create(
+            color: secondTextColor,
+            fontSize: OmiFontSize.t5_14,
+            fontWeight: OmiFontWeight.regular,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Column(
+          children: appearedItems.map((String raw) {
+            final (_MemoryTileParts parts) = _parseMemoryTile(raw);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => onItemTap(parts.title),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F7),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Container(
+                          margin: const EdgeInsets.only(top: 6),
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: orangeTextColor,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${parts.title} — ${parts.date}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OmiTextStyle.create(
+                              color: mainTextColor,
+                              fontSize: OmiFontSize.t6_15,
+                              fontWeight: OmiFontWeight.regular,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        Text(
+          'Appeared in $appearedCount conversations.',
+          style: OmiTextStyle.create(
+            color: secondTextColor,
+            fontSize: OmiFontSize.t5_14,
+            fontWeight: OmiFontWeight.regular,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MemoryTileParts {
+  const _MemoryTileParts({required this.title, required this.date});
+
+  final String title;
+  final String date;
+}
+
+_MemoryTileParts _parseMemoryTile(String raw) {
+  // Example raw: "Team standup — Jan 18"
+  const String sep = '—';
+  final List<String> parts = raw.split(sep);
+  if (parts.length >= 2) {
+    return _MemoryTileParts(
+      title: parts[0].trim(),
+      date: parts[1].trim(),
+    );
+  }
+  return _MemoryTileParts(title: raw.trim(), date: '');
+}
+
+class _WhyThisMattersSection extends StatelessWidget {
+  const _WhyThisMattersSection({required this.whyText});
+
+  final String whyText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.warning_amber_rounded,
+                color: const Color(0xFFFF9500), size: 18),
+            const SizedBox(width: 10),
+            Text(
+              'Why This Matters',
+              style: OmiTextStyle.create(
+                color: mainTextColor,
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.bold,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Divider(color: const Color(0xFFEDEDED), height: 1),
+        const SizedBox(height: 14),
+        Text(
+          whyText,
+          style: OmiTextStyle.create(
+            color: secondTextColor,
+            fontSize: OmiFontSize.t6_15,
+            fontWeight: OmiFontWeight.regular,
+            height: 1.6,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SuggestedNextStepSection extends StatelessWidget {
+  const _SuggestedNextStepSection({required this.nextStepText});
+
+  final String nextStepText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.lightbulb_outline,
+                color: purpleTextColor, size: 18),
+            const SizedBox(width: 10),
+            Text(
+              'Suggested Next Step',
+              style: OmiTextStyle.create(
+                color: mainTextColor,
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.bold,
+                height: 1.2,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Divider(color: const Color(0xFFEDEDED), height: 1),
+        const SizedBox(height: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                nextStepText,
+                style: OmiTextStyle.create(
+                  color: secondTextColor,
+                  fontSize: OmiFontSize.t6_15,
+                  fontWeight: OmiFontWeight.regular,
+                  height: 1.6,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: blueTextColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                minimumSize: const Size(140, 36),
+              ),
+              onPressed: () => MPToastUtils.showFeatureComingSoon(
+                message: 'Add as Todo',
+              ),
+              child: const Text(
+                '+ Add as Todo',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AskAiButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor: purpleTextColor,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+      ),
+      onPressed: () => MPToastUtils.showFeatureComingSoon(
+        message: 'Ask AI about this pattern',
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          const Icon(Icons.auto_awesome, size: 18),
+          const SizedBox(width: 10),
+          const Text(
+            'Ask AI About This Pattern',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ],
       ),
     );
   }
