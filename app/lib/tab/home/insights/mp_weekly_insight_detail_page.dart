@@ -277,42 +277,62 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _MPWeeklyCardShell(
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFE4EDF6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFFD2E0EE),
+          width: 1,
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              Icon(Icons.bar_chart, color: const Color(0xFF68B22E), size: 16),
+              const Text(
+                '📊',
+                style: TextStyle(
+                  fontSize: 18,
+                  height: 1,
+                ),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: OmiTextStyle.create(
                     color: mainTextColor,
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
+                    fontSize: OmiFontSize.t9_18,
+                    fontWeight: OmiFontWeight.bold,
+                    height: 1.15,
                   ),
-                ),
-              ),
-              Text(
-                subLabel,
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t3_12,
-                  fontWeight: OmiFontWeight.regular,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFE7E7E7)),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 30),
+            child: Text(
+              subLabel,
+              style: OmiTextStyle.create(
+                color: const Color(0xFF8B919A),
+                fontSize: OmiFontSize.t5_14,
+                fontWeight: OmiFontWeight.regular,
+                height: 1.2,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Text(
             summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t5_14,
+              color: const Color(0xFF3E464F),
+              fontSize: OmiFontSize.t6_15,
               fontWeight: OmiFontWeight.regular,
               height: 1.45,
             ),
