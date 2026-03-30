@@ -162,6 +162,10 @@ class _MPWeeklyInsightBody extends StatelessWidget {
         if (weekly == null) {
           return const MPTristatePage(type: MPTristateType.empty);
         }
+        final List<MPWeeklyPendingItem> visiblePendingItems = weekly
+            .pendingItemCards
+            .where((MPWeeklyPendingItem e) => e.visible)
+            .toList();
         return SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(10, 12, 10, 24),
           child: Column(
@@ -189,23 +193,17 @@ class _MPWeeklyInsightBody extends StatelessWidget {
                 ),
               ],
               // 4. Challenges & Learnings
-              if (weekly.challengesAndLearnings.isNotEmpty) ...<Widget>[
+              if (weekly.challengeLearningItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyTextCard(
-                  title: 'Challenges & Learnings',
-                  icon: Icons.warning_amber_outlined,
-                  iconColor: const Color(0xFFDD8D43),
-                  content: weekly.challengesAndLearnings,
+                _MPWeeklyChallengesLearningsCard(
+                  items: weekly.challengeLearningItems,
                 ),
               ],
               // 5. Pending items
-              if (weekly.pendingItems.isNotEmpty) ...<Widget>[
+              if (visiblePendingItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyBulletCard(
-                  title: 'Pending items',
-                  icon: Icons.schedule_outlined,
-                  iconColor: const Color(0xFFDA8A3F),
-                  items: weekly.pendingItems,
+                _MPWeeklyPendingItemsCard(
+                  items: visiblePendingItems,
                 ),
               ],
               // 6. Next Week Priorities
@@ -442,74 +440,6 @@ class _MPWeeklySummaryCard extends StatelessWidget {
   }
 }
 
-class _MPWeeklyBulletCard extends StatelessWidget {
-  const _MPWeeklyBulletCard({
-    required this.title,
-    required this.icon,
-    required this.iconColor,
-    required this.items,
-  });
-
-  final String title;
-  final IconData icon;
-  final Color iconColor;
-  final List<String> items;
-
-  @override
-  Widget build(BuildContext context) {
-    return _MPWeeklyCardShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(icon, color: iconColor, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: OmiTextStyle.create(
-                  color: mainTextColor,
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.medium,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFE7E7E7)),
-          const SizedBox(height: 8),
-          ...items.map((String text) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  const Padding(
-                    padding: EdgeInsets.only(top: 7),
-                    child: Icon(Icons.circle, size: 5, color: Color(0xFF8FA76D)),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      text,
-                      style: OmiTextStyle.create(
-                        color: secondTextColor,
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.regular,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
-}
-
 class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
   const _MPWeeklyAccomplishmentsCard({required this.items});
 
@@ -590,18 +520,10 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
   }
 }
 
-class _MPWeeklyTextCard extends StatelessWidget {
-  const _MPWeeklyTextCard({
-    required this.title,
-    required this.icon,
-    required this.iconColor,
-    required this.content,
-  });
+class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
+  const _MPWeeklyChallengesLearningsCard({required this.items});
 
-  final String title;
-  final IconData icon;
-  final Color iconColor;
-  final String content;
+  final List<MPWeeklyChallengeLearningItem> items;
 
   @override
   Widget build(BuildContext context) {
@@ -609,32 +531,126 @@ class _MPWeeklyTextCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(icon, color: iconColor, size: 16),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: OmiTextStyle.create(
-                  color: mainTextColor,
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.medium,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: Color(0xFFE7E7E7)),
-          const SizedBox(height: 10),
           Text(
-            content,
+            'Challenges & Learnings',
             style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t5_14,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.45,
+              color: mainTextColor,
+              fontSize: OmiFontSize.t6_15,
+              fontWeight: OmiFontWeight.medium,
             ),
           ),
+          const SizedBox(height: 10),
+          ...items.asMap().entries.map((MapEntry<int, MPWeeklyChallengeLearningItem> e) {
+            final MPWeeklyChallengeLearningItem item = e.value;
+            return Container(
+              margin: EdgeInsets.only(bottom: e.key == items.length - 1 ? 0 : 10),
+              decoration: BoxDecoration(
+                color: Color(item.backgroundColorValue),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Color(item.borderColorValue),
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    item.title,
+                    style: OmiTextStyle.create(
+                      color: mainTextColor,
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.medium,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    item.description,
+                    style: OmiTextStyle.create(
+                      color: secondTextColor,
+                      fontSize: OmiFontSize.t5_14,
+                      fontWeight: OmiFontWeight.regular,
+                      height: 1.45,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPWeeklyPendingItemsCard extends StatelessWidget {
+  const _MPWeeklyPendingItemsCard({required this.items});
+
+  final List<MPWeeklyPendingItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MPWeeklyCardShell(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Pending Items',
+            style: OmiTextStyle.create(
+              color: mainTextColor,
+              fontSize: OmiFontSize.t6_15,
+              fontWeight: OmiFontWeight.medium,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ...items.asMap().entries.map((MapEntry<int, MPWeeklyPendingItem> e) {
+            final MPWeeklyPendingItem item = e.value;
+            return Padding(
+              padding: EdgeInsets.only(bottom: e.key == items.length - 1 ? 0 : 10),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => MPToastUtils.showFeatureComingSoon(
+                    message: item.text,
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF2F2F5),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2),
+                          child: Icon(
+                            Icons.star_outline_rounded,
+                            size: 16,
+                            color: Color(0xFFDA8A3F),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.text,
+                            style: OmiTextStyle.create(
+                              color: secondTextColor,
+                              fontSize: OmiFontSize.t5_14,
+                              fontWeight: OmiFontWeight.regular,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );

@@ -154,6 +154,32 @@ class MPWeeklyExpertFeedbackItem {
   final String content;
 }
 
+/// Weekly 详情页中的 Challenges/Learnings 子项
+class MPWeeklyChallengeLearningItem {
+  const MPWeeklyChallengeLearningItem({
+    required this.title,
+    required this.description,
+    required this.backgroundColorValue,
+    required this.borderColorValue,
+  });
+
+  final String title;
+  final String description;
+  final int backgroundColorValue;
+  final int borderColorValue;
+}
+
+/// Weekly 详情页中的 pending item
+class MPWeeklyPendingItem {
+  const MPWeeklyPendingItem({
+    required this.text,
+    required this.visible,
+  });
+
+  final String text;
+  final bool visible;
+}
+
 /// Weekly 详情页结构化数据
 class MPWeeklyInsightDetailData {
   const MPWeeklyInsightDetailData({
@@ -165,7 +191,9 @@ class MPWeeklyInsightDetailData {
     required this.accomplishmentItems,
     required this.accomplishments,
     required this.challengesAndLearnings,
+    required this.challengeLearningItems,
     required this.pendingItems,
+    required this.pendingItemCards,
     required this.nextWeekPriorities,
     required this.expertWeeklyFeedback,
     required this.askAiButtonText,
@@ -179,7 +207,9 @@ class MPWeeklyInsightDetailData {
   final List<MPWeeklyAccomplishmentItem> accomplishmentItems;
   final List<String> accomplishments;
   final String challengesAndLearnings;
+  final List<MPWeeklyChallengeLearningItem> challengeLearningItems;
   final List<String> pendingItems;
+  final List<MPWeeklyPendingItem> pendingItemCards;
   final List<MPWeeklyPriorityItem> nextWeekPriorities;
   final List<MPWeeklyExpertFeedbackItem> expertWeeklyFeedback;
   final String askAiButtonText;
@@ -422,6 +452,42 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
           'Update API documentation for V2 endpoints',
           'Schedule follow-up with sales thread',
         ];
+        final List<MPWeeklyPendingItem> pendingItemCards =
+            <MPWeeklyPendingItem>[
+          const MPWeeklyPendingItem(
+            text: 'Review migration milestones with infrastructure team',
+            visible: true,
+          ),
+          const MPWeeklyPendingItem(
+            text: 'Update API documentation for v2 endpoints',
+            visible: true,
+          ),
+          const MPWeeklyPendingItem(
+            text: 'Schedule follow-up with lead investor',
+            visible: true,
+          ),
+          const MPWeeklyPendingItem(
+            text: 'Explore productivity ideas',
+            visible: true,
+          ),
+        ];
+        final List<MPWeeklyChallengeLearningItem> challengeLearningItems =
+            <MPWeeklyChallengeLearningItem>[
+          const MPWeeklyChallengeLearningItem(
+            title: 'Resource Constraints',
+            description:
+                'Team bandwidth became a bottleneck mid-week. Consider redistributing workload or postponing non-critical items.',
+            backgroundColorValue: 0xFFF5F1E7,
+            borderColorValue: 0xFFECD8A5,
+          ),
+          const MPWeeklyChallengeLearningItem(
+            title: 'Communication Win',
+            description:
+                'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
+            backgroundColorValue: 0xFFD9E3F5,
+            borderColorValue: 0xFFB6CAE9,
+          ),
+        ];
         final List<MPWeeklyPriorityItem> nextWeekPriorities =
             <MPWeeklyPriorityItem>[
           const MPWeeklyPriorityItem(text: 'Launch Mobile Beta'),
@@ -471,7 +537,9 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
             accomplishments: accomplishments,
             challengesAndLearnings:
                 'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
+            challengeLearningItems: challengeLearningItems,
             pendingItems: pendingItems,
+            pendingItemCards: pendingItemCards,
             nextWeekPriorities: nextWeekPriorities,
             expertWeeklyFeedback: expertFeedback,
             askAiButtonText: 'Ask AI about this week',
