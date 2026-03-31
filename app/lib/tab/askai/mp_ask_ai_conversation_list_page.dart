@@ -62,7 +62,13 @@ class _MPAskAIConversationListViewState
       body: SafeArea(
         child: Row(
           children: <Widget>[
-            Expanded(child: Container()),
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(context).maybePop(),
+                child: Container(),
+              ),
+            ),
             Container(
               width: MediaQuery.of(context).size.width * 0.68,
               decoration: const BoxDecoration(
@@ -86,7 +92,7 @@ class _MPAskAIConversationListViewState
                                 InkWell(
                                   onTap: _showComingSoon,
                                   borderRadius: BorderRadius.circular(14),
-                                  child: Ink(
+                                  child: Container(
                                     width: 34,
                                     height: 34,
                                     decoration: const BoxDecoration(
@@ -95,7 +101,7 @@ class _MPAskAIConversationListViewState
                                     ),
                                     child: const Icon(
                                       Icons.add_rounded,
-                                      size: 22,
+                                      size: 20,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -126,7 +132,7 @@ class _MPAskAIConversationListViewState
                                             'Search',
                                             style: OmiTextStyle.create(
                                               color: secondTextColor,
-                                              fontSize: OmiFontSize.t6_15,
+                                              fontSize: OmiFontSize.t4_13,
                                               fontWeight: OmiFontWeight.regular,
                                             ),
                                           ),
@@ -156,7 +162,7 @@ class _MPAskAIConversationListViewState
                               'RECENT CONVERSATIONS',
                               style: OmiTextStyle.create(
                                 color: secondTextColor.withValues(alpha: 0.7),
-                                fontSize: OmiFontSize.t5_14,
+                                fontSize: OmiFontSize.t3_12,
                                 fontWeight: OmiFontWeight.bold,
                               ),
                             ),
@@ -191,7 +197,7 @@ class _MPAskAIConversationListViewState
             state.errorMessage ?? 'Load failed',
             style: OmiTextStyle.create(
               color: secondTextColor,
-              fontSize: OmiFontSize.t6_15,
+              fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.regular,
             ),
           ),
@@ -221,7 +227,7 @@ class _MPAskAIConversationListViewState
                 item.title,
                 style: OmiTextStyle.create(
                   color: mainTextColor,
-                  fontSize: OmiFontSize.t11_20,
+                  fontSize: OmiFontSize.t8_17,
                   fontWeight: OmiFontWeight.medium,
                 ),
               ),
