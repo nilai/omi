@@ -234,7 +234,7 @@ class _MPAskAIConversationListViewState
                       item.title,
                       style: OmiTextStyle.create(
                         color: mainTextColor,
-                        fontSize: OmiFontSize.t8_17,
+                        fontSize: OmiFontSize.t6_15,
                         fontWeight: OmiFontWeight.medium,
                       ),
                     ),
