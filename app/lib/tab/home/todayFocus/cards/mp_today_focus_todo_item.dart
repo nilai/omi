@@ -51,23 +51,29 @@ class MPTodayFocusTodoItem extends StatelessWidget {
   TextStyle _titleStyle() {
     switch (tone) {
       case MPTodayFocusTodoItemTone.today:
-      case MPTodayFocusTodoItemTone.upcoming:
         return OmiTextStyle.create(
           fontSize: OmiFontSize.t6_15,
           fontWeight: OmiFontWeight.medium,
           color: mainTextColor,
           height: 1.35,
         );
+      case MPTodayFocusTodoItemTone.upcoming:
+        return OmiTextStyle.create(
+          fontSize: OmiFontSize.t4_13,
+          fontWeight: OmiFontWeight.medium,
+          color: mainTextColor,
+          height: 1.35,
+        );
       case MPTodayFocusTodoItemTone.overdue:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t6_15,
+          fontSize: OmiFontSize.t4_13,
           fontWeight: OmiFontWeight.medium,
           color: secondTextColor,
           height: 1.35,
         );
       case MPTodayFocusTodoItemTone.completed:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t6_15,
+          fontSize: OmiFontSize.t4_13,
           fontWeight: OmiFontWeight.medium,
           color: secondTextColor.withValues(alpha: 0.62),
           height: 1.35,
