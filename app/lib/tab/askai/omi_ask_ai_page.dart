@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_voice_text_input.dart';
 import 'package:omi/tab/askai/mp_ask_ai_cubit.dart';
+import 'package:omi/tab/askai/mp_ask_ai_conversation_list_page.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
@@ -23,7 +24,22 @@ class _OmiAskAIView extends StatelessWidget {
   const _OmiAskAIView();
 
   void _onTapTopRightAction(BuildContext context) {
-    MPToastUtils.showFeatureComingSoon(context: context);
+    Navigator.of(context).push(
+      PageRouteBuilder<void>(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (_, __, ___) => const MPAskAIConversationListPage(),
+        transitionsBuilder: (_, Animation<double> animation, __, Widget child) {
+          final Animation<Offset> slide = Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          );
+          return SlideTransition(position: slide, child: child);
+        },
+      ),
+    );
   }
 
   void _onTapModule(BuildContext context, MPAskAIModule module) {
