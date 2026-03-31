@@ -130,6 +130,15 @@ class _OmiAskAIView extends StatelessWidget {
       children: <Widget>[
         const SizedBox(height: 10),
         Text(
+          'Understand your memories and decide what matters',
+          style: OmiTextStyle.create(
+            color: secondTextColor,
+            fontSize: OmiFontSize.t8_17,
+            fontWeight: OmiFontWeight.regular,
+          ),
+        ),
+        const SizedBox(height: 14),
+        Text(
           module.subtitle,
           style: OmiTextStyle.create(
             color: mainTextColor,
