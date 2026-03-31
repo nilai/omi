@@ -223,12 +223,22 @@ class _MPAskAIConversationListViewState
             final MPAskAIConversationItem item = state.items[index];
             return Padding(
               padding: const EdgeInsets.only(bottom: 16),
-              child: Text(
-                item.title,
-                style: OmiTextStyle.create(
-                  color: mainTextColor,
-                  fontSize: OmiFontSize.t8_17,
-                  fontWeight: OmiFontWeight.medium,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _showComingSoon,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      item.title,
+                      style: OmiTextStyle.create(
+                        color: mainTextColor,
+                        fontSize: OmiFontSize.t8_17,
+                        fontWeight: OmiFontWeight.medium,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             );
