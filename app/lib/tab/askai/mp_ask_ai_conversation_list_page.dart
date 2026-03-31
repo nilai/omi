@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/tab/askai/mp_ask_ai_chat_page.dart';
 import 'package:omi/tab/askai/mp_ask_ai_conversation_list_cubit.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
@@ -53,6 +54,17 @@ class _MPAskAIConversationListViewState
 
   void _showComingSoon() {
     MPToastUtils.showFeatureComingSoon(context: context);
+  }
+
+  void _onTapConversationItem(MPAskAIConversationItem item) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MPAskAIChatPage(
+          aboutText: item.title,
+          conversationId: item.id,
+        ),
+      ),
+    );
   }
 
   @override
@@ -227,7 +239,7 @@ class _MPAskAIConversationListViewState
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: _showComingSoon,
+                  onTap: () => _onTapConversationItem(item),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Text(

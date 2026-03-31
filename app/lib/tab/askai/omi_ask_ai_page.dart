@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_voice_text_input.dart';
+import 'package:omi/tab/askai/mp_ask_ai_chat_page.dart';
 import 'package:omi/tab/askai/mp_ask_ai_cubit.dart';
 import 'package:omi/tab/askai/mp_ask_ai_conversation_list_page.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
@@ -50,8 +51,19 @@ class _OmiAskAIView extends StatelessWidget {
     MPToastUtils.showFeatureComingSoon(context: context);
   }
 
-  void _onTapQuestion(BuildContext context, String question) {
-    MPToastUtils.showFeatureComingSoon(context: context);
+  void _onTapQuestion(
+    BuildContext context,
+    MPAskAIModule module,
+    String question,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MPAskAIChatPage(
+          aboutText: module.subtitle,
+          suggestedQuestions: module.questions,
+        ),
+      ),
+    );
   }
 
   Widget _buildTopBar(BuildContext context, MPAskAIState state) {
@@ -172,7 +184,7 @@ class _OmiAskAIView extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => _onTapQuestion(context, question),
+                onTap: () => _onTapQuestion(context, module, question),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
