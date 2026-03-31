@@ -104,7 +104,7 @@ class _OmiAskAIView extends StatelessWidget {
           'Understand your memories and decide what matters',
           style: OmiTextStyle.create(
             color: secondTextColor,
-            fontSize: OmiFontSize.t8_17,
+            fontSize: OmiFontSize.t6_15,
             fontWeight: OmiFontWeight.regular,
           ),
         ),
@@ -133,7 +133,7 @@ class _OmiAskAIView extends StatelessWidget {
           'Understand your memories and decide what matters',
           style: OmiTextStyle.create(
             color: secondTextColor,
-            fontSize: OmiFontSize.t8_17,
+            fontSize: OmiFontSize.t6_15,
             fontWeight: OmiFontWeight.regular,
           ),
         ),
@@ -142,7 +142,7 @@ class _OmiAskAIView extends StatelessWidget {
           module.subtitle,
           style: OmiTextStyle.create(
             color: mainTextColor,
-            fontSize: OmiFontSize.t11_20,
+            fontSize: OmiFontSize.t8_17,
             fontWeight: OmiFontWeight.bold,
           ),
         ),
@@ -177,7 +177,7 @@ class _OmiAskAIView extends StatelessWidget {
                         question,
                         style: OmiTextStyle.create(
                           color: secondTextColor,
-                          fontSize: OmiFontSize.t11_20,
+                          fontSize: OmiFontSize.t8_17,
                           fontWeight: OmiFontWeight.regular,
                         ),
                       ),
@@ -274,7 +274,7 @@ class _AskModuleCard extends StatelessWidget {
                       module.title,
                       style: OmiTextStyle.create(
                         color: module.iconColor,
-                        fontSize: OmiFontSize.t8_17,
+                        fontSize: OmiFontSize.t6_15,
                         fontWeight: OmiFontWeight.bold,
                       ),
                     ),
@@ -283,7 +283,7 @@ class _AskModuleCard extends StatelessWidget {
                       module.subtitle,
                       style: OmiTextStyle.create(
                         color: module.iconColor.withValues(alpha: 0.75),
-                        fontSize: OmiFontSize.t7_16,
+                        fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.regular,
                       ),
                     ),
