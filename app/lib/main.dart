@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/http/shared.dart';
 import 'login/home/mp_login_page.dart';
 import 'login/mp_user.dart';
 import 'package:omi/cache/omi_server_cache.dart';
@@ -26,7 +27,7 @@ class MyApp extends StatelessWidget {
   }
 
   Widget _buildHomePage(BuildContext context) {
-    if (MPUser.isLoggedIn) {
+    if (ApiTools.hasAccessToken()) {
       return const MainTabPage();
     }
     return const MPLoginPage();
