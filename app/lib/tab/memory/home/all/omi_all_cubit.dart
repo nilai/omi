@@ -3,9 +3,12 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
+import 'package:omi/http/api/mp_memory.dart';
+import 'package:omi/http/schema/mp_data_model.dart';
+import 'package:omi/http/schema/mp_memory.dart';
 
 import 'card/mp_audio_recording_card.dart';
-import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
 
 
@@ -240,115 +243,162 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     }
   }
 
-  /// 模拟游标分页。接入真实接口时改为：
-  /// `getXxx(MPRequest(cursor: cursor, pageSize: pageSize))`，并用返回的 `hasMore` 与列表最后 id 更新 [_cursor]。
+  /// 游标分页：调用 [getMemoryList]，用返回的 `hasMore` 与列表最后一条 [MPMemoryEntry.id] 更新 [_cursor]。
   Future<_CursorFetchResult> _fetchMemoryList({required String cursor}) async {
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-
-    if (cursor.isEmpty) {
-      final List<MPMemoryEntry> items = <MPMemoryEntry>[
-        const MPMemoryEntry.conversation(
-          id: 'mem_001',
-          variant: MPMemoryCardVariant.newUpdates,
-          data: MPMemoryCardData(
-            title: 'Team standup discussion on API migration',
-            timeLabel: 'Today, 10:30 AM',
-            preview:
-            'Discussed timeline for migrating legacy API to new microservices architecture. Team agreed...',
-            badgeCount: 1,
-            statusLabel: 'New updates',
-          ),
-        ),
-        const MPMemoryEntry.audioRecording(
-          id: 'mem_audio_001',
-          audioData: MPAudioRecordingCardData(
-            primaryTimeLabel: 'Jan 18, 2026, 11:20 AM',
-            secondaryTimeLabel: 'January 18, 2026 at 11:20 AM',
-            sourceLabel: 'MobilePhone',
-            durationLabel: '3m47s',
-          ),
-        ),
-        const MPMemoryEntry.memoGroup(
-          id: 'mem_mo_single',
-          memoVariant: MPMemoGroupCardVariant.listFull,
-          memoData: MPMemoGroupCardData(
-            categoryLabel: 'Memos',
-            dateLabel: 'Mar 3',
-            items: <String>[
-              'Follow up with design on the onboarding flow wireframes.',
-            ],
-          ),
-        ),
-        const MPMemoryEntry.memoGroup(
-          id: 'mem_mo_full',
-          memoVariant: MPMemoGroupCardVariant.listFull,
-          memoData: MPMemoGroupCardData(
-            categoryLabel: 'Memos',
-            dateLabel: 'Mar 2',
-            items: <String>[
-              'Book venue for Q2 offsite by Friday.',
-              'Share draft OKRs with the leadership team.',
-              'Review analytics dashboard with data team.',
-            ],
-          ),
-        ),
-        const MPMemoryEntry.memoGroup(
-          id: 'mem_mo_collapse',
-          memoVariant: MPMemoGroupCardVariant.listFull,
-          memoData: MPMemoGroupCardData(
-            categoryLabel: 'Memos',
-            dateLabel: 'Mar 1',
-            items: <String>[
-              'Sync with legal on updated privacy policy.',
-              'Prepare slide deck for customer advisory board.',
-              'Schedule 1:1s with new hires next week.',
-              'Draft blog post for product launch.',
-              'Confirm budget allocation with finance.',
-            ],
-            itemMuted: <bool>[false, true, false, false, true],
-          ),
-        ),
-        const MPMemoryEntry.conversation(
-          id: 'mem_002',
-          variant: MPMemoryCardVariant.standard,
-          data: MPMemoryCardData(
-            title: 'Investor meeting - Series A funding discussion',
-            timeLabel: 'Yesterday, 4:30 PM',
-            preview:
-            'Presented growth metrics and Q1 achievements to potential lead investor. They...',
-          ),
-        ),
-        const MPMemoryEntry.conversation(
-          id: 'mem_003',
-          variant: MPMemoryCardVariant.compact,
-          data: MPMemoryCardData(
-            title: 'Coffee chat with Jordan about team dynamics',
-            timeLabel: 'Yesterday, 2:15 PM',
-            preview:
-            'Explored ideas for differentiation in competitive market. Jordan suggested...',
-          ),
-        ),
-      ];
-      return (items: items, hasMore: true);
+    final MPGetMemoryListResponse? resp = await getMemoryList(
+      MPGetMemoryV2ListRequest(
+        pageSize: pageSize,
+        cursor: cursor,
+      ),
+    );
+    if (resp == null) {
+      throw StateError('getMemoryList failed');
     }
-
-    if (cursor == 'mem_003') {
-      return (
-      items: <MPMemoryEntry>[
-        const MPMemoryEntry.conversation(
-          id: 'mem_004',
-          variant: MPMemoryCardVariant.standard,
-          data: MPMemoryCardData(
-            title: '游标下一页 · 追加条目',
-            timeLabel: 'Just now',
-            preview: '使用 cursor=mem_003 拉取的下一批数据（模拟已无更多）。',
-          ),
-        ),
-      ],
-      hasMore: false,
-      );
+    if (resp.baseResp.code != 0) {
+      throw StateError(resp.baseResp.message);
     }
-
-    return (items: <MPMemoryEntry>[], hasMore: false);
+    final List<MPMemoryEntry> items =
+        resp.memorys.map(_mpMemoryStructToEntry).toList(growable: false);
+    return (items: items, hasMore: resp.hasMore);
   }
+}
+
+/// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（会话卡片 / 纯录音卡片）。
+MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
+  switch (m.type) {
+    case MPMemoryType.onlyRecord:
+      final DateTime dt = _memoryDateTimeFromServer(m.createAt);
+      return MPMemoryEntry.audioRecording(
+        id: m.id,
+        audioData: MPAudioRecordingCardData(
+          primaryTimeLabel: DateFormat('MMM d, y, h:mm a').format(dt),
+          secondaryTimeLabel: DateFormat("MMMM d, y 'at' h:mm a").format(dt),
+          sourceLabel: m.onlyRecordContent?.source?.trim().isNotEmpty == true
+              ? m.onlyRecordContent!.source!.trim()
+              : 'Recording',
+          durationLabel: _formatDurationSeconds(m.duration ?? 0),
+        ),
+      );
+    case MPMemoryType.summary:
+      final MPSummaryMemoryStruct? sc = m.summaryContent;
+      final bool hasTodos = sc != null && sc.todos.isNotEmpty;
+      final MPMemoryCardVariant variant = hasTodos
+          ? MPMemoryCardVariant.newUpdates
+          : MPMemoryCardVariant.standard;
+      final String preview =
+          (sc?.summary ?? m.content).trim().isNotEmpty ? (sc?.summary ?? m.content).trim() : ' ';
+      return MPMemoryEntry.conversation(
+        id: m.id,
+        variant: variant,
+        data: MPMemoryCardData(
+          title: m.title.trim().isNotEmpty ? m.title : 'Memory',
+          timeLabel:_shortTimeLabel(m.createAt),
+          preview: preview,
+          badgeCount: variant == MPMemoryCardVariant.newUpdates
+              ? sc!.todos.length
+              : null,
+          statusLabel:
+              variant == MPMemoryCardVariant.newUpdates ? 'New updates' : null,
+        ),
+      );
+    case MPMemoryType.memoryFeed:
+      final String preview = _previewMemoryFeed(m);
+      return MPMemoryEntry.conversation(
+        id: m.id,
+        variant: MPMemoryCardVariant.standard,
+        data: MPMemoryCardData(
+          title: m.title.trim().isNotEmpty ? m.title : 'Insight',
+          timeLabel: _timeLabelForMemory(m),
+          preview: preview,
+        ),
+      );
+    case MPMemoryType.memoList:
+      final String preview = _previewMemoList(m);
+      return MPMemoryEntry.conversation(
+        id: m.id,
+        variant: MPMemoryCardVariant.standard,
+        data: MPMemoryCardData(
+          title: m.title.trim().isNotEmpty ? m.title : 'Expert',
+          timeLabel: _timeLabelForMemory(m),
+          preview: preview,
+        ),
+      );
+  }
+}
+
+String _timeLabelForMemory(MPMemoryStruct m) {
+  final String? st = m.subTitle?.trim();
+  if (st != null && st.isNotEmpty) {
+    return st;
+  }
+  return _shortTimeLabel(m.createAt);
+}
+
+/// [MPMemoryFeedStruct] 无顶层 `content`：优先 `summary_memory.summary`，否则取首个 feed 的 `content`，再退回 [MPMemoryStruct.content]。
+String _previewMemoryFeed(MPMemoryStruct m) {
+  final MPMemoryFeedStruct? mf = m.memoryFeed;
+  if (mf != null) {
+    final MPSummaryMemoryStruct? smStruct = mf.summaryMemory;
+    if (smStruct != null) {
+      final String t = smStruct.summary.trim();
+      if (t.isNotEmpty) {
+        return t;
+      }
+    }
+    for (final MPFeedCardStruct f in mf.feeds) {
+      final String? c = f.content?.trim();
+      if (c != null && c.isNotEmpty) {
+        return c;
+      }
+    }
+  }
+  final String fallback = m.content.trim();
+  return fallback.isNotEmpty ? fallback : ' ';
+}
+
+/// `MEMO_LIST` 时顶层 `content` 可能为空，从 [MPMemoryStruct.memoList] 拼预览。
+String _previewMemoList(MPMemoryStruct m) {
+  final List<MPMemoStruct>? memos = m.memoList;
+  if (memos != null && memos.isNotEmpty) {
+    final List<String> parts = <String>[];
+    for (final MPMemoStruct e in memos) {
+      final String t = e.title.trim();
+      final String c = e.content.trim();
+      final String one = t.isNotEmpty ? t : c;
+      if (one.isNotEmpty) {
+        parts.add(one);
+      }
+      if (parts.length >= 3) {
+        break;
+      }
+    }
+    if (parts.isNotEmpty) {
+      return parts.join(' · ');
+    }
+  }
+  final String fallback = m.content.trim();
+  return fallback.isNotEmpty ? fallback : ' ';
+}
+
+DateTime _memoryDateTimeFromServer(int createAt) {
+  if (createAt > 10000000000) {
+    return DateTime.fromMillisecondsSinceEpoch(createAt);
+  }
+  return DateTime.fromMillisecondsSinceEpoch(createAt * 1000);
+}
+
+String _shortTimeLabel(int createAt) {
+  return DateFormat('MMM d, y, h:mm a').format(_memoryDateTimeFromServer(createAt));
+}
+
+String _formatDurationSeconds(int seconds) {
+  if (seconds <= 0) {
+    return '0s';
+  }
+  final int m = seconds ~/ 60;
+  final int s = seconds % 60;
+  if (m > 0) {
+    return '${m}m${s}s';
+  }
+  return '${s}s';
 }
