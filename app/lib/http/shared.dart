@@ -67,30 +67,51 @@ class ApiTools {
   Future<String> get uuid async {
     return MPUuidUtil.instance.uuid;
   }
+
+  /// 获取访问令牌
+  static String? get accessToken => SharedPreferencesUtil().accessToken;
+  /// 判断是否有访问令牌
+  static bool hasAccessToken() {
+    return accessToken != null && accessToken!.isNotEmpty;
+  }
+  /// 获取刷新令牌
+  static String? get refreshToken => SharedPreferencesUtil().refreshToken;
+  /// 获取邮箱
+  static String? get email => SharedPreferencesUtil().email;
+  /// 获取 token 过期时间
+  static DateTime? get tokenExpiresTime => SharedPreferencesUtil().tokenExpiresTime;
+  /// 判断 token 是否过期
+  static bool tokenIsExpired() {
+    final tokenExpiresTime = SharedPreferencesUtil().tokenExpiresTime;
+    if (tokenExpiresTime == null) {
+      return false;
+    }
+    return DateTime.now().isAfter(tokenExpiresTime) || tokenExpiresTime.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0));
+  }
 }
 
 Future<String> getAuthHeader() async {
-  DateTime? expiry = DateTime.fromMillisecondsSinceEpoch(SharedPreferencesUtil().tokenExpirationTime);
-  bool hasAuthToken = SharedPreferencesUtil().authToken.isNotEmpty;
+  // DateTime? expiry = DateTime.fromMillisecondsSinceEpoch(SharedPreferencesUtil().tokenExpirationTime);
+  // bool hasAuthToken = SharedPreferencesUtil().authToken.isNotEmpty;
 
-  bool isExpirationDateValid =
-      !(expiry.isBefore(DateTime.now()) ||
-          expiry.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0)) ||
-          (expiry.isBefore(DateTime.now().add(const Duration(minutes: 5))) && expiry.isAfter(DateTime.now())));
+  // bool isExpirationDateValid =
+  //     !(expiry.isBefore(DateTime.now()) ||
+  //         expiry.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0)) ||
+  //         (expiry.isBefore(DateTime.now().add(const Duration(minutes: 5))) && expiry.isAfter(DateTime.now())));
 
-  if (!hasAuthToken || !isExpirationDateValid) {
+  if (!ApiTools.hasAccessToken() || !ApiTools.tokenIsExpired()) {
     // TODO: refersh token
     // SharedPreferencesUtil().authToken = await AuthService.instance.getIdToken() ?? '';
   }
 
-  if (!hasAuthToken) {
+  if (!ApiTools.hasAccessToken()) {
     // if (AuthService.instance.isSignedIn()) {
     //   // should only throw if the user is signed in but the token is not found
     //   // if the user is not signed in, the token will always be empty
     //   throw Exception('No auth token found');
     // }
   }
-  return 'Bearer ${SharedPreferencesUtil().authToken}';
+  return 'Bearer ${ApiTools.accessToken}';
 }
 
 /// Builds common headers for API and WebSocket requests
@@ -152,7 +173,7 @@ Future<http.Response?> makeApiCall({
       Logger.log('Token expired on 1st attempt');
       // TODO: refresh token
       // SharedPreferencesUtil().authToken = await AuthService.instance.getIdToken() ?? '';
-      if (SharedPreferencesUtil().authToken.isNotEmpty) {
+      if (ApiTools.hasAccessToken()) {
         final refreshedHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
         response = await _performRequest(url, refreshedHeaders, body, method);
         Logger.log('Token refreshed and request retried');

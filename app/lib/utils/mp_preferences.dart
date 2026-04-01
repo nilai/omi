@@ -14,18 +14,6 @@ class MPPreferences {
     _preferences = await SharedPreferences.getInstance();
   }
 
-  /// 用户唯一标识。
-  String get uid => getString('uid') ?? '';
-  set uid(String value) => saveString('uid', value);
-
-  /// 鉴权 token。
-  String get authToken => getString('authToken') ?? '';
-  set authToken(String value) => saveString('authToken', value);
-
-  /// token 过期时间（毫秒时间戳）。
-  int get tokenExpirationTime => getInt('tokenExpirationTime') ?? 0;
-  set tokenExpirationTime(int value) => saveInt('tokenExpirationTime', value);
-
   /// 写入字符串。
   Future<bool> saveString(String key, String value) async {
     return await _preferences?.setString(key, value) ?? false;
@@ -87,11 +75,72 @@ class MPPreferences {
   }
 }
 
-/// 兼容旧调用：保留历史类名，内部复用 MPPreferences。
+/// 
 class SharedPreferencesUtil extends MPPreferences {
   static final SharedPreferencesUtil _instance = SharedPreferencesUtil._internal();
 
   factory SharedPreferencesUtil() => _instance;
 
   SharedPreferencesUtil._internal() : super._internal();
+
+  static const String _accessTokenKey = 'mp_accessToken';
+  static const String _refreshTokenKey = 'mp_refreshToken';
+  static const String _emailKey = 'mp_email';
+  static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
+
+  String? _accessToken;
+  String? _refreshToken;
+  String? _email;
+  /// token 过期时间（毫秒时间戳）。
+  DateTime? _tokenExpiresTime;
+
+
+  /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
+  String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
+
+  /// 设置访问令牌：优先写入本地存储，再更新内存中的私有属性。
+  Future<void> setAccessToken(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_accessTokenKey);
+    } else {
+      await MPPreferences().saveString(_accessTokenKey, value);
+    }
+    _accessToken = value;
+  }
+
+  /// 获取刷新令牌：优先取内存中的私有属性，其次取本地存储。
+  String? get refreshToken => _refreshToken ?? MPPreferences().getString(_refreshTokenKey);
+
+  /// 设置刷新令牌：优先写入本地存储，再更新内存中的私有属性。
+  Future<void> setRefreshToken(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_refreshTokenKey);
+    } else {
+      await MPPreferences().saveString(_refreshTokenKey, value);
+    }
+    _refreshToken = value;
+  }
+
+  /// 获取邮箱：优先取内存中的私有属性，其次取本地存储。
+  String? get email => _email ?? MPPreferences().getString(_emailKey);
+
+  /// 设置邮箱：优先写入本地存储，再更新内存中的私有属性。
+  Future<void> setEmail(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_emailKey);
+    } else {
+      await MPPreferences().saveString(_emailKey, value);
+    }
+    _email = value;
+  }
+
+  /// 获取 token 过期时间：优先取内存中的私有属性，其次取本地存储。
+  DateTime? get tokenExpiresTime => _tokenExpiresTime ?? DateTime.fromMillisecondsSinceEpoch(MPPreferences().getInt(_tokenExpiresTimeKey) ?? 0);
+
+  /// 设置 token 过期时间：优先写入本地存储，再更新内存中的私有属性。
+  Future<void> setTokenExpiresTime(int value) async {
+    final int timestamp = DateTime.now().add(Duration(seconds: value - 2)).millisecondsSinceEpoch;
+    await MPPreferences().saveInt(_tokenExpiresTimeKey, timestamp);
+    _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  }
 }
