@@ -25,7 +25,7 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       error = 'Please enter the verification code.';
     }
     if (error != null) {
-      MPToastUtils.showMessage(error, context: _context!);
+      emit(state.copyWith(codeError: error)); 
       return;
     }
     final req = MPRegisterRequest(email: email, code: code, password: password);

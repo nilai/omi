@@ -12,7 +12,7 @@ class MPVerifyState {
     this.isSubmitted = false,
   });
 
-  /// 用户输入的验证码（最多 4 位数字）。
+  /// 用户输入的验证码(长度大于等于4)。
   final String code;
 
   /// 错误文案，`null` 或空字符串不展示。
@@ -22,7 +22,7 @@ class MPVerifyState {
   final bool isSubmitted;
 
   /// 验证按钮是否可点。
-  bool get isPrimaryButtonEnabled => code.length == 4;
+  bool get isPrimaryButtonEnabled => code.length >= 4;
 
   /// 规范化错误信息。
   static String? normalizeError(String? e) {
