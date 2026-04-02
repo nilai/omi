@@ -143,4 +143,10 @@ class SharedPreferencesUtil extends MPPreferences {
     await MPPreferences().saveInt(_tokenExpiresTimeKey, timestamp);
     _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
   }
+
+  /// 清除本地记录的 token 过期时间（登出时使用）。
+  Future<void> clearTokenExpiresTime() async {
+    await MPPreferences().remove(_tokenExpiresTimeKey);
+    _tokenExpiresTime = null;
+  }
 }

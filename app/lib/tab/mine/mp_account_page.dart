@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/login/mp_user.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/tab/mine/mp_account_cubit.dart';
+import 'package:omi/tab/mine/mp_account_state.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
@@ -14,13 +16,18 @@ class MPAccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final MPUser user = MPUser.instance;
-    final String displayName = (user.name != null && user.name!.trim().isNotEmpty)
-        ? user.name!.trim()
-        : 'MemoPin User';
-    final String displayEmail =
-        (user.email != null && user.email!.trim().isNotEmpty) ? user.email!.trim() : 'user@memopin.com';
+    return BlocProvider<MPAccountCubit>(
+      create: (_) => MPAccountCubit()..loadProfile(),
+      child: const _MPAccountView(),
+    );
+  }
+}
 
+class _MPAccountView extends StatelessWidget {
+  const _MPAccountView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: pageColor,
       appBar: AppBar(
@@ -42,35 +49,43 @@ class MPAccountPage extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildProfileCard(context, displayName: displayName, displayEmail: displayEmail),
-            const SizedBox(height: 24),
-            _buildSectionTitle('SUBSCRIPTION'),
-            const SizedBox(height: 10),
-            _buildSubscriptionCard(context),
-            const SizedBox(height: 24),
-            _buildSectionTitle('DATA MANAGEMENT'),
-            const SizedBox(height: 10),
-            _buildDataManagementCard(context),
-            const SizedBox(height: 24),
-            _buildSectionTitle('HELP & SUPPORT'),
-            const SizedBox(height: 10),
-            _buildHelpSupportCard(context),
-            const SizedBox(height: 28),
-            Text(
-              'MemoPin v1.0.0',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: secondTextColor.withValues(alpha: 0.85),
-              ),
+      body: BlocBuilder<MPAccountCubit, MPAccountState>(
+        builder: (BuildContext context, MPAccountState state) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildProfileCard(
+                  context,
+                  state: state,
+                  onSignOut: () => context.read<MPAccountCubit>().signOut(context),
+                ),
+                const SizedBox(height: 24),
+                _buildSectionTitle('SUBSCRIPTION'),
+                const SizedBox(height: 10),
+                _buildSubscriptionCard(context),
+                const SizedBox(height: 24),
+                _buildSectionTitle('DATA MANAGEMENT'),
+                const SizedBox(height: 10),
+                _buildDataManagementCard(context),
+                const SizedBox(height: 24),
+                _buildSectionTitle('HELP & SUPPORT'),
+                const SizedBox(height: 10),
+                _buildHelpSupportCard(context),
+                const SizedBox(height: 28),
+                Text(
+                  'MemoPin v1.0.0',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: secondTextColor.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -90,9 +105,10 @@ class MPAccountPage extends StatelessWidget {
   /// 顶部：头像、用户信息、退出登录
   Widget _buildProfileCard(
     BuildContext context, {
-    required String displayName,
-    required String displayEmail,
+    required MPAccountState state,
+    required VoidCallback onSignOut,
   }) {
+    final bool loading = state.profileStatus == MPAccountProfileStatus.loading;
     return _whiteCard(
       radius: 16,
       child: Padding(
@@ -117,30 +133,55 @@ class MPAccountPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w600,
-                          color: mainTextColor,
+                      if (loading)
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: blueTextColor,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Loading profile…',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: secondTextColor.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        )
+                      else
+                        Text(
+                          state.displayName,
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: mainTextColor,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        displayEmail,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: secondTextColor.withValues(alpha: 0.95),
+                      if (!loading) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          state.displayEmail,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: secondTextColor.withValues(alpha: 0.95),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Member since January 2024',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: secondTextColor.withValues(alpha: 0.9),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Member since January 2024',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: secondTextColor.withValues(alpha: 0.9),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -151,21 +192,31 @@ class MPAccountPage extends StatelessWidget {
               color: const Color(0xFFF0F1F3),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
-                onTap: () => _comingSoon(context),
+                onTap: state.signOutInProgress ? null : onSignOut,
                 borderRadius: BorderRadius.circular(12),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.logout_rounded, color: redColor, size: 22),
-                      SizedBox(width: 8),
+                    children: [
+                      if (state.signOutInProgress)
+                        SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: redColor,
+                          ),
+                        )
+                      else
+                        const Icon(Icons.logout_rounded, color: redColor, size: 22),
+                      const SizedBox(width: 8),
                       Text(
                         'Sign Out',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: redColor,
+                          color: redColor.withValues(alpha: state.signOutInProgress ? 0.5 : 1),
                         ),
                       ),
                     ],
@@ -186,7 +237,7 @@ class MPAccountPage extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _comingSoon(context),
+          onTap: () => MPAccountPage._comingSoon(context),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -286,7 +337,7 @@ class MPAccountPage extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _comingSoon(context),
+        onTap: () => MPAccountPage._comingSoon(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
@@ -384,7 +435,7 @@ class MPAccountPage extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => _comingSoon(context),
+        onTap: () => MPAccountPage._comingSoon(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
