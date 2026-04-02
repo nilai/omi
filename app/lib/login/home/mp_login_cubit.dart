@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/login/home/mp_login_state.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
@@ -5,10 +6,17 @@ import 'package:omi/utils/mp_toast_utils.dart';
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';
 import '../../utils/mp_preferences.dart';
+import '../verify/mp_verify_page.dart';
 
 /// 认证页 Cubit：表单输入、模式切换与提交校验。
 class MPLoginCubit extends Cubit<MPLoginState> {
   MPLoginCubit() : super(const MPLoginState());
+
+  BuildContext? _context;
+
+  void setContext(BuildContext context) {
+    _context = context;
+  }
 
   /// 更新邮箱；编辑时清除邮箱错误（空输入时错误保持为 `null`）。
   void setEmail(String value) {
@@ -47,8 +55,12 @@ class MPLoginCubit extends Cubit<MPLoginState> {
 
     if (emailErr != null || passwordErr != null) {
       emit(state.copyWith(emailError: emailErr, passwordError: passwordErr));
-    }else {
+      return;
+    }
+    if (state.mode == MPLoginMode.login) {
       _login(email, password);
+    } else {
+      _register(email, password);
     }
   }
 
@@ -61,24 +73,24 @@ class MPLoginCubit extends Cubit<MPLoginState> {
       await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
       await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
       SharedPreferencesUtil().setEmail(email);
-    }else {
+    } else {
       MPToastUtils.showMessage(response?.baseResp.message ?? 'Login failed');
     }
   }
 
   /// 注册
   void _register(String email, String password) async {
-    final req = MPRegisterRequest(email: email, password: password);
-    final response = await register(req);
+    /// 发送验证码
+    final req = MPSendCodeRequest(email: email);
+    final response = await sendCode(req);
     if (response != null && response.baseResp.code == 0) {
-      await SharedPreferencesUtil().setAccessToken(response.accessToken);
-      await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
-      await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
+      Navigator.of(_context!).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => MPVerifyPage(email: email, password: password),
+        ),
+      );
+    } else {
+      MPToastUtils.showMessage(response?.baseResp.message ?? 'Send code failed');
+    }
   }
-
-  // static bool _isValidEmail(String email) {
-  //   final RegExp re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  //   return re.hasMatch(email);
-  // }
-
 }

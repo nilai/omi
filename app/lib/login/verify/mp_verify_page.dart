@@ -14,24 +14,29 @@ class MPVerifyPage extends StatelessWidget {
   const MPVerifyPage({
     super.key,
     required this.email,
+    required this.password,
   });
 
   /// 待验证邮箱。
   final String email;
 
+  /// 待验证密码。
+  final String password;
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => MPVerifyCubit(),
-      child: _MPVerifyScaffold(email: email),
+      child: _MPVerifyScaffold(email: email, password: password),
     );
   }
 }
 
 class _MPVerifyScaffold extends StatelessWidget {
-  const _MPVerifyScaffold({required this.email});
+  const _MPVerifyScaffold({required this.email, required this.password});
 
   final String email;
+  final String password;
 
   @override
   Widget build(BuildContext context) {
