@@ -71,7 +71,8 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
         builder: (context, state) {
           final MPForgetCubit cubit = context.read<MPForgetCubit>();
           final String? emailErr = MPForgetState.normalizeError(state.emailError);
-
+          cubit.setContext(context);
+          
           return SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: Column(
