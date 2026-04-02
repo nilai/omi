@@ -5,7 +5,9 @@ import 'package:omi/utils/mp_toast_utils.dart';
 
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';
+import '../../tab/omi_main_tab_page.dart';
 import '../../utils/mp_preferences.dart';
+import '../../utils/mp_uuid_util.dart';
 import '../verify/mp_verify_page.dart';
 
 /// 认证页 Cubit：表单输入、模式切换与提交校验。
@@ -66,13 +68,18 @@ class MPLoginCubit extends Cubit<MPLoginState> {
 
   /// 登录
   void _login(String email, String password) async {
-    final req = MPLoginRequest(email: email, password: password);
+    final deviceId = await MPUuidUtil.instance.uuid;
+    final req = MPLoginRequest(email: email, password: password, deviceId: deviceId);
     final response = await login(req);
     if (response != null && response.baseResp.code == 0) {
       await SharedPreferencesUtil().setAccessToken(response.accessToken);
       await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
       await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
       SharedPreferencesUtil().setEmail(email);
+      await Navigator.of(_context!).pushAndRemoveUntil<void>(
+        MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
+        (Route<dynamic> route) => false,
+      );
     } else {
       MPToastUtils.showMessage(response?.baseResp.message ?? 'Login failed');
     }

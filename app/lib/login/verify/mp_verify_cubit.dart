@@ -4,7 +4,7 @@ import 'package:omi/http/schema/mp_login.dart';
 import 'package:omi/login/verify/mp_verify_state.dart';
 
 import '../../http/api/mp_login.dart';
-import '../../tab/home/home/mp_home_page.dart';
+import '../../tab/omi_main_tab_page.dart';
 import '../../utils/mp_preferences.dart';
 import '../../utils/mp_toast_utils.dart';
 
@@ -36,11 +36,11 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
       SharedPreferencesUtil().setEmail(email);
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
-        MaterialPageRoute<void>(builder: (_) => const MPHomePage()),
+        MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,
       );
     }else {
-      MPToastUtils.showMessage(response?.baseResp.message ?? 'Register failed', context: _context!);
+      MPToastUtils.showMessage(response?.baseResp.message ?? 'Register failed');
     }
   }
 }

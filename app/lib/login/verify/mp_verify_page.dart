@@ -11,11 +11,7 @@ import 'package:omi/utils/omi_font_utils.dart';
 
 /// 邮箱验证码页面。
 class MPVerifyPage extends StatelessWidget {
-  const MPVerifyPage({
-    super.key,
-    required this.email,
-    required this.password,
-  });
+  const MPVerifyPage({super.key, required this.email, required this.password});
 
   /// 待验证邮箱。
   final String email;
@@ -42,7 +38,9 @@ class _MPVerifyScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(child: _MPVerifyBody(email: email, password: password)),
+      body: SafeArea(
+        child: _MPVerifyBody(email: email, password: password),
+      ),
     );
   }
 }
@@ -74,13 +72,12 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
   @override
   Widget build(BuildContext context) {
     return BlocListener<MPVerifyCubit, MPVerifyState>(
-      listenWhen: (p, c) => p.isSubmitted != c.isSubmitted && c.isSubmitted,
-      listener: (context, state) {
-        MPToastUtils.showFeatureComingSoon(message: '验证码验证');
-      },
+      listenWhen: (p, c) => p.isPrimaryButtonEnabled != c.isPrimaryButtonEnabled,
+      listener: (context, state) {},
       child: BlocBuilder<MPVerifyCubit, MPVerifyState>(
         builder: (context, state) {
           final MPVerifyCubit cubit = context.read<MPVerifyCubit>();
+          cubit.setContext(context);
           final String? codeErr = MPVerifyState.normalizeError(state.codeError);
 
           return SingleChildScrollView(
@@ -145,10 +142,11 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                   textInputAction: TextInputAction.done,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly,
-                    // LengthLimitingTextInputFormatter(4),
+                    LengthLimitingTextInputFormatter(6),
                   ],
                   onChanged: (String value) => setState(() {
                     _codeController.text = value;
+                    cubit.emit(state.copyWith(code: value));
                   }),
                   style: TextStyle(
                     fontSize: OmiFontSize.t8_17,
@@ -166,10 +164,7 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                     ),
                     filled: true,
                     fillColor: const Color(0xFFF2F2F7),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide.none,
@@ -185,18 +180,16 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                   const SizedBox(height: 8),
                   Text(
                     codeErr,
-                    style: TextStyle(
-                      fontSize: OmiFontSize.t5_14,
-                      color: redColor,
-                      fontWeight: OmiFontWeight.regular,
-                    ),
+                    style: TextStyle(fontSize: OmiFontSize.t5_14, color: redColor, fontWeight: OmiFontWeight.regular),
                   ),
                 ],
                 const SizedBox(height: 24),
                 SizedBox(
                   height: 56,
                   child: FilledButton(
-                    onPressed: state.isPrimaryButtonEnabled ? () => cubit.submit(widget.email, widget.password, _codeController.text.trim()) : null,
+                    onPressed: state.isPrimaryButtonEnabled
+                        ? () => cubit.submit(widget.email, widget.password, _codeController.text.trim())
+                        : null,
                     style: FilledButton.styleFrom(
                       backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFA1CCFF),
                       foregroundColor: Colors.white,
@@ -246,9 +239,7 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                 const SizedBox(height: 20),
                 _LegalFooter(
                   onTermsTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms),
-                    ),
+                    MaterialPageRoute<void>(builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms)),
                   ),
                   onPrivacyTap: () => Navigator.of(context).push<void>(
                     MaterialPageRoute<void>(
@@ -266,10 +257,7 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
 }
 
 class _LegalFooter extends StatefulWidget {
-  const _LegalFooter({
-    required this.onTermsTap,
-    required this.onPrivacyTap,
-  });
+  const _LegalFooter({required this.onTermsTap, required this.onPrivacyTap});
 
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;
@@ -311,19 +299,13 @@ class _LegalFooterState extends State<_LegalFooter> {
           TextSpan(
             text: 'Terms of Service',
             recognizer: _termsRecognizer,
-            style: TextStyle(
-              color: blueTextColor,
-              fontWeight: OmiFontWeight.bold,
-            ),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
           ),
           const TextSpan(text: ' and '),
           TextSpan(
             text: 'Privacy Policy',
             recognizer: _privacyRecognizer,
-            style: TextStyle(
-              color: blueTextColor,
-              fontWeight: OmiFontWeight.bold,
-            ),
+            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
           ),
         ],
       ),
