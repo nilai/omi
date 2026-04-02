@@ -44,12 +44,12 @@ class MPLoginCubit extends Cubit<MPLoginState> {
     final String password = state.password;
 
     String? emailErr;
-    if (email.isNotEmpty) {
+    if (email.isEmpty) {
       emailErr = 'Please enter a valid email address.';
     }
 
     String? passwordErr;
-    if (password.isNotEmpty) {
+    if (password.isEmpty) {
       passwordErr = 'Please enter a valid password.';
     }
 

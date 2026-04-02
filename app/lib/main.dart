@@ -4,10 +4,18 @@ import 'login/home/mp_login_page.dart';
 import 'login/mp_user.dart';
 import 'package:omi/cache/omi_server_cache.dart';
 import 'package:omi/tab/omi_main_tab_page.dart';
+import 'env/env.dart';
+import 'utils/mp_preferences.dart';
+import 'utils/mp_uuid_util.dart';
+import 'utils/platform/platform_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await OmiServerCache().initialize();
+  Env.init();
+  PlatformManager.initializeServices();
+  await MPUuidUtil.instance.uuid;
+  await MPPreferences();
   runApp(const MyApp());
 }
 
