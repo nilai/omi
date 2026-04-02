@@ -42,16 +42,16 @@ class _MPVerifyScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(child: _MPVerifyBody(email: email)),
+      body: SafeArea(child: _MPVerifyBody(email: email, password: password)),
     );
   }
 }
 
 class _MPVerifyBody extends StatefulWidget {
-  const _MPVerifyBody({required this.email});
+  const _MPVerifyBody({required this.email, required this.password});
 
   final String email;
-
+  final String password;
   @override
   State<_MPVerifyBody> createState() => _MPVerifyBodyState();
 }
@@ -145,9 +145,11 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                   textInputAction: TextInputAction.done,
                   inputFormatters: <TextInputFormatter>[
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
+                    // LengthLimitingTextInputFormatter(4),
                   ],
-                  onChanged: cubit.setCode,
+                  onChanged: (String value) => setState(() {
+                    _codeController.text = value;
+                  }),
                   style: TextStyle(
                     fontSize: OmiFontSize.t8_17,
                     color: mainTextColor,
@@ -194,7 +196,7 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                 SizedBox(
                   height: 56,
                   child: FilledButton(
-                    onPressed: state.isPrimaryButtonEnabled ? cubit.submit : null,
+                    onPressed: state.isPrimaryButtonEnabled ? () => cubit.submit(widget.email, widget.password, _codeController.text.trim()) : null,
                     style: FilledButton.styleFrom(
                       backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFA1CCFF),
                       foregroundColor: Colors.white,
