@@ -66,8 +66,8 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
     return BlocListener<MPLoginCubit, MPLoginState>(
       listenWhen: (MPLoginState p, MPLoginState c) => p.mode != c.mode,
       listener: (BuildContext context, MPLoginState state) {
-        _emailController.clear();
-        _passwordController.clear();
+        // _emailController.clear();
+        // _passwordController.clear();
       },
       child: BlocBuilder<MPLoginCubit, MPLoginState>(
         builder: (BuildContext context, MPLoginState state) {

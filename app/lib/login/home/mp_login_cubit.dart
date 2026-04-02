@@ -1,5 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/login/home/mp_login_state.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
+
+import '../../http/api/mp_login.dart';
+import '../../http/schema/mp_login.dart';
+import '../../utils/mp_preferences.dart';
 
 /// 认证页 Cubit：表单输入、模式切换与提交校验。
 class MPLoginCubit extends Cubit<MPLoginState> {
@@ -31,28 +36,49 @@ class MPLoginCubit extends Cubit<MPLoginState> {
     final String password = state.password;
 
     String? emailErr;
-    if (email.isNotEmpty && !_isValidEmail(email)) {
+    if (email.isNotEmpty) {
       emailErr = 'Please enter a valid email address.';
     }
 
     String? passwordErr;
-    if (password.isNotEmpty && !_isValidPassword(password)) {
-      passwordErr = 'Use at least 12 characters, including letters, numbers, and symbols.';
+    if (password.isNotEmpty) {
+      passwordErr = 'Please enter a valid password.';
     }
 
-    emit(state.copyWith(emailError: emailErr, passwordError: passwordErr));
+    if (emailErr != null || passwordErr != null) {
+      emit(state.copyWith(emailError: emailErr, passwordError: passwordErr));
+    }else {
+      _login(email, password);
+    }
   }
 
-  static bool _isValidEmail(String email) {
-    final RegExp re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    return re.hasMatch(email);
+  /// 登录
+  void _login(String email, String password) async {
+    final req = MPLoginRequest(email: email, password: password);
+    final response = await login(req);
+    if (response != null && response.baseResp.code == 0) {
+      await SharedPreferencesUtil().setAccessToken(response.accessToken);
+      await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
+      await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
+      SharedPreferencesUtil().setEmail(email);
+    }else {
+      MPToastUtils.showMessage(response?.baseResp.message ?? 'Login failed');
+    }
   }
 
-  static bool _isValidPassword(String password) {
-    if (password.length < 12) return false;
-    final bool hasLetter = RegExp(r'[A-Za-z]').hasMatch(password);
-    final bool hasDigit = RegExp(r'\d').hasMatch(password);
-    final bool hasSymbol = RegExp(r'[^\w\s]').hasMatch(password);
-    return hasLetter && hasDigit && hasSymbol;
+  /// 注册
+  void _register(String email, String password) async {
+    final req = MPRegisterRequest(email: email, password: password);
+    final response = await register(req);
+    if (response != null && response.baseResp.code == 0) {
+      await SharedPreferencesUtil().setAccessToken(response.accessToken);
+      await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
+      await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
   }
+
+  // static bool _isValidEmail(String email) {
+  //   final RegExp re = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+  //   return re.hasMatch(email);
+  // }
+
 }

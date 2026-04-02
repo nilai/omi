@@ -20,8 +20,8 @@ const Object _kUnset = _Unset();
 class MPLoginState {
   const MPLoginState({
     this.mode = MPLoginMode.login,
-    this.email = '',
-    this.password = '',
+    this.email = '18911833398@163.com',
+    this.password = '123456123456123456',
     this.emailError,
     this.passwordError,
     this.obscurePassword = true,
