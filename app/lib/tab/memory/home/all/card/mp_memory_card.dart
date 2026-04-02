@@ -41,6 +41,7 @@ class MPMemoryCardData {
     required this.preview,
     this.badgeCount,
     this.statusLabel,
+    this.showActivity,
   });
 
   final String title;
@@ -52,6 +53,9 @@ class MPMemoryCardData {
 
   /// [MPMemoryCardVariant.newUpdates] 时与时间之间的紫色状态文案，如 `New updates`
   final String? statusLabel;
+
+  /// 底部是否展示 Activity；`null` 时由 [MPMemoryCard] 按 [MPMemoryCardVariant] 决定（compact 不展示）。
+  final bool? showActivity;
 }
 
 /// Cubit / 列表行：会话、Memos 分组或录音记忆卡片
@@ -127,7 +131,7 @@ class MPMemoryCard extends StatelessWidget {
       variant == MPMemoryCardVariant.newUpdates;
 
   bool get _showActivity =>
-      variant != MPMemoryCardVariant.compact;
+      data.showActivity ?? false;
 
   Color get _cardBg =>
       variant == MPMemoryCardVariant.compact ? _kCompactBg : Colors.white;
