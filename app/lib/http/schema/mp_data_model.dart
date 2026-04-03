@@ -281,7 +281,15 @@ class MPMemoryStruct {
   @JsonKey(name: 'source')
   final String? source;
   
- 
+  @JsonKey(name: 'memory_feed')
+  final MPMemoryFeedStruct? memoryFeed;
+
+  @JsonKey(name: 'summary_memory')
+  final MPSummaryMemoryStruct? summaryMemory;
+  
+  @JsonKey(name: 'only_record_memory')
+  final MPOnlyRecordMemoryStruct? onlyRecordMemory;
+
 
   MPMemoryStruct({
     required this.id,
@@ -293,6 +301,9 @@ class MPMemoryStruct {
     this.duration,
     this.memoList,
     this.source,
+    this.memoryFeed,
+    this.summaryMemory,
+    this.onlyRecordMemory,
   });
 
   factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);
@@ -337,6 +348,18 @@ class MPFeedCardStruct {
       _$MPFeedCardStructFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPFeedCardStructToJson(this);
+}
+
+/// 与后端 `FeedCardStruct.type` 取值一致（若与接口文档不符请在此调整）。
+abstract final class MPFeedCardType {
+  MPFeedCardType._();
+
+  static const int businessInsight = 1;
+  static const int executionInsight = 6;
+  static const int todosCreated = 2;
+  static const int myMemo = 3;
+  static const int resummary = 4;
+  static const int youAsked = 5;
 }
 
 // Memory Feed Struct

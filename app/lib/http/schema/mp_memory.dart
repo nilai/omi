@@ -53,3 +53,33 @@ class MPGetMemoryListResponse {
 
   Map<String, dynamic> toJson() => _$MPGetMemoryListResponseToJson(this);
 }
+
+
+@JsonSerializable()
+class MPGetMemoryV2DetailRequest {
+ 
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPGetMemoryV2DetailRequest({
+    required this.memoryId,
+  });
+
+  factory MPGetMemoryV2DetailRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryV2DetailRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2DetailRequestToJson(this);
+}
+
+
+@JsonSerializable()
+class MPGetMemoryV2DetailResponse {
+  @JsonKey(name: 'memory_detail')
+  final MPMemoryStruct memoryDetail;
+
+  MPGetMemoryV2DetailResponse({
+    required this.memoryDetail,
+  });
+
+  factory MPGetMemoryV2DetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryV2DetailResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2DetailResponseToJson(this);
+}

@@ -161,6 +161,21 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
           ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
       source: json['source'] as String?,
+      memoryFeed: json['memory_feed'] == null
+          ? null
+          : MPMemoryFeedStruct.fromJson(
+              json['memory_feed'] as Map<String, dynamic>,
+            ),
+      summaryMemory: json['summary_memory'] == null
+          ? null
+          : MPSummaryMemoryStruct.fromJson(
+              json['summary_memory'] as Map<String, dynamic>,
+            ),
+      onlyRecordMemory: json['only_record_memory'] == null
+          ? null
+          : MPOnlyRecordMemoryStruct.fromJson(
+              json['only_record_memory'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
@@ -174,6 +189,9 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'duration': instance.duration,
       'memo_list': instance.memoList,
       'source': instance.source,
+      'memory_feed': instance.memoryFeed,
+      'summary_memory': instance.summaryMemory,
+      'only_record_memory': instance.onlyRecordMemory,
     };
 
 const _$MPMemoryTypeEnumMap = {

@@ -22,17 +22,26 @@ class MPMemoryActionItemData {
   /// [status]：[MPMemoryActionItemStatus.pending] 显示可点的 Create Todo；
   /// [MPMemoryActionItemStatus.created] 显示已完成态且不可点。
   /// {@endtemplate}
-  const MPMemoryActionItemData({required this.title, required this.status});
+  const MPMemoryActionItemData({
+    required this.id,
+    required this.title,
+    required this.status,
+  });
+
+  /// 与接口 [MPTodoStruct.id] 一致。
+  final String id;
 
   final String title;
 
   final MPMemoryActionItemStatus status;
 
   MPMemoryActionItemData copyWith({
+    String? id,
     String? title,
     MPMemoryActionItemStatus? status,
   }) {
     return MPMemoryActionItemData(
+      id: id ?? this.id,
       title: title ?? this.title,
       status: status ?? this.status,
     );
@@ -309,20 +318,3 @@ class _MPActionPillButton extends StatelessWidget {
   }
 }
 
-/// 与详情页示例一致的 3 条默认数据（1 已创建 + 2 待办）
-List<MPMemoryActionItemData> mpMemoryActionSampleItems() {
-  return const <MPMemoryActionItemData>[
-    MPMemoryActionItemData(
-      title: 'Review migration milestones with infrastructure team',
-      status: MPMemoryActionItemStatus.created,
-    ),
-    MPMemoryActionItemData(
-      title: 'Schedule authentication service testing session',
-      status: MPMemoryActionItemStatus.pending,
-    ),
-    MPMemoryActionItemData(
-      title: 'Document rollout risks and mitigation strategies',
-      status: MPMemoryActionItemStatus.pending,
-    ),
-  ];
-}

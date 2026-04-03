@@ -14,8 +14,10 @@ class MPMemoryTranscriptItemData {
     required this.speakerName,
     required this.transcriptText,
     this.waveformHeights,
+    required this.id,
   });
 
+  final String id;
   final String timestamp;
 
   final String speakerName;
@@ -31,12 +33,14 @@ class MPMemoryTranscriptItemData {
     String? speakerName,
     String? transcriptText,
     List<double>? waveformHeights,
+    String? id,
   }) {
     return MPMemoryTranscriptItemData(
       timestamp: timestamp ?? this.timestamp,
       speakerName: speakerName ?? this.speakerName,
       transcriptText: transcriptText ?? this.transcriptText,
       waveformHeights: waveformHeights ?? this.waveformHeights,
+      id: id ?? this.id,
     );
   }
 }

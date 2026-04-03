@@ -41,3 +41,23 @@ Map<String, dynamic> _$MPGetMemoryListResponseToJson(
   'base_resp': instance.baseResp,
   'memory_total': instance.memoryTotal,
 };
+
+MPGetMemoryV2DetailRequest _$MPGetMemoryV2DetailRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2DetailRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPGetMemoryV2DetailRequestToJson(
+  MPGetMemoryV2DetailRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
+MPGetMemoryV2DetailResponse _$MPGetMemoryV2DetailResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2DetailResponse(
+  memoryDetail: MPMemoryStruct.fromJson(
+    json['memory_detail'] as Map<String, dynamic>,
+  ),
+);
+
+Map<String, dynamic> _$MPGetMemoryV2DetailResponseToJson(
+  MPGetMemoryV2DetailResponse instance,
+) => <String, dynamic>{'memory_detail': instance.memoryDetail};

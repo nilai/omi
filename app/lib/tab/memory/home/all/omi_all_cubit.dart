@@ -279,14 +279,28 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         ),
       );
     case MPMemoryType.summary:
+      return MPMemoryEntry.conversation(
+        id: m.id,
+        conversationKind: MPMemoryConversationKind.summary,
+        variant: MPMemoryCardVariant.newUpdates,
+        data: MPMemoryCardData(
+          showActivity: false,
+          title: m.title,
+          timeLabel: _shortTimeLabel(m.createAt),
+          preview: m.content,
+          badgeCount: 0,
+          statusLabel: null,
+        ),
+      );
     case MPMemoryType.memoryFeed:
       return MPMemoryEntry.conversation(
         id: m.id,
+        conversationKind: MPMemoryConversationKind.memoryFeed,
         variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
-          showActivity: m.type == MPMemoryType.memoryFeed,
+          showActivity: true,
           title: m.title,
-          timeLabel:_shortTimeLabel(m.createAt),
+          timeLabel: _shortTimeLabel(m.createAt),
           preview: m.content,
           badgeCount: 0,
           statusLabel: null,

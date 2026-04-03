@@ -22,3 +22,19 @@ Future<MPGetMemoryListResponse?> getMemoryList(MPGetMemoryV2ListRequest req) asy
   }
   return null;
 }
+
+// GET /api/v1/memory/get_detail
+Future<MPGetMemoryV2DetailResponse?> getMemoryDetail(MPGetMemoryV2DetailRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/memory/get_detail?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getMemoryDetail response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemoryV2DetailResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

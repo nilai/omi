@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/common/mp_todo_priority_utils.dart';
 import 'package:omi/common/omi_edit_todo_popup.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/utils/omi_color_utils.dart';
@@ -8,52 +9,22 @@ import 'package:omi/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
 import '../omi_memory_detail_cubit.dart';
+import 'mp_memory_todos_created_models.dart';
 
-/// 已创建 Todo 条目的优先级（决定文案与颜色）
-enum MPMemoryTodoPriorityKind {
-  /// 红色：High priority
-  high,
-
-  /// 灰色：Medium
-  medium,
-
-  /// 橙色：Normal
-  normal,
-}
-
-/// 单条已创建 Todo（用于「TODOS CREATED」列表）
-class MPMemoryCreatedTodoLineData {
-  const MPMemoryCreatedTodoLineData({
-    required this.title,
-    required this.priority,
-    required this.deadlineLabel,
-  });
-
-  final String title;
-  final MPMemoryTodoPriorityKind priority;
-
-  /// 如 `Tomorrow`、`No deadline`
-  final String deadlineLabel;
-}
-
-/// 「TODOS CREATED」整卡数据
-class MPMemoryTodosCreatedCardData {
-  const MPMemoryTodosCreatedCardData({
-    this.headerTimeLabel = 'Just now',
-    required this.items,
-  });
-
-  /// 头部右侧时间，如 `Just now`
-  final String headerTimeLabel;
-
-  final List<MPMemoryCreatedTodoLineData> items;
-}
+export 'mp_memory_todos_created_models.dart';
 
 /// 左侧深绿竖条 + 白底圆角，展示已生成的 Todo 列表
 class MPMemoryTodosCreatedCard extends StatelessWidget {
-  const MPMemoryTodosCreatedCard({super.key, required this.data});
+  const MPMemoryTodosCreatedCard({
+    super.key,
+    required this.data,
+    this.feedBlockIndex = 0,
+  });
 
   final MPMemoryTodosCreatedCardData data;
+
+  /// 对应 [MPMemoryDetailCardData.feedBlocks] 下标，用于删除回调。
+  final int feedBlockIndex;
 
   static const Color _kLeftStripe = greenDeepColor;
 
@@ -137,16 +108,17 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                       title: data.items[i].title,
                       notes:
                           'Need to confirm their availability for next sprint, focus on timeline alignment.',
-                      priorityLabel: _priorityLabelByKind(
+                      priorityLabel: MPTodoPriorityUtils.labelForKind(
                         data.items[i].priority,
                       ),
                       whenLabel: data.items[i].deadlineLabel,
                       timeLabel: '01:02',
                     ),
                     onDelete: () {
-                      return context
-                          .read<OmiMemoryDetailCubit>()
-                          .deleteCreatedTodoAt(i);
+                      return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoAt(
+                            feedBlockIndex,
+                            i,
+                          );
                     },
                   );
                 },
@@ -156,17 +128,6 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _priorityLabelByKind(MPMemoryTodoPriorityKind kind) {
-    switch (kind) {
-      case MPMemoryTodoPriorityKind.high:
-        return 'High priority';
-      case MPMemoryTodoPriorityKind.medium:
-        return 'Medium';
-      case MPMemoryTodoPriorityKind.normal:
-        return 'Normal';
-    }
   }
 }
 
@@ -184,17 +145,6 @@ class _MPCreatedTodoRow extends StatelessWidget {
         return secondTextColor;
       case MPMemoryTodoPriorityKind.normal:
         return orangeTextColor;
-    }
-  }
-
-  String _priorityLabel() {
-    switch (item.priority) {
-      case MPMemoryTodoPriorityKind.high:
-        return 'High priority';
-      case MPMemoryTodoPriorityKind.medium:
-        return 'Medium';
-      case MPMemoryTodoPriorityKind.normal:
-        return 'Normal';
     }
   }
 
@@ -224,7 +174,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
               runSpacing: 4,
               children: <Widget>[
                 Text(
-                  _priorityLabel(),
+                  MPTodoPriorityUtils.labelForKind(item.priority),
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,

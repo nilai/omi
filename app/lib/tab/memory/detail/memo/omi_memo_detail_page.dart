@@ -6,6 +6,7 @@ import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/omi_quick_add_todo_popup.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
+import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_feed_section.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
 import 'package:omi/tab/memory/detail/memory/omi_memory_detail_cubit.dart';
 import 'package:omi/utils/omi_color_utils.dart';
@@ -18,12 +19,15 @@ import '../../../../generated/assets.dart';
 /// 1. 主卡片不带背景色；
 /// 2. Segment 下内容与页面主滚动保持同一滚动容器。
 class OmiMemoDetailPage extends StatelessWidget {
-  const OmiMemoDetailPage({super.key});
+  const OmiMemoDetailPage({super.key, required this.memoryId});
+
+  /// 与列表项 [MPMemoryEntry.id] 一致，用于详情接口。
+  final String memoryId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => OmiMemoryDetailCubit()..initData(),
+      create: (_) => OmiMemoryDetailCubit(memoryId: memoryId)..initData(),
       child: const _OmiMemoDetailView(),
     );
   }
@@ -123,6 +127,7 @@ class _OmiMemoDetailView extends StatelessWidget {
                         onPlayTap: () {},
                       ),
                     ),
+                    MPMemoryDetailFeedSection(data: data),
                   ],
                 ),
               );

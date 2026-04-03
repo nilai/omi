@@ -10,22 +10,21 @@ import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
 import 'card/mp_memory_detail_content_card.dart';
-import 'card/mp_memory_insight_card.dart';
-import 'card/mp_memory_todos_created_card.dart';
-import 'card/mp_memory_my_memos_card.dart';
-import 'card/mp_memory_you_asked_card.dart';
-import 'card/mp_memory_resummary_card.dart';
+import 'card/mp_memory_detail_feed_section.dart';
 import 'card/mp_memory_detail_bottom_bar.dart';
 import 'omi_memory_detail_cubit.dart';
 
 /// Memory 详情页（顶部 [MPCustomNavBar]：返回 + 标题 + 分享 / 更多）
 class OmiMemoryDetailPage extends StatelessWidget {
-  const OmiMemoryDetailPage({super.key});
+  const OmiMemoryDetailPage({super.key, required this.memoryId});
+
+  /// 列表页传入的 memory id，用于拉取详情。
+  final String memoryId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => OmiMemoryDetailCubit()..initData(),
+      create: (_) => OmiMemoryDetailCubit(memoryId: memoryId)..initData(),
       child: const _OmiMemoryDetailView(),
     );
   }
@@ -130,72 +129,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                         },
                       ),
                     ),
-                    for (final MPMemoryInsightItemData item
-                        in data.insightItems)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryInsightCard(
-                          data: item,
-                          onReadMore: () {
-                            // TODO: Insight 全文 / 展开
-                          },
-                          onAddFollowUpTodo: () {
-                            // TODO: 创建 follow-up todo
-                          },
-                        ),
-                      ),
-                    if (data.todosCreated != null &&
-                        data.todosCreated!.items.isNotEmpty) ...<Widget>[
-                      if (data.insightItems.isEmpty) const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryTodosCreatedCard(
-                          data: data.todosCreated!,
-                        ),
-                      ),
-                    ],
-                    if (data.myMemos != null &&
-                        data.myMemos!.lines.isNotEmpty) ...<Widget>[
-                      if (data.insightItems.isEmpty &&
-                          (data.todosCreated == null ||
-                              data.todosCreated!.items.isEmpty))
-                        const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryMyMemosCard(data: data.myMemos!),
-                      ),
-                    ],
-                    if (data.youAsked != null) ...<Widget>[
-                      if (data.insightItems.isEmpty &&
-                          (data.todosCreated == null ||
-                              data.todosCreated!.items.isEmpty) &&
-                          (data.myMemos == null || data.myMemos!.lines.isEmpty))
-                        const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: MPMemoryYouAskedCard(data: data.youAsked!),
-                      ),
-                    ],
-                    if (data.resummaryItems.isNotEmpty) ...<Widget>[
-                      if (data.insightItems.isEmpty &&
-                          (data.todosCreated == null ||
-                              data.todosCreated!.items.isEmpty) &&
-                          (data.myMemos == null ||
-                              data.myMemos!.lines.isEmpty) &&
-                          data.youAsked == null)
-                        const SizedBox(height: 12),
-                      for (final MPMemoryResummaryCardData item
-                          in data.resummaryItems)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: MPMemoryResummaryCard(
-                            data: item,
-                            onExpansionChanged: (bool expanded) {
-                              // TODO: 埋点 / 同步展开状态
-                            },
-                          ),
-                        ),
-                    ],
+                    MPMemoryDetailFeedSection(data: data),
                   ],
                 ),
               );

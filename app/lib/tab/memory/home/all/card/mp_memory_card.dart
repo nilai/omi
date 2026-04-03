@@ -21,6 +21,12 @@ enum MPMemoryEntryKind {
   audioRecording,
 }
 
+/// 会话型列表项子类型（服务端 summary / memoryFeed），决定详情页形态与导航。
+enum MPMemoryConversationKind {
+  summary,
+  memoryFeed,
+}
+
 /// Memory 列表卡片三种展示形态（对应设计稿）
 enum MPMemoryCardVariant {
   /// 有新更新：左侧紫色竖条、角标、「New updates」状态文案，底部 Audio / Summary / Activity
@@ -64,6 +70,7 @@ class MPMemoryCardData {
 class MPMemoryEntry {
   const MPMemoryEntry.conversation({
     required this.id,
+    required this.conversationKind,
     required this.variant,
     required this.data,
   })  : kind = MPMemoryEntryKind.conversation,
@@ -78,7 +85,8 @@ class MPMemoryEntry {
   })  : kind = MPMemoryEntryKind.memoGroup,
         variant = null,
         data = null,
-        audioData = null;
+        audioData = null,
+        conversationKind = null;
 
   const MPMemoryEntry.audioRecording({
     required this.id,
@@ -87,12 +95,16 @@ class MPMemoryEntry {
         variant = null,
         data = null,
         memoVariant = null,
-        memoData = null;
+        memoData = null,
+        conversationKind = null;
 
   /// 业务唯一 id，作为服务端 cursor 传递
   final String id;
 
   final MPMemoryEntryKind kind;
+
+  /// [kind] 为 [MPMemoryEntryKind.conversation] 时使用（服务端 summary / memoryFeed）。
+  final MPMemoryConversationKind? conversationKind;
 
   /// [kind] 为 [MPMemoryEntryKind.conversation] 时使用
   final MPMemoryCardVariant? variant;
