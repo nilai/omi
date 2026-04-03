@@ -1,8 +1,10 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/login/forget/mp_forget_success_cubit.dart';
+import 'package:omi/login/forget/mp_forget_success_state.dart';
 import 'package:omi/login/home/mp_login_page.dart';
 import 'package:omi/login/legal/mp_legal_document_page.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 
@@ -15,6 +17,18 @@ class MPForgetSuccessPage extends StatelessWidget {
 
   /// 发送重置链接的目标邮箱。
   final String email;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<MPForgetSuccessCubit>(
+      create: (_) => MPForgetSuccessCubit(email: email),
+      child: const _MPForgetSuccessView(),
+    );
+  }
+}
+
+class _MPForgetSuccessView extends StatelessWidget {
+  const _MPForgetSuccessView();
 
   @override
   Widget build(BuildContext context) {
@@ -41,102 +55,85 @@ class MPForgetSuccessPage extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const _SuccessIcon(),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Reset Link Sent!',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: OmiFontSize.t16_25,
-                        fontWeight: OmiFontWeight.bold,
-                        color: mainTextColor,
-                        letterSpacing: -0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      "We've sent a password reset link to",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: OmiFontSize.t6_15,
-                        color: secondTextColor,
-                        height: 1.4,
-                        fontWeight: OmiFontWeight.medium,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: OmiFontSize.t8_17,
-                        color: mainTextColor,
-                        fontWeight: OmiFontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F6FA),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Text.rich(
-                        TextSpan(
+                child: BlocBuilder<MPForgetSuccessCubit, MPForgetSuccessState>(
+                  builder: (BuildContext context, MPForgetSuccessState state) {
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const _SuccessIcon(),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Reset Link Sent!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: OmiFontSize.t16_25,
+                            fontWeight: OmiFontWeight.bold,
+                            color: mainTextColor,
+                            letterSpacing: -0.8,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "We've sent a password reset link to",
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: OmiFontSize.t6_15,
                             color: secondTextColor,
-                            height: 1.5,
+                            height: 1.4,
                             fontWeight: OmiFontWeight.medium,
                           ),
-                          children: <InlineSpan>[
-                            const TextSpan(text: "Didn't receive the email? Check your spam folder or "),
-                            TextSpan(
-                              text: 'try again',
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  MPToastUtils.showFeatureComingSoon(message: '重新发送');
-                                },
-                              style: TextStyle(
-                                color: blueTextColor,
-                                fontWeight: OmiFontWeight.bold,
-                              ),
-                            ),
-                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      height: 56,
-                      child: FilledButton(
-                        onPressed: () {
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute<void>(builder: (_) => const MPLoginPage()),
-                            (route) => false,
-                          );
-                        },
-                        style: FilledButton.styleFrom(
-                          backgroundColor: blueTextColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: Text(
-                          'Back to Sign In',
+                        const SizedBox(height: 4),
+                        Text(
+                          state.email,
+                          textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: OmiFontSize.t8_17,
+                            color: mainTextColor,
                             fontWeight: OmiFontWeight.bold,
-                            letterSpacing: -0.4,
                           ),
                         ),
-                      ),
-                    ),
-                  ],
+                        const SizedBox(height: 18),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF5F6FA),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: _ResendHintParagraph(
+                            resendInProgress: state.resendInProgress,
+                            onTryAgain: () => context.read<MPForgetSuccessCubit>().tryResendCode(),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          height: 56,
+                          child: FilledButton(
+                            onPressed: () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute<void>(builder: (_) => const MPLoginPage()),
+                                (Route<dynamic> route) => false,
+                              );
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: blueTextColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                            child: Text(
+                              'Back to Sign In',
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t8_17,
+                                fontWeight: OmiFontWeight.bold,
+                                letterSpacing: -0.4,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -159,6 +156,78 @@ class MPForgetSuccessPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 带可点击「try again」的说明文案；正确 dispose [TapGestureRecognizer]。
+class _ResendHintParagraph extends StatefulWidget {
+  const _ResendHintParagraph({
+    required this.resendInProgress,
+    required this.onTryAgain,
+  });
+
+  final bool resendInProgress;
+  final VoidCallback onTryAgain;
+
+  @override
+  State<_ResendHintParagraph> createState() => _ResendHintParagraphState();
+}
+
+class _ResendHintParagraphState extends State<_ResendHintParagraph> {
+  late final TapGestureRecognizer _tryAgainRecognizer;
+
+  @override
+  void initState() {
+    super.initState();
+    _tryAgainRecognizer = TapGestureRecognizer()..onTap = _handleTryAgain;
+  }
+
+  @override
+  void didUpdateWidget(covariant _ResendHintParagraph oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _tryAgainRecognizer.onTap = _handleTryAgain;
+  }
+
+  void _handleTryAgain() {
+    if (widget.resendInProgress) {
+      return;
+    }
+    widget.onTryAgain();
+  }
+
+  @override
+  void dispose() {
+    _tryAgainRecognizer.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Color linkColor =
+        widget.resendInProgress ? secondTextColor.withValues(alpha: 0.45) : blueTextColor;
+
+    return Text.rich(
+      TextSpan(
+        style: TextStyle(
+          fontSize: OmiFontSize.t6_15,
+          color: secondTextColor,
+          height: 1.5,
+          fontWeight: OmiFontWeight.medium,
+        ),
+        children: <InlineSpan>[
+          const TextSpan(text: "Didn't receive the email? Check your spam folder or "),
+          TextSpan(
+            text: 'try again',
+            recognizer: _tryAgainRecognizer,
+            style: TextStyle(
+              color: linkColor,
+              fontWeight: OmiFontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }
