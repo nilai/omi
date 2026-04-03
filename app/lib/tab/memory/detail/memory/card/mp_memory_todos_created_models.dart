@@ -5,20 +5,20 @@ export 'package:omi/common/mp_memory_todo_priority_kind.dart';
 /// 单条已创建 Todo（用于「TODOS CREATED」列表）
 class MPMemoryCreatedTodoLineData {
   const MPMemoryCreatedTodoLineData({
-    required this.id,
-    required this.title,
-    required this.priority,
-    required this.deadlineLabel,
+    this.id,
+    this.title,
+    this.priority,
+    this.deadlineLabel,
   });
 
   /// 与接口 [MPTodoStruct.id] 一致；本地新增尚未落库时可为空串。
-  final String id;
+  final String? id;
 
-  final String title;
-  final MPMemoryTodoPriorityKind priority;
+  final String? title;
+  final MPMemoryTodoPriorityKind? priority;
 
-  /// 如 `Tomorrow`、`No deadline`
-  final String deadlineLabel;
+  /// 截止时间 Unix 时间戳（秒或毫秒）；null 表示无截止时间。
+  final int? deadlineLabel;
 }
 
 /// 「TODOS CREATED」整卡数据

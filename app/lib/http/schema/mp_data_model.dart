@@ -39,6 +39,15 @@ enum MPMemoryType {
   memoList,
 }
 
+/// 与后端 `MemoType` 对齐：1 = HIGHLIGHT_MEMO，2 = MANUAL_MEMO。
+enum MPMemoType {
+  @JsonValue(1)
+  highlightMemo,
+
+  @JsonValue(2)
+  manualMemo,
+}
+
 // Speaker Struct
 @JsonSerializable()
 class MPSpeakerStruct {
@@ -86,29 +95,29 @@ class MPSpeakerStruct {
 @JsonSerializable()
 class MPTodoStruct {
   @JsonKey(name: 'id')
-  final String id;
+  final String? id;
 
   @JsonKey(name: 'title')
-  final String title;
+  final String? title;
 
   @JsonKey(name: 'owner')
-  final MPSpeakerStruct owner;
+  final MPSpeakerStruct? owner;
 
   @JsonKey(name: 'priority')
-  final String priority;
+  final String? priority;
 
   @JsonKey(name: 'deadline')
-  final String deadline;
+  final int? deadline;
 
   @JsonKey(name: 'status')
   final int? status;
 
   MPTodoStruct({
-    required this.id,
-    required this.title,
-    required this.owner,
-    required this.priority,
-    required this.deadline,
+    this.id,
+    this.title,
+    this.owner,
+    this.priority,
+    this.deadline,
     this.status,
   });
 
@@ -130,7 +139,7 @@ class MPRecordConversationStruct {
   final String content;
 
   @JsonKey(name: 'time')
-  final String time;
+  final int? time;
 
   MPRecordConversationStruct({
     required this.id,
@@ -151,15 +160,28 @@ typedef MPSummaryConversationStruct = MPRecordConversationStruct;
 // Summary Memory Struct
 @JsonSerializable(explicitToJson: true)
 class MPSummaryMemoryStruct {
+
+  @JsonKey(name: 'title')
+  final String? title;
+
+  @JsonKey(name: 'content')
+  final String? content;
+
+  @JsonKey(name: 'create_at')
+  final int? createAt;
+
+  @JsonKey(name: 'duration')
+  final int? duration;
+
   @JsonKey(name: 'participants')
-  final List<MPSpeakerStruct> participants;
+  final List<MPSpeakerStruct>? participants;
 
   @JsonKey(name: 'participants_cnt')
-  final int participantsCnt;
+  final int? participantsCnt;
 
   /// 录音地址
   @JsonKey(name: 'record_url')
-  final String recordUrl;
+  final String? recordUrl;
 
   /// 录音地址
   @JsonKey(name: 'record_uri')
@@ -167,13 +189,13 @@ class MPSummaryMemoryStruct {
 
   /// markdown 格式
   @JsonKey(name: 'summary')
-  final String summary;
+  final String? summary;
 
   @JsonKey(name: 'transcript')
-  final List<MPRecordConversationStruct> transcript;
+  final List<MPRecordConversationStruct>? transcript;
 
   @JsonKey(name: 'todos')
-  final List<MPTodoStruct> todos;
+  final List<MPTodoStruct>? todos;
 
   @JsonKey(name: 'status')
   final int? status;
@@ -182,13 +204,17 @@ class MPSummaryMemoryStruct {
   final String? source;
 
   MPSummaryMemoryStruct({
-    required this.participants,
-    required this.participantsCnt,
-    required this.recordUrl,
+    this.title,
+    this.content,
+    this.createAt,
+    this.duration,
+    this.participants,
+    this.participantsCnt,
+    this.recordUrl,
     this.recordUri,
-    required this.summary,
-    required this.transcript,
-    required this.todos,
+    this.summary,
+    this.transcript,
+    this.todos,
     this.status,
     this.source,
   });
@@ -335,6 +361,15 @@ class MPFeedCardStruct {
   @JsonKey(name: 'todos')
   final List<MPTodoStruct>? todos;
 
+  /// 仅在 INSIGHT 卡片返回，表示该 insight 是否已添加过 todo
+  @JsonKey(name: 'has_added_todo')
+  final bool? hasAddedTodo;
+
+   /// 仅在 MY_MEMO 卡片返回
+  @JsonKey(name: 'memos')
+  final List<MPMemoStruct>? memos;
+
+
   const MPFeedCardStruct({
     this.id,
     this.type,
@@ -342,6 +377,8 @@ class MPFeedCardStruct {
     this.createAt,
     this.content,
     this.todos,
+    this.hasAddedTodo,
+    this.memos,
   });
 
   factory MPFeedCardStruct.fromJson(Map<String, dynamic> json) =>
@@ -354,12 +391,15 @@ class MPFeedCardStruct {
 abstract final class MPFeedCardType {
   MPFeedCardType._();
 
-  static const int businessInsight = 1;
-  static const int executionInsight = 6;
   static const int todosCreated = 2;
   static const int myMemo = 3;
   static const int resummary = 4;
   static const int youAsked = 5;
+  static const int patternInsight = 5;
+  static const int businessInsight = 6;
+  static const int creativeInsight = 7;
+  static const int wellnessInsight = 8;
+  static const int executionInsight = 9;
 }
 
 // Memory Feed Struct
@@ -403,6 +443,9 @@ class MPMemoStruct {
   @JsonKey(name: 'relate_memory_id')
   final int? relateMemoryId;
 
+  @JsonKey(name: 'type')
+  final MPMemoType? type;
+
   MPMemoStruct({
     required this.id,
     required this.title,
@@ -410,6 +453,7 @@ class MPMemoStruct {
     this.tags,
     this.createAt,
     this.relateMemoryId,
+    this.type,
   });
 
   factory MPMemoStruct.fromJson(Map<String, dynamic> json) => _$MPMemoStructFromJson(json);

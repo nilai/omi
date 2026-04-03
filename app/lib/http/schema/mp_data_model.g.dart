@@ -48,7 +48,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
   title: json['title'] as String,
   owner: MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
   priority: json['priority'] as String,
-  deadline: json['deadline'] as String,
+  deadline: (json['deadline'] as num?)?.toInt(),
   status: (json['status'] as num?)?.toInt(),
 );
 
@@ -68,7 +68,7 @@ MPRecordConversationStruct _$MPRecordConversationStructFromJson(
   id: json['id'] as String,
   speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
   content: json['content'] as String,
-  time: json['time'] as String,
+  time: (json['time'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPRecordConversationStructToJson(
@@ -83,20 +83,24 @@ Map<String, dynamic> _$MPRecordConversationStructToJson(
 MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
   Map<String, dynamic> json,
 ) => MPSummaryMemoryStruct(
-  participants: (json['participants'] as List<dynamic>)
-      .map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
+  title: json['title'] as String?,
+  content: json['content'] as String?,
+  createAt: (json['create_at'] as num?)?.toInt(),
+  duration: (json['duration'] as num?)?.toInt(),
+  participants: (json['participants'] as List<dynamic>?)
+      ?.map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
-  participantsCnt: (json['participants_cnt'] as num).toInt(),
-  recordUrl: json['record_url'] as String,
+  participantsCnt: (json['participants_cnt'] as num?)?.toInt(),
+  recordUrl: json['record_url'] as String?,
   recordUri: json['record_uri'] as String?,
-  summary: json['summary'] as String,
-  transcript: (json['transcript'] as List<dynamic>)
-      .map(
+  summary: json['summary'] as String?,
+  transcript: (json['transcript'] as List<dynamic>?)
+      ?.map(
         (e) => MPRecordConversationStruct.fromJson(e as Map<String, dynamic>),
       )
       .toList(),
-  todos: (json['todos'] as List<dynamic>)
-      .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+  todos: (json['todos'] as List<dynamic>?)
+      ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
   status: (json['status'] as num?)?.toInt(),
   source: json['source'] as String?,
@@ -105,13 +109,17 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
 Map<String, dynamic> _$MPSummaryMemoryStructToJson(
   MPSummaryMemoryStruct instance,
 ) => <String, dynamic>{
-  'participants': instance.participants.map((e) => e.toJson()).toList(),
+  'title': instance.title,
+  'content': instance.content,
+  'create_at': instance.createAt,
+  'duration': instance.duration,
+  'participants': instance.participants?.map((e) => e.toJson()).toList(),
   'participants_cnt': instance.participantsCnt,
   'record_url': instance.recordUrl,
   'record_uri': instance.recordUri,
   'summary': instance.summary,
-  'transcript': instance.transcript.map((e) => e.toJson()).toList(),
-  'todos': instance.todos.map((e) => e.toJson()).toList(),
+  'transcript': instance.transcript?.map((e) => e.toJson()).toList(),
+  'todos': instance.todos?.map((e) => e.toJson()).toList(),
   'status': instance.status,
   'source': instance.source,
 };
@@ -211,6 +219,10 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
+      memos: (json['memos'] as List<dynamic>?)
+          ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+        hasAddedTodo: json['has_added_todo'] as bool
     );
 
 Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
@@ -221,6 +233,9 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'create_at': instance.createAt,
       'content': instance.content,
       'todos': instance.todos,
+      'memos': instance.memos,
+      'has_added_todo': instance.hasAddedTodo
+
     };
 
 MPMemoryFeedStruct _$MPMemoryFeedStructFromJson(Map<String, dynamic> json) =>
@@ -235,6 +250,7 @@ MPMemoryFeedStruct _$MPMemoryFeedStructFromJson(Map<String, dynamic> json) =>
               ?.map((e) => MPFeedCardStruct.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+
     );
 
 Map<String, dynamic> _$MPMemoryFeedStructToJson(MPMemoryFeedStruct instance) =>
@@ -250,6 +266,7 @@ MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
   createAt: (json['create_at'] as num?)?.toInt(),
   relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
+  type: $enumDecodeNullable(_$MPMemoTypeEnumMap, json['type']),
 );
 
 Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) =>
@@ -260,7 +277,13 @@ Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) =>
       'tags': instance.tags,
       'create_at': instance.createAt,
       'relate_memory_id': instance.relateMemoryId,
+      'type': _$MPMemoTypeEnumMap[instance.type],
     };
+
+const _$MPMemoTypeEnumMap = {
+  MPMemoType.highlightMemo: 1,
+  MPMemoType.manualMemo: 2,
+};
 
 MPExpertStruct _$MPExpertStructFromJson(Map<String, dynamic> json) =>
     MPExpertStruct(

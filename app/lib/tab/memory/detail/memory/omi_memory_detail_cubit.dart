@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:omi/common/mp_date_utils.dart';
 import 'package:omi/common/mp_todo_priority_utils.dart';
 import 'package:omi/http/api/mp_memory.dart';
 import 'package:omi/http/schema/mp_data_model.dart';
@@ -84,7 +85,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
                     id: '',
                     title: title,
                     priority: MPMemoryTodoPriorityKind.medium,
-                    deadlineLabel: 'No deadline',
+                    deadlineLabel: null,
                   ),
                 ],
               ),
@@ -219,32 +220,36 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
   final MPMemoryFeedStruct? mf = m.memoryFeed;
   final MPSummaryMemoryStruct? sm = mf?.summaryMemory;
-  final String title = m.title.trim().isNotEmpty ? m.title : 'Memory';
+  final String title = sm?.title ?? '';
 
-  final String overviewText = sm?.summary.trim() ?? '';
+  final String overviewText = sm?.summary?.trim() ?? '';
 
-  final List<String> speakerLabels = sm == null || sm.participants.isEmpty
-      ? <String>['Speaker']
-      : sm.participants.map((MPSpeakerStruct p) => p.name).toList();
+  final List<String> speakerLabels = sm == null || (sm.participants ?? []).isEmpty
+      ? []
+      : (sm.participants ?? []).map((MPSpeakerStruct p) => p.name).toList();
 
   final List<MPMemoryTranscriptItemData> transcriptItems =
       sm == null
           ? const <MPMemoryTranscriptItemData>[]
-          : sm.transcript
+          : (sm.transcript ?? [])
               .map(
-                (MPRecordConversationStruct t) => MPMemoryTranscriptItemData(
-                  timestamp: t.time,
-                  speakerName: t.speaker.name,
-                  transcriptText: t.content,
-                  id: t.id,
-                ),
+                (MPRecordConversationStruct t) {
+                  final int sec = t.time ?? 0;
+                  return MPMemoryTranscriptItemData(
+                    timestamp: MPDateUtils.formatTranscriptSecondsToMmSs(sec),
+                    timeSeconds: sec,
+                    speakerName: t.speaker.name,
+                    transcriptText: t.content,
+                    id: t.id,
+                  );
+                },
               )
               .toList(growable: false);
 
   final List<MPMemoryActionItemData> actionItems =
       sm == null
           ? const <MPMemoryActionItemData>[]
-          : sm.todos
+          : (sm.todos ?? [])
               .map(
                 (MPTodoStruct t) => MPMemoryActionItemData(
                   id: t.id,
@@ -252,6 +257,8 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
                   status: t.status == 1
                       ? MPMemoryActionItemStatus.pending
                       : MPMemoryActionItemStatus.created,
+                  priority: t.priority,
+                  deadline: t.deadline
                 ),
               )
               .toList(growable: false);
@@ -262,18 +269,19 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
     int unknownInsightIndex = 0;
     for (final MPFeedCardStruct f in mf.feeds) {
       final int kind = _resolveFeedCardKind(f);
-      if (kind == MPFeedCardType.myMemo) {
-        final String line = (f.content ?? '').trim();
-        if (line.isNotEmpty) {
-          feedBlocks.add(
-            MPMemoryFeedMyMemoBlock(
-              MPMemoryMyMemosCardData(
-                headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-                lines: <String>[line],
-              ),
-            ),
-          );
+      if (kind == MPFeedCardType.myMemo) {  
+        final List<MPMemoStruct> memos = f.memos ?? const <MPMemoStruct>[];
+        if (memos.isEmpty) {
+          continue;
         }
+        feedBlocks.add(
+          MPMemoryFeedMyMemoBlock(
+            MPMemoryMyMemosCardData(
+              headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+              lines: memos.map((MPMemoStruct m) => m.title).toList(growable: false),
+            ),
+          ),
+        );
         continue;
       }
       if (kind == MPFeedCardType.todosCreated) {
@@ -322,20 +330,18 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
         continue;
       }
 
-      final String body = (f.content ?? '').trim();
-      if (body.isEmpty) {
-        continue;
-      }
-
+  
       final MPInsightCardTone tone;
       if (kind == MPFeedCardType.executionInsight) {
         tone = MPInsightCardTone.execution;
       } else if (kind == MPFeedCardType.businessInsight) {
         tone = MPInsightCardTone.business;
+      } else if (kind == MPFeedCardType.creativeInsight) {
+        tone = MPInsightCardTone.creative;
+      } else if (kind == MPFeedCardType.wellnessInsight) {
+        tone = MPInsightCardTone.wellness;
       } else {
-        tone = unknownInsightIndex.isEven
-            ? MPInsightCardTone.business
-            : MPInsightCardTone.execution;
+        tone = _kInsightToneCycle[unknownInsightIndex % _kInsightToneCycle.length];
         unknownInsightIndex++;
       }
 
@@ -344,7 +350,7 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
           MPMemoryInsightItemData(
             tone: tone,
             timeLabel: _feedCardTimeLabel(f.createAt),
-            bodyText: body,
+            bodyText: f.content ?? '',
             categoryTitle: f.title,
           ),
         ),
@@ -354,8 +360,7 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
 
   final DateTime dt = _detailServerTime(m.createAt);
   final String durationLabel = _formatDetailDuration(m.duration);
-  final String sourceLabel =
-      m.source?.trim().isNotEmpty == true ? m.source!.trim() : 'MemoPin';
+  final String sourceLabel = (m.source ?? '').trim();
   final String metaLine =
       '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
 
@@ -421,19 +426,30 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
   return MPMemoryCreatedTodoLineData(
     id: t.id,
     title: t.title,
-    priority: MPTodoPriorityUtils.fromServerString(t.priority),
+    priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'normal'),
     deadlineLabel: t.deadline,
   );
 }
 
-/// 非 1–4 的 [MPFeedCardStruct.type] 视为 insight，按序交替 Business / Execution。
+/// 非 1–4 的 [MPFeedCardStruct.type] 视为 insight；未知 type 在多种 [MPInsightCardTone] 间轮换。
 const int _kFeedUnknownInsight = -1;
+
+const List<MPInsightCardTone> _kInsightToneCycle = <MPInsightCardTone>[
+  MPInsightCardTone.business,
+  MPInsightCardTone.execution,
+  MPInsightCardTone.creative,
+  MPInsightCardTone.wellness,
+  MPInsightCardTone.strategic,
+  MPInsightCardTone.growth,
+];
 
 int _resolveFeedCardKind(MPFeedCardStruct f) {
   if (f.type != null) {
     final int v = f.type!;
     if (v == MPFeedCardType.businessInsight ||
         v == MPFeedCardType.executionInsight ||
+        v == MPFeedCardType.creativeInsight ||
+        v == MPFeedCardType.wellnessInsight ||
         v == MPFeedCardType.todosCreated ||
         v == MPFeedCardType.myMemo ||
         v == MPFeedCardType.youAsked ||

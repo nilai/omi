@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/common/mp_date_utils.dart';
 import 'package:omi/common/mp_todo_priority_utils.dart';
 import 'package:omi/common/omi_edit_todo_popup.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -105,14 +106,18 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                   showOmiEditTodoPopup(
                     context,
                     params: OmiEditTodoPopupParams(
-                      title: data.items[i].title,
+                      title: data.items[i].title ?? '',
                       notes:
                           'Need to confirm their availability for next sprint, focus on timeline alignment.',
                       priorityLabel: MPTodoPriorityUtils.labelForKind(
-                        data.items[i].priority,
+                        data.items[i].priority ?? MPMemoryTodoPriorityKind.normal,
                       ),
-                      whenLabel: data.items[i].deadlineLabel,
-                      timeLabel: '01:02',
+                      whenLabel: MPDateUtils.formatWhenLabelFromDeadline(
+                        data.items[i].deadlineLabel,
+                      ),
+                      timeLabel: MPDateUtils.formatTimeLabelFromDeadline(
+                        data.items[i].deadlineLabel,
+                      ),
                     ),
                     onDelete: () {
                       return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoAt(
@@ -138,7 +143,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
   final VoidCallback? onTap;
 
   Color _priorityColor() {
-    switch (item.priority) {
+    switch (item.priority ?? MPMemoryTodoPriorityKind.normal) {
       case MPMemoryTodoPriorityKind.high:
         return redColor;
       case MPMemoryTodoPriorityKind.medium:
@@ -159,7 +164,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              item.title,
+              item.title ?? '',
               style: OmiTextStyle.create(
                 fontSize: OmiFontSize.t4_13,
                 fontWeight: OmiFontWeight.bold,
@@ -174,7 +179,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
               runSpacing: 4,
               children: <Widget>[
                 Text(
-                  MPTodoPriorityUtils.labelForKind(item.priority),
+                  MPTodoPriorityUtils.labelForKind(item.priority ?? MPMemoryTodoPriorityKind.normal),
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
@@ -192,7 +197,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  item.deadlineLabel,
+                  MPDateUtils.deadlineLineText(item.deadlineLabel),
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,

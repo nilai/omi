@@ -1,0 +1,63 @@
+import 'package:intl/intl.dart';
+
+/// Unix 时间戳与 Todo 截止时间展示文案。
+class MPDateUtils {
+  MPDateUtils._();
+
+  /// 秒或毫秒时间戳转本地 [DateTime]；`raw > 1e10` 视为毫秒。
+  static DateTime? dateTimeFromUnixEpoch(int? raw) {
+    if (raw == null) {
+      return null;
+    }
+    return raw > 10000000000
+        ? DateTime.fromMillisecondsSinceEpoch(raw)
+        : DateTime.fromMillisecondsSinceEpoch(raw * 1000);
+  }
+
+  /// 日期部分：当天为 `Today`，否则为 `yyyy年M月d日`；无截止时间为 `No deadline`。
+  static String formatWhenLabelFromDeadline(int? deadline) {
+    final DateTime? dt = dateTimeFromUnixEpoch(deadline);
+    if (dt == null) {
+      return 'No deadline';
+    }
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    if (day == today) {
+      return 'Today';
+    }
+    return DateFormat('yyyy年M月d日').format(dt);
+  }
+
+  /// `HH:mm:ss`；无截止时间时为 `--:--:--`。
+  static String formatTimeLabelFromDeadline(int? deadline) {
+    final DateTime? dt = dateTimeFromUnixEpoch(deadline);
+    if (dt == null) {
+      return '--:--:--';
+    }
+    return DateFormat('HH:mm:ss').format(dt);
+  }
+
+  /// 列表一行：`Today · HH:mm:ss` 或 `yyyy年M月d日 · HH:mm:ss`；无截止为 `No deadline`。
+  static String deadlineLineText(int? deadline) {
+    final DateTime? dt = dateTimeFromUnixEpoch(deadline);
+    if (dt == null) {
+      return 'No deadline';
+    }
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final String when =
+        day == today ? 'Today' : DateFormat('yyyy年M月d日').format(dt);
+    final String time = DateFormat('HH:mm:ss').format(dt);
+    return '$when · $time';
+  }
+
+  /// 展示为 `MM:SS`（分、秒各至少两位）。
+  static String formatTranscriptSecondsToMmSs(int seconds) {
+    final int s = seconds.clamp(0, 86400);
+    final int m = s ~/ 60;
+    final int sec = s % 60;
+    return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
+  }
+}

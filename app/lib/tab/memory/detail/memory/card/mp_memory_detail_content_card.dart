@@ -184,8 +184,8 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       if (isSameIndex && _playing) {
         _playing = false;
       } else {
-        final String ts = _transcriptItems[index].timestamp;
-        final Duration fromTranscript = Duration(seconds: _parseToSeconds(ts));
+        final Duration fromTranscript =
+            Duration(seconds: _transcriptItems[index].timeSeconds);
         if (fromTranscript <= _total) {
           _elapsed = fromTranscript;
         }
@@ -249,7 +249,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     final int nowSec = _elapsed.inSeconds;
     int selected = 0;
     for (int i = 0; i < items.length; i++) {
-      final int ts = _parseToSeconds(items[i].timestamp);
+      final int ts = items[i].timeSeconds;
       if (nowSec >= ts) {
         selected = i;
       } else {

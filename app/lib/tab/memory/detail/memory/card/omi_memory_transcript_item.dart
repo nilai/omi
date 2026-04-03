@@ -8,9 +8,10 @@ import '../../../../../utils/omi_image_loader.dart';
 
 /// Transcript 列表单行数据
 class MPMemoryTranscriptItemData {
-  /// [timestamp] 如 `00:00`
+  /// [timestamp] 如 `00:00`（与 [timeSeconds] 一致）
   const MPMemoryTranscriptItemData({
     required this.timestamp,
+    required this.timeSeconds,
     required this.speakerName,
     required this.transcriptText,
     this.waveformHeights,
@@ -19,6 +20,9 @@ class MPMemoryTranscriptItemData {
 
   final String id;
   final String timestamp;
+
+  /// 从音频起点算起的偏移秒数，与 [timestamp] 对应。
+  final int timeSeconds;
 
   final String speakerName;
 
@@ -30,6 +34,7 @@ class MPMemoryTranscriptItemData {
   /// 复制并覆盖部分字段（用于编辑说话人等）
   MPMemoryTranscriptItemData copyWith({
     String? timestamp,
+    int? timeSeconds,
     String? speakerName,
     String? transcriptText,
     List<double>? waveformHeights,
@@ -37,6 +42,7 @@ class MPMemoryTranscriptItemData {
   }) {
     return MPMemoryTranscriptItemData(
       timestamp: timestamp ?? this.timestamp,
+      timeSeconds: timeSeconds ?? this.timeSeconds,
       speakerName: speakerName ?? this.speakerName,
       transcriptText: transcriptText ?? this.transcriptText,
       waveformHeights: waveformHeights ?? this.waveformHeights,

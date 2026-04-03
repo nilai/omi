@@ -23,17 +23,24 @@ class MPMemoryActionItemData {
   /// [MPMemoryActionItemStatus.created] 显示已完成态且不可点。
   /// {@endtemplate}
   const MPMemoryActionItemData({
-    required this.id,
-    required this.title,
-    required this.status,
+    this.id,
+    this.title,
+    this.status,
+    this.deadline,
+    this.priority,
+
   });
 
   /// 与接口 [MPTodoStruct.id] 一致。
-  final String id;
+  final String? id;
 
-  final String title;
+  final String? title;
 
-  final MPMemoryActionItemStatus status;
+  final MPMemoryActionItemStatus? status;
+
+  final int? deadline;
+
+  final String? priority;
 
   MPMemoryActionItemData copyWith({
     String? id,
@@ -151,7 +158,7 @@ class MPMemoryActionContent extends StatelessWidget {
   }) async {
     final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
       context,
-      params: MPAddTodoPopupParams(initialTitle: item.title),
+      params: MPAddTodoPopupParams(initialTitle: item.title ?? ''),
       onContextTap: onActionContextTap,
     );
     if (!context.mounted || result == null) {
@@ -201,7 +208,7 @@ class _MPMemoryActionCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Text(
-            data.title,
+            data.title ?? '',
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.medium,

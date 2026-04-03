@@ -7,13 +7,25 @@ import 'package:omi/utils/omi_textstyle.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
 
-/// Insight 卡片配色主题（商务洞察 / 执行洞察）
+/// Insight 卡片配色主题（仅样式差异，与 [MPFeedCardType] 可对应或用于轮换）。
 enum MPInsightCardTone {
-  /// 暖橙：Business insight
+  /// 暖橙
   business,
 
-  /// 冷蓝：Execution insight
+  /// 冷蓝
   execution,
+
+  /// 紫色
+  creative,
+
+  /// 绿色
+  wellness,
+
+  /// 红色 / 强调
+  strategic,
+
+  /// 深绿
+  growth,
 }
 
 /// 单条 Insight 卡片数据
@@ -46,6 +58,14 @@ class MPMemoryInsightItemData {
         return 'BUSINESS INSIGHT';
       case MPInsightCardTone.execution:
         return 'EXECUTION INSIGHT';
+      case MPInsightCardTone.creative:
+        return 'CREATIVE INSIGHT';
+      case MPInsightCardTone.wellness:
+        return 'WELLNESS INSIGHT';
+      case MPInsightCardTone.strategic:
+        return 'STRATEGIC INSIGHT';
+      case MPInsightCardTone.growth:
+        return 'GROWTH INSIGHT';
     }
   }
 }
@@ -86,6 +106,42 @@ class _MPInsightVisual {
           buttonBg: blueTextColor.withAlpha(80),
           buttonForeground: blueTextColor,
           icon: Assets.omiExecutionInsight,
+        );
+      case MPInsightCardTone.creative:
+        return _MPInsightVisual(
+          cardBg: purpleTextColor.withAlpha(28),
+          accent: purpleTextColor,
+          iconBg: purpleTextColor,
+          buttonBg: purpleTextColor.withAlpha(80),
+          buttonForeground: purpleTextColor,
+          icon: Assets.omiDetailMessage,
+        );
+      case MPInsightCardTone.wellness:
+        return _MPInsightVisual(
+          cardBg: greenTextColor.withAlpha(30),
+          accent: greenTextColor,
+          iconBg: greenTextColor,
+          buttonBg: greenTextColor.withAlpha(80),
+          buttonForeground: greenTextColor,
+          icon: Assets.omiDetailPhone,
+        );
+      case MPInsightCardTone.strategic:
+        return _MPInsightVisual(
+          cardBg: redColor.withAlpha(26),
+          accent: redColor,
+          iconBg: redColor,
+          buttonBg: redColor.withAlpha(80),
+          buttonForeground: redColor,
+          icon: Assets.omiDetailEdit,
+        );
+      case MPInsightCardTone.growth:
+        return _MPInsightVisual(
+          cardBg: greenDeepColor.withAlpha(28),
+          accent: greenDeepColor,
+          iconBg: greenDeepColor,
+          buttonBg: greenDeepColor.withAlpha(80),
+          buttonForeground: greenDeepColor,
+          icon: Assets.omiDetailCheck,
         );
     }
   }
