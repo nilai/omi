@@ -281,18 +281,7 @@ class MPMemoryStruct {
   @JsonKey(name: 'source')
   final String? source;
   
-  @JsonKey(name: 'custom_labels')
-  final List<String>? customLabels;
-
-  @JsonKey(name: 'summary_content')
-  final MPSummaryMemoryStruct? summaryContent;
-
-  @JsonKey(name: 'only_record_content')
-  final MPOnlyRecordMemoryStruct? onlyRecordContent;
-
-  @JsonKey(name: 'memory_feed')
-  final MPMemoryFeedStruct? memoryFeed;
-
+ 
 
   MPMemoryStruct({
     required this.id,
@@ -304,10 +293,6 @@ class MPMemoryStruct {
     this.duration,
     this.memoList,
     this.source,
-    this.memoryFeed,
-    this.summaryContent,
-    this.onlyRecordContent,
-    this.customLabels,
   });
 
   factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);

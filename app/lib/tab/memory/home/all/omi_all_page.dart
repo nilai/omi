@@ -179,6 +179,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                         data: entry.memoData!,
                         onTap: () => _onMemoryEntryTap(context, entry),
                       ),
+                    // 对应服务端 [MPMemoryType.onlyRecord]
                     MPMemoryEntryKind.audioRecording => MPAudioRecordingCard(
                         data: entry.audioData!,
                         onTap: () => _onMemoryEntryTap(context, entry),

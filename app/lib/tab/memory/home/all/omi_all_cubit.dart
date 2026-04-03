@@ -9,6 +9,7 @@ import 'package:omi/http/schema/mp_data_model.dart';
 import 'package:omi/http/schema/mp_memory.dart';
 
 import 'card/mp_audio_recording_card.dart';
+import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
 
 
@@ -263,121 +264,57 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   }
 }
 
-/// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（会话卡片 / 纯录音卡片）。
+/// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   switch (m.type) {
+    // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
-      final DateTime dt = _memoryDateTimeFromServer(m.createAt);
       return MPMemoryEntry.audioRecording(
         id: m.id,
         audioData: MPAudioRecordingCardData(
-          primaryTimeLabel: DateFormat('MMM d, y, h:mm a').format(dt),
-          secondaryTimeLabel: DateFormat("MMMM d, y 'at' h:mm a").format(dt),
-          sourceLabel: m.onlyRecordContent?.source?.trim().isNotEmpty == true
-              ? m.onlyRecordContent!.source!.trim()
-              : 'Recording',
+          primaryTimeLabel: m.title,
+          secondaryTimeLabel: m.content,
+          sourceLabel: m.source ?? '',
           durationLabel: _formatDurationSeconds(m.duration ?? 0),
         ),
       );
     case MPMemoryType.summary:
-      final MPSummaryMemoryStruct? sc = m.summaryContent;
-      final bool hasTodos = sc != null && sc.todos.isNotEmpty;
-      final MPMemoryCardVariant variant = hasTodos
-          ? MPMemoryCardVariant.newUpdates
-          : MPMemoryCardVariant.standard;
-      final String preview =
-          (sc?.summary ?? m.content).trim().isNotEmpty ? (sc?.summary ?? m.content).trim() : ' ';
-      return MPMemoryEntry.conversation(
-        id: m.id,
-        variant: variant,
-        data: MPMemoryCardData(
-          title: m.title.trim().isNotEmpty ? m.title : 'Memory',
-          timeLabel:_shortTimeLabel(m.createAt),
-          preview: preview,
-          badgeCount: variant == MPMemoryCardVariant.newUpdates
-              ? sc!.todos.length
-              : null,
-          statusLabel:
-              variant == MPMemoryCardVariant.newUpdates ? 'New updates' : null,
-        ),
-      );
     case MPMemoryType.memoryFeed:
-      final String preview = _previewMemoryFeed(m);
       return MPMemoryEntry.conversation(
         id: m.id,
-        variant: MPMemoryCardVariant.standard,
+        variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
-          title: m.title.trim().isNotEmpty ? m.title : 'Insight',
-          timeLabel: _timeLabelForMemory(m),
-          preview: preview,
+          showActivity: m.type == MPMemoryType.memoryFeed,
+          title: m.title,
+          timeLabel:_shortTimeLabel(m.createAt),
+          preview: m.content,
+          badgeCount: 0,
+          statusLabel: null,
         ),
       );
     case MPMemoryType.memoList:
-      final String preview = _previewMemoList(m);
-      return MPMemoryEntry.conversation(
-        id: m.id,
-        variant: MPMemoryCardVariant.standard,
-        data: MPMemoryCardData(
-          title: m.title.trim().isNotEmpty ? m.title : 'Expert',
-          timeLabel: _timeLabelForMemory(m),
-          preview: preview,
-        ),
-      );
+      return _mpMemoryStructToMemoGroupEntry(m);
   }
 }
 
-String _timeLabelForMemory(MPMemoryStruct m) {
-  final String? st = m.subTitle?.trim();
-  if (st != null && st.isNotEmpty) {
-    return st;
-  }
-  return _shortTimeLabel(m.createAt);
-}
+/// `MEMO_LIST` → [MPMemoryEntryKind.memoGroup]（Memos 分组卡片）。
+MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
+  final List<MPMemoStruct> memos = m.memoList ?? [];
 
-/// [MPMemoryFeedStruct] 无顶层 `content`：优先 `summary_memory.summary`，否则取首个 feed 的 `content`，再退回 [MPMemoryStruct.content]。
-String _previewMemoryFeed(MPMemoryStruct m) {
-  final MPMemoryFeedStruct? mf = m.memoryFeed;
-  if (mf != null) {
-    final MPSummaryMemoryStruct? smStruct = mf.summaryMemory;
-    if (smStruct != null) {
-      final String t = smStruct.summary.trim();
-      if (t.isNotEmpty) {
-        return t;
-      }
-    }
-    for (final MPFeedCardStruct f in mf.feeds) {
-      final String? c = f.content?.trim();
-      if (c != null && c.isNotEmpty) {
-        return c;
-      }
-    }
-  }
-  final String fallback = m.content.trim();
-  return fallback.isNotEmpty ? fallback : ' ';
-}
 
-/// `MEMO_LIST` 时顶层 `content` 可能为空，从 [MPMemoryStruct.memoList] 拼预览。
-String _previewMemoList(MPMemoryStruct m) {
-  final List<MPMemoStruct>? memos = m.memoList;
-  if (memos != null && memos.isNotEmpty) {
-    final List<String> parts = <String>[];
-    for (final MPMemoStruct e in memos) {
-      final String t = e.title.trim();
-      final String c = e.content.trim();
-      final String one = t.isNotEmpty ? t : c;
-      if (one.isNotEmpty) {
-        parts.add(one);
-      }
-      if (parts.length >= 3) {
-        break;
-      }
-    }
-    if (parts.isNotEmpty) {
-      return parts.join(' · ');
-    }
-  }
-  final String fallback = m.content.trim();
-  return fallback.isNotEmpty ? fallback : ' ';
+  final MPMemoGroupCardVariant variant = memos.length == 1
+      ? MPMemoGroupCardVariant.single
+      : MPMemoGroupCardVariant.listFull;
+
+  return MPMemoryEntry.memoGroup(
+    id: m.id,
+    memoVariant: variant,
+    memoData: MPMemoGroupCardData(
+      subtitle: m.subTitle,
+      title: m.title,
+      items: memos,
+    ),
+  );
 }
 
 DateTime _memoryDateTimeFromServer(int createAt) {
