@@ -25,6 +25,16 @@ class MPTodayFocusCardData {
 
   final String headerTitle;
   final List<MPTodayFocusCardItem> items;
+
+  MPTodayFocusCardData copyWith({
+    String? headerTitle,
+    List<MPTodayFocusCardItem>? items,
+  }) {
+    return MPTodayFocusCardData(
+      headerTitle: headerTitle ?? this.headerTitle,
+      items: items ?? this.items,
+    );
+  }
 }
 
 /// 浅绿底圆角卡片：标题 + 星标列表（标题 / → 副文案 / 右侧时间）

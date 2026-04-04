@@ -3,6 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
 
+/// AI 推荐加入 Focus 的一条建议（标题 + 展示用时间）
+class MPTodayFocusAISuggestionItem {
+  const MPTodayFocusAISuggestionItem({
+    required this.title,
+    required this.scheduledTimeLabel,
+  });
+
+  final String title;
+  final String scheduledTimeLabel;
+}
+
 /// Today Focus 页阶段（与 [MPTristatePage] 对应，对齐 Memory All 等页）
 enum MPTodayFocusPhase {
   loading,
@@ -22,6 +33,8 @@ class MPTodayFocusState {
     this.futureItems = const <MPTodayFocusTodoRowData>[],
     this.overdueItems = const <MPTodayFocusTodoRowData>[],
     this.completedItems = const <MPTodayFocusTodoRowData>[],
+    this.aiFocusSuggestions = const <MPTodayFocusAISuggestionItem>[],
+    this.aiFocusSuggestionIndex = 0,
   });
 
   final MPTodayFocusPhase phase;
@@ -32,6 +45,27 @@ class MPTodayFocusState {
   final List<MPTodayFocusTodoRowData> futureItems;
   final List<MPTodayFocusTodoRowData> overdueItems;
   final List<MPTodayFocusTodoRowData> completedItems;
+
+  /// 当 [focusCard] 少于 3 条时，供 AI 推荐卡片轮播使用。
+  final List<MPTodayFocusAISuggestionItem> aiFocusSuggestions;
+
+  /// 当前展示的推荐在 [aiFocusSuggestions] 中的下标。
+  final int aiFocusSuggestionIndex;
+
+  /// 当前应展示的 AI 推荐；[focusCard] ≥3 或队列为空时为 `null`。
+  MPTodayFocusAISuggestionItem? get currentAiFocusSuggestion {
+    if (focusCard.items.length >= 3) {
+      return null;
+    }
+    if (aiFocusSuggestions.isEmpty) {
+      return null;
+    }
+    if (aiFocusSuggestionIndex < 0 ||
+        aiFocusSuggestionIndex >= aiFocusSuggestions.length) {
+      return null;
+    }
+    return aiFocusSuggestions[aiFocusSuggestionIndex];
+  }
 
   bool get _hasAnyTodo =>
       todayItems.isNotEmpty ||
@@ -53,6 +87,8 @@ class MPTodayFocusState {
     List<MPTodayFocusTodoRowData>? futureItems,
     List<MPTodayFocusTodoRowData>? overdueItems,
     List<MPTodayFocusTodoRowData>? completedItems,
+    List<MPTodayFocusAISuggestionItem>? aiFocusSuggestions,
+    int? aiFocusSuggestionIndex,
   }) {
     return MPTodayFocusState(
       phase: phase ?? this.phase,
@@ -64,6 +100,9 @@ class MPTodayFocusState {
       futureItems: futureItems ?? this.futureItems,
       overdueItems: overdueItems ?? this.overdueItems,
       completedItems: completedItems ?? this.completedItems,
+      aiFocusSuggestions: aiFocusSuggestions ?? this.aiFocusSuggestions,
+      aiFocusSuggestionIndex:
+          aiFocusSuggestionIndex ?? this.aiFocusSuggestionIndex,
     );
   }
 }
@@ -119,6 +158,22 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 与 OmiAll / MemorySearch 等页的 [retry] 一致
   Future<void> retry() => initData();
 
+  static const List<MPTodayFocusAISuggestionItem> _kMockAiSuggestions =
+      <MPTodayFocusAISuggestionItem>[
+    MPTodayFocusAISuggestionItem(
+      title: 'Revise marketing deck with ADHD-focused messaging',
+      scheduledTimeLabel: '14:00',
+    ),
+    MPTodayFocusAISuggestionItem(
+      title: 'Block 25 minutes for inbox zero before standup',
+      scheduledTimeLabel: '08:30',
+    ),
+    MPTodayFocusAISuggestionItem(
+      title: 'Draft one-paragraph summary for stakeholders',
+      scheduledTimeLabel: '17:00',
+    ),
+  ];
+
   static MPTodayFocusState _mockLoadedState() {
     return MPTodayFocusState(
       phase: MPTodayFocusPhase.loaded,
@@ -129,18 +184,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
             subtext: 'Meeting scheduled today',
             timeLabel: '09:00',
           ),
-          const MPTodayFocusCardItem(
-            title: 'Follow up with Sarah about design feedback',
-            subtext: 'Design feedback pending',
-            timeLabel: '14:00',
-          ),
-          const MPTodayFocusCardItem(
-            title: 'Finalize API migration timeline',
-            subtext: 'Project deadline soon',
-            timeLabel: '16:30',
-          ),
         ],
       ),
+      aiFocusSuggestions: _kMockAiSuggestions,
+      aiFocusSuggestionIndex: 0,
       todayItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
           title: 'Update API documentation for v2 endpoints',
@@ -258,5 +305,45 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   void clearOverdue() {
     if (!_isInteractive) return;
     emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
+  }
+
+  /// 将当前 AI 推荐加入 Today's Focus；**TODO: 替换为真实加 Focus 接口**。
+  /// 成功后 Focus 列表增加一条，并切换到队列中下一条标题（仍不足 3 条时卡片继续展示）。
+  Future<bool> addCurrentAiSuggestionToFocus() async {
+    if (!_isInteractive) {
+      return false;
+    }
+    final MPTodayFocusAISuggestionItem? cur = state.currentAiFocusSuggestion;
+    if (cur == null) {
+      return false;
+    }
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 420));
+
+      final List<MPTodayFocusCardItem> nextItems =
+          List<MPTodayFocusCardItem>.of(state.focusCard.items)
+            ..add(
+              MPTodayFocusCardItem(
+                title: cur.title,
+                subtext: 'Suggested by AI',
+                timeLabel: cur.scheduledTimeLabel,
+              ),
+            );
+
+      final List<MPTodayFocusAISuggestionItem> queue = state.aiFocusSuggestions;
+      final int nextIndex = queue.isEmpty
+          ? 0
+          : (state.aiFocusSuggestionIndex + 1) % queue.length;
+
+      emit(
+        state.copyWith(
+          focusCard: state.focusCard.copyWith(items: nextItems),
+          aiFocusSuggestionIndex: nextIndex,
+        ),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }

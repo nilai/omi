@@ -118,6 +118,8 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                       timeLabel: MPDateUtils.formatTimeLabelFromDeadline(
                         data.items[i].deadlineLabel,
                       ),
+                      todoId: data.items[i].id ?? '',
+                      deadlineUnixSec: data.items[i].deadlineLabel,
                     ),
                     onDelete: () {
                       return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoAt(

@@ -23,7 +23,7 @@ class OmiMemoryDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
+    return BlocProvider<OmiMemoryDetailCubit>(
       create: (_) => OmiMemoryDetailCubit(memoryId: memoryId)..initData(),
       child: const _OmiMemoryDetailView(),
     );
@@ -114,23 +114,52 @@ class _OmiMemoryDetailView extends StatelessWidget {
               );
             case OmiMemoryDetailPhase.loaded:
               final MPMemoryDetailCardData data = state.data!;
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: MPMemoryDetailContentCard(
-                        data: data,
-                        onSegmentChanged: (MPMemoryDetailSegment s) {},
-                        onPlayTap: () {
-                          // TODO: 播放
-                        },
-                      ),
+              return RefreshIndicator(
+                onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification n) {
+                    if (n.metrics.axis != Axis.vertical) {
+                      return false;
+                    }
+                    if (n is! ScrollUpdateNotification) {
+                      return false;
+                    }
+                    if (n.metrics.pixels >= n.metrics.maxScrollExtent - 160) {
+                      context.read<OmiMemoryDetailCubit>().loadMoreFeeds();
+                    }
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: MPMemoryDetailContentCard(
+                            data: data,
+                            onSegmentChanged: (MPMemoryDetailSegment s) {},
+                            onPlayTap: () {
+                              // TODO: 播放
+                            },
+                          ),
+                        ),
+                        MPMemoryDetailFeedSection(data: data),
+                        if (state.isLoadingMore)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 16, bottom: 8),
+                            child: Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                    MPMemoryDetailFeedSection(data: data),
-                  ],
+                  ),
                 ),
               );
           }

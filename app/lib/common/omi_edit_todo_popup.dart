@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:omi/common/mp_todo_manager.dart';
+import 'package:omi/common/mp_todo_utils.dart';
 import 'package:omi/common/omi_button.dart';
 import 'package:omi/common/omi_todo_more_sheet.dart';
 import 'package:omi/common/mp_confirm_delete_dialog.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -19,6 +23,8 @@ class OmiEditTodoPopupParams {
     this.priorityLabel = 'Normal',
     this.whenLabel = 'No deadline',
     this.timeLabel = '09:00',
+    this.todoId = '',
+    this.deadlineUnixSec,
   });
 
   final String title;
@@ -29,6 +35,10 @@ class OmiEditTodoPopupParams {
   final String priorityLabel;
   final String whenLabel;
   final String timeLabel;
+  final String todoId;
+
+  /// 截止时间 Unix（秒或毫秒，与 [MPMemoryCreatedTodoLineData.deadlineLabel] 一致）；无截止为 `null`。
+  final int? deadlineUnixSec;
 }
 
 Future<void> showOmiEditTodoPopup(
@@ -74,27 +84,179 @@ class _OmiEditTodoPopupSheet extends StatefulWidget {
 }
 
 class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
-  static const List<String> _priorities = <String>[
-    'Low',
-    'Normal',
-    'High priority',
-  ];
-  static const List<String> _whenOptions = <String>[
-    'No deadline',
-    'Today',
-    'Tomorrow',
-    'This week',
-  ];
   late String _priority;
   late String _when;
   late String _time;
+  int? _deadlineUnixSec;
+  DateTime? _pickedCalendarDate;
+  bool _isMarkingDone = false;
+
+  static int? _normalizeDeadlineSec(int? raw) {
+    if (raw == null) {
+      return null;
+    }
+    return raw > 10000000000 ? raw ~/ 1000 : raw;
+  }
+
+  static DateTime _dateOnly(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
+
+  TimeOfDay _parseTimeOfDayFromEdit(
+    String raw, {
+    int? fallbackFromSec,
+  }) {
+    final String t = raw.trim();
+    if (t.isEmpty || t.startsWith('--')) {
+      if (fallbackFromSec != null) {
+        final DateTime dt = DateTime.fromMillisecondsSinceEpoch(
+          fallbackFromSec * 1000,
+        );
+        return TimeOfDay(hour: dt.hour, minute: dt.minute);
+      }
+      return const TimeOfDay(hour: 9, minute: 0);
+    }
+    final List<String> parts = t.split(':');
+    final int h = int.tryParse(parts[0]) ?? 9;
+    final int m = parts.length >= 2 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    return TimeOfDay(
+      hour: h.clamp(0, 23),
+      minute: m.clamp(0, 59),
+    );
+  }
+
+  void _syncDeadlineFromWhenAndTime() {
+    if (_when == 'No deadline') {
+      _deadlineUnixSec = null;
+      return;
+    }
+    final int? secBefore = _deadlineUnixSec;
+    final TimeOfDay tod = _parseTimeOfDayFromEdit(
+      _time,
+      fallbackFromSec: secBefore,
+    );
+    final DateTime now = DateTime.now();
+    late final DateTime day;
+    if (_when == 'Today') {
+      day = _dateOnly(now);
+    } else if (_when == 'Tomorrow') {
+      day = _dateOnly(now).add(const Duration(days: 1));
+    } else if (_pickedCalendarDate != null) {
+      day = _pickedCalendarDate!;
+    } else {
+      try {
+        final DateTime parsed = DateFormat('MMM d, y').parse(_when, false);
+        day = DateTime(parsed.year, parsed.month, parsed.day);
+      } catch (_) {
+        try {
+          final DateTime parsed =
+              DateFormat('yyyy年M月d日').parse(_when, false);
+          day = DateTime(parsed.year, parsed.month, parsed.day);
+        } catch (_) {
+          return;
+        }
+      }
+    }
+    final DateTime combined = DateTime(
+      day.year,
+      day.month,
+      day.day,
+      tod.hour,
+      tod.minute,
+    );
+    _deadlineUnixSec = combined.millisecondsSinceEpoch ~/ 1000;
+  }
+
+  void _syncInitialWhenFromParams() {
+    final String w = _when;
+    if (w == 'No deadline' || w == 'Today' || w == 'Tomorrow') {
+      _pickedCalendarDate = null;
+      return;
+    }
+    if (_deadlineUnixSec != null) {
+      final DateTime dt =
+          DateTime.fromMillisecondsSinceEpoch(_deadlineUnixSec! * 1000);
+      final DateTime d = DateTime(dt.year, dt.month, dt.day);
+      final DateTime today = _dateOnly(DateTime.now());
+      if (d == today) {
+        _when = 'Today';
+        _pickedCalendarDate = null;
+      } else if (d == today.add(const Duration(days: 1))) {
+        _when = 'Tomorrow';
+        _pickedCalendarDate = null;
+      } else {
+        _pickedCalendarDate = d;
+        _when = DateFormat('MMM d, y').format(d);
+      }
+      return;
+    }
+    try {
+      final DateTime parsed = DateFormat('yyyy年M月d日').parse(w, false);
+      _pickedCalendarDate =
+          DateTime(parsed.year, parsed.month, parsed.day);
+      _when = DateFormat('MMM d, y').format(_pickedCalendarDate!);
+    } catch (_) {
+      _pickedCalendarDate = null;
+    }
+  }
+
+  Future<void> _pickDateOnlyFlow() async {
+    final DateTime now = DateTime.now();
+    final DateTime today = _dateOnly(now);
+    final DateTime? date = await showDatePicker(
+      context: context,
+      initialDate: _pickedCalendarDate ?? today,
+      firstDate: DateTime(today.year - 1),
+      lastDate: DateTime(today.year + 5),
+    );
+    if (!mounted || date == null) {
+      return;
+    }
+    setState(() {
+      _pickedCalendarDate = _dateOnly(date);
+      _when = DateFormat('MMM d, y').format(_pickedCalendarDate!);
+      if (_time.isEmpty) {
+        _time = '09:00';
+      }
+      _syncDeadlineFromWhenAndTime();
+    });
+  }
+
+  Future<void> _pickWhenForEdit() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final String? v = await _showOptionSheet(
+      options: MPTodoUtils.kTodoWhenOptions,
+      selected: _when,
+    );
+    if (v == null || !mounted) return;
+    if (v == 'Pick a date') {
+      await _pickDateOnlyFlow();
+      return;
+    }
+    setState(() {
+      _when = v;
+      _pickedCalendarDate = null;
+      if (v == 'No deadline') {
+        _time = '';
+      } else if (_time.isEmpty) {
+        _time = '09:00';
+      }
+      _syncDeadlineFromWhenAndTime();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _priority = widget.params.priorityLabel;
+    _priority =
+        MPTodoUtils.normalizePriorityPickerLabel(widget.params.priorityLabel);
     _when = widget.params.whenLabel;
     _time = widget.params.timeLabel;
+    if (_time.startsWith('--')) {
+      _time = '';
+    }
+    _deadlineUnixSec = _normalizeDeadlineSec(widget.params.deadlineUnixSec);
+    _syncInitialWhenFromParams();
+    _syncDeadlineFromWhenAndTime();
   }
 
   Future<String?> _showOptionSheet({
@@ -466,7 +628,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                             value: _priority,
                             onTap: () async {
                               final String? v = await _showOptionSheet(
-                                options: _priorities,
+                                options: MPTodoUtils.kTodoPriorities,
                                 selected: _priority,
                               );
                               if (v == null || !mounted) return;
@@ -479,21 +641,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                           child: _InfoField(
                             title: 'WHEN',
                             value: _when,
-                            onTap: () async {
-                              final String? v = await _showOptionSheet(
-                                options: _whenOptions,
-                                selected: _when,
-                              );
-                              if (v == null || !mounted) return;
-                              setState(() {
-                                _when = v;
-                                if (v == 'No deadline') {
-                                  _time = '';
-                                } else if (_time.isEmpty) {
-                                  _time = '09:00';
-                                }
-                              });
-                            },
+                            onTap: _pickWhenForEdit,
                           ),
                         ),
                         if (_when != 'No deadline') ...<Widget>[
@@ -507,7 +655,10 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                   selected: _time.isEmpty ? '09:00' : _time,
                                 );
                                 if (v == null || !mounted) return;
-                                setState(() => _time = v);
+                                setState(() {
+                                  _time = v;
+                                  _syncDeadlineFromWhenAndTime();
+                                });
                               },
                             ),
                           ),
@@ -516,7 +667,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                     ),
                     const SizedBox(height: 18),
                     OmiButton(
-                      text: 'Mark as done',
+                      text: _isMarkingDone ? 'Saving…' : 'Mark as done',
                       icon: OmiImageLoader.localImg(
                         Assets.omiDetailCheck,
                         width: 16,
@@ -528,10 +679,37 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                       width: double.infinity,
                       height: 50,
                       borderRadius: BorderRadius.circular(12),
-                      onPressed: () {
-                        widget.onMarkAsDone?.call();
-                        Navigator.of(context).pop();
-                      },
+                      onPressed: _isMarkingDone
+                          ? null
+                          : () async {
+                              final String tid =
+                                  widget.params.todoId.trim();
+                              if (tid.isEmpty) {
+                                MPToastUtils.showMessage('任务ID不能为空');
+                                return;
+                              }
+                              _syncDeadlineFromWhenAndTime();
+                              setState(() => _isMarkingDone = true);
+                              final bool ok =
+                                  await MPTodoManager().updateTodoWithRequest(
+                                todoId: tid,
+                                title: widget.params.title,
+                                priority: MPTodoUtils.mapPriorityToApi(_priority),
+                                deadline: _deadlineUnixSec != null
+                                    ? '$_deadlineUnixSec'
+                                    : '',
+                                isCompleted: true,
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              if (ok) {
+                                widget.onMarkAsDone?.call();
+                                Navigator.of(context).pop();
+                              } else {
+                                setState(() => _isMarkingDone = false);
+                              }
+                            },
                     ),
                   ],
                 ),

@@ -5,6 +5,7 @@ import 'package:omi/common/mp_share_sheet.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/omi_quick_add_todo_popup.dart';
+import 'package:omi/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_feed_section.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
@@ -14,7 +15,7 @@ import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
 
-/// Memo 详情页：与 Memory 详情复用同一份内容逻辑。
+/// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
 /// 区别：
 /// 1. 主卡片不带背景色；
 /// 2. Segment 下内容与页面主滚动保持同一滚动容器。
@@ -26,8 +27,8 @@ class OmiMemoDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => OmiMemoryDetailCubit(memoryId: memoryId)..initData(),
+    return BlocProvider<OmiMemoryDetailCubit>(
+      create: (_) => OmiMemoDetailCubit(memoryId: memoryId)..initData(),
       child: const _OmiMemoDetailView(),
     );
   }

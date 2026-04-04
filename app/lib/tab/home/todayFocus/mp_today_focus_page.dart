@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../generated/assets.dart';
 import 'cards/mp_all_todos_input_card.dart';
+import 'cards/mp_today_focus_add_card.dart';
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
 import 'mp_today_focus_cubit.dart';
@@ -22,6 +24,11 @@ class MPTodayFocusPage extends StatefulWidget {
 class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   late final MPTodayFocusCubit _cubit = MPTodayFocusCubit()..initData();
 
+  /// 本次进入页面内关闭 AI 推荐卡后不再展示；离开页面再进入会重置。
+  bool _aiAddCardDismissedThisSession = false;
+
+  bool _addingAiFocus = false;
+
   @override
   void dispose() {
     _cubit.close();
@@ -29,6 +36,22 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   }
 
   Future<void> _onRefresh() => _cubit.initData();
+
+  void _onTapAddAiFocus() {
+    if (_addingAiFocus) {
+      return;
+    }
+    setState(() => _addingAiFocus = true);
+    _cubit.addCurrentAiSuggestionToFocus().then((bool ok) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _addingAiFocus = false);
+      if (!ok) {
+        MPToastUtils.showMessage('添加失败');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +133,26 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
                           MPTodayFocusCard(data: state.focusCard),
+                          if (state.focusCard.items.length < 3 &&
+                              !_aiAddCardDismissedThisSession &&
+                              state.currentAiFocusSuggestion != null) ...<Widget>[
+                            const SizedBox(height: 16),
+                            MPTodayFocusAddCard(
+                              title: state.currentAiFocusSuggestion!.title,
+                              scheduledTimeLabel: state
+                                  .currentAiFocusSuggestion!.scheduledTimeLabel,
+                              addButtonText: _addingAiFocus
+                                  ? 'Adding…'
+                                  : 'Add to Focus',
+                              onDismiss: () {
+                                setState(() {
+                                  _aiAddCardDismissedThisSession = true;
+                                });
+                              },
+                              onAddToFocus:
+                                  _addingAiFocus ? null : _onTapAddAiFocus,
+                            ),
+                          ],
                           const SizedBox(height: 20),
                           MPAllTodosInputCard(
                             onSubmitted: (r) =>

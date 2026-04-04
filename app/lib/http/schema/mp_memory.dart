@@ -83,3 +83,44 @@ class MPGetMemoryV2DetailResponse {
   factory MPGetMemoryV2DetailResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryV2DetailResponseFromJson(json);
   Map<String, dynamic> toJson() => _$MPGetMemoryV2DetailResponseToJson(this);
 }
+
+
+@JsonSerializable()
+class MPGetMemoryFeedRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'page_size')
+  final int? pageSize;
+
+  @JsonKey(name: 'cursor')
+  final String cursor;
+
+  MPGetMemoryFeedRequest({
+    required this.memoryId,
+    this.pageSize,
+    required this.cursor,
+  });
+
+  factory MPGetMemoryFeedRequest.fromJson(Map<String, dynamic> json) => _$MPGetMemoryFeedRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryFeedRequestToJson(this);
+}
+
+@JsonSerializable()
+class MPGetMemoryFeedResponse {
+  @JsonKey(name: 'feeds')
+  final List<MPFeedCardStruct>? feeds;
+
+  @JsonKey(name: 'has_more')
+  final bool? hasMore;
+
+
+  MPGetMemoryFeedResponse({
+    this.feeds,
+    this.hasMore,
+  });
+
+  factory MPGetMemoryFeedResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryFeedResponseFromJson(json);
+  Map<String, dynamic> toJson() => _$MPGetMemoryFeedResponseToJson(this);
+}

@@ -10,7 +10,7 @@ import '../shared.dart';
 Future<MPGetMemoryListResponse?> getMemoryList(MPGetMemoryV2ListRequest req) async {
   var response = await makeApiCall(
     url:
-    '${Env.apiBaseUrl}api/v1/memory/get_list?page_size=${req.pageSize}&cursor=${req.cursor.isNotEmpty ? req.cursor : ''}${req.day != null ? '&day=${req.day}' : ''}',
+    '${Env.apiBaseUrl}api/v2/memory/get_list?page_size=${req.pageSize}&cursor=${req.cursor.isNotEmpty ? req.cursor : ''}${req.day != null ? '&day=${req.day}' : ''}',
     headers: {},
     method: 'GET',
     body: '',
@@ -35,6 +35,22 @@ Future<MPGetMemoryV2DetailResponse?> getMemoryDetail(MPGetMemoryV2DetailRequest 
   debugPrint('getMemoryDetail response: ${response.body}');
   if (response.statusCode == 200) {
     return MPGetMemoryV2DetailResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+Future<MPGetMemoryFeedResponse?> getMemoryFeed(MPGetMemoryFeedRequest req) async {
+  var response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v2/memory/feed/get_list?page_size=${req.pageSize}&memory_id=${req.memoryId}&cursor=${req.cursor}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getMemoryFeed response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemoryFeedResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
   return null;
 }

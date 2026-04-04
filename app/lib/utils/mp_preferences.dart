@@ -84,11 +84,13 @@ class SharedPreferencesUtil extends MPPreferences {
   SharedPreferencesUtil._internal() : super._internal();
 
   static const String _accessTokenKey = 'mp_accessToken';
+  static const String _uidKey = 'mp_uid';
   static const String _refreshTokenKey = 'mp_refreshToken';
   static const String _emailKey = 'mp_email';
   static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
 
   String? _accessToken;
+  String? _uid;
   String? _refreshToken;
   String? _email;
   /// token 过期时间（毫秒时间戳）。
@@ -98,15 +100,27 @@ class SharedPreferencesUtil extends MPPreferences {
   /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
   String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
 
-  /// 设置访问令牌：优先写入本地存储，再更新内存中的私有属性。
-  Future<void> setAccessToken(String? value) async {
+  /// 用户 id：优先取内存，其次本地存储。
+  String? get uid => _uid ?? MPPreferences().getString(_uidKey);
+
+  /// 设置访问令牌：写入本地并更新内存；登出时 `value == null` 会同时清除 [uid]。
+  /// 传入 [uid] 时一并持久化（仅刷 token 可不传，保留原 uid）。
+  Future<void> setAccessToken(String? value, {String? uid}) async {
     if (value == null) {
       await MPPreferences().remove(_accessTokenKey);
+      await MPPreferences().remove(_uidKey);
+      _accessToken = null;
+      _uid = null;
     } else {
       await MPPreferences().saveString(_accessTokenKey, value);
+      _accessToken = value;
+      if (uid != null) {
+        await MPPreferences().saveString(_uidKey, uid);
+        _uid = uid;
+      }
     }
-    _accessToken = value;
   }
+
 
   /// 获取刷新令牌：优先取内存中的私有属性，其次取本地存储。
   String? get refreshToken => _refreshToken ?? MPPreferences().getString(_refreshTokenKey);

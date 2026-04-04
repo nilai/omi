@@ -16,27 +16,77 @@ import 'package:omi/tab/memory/detail/memory/card/mp_memory_todos_created_models
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 
 enum OmiMemoryDetailPhase { loading, loaded, error }
+
+/// 详情主内容（转写 / Overview / Actions）的数据来源。
+enum OmiMemoryDetailSource {
+  /// 与 Feed 会话一致：取 [MPMemoryStruct.memoryFeed] 内 [MPMemoryFeedStruct.summaryMemory]。
+  memoryFeedSummary,
+
+  /// Memo 等：取根级 [MPMemoryStruct.summaryMemory]。
+  rootSummaryMemory,
+}
 
 class OmiMemoryDetailState {
   const OmiMemoryDetailState({
     required this.phase,
     this.data,
     this.errorMessage,
+    this.isRefreshing = false,
+    this.isLoadingMore = false,
+    this.feedHasMore = false,
   });
 
   final OmiMemoryDetailPhase phase;
   final MPMemoryDetailCardData? data;
   final String? errorMessage;
+
+  /// 下拉刷新中（保持 [data] 展示）
+  final bool isRefreshing;
+
+  /// 底部加载更多中
+  final bool isLoadingMore;
+
+  /// 是否仍可请求更多 Feed（由详情首屏与 [getMemoryFeed] 的 `has_more` 更新）
+  final bool feedHasMore;
+
+  OmiMemoryDetailState copyWith({
+    OmiMemoryDetailPhase? phase,
+    MPMemoryDetailCardData? data,
+    String? errorMessage,
+    bool? isRefreshing,
+    bool? isLoadingMore,
+    bool? feedHasMore,
+  }) {
+    return OmiMemoryDetailState(
+      phase: phase ?? this.phase,
+      data: data ?? this.data,
+      errorMessage: errorMessage ?? this.errorMessage,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      feedHasMore: feedHasMore ?? this.feedHasMore,
+    );
+  }
 }
 
+const int _kMemoryFeedPageSize = 20;
+
 class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
-  OmiMemoryDetailCubit({required this.memoryId})
-    : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
+  OmiMemoryDetailCubit({
+    required this.memoryId,
+    this.detailSource = OmiMemoryDetailSource.memoryFeedSummary,
+  }) : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
 
   /// 列表页传入，对应接口 `memory_id`。
   final String memoryId;
+
+  /// 决定 [getMemoryDetail] 结果如何映射为 [MPMemoryDetailCardData]。
+  final OmiMemoryDetailSource detailSource;
+
+  int _unknownInsightIndex = 0;
+  String _feedCursor = '';
 
   Future<void> initData() => load();
 
@@ -49,10 +99,20 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
-      final MPMemoryDetailCardData data =
-          mpMemoryStructToDetailCardData(resp.memoryDetail);
+      final ({
+        MPMemoryDetailCardData data,
+        int nextUnknownInsightIndex,
+        String feedCursor,
+        bool feedHasMore,
+      }) bundle = _mapDetailResponse(resp.memoryDetail);
+      _unknownInsightIndex = bundle.nextUnknownInsightIndex;
+      _feedCursor = bundle.feedCursor;
       emit(
-        OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: data),
+        OmiMemoryDetailState(
+          phase: OmiMemoryDetailPhase.loaded,
+          data: bundle.data,
+          feedHasMore: bundle.feedHasMore,
+        ),
       );
     } catch (e) {
       emit(
@@ -65,6 +125,139 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   Future<void> retry() => load();
+
+  ({
+    MPMemoryDetailCardData data,
+    int nextUnknownInsightIndex,
+    String feedCursor,
+    bool feedHasMore,
+  }) _mapDetailResponse(MPMemoryStruct m) {
+    return switch (detailSource) {
+      OmiMemoryDetailSource.memoryFeedSummary => mpMemoryStructToDetailBundle(m),
+      OmiMemoryDetailSource.rootSummaryMemory => mpMemoryStructToMemoDetailBundle(m),
+    };
+  }
+
+  /// 下拉刷新：重新拉详情，不打断全屏 loading 态以外的已展示内容。
+  Future<void> refresh() async {
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase == OmiMemoryDetailPhase.loading) {
+      return;
+    }
+    if (cur.phase == OmiMemoryDetailPhase.loaded && cur.data != null) {
+      emit(cur.copyWith(isRefreshing: true));
+    }
+    try {
+      final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
+        MPGetMemoryV2DetailRequest(memoryId: memoryId),
+      );
+      if (resp == null) {
+        throw StateError('getMemoryDetail failed');
+      }
+      final ({
+        MPMemoryDetailCardData data,
+        int nextUnknownInsightIndex,
+        String feedCursor,
+        bool feedHasMore,
+      }) bundle = _mapDetailResponse(resp.memoryDetail);
+      _unknownInsightIndex = bundle.nextUnknownInsightIndex;
+      _feedCursor = bundle.feedCursor;
+      emit(
+        OmiMemoryDetailState(
+          phase: OmiMemoryDetailPhase.loaded,
+          data: bundle.data,
+          feedHasMore: bundle.feedHasMore,
+          isRefreshing: false,
+          isLoadingMore: false,
+        ),
+      );
+    } catch (e) {
+      if (state.phase == OmiMemoryDetailPhase.loaded && state.data != null) {
+        emit(state.copyWith(isRefreshing: false));
+        MPToastUtils.showMessage('刷新失败，请稍后重试');
+      } else {
+        emit(
+          OmiMemoryDetailState(
+            phase: OmiMemoryDetailPhase.error,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
+    }
+  }
+
+  /// 上拉加载更多 Feed 块，追加到 [MPMemoryDetailCardData.feedBlocks]。
+  Future<void> loadMoreFeeds() async {
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+      return;
+    }
+    if (!cur.feedHasMore || cur.isLoadingMore) {
+      return;
+    }
+
+    emit(cur.copyWith(isLoadingMore: true));
+    try {
+      final MPGetMemoryFeedResponse? resp = await getMemoryFeed(
+        MPGetMemoryFeedRequest(
+          memoryId: memoryId,
+          pageSize: _kMemoryFeedPageSize,
+          cursor: _feedCursor,
+        ),
+      );
+      if (resp == null) {
+        emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
+        MPToastUtils.showMessage('加载更多失败');
+        return;
+      }
+      final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
+      if (cards.isEmpty) {
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            feedHasMore: resp.hasMore ?? false,
+          ),
+        );
+        return;
+      }
+      final _FeedBlocksBuildResult built = _buildFeedBlocksFromCards(
+        cards,
+        _unknownInsightIndex,
+      );
+      _unknownInsightIndex = built.nextUnknownInsightIndex;
+      final String? lastId = _lastFeedCardId(cards);
+      if (lastId != null && lastId.isNotEmpty) {
+        _feedCursor = lastId;
+      }
+
+      final MPMemoryDetailCardData d = state.data!;
+      final List<MPMemoryFeedBlock> merged =
+          List<MPMemoryFeedBlock>.from(d.feedBlocks)..addAll(built.blocks);
+      final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+        title: d.title,
+        metaLine: d.metaLine,
+        audioTimeStart: d.audioTimeStart,
+        audioTimeEnd: d.audioTimeEnd,
+        waveformHeights: d.waveformHeights,
+        speakerLabels: d.speakerLabels,
+        overviewText: d.overviewText,
+        transcriptItems: d.transcriptItems,
+        actionItems: d.actionItems,
+        initialSegment: d.initialSegment,
+        feedBlocks: merged,
+      );
+      emit(
+        state.copyWith(
+          data: nextData,
+          isLoadingMore: false,
+          feedHasMore: resp.hasMore ?? false,
+        ),
+      );
+    } catch (_) {
+      emit(state.copyWith(isLoadingMore: false));
+      MPToastUtils.showMessage('加载更多失败');
+    }
+  }
 
   /// 快捷输入新增 Todo：在 [MPMemoryDetailCardData.feedBlocks] 末尾追加一条 TODOS CREATED。
   void addTodoFromQuickInput(String text) {
@@ -106,9 +299,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       feedBlocks: nextBlocks,
     );
 
-    emit(
-      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
-    );
+    emit(cur.copyWith(data: nextData));
   }
 
   /// 快捷输入新增 Memo：在 [MPMemoryDetailCardData.feedBlocks] 末尾追加一条 MY MEMOS。
@@ -144,9 +335,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       feedBlocks: nextBlocks,
     );
 
-    emit(
-      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
-    );
+    emit(cur.copyWith(data: nextData));
   }
 
   Future<bool> _deleteTodoApi(MPMemoryCreatedTodoLineData item) async {
@@ -204,28 +393,149 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       feedBlocks: nextBlocks,
     );
 
-    emit(
-      OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loaded, data: nextData),
-    );
+    emit(cur.copyWith(data: nextData));
     return true;
   }
 }
 
-/// 将详情接口返回的 [MPMemoryStruct] 转为页面 [MPMemoryDetailCardData]。
-///
-/// 会话/Feed 正文与转写等取自 [MPMemoryStruct.memoryFeed] 内嵌的 [MPMemoryFeedStruct.summaryMemory]，
-/// 不使用根级 [MPMemoryStruct.summaryMemory]、[MPMemoryStruct.onlyRecordMemory]。
-///
-/// [MPMemoryFeedStruct.feeds] 顺序映射为 [MPMemoryDetailCardData.feedBlocks]（Insight / Todos / Memos / You asked 等可混合）。
-MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
-  final MPMemoryFeedStruct? mf = m.memoryFeed;
-  final MPSummaryMemoryStruct? sm = mf?.summaryMemory;
-  final String title = sm?.title ?? '';
+class _FeedBlocksBuildResult {
+  const _FeedBlocksBuildResult({
+    required this.blocks,
+    required this.nextUnknownInsightIndex,
+  });
+
+  final List<MPMemoryFeedBlock> blocks;
+  final int nextUnknownInsightIndex;
+}
+
+String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
+  for (int i = feeds.length - 1; i >= 0; i--) {
+    final String? id = feeds[i].id;
+    if (id != null && id.isNotEmpty) {
+      return id;
+    }
+  }
+  return null;
+}
+
+_FeedBlocksBuildResult _buildFeedBlocksFromCards(
+  List<MPFeedCardStruct> feeds,
+  int unknownInsightStart,
+) {
+  int unknownInsightIndex = unknownInsightStart;
+  final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
+  for (final MPFeedCardStruct f in feeds) {
+    final int kind = _resolveFeedCardKind(f);
+    if (kind == MPFeedCardType.myMemo) {
+      final List<MPMemoStruct> memos = f.memos ?? const <MPMemoStruct>[];
+      if (memos.isEmpty) {
+        continue;
+      }
+      feedBlocks.add(
+        MPMemoryFeedMyMemoBlock(
+          MPMemoryMyMemosCardData(
+            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            lines: memos.map((MPMemoStruct memo) => memo.title).toList(growable: false),
+          ),
+        ),
+      );
+      continue;
+    }
+    if (kind == MPFeedCardType.todosCreated) {
+      final List<MPTodoStruct> todos = f.todos ?? const <MPTodoStruct>[];
+      if (todos.isEmpty) {
+        continue;
+      }
+      feedBlocks.add(
+        MPMemoryFeedTodosCreatedBlock(
+          MPMemoryTodosCreatedCardData(
+            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            items: todos.map(_mptodoToCreatedLine).toList(growable: false),
+          ),
+        ),
+      );
+      continue;
+    }
+    if (kind == MPFeedCardType.youAsked) {
+      feedBlocks.add(
+        MPMemoryFeedYouAskedBlock(
+          MPMemoryYouAskedCardData(
+            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            userMessage: f.title ?? ' ',
+            aiReply: ' ',
+          ),
+        ),
+      );
+      continue;
+    }
+    if (kind == MPFeedCardType.resummary) {
+      final String mainTitle = (f.title ?? '').trim();
+      final String body = (f.content ?? '').trim();
+      if (mainTitle.isEmpty && body.isEmpty) {
+        continue;
+      }
+      feedBlocks.add(
+        MPMemoryFeedResummaryBlock(
+          MPMemoryResummaryCardData(
+            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
+            sectionTitle: 'Summary',
+            bodyText: body.isNotEmpty ? body : ' ',
+          ),
+        ),
+      );
+      continue;
+    }
+
+    final MPInsightCardTone tone;
+    if (kind == MPFeedCardType.executionInsight) {
+      tone = MPInsightCardTone.execution;
+    } else if (kind == MPFeedCardType.businessInsight) {
+      tone = MPInsightCardTone.business;
+    } else if (kind == MPFeedCardType.creativeInsight) {
+      tone = MPInsightCardTone.creative;
+    } else if (kind == MPFeedCardType.wellnessInsight) {
+      tone = MPInsightCardTone.wellness;
+    } else {
+      tone = _kInsightToneCycle[unknownInsightIndex % _kInsightToneCycle.length];
+      unknownInsightIndex++;
+    }
+
+    feedBlocks.add(
+      MPMemoryFeedInsightBlock(
+        MPMemoryInsightItemData(
+          tone: tone,
+          timeLabel: _feedCardTimeLabel(f.createAt),
+          bodyText: f.content ?? '',
+          categoryTitle: f.title,
+        ),
+      ),
+    );
+  }
+  return _FeedBlocksBuildResult(
+    blocks: feedBlocks,
+    nextUnknownInsightIndex: unknownInsightIndex,
+  );
+}
+
+/// 详情映射结果：主卡片数据 + 分页加载 Feed 所需的游标与 unknown insight 计数。
+({
+  MPMemoryDetailCardData data,
+  int nextUnknownInsightIndex,
+  String feedCursor,
+  bool feedHasMore,
+}) _mpMemoryStructToDetailBundleFromSources(
+  MPMemoryStruct m, {
+  required MPSummaryMemoryStruct? sm,
+  required List<MPFeedCardStruct> feedCards,
+}) {
+  final String rawTitle = (sm?.title ?? '').trim();
+  final String title = rawTitle.isNotEmpty ? rawTitle : m.title.trim();
 
   final String overviewText = sm?.summary?.trim() ?? '';
 
   final List<String> speakerLabels = sm == null || (sm.participants ?? []).isEmpty
-      ? []
+      ? <String>[]
       : (sm.participants ?? []).map((MPSpeakerStruct p) => p.name).toList();
 
   final List<MPMemoryTranscriptItemData> transcriptItems =
@@ -258,113 +568,21 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
                       ? MPMemoryActionItemStatus.pending
                       : MPMemoryActionItemStatus.created,
                   priority: t.priority,
-                  deadline: t.deadline
+                  deadline: t.deadline,
                 ),
               )
               .toList(growable: false);
 
-  final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
+  final _FeedBlocksBuildResult built = _buildFeedBlocksFromCards(feedCards, 0);
 
-  if (mf != null) {
-    int unknownInsightIndex = 0;
-    for (final MPFeedCardStruct f in mf.feeds) {
-      final int kind = _resolveFeedCardKind(f);
-      if (kind == MPFeedCardType.myMemo) {  
-        final List<MPMemoStruct> memos = f.memos ?? const <MPMemoStruct>[];
-        if (memos.isEmpty) {
-          continue;
-        }
-        feedBlocks.add(
-          MPMemoryFeedMyMemoBlock(
-            MPMemoryMyMemosCardData(
-              headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-              lines: memos.map((MPMemoStruct m) => m.title).toList(growable: false),
-            ),
-          ),
-        );
-        continue;
-      }
-      if (kind == MPFeedCardType.todosCreated) {
-        final List<MPTodoStruct> todos = f.todos ?? const <MPTodoStruct>[];
-        if (todos.isEmpty) {
-          continue;
-        }
-        feedBlocks.add(
-          MPMemoryFeedTodosCreatedBlock(
-            MPMemoryTodosCreatedCardData(
-              headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-              items: todos.map(_mptodoToCreatedLine).toList(growable: false),
-            ),
-          ),
-        );
-        continue;
-      }
-      if (kind == MPFeedCardType.youAsked) {
-        feedBlocks.add(
-          MPMemoryFeedYouAskedBlock(
-            MPMemoryYouAskedCardData(
-              headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-              userMessage: f.title ?? ' ',
-              aiReply: ' ',
-            ),
-          ),
-        );
-        continue;
-      }
-      if (kind == MPFeedCardType.resummary) {
-        final String mainTitle = (f.title ?? '').trim();
-        final String body = (f.content ?? '').trim();
-        if (mainTitle.isEmpty && body.isEmpty) {
-          continue;
-        }
-        feedBlocks.add(
-          MPMemoryFeedResummaryBlock(
-            MPMemoryResummaryCardData(
-              headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-              mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
-              sectionTitle: 'Summary',
-              bodyText: body.isNotEmpty ? body : ' ',
-            ),
-          ),
-        );
-        continue;
-      }
-
-  
-      final MPInsightCardTone tone;
-      if (kind == MPFeedCardType.executionInsight) {
-        tone = MPInsightCardTone.execution;
-      } else if (kind == MPFeedCardType.businessInsight) {
-        tone = MPInsightCardTone.business;
-      } else if (kind == MPFeedCardType.creativeInsight) {
-        tone = MPInsightCardTone.creative;
-      } else if (kind == MPFeedCardType.wellnessInsight) {
-        tone = MPInsightCardTone.wellness;
-      } else {
-        tone = _kInsightToneCycle[unknownInsightIndex % _kInsightToneCycle.length];
-        unknownInsightIndex++;
-      }
-
-      feedBlocks.add(
-        MPMemoryFeedInsightBlock(
-          MPMemoryInsightItemData(
-            tone: tone,
-            timeLabel: _feedCardTimeLabel(f.createAt),
-            bodyText: f.content ?? '',
-            categoryTitle: f.title,
-          ),
-        ),
-      );
-    }
-  }
-
-  final DateTime dt = _detailServerTime(m.createAt);
-  final String durationLabel = _formatDetailDuration(m.duration);
-  final String sourceLabel = (m.source ?? '').trim();
+  final int metaCreateAt = sm?.createAt ?? m.createAt;
+  final DateTime dt = _detailServerTime(metaCreateAt);
+  final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
+  final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
   final String metaLine =
       '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
 
-  return MPMemoryDetailCardData(
+  final MPMemoryDetailCardData data = MPMemoryDetailCardData(
     title: title,
     metaLine: metaLine,
     audioTimeStart: '0:00',
@@ -374,9 +592,57 @@ MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) {
     overviewText: overviewText.isNotEmpty ? overviewText : ' ',
     transcriptItems: transcriptItems,
     actionItems: actionItems,
-    feedBlocks: feedBlocks,
+    feedBlocks: built.blocks,
+  );
+
+  final String feedCursor = _lastFeedCardId(feedCards) ?? '';
+  final bool feedHasMore = feedCards.isNotEmpty;
+
+  return (
+    data: data,
+    nextUnknownInsightIndex: built.nextUnknownInsightIndex,
+    feedCursor: feedCursor,
+    feedHasMore: feedHasMore,
   );
 }
+
+/// Memory 会话详情：正文来自 [MPMemoryStruct.memoryFeed] 内 [MPMemoryFeedStruct.summaryMemory]，Feed 列表同 [MPMemoryFeedStruct.feeds]。
+({
+  MPMemoryDetailCardData data,
+  int nextUnknownInsightIndex,
+  String feedCursor,
+  bool feedHasMore,
+}) mpMemoryStructToDetailBundle(MPMemoryStruct m) {
+  final MPMemoryFeedStruct? mf = m.memoryFeed;
+  return _mpMemoryStructToDetailBundleFromSources(
+    m,
+    sm: mf?.summaryMemory,
+    feedCards: mf?.feeds ?? const <MPFeedCardStruct>[],
+  );
+}
+
+/// Memo 详情：正文来自根级 [MPMemoryStruct.summaryMemory]；下方活动区仍可使用 [MPMemoryStruct.memoryFeed] 的 [MPMemoryFeedStruct.feeds]（若有）。
+({
+  MPMemoryDetailCardData data,
+  int nextUnknownInsightIndex,
+  String feedCursor,
+  bool feedHasMore,
+}) mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
+  return _mpMemoryStructToDetailBundleFromSources(
+    m,
+    sm: m.summaryContent,
+    feedCards: m.memoryFeed?.feeds ?? const <MPFeedCardStruct>[],
+  );
+}
+
+/// 将详情接口返回的 [MPMemoryStruct] 转为页面 [MPMemoryDetailCardData]。
+///
+/// 会话/Feed 正文与转写等取自 [MPMemoryStruct.memoryFeed] 内嵌的 [MPMemoryFeedStruct.summaryMemory]，
+/// 不使用根级 [MPMemoryStruct.summaryMemory]、[MPMemoryStruct.onlyRecordMemory]。
+///
+/// [MPMemoryFeedStruct.feeds] 顺序映射为 [MPMemoryDetailCardData.feedBlocks]（Insight / Todos / Memos / You asked 等可混合）。
+MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) =>
+    mpMemoryStructToDetailBundle(m).data;
 
 DateTime _detailServerTime(int createAt) {
   if (createAt > 10000000000) {

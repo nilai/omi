@@ -15,12 +15,15 @@ import 'mp_audio_detail_cubit.dart';
 
 /// Audio Memory 详情页（UI 对齐设计稿）。
 class OmiAudioDetailPage extends StatelessWidget {
-  const OmiAudioDetailPage({super.key});
+  const OmiAudioDetailPage({super.key, required this.memoryId});
+
+  /// 列表项 id，对应详情接口 `memory_id`。
+  final String memoryId;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPAudioDetailCubit>(
-      create: (_) => MPAudioDetailCubit()..initData(),
+      create: (_) => MPAudioDetailCubit(memoryId: memoryId)..initData(),
       child: const _OmiAudioDetailView(),
     );
   }

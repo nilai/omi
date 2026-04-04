@@ -61,3 +61,32 @@ MPGetMemoryV2DetailResponse _$MPGetMemoryV2DetailResponseFromJson(
 Map<String, dynamic> _$MPGetMemoryV2DetailResponseToJson(
   MPGetMemoryV2DetailResponse instance,
 ) => <String, dynamic>{'memory_detail': instance.memoryDetail};
+
+MPGetMemoryFeedRequest _$MPGetMemoryFeedRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryFeedRequest(
+  memoryId: json['memory_id'] as String,
+  pageSize: (json['page_size'] as num?)?.toInt(),
+  cursor: json['cursor'] as String,
+);
+
+Map<String, dynamic> _$MPGetMemoryFeedRequestToJson(
+  MPGetMemoryFeedRequest instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'page_size': instance.pageSize,
+  'cursor': instance.cursor,
+};
+
+MPGetMemoryFeedResponse _$MPGetMemoryFeedResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryFeedResponse(
+  feeds: (json['feeds'] as List<dynamic>?)
+      ?.map((e) => MPFeedCardStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  hasMore: json['has_more'] as bool?,
+);
+
+Map<String, dynamic> _$MPGetMemoryFeedResponseToJson(
+  MPGetMemoryFeedResponse instance,
+) => <String, dynamic>{'feeds': instance.feeds, 'has_more': instance.hasMore};

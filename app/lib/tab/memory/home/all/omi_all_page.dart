@@ -7,6 +7,7 @@ import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
+import '../../../../utils/mp_toast_utils.dart';
 import '../../detail/audio/omi_audio_detail_page.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -97,7 +98,9 @@ class _OmiAllViewState extends State<_OmiAllView> {
         // TODO: 打开录音详情
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (BuildContext context) => const OmiAudioDetailPage(),
+            builder: (BuildContext context) => OmiAudioDetailPage(
+              memoryId: entry.id,
+            ),
           ),
         );
         break;
@@ -127,7 +130,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
                 onButtonPressed: () {
-                  context.read<OmiAllCubit>().retry();
+                  MPToastUtils.showFeatureComingSoon(message: '录音');
                 },
               ),
             );
@@ -189,6 +192,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     // 对应服务端 [MPMemoryType.onlyRecord]
                     MPMemoryEntryKind.audioRecording => MPAudioRecordingCard(
                         data: entry.audioData!,
+                        memoryId: entry.id,
                         onTap: () => _onMemoryEntryTap(context, entry),
                       ),
                   };

@@ -31,9 +31,17 @@ const Color _kBorder = Color(0xFFE8E8E6);
 
 /// 录音类 Memory 卡片：圆角白底、双时间 + 底栏「麦克风+来源 | 时长」
 class MPAudioRecordingCard extends StatelessWidget {
-  const MPAudioRecordingCard({super.key, required this.data, this.onTap});
+  const MPAudioRecordingCard({
+    super.key,
+    required this.data,
+    required this.memoryId,
+    this.onTap,
+  });
 
   final MPAudioRecordingCardData data;
+
+  /// 用于默认跳转 [OmiAudioDetailPage] 的 `memory_id`。
+  final String memoryId;
 
   final VoidCallback? onTap;
 
@@ -47,7 +55,7 @@ class MPAudioRecordingCard extends StatelessWidget {
             () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const OmiAudioDetailPage(),
+                  builder: (_) => OmiAudioDetailPage(memoryId: memoryId),
                 ),
               );
             },
