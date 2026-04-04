@@ -4,6 +4,25 @@ import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
 
+// Get Todo List Request
+@JsonSerializable()
+class MPGetTodoListRequest {
+  @JsonKey(name: 'page_size')
+  final int pageSize;
+
+  @JsonKey(name: 'page_no')
+  final int pageno;
+
+  MPGetTodoListRequest({
+    required this.pageSize,
+    required this.pageno,
+  });
+
+  factory MPGetTodoListRequest.fromJson(Map<String, dynamic> json) => _$MPGetTodoListRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetTodoListRequestToJson(this);
+}
+
 // Create Todo Request
 @JsonSerializable()
 class MPCreateTodoRequest {
@@ -92,7 +111,32 @@ class MPUpdateTodoRequest {
   Map<String, dynamic> toJson() => _$MPUpdateTodoRequestToJson(this);
 }
 
+// Get Todo List Response
+@JsonSerializable()
+class MPGetTodoListResponse {
+  @JsonKey(name: 'todos')
+  final List<MPTodoStruct> todos;
 
+  @JsonKey(name: 'has_more')
+  final bool hasMore;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  @JsonKey(name: 'total_count')
+  final int? totalCount;
+
+  MPGetTodoListResponse({
+    required this.todos,
+    required this.hasMore,
+    required this.baseResp,
+    this.totalCount,
+  });
+
+  factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetTodoListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetTodoListResponseToJson(this);
+}
 
 // Create Todo Response
 @JsonSerializable()

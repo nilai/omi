@@ -37,8 +37,8 @@ class MPTodayFocusTodoItem extends StatelessWidget {
   static const Color _kTodayAccent = Color(0xFF1B4332);
   static const Color _kUpcomingCheckBorder = Color(0xFF9CA3AF);
   static const Color _kUpcomingCheckFill = Color(0xFF6B7280);
-  static const Color _kRowBg = Color(0xFFF4F5F9);
-  static const Color _kOverdueHighlightBg = Color(0xFFECEEF2);
+  static const Color _kRowBg = Color(0xFFF0F0F0);
+  static const Color _kOverdueHighlightBg = Color(0xFFFFFFFF);
   static const Color _kTimeColor = Color(0xFF999999);
 
   Color get _contentBg {
@@ -52,29 +52,29 @@ class MPTodayFocusTodoItem extends StatelessWidget {
     switch (tone) {
       case MPTodayFocusTodoItemTone.today:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t6_15,
-          fontWeight: OmiFontWeight.medium,
+          fontSize: OmiFontSize.t5_14,
+          fontWeight: OmiFontWeight.regular,
           color: mainTextColor,
           height: 1.35,
         );
       case MPTodayFocusTodoItemTone.upcoming:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t4_13,
-          fontWeight: OmiFontWeight.medium,
+          fontSize: OmiFontSize.t3_12,
+          fontWeight: OmiFontWeight.regular,
           color: mainTextColor,
           height: 1.35,
         );
       case MPTodayFocusTodoItemTone.overdue:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t4_13,
-          fontWeight: OmiFontWeight.medium,
+          fontSize: OmiFontSize.t3_12,
+          fontWeight: OmiFontWeight.regular,
           color: secondTextColor,
           height: 1.35,
         );
       case MPTodayFocusTodoItemTone.completed:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t4_13,
-          fontWeight: OmiFontWeight.medium,
+          fontSize: OmiFontSize.t3_12,
+          fontWeight: OmiFontWeight.regular,
           color: secondTextColor.withValues(alpha: 0.62),
           height: 1.35,
         );
@@ -84,21 +84,21 @@ class MPTodayFocusTodoItem extends StatelessWidget {
   TextStyle? _timeStyle() {
     switch (tone) {
       case MPTodayFocusTodoItemTone.today:
-      case MPTodayFocusTodoItemTone.upcoming:
         return OmiTextStyle.create(
           fontSize: OmiFontSize.t5_14,
           fontWeight: OmiFontWeight.regular,
           color: _kTimeColor,
         );
       case MPTodayFocusTodoItemTone.overdue:
+      case MPTodayFocusTodoItemTone.upcoming:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t5_14,
+          fontSize: OmiFontSize.t3_12,
           fontWeight: OmiFontWeight.regular,
           color: secondTextColor.withValues(alpha: 0.72),
         );
       case MPTodayFocusTodoItemTone.completed:
         return OmiTextStyle.create(
-          fontSize: OmiFontSize.t5_14,
+          fontSize: OmiFontSize.t3_12,
           fontWeight: OmiFontWeight.regular,
           color: secondTextColor.withValues(alpha: 0.4),
         );
@@ -110,7 +110,7 @@ class MPTodayFocusTodoItem extends StatelessWidget {
     final bool showTime = timeLabel.trim().isNotEmpty;
 
     final Widget body = Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -130,7 +130,7 @@ class MPTodayFocusTodoItem extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               title,
@@ -158,12 +158,18 @@ class MPTodayFocusTodoItem extends StatelessWidget {
               color: _contentBg,
               child: InkWell(
                 onTap: onTap,
-                child: body,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: body,
+                ),
               ),
             )
           : ColoredBox(
               color: _contentBg,
-              child: body,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: body,
+              ),
             ),
     );
   }
@@ -194,13 +200,13 @@ class _MPTodoCheckSquare extends StatelessWidget {
             : upcomingBorder.withValues(alpha: enabled ? 1.0 : 0.4));
 
     final Color? fillColor =
-        checked ? (isToday ? accent : upcomingFill) : null;
+         null;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
       curve: Curves.easeOut,
-      width: 22,
-      height: 22,
+      width: 16,
+      height: 16,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: fillColor ?? Colors.transparent,
@@ -211,10 +217,10 @@ class _MPTodoCheckSquare extends StatelessWidget {
         ),
       ),
       child: checked
-          ? const Icon(
+          ? Icon(
               Icons.check_rounded,
-              size: 15,
-              color: Colors.white,
+              size: 12,
+              color: upcomingFill,
             )
           : null,
     );

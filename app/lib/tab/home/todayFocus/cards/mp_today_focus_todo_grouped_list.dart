@@ -10,12 +10,14 @@ class MPTodayFocusTodoRowData {
   const MPTodayFocusTodoRowData({
     required this.title,
     required this.timeLabel,
+    this.todoId = '',
     this.isChecked = false,
     this.highlighted = false,
   });
 
   final String title;
   final String timeLabel;
+  final String todoId;
   final bool isChecked;
 
   /// 仅 Overdue：浅灰高亮底
@@ -48,7 +50,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.onItemCheckChanged,
     this.onItemTap,
     this.sectionGap = 24,
-    this.itemGap = 8,
+    this.itemGap = 4,
   });
 
   final List<MPTodayFocusTodoRowData> todayItems;
@@ -110,23 +112,23 @@ class _MPTodayFocusTodoGroupedListState
 
   TextStyle _headerStyle({required bool isToday}) {
     return OmiTextStyle.create(
-      fontSize: OmiFontSize.t6_15,
-      fontWeight: OmiFontWeight.bold,
+      fontSize: OmiFontSize.t5_14,
+      fontWeight: OmiFontWeight.medium,
       color: isToday ? mainTextColor : secondTextColor,
       height: 1.25,
     );
   }
 
   TextStyle get _mutedHeaderStyle => OmiTextStyle.create(
-        fontSize: OmiFontSize.t6_15,
-        fontWeight: OmiFontWeight.bold,
+        fontSize: OmiFontSize.t5_14,
+        fontWeight: OmiFontWeight.medium,
         color: secondTextColor,
         height: 1.25,
       );
 
   Widget _sectionHeader(String title, {required bool isToday}) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Text(title, style: _headerStyle(isToday: isToday)),
     );
   }
@@ -134,37 +136,27 @@ class _MPTodayFocusTodoGroupedListState
   Widget _futureHeader() {
     final int n = widget.futureItems.length;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: InkWell(
+      padding: const EdgeInsets.only(bottom: 0),
+      child: GestureDetector(
         onTap: n == 0
             ? null
             : () => setState(() => _futureExpanded = !_futureExpanded),
-        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             children: <Widget>[
-              Expanded(
+              Flexible(
                 child: Text(
                   'Future (>7 days)',
                   style: _headerStyle(isToday: false),
                 ),
               ),
               if (n > 0) ...<Widget>[
-                Text(
-                  '$n',
-                  style: OmiTextStyle.create(
-                    fontSize: OmiFontSize.t5_14,
-                    fontWeight: OmiFontWeight.medium,
-                    color: secondTextColor,
-                  ),
-                ),
-                const SizedBox(width: 4),
                 Icon(
                   _futureExpanded
                       ? Icons.expand_less_rounded
                       : Icons.expand_more_rounded,
-                  size: 22,
+                  size: 18,
                   color: secondTextColor,
                 ),
               ],
@@ -182,16 +174,15 @@ class _MPTodayFocusTodoGroupedListState
     Widget? trailing,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
           Expanded(
-            child: InkWell(
+            child: GestureDetector(
               onTap: onToggle,
-              borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 0),
                 child: Row(
                   children: <Widget>[
                     Text(title, style: _mutedHeaderStyle),
@@ -200,7 +191,7 @@ class _MPTodayFocusTodoGroupedListState
                       expanded
                           ? Icons.expand_less_rounded
                           : Icons.expand_more_rounded,
-                      size: 22,
+                      size: 18,
                       color: secondTextColor,
                     ),
                   ],
@@ -230,8 +221,8 @@ class _MPTodayFocusTodoGroupedListState
         child: Text(
           widget.clearLabel,
           style: OmiTextStyle.create(
-            fontSize: OmiFontSize.t5_14,
-            fontWeight: OmiFontWeight.medium,
+            fontSize: OmiFontSize.t3_12,
+            fontWeight: OmiFontWeight.regular,
             color: secondTextColor.withValues(alpha: 0.75),
           ),
         ),

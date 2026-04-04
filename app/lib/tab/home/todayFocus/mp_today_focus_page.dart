@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/mp_completed_todo_action_popup.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
+import 'package:omi/common/omi_edit_todo_popup.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -53,17 +55,91 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     });
   }
 
+  Future<void> _onTapFocusItem(int index, MPTodayFocusCardItem item) async {
+    if (!mounted) {
+      return;
+    }
+    await showOmiEditTodoPopup(
+      context,
+      params: OmiEditTodoPopupParams(
+        title: item.title,
+        notes: item.subtext,
+        whenLabel: 'Today',
+        timeLabel: item.timeLabel,
+        todoId: '',
+      ),
+      onDelete: () async {
+        _cubit.removeFocusItemAt(index);
+        return true;
+      },
+    );
+  }
+
+  Future<void> _onTapTodoItem(
+    MPTodayFocusState state,
+    MPTodayFocusTodoSection section,
+    int index,
+  ) async {
+    List<MPTodayFocusTodoRowData> rows;
+    String whenLabel = 'No deadline';
+    String timeLabel = '';
+    switch (section) {
+      case MPTodayFocusTodoSection.today:
+        rows = state.todayItems;
+        whenLabel = 'Today';
+        break;
+      case MPTodayFocusTodoSection.upcomingWithinSevenDays:
+        rows = state.upcomingItems;
+        break;
+      case MPTodayFocusTodoSection.futureBeyondSevenDays:
+        rows = state.futureItems;
+        break;
+      case MPTodayFocusTodoSection.overdue:
+        rows = state.overdueItems;
+        break;
+      case MPTodayFocusTodoSection.completed:
+        rows = state.completedItems;
+        break;
+    }
+    if (index < 0 || index >= rows.length || !mounted) {
+      return;
+    }
+    final MPTodayFocusTodoRowData row = rows[index];
+    if (section == MPTodayFocusTodoSection.today) {
+      timeLabel = row.timeLabel;
+    }
+    if (section == MPTodayFocusTodoSection.completed) {
+      await showMPCompletedTodoActionPopup(
+        context,
+        params: MPCompletedTodoActionPopupParams(title: row.title),
+        onRestore: () => _cubit.restoreCompletedAt(index),
+        onDelete: () => _cubit.deleteCompletedAt(index),
+      );
+      return;
+    }
+    await showOmiEditTodoPopup(
+      context,
+      params: OmiEditTodoPopupParams(
+        title: row.title,
+        notes: '',
+        whenLabel: whenLabel,
+        timeLabel: timeLabel,
+        todoId: row.todoId,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPTodayFocusCubit>.value(
       value: _cubit,
       child: Scaffold(
-        backgroundColor: pageColor,
+        backgroundColor: Color(0xFFF0F0F0),
         appBar: PreferredSize(
           preferredSize: MPCustomNavBar.preferredSizeOf(context),
           child: MPCustomNavBar(
-            title: 'Today Focus',
-            backgroundColor: pageColor,
+            title: 'All To-Dos',
+            backgroundColor: Colors.white,
             onBack: () {
               Navigator.of(context, rootNavigator: true).maybePop();
             },
@@ -132,7 +208,11 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: <Widget>[
-                          MPTodayFocusCard(data: state.focusCard),
+                          MPTodayFocusCard(
+                            data: state.focusCard,
+                            onItemDeleted: _cubit.removeFocusItemAt,
+                            onItemTap: _onTapFocusItem,
+                          ),
                           if (state.focusCard.items.length < 3 &&
                               !_aiAddCardDismissedThisSession &&
                               state.currentAiFocusSuggestion != null) ...<Widget>[
@@ -168,6 +248,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                             initialFutureExpanded: true,
                             onOverdueClear: _cubit.clearOverdue,
                             onItemCheckChanged: _cubit.setTodoChecked,
+                            onItemTap: (MPTodayFocusTodoSection section, int index) {
+                              _onTapTodoItem(state, section, index);
+                            },
                           ),
                         ],
                       ),

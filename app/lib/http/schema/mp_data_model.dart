@@ -109,6 +109,7 @@ class MPTodoStruct {
   @JsonKey(name: 'deadline')
   final int? deadline;
 
+  //（1-进行中，0-已删除，2-已完成, 3-已超期）
   @JsonKey(name: 'status')
   final int? status;
 

@@ -1,4 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/mp_todo_manager.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
@@ -190,10 +192,12 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       aiFocusSuggestionIndex: 0,
       todayItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_today_1',
           title: 'Update API documentation for v2 endpoints',
           timeLabel: '09:00',
         ),
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_today_2',
           title:
               'Review the new product roadmap and prepare feedback for tomorrow\'s meeting',
           timeLabel: '14:00',
@@ -201,26 +205,31 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       ],
       upcomingItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_upcoming_1',
           title: 'Research new collaboration tools',
           timeLabel: 'Mon 11:30',
         ),
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_upcoming_2',
           title: 'Schedule team building event',
           timeLabel: 'Thu 16:00',
         ),
       ],
       futureItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_future_1',
           title: 'Quarterly planning draft',
           timeLabel: 'Apr 2',
         ),
       ],
       overdueItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_overdue_1',
           title: 'Send invoice',
           timeLabel: 'Mar 3 14:00',
         ),
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_overdue_2',
           title: 'Submit expense report',
           timeLabel: 'Mar 5 10:00',
           highlighted: true,
@@ -228,6 +237,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       ],
       completedItems: <MPTodayFocusTodoRowData>[
         const MPTodayFocusTodoRowData(
+          todoId: 'todo_completed_1',
           title: 'Update API documentation for v2 endpoints',
           timeLabel: '09:00',
           isChecked: true,
@@ -247,9 +257,27 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     );
     next.insert(
       0,
-      MPTodayFocusTodoRowData(title: t, timeLabel: ''),
+      MPTodayFocusTodoRowData(title: t, timeLabel: '', todoId: ''),
     );
     emit(state.copyWith(todayItems: next));
+  }
+
+  List<MPTodayFocusTodoRowData> _itemsForSection(
+    MPTodayFocusState s,
+    MPTodayFocusTodoSection section,
+  ) {
+    switch (section) {
+      case MPTodayFocusTodoSection.today:
+        return s.todayItems;
+      case MPTodayFocusTodoSection.upcomingWithinSevenDays:
+        return s.upcomingItems;
+      case MPTodayFocusTodoSection.futureBeyondSevenDays:
+        return s.futureItems;
+      case MPTodayFocusTodoSection.overdue:
+        return s.overdueItems;
+      case MPTodayFocusTodoSection.completed:
+        return s.completedItems;
+    }
   }
 
   void setTodoChecked(
@@ -258,53 +286,126 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     bool isChecked,
   ) {
     if (!_isInteractive) return;
-    List<MPTodayFocusTodoRowData> listFor(MPTodayFocusTodoSection s) {
-      switch (s) {
-        case MPTodayFocusTodoSection.today:
-          return state.todayItems;
-        case MPTodayFocusTodoSection.upcomingWithinSevenDays:
-          return state.upcomingItems;
-        case MPTodayFocusTodoSection.futureBeyondSevenDays:
-          return state.futureItems;
-        case MPTodayFocusTodoSection.overdue:
-          return state.overdueItems;
-        case MPTodayFocusTodoSection.completed:
-          return state.completedItems;
-      }
+    if (section == MPTodayFocusTodoSection.completed) {
+      return;
+    }
+    if (!isChecked) {
+      return;
+    }
+    _completeAndMoveToCompleted(section, index);
+  }
+
+  Future<void> _completeAndMoveToCompleted(
+    MPTodayFocusTodoSection section,
+    int index,
+  ) async {
+    final List<MPTodayFocusTodoRowData> src = _itemsForSection(state, section);
+    if (index < 0 || index >= src.length) return;
+    final String todoId = src[index].todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('任务ID不能为空');
+      return;
+    }
+    final bool ok = await MPTodoManager().completeTodo(todoId);
+    if (!ok || !_isInteractive) {
+      return;
     }
 
-    final List<MPTodayFocusTodoRowData> src = listFor(section);
-    if (index < 0 || index >= src.length) return;
-    final MPTodayFocusTodoRowData row = src[index];
-    final MPTodayFocusTodoRowData updated = MPTodayFocusTodoRowData(
+    final List<MPTodayFocusTodoRowData> latestSrc = List<MPTodayFocusTodoRowData>.of(
+      _itemsForSection(state, section),
+    );
+    if (index < 0 || index >= latestSrc.length) return;
+    final MPTodayFocusTodoRowData row = latestSrc.removeAt(index);
+    final MPTodayFocusTodoRowData completedRow = MPTodayFocusTodoRowData(
+      todoId: row.todoId,
       title: row.title,
       timeLabel: row.timeLabel,
-      isChecked: isChecked,
-      highlighted: row.highlighted,
+      isChecked: true,
+      highlighted: false,
     );
-    final List<MPTodayFocusTodoRowData> replaced = List<
-        MPTodayFocusTodoRowData>.generate(
-      src.length,
-      (int i) => i == index ? updated : src[i],
-    );
+    final List<MPTodayFocusTodoRowData> nextCompleted =
+        List<MPTodayFocusTodoRowData>.of(state.completedItems)
+          ..insert(0, completedRow);
 
     switch (section) {
       case MPTodayFocusTodoSection.today:
-        emit(state.copyWith(todayItems: replaced));
+        emit(state.copyWith(todayItems: latestSrc, completedItems: nextCompleted));
       case MPTodayFocusTodoSection.upcomingWithinSevenDays:
-        emit(state.copyWith(upcomingItems: replaced));
+        emit(
+          state.copyWith(
+            upcomingItems: latestSrc,
+            completedItems: nextCompleted,
+          ),
+        );
       case MPTodayFocusTodoSection.futureBeyondSevenDays:
-        emit(state.copyWith(futureItems: replaced));
+        emit(state.copyWith(futureItems: latestSrc, completedItems: nextCompleted));
       case MPTodayFocusTodoSection.overdue:
-        emit(state.copyWith(overdueItems: replaced));
+        emit(state.copyWith(overdueItems: latestSrc, completedItems: nextCompleted));
       case MPTodayFocusTodoSection.completed:
-        emit(state.copyWith(completedItems: replaced));
+        return;
     }
+  }
+
+  Future<bool> restoreCompletedAt(int index) async {
+    if (!_isInteractive) {
+      return false;
+    }
+    final List<MPTodayFocusTodoRowData> completed =
+        List<MPTodayFocusTodoRowData>.of(state.completedItems);
+    if (index < 0 || index >= completed.length) {
+      return false;
+    }
+    final MPTodayFocusTodoRowData row = completed.removeAt(index);
+    final List<MPTodayFocusTodoRowData> today =
+        List<MPTodayFocusTodoRowData>.of(state.todayItems)
+          ..insert(
+            0,
+            MPTodayFocusTodoRowData(
+              todoId: row.todoId,
+              title: row.title,
+              timeLabel: row.timeLabel,
+              isChecked: false,
+              highlighted: false,
+            ),
+          );
+    emit(state.copyWith(todayItems: today, completedItems: completed));
+    return true;
+  }
+
+  Future<bool> deleteCompletedAt(int index) async {
+    if (!_isInteractive) {
+      return false;
+    }
+    final List<MPTodayFocusTodoRowData> completed =
+        List<MPTodayFocusTodoRowData>.of(state.completedItems);
+    if (index < 0 || index >= completed.length) {
+      return false;
+    }
+    final String todoId = completed[index].todoId.trim();
+    if (todoId.isNotEmpty) {
+      final bool ok = await MPTodoManager().deleteTodo(todoId);
+      if (!ok) {
+        return false;
+      }
+    }
+    completed.removeAt(index);
+    emit(state.copyWith(completedItems: completed));
+    return true;
   }
 
   void clearOverdue() {
     if (!_isInteractive) return;
     emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
+  }
+
+  /// 从 Today's Focus 移除一条（左滑删除）；**TODO: 可在此同步调用删除接口**。
+  void removeFocusItemAt(int index) {
+    if (!_isInteractive) return;
+    final List<MPTodayFocusCardItem> items = state.focusCard.items;
+    if (index < 0 || index >= items.length) return;
+    final List<MPTodayFocusCardItem> next =
+        List<MPTodayFocusCardItem>.of(items)..removeAt(index);
+    emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }
 
   /// 将当前 AI 推荐加入 Today's Focus；**TODO: 替换为真实加 Focus 接口**。

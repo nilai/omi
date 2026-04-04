@@ -43,10 +43,14 @@ class MPTodayFocusCard extends StatelessWidget {
     super.key,
     required this.data,
     this.onItemTap,
+    this.onItemDeleted,
   });
 
   final MPTodayFocusCardData data;
   final void Function(int index, MPTodayFocusCardItem item)? onItemTap;
+
+  /// 左滑露出删除按钮，点击删除后回调；为 `null` 时不启用。
+  final void Function(int index)? onItemDeleted;
 
   static const Color _kCardBg = Color(0xFFF4F9F7);
 
@@ -82,7 +86,7 @@ class MPTodayFocusCard extends StatelessWidget {
           ...List<Widget>.generate(data.items.length, (int index) {
             final MPTodayFocusCardItem item = data.items[index];
             final Widget row = _MPTodayFocusItemRow(item: item);
-            final Widget content = onItemTap == null
+            Widget content = onItemTap == null
                 ? row
                 : Material(
                     color: Colors.transparent,
@@ -95,6 +99,16 @@ class MPTodayFocusCard extends StatelessWidget {
                       ),
                     ),
                   );
+            if (onItemDeleted != null) {
+              content = _MPTodayFocusRevealDeleteRow(
+                key: ValueKey<String>(
+                  'mp_today_focus_${index}_${item.title}_${item.timeLabel}',
+                ),
+                cardBgColor: _kCardBg,
+                onDelete: () => onItemDeleted!(index),
+                child: content,
+              );
+            }
             if (index == 0) {
               return content;
             }
@@ -103,6 +117,102 @@ class MPTodayFocusCard extends StatelessWidget {
               child: content,
             );
           }),
+        ],
+      ),
+    );
+  }
+}
+
+/// 左滑露出右侧「删除」按钮，点击后再触发 [onDelete]（非滑满即删）。
+class _MPTodayFocusRevealDeleteRow extends StatefulWidget {
+  const _MPTodayFocusRevealDeleteRow({
+    super.key,
+    required this.cardBgColor,
+    required this.child,
+    required this.onDelete,
+  });
+
+  final Color cardBgColor;
+  final Widget child;
+  final VoidCallback onDelete;
+
+  @override
+  State<_MPTodayFocusRevealDeleteRow> createState() =>
+      _MPTodayFocusRevealDeleteRowState();
+}
+
+class _MPTodayFocusRevealDeleteRowState
+    extends State<_MPTodayFocusRevealDeleteRow> {
+  static const double _kActionWidth = 66;
+
+  /// 非正数，0 为闭合，`-_kActionWidth` 为完全露出删除区。
+  double _offsetX = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      clipBehavior: Clip.hardEdge,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: <Widget>[
+          Positioned(
+            top: 0,
+            right: 0,
+            bottom: 0,
+            width: _kActionWidth,
+            child: Container(
+              alignment: Alignment.center,
+              color: redColor,
+              child: SizedBox.expand(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onDelete,
+                  child: Center(
+                    child: Text(
+                      'Remove from\nfocus',
+                      textAlign: TextAlign.center,
+                      style: OmiTextStyle.create(
+                        fontSize: OmiFontSize.t3_12,
+                        fontWeight: OmiFontWeight.regular,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragUpdate: (DragUpdateDetails details) {
+              setState(() {
+                _offsetX =
+                    (_offsetX + details.delta.dx).clamp(-_kActionWidth, 0.0);
+              });
+            },
+            onHorizontalDragEnd: (DragEndDetails details) {
+              final double? vx = details.primaryVelocity;
+              setState(() {
+                if (vx != null && vx < -400) {
+                  _offsetX = -_kActionWidth;
+                } else if (vx != null && vx > 400) {
+                  _offsetX = 0;
+                } else if (_offsetX.abs() > _kActionWidth / 2) {
+                  _offsetX = -_kActionWidth;
+                } else {
+                  _offsetX = 0;
+                }
+              });
+            },
+            child: Transform.translate(
+              offset: Offset(_offsetX, 0),
+              child: Container(
+                width: double.infinity,
+                color: widget.cardBgColor,
+                child: widget.child,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -123,7 +233,7 @@ class _MPTodayFocusItemRow extends StatelessWidget {
           padding: const EdgeInsets.only(top: 2),
           child: Icon(
             Icons.star_border_rounded,
-            size: 22,
+            size: 18,
             color: orangeTextColor,
           ),
         ),
@@ -135,8 +245,8 @@ class _MPTodayFocusItemRow extends StatelessWidget {
               Text(
                 item.title,
                 style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.bold,
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.medium,
                   color: mainTextColor,
                   height: 1.35,
                 ),
@@ -145,7 +255,7 @@ class _MPTodayFocusItemRow extends StatelessWidget {
               Text(
                 '→ ${item.subtext}',
                 style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t5_14,
+                  fontSize: OmiFontSize.t4_13,
                   fontWeight: OmiFontWeight.regular,
                   color: secondTextColor,
                   height: 1.35,

@@ -6,6 +6,20 @@ part of 'mp_todo.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+MPGetTodoListRequest _$MPGetTodoListRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetTodoListRequest(
+  pageSize: (json['page_size'] as num).toInt(),
+  pageno: (json['page_no'] as num).toInt(),
+);
+
+Map<String, dynamic> _$MPGetTodoListRequestToJson(
+  MPGetTodoListRequest instance,
+) => <String, dynamic>{
+  'page_size': instance.pageSize,
+  'page_no': instance.pageno,
+};
+
 MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
     MPCreateTodoRequest(
       title: json['title'] as String,
@@ -53,6 +67,26 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(
   'priority': instance.priority,
   'deadline': instance.deadline,
   'is_completed': instance.isCompleted,
+};
+
+MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetTodoListResponse(
+  todos: (json['todos'] as List<dynamic>)
+      .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  hasMore: json['has_more'] as bool,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+  totalCount: (json['total_count'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$MPGetTodoListResponseToJson(
+  MPGetTodoListResponse instance,
+) => <String, dynamic>{
+  'todos': instance.todos,
+  'has_more': instance.hasMore,
+  'base_resp': instance.baseResp,
+  'total_count': instance.totalCount,
 };
 
 MPCreateTodoResponse _$MPCreateTodoResponseFromJson(

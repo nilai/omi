@@ -87,6 +87,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   late String _priority;
   late String _when;
   late String _time;
+  late final TextEditingController _notesController;
   int? _deadlineUnixSec;
   DateTime? _pickedCalendarDate;
   bool _isMarkingDone = false;
@@ -255,8 +256,15 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
       _time = '';
     }
     _deadlineUnixSec = _normalizeDeadlineSec(widget.params.deadlineUnixSec);
+    _notesController = TextEditingController(text: widget.params.notes);
     _syncInitialWhenFromParams();
     _syncDeadlineFromWhenAndTime();
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
   }
 
   Future<String?> _showOptionSheet({
@@ -492,229 +500,258 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final double bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return Container(
-      color: Colors.white,
-      child: Container(
-        clipBehavior: Clip.antiAlias,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(0, 0, 0, bottomInset + 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                height: 56,
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Row(
-                  children: <Widget>[
-                    InkWell(
-                      onTap: () => Navigator.of(context).pop(),
-                      borderRadius: BorderRadius.circular(999),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: OmiImageLoader.localImg(
-                          Assets.omiLeftBack,
-                          width: 22,
-                          height: 22,
-                          color: blueTextColor,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        'Todo',
-                        textAlign: TextAlign.center,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t6_15,
-                          fontWeight: OmiFontWeight.medium,
-                          color: mainTextColor,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTapDown: (TapDownDetails details) async {
-                        final OmiTodoMoreAction? action =
-                            await showOmiTodoMoreMenu(
-                              context,
-                              details: details,
-                            );
-                        if (action == null) return;
-                        switch (action) {
-                          case OmiTodoMoreAction.exportToCalendar:
-                            // TODO: Export to calendar
-                            break;
-                          case OmiTodoMoreAction.shareTask:
-                            // TODO: Share task
-                            break;
-                          case OmiTodoMoreAction.delete:
-                            Navigator.of(context).pop();
-                            WidgetsBinding.instance.addPostFrameCallback((
-                              _,
-                            ) async {
-                              final bool ok = await showMPConfirmDeleteDialog(
-                                widget.rootContext,
-                              );
-                              if (!ok) return;
-                              if (widget.onDelete != null) {
-                                await widget.onDelete!.call();
-                              }
-                            });
-                            break;
-                        }
-                      },
-                      borderRadius: BorderRadius.circular(999),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8),
-                        child: OmiImageLoader.localImg(
-                          Assets.omiMemoryDetialMore,
-                          width: 20,
-                          height: 20,
-                          color: secondTextColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Text(
-                      widget.params.title,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.medium,
-                        color: mainTextColor,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    const _SectionTitle(text: 'CONTEXT'),
-                    const SizedBox(height: 8),
-                    _ContextCard(params: widget.params),
-                    const SizedBox(height: 14),
-                    const _SectionTitle(text: 'NOTES'),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF2F2F7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        widget.params.notes,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t6_15,
-                          fontWeight: OmiFontWeight.regular,
-                          color: mainTextColor,
-                          height: 1.35,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: <Widget>[
-                        Expanded(
-                          child: _InfoField(
-                            title: 'PRIORITY',
-                            value: _priority,
-                            onTap: () async {
-                              final String? v = await _showOptionSheet(
-                                options: MPTodoUtils.kTodoPriorities,
-                                selected: _priority,
-                              );
-                              if (v == null || !mounted) return;
-                              setState(() => _priority = v);
-                            },
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    final double keyboardInset = mediaQuery.viewInsets.bottom;
+    final double safeBottom = mediaQuery.viewPadding.bottom;
+    final double maxSheetHeight = mediaQuery.size.height - mediaQuery.padding.top - 8;
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxSheetHeight),
+          child: Container(
+            clipBehavior: Clip.antiAlias,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  height: 56,
+                  color: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: <Widget>[
+                      InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        borderRadius: BorderRadius.circular(999),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: OmiImageLoader.localImg(
+                            Assets.omiLeftBack,
+                            width: 22,
+                            height: 22,
+                            color: blueTextColor,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _InfoField(
-                            title: 'WHEN',
-                            value: _when,
-                            onTap: _pickWhenForEdit,
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Todo',
+                          textAlign: TextAlign.center,
+                          style: OmiTextStyle.create(
+                            fontSize: OmiFontSize.t6_15,
+                            fontWeight: OmiFontWeight.medium,
+                            color: mainTextColor,
                           ),
                         ),
-                        if (_when != 'No deadline') ...<Widget>[
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _InfoField(
-                              title: 'TIME',
-                              value: _time.isEmpty ? '--:--' : _time,
-                              onTap: () async {
-                                final String? v = await _showTimeWheelSheet(
-                                  selected: _time.isEmpty ? '09:00' : _time,
+                      ),
+                      InkWell(
+                        onTapDown: (TapDownDetails details) async {
+                          final OmiTodoMoreAction? action =
+                              await showOmiTodoMoreMenu(
+                                context,
+                                details: details,
+                              );
+                          if (action == null) return;
+                          switch (action) {
+                            case OmiTodoMoreAction.exportToCalendar:
+                              // TODO: Export to calendar
+                              break;
+                            case OmiTodoMoreAction.shareTask:
+                              // TODO: Share task
+                              break;
+                            case OmiTodoMoreAction.delete:
+                              Navigator.of(context).pop();
+                              WidgetsBinding.instance.addPostFrameCallback((
+                                _,
+                              ) async {
+                                final bool ok = await showMPConfirmDeleteDialog(
+                                  widget.rootContext,
                                 );
-                                if (v == null || !mounted) return;
-                                setState(() {
-                                  _time = v;
-                                  _syncDeadlineFromWhenAndTime();
-                                });
-                              },
+                                if (!ok) return;
+                                if (widget.onDelete != null) {
+                                  await widget.onDelete!.call();
+                                }
+                              });
+                              break;
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(999),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: OmiImageLoader.localImg(
+                            Assets.omiMemoryDetialMore,
+                            width: 20,
+                            height: 20,
+                            color: secondTextColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                Flexible(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, safeBottom + 16),
+                      child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        Text(
+                          widget.params.title,
+                          style: OmiTextStyle.create(
+                            fontSize: OmiFontSize.t6_15,
+                            fontWeight: OmiFontWeight.medium,
+                            color: mainTextColor,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        const _SectionTitle(text: 'CONTEXT'),
+                        const SizedBox(height: 8),
+                        _ContextCard(params: widget.params),
+                        const SizedBox(height: 14),
+                        const _SectionTitle(text: 'NOTES'),
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF2F2F7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: TextField(
+                            controller: _notesController,
+                            minLines: 3,
+                            maxLines: 6,
+                            textInputAction: TextInputAction.newline,
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t6_15,
+                              fontWeight: OmiFontWeight.regular,
+                              color: mainTextColor,
+                              height: 1.35,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'Add notes',
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              hintStyle: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t6_15,
+                                fontWeight: OmiFontWeight.regular,
+                                color: secondTextColor,
+                                height: 1.35,
+                              ),
                             ),
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: _InfoField(
+                                title: 'PRIORITY',
+                                value: _priority,
+                                onTap: () async {
+                                  final String? v = await _showOptionSheet(
+                                    options: MPTodoUtils.kTodoPriorities,
+                                    selected: _priority,
+                                  );
+                                  if (v == null || !mounted) return;
+                                  setState(() => _priority = v);
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _InfoField(
+                                title: 'WHEN',
+                                value: _when,
+                                onTap: _pickWhenForEdit,
+                              ),
+                            ),
+                            if (_when != 'No deadline') ...<Widget>[
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _InfoField(
+                                  title: 'TIME',
+                                  value: _time.isEmpty ? '--:--' : _time,
+                                  onTap: () async {
+                                    final String? v = await _showTimeWheelSheet(
+                                      selected: _time.isEmpty ? '09:00' : _time,
+                                    );
+                                    if (v == null || !mounted) return;
+                                    setState(() {
+                                      _time = v;
+                                      _syncDeadlineFromWhenAndTime();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        OmiButton(
+                          text: _isMarkingDone ? 'Saving…' : 'Mark as done',
+                          icon: OmiImageLoader.localImg(
+                            Assets.omiDetailCheck,
+                            width: 16,
+                            height: 16,
+                            color: Colors.white,
+                          ),
+                          textColor: Colors.white,
+                          bgColor: greenDeepColor,
+                          width: double.infinity,
+                          height: 50,
+                          borderRadius: BorderRadius.circular(12),
+                          onPressed: _isMarkingDone
+                              ? null
+                              : () async {
+                                  final String tid = widget.params.todoId.trim();
+                                  if (tid.isEmpty) {
+                                    MPToastUtils.showMessage('任务ID不能为空');
+                                    return;
+                                  }
+                                  _syncDeadlineFromWhenAndTime();
+                                  setState(() => _isMarkingDone = true);
+                                  final bool ok =
+                                      await MPTodoManager().updateTodoWithRequest(
+                                    todoId: tid,
+                                    title: widget.params.title,
+                                    priority: MPTodoUtils.mapPriorityToApi(_priority),
+                                    deadline: _deadlineUnixSec != null
+                                        ? '$_deadlineUnixSec'
+                                        : '',
+                                    isCompleted: true,
+                                  );
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  if (ok) {
+                                    widget.onMarkAsDone?.call();
+                                    Navigator.of(context).pop();
+                                  } else {
+                                    setState(() => _isMarkingDone = false);
+                                  }
+                                },
+                        ),
                       ],
-                    ),
-                    const SizedBox(height: 18),
-                    OmiButton(
-                      text: _isMarkingDone ? 'Saving…' : 'Mark as done',
-                      icon: OmiImageLoader.localImg(
-                        Assets.omiDetailCheck,
-                        width: 16,
-                        height: 16,
-                        color: Colors.white,
                       ),
-                      textColor: Colors.white,
-                      bgColor: greenDeepColor,
-                      width: double.infinity,
-                      height: 50,
-                      borderRadius: BorderRadius.circular(12),
-                      onPressed: _isMarkingDone
-                          ? null
-                          : () async {
-                              final String tid =
-                                  widget.params.todoId.trim();
-                              if (tid.isEmpty) {
-                                MPToastUtils.showMessage('任务ID不能为空');
-                                return;
-                              }
-                              _syncDeadlineFromWhenAndTime();
-                              setState(() => _isMarkingDone = true);
-                              final bool ok =
-                                  await MPTodoManager().updateTodoWithRequest(
-                                todoId: tid,
-                                title: widget.params.title,
-                                priority: MPTodoUtils.mapPriorityToApi(_priority),
-                                deadline: _deadlineUnixSec != null
-                                    ? '$_deadlineUnixSec'
-                                    : '',
-                                isCompleted: true,
-                              );
-                              if (!context.mounted) {
-                                return;
-                              }
-                              if (ok) {
-                                widget.onMarkAsDone?.call();
-                                Navigator.of(context).pop();
-                              } else {
-                                setState(() => _isMarkingDone = false);
-                              }
-                            },
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

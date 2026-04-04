@@ -75,7 +75,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
 
-  double get _cornerRadius => widget.showOutline ? 18.0 : 20.0;
+  double get _cornerRadius => widget.showOutline ? 12.0 : 16.0;
 
   void _submitTyped() {
     final String t = _controller.text.trim();
