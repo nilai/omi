@@ -8,6 +8,8 @@ import 'package:omi/tab/home/home/widgets/mp_home_audio_status_bar.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
+import '../../../audio/record/mp_audio_record_popup.dart';
+
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
   const MPHomePage({super.key, this.onViewAllMemories});
@@ -94,10 +96,10 @@ class _MPHomePageState extends State<MPHomePage> {
                       ),
                       title: 'Start Recording',
                       subtitle: 'Record a new audio memory',
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(ctx);
-                        MPToastUtils.showFeatureComingSoon(message: '录音');
-                      },
+                        final MPAudioRecordResult? r = await showMPAudioRecordPopup(context);
+                        },
                     ),
                     const Divider(height: 1),
                     _OptionTile(

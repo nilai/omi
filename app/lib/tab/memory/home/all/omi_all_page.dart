@@ -7,6 +7,7 @@ import 'package:omi/tab/memory/detail/memory/omi_memory_detail_page.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
+import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';
 import '../../../../utils/mp_toast_utils.dart';
 import '../../detail/audio/omi_audio_detail_page.dart';
@@ -131,17 +132,8 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
                 onButtonPressed: () async {
-                  final bool ok = await MPTodoManager().createTodo(
-                    title: '录音',
-                    priority: 'normal',
-                    deadline: '${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
-                  );
-                  if (!context.mounted) {
-                    return;
-                  }
-                  if (!ok) {
-                    MPToastUtils.showMessage('创建失败');
-                  }
+                  final MPAudioRecordResult? r = await showMPAudioRecordPopup(context);
+
                 },
               ),
             );
