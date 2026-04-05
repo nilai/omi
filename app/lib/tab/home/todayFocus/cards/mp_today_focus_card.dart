@@ -9,11 +9,15 @@ class MPTodayFocusCardItem {
     required this.title,
     required this.subtext,
     required this.timeLabel,
+    this.todoId = '',
   });
 
   final String title;
   final String subtext;
   final String timeLabel;
+
+  /// 与服务端 todo id 一致；无 id（如纯本地/AI 占位）时为空，删除前需有有效 id。
+  final String todoId;
 }
 
 /// 「Today's Focus」整卡数据
@@ -102,7 +106,7 @@ class MPTodayFocusCard extends StatelessWidget {
             if (onItemDeleted != null) {
               content = _MPTodayFocusRevealDeleteRow(
                 key: ValueKey<String>(
-                  'mp_today_focus_${index}_${item.title}_${item.timeLabel}',
+                  'mp_today_focus_${item.todoId}_${index}_${item.title}_${item.timeLabel}',
                 ),
                 cardBgColor: _kCardBg,
                 onDelete: () => onItemDeleted!(index),

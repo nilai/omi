@@ -33,6 +33,8 @@ class MPMemoryDetailCardData {
     required this.metaLine,
     required this.audioTimeStart,
     required this.audioTimeEnd,
+    this.recordFile,
+    this.recordUri,
     this.waveformHeights,
     required this.speakerLabels,
     required this.overviewText,
@@ -49,6 +51,8 @@ class MPMemoryDetailCardData {
 
   final String audioTimeStart;
   final String audioTimeEnd;
+  final String? recordFile;
+  final String? recordUri;
 
   /// 波形条高度 0~1，不传则内部生成占位波形
   final List<double>? waveformHeights;

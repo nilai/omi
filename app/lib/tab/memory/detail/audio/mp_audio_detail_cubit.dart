@@ -1,8 +1,14 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:omi/audio/mp_local_records_util.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/http/api/mp_memory.dart';
 import 'package:omi/http/schema/mp_data_model.dart';
 import 'package:omi/http/schema/mp_memory.dart';
@@ -72,11 +78,21 @@ class MPAudioDetailState {
 /// Audio 详情页 Cubit：拉取 [getMemoryDetail]，展示数据来自 [MPMemoryStruct.onlyRecordMemory]（JSON `only_record_content`）。
 class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   MPAudioDetailCubit({required this.memoryId})
-    : super(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
+    : super(const MPAudioDetailState(phase: MPAudioDetailPhase.loading)) {
+    _playerStateSub = _audioPlayer.playerStateStream.listen((PlayerState ps) {
+      if (ps.processingState == ProcessingState.completed) {
+        _stopTimer();
+        emit(state.copyWith(isPlaying: false, progress: 1));
+      }
+    });
+  }
 
   final String memoryId;
 
   Timer? _timer;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  StreamSubscription<PlayerState>? _playerStateSub;
+  String? _playingLocalPath;
 
   Future<void> initData() => load();
 
@@ -112,8 +128,25 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     if (state.phase != MPAudioDetailPhase.loaded) return;
     final bool next = !state.isPlaying;
     if (!next) {
+      await _audioPlayer.pause();
       _stopTimer();
       emit(state.copyWith(isPlaying: false));
+      return;
+    }
+
+    final String? localPath = await _ensurePlayableLocalPath();
+    if (localPath == null || localPath.isEmpty) {
+      MPToastUtils.showMessage('音频下载失败，请稍后重试');
+      return;
+    }
+    try {
+      if (_playingLocalPath != localPath) {
+        await _audioPlayer.setFilePath(localPath);
+        _playingLocalPath = localPath;
+      }
+      await _audioPlayer.play();
+    } catch (_) {
+      MPToastUtils.showMessage('音频播放失败');
       return;
     }
 
@@ -123,7 +156,106 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     }
     emit(state.copyWith(isPlaying: true, progress: p));
     _startTimer();
-    // TODO: 播放/暂停（使用 [MPAudioDetailData.recordFile] / [MPAudioDetailData.recordUri] 接真实音频）
+  }
+
+  Future<String?> _ensurePlayableLocalPath() async {
+    final MPAudioDetailData? data = state.data;
+    if (data == null) {
+      return null;
+    }
+    final String recordFile = (data.recordFile ?? '').trim();
+    if (recordFile.isEmpty) {
+      return null;
+    }
+
+    final String? localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(
+      recordFile,
+    );
+    if (localPath != null && localPath.isNotEmpty) {
+      return localPath;
+    }
+
+    final String? downloadUrl = _resolveRecordDownloadUrl(
+      recordFile: recordFile,
+      recordUri: (data.recordUri ?? '').trim(),
+    );
+    if (downloadUrl == null) {
+      return null;
+    }
+
+    return _downloadRecordToLocal(
+      downloadUrl: downloadUrl,
+      recordFile: recordFile,
+      total: data.total,
+    );
+  }
+
+  String? _resolveRecordDownloadUrl({
+    required String recordFile,
+    required String recordUri,
+  }) {
+    final Uri? recordFileUri = Uri.tryParse(recordFile);
+    if (recordFileUri != null &&
+        recordFileUri.hasScheme &&
+        recordFileUri.host.isNotEmpty) {
+      return recordFile;
+    }
+    final Uri? recordUriParsed = Uri.tryParse(recordUri);
+    if (recordUriParsed != null &&
+        recordUriParsed.hasScheme &&
+        recordUriParsed.host.isNotEmpty) {
+      return recordFileUri == null
+          ? recordUri
+          : recordUriParsed.resolveUri(recordFileUri).toString();
+    }
+    return null;
+  }
+
+  Future<String?> _downloadRecordToLocal({
+    required String downloadUrl,
+    required String recordFile,
+    required Duration total,
+  }) async {
+    try {
+      final Uri uri = Uri.parse(downloadUrl);
+      final http.Response response = await http.get(uri);
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        return null;
+      }
+      final Directory docs = await getApplicationDocumentsDirectory();
+      final Directory audioDir = Directory('${docs.path}/mp_audio_records');
+      if (!await audioDir.exists()) {
+        await audioDir.create(recursive: true);
+      }
+      final String sourceForId =
+          recordFile.isNotEmpty ? recordFile : downloadUrl;
+      String fileId = MPLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
+      if (fileId.isEmpty) {
+        fileId = DateTime.now().millisecondsSinceEpoch.toString();
+      }
+      String ext = '.m4a';
+      final String path = uri.path;
+      final int dot = path.lastIndexOf('.');
+      if (dot > 0 && dot < path.length - 1) {
+        ext = path.substring(dot);
+      }
+      final String filePath =
+          '${audioDir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileId$ext';
+      final File file = File(filePath);
+      await file.writeAsBytes(response.bodyBytes, flush: true);
+
+      await MPLocalRecordsUtil.instance.loadLocalRecords();
+      await MPLocalRecordsUtil.instance.addLocalRecord(
+        filePath,
+        duration: total.inSeconds > 0 ? total.inSeconds : null,
+        source: 'mp',
+        createAt: DateTime.now().millisecondsSinceEpoch,
+        fileId: fileId,
+      );
+      return filePath;
+    } catch (_) {
+      return null;
+    }
   }
 
   void _startTimer() {
@@ -153,6 +285,8 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   @override
   Future<void> close() {
     _stopTimer();
+    _playerStateSub?.cancel();
+    _audioPlayer.dispose();
     return super.close();
   }
 

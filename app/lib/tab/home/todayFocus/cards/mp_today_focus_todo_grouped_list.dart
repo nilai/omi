@@ -11,6 +11,10 @@ class MPTodayFocusTodoRowData {
     required this.title,
     required this.timeLabel,
     this.todoId = '',
+    this.status = 1,
+    this.priorityApi = 'normal',
+    this.deadlineUnixSec,
+    this.sourceSection,
     this.isChecked = false,
     this.highlighted = false,
   });
@@ -18,6 +22,10 @@ class MPTodayFocusTodoRowData {
   final String title;
   final String timeLabel;
   final String todoId;
+  final int status;
+  final String priorityApi;
+  final int? deadlineUnixSec;
+  final MPTodayFocusTodoSection? sourceSection;
   final bool isChecked;
 
   /// 仅 Overdue：浅灰高亮底

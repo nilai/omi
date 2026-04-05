@@ -595,8 +595,6 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 deadline: _deadlineUnixSec != null
                                     ? '${_deadlineUnixSec!}'
                                     : '',
-                                requestOwnerId:
-                                    p.ownerId.isNotEmpty ? p.ownerId : null,
                               );
                               if (!context.mounted) {
                                 return;

@@ -4,23 +4,38 @@ import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
 
+/// 与后端 `TodoListSectionType` 对齐：1 Today，2 近 7 天，3 更远未来，4 逾期。
+enum TodoListSectionType {
+  @JsonValue(1)
+  today,
+
+  @JsonValue(2)
+  upcomingSevenDays,
+
+  @JsonValue(3)
+  future,
+
+  @JsonValue(4)
+  overdue,
+}
+
 // Get Todo List Request
 @JsonSerializable()
-class MPGetTodoListRequest {
+class GetTodoGroupedListRequest {
   @JsonKey(name: 'page_size')
   final int pageSize;
 
   @JsonKey(name: 'page_no')
   final int pageno;
 
-  MPGetTodoListRequest({
+  GetTodoGroupedListRequest({
     required this.pageSize,
     required this.pageno,
   });
 
-  factory MPGetTodoListRequest.fromJson(Map<String, dynamic> json) => _$MPGetTodoListRequestFromJson(json);
+  factory GetTodoGroupedListRequest.fromJson(Map<String, dynamic> json) => _$GetTodoGroupedListRequestFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MPGetTodoListRequestToJson(this);
+  Map<String, dynamic> toJson() => _$GetTodoGroupedListRequestToJson(this);
 }
 
 // Create Todo Request
@@ -28,9 +43,6 @@ class MPGetTodoListRequest {
 class MPCreateTodoRequest {
   @JsonKey(name: 'title')
   final String title;
-
-  @JsonKey(name: 'owner_id')
-  final String ownerId;
 
   @JsonKey(name: 'priority')
   final String priority;
@@ -40,7 +52,6 @@ class MPCreateTodoRequest {
 
   MPCreateTodoRequest({
     required this.title,
-    required this.ownerId,
     required this.priority,
     required this.deadline,
   });
@@ -113,29 +124,61 @@ class MPUpdateTodoRequest {
 
 // Get Todo List Response
 @JsonSerializable()
-class MPGetTodoListResponse {
-  @JsonKey(name: 'todos')
-  final List<MPTodoStruct> todos;
+class GetTodoGroupedListResponse {
+  @JsonKey(name: 'focus_items')
+  final List<MPTodoStruct>? focusItems;
 
-  @JsonKey(name: 'has_more')
-  final bool hasMore;
-
-  @JsonKey(name: 'base_resp')
-  final MPBaseResp baseResp;
+  @JsonKey(name: 'sections')
+  final List<TodoListSectionStruct>? sections;
 
   @JsonKey(name: 'total_count')
   final int? totalCount;
 
-  MPGetTodoListResponse({
-    required this.todos,
-    required this.hasMore,
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  @JsonKey(name: 'incomplete_count')
+  final int? incompleteCount;
+
+  GetTodoGroupedListResponse({
+    this.focusItems,
+    this.sections,
+    this.totalCount,
     required this.baseResp,
+    this.incompleteCount,
+  });
+
+  factory GetTodoGroupedListResponse.fromJson(Map<String, dynamic> json) => _$GetTodoGroupedListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GetTodoGroupedListResponseToJson(this);
+}
+
+@JsonSerializable()
+class TodoListSectionStruct {
+
+  @JsonKey(name: 'section_type')
+  final TodoListSectionType sectionType;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'todos')
+  final List<MPTodoStruct> todos;
+
+  @JsonKey(name: 'total_count')
+  final int? totalCount;
+
+  TodoListSectionStruct({
+    required this.sectionType,
+    required this.title,
+    required this.todos,
     this.totalCount,
   });
 
-  factory MPGetTodoListResponse.fromJson(Map<String, dynamic> json) => _$MPGetTodoListResponseFromJson(json);
+  factory TodoListSectionStruct.fromJson(Map<String, dynamic> json) =>
+      _$TodoListSectionStructFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MPGetTodoListResponseToJson(this);
+  Map<String, dynamic> toJson() => _$TodoListSectionStructToJson(this);
 }
 
 // Create Todo Response

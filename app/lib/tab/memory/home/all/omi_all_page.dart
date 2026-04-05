@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:omi/common/mp_todo_manager.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:omi/tab/memory/detail/memory/omi_memory_detail_page.dart';
@@ -129,8 +130,18 @@ class _OmiAllViewState extends State<_OmiAllView> {
                 description:
                     'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
-                onButtonPressed: () {
-                  MPToastUtils.showFeatureComingSoon(message: '录音');
+                onButtonPressed: () async {
+                  final bool ok = await MPTodoManager().createTodo(
+                    title: '录音',
+                    priority: 'normal',
+                    deadline: '${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
+                  );
+                  if (!context.mounted) {
+                    return;
+                  }
+                  if (!ok) {
+                    MPToastUtils.showMessage('创建失败');
+                  }
                 },
               ),
             );

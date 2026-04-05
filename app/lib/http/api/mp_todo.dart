@@ -7,10 +7,10 @@ import '../../env/env.dart';
 import '../schema/mp_todo.dart';
 import '../shared.dart';
 
-// GET /api/v1/todo/get_list
-Future<MPGetTodoListResponse?> getTodoList(MPGetTodoListRequest req) async {
+// GET /api/v2/todo/get_grouped_list
+Future<GetTodoGroupedListResponse?> getTodoList(GetTodoGroupedListRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/todo/get_list?page_size=${req.pageSize}&page_no=${req.pageno}',
+    url: '${Env.apiBaseUrl}api/v2/todo/get_grouped_list?page_size=${req.pageSize}&page_no=${req.pageno}',
     headers: {},
     method: 'GET',
     body: '',
@@ -18,7 +18,7 @@ Future<MPGetTodoListResponse?> getTodoList(MPGetTodoListRequest req) async {
   if (response == null) return null;
   debugPrint('getTodoList response: ${response.body}');
   if (response.statusCode == 200) {
-    return MPGetTodoListResponse.fromJson(jsonDecode(response.body));
+    return GetTodoGroupedListResponse.fromJson(jsonDecode(response.body));
   }
   return null;
 }

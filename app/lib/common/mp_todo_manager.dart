@@ -53,20 +53,14 @@ class MPTodoManager {
     String priority = 'normal',
     /// `null` 表示使用当天日期（`YYYY-MM-DD`）；非 `null` 时原样提交（可为 `''` 或 Unix 秒字符串等，与接口约定一致）。
     String? deadline,
-    /// 非空时作为 [MPCreateTodoRequest.ownerId]；否则使用 [SharedPreferencesUtil.uid]。
-    String? requestOwnerId,
   }) async {
     try {
-      final ownerId = (requestOwnerId != null && requestOwnerId.isNotEmpty)
-          ? requestOwnerId
-          : (SharedPreferencesUtil().uid ?? '');
       final String deadlineStr =
           deadline ?? DateTime.now().toIso8601String().split('T')[0];
 
       // 创建请求
       final request = MPCreateTodoRequest(
         title: title,
-        ownerId: ownerId,
         priority: priority,
         deadline: deadlineStr,
       );

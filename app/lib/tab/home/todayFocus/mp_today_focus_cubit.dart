@@ -1,5 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:omi/common/mp_todo_manager.dart';
+import 'package:omi/http/api/mp_todo.dart';
+import 'package:omi/http/schema/mp_data_model.dart';
+import 'package:omi/http/schema/mp_todo.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
@@ -129,9 +133,16 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       emit(_loadingState());
     }
     try {
-      // TODO: 替换为真实接口
-      await Future<void>.delayed(const Duration(milliseconds: 280));
-      final MPTodayFocusState loaded = _mockLoadedState();
+      final GetTodoGroupedListResponse? raw = await getTodoList(
+        GetTodoGroupedListRequest(pageSize: 200, pageno: 1),
+      );
+      if (raw == null) {
+        throw StateError('getTodoList failed');
+      }
+      if (raw.baseResp.code != 0) {
+        throw StateError(raw.baseResp.message);
+      }
+      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw);
       if (!loaded.hasRenderableContent) {
         emit(
           loaded.copyWith(
@@ -160,90 +171,120 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 与 OmiAll / MemorySearch 等页的 [retry] 一致
   Future<void> retry() => initData();
 
-  static const List<MPTodayFocusAISuggestionItem> _kMockAiSuggestions =
-      <MPTodayFocusAISuggestionItem>[
-    MPTodayFocusAISuggestionItem(
-      title: 'Revise marketing deck with ADHD-focused messaging',
-      scheduledTimeLabel: '14:00',
-    ),
-    MPTodayFocusAISuggestionItem(
-      title: 'Block 25 minutes for inbox zero before standup',
-      scheduledTimeLabel: '08:30',
-    ),
-    MPTodayFocusAISuggestionItem(
-      title: 'Draft one-paragraph summary for stakeholders',
-      scheduledTimeLabel: '17:00',
-    ),
-  ];
+  /// `focus_items` → 顶部 Today's Focus；`sections` → 下方分组（按 [TodoListSectionType] 填入对应列表）。
+  static MPTodayFocusState _stateFromGroupedListResponse(
+    GetTodoGroupedListResponse resp,
+  ) {
+    final List<MPTodoStruct> focus = resp.focusItems ?? <MPTodoStruct>[];
+    final List<MPTodayFocusCardItem> focusCards = focus
+        .map(_mapTodoToFocusCardItem)
+        .toList(growable: false);
 
-  static MPTodayFocusState _mockLoadedState() {
+    final List<MPTodayFocusTodoRowData> todayItems = <MPTodayFocusTodoRowData>[];
+    final List<MPTodayFocusTodoRowData> upcomingItems =
+        <MPTodayFocusTodoRowData>[];
+    final List<MPTodayFocusTodoRowData> futureItems =
+        <MPTodayFocusTodoRowData>[];
+    final List<MPTodayFocusTodoRowData> overdueItems =
+        <MPTodayFocusTodoRowData>[];
+    final List<MPTodayFocusTodoRowData> completedItems =
+        <MPTodayFocusTodoRowData>[];
+
+    for (final TodoListSectionStruct sec in resp.sections ??
+        const <TodoListSectionStruct>[]) {
+      final MPTodayFocusTodoSection? uiSection =
+          _mapTodoListSectionTypeToUi(sec.sectionType);
+      if (uiSection == null) {
+        continue;
+      }
+      final List<MPTodayFocusTodoRowData> bucket = switch (uiSection) {
+        MPTodayFocusTodoSection.today => todayItems,
+        MPTodayFocusTodoSection.upcomingWithinSevenDays => upcomingItems,
+        MPTodayFocusTodoSection.futureBeyondSevenDays => futureItems,
+        MPTodayFocusTodoSection.overdue => overdueItems,
+        MPTodayFocusTodoSection.completed => completedItems,
+      };
+      for (final MPTodoStruct t in sec.todos) {
+        bucket.add(_mapTodoToRow(t, uiSection));
+      }
+    }
+
     return MPTodayFocusState(
       phase: MPTodayFocusPhase.loaded,
-      focusCard: MPTodayFocusCardData(
-        items: <MPTodayFocusCardItem>[
-          const MPTodayFocusCardItem(
-            title: 'Review migration milestones with infrastructure team',
-            subtext: 'Meeting scheduled today',
-            timeLabel: '09:00',
-          ),
-        ],
-      ),
-      aiFocusSuggestions: _kMockAiSuggestions,
+      focusCard: MPTodayFocusCardData(items: focusCards),
+      aiFocusSuggestions: const <MPTodayFocusAISuggestionItem>[],
       aiFocusSuggestionIndex: 0,
-      todayItems: <MPTodayFocusTodoRowData>[
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_today_1',
-          title: 'Update API documentation for v2 endpoints',
-          timeLabel: '09:00',
-        ),
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_today_2',
-          title:
-              'Review the new product roadmap and prepare feedback for tomorrow\'s meeting',
-          timeLabel: '14:00',
-        ),
-      ],
-      upcomingItems: <MPTodayFocusTodoRowData>[
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_upcoming_1',
-          title: 'Research new collaboration tools',
-          timeLabel: 'Mon 11:30',
-        ),
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_upcoming_2',
-          title: 'Schedule team building event',
-          timeLabel: 'Thu 16:00',
-        ),
-      ],
-      futureItems: <MPTodayFocusTodoRowData>[
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_future_1',
-          title: 'Quarterly planning draft',
-          timeLabel: 'Apr 2',
-        ),
-      ],
-      overdueItems: <MPTodayFocusTodoRowData>[
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_overdue_1',
-          title: 'Send invoice',
-          timeLabel: 'Mar 3 14:00',
-        ),
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_overdue_2',
-          title: 'Submit expense report',
-          timeLabel: 'Mar 5 10:00',
-          highlighted: true,
-        ),
-      ],
-      completedItems: <MPTodayFocusTodoRowData>[
-        const MPTodayFocusTodoRowData(
-          todoId: 'todo_completed_1',
-          title: 'Update API documentation for v2 endpoints',
-          timeLabel: '09:00',
-          isChecked: true,
-        ),
-      ],
+      todayItems: todayItems,
+      upcomingItems: upcomingItems,
+      futureItems: futureItems,
+      overdueItems: overdueItems,
+      completedItems: completedItems,
     );
+  }
+
+  static MPTodayFocusTodoSection? _mapTodoListSectionTypeToUi(
+    TodoListSectionType type,
+  ) {
+    switch (type) {
+      case TodoListSectionType.today:
+        return MPTodayFocusTodoSection.today;
+      case TodoListSectionType.upcomingSevenDays:
+        return MPTodayFocusTodoSection.upcomingWithinSevenDays;
+      case TodoListSectionType.future:
+        return MPTodayFocusTodoSection.futureBeyondSevenDays;
+      case TodoListSectionType.overdue:
+        return MPTodayFocusTodoSection.overdue;
+    }
+  }
+
+  static MPTodayFocusCardItem _mapTodoToFocusCardItem(MPTodoStruct t) {
+    final String title = (t.title ?? '').trim();
+    return MPTodayFocusCardItem(
+      title: title.isEmpty ? '—' : title,
+      subtext: 'scheduled for ${_formatDeadlineLabel(t.deadline)}',
+      timeLabel: _formatDeadlineLabel(t.deadline),
+      todoId: (t.id ?? '').trim(),
+    );
+  }
+
+  static MPTodayFocusTodoRowData _mapTodoToRow(
+    MPTodoStruct t,
+    MPTodayFocusTodoSection section,
+  ) {
+    final int st = t.status ?? 1;
+    final String title = (t.title ?? '').trim();
+    return MPTodayFocusTodoRowData(
+      title: title.isEmpty ? '—' : title,
+      timeLabel: _formatDeadlineLabel(t.deadline),
+      todoId: (t.id ?? '').trim(),
+      status: st,
+      priorityApi: (t.priority ?? 'normal').toLowerCase(),
+      deadlineUnixSec: t.deadline,
+      sourceSection: section,
+      isChecked: st == 2,
+      highlighted: st == 3,
+    );
+  }
+
+  /// [MPTodoStruct.deadline] 为 Unix 秒。
+  static String _formatDeadlineLabel(int? deadlineSec) {
+    if (deadlineSec == null || deadlineSec <= 0) {
+      return '';
+    }
+    final DateTime dt = DateTime.fromMillisecondsSinceEpoch(
+      deadlineSec * 1000,
+    );
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    if (day == today) {
+      return DateFormat('HH:mm').format(dt);
+    }
+    final int daysFromToday = day.difference(today).inDays;
+    if (daysFromToday > 0 && daysFromToday <= 7) {
+      return DateFormat('EEE HH:mm').format(dt);
+    }
+    return DateFormat('MMM d').format(dt);
   }
 
   bool get _isInteractive => state.phase == MPTodayFocusPhase.loaded;
@@ -318,6 +359,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final MPTodayFocusTodoRowData row = latestSrc.removeAt(index);
     final MPTodayFocusTodoRowData completedRow = MPTodayFocusTodoRowData(
       todoId: row.todoId,
+      status: 2,
       title: row.title,
       timeLabel: row.timeLabel,
       isChecked: true,
@@ -350,25 +392,26 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!_isInteractive) {
       return false;
     }
-    final List<MPTodayFocusTodoRowData> completed =
-        List<MPTodayFocusTodoRowData>.of(state.completedItems);
-    if (index < 0 || index >= completed.length) {
+    if (index < 0 || index >= state.completedItems.length) {
       return false;
     }
-    final MPTodayFocusTodoRowData row = completed.removeAt(index);
-    final List<MPTodayFocusTodoRowData> today =
-        List<MPTodayFocusTodoRowData>.of(state.todayItems)
-          ..insert(
-            0,
-            MPTodayFocusTodoRowData(
-              todoId: row.todoId,
-              title: row.title,
-              timeLabel: row.timeLabel,
-              isChecked: false,
-              highlighted: false,
-            ),
-          );
-    emit(state.copyWith(todayItems: today, completedItems: completed));
+    final MPTodayFocusTodoRowData row = state.completedItems[index];
+    final String todoId = row.todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('任务ID不能为空');
+      return false;
+    }
+    final bool ok = await MPTodoManager().updateTodoWithRequest(
+      todoId: todoId,
+      title: row.title,
+      priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
+      deadline: row.deadlineUnixSec != null ? '${row.deadlineUnixSec}' : '',
+      isCompleted: false,
+    );
+    if (!ok) {
+      return false;
+    }
+    await initData();
     return true;
   }
 
@@ -398,14 +441,35 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
   }
 
-  /// 从 Today's Focus 移除一条（左滑删除）；**TODO: 可在此同步调用删除接口**。
-  void removeFocusItemAt(int index) {
-    if (!_isInteractive) return;
+  /// 从 Today's Focus 移除一条：先调删除接口，成功后再从列表移除。
+  Future<bool> removeFocusItemAt(int index) async {
+    if (!_isInteractive) {
+      return false;
+    }
     final List<MPTodayFocusCardItem> items = state.focusCard.items;
-    if (index < 0 || index >= items.length) return;
+    if (index < 0 || index >= items.length) {
+      return false;
+    }
+    final String todoId = items[index].todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('任务ID不能为空');
+      return false;
+    }
+    final bool ok = await MPTodoManager().deleteTodo(todoId);
+    if (!ok || !_isInteractive) {
+      return false;
+    }
+    final List<MPTodayFocusCardItem> latest = state.focusCard.items;
+    final int i = latest.indexWhere(
+      (MPTodayFocusCardItem e) => e.todoId.trim() == todoId,
+    );
+    if (i < 0) {
+      return false;
+    }
     final List<MPTodayFocusCardItem> next =
-        List<MPTodayFocusCardItem>.of(items)..removeAt(index);
+        List<MPTodayFocusCardItem>.of(latest)..removeAt(i);
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
+    return true;
   }
 
   /// 将当前 AI 推荐加入 Today's Focus；**TODO: 替换为真实加 Focus 接口**。
@@ -428,6 +492,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
                 title: cur.title,
                 subtext: 'Suggested by AI',
                 timeLabel: cur.scheduledTimeLabel,
+                todoId: '',
               ),
             );
 

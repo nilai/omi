@@ -141,7 +141,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                             data: data,
                             onSegmentChanged: (MPMemoryDetailSegment s) {},
                             onPlayTap: () {
-                              // TODO: 播放
+                              context.read<OmiMemoryDetailCubit>().onPlayTap();
                             },
                           ),
                         ),

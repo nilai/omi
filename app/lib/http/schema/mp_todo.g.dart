@@ -6,15 +6,15 @@ part of 'mp_todo.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-MPGetTodoListRequest _$MPGetTodoListRequestFromJson(
+GetTodoGroupedListRequest _$GetTodoGroupedListRequestFromJson(
   Map<String, dynamic> json,
-) => MPGetTodoListRequest(
+) => GetTodoGroupedListRequest(
   pageSize: (json['page_size'] as num).toInt(),
   pageno: (json['page_no'] as num).toInt(),
 );
 
-Map<String, dynamic> _$MPGetTodoListRequestToJson(
-  MPGetTodoListRequest instance,
+Map<String, dynamic> _$GetTodoGroupedListRequestToJson(
+  GetTodoGroupedListRequest instance,
 ) => <String, dynamic>{
   'page_size': instance.pageSize,
   'page_no': instance.pageno,
@@ -23,7 +23,6 @@ Map<String, dynamic> _$MPGetTodoListRequestToJson(
 MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
     MPCreateTodoRequest(
       title: json['title'] as String,
-      ownerId: json['owner_id'] as String,
       priority: json['priority'] as String,
       deadline: json['deadline'] as String,
     );
@@ -32,7 +31,6 @@ Map<String, dynamic> _$MPCreateTodoRequestToJson(
   MPCreateTodoRequest instance,
 ) => <String, dynamic>{
   'title': instance.title,
-  'owner_id': instance.ownerId,
   'priority': instance.priority,
   'deadline': instance.deadline,
 };
@@ -69,24 +67,55 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(
   'is_completed': instance.isCompleted,
 };
 
-MPGetTodoListResponse _$MPGetTodoListResponseFromJson(
+GetTodoGroupedListResponse _$GetTodoGroupedListResponseFromJson(
   Map<String, dynamic> json,
-) => MPGetTodoListResponse(
+) => GetTodoGroupedListResponse(
+  focusItems: (json['focus_items'] as List<dynamic>?)
+      ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  sections: (json['sections'] as List<dynamic>?)
+      ?.map((e) => TodoListSectionStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  totalCount: (json['total_count'] as num?)?.toInt(),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+  incompleteCount: (json['incomplete_count'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$GetTodoGroupedListResponseToJson(
+  GetTodoGroupedListResponse instance,
+) => <String, dynamic>{
+  'focus_items': instance.focusItems,
+  'sections': instance.sections,
+  'total_count': instance.totalCount,
+  'base_resp': instance.baseResp,
+  'incomplete_count': instance.incompleteCount,
+};
+
+TodoListSectionStruct _$TodoListSectionStructFromJson(
+  Map<String, dynamic> json,
+) => TodoListSectionStruct(
+  sectionType: $enumDecode(_$TodoListSectionTypeEnumMap, json['section_type']),
+  title: json['title'] as String,
   todos: (json['todos'] as List<dynamic>)
       .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
-  hasMore: json['has_more'] as bool,
-  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
   totalCount: (json['total_count'] as num?)?.toInt(),
 );
 
-Map<String, dynamic> _$MPGetTodoListResponseToJson(
-  MPGetTodoListResponse instance,
+Map<String, dynamic> _$TodoListSectionStructToJson(
+  TodoListSectionStruct instance,
 ) => <String, dynamic>{
+  'section_type': _$TodoListSectionTypeEnumMap[instance.sectionType]!,
+  'title': instance.title,
   'todos': instance.todos,
-  'has_more': instance.hasMore,
-  'base_resp': instance.baseResp,
   'total_count': instance.totalCount,
+};
+
+const _$TodoListSectionTypeEnumMap = {
+  TodoListSectionType.today: 1,
+  TodoListSectionType.upcomingSevenDays: 2,
+  TodoListSectionType.future: 3,
+  TodoListSectionType.overdue: 4,
 };
 
 MPCreateTodoResponse _$MPCreateTodoResponseFromJson(

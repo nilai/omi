@@ -91,6 +91,29 @@ class MPSpeakerStruct {
   Map<String, dynamic> toJson() => _$MPSpeakerStructToJson(this);
 }
 
+/// Todo `deadline`：兼容 JSON 为 int、[num] 或数字字符串（Unix 秒）。
+int? mpTodoDeadlineFromJson(Object? json) {
+  if (json == null) {
+    return null;
+  }
+  if (json is int) {
+    return json;
+  }
+  if (json is num) {
+    return json.toInt();
+  }
+  if (json is String) {
+    final String s = json.trim();
+    if (s.isEmpty) {
+      return null;
+    }
+    return int.tryParse(s);
+  }
+  return null;
+}
+
+Object? mpTodoDeadlineToJson(int? value) => value;
+
 // Todo Struct
 @JsonSerializable()
 class MPTodoStruct {
@@ -106,7 +129,11 @@ class MPTodoStruct {
   @JsonKey(name: 'priority')
   final String? priority;
 
-  @JsonKey(name: 'deadline')
+  @JsonKey(
+    name: 'deadline',
+    fromJson: mpTodoDeadlineFromJson,
+    toJson: mpTodoDeadlineToJson,
+  )
   final int? deadline;
 
   //（1-进行中，0-已删除，2-已完成, 3-已超期）

@@ -111,7 +111,7 @@ Future<String> getAuthHeader() async {
     //   throw Exception('No auth token found');
     // }
   }
-  return 'Bearer ${ApiTools.accessToken}';
+  return 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
 }
 
 /// Builds common headers for API and WebSocket requests

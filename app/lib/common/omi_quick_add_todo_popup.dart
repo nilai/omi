@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:omi/common/mp_todo_manager.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
@@ -54,6 +56,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
   final TextEditingController _controller = TextEditingController();
   bool _isRecording = false;
   bool _isTranscribing = false;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -61,9 +64,26 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     super.dispose();
   }
 
-  void _submit() {
+  Future<void> _submit() async {
+    if (_isSubmitting) {
+      return;
+    }
     final String text = _controller.text.trim();
     if (text.isEmpty) return;
+    setState(() => _isSubmitting = true);
+    final bool ok = await MPTodoManager().createTodo(
+      title: text,
+      priority: 'normal',
+      deadline: '${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
+    );
+    if (!mounted) {
+      return;
+    }
+    if (!ok) {
+      setState(() => _isSubmitting = false);
+      MPToastUtils.showMessage('创建失败');
+      return;
+    }
     Navigator.of(context).pop(OmiQuickAddTodoResult(text: text));
   }
 

@@ -50,7 +50,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
       ? null
       : MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
   priority: json['priority'] as String?,
-  deadline: (json['deadline'] as num?)?.toInt(),
+  deadline: mpTodoDeadlineFromJson(json['deadline']),
   status: (json['status'] as num?)?.toInt(),
 );
 
@@ -60,7 +60,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'title': instance.title,
       'owner': instance.owner,
       'priority': instance.priority,
-      'deadline': instance.deadline,
+      'deadline': mpTodoDeadlineToJson(instance.deadline),
       'status': instance.status,
     };
 

@@ -125,7 +125,9 @@ class _OmiMemoDetailView extends StatelessWidget {
                         segmentBodyScrollWithParent: true,
                         cardType: MPMemoryDetailCardType.memo,
                         onSegmentChanged: (MPMemoryDetailSegment s) {},
-                        onPlayTap: () {},
+                        onPlayTap: () {
+                          context.read<OmiMemoryDetailCubit>().onPlayTap();
+                        },
                       ),
                     ),
                     MPMemoryDetailFeedSection(data: data),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_completed_todo_action_popup.dart';
@@ -66,12 +68,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         notes: item.subtext,
         whenLabel: 'Today',
         timeLabel: item.timeLabel,
-        todoId: '',
+        todoId: item.todoId,
       ),
-      onDelete: () async {
-        _cubit.removeFocusItemAt(index);
-        return true;
-      },
+      onDelete: () => _cubit.removeFocusItemAt(index),
     );
   }
 
@@ -210,7 +209,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         children: <Widget>[
                           MPTodayFocusCard(
                             data: state.focusCard,
-                            onItemDeleted: _cubit.removeFocusItemAt,
+                            onItemDeleted: (int i) async {
+                              await _cubit.removeFocusItemAt(i);
+                            },
                             onItemTap: _onTapFocusItem,
                           ),
                           if (state.focusCard.items.length < 3 &&
