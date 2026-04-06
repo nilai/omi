@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:omi/http/api/mp_memory.dart';
-import 'package:omi/http/schema/mp_data_model.dart';
-import 'package:omi/http/schema/mp_memory.dart';
+import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';

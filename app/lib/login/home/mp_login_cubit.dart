@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/login/home/mp_login_state.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
+import 'package:memo_pin/login/home/mp_login_state.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';

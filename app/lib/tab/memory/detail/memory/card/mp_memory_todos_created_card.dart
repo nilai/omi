@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/mp_date_utils.dart';
-import 'package:omi/common/mp_todo_priority_utils.dart';
-import 'package:omi/common/omi_edit_todo_popup.dart';
+import 'package:memo_pin/common/mp_date_utils.dart';
+import 'package:memo_pin/common/mp_todo_priority_utils.dart';
+import 'package:memo_pin/common/omi_edit_todo_popup.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_image_loader.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
 import '../omi_memory_detail_cubit.dart';

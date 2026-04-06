@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:omi/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
 
 /// Transcript 分段内容：由多条 [MPMemoryTranscriptItem] 组成，**固定高度**内可滑动。
 class MPMemoryTranscriptContent extends StatefulWidget {

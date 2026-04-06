@@ -1,4 +1,4 @@
-import 'package:omi/cache/omi_server_cache.dart';
+import 'package:memo_pin/cache/omi_server_cache.dart';
 
 class OmiCacheManager {
   /// 从磁盘恢复缓存到内存；请在 `runApp` 前 `await` 一次（需先 [WidgetsFlutterBinding.ensureInitialized]）

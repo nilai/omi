@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:omi/utils/analytics/intercom.dart';
-import 'package:omi/utils/analytics/mixpanel.dart';
-import 'package:omi/utils/debugging/crashlytics_manager.dart';
-import 'package:omi/utils/debugging/crash_reporter.dart';
-import 'package:omi/utils/platform/platform_service.dart';
+import 'package:memo_pin/utils/analytics/intercom.dart';
+import 'package:memo_pin/utils/analytics/mixpanel.dart';
+import 'package:memo_pin/utils/debugging/crashlytics_manager.dart';
+import 'package:memo_pin/utils/debugging/crash_reporter.dart';
+import 'package:memo_pin/utils/platform/platform_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// Centralized platform manager for all platform-specific services

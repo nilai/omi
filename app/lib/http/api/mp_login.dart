@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:omi/env/env.dart';
-import 'package:omi/http/schema/mp_login.dart';
-import 'package:omi/http/shared.dart';
+import 'package:memo_pin/env/env.dart';
+import 'package:memo_pin/http/schema/mp_login.dart';
+import 'package:memo_pin/http/shared.dart';
 
 Future<MPSendCodeResponse?> sendCode(MPSendCodeRequest req) async {
   final response = await makeApiCall(

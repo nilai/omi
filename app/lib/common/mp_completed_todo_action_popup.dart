@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/omi_button.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/omi_button.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 class MPCompletedTodoActionPopupParams {
   const MPCompletedTodoActionPopupParams({

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/common/mp_custom_nav_bar.dart';
-import 'package:omi/common/mp_tristate_page.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/mp_custom_nav_bar.dart';
+import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';

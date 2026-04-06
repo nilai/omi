@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// Memory 详情 **Overview** 分段内容（支持 Markdown；接口摘要可为 Markdown 字符串）。

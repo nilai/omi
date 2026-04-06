@@ -1,7 +1,7 @@
 // import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
-import 'package:omi/utils/platform/platform_service.dart';
-import 'package:omi/utils/debugging/crash_reporter.dart';
+import 'package:memo_pin/utils/platform/platform_service.dart';
+import 'package:memo_pin/utils/debugging/crash_reporter.dart';
 
 class CrashlyticsManager implements CrashReporter {
   static final CrashlyticsManager _instance = CrashlyticsManager._internal();

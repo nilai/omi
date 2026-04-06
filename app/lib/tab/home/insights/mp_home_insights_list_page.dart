@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:omi/common/mp_custom_nav_bar.dart';
-import 'package:omi/common/mp_tristate_page.dart';
-import 'package:omi/tab/home/insights/mp_daily_insight_detail_page.dart';
-import 'package:omi/tab/home/insights/mp_monthly_insight_detail_page.dart';
-import 'package:omi/tab/home/insights/mp_pattern_insight_detail_page.dart';
-import 'package:omi/tab/home/insights/mp_weekly_insight_detail_page.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/mp_custom_nav_bar.dart';
+import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/tab/home/insights/mp_daily_insight_detail_page.dart';
+import 'package:memo_pin/tab/home/insights/mp_monthly_insight_detail_page.dart';
+import 'package:memo_pin/tab/home/insights/mp_pattern_insight_detail_page.dart';
+import 'package:memo_pin/tab/home/insights/mp_weekly_insight_detail_page.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import 'mp_insights_list_cubit.dart';
 

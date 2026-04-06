@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 单条「最近提及」人物行数据
 class MPRecentlyMentionedPersonItem {

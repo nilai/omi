@@ -4,13 +4,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:omi/http/api/mp_speaker.dart';
-import 'package:omi/http/schema/mp_speaker.dart';
-import 'package:omi/permission/omi_microphone_manager.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/http/api/mp_speaker.dart';
+import 'package:memo_pin/http/schema/mp_speaker.dart';
+import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 

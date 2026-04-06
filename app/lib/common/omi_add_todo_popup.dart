@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:omi/common/mp_todo_manager.dart';
-import 'package:omi/common/mp_todo_utils.dart';
-import 'package:omi/common/omi_button.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_image_loader.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/common/mp_todo_utils.dart';
+import 'package:memo_pin/common/omi_button.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
 

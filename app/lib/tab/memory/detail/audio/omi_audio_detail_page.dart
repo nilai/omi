@@ -2,13 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/common/mp_memory_options_sheet.dart';
-import 'package:omi/common/mp_memory_update_name_dialog.dart';
-import 'package:omi/common/mp_share_sheet.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/mp_memory_options_sheet.dart';
+import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
+import 'package:memo_pin/common/mp_share_sheet.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../common/mp_custom_nav_bar.dart';
 import '../../../../generated/assets.dart';

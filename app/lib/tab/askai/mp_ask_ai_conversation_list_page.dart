@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/tab/askai/mp_ask_ai_chat_page.dart';
-import 'package:omi/tab/askai/mp_ask_ai_conversation_list_cubit.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/tab/askai/mp_ask_ai_chat_page.dart';
+import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_list_cubit.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 class MPAskAIConversationListPage extends StatelessWidget {
   const MPAskAIConversationListPage({super.key});

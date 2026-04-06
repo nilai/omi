@@ -1,4 +1,4 @@
-import 'package:omi/http/schema/mp_base.dart';
+import 'package:memo_pin/http/schema/mp_base.dart';
 class MPSendCodeRequest {
   MPSendCodeRequest({required this.email});
 

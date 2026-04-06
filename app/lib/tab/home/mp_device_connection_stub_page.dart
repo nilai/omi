@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/mp_custom_nav_bar.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
+import 'package:memo_pin/common/mp_custom_nav_bar.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
 
 /// 设备连接（对齐 react `DeviceConnectionPage`，完整能力后续再接 BLE）
 class MPDeviceConnectionStubPage extends StatelessWidget {

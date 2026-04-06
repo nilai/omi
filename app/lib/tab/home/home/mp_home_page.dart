@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/tab/home/connect_device/mp_connect_device_page.dart';
-import 'package:omi/tab/home/home/mp_home_cubit.dart';
-import 'package:omi/tab/home/insights/mp_home_insights_list_page.dart';
-import 'package:omi/tab/home/todayFocus/mp_today_focus_page.dart';
-import 'package:omi/tab/home/home/widgets/mp_home_audio_status_bar.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
+import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
+import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
+import 'package:memo_pin/tab/home/insights/mp_home_insights_list_page.dart';
+import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_page.dart';
+import 'package:memo_pin/tab/home/home/widgets/mp_home_audio_status_bar.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
 
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../http/schema/mp_home.dart';

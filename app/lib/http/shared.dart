@@ -5,10 +5,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as http_io;
-import 'package:omi/utils/mp_preferences.dart';
-import 'package:omi/utils/mp_uuid_util.dart';
+import 'package:memo_pin/utils/mp_preferences.dart';
+import 'package:memo_pin/utils/mp_uuid_util.dart';
 import 'package:path/path.dart';
-import 'package:omi/utils/platform/platform_manager.dart';
+import 'package:memo_pin/utils/platform/platform_manager.dart';
 import '../../env/env.dart';
 
 class Logger {

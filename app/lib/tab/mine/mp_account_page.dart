@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/tab/mine/mp_account_cubit.dart';
-import 'package:omi/tab/mine/mp_account_state.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
+import 'package:memo_pin/tab/mine/mp_account_cubit.dart';
+import 'package:memo_pin/tab/mine/mp_account_state.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
 
 /// Account & Data：账户资料、订阅、数据管理、帮助与支持
 class MPAccountPage extends StatelessWidget {

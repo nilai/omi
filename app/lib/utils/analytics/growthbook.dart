@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:omi/env/env.dart';
+import 'package:memo_pin/env/env.dart';
 import '../../env/env.dart';
 import 'package:growthbook_sdk_flutter/growthbook_sdk_flutter.dart';
 

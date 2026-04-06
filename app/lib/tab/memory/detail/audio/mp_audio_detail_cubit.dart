@@ -7,11 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:omi/audio/mp_local_records_util.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/http/api/mp_memory.dart';
-import 'package:omi/http/schema/mp_data_model.dart';
-import 'package:omi/http/schema/mp_memory.dart';
+import 'package:memo_pin/audio/mp_local_records_util.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 
 import '../memory/card/mp_memory_generate_summary_sheet.dart';
 

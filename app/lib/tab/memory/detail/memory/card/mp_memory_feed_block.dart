@@ -1,8 +1,8 @@
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_todos_created_models.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_todos_created_models.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
 
 /// 详情页主卡片下方列表：顺序与 [MPMemoryFeedStruct.feeds] 一致，可混合多种类型。
 sealed class MPMemoryFeedBlock {}

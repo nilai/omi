@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:omi/permission/omi_permission_service.dart';
-import 'package:omi/utils/bluetooth/bluetooth_adapter.dart';
+import 'package:memo_pin/permission/omi_permission_service.dart';
+import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 
 import 'ble_transport.dart';
 

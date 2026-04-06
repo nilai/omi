@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// Todo 编辑页「更多」弹窗的操作类型。
 enum OmiTodoMoreAction { exportToCalendar, shareTask, delete }

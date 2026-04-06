@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_color_utils.dart';

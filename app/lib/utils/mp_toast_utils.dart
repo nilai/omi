@@ -1,6 +1,6 @@
 // AI-generated START - Toast 提示工具类
 import 'package:flutter/material.dart';
-import 'package:omi/main.dart';
+import 'package:memo_pin/main.dart';
 
 /// Toast 提示工具类
 /// 用于显示提示消息，提示功能待完善

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:omi/tab/home/home/mp_home_cubit.dart';
-import 'package:omi/utils/omi_color_utils.dart';
+import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
 
 /// 首页录音 / 同步 / 导入状态条（对齐 react `AudioStatusBar`）
 class MPHomeAudioStatusBar extends StatelessWidget {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_todos_created_card.dart';
-import 'package:omi/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_my_memos_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_todos_created_card.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
 
 /// 主卡片下方：按 [MPMemoryDetailCardData.feedBlocks] 顺序渲染（与接口 feeds 一致，含 RESUMMARY）。
 class MPMemoryDetailFeedSection extends StatelessWidget {

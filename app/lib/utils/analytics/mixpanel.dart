@@ -1,8 +1,8 @@
-// import 'package:omi/backend/preferences.dart';
-// import 'package:omi/backend/schema/memory.dart';
-// import 'package:omi/backend/schema/conversation.dart';
-// import 'package:omi/env/env.dart';
-// import 'package:omi/utils/platform/platform_service.dart';
+// import 'package:memo_pin/backend/preferences.dart';
+// import 'package:memo_pin/backend/schema/memory.dart';
+// import 'package:memo_pin/backend/schema/conversation.dart';
+// import 'package:memo_pin/env/env.dart';
+// import 'package:memo_pin/utils/platform/platform_service.dart';
 // import 'package:mixpanel_flutter/mixpanel_flutter.dart';
 // import 'package:mixpanel_analytics/mixpanel_analytics.dart';
 

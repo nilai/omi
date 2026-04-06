@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/mp_todo_notification.dart';
-import 'package:omi/http/api/mp_todo.dart' as MPTodo;
-import 'package:omi/http/schema/mp_todo.dart';
-import 'package:omi/utils/mp_preferences.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
+import 'package:memo_pin/common/mp_todo_notification.dart';
+import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
+import 'package:memo_pin/http/schema/mp_todo.dart';
+import 'package:memo_pin/utils/mp_preferences.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 
 /// Todo 任务数据模型

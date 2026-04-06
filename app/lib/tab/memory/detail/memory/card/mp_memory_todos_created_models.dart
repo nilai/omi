@@ -1,6 +1,6 @@
-import 'package:omi/common/mp_memory_todo_priority_kind.dart';
+import 'package:memo_pin/common/mp_memory_todo_priority_kind.dart';
 
-export 'package:omi/common/mp_memory_todo_priority_kind.dart';
+export 'package:memo_pin/common/mp_memory_todo_priority_kind.dart';
 
 /// 单条已创建 Todo（用于「TODOS CREATED」列表）
 class MPMemoryCreatedTodoLineData {

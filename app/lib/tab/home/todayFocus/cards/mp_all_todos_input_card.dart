@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/mp_todo_voice_input.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/mp_todo_voice_input.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 「ALL TO DOS」标题 + 白底圆角输入条（占位文案 + 右侧语音，逻辑复用 [MPTodoVoiceInput]）。
 class MPAllTodosInputCard extends StatelessWidget {

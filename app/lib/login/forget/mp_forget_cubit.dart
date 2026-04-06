@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/login/forget/mp_forget_state.dart';
+import 'package:memo_pin/login/forget/mp_forget_state.dart';
 
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';

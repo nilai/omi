@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:omi/blu/ble_transport.dart';
-import 'package:omi/blu/mp_bluetooth_connection_helper.dart';
-import 'package:omi/utils/mp_preferences.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
+import 'package:memo_pin/blu/ble_transport.dart';
+import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/utils/mp_preferences.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 /// 连接页设备模型
 class MPConnectDeviceItem {

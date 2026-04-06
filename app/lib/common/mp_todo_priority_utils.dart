@@ -1,4 +1,4 @@
-import 'package:omi/common/mp_memory_todo_priority_kind.dart';
+import 'package:memo_pin/common/mp_memory_todo_priority_kind.dart';
 
 /// 服务端 Todo 优先级字符串与 [MPMemoryTodoPriorityKind] 的映射。
 class MPTodoPriorityUtils {

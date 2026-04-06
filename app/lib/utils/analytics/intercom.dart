@@ -1,8 +1,8 @@
 import 'dart:async';
 
-// import 'package:omi/backend/preferences.dart';
-import 'package:omi/env/env.dart';
-import 'package:omi/utils/platform/platform_service.dart';
+// import 'package:memo_pin/backend/preferences.dart';
+import 'package:memo_pin/env/env.dart';
+import 'package:memo_pin/utils/platform/platform_service.dart';
 import 'package:intercom_flutter/intercom_flutter.dart';
 
 class IntercomManager {

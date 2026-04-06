@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:omi/common/omi_button.dart';
-import 'package:omi/generated/assets.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_image_loader.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/common/omi_button.dart';
+import 'package:memo_pin/generated/assets.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// AI 推荐任务卡片：白底圆角阴影、角标、关闭、标题、计划时间、`Add to Focus` 主按钮。
 class MPTodayFocusAddCard extends StatelessWidget {

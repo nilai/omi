@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/common/mp_todo_manager.dart';
-import 'package:omi/common/mp_tristate_page.dart';
-import 'package:omi/tab/memory/detail/memo/omi_memo_detail_page.dart';
-import 'package:omi/tab/memory/detail/memory/omi_memory_detail_page.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_image_loader.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_page.dart';
+import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_page.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';

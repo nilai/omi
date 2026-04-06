@@ -1,10 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:omi/common/mp_todo_manager.dart';
-import 'package:omi/http/api/mp_todo.dart';
-import 'package:omi/http/schema/mp_data_model.dart';
-import 'package:omi/http/schema/mp_todo.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/http/api/mp_todo.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/schema/mp_todo.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';

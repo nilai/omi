@@ -1,4 +1,4 @@
-import 'package:omi/utils/platform/platform_manager.dart';
+import 'package:memo_pin/utils/platform/platform_manager.dart';
 
 class AnalyticsManager {
   static final AnalyticsManager _instance = AnalyticsManager._internal();

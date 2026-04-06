@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 「全部人物」单行：左姓名，右 `dateLabel · count`
 class MPAllPeopleRowItem {

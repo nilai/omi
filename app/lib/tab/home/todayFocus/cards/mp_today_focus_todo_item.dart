@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 列表行视觉：Today / Upcoming / Overdue / Completed 通过文案色与勾选样式区分，勾选态由 [isChecked] 决定。
 enum MPTodayFocusTodoItemTone {

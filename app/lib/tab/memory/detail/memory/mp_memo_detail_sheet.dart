@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:omi/http/api/mp_memo.dart';
-import 'package:omi/http/schema/mp_memo.dart';
-import 'package:omi/tab/memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/http/schema/mp_memo.dart';
+import 'package:memo_pin/tab/memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';

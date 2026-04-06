@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:omi/http/shared.dart';
+import 'package:memo_pin/http/shared.dart';
 import 'login/home/mp_login_page.dart';
 import 'login/mp_user.dart';
-import 'package:omi/cache/omi_server_cache.dart';
-import 'package:omi/tab/omi_main_tab_page.dart';
+import 'package:memo_pin/cache/omi_server_cache.dart';
+import 'package:memo_pin/tab/omi_main_tab_page.dart';
 import 'env/env.dart';
 import 'utils/mp_preferences.dart';
 import 'utils/mp_uuid_util.dart';

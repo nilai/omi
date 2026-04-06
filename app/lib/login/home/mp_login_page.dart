@@ -2,12 +2,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:omi/login/forget/mp_forget_page.dart';
-import 'package:omi/login/home/mp_login_cubit.dart';
-import 'package:omi/login/home/mp_login_state.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
+import 'package:memo_pin/login/forget/mp_forget_page.dart';
+import 'package:memo_pin/login/home/mp_login_cubit.dart';
+import 'package:memo_pin/login/home/mp_login_state.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../legal/mp_legal_document_page.dart';
 import '../verify/mp_verify_page.dart';
