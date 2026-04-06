@@ -9,6 +9,7 @@ import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../http/schema/mp_home.dart';
 
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
@@ -98,8 +99,8 @@ class _MPHomePageState extends State<MPHomePage> {
                       subtitle: 'Record a new audio memory',
                       onTap: () async {
                         Navigator.pop(ctx);
-                        final MPAudioRecordResult? r = await showMPAudioRecordPopup(context);
-                        },
+                        await showMPAudioRecordPopup(context);
+                      },
                     ),
                     const Divider(height: 1),
                     _OptionTile(
@@ -177,7 +178,7 @@ class _MPHomePageState extends State<MPHomePage> {
                       children: <Widget>[
                         Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context).push(
@@ -186,16 +187,16 @@ class _MPHomePageState extends State<MPHomePage> {
                                 ),
                               );
                             },
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             child: Container(
                               width: 32,
                               height: 32,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                               ),
-                              child: Icon(Icons.battery_unknown_rounded, size: 18, color: secondTextColor),
+                              child: const _MPHomeNavBullseye(),
                             ),
                           ),
                         ),
@@ -257,13 +258,10 @@ class _MPHomePageState extends State<MPHomePage> {
                       ),
                       const SizedBox(height: 16),
                       _InsightsCard(
-                        unreadCount: state.insightsUnreadCount,
-                        summaryLine: state.insightsSummaryLine,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
-                          );
-                        },
+                        insightOverview: state.insightOverview,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
+                        ),
                       ),
                     ],
                   ),
@@ -275,6 +273,56 @@ class _MPHomePageState extends State<MPHomePage> {
       ),
     );
   }
+}
+
+/// 首页导航左侧标识：白底圆角块内的同心圆靶心（中心实心点 + 双层细环，浅灰蓝）。
+class _MPHomeNavBullseye extends StatelessWidget {
+  const _MPHomeNavBullseye();
+
+  static const Color _kMarkColor = Color(0xFF94A3B8);
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 18,
+      height: 18,
+      child: CustomPaint(
+        painter: _MPHomeBullseyePainter(color: _kMarkColor),
+      ),
+    );
+  }
+}
+
+/// 绘制 MemoPin 导航栏小标：外环、内环（描边）与中心实心圆。
+class _MPHomeBullseyePainter extends CustomPainter {
+  const _MPHomeBullseyePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width * 0.5;
+    final double cy = size.height * 0.5;
+    final double r = (size.width < size.height ? size.width : size.height) * 0.5;
+
+    final Paint stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.15
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+    final Paint fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    canvas.drawCircle(Offset(cx, cy), r * 0.88, stroke);
+    canvas.drawCircle(Offset(cx, cy), r * 0.52, stroke);
+    canvas.drawCircle(Offset(cx, cy), r * 0.18, fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MPHomeBullseyePainter oldDelegate) => oldDelegate.color != color;
 }
 
 class _OptionTile extends StatelessWidget {
@@ -371,7 +419,7 @@ class _TodayFocusCard extends StatelessWidget {
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -390,7 +438,7 @@ class _TodayFocusCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 8),
           for (final MPHomeTodoItem todo in shown) ...<Widget>[
             InkWell(
               onTap: () => onTodoTap(todo),
@@ -435,34 +483,6 @@ class _TodayFocusCard extends StatelessWidget {
                 ),
               ),
           ],
-          if (todos.length < 3)
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF059669).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Text(
-                    'Add more tasks to Today\'s Focus to stay productive',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF3C3C43)),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF059669),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: onViewAll,
-                    child: const Text('Add to Today\'s Focus'),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -496,7 +516,7 @@ class _RecentMemoryCard extends StatelessWidget {
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -515,7 +535,7 @@ class _RecentMemoryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 8),
           for (final MPHomeMemoryItem m in shown)
             InkWell(
               onTap: () => onMemoryTap(m),
@@ -547,13 +567,11 @@ class _RecentMemoryCard extends StatelessWidget {
 
 class _InsightsCard extends StatelessWidget {
   const _InsightsCard({
-    required this.unreadCount,
-    required this.summaryLine,
+    required this.insightOverview,
     required this.onTap,
   });
 
-  final int unreadCount;
-  final String summaryLine;
+  final MPHomeInsightOverviewStruct insightOverview;
   final VoidCallback onTap;
 
   @override
@@ -579,7 +597,7 @@ class _InsightsCard extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -598,17 +616,17 @@ class _InsightsCard extends StatelessWidget {
                           child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                'Insights',
-                                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                                insightOverview.title,
+                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'AI insights & summaries over time',
+                                insightOverview.subTitle,
                                 style: TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
                               ),
                             ],
@@ -618,7 +636,7 @@ class _InsightsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      summaryLine,
+                      insightOverview.content,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF3C3C43)),
@@ -626,7 +644,7 @@ class _InsightsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (unreadCount > 0)
+              if (insightOverview.newInsightCount > 0)
                 Positioned(
                   top: 20,
                   right: 20,
@@ -639,7 +657,7 @@ class _InsightsCard extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      '$unreadCount',
+                      '${insightOverview.newInsightCount}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),

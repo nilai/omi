@@ -53,6 +53,42 @@ class MPDateUtils {
     return '$when · $time';
   }
 
+  /// 相对过去时间（英文）：同一天为 `Xm ago` / `Xh ago`，上一日历日为 `Yesterday`，
+  /// 2–6 日前为 `Xd ago`，满 7 日及以上为 `weekly`。
+  static String formatRelativeTimeAgo(int? raw) {
+    final DateTime? dt = dateTimeFromUnixEpoch(raw);
+    if (dt == null) {
+      return '';
+    }
+    final DateTime now = DateTime.now();
+    final DateTime todayStart = DateTime(now.year, now.month, now.day);
+    final DateTime eventDay = DateTime(dt.year, dt.month, dt.day);
+    final int diffDays = todayStart.difference(eventDay).inDays;
+    if (diffDays < 0) {
+      return '';
+    }
+    if (diffDays >= 7) {
+      return 'weekly';
+    }
+    if (diffDays >= 2) {
+      return '${diffDays}d ago';
+    }
+    if (diffDays == 1) {
+      return 'Yesterday';
+    }
+    final Duration diff = now.difference(dt);
+    if (diff.isNegative) {
+      return '';
+    }
+    if (diff.inSeconds < 60) {
+      return 'Just now';
+    }
+    if (diff.inMinutes < 60) {
+      return '${diff.inMinutes}m ago';
+    }
+    return '${diff.inHours}h ago';
+  }
+
   /// 展示为 `MM:SS`（分、秒各至少两位）。
   static String formatTranscriptSecondsToMmSs(int seconds) {
     final int s = seconds.clamp(0, 86400);

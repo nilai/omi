@@ -69,7 +69,9 @@ class ApiTools {
   }
 
   /// 获取访问令牌
-  static String? get accessToken => SharedPreferencesUtil().accessToken;
+  // static String? get accessToken => SharedPreferencesUtil().accessToken;
+  
+  static String? get accessToken => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
   /// 判断是否有访问令牌
   static bool hasAccessToken() {
     return accessToken != null && accessToken!.isNotEmpty;
