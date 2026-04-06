@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:omi/blu/ble_transport.dart';
 import 'package:omi/blu/mp_bluetooth_connection_helper.dart';
-import 'package:omi/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:omi/utils/mp_preferences.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 
@@ -158,14 +157,18 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     final bool supported = await MPBluetoothConnectionHelper.isBleSupported;
     if (!supported) {
       MPToastUtils.showMessage('当前设备不支持蓝牙');
-      emit(state.copyWith(isScanning: false));
+      if (!isClosed) {
+        emit(state.copyWith(isScanning: false));
+      }
       return;
     }
 
     final bool permitted = await MPBluetoothConnectionHelper.ensureBlePermissions();
     if (!permitted) {
       MPToastUtils.showMessage('需要蓝牙权限以扫描并连接设备');
-      emit(state.copyWith(isScanning: false));
+      if (!isClosed) {
+        emit(state.copyWith(isScanning: false));
+      }
       return;
     }
 
@@ -190,7 +193,13 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       } else {
         MPToastUtils.showMessage('请先打开蓝牙');
       }
-      emit(state.copyWith(isScanning: false));
+      if (!isClosed) {
+        emit(state.copyWith(isScanning: false));
+      }
+      return;
+    }
+
+    if (isClosed) {
       return;
     }
 
@@ -217,7 +226,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     try {
       await MPBluetoothConnectionHelper.startScan(timeout: _scanDuration);
       await Future<void>.delayed(_scanDuration);
-      if (generation != _scanGeneration) {
+      if (generation != _scanGeneration || isClosed) {
         return;
       }
       final List<MPBleScanEntry> entries =
@@ -245,9 +254,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
       _appendPersistedLastDeviceIfMissing(next);
 
-      emit(state.copyWith(isScanning: false, devices: next));
+      if (!isClosed) {
+        emit(state.copyWith(isScanning: false, devices: next));
+      }
     } catch (e) {
-      if (generation == _scanGeneration) {
+      if (generation == _scanGeneration && !isClosed) {
         MPToastUtils.showMessage('扫描失败，请重试');
         emit(
           state.copyWith(
@@ -259,9 +270,8 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     } finally {
       await _scanSubscription?.cancel();
       _scanSubscription = null;
-      if (generation == _scanGeneration) {
-        await _stopScanSafe();
-      }
+      /// 必须无条件停止扫描：若仅按 [generation] 判断，在 [close] 递增代次后此处会跳过 [stopScan]，导致退出页面仍扫描。
+      await _stopScanSafe();
     }
   }
 
@@ -347,19 +357,20 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
   }
 
+  /// 停止 BLE 扫描；始终调用插件 [stopScan]（内部已对未在扫的情况做处理），避免仅依赖 [isScanningNow] 漏停。
   Future<void> _stopScanSafe() async {
-    if (BluetoothAdapter.isScanningNow) {
-      try {
-        await MPBluetoothConnectionHelper.stopScan();
-      } catch (_) {
-        // ignore
-      }
+    try {
+      await MPBluetoothConnectionHelper.stopScan();
+    } catch (_) {
+      // ignore
     }
   }
 
   @override
   Future<void> close() async {
+    _scanGeneration++;
     await _scanSubscription?.cancel();
+    _scanSubscription = null;
     await _stopScanSafe();
     await _disconnectActive();
     await super.close();
