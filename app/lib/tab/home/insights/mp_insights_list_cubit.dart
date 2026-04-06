@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_insight.dart';
 
@@ -31,9 +32,8 @@ class MPInsightListItem {
     required this.periodLabel,
     required this.title,
     required this.subtitle,
-    required this.summary,
+    required this.content,
     this.unreadCount = 0,
-    this.bullets = const <String>[],
     this.showPatternDeepLine = false,
     this.decisionsCount,
     this.followUpsCount,
@@ -57,14 +57,12 @@ class MPInsightListItem {
   /// 例如 subtitle：End-of-day reflection / Week of ...
   final String subtitle;
 
-  /// 列表卡片摘要（点击进入详情页）
-  final String summary;
+  /// 列表卡片内容（点击进入详情页）
+  final String content;
 
   /// 列表卡片右上角角标（模拟动态数）
   final int unreadCount;
 
-  /// 卡片底部 bullet 列表（与截图对齐）
-  final List<String> bullets;
 
   /// pattern 卡片左侧深色竖线开关（用于区分两种状态）
   final bool showPatternDeepLine;
@@ -223,23 +221,16 @@ Future<_PageResult> _fetchPage({
   final MPGetInsightFeedListResponse? response = await getInsightFeedList(MPGetInsightFeedListRequest(pageSize: MPInsightsListCubit._pageSize, cursor: page == 0 ? null : '${page * MPInsightsListCubit._pageSize}'));
   if (response == null || response.baseResp.code != 0) {
     final cards = response?.cards ?? [];
-    // 1: string id,
-    // 2: InsightType cycle_type, // DAILY / MONTHLY / PATTERN
-    // 4: string title,
-    // 5: string sub_title,
-    // 6: i64 create_at,
-    // 7: string content // markdown格式
     final List<MPInsightListItem> list = <MPInsightListItem>[];
     for (final MPInsightCardStruct card in cards) {
       list.add(MPInsightListItem(
         id: card.id,
         type: MPInsightCardType.values[card.cycleType - 1],
-        periodLabel: card.createAt,
+        periodLabel: MPDateUtils.formatRelativeTimeAgo(card.createAt),
         title: card.title,
         subtitle: card.subTitle,
-        summary: card.content,
+        content: card.content,
         unreadCount: 0,
-        bullets: <String>[],
         showPatternDeepLine: false,
         decisionsCount: 0,
         followUpsCount: 0,
@@ -291,14 +282,8 @@ Future<_PageResult> _fetchPage({
             periodLabel: period,
             title: 'Daily Insight',
             subtitle: 'End-of-day reflection · $time',
-            summary:
-                'You reviewed your day and noticed patterns in what helped you focus.',
+            content: 'content',
             unreadCount: unread,
-            bullets: <String>[
-              '$decisions decisions made',
-              '$followUps follow-ups pending',
-              '$risks risk to watch',
-            ],
             decisionsCount: decisions,
             followUpsCount: followUps,
             risksCount: risks,
@@ -323,14 +308,8 @@ Future<_PageResult> _fetchPage({
             periodLabel: period,
             title: 'Weekly Insight',
             subtitle: 'Week of your progress · $time',
-            summary:
-                'A productive week: your focus improved when you grouped follow-ups together.',
+            content: 'content',
             unreadCount: unread,
-            bullets: <String>[
-              '$completed tasks completed',
-              '$pending pending for next week',
-              '$recommendations recommendations',
-            ],
             completedCount: completed,
             pendingCount: pending,
             recommendationsCount: recommendations,
@@ -355,14 +334,8 @@ Future<_PageResult> _fetchPage({
             periodLabel: period,
             title: 'Monthly Insight',
             subtitle: 'January 2026 · $time',
-            summary:
-                'You made steady progress over the month—your best results came from consistent capture.',
+            content: 'content',
             unreadCount: unread,
-            bullets: <String>[
-              'Focus concentrated on product & delivery',
-              '${3 + (globalIndex % 5)} long-running threads still unresolved',
-              'Momentum improving, but decisions lagging behind throughout the month',
-            ],
             completedCount: completed,
             pendingCount: pending,
             recommendationsCount: recommendations,
@@ -398,15 +371,9 @@ Future<_PageResult> _fetchPage({
             periodLabel: period,
             title: 'Pattern detected',
             subtitle: 'Cross-memory insight · Emerging pattern · $time',
-            summary:
-                'API migration blockers resurfacing across multiple conversations.',
+            content: 'content',
             unreadCount: unread,
             showPatternDeepLine: showDeepLine,
-            bullets: <String>[
-              'Appeared in $discussions discussions this week',
-              'Issue still unresolved',
-              'Ownership remains unclear',
-            ],
             recurringThemes: <String>[
               'Execution overload',
               'Timeline pressure',

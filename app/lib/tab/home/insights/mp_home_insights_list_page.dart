@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/tab/home/insights/mp_daily_insight_detail_page.dart';
@@ -222,7 +223,7 @@ class _MPInsightCard extends StatelessWidget {
       case MPInsightCardType.monthly:
         return Icons.calendar_month;
       case MPInsightCardType.pattern:
-        return Icons.auto_awesome;
+        return Icons.psychology_rounded;
     }
   }
 
@@ -239,13 +240,48 @@ class _MPInsightCard extends StatelessWidget {
     }
   }
 
-  List<String> _bullets() {
-    if (item.bullets.isNotEmpty) return item.bullets;
-    return <String>[
-      if (item.decisionsCount != null) '${item.decisionsCount} decisions made',
-      if (item.followUpsCount != null) '${item.followUpsCount} follow-ups pending',
-      if (item.risksCount != null) '${item.risksCount} risk to watch',
-    ];
+  MarkdownStyleSheet _markdownStyleSheet(Color accent) {
+    return MarkdownStyleSheet(
+      blockSpacing: 8,
+      listIndent: 22,
+      h1: OmiTextStyle.create(
+        color: const Color(0xFF2F3542),
+        fontSize: OmiFontSize.t8_17,
+        fontWeight: OmiFontWeight.bold,
+        height: 1.35,
+      ),
+      h1Padding: EdgeInsets.zero,
+      h2: OmiTextStyle.create(
+        color: const Color(0xFF2F3542),
+        fontSize: OmiFontSize.t7_16,
+        fontWeight: OmiFontWeight.bold,
+        height: 1.35,
+      ),
+      h2Padding: EdgeInsets.zero,
+      h3: OmiTextStyle.create(
+        color: const Color(0xFF2F3542),
+        fontSize: OmiFontSize.t7_16,
+        fontWeight: OmiFontWeight.bold,
+        height: 1.35,
+      ),
+      h3Padding: EdgeInsets.zero,
+      p: OmiTextStyle.create(
+        color: const Color(0xFF2F3542),
+        fontSize: OmiFontSize.t6_15,
+        fontWeight: OmiFontWeight.regular,
+        height: 1.4,
+      ),
+      pPadding: EdgeInsets.zero,
+      strong: OmiTextStyle.create(
+        color: const Color(0xFF2F3542),
+        fontSize: OmiFontSize.t6_15,
+        fontWeight: OmiFontWeight.bold,
+        height: 1.4,
+      ),
+      listBullet: OmiTextStyle.create(color: accent, fontSize: OmiFontSize.t6_15),
+      listBulletPadding: const EdgeInsets.only(right: 10, top: 6),
+      unorderedListAlign: WrapAlignment.start,
+    );
   }
 
   @override
@@ -375,48 +411,40 @@ class _MPInsightCard extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 10),
-                    Text(
-                      item.summary,
-                      style: OmiTextStyle.create(
-                        color: const Color(0xFF2F3542),
-                        fontSize: OmiFontSize.t7_16,
-                        fontWeight: OmiFontWeight.regular,
-                        height: 1.45,
-                      ),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
+                    MarkdownBody(
+                      data: item.content,
+                      shrinkWrap: true,
+                      softLineBreak: true,
+                      styleSheet: _markdownStyleSheet(accent),
+                      listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.start,
+                      bulletBuilder: (MarkdownBulletParameters parameters) {
+                        if (parameters.style == BulletStyle.unorderedList) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 7),
+                            child: Container(
+                              width: 4,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                          );
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            '${parameters.index + 1}.',
+                            style: OmiTextStyle.create(
+                              color: const Color(0xFF2F3542),
+                              fontSize: OmiFontSize.t6_15,
+                              fontWeight: OmiFontWeight.medium,
+                              height: 1.4,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 10),
-                    ..._bullets().map((String b) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 7),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: <Widget>[
-                            Padding(
-                              padding: const EdgeInsets.only(top: 9),
-                              child: Container(
-                                width: 4,
-                                height: 4,
-                                decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(999)),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                b,
-                                style: OmiTextStyle.create(
-                                  color: const Color(0xFF2F3542),
-                                  fontSize: OmiFontSize.t6_15,
-                                  fontWeight: OmiFontWeight.regular,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
                   ],
                 ),
               ),

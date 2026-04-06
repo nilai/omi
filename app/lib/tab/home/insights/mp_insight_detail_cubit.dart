@@ -405,7 +405,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
-            item.summary,
+            item.content,
             'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
             'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
           ],
@@ -551,7 +551,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
-            item.summary,
+            item.content,
             'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
             'Follow-ups were most effective when they were grouped and scheduled right after key work.',
           ],
@@ -652,7 +652,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         return MPInsightDetailData(
           item: item,
           paragraphs: <String>[
-            item.summary,
+            item.content,
             'The month showed stable capture habits paired with improved execution focus.',
           ],
           tips: <String>[
@@ -660,7 +660,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
           ],
           monthly: MPMonthlyInsightDetailData(
             monthSubtitle: item.periodLabel,
-            monthOverviewSummary: item.summary,
+            monthOverviewSummary: item.content,
             attentionDistribution: attentionDistribution,
             keyPeopleThisMonth: keyPeople,
             topicsSurfacing: topicsSurfacing,
