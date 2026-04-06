@@ -99,8 +99,8 @@ class _MPHomePageState extends State<MPHomePage> {
                       subtitle: 'Record a new audio memory',
                       onTap: () async {
                         Navigator.pop(ctx);
-                        final MPAudioRecordResult? r = await showMPAudioRecordPopup(context);
-                        },
+                        await showMPAudioRecordPopup(context);
+                      },
                     ),
                     const Divider(height: 1),
                     _OptionTile(
@@ -178,7 +178,7 @@ class _MPHomePageState extends State<MPHomePage> {
                       children: <Widget>[
                         Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           child: InkWell(
                             onTap: () {
                               Navigator.of(context).push(
@@ -187,16 +187,16 @@ class _MPHomePageState extends State<MPHomePage> {
                                 ),
                               );
                             },
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                             child: Container(
                               width: 32,
                               height: 32,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                               ),
-                              child: Icon(Icons.battery_unknown_rounded, size: 18, color: secondTextColor),
+                              child: const _MPHomeNavBullseye(),
                             ),
                           ),
                         ),
@@ -273,6 +273,56 @@ class _MPHomePageState extends State<MPHomePage> {
       ),
     );
   }
+}
+
+/// 首页导航左侧标识：白底圆角块内的同心圆靶心（中心实心点 + 双层细环，浅灰蓝）。
+class _MPHomeNavBullseye extends StatelessWidget {
+  const _MPHomeNavBullseye();
+
+  static const Color _kMarkColor = Color(0xFF94A3B8);
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 18,
+      height: 18,
+      child: CustomPaint(
+        painter: _MPHomeBullseyePainter(color: _kMarkColor),
+      ),
+    );
+  }
+}
+
+/// 绘制 MemoPin 导航栏小标：外环、内环（描边）与中心实心圆。
+class _MPHomeBullseyePainter extends CustomPainter {
+  const _MPHomeBullseyePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double cx = size.width * 0.5;
+    final double cy = size.height * 0.5;
+    final double r = (size.width < size.height ? size.width : size.height) * 0.5;
+
+    final Paint stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.15
+      ..strokeCap = StrokeCap.round
+      ..isAntiAlias = true;
+    final Paint fill = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    canvas.drawCircle(Offset(cx, cy), r * 0.88, stroke);
+    canvas.drawCircle(Offset(cx, cy), r * 0.52, stroke);
+    canvas.drawCircle(Offset(cx, cy), r * 0.18, fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MPHomeBullseyePainter oldDelegate) => oldDelegate.color != color;
 }
 
 class _OptionTile extends StatelessWidget {
