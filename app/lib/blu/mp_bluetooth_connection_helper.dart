@@ -1,0 +1,192 @@
+import 'dart:async';
+
+import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:omi/permission/omi_permission_service.dart';
+import 'package:omi/utils/bluetooth/bluetooth_adapter.dart';
+
+import 'ble_transport.dart';
+
+/// 单次扫描聚合结果：用于 UI 列表，无需依赖完整 [BtDevice] 模型。
+class MPBleScanEntry {
+  /// 创建扫描条目。
+  const MPBleScanEntry({
+    required this.remoteId,
+    required this.displayName,
+    required this.rssi,
+    required this.signalPercent,
+  });
+
+  /// [BluetoothDevice.remoteId] 字符串。
+  final String remoteId;
+
+  /// 展示用名称（与广播名一致，可为空时由调用方兜底）。
+  final String displayName;
+
+  /// 原始 RSSI（dBm）。
+  final int rssi;
+
+  /// 映射后的信号百分比 0–100。
+  final int signalPercent;
+}
+
+/// 应用层 BLE 扫描、设备筛选与 [BleTransport] 创建入口。
+///
+/// 封装 [BluetoothAdapter] 与权限申请，供连接页等模块调用。
+class MPBluetoothConnectionHelper {
+  MPBluetoothConnectionHelper._();
+
+  /// 是否支持 BLE（硬件/系统能力）。
+  static Future<bool> get isBleSupported => BluetoothAdapter.isSupported;
+
+  /// 适配器是否已上电（系统蓝牙已开）。
+  ///
+  /// 内部使用 [waitForAdapterOn]，避免 [FlutterBluePlus.adapterStateNow] 在启动初期为
+  /// [BluetoothAdapterState.unknown] 时误判。
+  static Future<bool> get isAdapterPoweredOn async {
+    return waitForAdapterOn(timeout: const Duration(seconds: 5));
+  }
+
+  /// 等待系统蓝牙为 [BluetoothAdapterState.on]。
+  ///
+  /// 初次进入页面时 [FlutterBluePlus.adapterStateNow] 常仍为 [BluetoothAdapterState.unknown]
+  ///（原生尚未回调），若仅用同步 getter 会误判为未开蓝牙，必须监听 [FlutterBluePlus.adapterState]。
+  static Future<bool> waitForAdapterOn({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on) {
+      return true;
+    }
+    try {
+      await FlutterBluePlus.adapterState
+          .where((BluetoothAdapterState s) => s == BluetoothAdapterState.on)
+          .first
+          .timeout(timeout);
+      return true;
+    } on TimeoutException {
+      return FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on;
+    }
+  }
+
+  /// 尝试打开系统蓝牙（可能抛错或需用户到系统设置处理）。
+  static Future<void> tryTurnBluetoothOn() => BluetoothAdapter.turnOn();
+
+  /// 申请 BLE 扫描/连接所需权限；全部授予返回 `true`。
+  static Future<bool> ensureBlePermissions() {
+    return OmiPermissionService.requestBlePermissionsForScanAndConnect();
+  }
+
+  /// 开始扫描；[timeout] 到达后由插件自动停止本轮扫描。
+  static Future<void> startScan({
+    Duration? timeout,
+    List<Guid> withServices = const [],
+    List<String> withNames = const [],
+    List<String> withKeywords = const [],
+    bool continuousUpdates = false,
+  }) {
+    return BluetoothAdapter.startScan(
+      timeout: timeout,
+      withServices: withServices,
+      withNames: withNames,
+      withKeywords: withKeywords,
+      continuousUpdates: continuousUpdates,
+    );
+  }
+
+  /// 停止扫描。
+  static Future<void> stopScan() => BluetoothAdapter.stopScan();
+
+  /// 扫描结果流（与 [FlutterBluePlus.scanResults] 行为一致）。
+  static Stream<List<ScanResult>> get scanResultsStream => BluetoothAdapter.scanResults;
+
+  /// 将 RSSI（常见约 -100～0 dBm）映射为 0～100 的展示用信号强度。
+  static int rssiToSignalPercent(int rssi) {
+    const int minRssi = -100;
+    const int maxRssi = -40;
+    final int clamped = rssi.clamp(minRssi, maxRssi);
+    return (((clamped - minRssi) / (maxRssi - minRssi)) * 100).round();
+  }
+
+  /// 是否视为本项目目标硬件（MemoPin / AI_NOTE / AI_PEN 等命名或广播特征）。
+  ///
+  /// 若后续固件固定 Service UUID，可在此集中补充判断。
+  static bool isMemoPinLikeScanResult(ScanResult result) {
+    final String name = result.device.platformName.trim();
+    if (name.isEmpty) {
+      return false;
+    }
+    final String upper = name.toUpperCase();
+    if (upper.contains('MEMOPIN')) {
+      return true;
+    }
+    if (upper.startsWith('AI_NOTE') || upper.startsWith('AI_PEN')) {
+      return true;
+    }
+    return false;
+  }
+
+  /// 从当前 [results] 去重并筛选 [isMemoPinLikeScanResult]，按 RSSI 降序。
+  static List<MPBleScanEntry> entriesFromScanResults(List<ScanResult> results) {
+    final Map<String, ScanResult> bestById = <String, ScanResult>{};
+    for (final ScanResult r in results) {
+      if (!isMemoPinLikeScanResult(r)) {
+        continue;
+      }
+      final String id = r.device.remoteId.str;
+      final ScanResult? prev = bestById[id];
+      if (prev == null || r.rssi > prev.rssi) {
+        bestById[id] = r;
+      }
+    }
+    final List<ScanResult> sorted = bestById.values.toList()
+      ..sort((ScanResult a, ScanResult b) => b.rssi.compareTo(a.rssi));
+    return sorted.map((ScanResult r) {
+      final String rawName = r.device.platformName.trim();
+      final String display = rawName.isEmpty ? 'MemoPin (${r.device.remoteId.str})' : rawName;
+      return MPBleScanEntry(
+        remoteId: r.device.remoteId.str,
+        displayName: display,
+        rssi: r.rssi,
+        signalPercent: rssiToSignalPercent(r.rssi),
+      );
+    }).toList();
+  }
+
+  /// 创建 GATT 传输实例（连接成功后可用于读写特征）。
+  static BleTransport createBleTransport(BluetoothDevice device) => BleTransport(device);
+
+  /// 通过远程 ID 获取 [BluetoothDevice]。
+  static BluetoothDevice bluetoothDeviceFromRemoteId(String remoteId) => BluetoothDevice.fromId(remoteId);
+
+  /// 在 [duration] 内扫描并返回 MemoPin 类设备列表（已按信号排序）。
+  ///
+  /// 内部会 [ensureBlePermissions]，并等待适配器处于 [BluetoothAdapterState.on]。
+  static Future<List<MPBleScanEntry>> discoverMemoPinLikeDevices({
+    Duration duration = const Duration(seconds: 5),
+  }) async {
+    final bool ok = await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+    if (!ok) {
+      return <MPBleScanEntry>[];
+    }
+    final bool on = await waitForAdapterOn(timeout: const Duration(seconds: 15));
+    if (!on) {
+      return <MPBleScanEntry>[];
+    }
+    final List<ScanResult> buffer = <ScanResult>[];
+    late final StreamSubscription<List<ScanResult>> sub;
+    sub = BluetoothAdapter.scanResults.listen((List<ScanResult> list) {
+      buffer
+        ..clear()
+        ..addAll(list);
+    });
+    try {
+      await BluetoothAdapter.startScan(timeout: duration);
+      await Future<void>.delayed(duration);
+      return entriesFromScanResults(List<ScanResult>.from(buffer));
+    } finally {
+      await sub.cancel();
+      if (BluetoothAdapter.isScanningNow) {
+        await BluetoothAdapter.stopScan();
+      }
+    }
+  }
+}

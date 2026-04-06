@@ -25,6 +25,14 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
   )..repeat();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _cubit.initData();
+    });
+  }
+
+  @override
   void dispose() {
     _radarController.dispose();
     _cubit.close();
