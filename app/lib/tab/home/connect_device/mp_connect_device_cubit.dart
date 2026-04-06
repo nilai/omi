@@ -91,9 +91,103 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   bool _connectInFlight = false;
   int _scanGeneration = 0;
 
-  /// 进入页面后触发首轮扫描（扫描中会附带本地记录的「上次设备」行，见 [_devicesToShowWhileScanning]）。
+  /// 进入页面后：若有上次退出时停放的 BLE 会话则先恢复到列表，再首轮扫描。
   void initData() {
-    unawaited(startScan());
+    if (_transport == null) {
+      final BleTransport? adopted = MPBluetoothConnectionHelper.takeBackgroundBleTransport();
+      if (adopted != null) {
+        _transport = adopted;
+      }
+    }
+    unawaited(_restoreParkedConnectionThenScan());
+  }
+
+  /// 从 [parkBackgroundBleTransport] 恢复的 [BleTransport] 同步 UI，并与 [startScan] 衔接。
+  Future<void> _restoreParkedConnectionThenScan() async {
+    if (_transport != null) {
+      try {
+        final bool connected = await _transport!.isConnected();
+        if (!connected) {
+          await _disconnectActive();
+        } else {
+          final MPConnectDeviceItem row = await _connectedDeviceItemForActiveTransport();
+          if (!isClosed) {
+            emit(
+              state.copyWith(
+                devices: <MPConnectDeviceItem>[row],
+              ),
+            );
+          }
+        }
+      } catch (_) {
+        await _disconnectActive();
+      }
+    }
+    if (!isClosed) {
+      await startScan();
+    }
+  }
+
+  /// 根据当前 [_transport] 构造「已连接」列表项，并与本地记录对齐（必要时写回 prefs）。
+  ///
+  /// 已连接设备往往不出现在扫描结果里，必须依赖 GATT 会话展示。
+  Future<MPConnectDeviceItem> _connectedDeviceItemForActiveTransport() async {
+    final String id = _transport!.deviceId;
+    MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    String displayName;
+    if (r != null && r.remoteId == id) {
+      displayName = r.displayName;
+    } else {
+      displayName = await _displayNameForBleRemoteId(id);
+      await SharedPreferencesUtil().setLastConnectedBleDevice(
+        remoteId: id,
+        displayName: displayName,
+      );
+    }
+    return MPConnectDeviceItem(
+      id: id,
+      name: displayName,
+      batteryPercent: 0,
+      signalPercent: 0,
+      isConnected: true,
+    );
+  }
+
+  /// 解析展示名：优先本地记录，其次广播名，最后退回占位文案。
+  Future<String> _displayNameForBleRemoteId(String remoteId) async {
+    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    if (r != null && r.remoteId == remoteId) {
+      return r.displayName;
+    }
+    try {
+      final String raw = BluetoothDevice.fromId(remoteId).platformName.trim();
+      if (raw.isNotEmpty) {
+        return raw;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return 'MemoPin ($remoteId)';
+  }
+
+  /// 若状态里尚无「已连接」行但 [_transport] 仍在线，则补齐（扫描列表依赖 [preservedConnectedId]）。
+  Future<List<MPConnectDeviceItem>> _keepConnectedRowsForScan() async {
+    final List<MPConnectDeviceItem> fromState =
+        state.devices.where((MPConnectDeviceItem d) => d.isConnected).toList();
+    if (fromState.isNotEmpty) {
+      return fromState;
+    }
+    if (_transport == null) {
+      return fromState;
+    }
+    try {
+      if (!await _transport!.isConnected()) {
+        return fromState;
+      }
+      return <MPConnectDeviceItem>[await _connectedDeviceItemForActiveTransport()];
+    } catch (_) {
+      return fromState;
+    }
   }
 
   /// 扫描过程中仍展示：已连接设备 + 本地持久化的上次设备（若尚未出现在已连接列表中）。
@@ -203,8 +297,12 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       return;
     }
 
-    final List<MPConnectDeviceItem> keepConnected =
-        state.devices.where((MPConnectDeviceItem d) => d.isConnected).toList();
+    final List<MPConnectDeviceItem> keepConnected = await _keepConnectedRowsForScan();
+    if (keepConnected.isNotEmpty &&
+        state.devices.where((MPConnectDeviceItem d) => d.isConnected).isEmpty &&
+        !isClosed) {
+      emit(state.copyWith(devices: keepConnected));
+    }
     final String? preservedConnectedId =
         keepConnected.isEmpty ? null : keepConnected.first.id;
     emit(
@@ -270,7 +368,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     } finally {
       await _scanSubscription?.cancel();
       _scanSubscription = null;
-      /// 必须无条件停止扫描：若仅按 [generation] 判断，在 [close] 递增代次后此处会跳过 [stopScan]，导致退出页面仍扫描。
+      // 必须无条件停止扫描：若仅按 generation 判断，在 close 递增代次后此处会跳过 stopScan，导致退出页面仍扫描。
       await _stopScanSafe();
     }
   }
@@ -342,19 +440,22 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   }
 
   Future<void> _disconnectActive() async {
-    if (_transport != null) {
+    BleTransport? t = _transport;
+    _transport = null;
+    t ??= MPBluetoothConnectionHelper.takeBackgroundBleTransport();
+    if (t != null) {
       try {
-        await _transport!.disconnect();
+        await t.disconnect();
       } catch (_) {
         // ignore
       }
       try {
-        await _transport!.dispose();
+        await t.dispose();
       } catch (_) {
         // ignore
       }
-      _transport = null;
     }
+    await MPBluetoothConnectionHelper.disposeBackgroundBleTransportIfAny();
   }
 
   /// 停止 BLE 扫描；始终调用插件 [stopScan]（内部已对未在扫的情况做处理），避免仅依赖 [isScanningNow] 漏停。
@@ -372,7 +473,19 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     await _scanSubscription?.cancel();
     _scanSubscription = null;
     await _stopScanSafe();
-    await _disconnectActive();
+    // 仍在连接态时退出页面：不断开 BLE，仅将 BleTransport 存为背景会话。
+    if (_transport != null) {
+      try {
+        if (await _transport!.isConnected()) {
+          MPBluetoothConnectionHelper.parkBackgroundBleTransport(_transport);
+          _transport = null;
+        } else {
+          await _disconnectActive();
+        }
+      } catch (_) {
+        await _disconnectActive();
+      }
+    }
     await super.close();
   }
 }

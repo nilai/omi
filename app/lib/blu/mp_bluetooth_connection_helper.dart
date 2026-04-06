@@ -35,6 +35,42 @@ class MPBleScanEntry {
 class MPBluetoothConnectionHelper {
   MPBluetoothConnectionHelper._();
 
+  /// 连接页关闭后仍要保持的 GATT 会话（不断开 physical link）。
+  ///
+  /// 由 [MPConnectDeviceCubit] 在 `close` 时 [parkBackgroundBleTransport]，重新进入时
+  /// [takeBackgroundBleTransport] 取回；用户主动断开时由 [disposeBackgroundBleTransportIfAny] 清理。
+  static BleTransport? _backgroundBleTransport;
+
+  /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
+  static void parkBackgroundBleTransport(BleTransport? transport) {
+    _backgroundBleTransport = transport;
+  }
+
+  /// 取出背景会话引用（取出后 helper 不再持有，一般由连接页 Cubit 接管）。
+  static BleTransport? takeBackgroundBleTransport() {
+    final BleTransport? t = _backgroundBleTransport;
+    _backgroundBleTransport = null;
+    return t;
+  }
+
+  /// 释放背景会话并断开 BLE（用户主动断开或连接新设备前清理）。
+  static Future<void> disposeBackgroundBleTransportIfAny() async {
+    final BleTransport? t = _backgroundBleTransport;
+    _backgroundBleTransport = null;
+    if (t != null) {
+      try {
+        await t.disconnect();
+      } catch (_) {
+        // ignore
+      }
+      try {
+        await t.dispose();
+      } catch (_) {
+        // ignore
+      }
+    }
+  }
+
   /// 是否支持 BLE（硬件/系统能力）。
   static Future<bool> get isBleSupported => BluetoothAdapter.isSupported;
 
