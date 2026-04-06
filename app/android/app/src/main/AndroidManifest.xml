@@ -28,7 +28,7 @@
         android:maxSdkVersion="28" />
 
     <application
-        android:label="omi"
+        android:label="MemoPin"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

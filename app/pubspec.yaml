@@ -1,4 +1,4 @@
-name: omi
+name: memo_pin
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -122,6 +122,10 @@ dependencies:
 dependency_overrides:
   uuid: ^4.4.0
   protobuf: ^3.1.0  # Force protobuf 3.x for compatibility between mcumgr_flutter and flutter_reactive_ble
+  # 兼容当前 Flutter iOS Registrar API（避免 url_launcher_ios 6.4.x 的 viewController 编译错误）
+  url_launcher_ios: 6.3.2
+  # 兼容当前 Flutter iOS Registrar API（避免 video_player_avfoundation 的 viewController 编译错误）
+  video_player_avfoundation: 2.8.10
   opus_flutter_ios:
     git:
       url: https://github.com/mdmohsin7/opus_flutter.git
