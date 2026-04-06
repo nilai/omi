@@ -369,7 +369,7 @@ class _TodayFocusCard extends StatelessWidget {
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -388,7 +388,7 @@ class _TodayFocusCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 8),
           for (final MPHomeTodoItem todo in shown) ...<Widget>[
             InkWell(
               onTap: () => onTodoTap(todo),
@@ -466,7 +466,7 @@ class _RecentMemoryCard extends StatelessWidget {
           BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -485,7 +485,7 @@ class _RecentMemoryCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 8),
           for (final MPHomeMemoryItem m in shown)
             InkWell(
               onTap: () => onMemoryTap(m),
@@ -547,7 +547,7 @@ class _InsightsCard extends StatelessWidget {
           child: Stack(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
