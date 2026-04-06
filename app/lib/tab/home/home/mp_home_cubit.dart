@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_home.dart';
-import '../../../utils/mp_toast_utils.dart';
 
 /// 首页音频条状态类型（对齐 react `AudioStatusBar`）
 enum MPHomeAudioStatusType {
@@ -119,7 +119,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     );
   }
 
+  /// 若本地存在上次连接的 BLE 记录，则短扫并建链后 [MPBluetoothConnectionHelper.parkBackgroundBleTransport]；无记录则立即返回。
+  Future<void> connectBluetoothToLastRecordedDevice() {
+    return MPBluetoothConnectionHelper.tryConnectLastRecordedBleDevice();
+  }
+
   void initData() async {
+    unawaited(connectBluetoothToLastRecordedDevice());
     final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
     if (response != null && response.baseResp.code == 0) {
         

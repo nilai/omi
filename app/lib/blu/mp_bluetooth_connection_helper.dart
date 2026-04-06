@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
+import 'package:memo_pin/utils/mp_preferences.dart';
 
 import 'ble_transport.dart';
 
@@ -65,6 +66,74 @@ class MPBluetoothConnectionHelper {
       }
       try {
         await t.dispose();
+      } catch (_) {
+        // ignore
+      }
+    }
+  }
+
+  /// 登出或需要彻底释放应用侧 BLE 时调用。
+  ///
+  /// 先 [disposeBackgroundBleTransportIfAny]，再对 [FlutterBluePlus.connectedDevices] 执行 [BluetoothDevice.disconnect]，
+  /// 以覆盖仅通过系统栈连接、未托管在 [BleTransport] 中的情况。
+  static Future<void> disconnectAppBleForLogout() async {
+    await disposeBackgroundBleTransportIfAny();
+    try {
+      final List<BluetoothDevice> connected = FlutterBluePlus.connectedDevices;
+      for (final BluetoothDevice d in connected) {
+        try {
+          await d.disconnect();
+        } catch (_) {
+          // ignore
+        }
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  /// 若有本地记录的 BLE 设备：申请权限、短扫 MemoPin 类广播，再对记录 [remoteId] 建立 [BleTransport] 并 [parkBackgroundBleTransport]。
+  ///
+  /// 无记录、无权限、蓝牙未开、连接失败时安静返回（不打断首页）。
+  static Future<void> tryConnectLastRecordedBleDevice() async {
+    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    if (r == null) {
+      return;
+    }
+
+    final BleTransport? bg = _backgroundBleTransport;
+    if (bg != null) {
+      try {
+        if (bg.deviceId == r.remoteId && await bg.isConnected()) {
+          return;
+        }
+      } catch (_) {
+        // ignore
+      }
+      await disposeBackgroundBleTransportIfAny();
+    }
+
+    final bool supported = await isBleSupported;
+    if (!supported) {
+      return;
+    }
+
+    final bool permitted = await ensureBlePermissions();
+    if (!permitted) {
+      return;
+    }
+
+    // 短扫 MemoPin 类设备（discoverMemoPinLikeDevices 内会等待适配器上电），再按记录的 remoteId 直接建链。
+    await discoverMemoPinLikeDevices(duration: const Duration(seconds: 6));
+
+    final BluetoothDevice device = bluetoothDeviceFromRemoteId(r.remoteId);
+    final BleTransport transport = createBleTransport(device);
+    try {
+      await transport.connect();
+      parkBackgroundBleTransport(transport);
+    } catch (_) {
+      try {
+        await transport.dispose();
       } catch (_) {
         // ignore
       }
