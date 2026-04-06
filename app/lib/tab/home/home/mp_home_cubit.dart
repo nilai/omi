@@ -162,7 +162,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   void start() {
     _insightsTimer?.cancel();
-    _insightsTimer = Timer.periodic(const Duration(seconds: 4), (_) => _tickInsights());
+    _insightsTimer = Timer.periodic(Duration(seconds: 1), (_) => _tickInsights());
   }
 
   void _tickInsights() {
