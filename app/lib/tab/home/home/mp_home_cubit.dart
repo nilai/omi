@@ -3,6 +3,12 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/mp_date_utils.dart';
+import '../../../http/api/mp_home.dart';
+import '../../../http/schema/mp_data_model.dart';
+import '../../../http/schema/mp_home.dart';
+import '../../../utils/mp_toast_utils.dart';
+
 /// 首页音频条状态类型（对齐 react `AudioStatusBar`）
 enum MPHomeAudioStatusType {
   recording,
@@ -40,7 +46,7 @@ class MPHomeTodoItem {
     this.completed = false,
   });
 
-  final int id;
+  final String id;
   final String title;
   final String? time;
   final String? reason;
@@ -55,7 +61,7 @@ class MPHomeMemoryItem {
     required this.timeLabel,
   });
 
-  final int id;
+  final String id;
   final String titleOrDate;
   final String timeLabel;
 }
@@ -100,59 +106,58 @@ class MPHomeState {
 
 /// 首页：Today's Focus / Recent Memory / Insights / 顶部状态条（mock + 定时刷新）
 class MPHomeCubit extends Cubit<MPHomeState> {
-  MPHomeCubit() : super(_initialState());
+  MPHomeCubit() : super(_initialState()) {
+    initData();
+  }
 
   Timer? _insightsTimer;
   final Random _random = Random();
 
   static MPHomeState _initialState() {
-    const List<MPHomeTodoItem> upNext = <MPHomeTodoItem>[
-      MPHomeTodoItem(
-        id: 1,
-        title: 'Review migration milestones with infrastructure team',
-        time: '09:00',
-        reason: 'Meeting scheduled today',
-      ),
-      MPHomeTodoItem(
-        id: 3,
-        title: 'Follow up with Sarah about design feedback',
-        time: '14:00',
-        reason: 'Design feedback pending',
-      ),
-      MPHomeTodoItem(
-        id: 4,
-        title: 'Finalize API migration timeline',
-        time: '16:30',
-        reason: 'Project deadline soon',
-      ),
-    ];
-
-    const List<MPHomeMemoryItem> memories = <MPHomeMemoryItem>[
-      MPHomeMemoryItem(
-        id: 1,
-        titleOrDate: 'Team standup discussion on API migration',
-        timeLabel: '2h ago',
-      ),
-      MPHomeMemoryItem(
-        id: 7,
-        titleOrDate: 'Product launch planning with marketing team',
-        timeLabel: '3h ago',
-      ),
-      MPHomeMemoryItem(
-        id: 8,
-        titleOrDate: 'Investor meeting - Series A funding discussion',
-        timeLabel: 'Yesterday',
-      ),
-    ];
-
-    return MPHomeState(
-      upNextTodos: upNext,
-      recentMemories: memories,
-      insightsUnreadCount: 1,
-      insightsSummaryLine:
-          'You have three meetings tomorrow morning. Consider blocking 30 minutes before the first one to review notes.',
-      audioStatus: null,
+    return const MPHomeState(
+      upNextTodos: <MPHomeTodoItem>[],
+      recentMemories: <MPHomeMemoryItem>[],
+      insightsUnreadCount: 0,
+      insightsSummaryLine: '',
     );
+  }
+
+  void initData() async {
+    final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
+    if (response != null && response.baseResp.code == 0) {
+        
+      final List<MPHomeTodoItem> upNextTodos = <MPHomeTodoItem>[];
+      for (final MPTodoStruct e in response.focusItems) {
+        String formatDeadlineToTime(int? deadline) {
+          if (deadline == null) return '';
+          final DateTime? dt = MPDateUtils.dateTimeFromUnixEpoch(deadline);
+          if (dt == null) return '';
+          final String hh = dt.hour.toString().padLeft(2, '0');
+          final String mm = dt.minute.toString().padLeft(2, '0');
+          return '$hh:$mm';
+        }
+        upNextTodos.add(MPHomeTodoItem(id: e.id ?? '', title: e.title ?? '', time: formatDeadlineToTime(e.deadline), reason: e.priority ?? ''));
+      }
+      final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
+      for (final MPMemoryStruct e in response.recentMemories) {
+        recentMemories.add(
+          MPHomeMemoryItem(
+            id: e.id,
+            titleOrDate: e.title,
+            timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
+          ),
+        );
+      }
+      final int insightsUnreadCount = response.insightOverview.newInsightCount;
+      final String insightsSummaryLine = response.insightOverview.content;
+
+      emit(state.copyWith(
+        upNextTodos: upNextTodos,
+        recentMemories: recentMemories,
+        insightsUnreadCount: insightsUnreadCount,
+        insightsSummaryLine: insightsSummaryLine,
+      ));
+    }
   }
 
   void start() {
