@@ -13,7 +13,7 @@ enum MPInsightCardType {
   monthly,
   pattern;
 
-  static MPInsightCardType fromInt(String value) {
+  static MPInsightCardType fromServerString(String value) {
     return switch (value) {
       'DAILY' => daily,
       'WEEKLY' => weekly,
@@ -127,7 +127,6 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
   MPInsightsListCubit() : super(const MPInsightsListState(phase: MPInsightsListPhase.loading));
 
   static const int _pageSize = 20;
-  static const int _maxPages = 4;
 
   /// 当前分页索引（从 0 开始；next page = [_cursorPage]）
   int _cursorPage = 0;
@@ -213,14 +212,16 @@ class _PageResult {
   final bool hasMore;
 }
 
-/// Mock：模拟后台分页拉取
+/// 
 Future<_PageResult> _fetchPage({
   required int page,
 }) async {
-
+// {"cards":[{"id":"91003","cycle_type":1,"title":"Daily focus insight","sub_title":"Apr 05","create_at":1775433084,"content":"You have a recurring pattern: tasks with concrete owners close 2x faster."},
+//{"id":"91002","cycle_type":2,"title":"Weekly execution insight","sub_title":"This week","create_at":1775429484,"content":"Cross-team updates are delayed mostly at handoff stage; add one summary owner."},
+//{"id":"91001","cycle_type":3,"title":"Monthly growth insight","sub_title":"This month","create_at":1775425884,"content":"Meeting outcomes improved after adding explicit next-action sections in summaries."}]
   final MPGetInsightFeedListResponse? response = await getInsightFeedList(MPGetInsightFeedListRequest(pageSize: MPInsightsListCubit._pageSize, cursor: page == 0 ? null : '${page * MPInsightsListCubit._pageSize}'));
-  if (response == null || response.baseResp.code != 0) {
-    final cards = response?.cards ?? [];
+  if (response != null && response.baseResp.code == 0) {
+    final cards = response.cards;
     final List<MPInsightListItem> list = <MPInsightListItem>[];
     for (final MPInsightCardStruct card in cards) {
       list.add(MPInsightListItem(
@@ -242,184 +243,6 @@ Future<_PageResult> _fetchPage({
     }
     return _PageResult(items: list, hasMore: response?.hasMore ?? false);
   }
-  // 模拟网络延迟
-  await Future<void>.delayed(const Duration(milliseconds: 520));
-
-  if (page < 0 || page >= MPInsightsListCubit._maxPages) {
-    return const _PageResult(items: <MPInsightListItem>[], hasMore: false);
-  }
-
-  final DateTime base = DateTime(2026, 3, 30);
-  final List<MPInsightListItem> list = <MPInsightListItem>[];
-
-  for (int i = 0; i < MPInsightsListCubit._pageSize; i++) {
-    final int globalIndex = page * MPInsightsListCubit._pageSize + i;
-    final MPInsightCardType type = switch (globalIndex % 4) {
-      0 => MPInsightCardType.daily,
-      1 => MPInsightCardType.weekly,
-      2 => MPInsightCardType.monthly,
-      _ => MPInsightCardType.pattern,
-    };
-
-    final int unread = globalIndex % 3 == 0 ? (1 + globalIndex % 4) : 0;
-
-    final String id = '${type.name}-$globalIndex';
-
-    switch (type) {
-      case MPInsightCardType.daily: {
-        final DateTime d = base.subtract(Duration(days: globalIndex));
-        final String month = _monthShortEn(d.month);
-        final String period = '$month ${d.day}';
-        final int decisions = 1 + (globalIndex % 3);
-        final int followUps = 1 + (globalIndex % 4);
-        final int risks = 1 + (globalIndex % 2);
-        final String time = _timeLabelFromIndex(globalIndex);
-
-        list.add(
-          MPInsightListItem(
-            id: id,
-            type: type,
-            periodLabel: period,
-            title: 'Daily Insight',
-            subtitle: 'End-of-day reflection · $time',
-            content: 'content',
-            unreadCount: unread,
-            decisionsCount: decisions,
-            followUpsCount: followUps,
-            risksCount: risks,
-          ),
-        );
-        break;
-      }
-
-      case MPInsightCardType.weekly: {
-        final DateTime d = base.subtract(Duration(days: globalIndex * 3));
-        final String month = _monthShortEn(d.month);
-        final String period = '$month ${d.day}';
-        final int completed = 6 + (globalIndex % 7);
-        final int pending = 2 + (globalIndex % 5);
-        final int recommendations = 1 + (globalIndex % 4);
-        final String time = _timeLabelFromIndex(globalIndex);
-
-        list.add(
-          MPInsightListItem(
-            id: id,
-            type: type,
-            periodLabel: period,
-            title: 'Weekly Insight',
-            subtitle: 'Week of your progress · $time',
-            content: 'content',
-            unreadCount: unread,
-            completedCount: completed,
-            pendingCount: pending,
-            recommendationsCount: recommendations,
-          ),
-        );
-        break;
-      }
-
-      case MPInsightCardType.monthly: {
-        final DateTime d = base.subtract(Duration(days: globalIndex * 15));
-        final String monthName = _monthShortEn(d.month);
-        final String period = '$monthName ${d.day}';
-        final String time = _timeLabelFromIndex(globalIndex);
-        final int completed = 10 + (globalIndex % 10);
-        final int pending = 5 + (globalIndex % 8);
-        final int recommendations = 2 + (globalIndex % 5);
-
-        list.add(
-          MPInsightListItem(
-            id: id,
-            type: type,
-            periodLabel: period,
-            title: 'Monthly Insight',
-            subtitle: 'January 2026 · $time',
-            content: 'content',
-            unreadCount: unread,
-            completedCount: completed,
-            pendingCount: pending,
-            recommendationsCount: recommendations,
-          ),
-        );
-        break;
-      }
-
-      case MPInsightCardType.pattern: {
-        final DateTime d = base.subtract(Duration(days: globalIndex));
-        final String month = _monthShortEn(d.month);
-        final String period = '$month ${d.day}';
-        final int discussions = 4 + (globalIndex % 5);
-        final String time = _timeLabelFromIndex(globalIndex);
-        final bool showDeepLine = globalIndex % 2 == 1;
-        final int memoryCount = 3 + (globalIndex % 2 == 0 ? 1 : 0); // 3~4 条，模拟动态个数
-
-        const List<String> memoryPool = <String>[
-          'Team standup — Jan 18',
-          'Infra sync — Jan 20',
-          'Product review — Jan 23',
-          'Hiring discussion — Jan 25',
-          'Sprint planning — Jan 26',
-          'Design retro — Feb 1',
-        ];
-
-        final List<String> selectedMemories = memoryPool.take(memoryCount).toList();
-
-        list.add(
-          MPInsightListItem(
-            id: id,
-            type: type,
-            periodLabel: period,
-            title: 'Pattern detected',
-            subtitle: 'Cross-memory insight · Emerging pattern · $time',
-            content: 'content',
-            unreadCount: unread,
-            showPatternDeepLine: showDeepLine,
-            recurringThemes: <String>[
-              'Execution overload',
-              'Timeline pressure',
-              if (globalIndex % 2 == 0) 'Authentication risks',
-            ],
-            patternMemoryTitles: <String>[
-              ...selectedMemories,
-            ],
-          ),
-        );
-        break;
-      }
-    }
-  }
-
-  final bool hasMore = page < MPInsightsListCubit._maxPages - 1;
-  return _PageResult(items: list, hasMore: hasMore);
-}
-
-String _monthShortEn(int month) {
-  return switch (month) {
-    1 => 'Jan',
-    2 => 'Feb',
-    3 => 'Mar',
-    4 => 'Apr',
-    5 => 'May',
-    6 => 'Jun',
-    7 => 'Jul',
-    8 => 'Aug',
-    9 => 'Sep',
-    10 => 'Oct',
-    11 => 'Nov',
-    12 => 'Dec',
-    _ => 'Mon',
-  };
-}
-
-String _timeLabelFromIndex(int index) {
-  const List<String> times = <String>[
-    '10:00 AM',
-    '11:00 AM',
-    '02:00 PM',
-    '05:30 PM',
-    '10:00 PM',
-    '11:00 PM',
-  ];
-  return times[index % times.length];
+  return _PageResult(items: [], hasMore: false);
 }
 
