@@ -54,3 +54,35 @@ Future<MPGetMemoryFeedResponse?> getMemoryFeed(MPGetMemoryFeedRequest req) async
   }
   return null;
 }
+
+// POST /api/v1/memory/delete
+Future<MPDeleteMemoryResponse?> deleteMemory(MPDeleteMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/delete',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('deleteMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPDeleteMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/memory/rename
+Future<MPRenameMemoryResponse?> renameMemory(MPRenameMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/rename',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('renameMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPRenameMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

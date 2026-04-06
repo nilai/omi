@@ -1,6 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:omi/common/mp_confirm_delete_dialog.dart';
+import 'package:omi/http/api/mp_memory.dart';
+import 'package:omi/http/schema/mp_memory.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
@@ -40,6 +44,7 @@ class MPMemoryOptionsSheetParams {
     this.showModifyDate = true,
     this.showDelete = true,
     this.cancelText = 'Cancel',
+    this.memoryId,
   });
 
   final String title;
@@ -54,6 +59,9 @@ class MPMemoryOptionsSheetParams {
   final bool showDelete;
 
   final String cancelText;
+
+  /// 非空时，点「Delete」会先确认再调用 [deleteMemory]；为空则仅返回 [MPMemoryOptionKind.delete]。
+  final String? memoryId;
 }
 
 /// 打开「Memory Options」弹窗。
@@ -203,7 +211,10 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
                     const SizedBox(height: 16),
                     for (int i = 0; i < items.length; i++) ...<Widget>[
                       if (i > 0) const SizedBox(height: 12),
-                      _MPMemoryOptionTile(item: items[i]),
+                      _MPMemoryOptionTile(
+                        item: items[i],
+                        sheetParams: params,
+                      ),
                     ],
                     const SizedBox(height: 14),
                     SizedBox(
@@ -239,9 +250,46 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
 }
 
 class _MPMemoryOptionTile extends StatelessWidget {
-  const _MPMemoryOptionTile({required this.item});
+  const _MPMemoryOptionTile({
+    required this.item,
+    required this.sheetParams,
+  });
 
   final MPMemoryOptionItem item;
+  final MPMemoryOptionsSheetParams sheetParams;
+
+  Future<void> _onTap(BuildContext context) async {
+    final String? id = sheetParams.memoryId?.trim();
+    if (item.kind == MPMemoryOptionKind.delete &&
+        id != null &&
+        id.isNotEmpty) {
+      final bool ok = await showMPConfirmDeleteDialog(
+        context,
+        params: const MPConfirmDeleteDialogParams(
+          title: 'Delete Memory',
+          messageLine1: 'Are you sure you want to delete this memory?',
+          messageLine2: 'This action cannot be undone.',
+          cancelText: 'No, Keep',
+          confirmText: 'Yes, Delete',
+        ),
+      );
+      if (!context.mounted) return;
+      if (!ok) return;
+      final MPDeleteMemoryResponse? resp = await deleteMemory(
+        MPDeleteMemoryRequest(memoryId: id),
+      );
+      if (!context.mounted) return;
+      if (resp == null || resp.baseResp.code != 0) {
+        MPToastUtils.showMessage(
+          resp?.baseResp.message ?? '删除失败，请稍后重试',
+        );
+        return;
+      }
+      Navigator.of(context).pop(MPMemoryOptionKind.delete);
+      return;
+    }
+    Navigator.of(context).pop(item.kind);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +298,7 @@ class _MPMemoryOptionTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).pop(item.kind),
+        onTap: () => _onTap(context),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           child: Row(

@@ -124,3 +124,67 @@ class MPGetMemoryFeedResponse {
   factory MPGetMemoryFeedResponse.fromJson(Map<String, dynamic> json) => _$MPGetMemoryFeedResponseFromJson(json);
   Map<String, dynamic> toJson() => _$MPGetMemoryFeedResponseToJson(this);
 }
+
+// Delete Memory Request
+@JsonSerializable()
+class MPDeleteMemoryRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPDeleteMemoryRequest({
+    required this.memoryId,
+  });
+
+  factory MPDeleteMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteMemoryRequestToJson(this);
+}
+
+// Delete Memory Response
+@JsonSerializable()
+class MPDeleteMemoryResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteMemoryResponse({
+    required this.baseResp,
+  });
+
+  factory MPDeleteMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteMemoryResponseToJson(this);
+}
+
+// Rename Memory Request
+@JsonSerializable()
+class MPRenameMemoryRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'title')
+  final String title;
+
+  MPRenameMemoryRequest({
+    required this.memoryId,
+    required this.title,
+  });
+
+  factory MPRenameMemoryRequest.fromJson(Map<String, dynamic> json) => _$MPRenameMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRenameMemoryRequestToJson(this);
+}
+
+// Rename Memory Response
+@JsonSerializable()
+class MPRenameMemoryResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPRenameMemoryResponse({
+    required this.baseResp,
+  });
+
+  factory MPRenameMemoryResponse.fromJson(Map<String, dynamic> json) => _$MPRenameMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRenameMemoryResponseToJson(this);
+}

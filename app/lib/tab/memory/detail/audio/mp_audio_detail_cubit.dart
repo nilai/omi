@@ -39,6 +39,26 @@ class MPAudioDetailData {
 
   /// [MPOnlyRecordMemoryStruct.record_uri]
   final String? recordUri;
+
+  MPAudioDetailData copyWith({
+    String? title,
+    String? subtitle,
+    String? leftTime,
+    String? rightTime,
+    Duration? total,
+    String? recordFile,
+    String? recordUri,
+  }) {
+    return MPAudioDetailData(
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      leftTime: leftTime ?? this.leftTime,
+      rightTime: rightTime ?? this.rightTime,
+      total: total ?? this.total,
+      recordFile: recordFile ?? this.recordFile,
+      recordUri: recordUri ?? this.recordUri,
+    );
+  }
 }
 
 class MPAudioDetailState {
@@ -123,6 +143,18 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   }
 
   Future<void> retry() => load();
+
+  /// 重命名成功后更新本地标题（接口由 [MPMemoryUpdateNameDialog] 调用）。
+  void updateTitle(String newTitle) {
+    if (state.phase != MPAudioDetailPhase.loaded || state.data == null) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        data: state.data!.copyWith(title: newTitle.trim()),
+      ),
+    );
+  }
 
   Future<void> onPlayTap() async {
     if (state.phase != MPAudioDetailPhase.loaded) return;

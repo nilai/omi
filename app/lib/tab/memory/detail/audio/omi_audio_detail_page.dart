@@ -3,7 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:omi/common/mp_memory_options_sheet.dart';
+import 'package:omi/common/mp_memory_update_name_dialog.dart';
 import 'package:omi/common/mp_share_sheet.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
@@ -24,13 +26,15 @@ class OmiAudioDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<MPAudioDetailCubit>(
       create: (_) => MPAudioDetailCubit(memoryId: memoryId)..initData(),
-      child: const _OmiAudioDetailView(),
+      child: _OmiAudioDetailView(memoryId: memoryId),
     );
   }
 }
 
 class _OmiAudioDetailView extends StatelessWidget {
-  const _OmiAudioDetailView();
+  const _OmiAudioDetailView({required this.memoryId});
+
+  final String memoryId;
 
   @override
   Widget build(BuildContext context) {
@@ -61,21 +65,37 @@ class _OmiAudioDetailView extends StatelessWidget {
               onTap: () async {
                 final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
                   context,
-                  params: const MPMemoryOptionsSheetParams(),
+                  params: MPMemoryOptionsSheetParams(memoryId: memoryId),
                 );
                 if (kind == null) return;
+                if (!context.mounted) return;
                 switch (kind) {
                   case MPMemoryOptionKind.manageProjects:
                     // TODO: Manage projects
                     break;
                   case MPMemoryOptionKind.editTitle:
-                    // TODO: Edit title
+                    final MPAudioDetailCubit cubit =
+                        context.read<MPAudioDetailCubit>();
+                    final MPAudioDetailState s = cubit.state;
+                    if (s.phase != MPAudioDetailPhase.loaded ||
+                        s.data == null) {
+                      MPToastUtils.showMessage('请等待加载完成');
+                      break;
+                    }
+                    MPMemoryUpdateNameDialog.show(
+                      context: context,
+                      memoryId: memoryId,
+                      currentTitle: s.data!.title,
+                      onSuccess: cubit.updateTitle,
+                    );
                     break;
                   case MPMemoryOptionKind.modifyDate:
                     // TODO: Modify date
                     break;
                   case MPMemoryOptionKind.delete:
-                    // TODO: Delete
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    }
                     break;
                 }
               },

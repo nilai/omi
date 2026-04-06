@@ -66,6 +66,38 @@ class MPMemoryDetailCardData {
 
   /// 主卡片下方活动区：顺序与接口 [MPMemoryFeedStruct.feeds] 一致（含 RESUMMARY / Insight / Todos 等，可混合）。
   final List<MPMemoryFeedBlock> feedBlocks;
+
+  MPMemoryDetailCardData copyWith({
+    String? title,
+    String? metaLine,
+    String? audioTimeStart,
+    String? audioTimeEnd,
+    String? recordFile,
+    String? recordUri,
+    List<double>? waveformHeights,
+    List<String>? speakerLabels,
+    String? overviewText,
+    List<MPMemoryTranscriptItemData>? transcriptItems,
+    List<MPMemoryActionItemData>? actionItems,
+    MPMemoryDetailSegment? initialSegment,
+    List<MPMemoryFeedBlock>? feedBlocks,
+  }) {
+    return MPMemoryDetailCardData(
+      title: title ?? this.title,
+      metaLine: metaLine ?? this.metaLine,
+      audioTimeStart: audioTimeStart ?? this.audioTimeStart,
+      audioTimeEnd: audioTimeEnd ?? this.audioTimeEnd,
+      recordFile: recordFile ?? this.recordFile,
+      recordUri: recordUri ?? this.recordUri,
+      waveformHeights: waveformHeights ?? this.waveformHeights,
+      speakerLabels: speakerLabels ?? this.speakerLabels,
+      overviewText: overviewText ?? this.overviewText,
+      transcriptItems: transcriptItems ?? this.transcriptItems,
+      actionItems: actionItems ?? this.actionItems,
+      initialSegment: initialSegment ?? this.initialSegment,
+      feedBlocks: feedBlocks ?? this.feedBlocks,
+    );
+  }
 }
 
 const Color _kCardBg = greenDeepColor;

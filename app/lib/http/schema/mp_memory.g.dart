@@ -90,3 +90,42 @@ MPGetMemoryFeedResponse _$MPGetMemoryFeedResponseFromJson(
 Map<String, dynamic> _$MPGetMemoryFeedResponseToJson(
   MPGetMemoryFeedResponse instance,
 ) => <String, dynamic>{'feeds': instance.feeds, 'has_more': instance.hasMore};
+
+MPDeleteMemoryRequest _$MPDeleteMemoryRequestFromJson(
+  Map<String, dynamic> json,
+) => MPDeleteMemoryRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPDeleteMemoryRequestToJson(
+  MPDeleteMemoryRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
+MPDeleteMemoryResponse _$MPDeleteMemoryResponseFromJson(
+  Map<String, dynamic> json,
+) => MPDeleteMemoryResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPDeleteMemoryResponseToJson(
+  MPDeleteMemoryResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};
+
+MPRenameMemoryRequest _$MPRenameMemoryRequestFromJson(
+  Map<String, dynamic> json,
+) => MPRenameMemoryRequest(
+  memoryId: json['memory_id'] as String,
+  title: json['title'] as String,
+);
+
+Map<String, dynamic> _$MPRenameMemoryRequestToJson(
+  MPRenameMemoryRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId, 'title': instance.title};
+
+MPRenameMemoryResponse _$MPRenameMemoryResponseFromJson(
+  Map<String, dynamic> json,
+) => MPRenameMemoryResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPRenameMemoryResponseToJson(
+  MPRenameMemoryResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};

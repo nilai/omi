@@ -141,6 +141,18 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   Future<void> retry() => load();
 
+  /// 重命名成功后更新本地标题（接口由 [MPMemoryUpdateNameDialog] 调用）。
+  void updateTitle(String newTitle) {
+    if (state.phase != OmiMemoryDetailPhase.loaded || state.data == null) {
+      return;
+    }
+    final String t = newTitle.trim();
+    if (t.isEmpty) {
+      return;
+    }
+    emit(state.copyWith(data: state.data!.copyWith(title: t)));
+  }
+
   Future<void> onPlayTap() async {
     final OmiMemoryDetailState cur = state;
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
