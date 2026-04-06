@@ -159,7 +159,7 @@ class _MPShareSheetState extends State<_MPShareSheet> {
           onTap: () => _toggleAdditional(MPShareAdditionalContent.transcript),
         ),
       if (p.showAudioRecording) ...<Widget>[
-        if (p.showTranscript) const Divider(height: 1),
+        if (p.showTranscript) const Divider(height: 1, color: lineColor,),
         _MPAdditionalTile(
           title: 'Audio recording',
           subtitle: p.audioSubtitle,
@@ -222,7 +222,7 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                       p.subtitle,
                       textAlign: TextAlign.center,
                       style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t6_15,
+                        fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.regular,
                         color: secondTextColor,
                       ),
@@ -261,14 +261,14 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                     _MPCardContainer(child: Column(children: additionalTiles)),
                     const SizedBox(height: 16),
                     SizedBox(
-                      height: 54,
+                      height: 50,
                       child: TextButton(
                         onPressed: _onContinue,
                         style: TextButton.styleFrom(
                           backgroundColor: blueTextColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: Row(
@@ -277,8 +277,8 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                             Text(
                               p.continueText,
                               style: OmiTextStyle.create(
-                                fontSize: OmiFontSize.t8_17,
-                                fontWeight: OmiFontWeight.bold,
+                                fontSize: OmiFontSize.t7_16,
+                                fontWeight: OmiFontWeight.medium,
                                 color: Colors.white,
                               ),
                             ),
@@ -290,20 +290,20 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                     ),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 52,
+                      height: 50,
                       child: TextButton(
                         onPressed: () => Navigator.of(context).pop(),
                         style: TextButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: blueTextColor,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: Text(
                           p.cancelText,
                           style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t8_17,
+                            fontSize: OmiFontSize.t7_16,
                             fontWeight: OmiFontWeight.medium,
                             color: blueTextColor,
                           ),
@@ -366,7 +366,7 @@ class _MPSummaryOptionCard extends StatelessWidget {
                 selected: selected,
                 onTap: () => onChanged(opt.id),
               ),
-              if (i != options.length - 1) const Divider(height: 1),
+              if (i != options.length - 1) const Divider(height: 1, color: lineColor,),
             ],
           );
         }),
@@ -397,13 +397,13 @@ class _MPSummaryTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             Container(
-              width: 20,
-              height: 20,
+              width: 18,
+              height: 18,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(999),
@@ -415,8 +415,8 @@ class _MPSummaryTile extends StatelessWidget {
               child: selected
                   ? Center(
                       child: Container(
-                        width: 10,
-                        height: 10,
+                        width: 8,
+                        height: 8,
                         decoration: BoxDecoration(
                           color: _kRadioBlue,
                           borderRadius: BorderRadius.circular(999),
@@ -435,16 +435,16 @@ class _MPSummaryTile extends StatelessWidget {
                       Text(
                         title,
                         style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t6_15,
-                          fontWeight: OmiFontWeight.medium,
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.regular,
                           color: mainTextColor,
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
+                          horizontal: 8,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEDEBFF),
@@ -453,19 +453,19 @@ class _MPSummaryTile extends StatelessWidget {
                         child: Text(
                           badge,
                           style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t4_13,
-                            fontWeight: OmiFontWeight.medium,
+                            fontSize: OmiFontSize.t3_12,
+                            fontWeight: OmiFontWeight.regular,
                             color: const Color(0xFF6B5CFF),
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     timeLabel,
                     style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t5_14,
+                      fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.regular,
                       color: secondTextColor,
                     ),
@@ -502,14 +502,14 @@ class _MPAdditionalTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
             _MPCheckbox(selected: selected),
-            const SizedBox(width: 12),
-            Icon(leadingIcon, size: 20, color: leadingColor),
-            const SizedBox(width: 12),
+            const SizedBox(width: 8),
+            Icon(leadingIcon, size: 16, color: leadingColor),
+            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -517,17 +517,17 @@ class _MPAdditionalTile extends StatelessWidget {
                   Text(
                     title,
                     style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t7_16,
-                      fontWeight: OmiFontWeight.bold,
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.regular,
                       color: mainTextColor,
                     ),
                   ),
                   if (subtitle != null) ...<Widget>[
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle!,
                       style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
+                        fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.regular,
                         color: secondTextColor,
                       ),
@@ -553,8 +553,8 @@ class _MPCheckbox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 22,
-      height: 22,
+      width: 18,
+      height: 18,
       decoration: BoxDecoration(
         color: selected ? _kBlue : Colors.white,
         borderRadius: BorderRadius.circular(999),
@@ -564,7 +564,7 @@ class _MPCheckbox extends StatelessWidget {
         ),
       ),
       child: selected
-          ? const Icon(Icons.check, size: 14, color: Colors.white)
+          ? const Icon(Icons.check, size: 12, color: Colors.white)
           : null,
     );
   }
