@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
+import '../../utils/omi_color_utils.dart';
+import '../../utils/omi_font_utils.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 法律文档类型：服务条款或隐私政策。

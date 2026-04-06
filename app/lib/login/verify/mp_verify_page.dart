@@ -2,13 +2,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/login/legal/mp_legal_document_page.dart';
-import 'package:omi/login/verify/mp_verify_cubit.dart';
-import 'package:omi/login/verify/mp_verify_state.dart';
-import 'package:omi/utils/mp_toast_utils.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
 
+import '../../login/legal/mp_legal_document_page.dart';
 import '../../utils/mp_toast_utils.dart';
 import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';

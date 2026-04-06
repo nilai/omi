@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:omi/common/mp_voice_text_input.dart';
-import 'package:omi/tab/askai/mp_ask_ai_chat_cubit.dart';
-import 'package:omi/utils/omi_color_utils.dart';
-import 'package:omi/utils/omi_font_utils.dart';
-import 'package:omi/utils/omi_textstyle.dart';
+import '../../common/mp_voice_text_input.dart';
+import '../../tab/askai/mp_ask_ai_chat_cubit.dart';
+import '../../utils/omi_color_utils.dart';
+import '../../utils/omi_font_utils.dart';
+import '../../utils/omi_textstyle.dart';
 
 class MPAskAIChatPage extends StatelessWidget {
   const MPAskAIChatPage({
