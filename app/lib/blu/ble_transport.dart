@@ -195,6 +195,25 @@ class BleTransport extends DeviceTransport {
     }
   }
 
+  /// 标准 BLE Battery Service（UUID `0x180F`）的电量百分比（`0x2A19` 首字节 0–100）。
+  ///
+  /// 设备未实现该服务或读失败时返回 `null`。
+  Future<int?> readStandardBatteryPercent() async {
+    try {
+      final List<int> data = await readCharacteristic(
+        '0000180f-0000-1000-8000-00805f9b34fb',
+        '00002a19-0000-1000-8000-00805f9b34fb',
+      );
+      if (data.isEmpty) {
+        return null;
+      }
+      return data.first.clamp(0, 100);
+    } catch (e) {
+      debugPrint('BleTransport.readStandardBatteryPercent: $e');
+      return null;
+    }
+  }
+
   Future<BluetoothCharacteristic?> _getCharacteristic(String serviceUuid, String characteristicUuid) async {
     final service = _services.firstWhereOrNull(
       (service) => service.uuid.str128.toLowerCase() == serviceUuid.toLowerCase(),

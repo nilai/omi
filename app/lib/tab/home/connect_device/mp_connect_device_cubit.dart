@@ -117,6 +117,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
                 devices: <MPConnectDeviceItem>[row],
               ),
             );
+            unawaited(_refreshConnectedDeviceBattery(row.id));
           }
         }
       } catch (_) {
@@ -342,9 +343,14 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
       if (preservedConnectedId != null &&
           !next.any((MPConnectDeviceItem i) => i.id == preservedConnectedId)) {
-        final MPConnectDeviceItem? prev = keepConnected.firstWhereOrNull(
-          (MPConnectDeviceItem d) => d.id == preservedConnectedId,
-        );
+        // 扫描期间可能已通过 GATT 更新电量，优先使用当前 state 中的已连接行。
+        final MPConnectDeviceItem? prev = state.devices.firstWhereOrNull(
+              (MPConnectDeviceItem d) =>
+                  d.id == preservedConnectedId && d.isConnected,
+            ) ??
+            keepConnected.firstWhereOrNull(
+              (MPConnectDeviceItem d) => d.id == preservedConnectedId,
+            );
         if (prev != null) {
           next.insert(0, prev);
         }
@@ -354,6 +360,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
       if (!isClosed) {
         emit(state.copyWith(isScanning: false, devices: next));
+        if (preservedConnectedId != null) {
+          unawaited(_refreshConnectedDeviceBattery(preservedConnectedId));
+        }
       }
     } catch (e) {
       if (generation == _scanGeneration && !isClosed) {
@@ -431,11 +440,44 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
               .toList(),
         ),
       );
+      unawaited(_refreshConnectedDeviceBattery(id));
     } catch (e) {
       MPToastUtils.showMessage('连接失败，请靠近设备后重试');
       await _disconnectActive();
     } finally {
       _connectInFlight = false;
+    }
+  }
+
+  /// 从 [_transport] 读取标准 BAS 电量并写回 [MPConnectDeviceItem.batteryPercent]。
+  Future<void> _refreshConnectedDeviceBattery(String remoteId) async {
+    if (isClosed) {
+      return;
+    }
+    final BleTransport? t = _transport;
+    if (t == null || t.deviceId != remoteId) {
+      return;
+    }
+    try {
+      if (!await t.isConnected()) {
+        return;
+      }
+      final int? pct = await t.readStandardBatteryPercent();
+      if (pct == null || isClosed) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          devices: state.devices
+              .map(
+                (MPConnectDeviceItem d) =>
+                    d.id == remoteId ? d.copyWith(batteryPercent: pct) : d,
+              )
+              .toList(),
+        ),
+      );
+    } catch (_) {
+      // ignore
     }
   }
 

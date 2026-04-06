@@ -424,7 +424,9 @@ class _MPDeviceCardHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              _MPSignalBar(value: item.signalPercent),
+              _MPSignalBar(
+                value: item.isConnected ? item.batteryPercent : 0,
+              ),
             ],
           ),
         ),
