@@ -9,6 +9,12 @@ import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 
+import '../../utils/mp_toast_utils.dart';
+import '../../utils/omi_color_utils.dart';
+import '../../utils/omi_font_utils.dart';
+import 'mp_verify_cubit.dart';
+import 'mp_verify_state.dart';
+
 /// 邮箱验证码页面。
 class MPVerifyPage extends StatelessWidget {
   const MPVerifyPage({super.key, required this.email, required this.password});

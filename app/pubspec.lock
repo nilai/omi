@@ -1997,13 +1997,13 @@ packages:
     source: hosted
     version: "2.9.5"
   video_player_avfoundation:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       name: video_player_avfoundation
-      sha256: af0e5b8a7a4876fb37e7cc8cb2a011e82bb3ecfa45844ef672e32cb14a1f259e
+      sha256: "2a7aaf2f28212c285e0fb29b50728bbea513d743dd48d3024098015f169fb937"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.9.4"
+    version: "2.8.10"
   video_player_platform_interface:
     dependency: transitive
     description:
