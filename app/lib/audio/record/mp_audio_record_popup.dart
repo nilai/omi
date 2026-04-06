@@ -4,7 +4,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:omi/permission/omi_permission_service.dart';
+import 'package:omi/http/api/mp_speaker.dart';
+import 'package:omi/http/schema/mp_speaker.dart';
+import 'package:omi/permission/omi_microphone_manager.dart';
 import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
@@ -185,23 +187,30 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
     setState(() => _busy = true);
     try {
-      final bool ok = await OmiPermissionService.requestMicrophonePermission();
+      if (!mounted) {
+        return;
+      }
+      final bool ok =
+          await OmiMicrophoneManager.ensureMicrophonePermission(context);
       if (!ok) {
         if (mounted) {
-          MPToastUtils.showMessage('需要麦克风权限才能录音');
+          setState(() => _busy = false);
         }
         return;
       }
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(
         dir.path,
-        'omi_focus_${DateTime.now().millisecondsSinceEpoch}.m4a',
+        'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac',
       );
       await _recorder.openRecorder();
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,
-        codec: Codec.aacMP4,
+        codec: Codec.aacADTS,
+        bitRate: 8000,
+        numChannels: 1,
+        sampleRate: 8000,
       );
       if (!mounted) {
         await _releaseRecorder(deleteFile: true);
@@ -285,12 +294,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _tickTimer?.cancel();
     _tickTimer = null;
     final Duration total = _elapsed;
-    String? outPath = _recordPath;
+    String outPath = _recordPath!;
     try {
-      final String? stopped = await _recorder.stopRecorder();
-      outPath = stopped ?? outPath;
-      await _recorder.closeRecorder();
-      _recorderOpened = false;
+      if (_recorderOpened) {
+        final String? stopped = await _recorder.stopRecorder();
+        outPath = stopped ?? outPath;
+        await _recorder.closeRecorder();
+        _recorderOpened = false;
+      }
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('保存失败: $e');
@@ -299,9 +310,39 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await _releaseRecorder(deleteFile: false);
       return;
     }
-    if (!mounted || outPath == null || outPath.isEmpty) {
+    if (!mounted || outPath.isEmpty) {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
       return;
     }
+
+    final String audioUrl = Uri.file(File(outPath).absolute.path).toString();
+    final MPAddSpeakerResponse? resp = await addSpeaker(
+      MPAddSpeakerRequest(
+        audioUrl: audioUrl,
+        name: '录音',
+        avatar: '',
+        myselfVoice: true,
+        duration: total.inSeconds > 0 ? total.inSeconds : null,
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (resp == null || resp.baseResp.code != 0) {
+      MPToastUtils.showMessage(
+        resp?.baseResp.message ?? '提交声纹失败，请稍后重试',
+      );
+      setState(() {
+        _recordPath = outPath;
+        _busy = false;
+      });
+      return;
+    }
+
     _recordPath = null;
     Navigator.of(context).pop(
       MPAudioRecordResult(filePath: outPath, duration: total),
@@ -407,8 +448,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                           color: _kWaveGreen,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
+                   
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+               Text(
                         _formatMinSec(_elapsed),
                         style: OmiTextStyle.create(
                           color: mainTextColor,
@@ -416,11 +463,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                           fontWeight: OmiFontWeight.bold,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            const SizedBox(width: 12),
+
             GestureDetector(
               onTap: _busy ? null : _togglePauseResume,
               child: Container(

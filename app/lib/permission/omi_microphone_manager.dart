@@ -1,24 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:permission_manager/permission_manager.dart';
+
+import '../utils/mp_toast_utils.dart';
 import 'omi_permission_service.dart';
 
 class OmiMicrophoneManager {
-  /// 申请麦克风权限，并给出可见反馈。
-  static Future<void> ensureMicrophonePermission(BuildContext context) async {
+  /// 确保麦克风可用：必要时发起申请，并用 SnackBar 提示结果。
+  ///
+  /// - 已授权：直接 `true`（不弹 SnackBar）。
+  /// - 本次授权成功：`true`，并提示「麦克风权限已授权」。
+  /// - 拒绝 / 永久拒绝 / 异常：`false`，并给出对应提示。
+  static Future<bool> ensureMicrophonePermission(BuildContext context) async {
     try {
-      final PermissionManagerStatus status =
-      await OmiPermissionService.requestMicrophonePermissionStatus();
-      if (!context.mounted) return;
+      if (await OmiPermissionService.hasMicrophonePermission()) {
+        return true;
+      }
 
-      final messenger = ScaffoldMessenger.of(context);
+      final PermissionManagerStatus status =
+          await OmiPermissionService.requestMicrophonePermissionStatus();
+      if (!context.mounted) {
+        return false;
+      }
+
+      final ScaffoldMessengerState messenger = ScaffoldMessenger.of(context);
 
       if (status == PermissionManagerStatus.granted) {
-        messenger.showSnackBar(
-          const SnackBar(
-            content: Text('麦克风权限已授权'),
-          ),
-        );
-        return;
+        return true;
       }
 
       if (status == PermissionManagerStatus.permanentlyDenied) {
@@ -33,22 +40,25 @@ class OmiMicrophoneManager {
             ),
           ),
         );
-        return;
+        return false;
       }
 
-      // 普通拒绝：一般意味着用户点了“拒绝”，此时系统弹窗不会再自动出现了。
       messenger.showSnackBar(
         const SnackBar(
           content: Text('需要麦克风权限，请在弹窗中选择“允许”后重试'),
         ),
       );
+      return false;
     } catch (_) {
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return false;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('权限申请失败，请稍后重试'),
         ),
       );
+      return false;
     }
   }
 }
