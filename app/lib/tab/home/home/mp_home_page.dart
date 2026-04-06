@@ -9,6 +9,7 @@ import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../http/schema/mp_home.dart';
 
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
@@ -257,13 +258,10 @@ class _MPHomePageState extends State<MPHomePage> {
                       ),
                       const SizedBox(height: 16),
                       _InsightsCard(
-                        unreadCount: state.insightsUnreadCount,
-                        summaryLine: state.insightsSummaryLine,
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
-                          );
-                        },
+                        insightOverview: state.insightOverview,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
+                        ),
                       ),
                     ],
                   ),
@@ -547,13 +545,11 @@ class _RecentMemoryCard extends StatelessWidget {
 
 class _InsightsCard extends StatelessWidget {
   const _InsightsCard({
-    required this.unreadCount,
-    required this.summaryLine,
+    required this.insightOverview,
     required this.onTap,
   });
 
-  final int unreadCount;
-  final String summaryLine;
+  final MPHomeInsightOverviewStruct insightOverview;
   final VoidCallback onTap;
 
   @override
@@ -598,17 +594,17 @@ class _InsightsCard extends StatelessWidget {
                           child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
                               Text(
-                                'Insights',
-                                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                                insightOverview.title,
+                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
-                                'AI insights & summaries over time',
+                                insightOverview.subTitle,
                                 style: TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
                               ),
                             ],
@@ -618,7 +614,7 @@ class _InsightsCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      summaryLine,
+                      insightOverview.content,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF3C3C43)),
@@ -626,7 +622,7 @@ class _InsightsCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (unreadCount > 0)
+              if (insightOverview.newInsightCount > 0)
                 Positioned(
                   top: 20,
                   right: 20,
@@ -639,7 +635,7 @@ class _InsightsCard extends StatelessWidget {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      '$unreadCount',
+                      '${insightOverview.newInsightCount}',
                       style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
                     ),
                   ),

@@ -70,8 +70,7 @@ class MPHomeState {
   const MPHomeState({
     required this.upNextTodos,
     required this.recentMemories,
-    required this.insightsUnreadCount,
-    required this.insightsSummaryLine,
+    required this.insightOverview,
     this.audioStatus,
   });
 
@@ -79,26 +78,22 @@ class MPHomeState {
   final List<MPHomeMemoryItem> recentMemories;
 
   /// Insights 卡片角标（动态演示）
-  final int insightsUnreadCount;
+  final MPHomeInsightOverviewStruct insightOverview;
 
-  /// Insights 卡片正文一行摘要
-  final String insightsSummaryLine;
-
+  /// 
   final MPHomeAudioStatus? audioStatus;
 
   MPHomeState copyWith({
     List<MPHomeTodoItem>? upNextTodos,
     List<MPHomeMemoryItem>? recentMemories,
-    int? insightsUnreadCount,
-    String? insightsSummaryLine,
+    MPHomeInsightOverviewStruct? insightOverview,
     MPHomeAudioStatus? audioStatus,
     bool clearAudioStatus = false,
   }) {
     return MPHomeState(
       upNextTodos: upNextTodos ?? this.upNextTodos,
       recentMemories: recentMemories ?? this.recentMemories,
-      insightsUnreadCount: insightsUnreadCount ?? this.insightsUnreadCount,
-      insightsSummaryLine: insightsSummaryLine ?? this.insightsSummaryLine,
+      insightOverview: insightOverview ?? this.insightOverview,
       audioStatus: clearAudioStatus ? null : (audioStatus ?? this.audioStatus),
     );
   }
@@ -113,11 +108,14 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   Timer? _insightsTimer;
 
   static MPHomeState _initialState() {
-    return const MPHomeState(
-      upNextTodos: <MPHomeTodoItem>[],
-      recentMemories: <MPHomeMemoryItem>[],
-      insightsUnreadCount: 0,
-      insightsSummaryLine: '',
+    return MPHomeState(
+      upNextTodos: const <MPHomeTodoItem>[],
+      recentMemories: const <MPHomeMemoryItem>[],
+      insightOverview: MPHomeInsightOverviewStruct(
+        title: '',
+        subTitle: '',
+        newInsightCount: 0,
+        content: '',),
     );
   }
 
@@ -147,14 +145,12 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           ),
         );
       }
-      final int insightsUnreadCount = response.insightOverview.newInsightCount;
-      final String insightsSummaryLine = response.insightOverview.content;
+      final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
 
       emit(state.copyWith(
         upNextTodos: upNextTodos,
         recentMemories: recentMemories,
-        insightsUnreadCount: insightsUnreadCount,
-        insightsSummaryLine: insightsSummaryLine,
+        insightOverview: insightOverview,
       ));
     }
   }
