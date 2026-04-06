@@ -433,34 +433,6 @@ class _TodayFocusCard extends StatelessWidget {
                 ),
               ),
           ],
-          if (todos.length < 3)
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF059669).withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF059669).withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  const Text(
-                    'Add more tasks to Today\'s Focus to stay productive',
-                    style: TextStyle(fontSize: 14, color: Color(0xFF3C3C43)),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF059669),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: onViewAll,
-                    child: const Text('Add to Today\'s Focus'),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
