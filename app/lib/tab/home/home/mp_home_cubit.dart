@@ -166,20 +166,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   void _tickInsights() {
-    final int nextBadge = _random.nextInt(4);
-    final List<String> lines = <String>[
-      'You have three meetings tomorrow morning. Consider blocking 30 minutes before the first one to review notes.',
-      'Pattern detected: API migration blockers appeared in multiple discussions this week.',
-      'Weekly reflection: balance deep work blocks with follow-ups on investor materials.',
-      'Today\'s tip: link todos to memories so Recall stays accurate.',
-    ];
-    final String line = lines[_random.nextInt(lines.length)];
-    emit(
-      state.copyWith(
-        insightsUnreadCount: nextBadge,
-        insightsSummaryLine: line,
-      ),
-    );
+    // TODO: 定时刷新 insights
   }
 
   /// 演示：设备录音中（对齐 react `setRecording`）
