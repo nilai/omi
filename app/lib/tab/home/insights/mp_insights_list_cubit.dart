@@ -2,12 +2,25 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../http/api/mp_insight.dart';
+import '../../../http/schema/mp_insight.dart';
+
 /// Insights 卡片类型（四类：Daily / Weekly / Monthly / Pattern）
 enum MPInsightCardType {
   daily,
   weekly,
   monthly,
-  pattern,
+  pattern;
+
+  static MPInsightCardType fromInt(String value) {
+    return switch (value) {
+      'DAILY' => daily,
+      'WEEKLY' => weekly,
+      'MONTHLY' => monthly,
+      'PATTERN' => pattern,
+      _ => throw Exception('Invalid insight card type: $value'),
+    };
+  }
 }
 
 /// Insights 列表项（用于列表卡片展示 + 点击后详情页初始化）
@@ -115,7 +128,7 @@ class MPInsightsListState {
 class MPInsightsListCubit extends Cubit<MPInsightsListState> {
   MPInsightsListCubit() : super(const MPInsightsListState(phase: MPInsightsListPhase.loading));
 
-  static const int _pageSize = 8;
+  static const int _pageSize = 20;
   static const int _maxPages = 4;
 
   /// 当前分页索引（从 0 开始；next page = [_cursorPage]）
@@ -206,6 +219,38 @@ class _PageResult {
 Future<_PageResult> _fetchPage({
   required int page,
 }) async {
+
+  final MPGetInsightFeedListResponse? response = await getInsightFeedList(MPGetInsightFeedListRequest(pageSize: MPInsightsListCubit._pageSize, cursor: page == 0 ? null : '${page * MPInsightsListCubit._pageSize}'));
+  if (response == null || response.baseResp.code != 0) {
+    final cards = response?.cards ?? [];
+    // 1: string id,
+    // 2: InsightType cycle_type, // DAILY / MONTHLY / PATTERN
+    // 4: string title,
+    // 5: string sub_title,
+    // 6: i64 create_at,
+    // 7: string content // markdown格式
+    final List<MPInsightListItem> list = <MPInsightListItem>[];
+    for (final MPInsightCardStruct card in cards) {
+      list.add(MPInsightListItem(
+        id: card.id,
+        type: MPInsightCardType.values[card.cycleType - 1],
+        periodLabel: card.createAt,
+        title: card.title,
+        subtitle: card.subTitle,
+        summary: card.content,
+        unreadCount: 0,
+        bullets: <String>[],
+        showPatternDeepLine: false,
+        decisionsCount: 0,
+        followUpsCount: 0,
+        risksCount: 0,
+        completedCount: 0,
+        pendingCount: 0,
+        recommendationsCount: 0,
+      ));
+    }
+    return _PageResult(items: list, hasMore: response?.hasMore ?? false);
+  }
   // 模拟网络延迟
   await Future<void>.delayed(const Duration(milliseconds: 520));
 
