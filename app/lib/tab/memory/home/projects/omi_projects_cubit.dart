@@ -245,43 +245,26 @@ class OmiProjectsCubit extends Cubit<OmiProjectsState> {
 
     if (cursor.isEmpty) {
       final List<OmiProjectEntry> items = <OmiProjectEntry>[
-        const OmiProjectEntry(
-          id: 'proj_001',
-          data: MPProjectCardData(
-            title: 'API Migration',
-            updatedPhrase: 'today',
-            memoryCount: 3,
-            lastActivityDetail: 'Timeline discussion',
-          ),
-        ),
-        const OmiProjectEntry(
-          id: 'proj_002',
-          data: MPProjectCardData(
-            title: 'Q1 Planning',
-            updatedPhrase: 'yesterday',
-            memoryCount: 12,
-            lastActivityDetail: 'Budget review notes',
-          ),
-        ),
+        // const OmiProjectEntry(
+        //   id: 'proj_001',
+        //   data: MPProjectCardData(
+        //     title: 'API Migration',
+        //     updatedPhrase: 'today',
+        //     memoryCount: 3,
+        //     lastActivityDetail: 'Timeline discussion',
+        //   ),
+        // ),
+        // const OmiProjectEntry(
+        //   id: 'proj_002',
+        //   data: MPProjectCardData(
+        //     title: 'Q1 Planning',
+        //     updatedPhrase: 'yesterday',
+        //     memoryCount: 12,
+        //     lastActivityDetail: 'Budget review notes',
+        //   ),
+        // ),
       ];
       return (items: items, hasMore: true);
-    }
-
-    if (cursor == 'proj_002') {
-      return (
-        items: <OmiProjectEntry>[
-          const OmiProjectEntry(
-            id: 'proj_003',
-            data: MPProjectCardData(
-              title: '游标下一页 · 追加项目',
-              updatedPhrase: 'today',
-              memoryCount: 1,
-              lastActivityDetail: '使用 cursor=proj_002 拉取',
-            ),
-          ),
-        ],
-        hasMore: false,
-      );
     }
 
     return (items: <OmiProjectEntry>[], hasMore: false);

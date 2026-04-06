@@ -100,6 +100,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
     showMPMemoDetailSheet(
       context,
       variant: MPMemoDetailSheetVariant.manual,
+      memoId: memo.id.trim().isEmpty ? null : memo.id,
       manualMemoText: memo.content,
       linkedMemoryText: memo.title,
       onAnalyze: (String memoText) async {

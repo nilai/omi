@@ -5,7 +5,11 @@ import 'package:omi/common/mp_share_sheet.dart';
 import 'package:omi/common/mp_custom_nav_bar.dart';
 import 'package:omi/common/mp_tristate_page.dart';
 import 'package:omi/common/omi_quick_add_todo_popup.dart';
+import 'package:omi/common/mp_todo_manager.dart';
+import 'package:omi/http/api/mp_memo.dart';
+import 'package:omi/http/schema/mp_memo.dart';
 import 'package:omi/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_feed_section.dart';
 import 'package:omi/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
@@ -14,6 +18,7 @@ import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_image_loader.dart';
 
 import '../../../../generated/assets.dart';
+import '../../../askai/mp_ask_ai_chat_page.dart';
 
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
 /// 区别：
@@ -143,9 +148,16 @@ class _OmiMemoDetailView extends StatelessWidget {
             context,
           );
           if (result == null) return;
-          context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(
-            result.text,
-          );
+          if (!context.mounted) return;
+          final String line = result.text.trim();
+          if (line.isEmpty) return;
+          final bool ok = await MPTodoManager().createTodo(title: line);
+          if (!context.mounted) return;
+          if (!ok) {
+            MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
+            return;
+          }
+          context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(line);
         },
         onAddMemo: () async {
           final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
@@ -156,11 +168,42 @@ class _OmiMemoDetailView extends StatelessWidget {
             ),
           );
           if (result == null) return;
-          context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(
-            result.text,
+          final String line = result.text.trim();
+          if (line.isEmpty) return;
+          if (!context.mounted) return;
+          final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
+            MPCreateMemoWithTextRequest(
+              content: line,
+              createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            ),
+          );
+          if (!context.mounted) return;
+          if (resp == null || resp.baseResp.code != 0) {
+            MPToastUtils.showMessage(
+              resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试',
+            );
+            return;
+          }
+          context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
+        },
+        onAskAi: () {
+          final OmiMemoryDetailState s =
+              context.read<OmiMemoryDetailCubit>().state;
+          if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
+            return;
+          }
+          final String aboutText = s.data!.title.trim().isEmpty
+              ? 'Memo'
+              : s.data!.title;
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => MPAskAIChatPage(
+                aboutText: aboutText,
+                suggestedQuestions: const <String>[],
+              ),
+            ),
           );
         },
-        onAskAi: () {},
       ),
     );
   }

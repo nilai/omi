@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:omi/http/api/mp_memo.dart';
+import 'package:omi/http/schema/mp_memo.dart';
 import 'package:omi/tab/memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
+import 'package:omi/utils/mp_toast_utils.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
@@ -27,6 +30,8 @@ Future<void> showMPMemoDetailSheet(
   required MPMemoDetailSheetVariant variant,
   required Future<List<String>> Function(String memoText) onAnalyze,
   Future<bool> Function(String memoText)? onDelete,
+  /// 有值时删除会先调 `deleteMemo` 接口，成功后再执行 [onDelete]（若有）并关闭弹窗。
+  String? memoId,
   String manualMemoText = '',
   String linkedMemoryText = '',
   String voiceTitle = '',
@@ -40,6 +45,11 @@ Future<void> showMPMemoDetailSheet(
       '${voiceTitle.trim()}\n\n${voiceBody.trim()}'.trim(),
     MPMemoDetailSheetVariant.highlight => highlightMemoText.trim(),
   };
+
+  final String? trimmedMemoId = memoId?.trim();
+  final bool hasServerMemoId =
+      trimmedMemoId != null && trimmedMemoId.isNotEmpty;
+  final bool canDelete = hasServerMemoId || onDelete != null;
 
   return showModalBottomSheet<void>(
     context: context,
@@ -158,11 +168,30 @@ Future<void> showMPMemoDetailSheet(
                         ),
                       ),
                       InkWell(
-                        onTap: onDelete == null
+                        onTap: !canDelete
                             ? null
                             : () async {
-                                final bool ok = await onDelete(memoKey);
-                                if (!sheetContext.mounted || !ok) return;
+                                if (hasServerMemoId) {
+                                  final MPDeleteMemoResponse? resp =
+                                      await deleteMemo(
+                                    MPDeleteMemoRequest(
+                                      memoId: trimmedMemoId,
+                                    ),
+                                  );
+                                  if (!sheetContext.mounted) return;
+                                  if (resp == null ||
+                                      resp.baseResp.code != 0) {
+                                    MPToastUtils.showMessage(
+                                      resp?.baseResp.message ??
+                                          '删除 Memo 失败，请稍后重试',
+                                    );
+                                    return;
+                                  }
+                                }
+                                if (onDelete != null) {
+                                  final bool ok = await onDelete(memoKey);
+                                  if (!sheetContext.mounted || !ok) return;
+                                }
                                 Navigator.of(sheetContext).pop();
                               },
                         borderRadius: BorderRadius.circular(999),
@@ -172,9 +201,7 @@ Future<void> showMPMemoDetailSheet(
                             Assets.omiDetailDelete,
                             width: 18,
                             height: 18,
-                            color: onDelete == null
-                                ? secondTextColor
-                                : redColor,
+                            color: canDelete ? redColor : secondTextColor,
                           ),
                         ),
                       ),

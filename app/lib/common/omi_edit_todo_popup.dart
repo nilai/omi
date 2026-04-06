@@ -575,6 +575,13 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                   widget.rootContext,
                                 );
                                 if (!ok) return;
+                                final String todoId =
+                                    widget.params.todoId.trim();
+                                if (todoId.isNotEmpty) {
+                                  final bool deleted = await MPTodoManager()
+                                      .deleteTodo(todoId);
+                                  if (!deleted) return;
+                                }
                                 if (widget.onDelete != null) {
                                   await widget.onDelete!.call();
                                 }

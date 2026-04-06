@@ -158,34 +158,34 @@ class OmiPeopleCubit extends Cubit<OmiPeopleState> {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     return (
       recent: const <MPRecentlyMentionedPersonItem>[
-        MPRecentlyMentionedPersonItem(
-          name: 'Alex',
-          lastTalkedPhrase: 'today',
-          memoryCount: 3,
-        ),
-        MPRecentlyMentionedPersonItem(
-          name: 'Sarah',
-          lastTalkedPhrase: 'yesterday',
-          memoryCount: 2,
-        ),
-        MPRecentlyMentionedPersonItem(
-          name: 'Jordan',
-          lastTalkedPhrase: 'today',
-          memoryCount: 1,
-        ),
-        MPRecentlyMentionedPersonItem(
-          name: 'Emily',
-          lastTalkedPhrase: 'yesterday',
-          memoryCount: 2,
-        ),
+        // MPRecentlyMentionedPersonItem(
+        //   name: 'Alex',
+        //   lastTalkedPhrase: 'today',
+        //   memoryCount: 3,
+        // ),
+        // MPRecentlyMentionedPersonItem(
+        //   name: 'Sarah',
+        //   lastTalkedPhrase: 'yesterday',
+        //   memoryCount: 2,
+        // ),
+        // MPRecentlyMentionedPersonItem(
+        //   name: 'Jordan',
+        //   lastTalkedPhrase: 'today',
+        //   memoryCount: 1,
+        // ),
+        // MPRecentlyMentionedPersonItem(
+        //   name: 'Emily',
+        //   lastTalkedPhrase: 'yesterday',
+        //   memoryCount: 2,
+        // ),
       ],
       all: const <MPAllPeopleRowItem>[
-        MPAllPeopleRowItem(name: 'Alex', dateLabel: 'Jan 21', count: 3),
-        MPAllPeopleRowItem(name: 'Amy', dateLabel: 'Jan 10', count: 1),
-        MPAllPeopleRowItem(name: 'David', dateLabel: 'Today', count: 4),
-        MPAllPeopleRowItem(name: 'Elena', dateLabel: 'Jan 5', count: 2),
-        MPAllPeopleRowItem(name: 'Jordan', dateLabel: 'Jan 18', count: 1),
-        MPAllPeopleRowItem(name: 'Julia', dateLabel: 'Dec 28', count: 5),
+        // MPAllPeopleRowItem(name: 'Alex', dateLabel: 'Jan 21', count: 3),
+        // MPAllPeopleRowItem(name: 'Amy', dateLabel: 'Jan 10', count: 1),
+        // MPAllPeopleRowItem(name: 'David', dateLabel: 'Today', count: 4),
+        // MPAllPeopleRowItem(name: 'Elena', dateLabel: 'Jan 5', count: 2),
+        // MPAllPeopleRowItem(name: 'Jordan', dateLabel: 'Jan 18', count: 1),
+        // MPAllPeopleRowItem(name: 'Julia', dateLabel: 'Dec 28', count: 5),
       ],
     );
   }

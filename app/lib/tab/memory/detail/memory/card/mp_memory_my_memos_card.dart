@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:omi/http/schema/mp_data_model.dart';
 import 'package:omi/utils/omi_color_utils.dart';
 import 'package:omi/utils/omi_font_utils.dart';
 import 'package:omi/utils/omi_textstyle.dart';
@@ -6,6 +7,23 @@ import 'package:omi/utils/omi_textstyle.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
 import '../mp_memo_detail_sheet.dart';
+
+/// 单条 MY MEMO 行：正文 + 与后端 [MPMemoType] 一致的类型（决定底部弹窗 Manual / Highlight）。
+class MPMemoryMyMemoLine {
+  const MPMemoryMyMemoLine({
+    required this.text,
+    this.type = MPMemoType.highlightMemo,
+    this.memoId,
+  });
+
+  final String text;
+
+  /// `highlightMemo` → Highlight 弹窗；`manualMemo` → Manual Memo 弹窗。
+  final MPMemoType type;
+
+  /// 服务端 Memo id；有值时删除会先请求接口。
+  final String? memoId;
+}
 
 /// 「MY MEMOS」整卡数据
 class MPMemoryMyMemosCardData {
@@ -18,8 +36,8 @@ class MPMemoryMyMemosCardData {
   /// 头部右侧时间，如 `Just now`
   final String headerTimeLabel;
 
-  /// 每条 Memo 正文（展示时会加引号样式）
-  final List<String> lines;
+  /// 每条 Memo（展示正文时会加引号样式）
+  final List<MPMemoryMyMemoLine> lines;
 
   /// 弹窗里的来源文案，如 `From: Team standup discussion on API migration · 02:14`
   final String sourceLine;
@@ -40,12 +58,6 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
   static const Color _kIconCircleBg = Color(0xFFE8F4FF);
   bool _isDeleted = false;
 
-  Future<bool> _deleteMemo(String memoText) async {
-    // TODO: 替换为真实删除接口
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    return true;
-  }
-
   /// 请求 AI 分析结果（占位实现，后续替换真实接口）。
   Future<List<String>> _analyzeMemoActions(String memoText) async {
     await Future<void>.delayed(const Duration(milliseconds: 1600));
@@ -59,17 +71,23 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
     ];
   }
 
-  /// 显示 Memo 详情底部弹窗。
-  void _showMemoSheet(BuildContext context, String memoText) {
+  /// 显示 Memo 详情底部弹窗（按 [MPMemoryMyMemoLine.type] 区分 Manual / Highlight）。
+  void _showMemoSheet(BuildContext context, MPMemoryMyMemoLine line) {
+    final MPMemoDetailSheetVariant variant =
+        line.type == MPMemoType.manualMemo
+            ? MPMemoDetailSheetVariant.manual
+            : MPMemoDetailSheetVariant.highlight;
+    final bool isManual = variant == MPMemoDetailSheetVariant.manual;
     showMPMemoDetailSheet(
       context,
-      variant: MPMemoDetailSheetVariant.highlight,
-      highlightSourceLine: widget.data.sourceLine,
-      highlightMemoText: memoText,
+      variant: variant,
+      memoId: line.memoId,
+      manualMemoText: isManual ? line.text : '',
+      highlightSourceLine: isManual ? '' : widget.data.sourceLine,
+      highlightMemoText: isManual ? '' : line.text,
       onAnalyze: _analyzeMemoActions,
       onDelete: (String t) async {
-        final bool ok = await _deleteMemo(t);
-        if (!mounted || !ok) return false;
+        if (!mounted) return false;
         setState(() {
           _isDeleted = true;
         });
@@ -163,9 +181,10 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
                   ],
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
-                    onTap: () => _showMemoSheet(context, widget.data.lines[i]),
+                    onTap: () =>
+                        _showMemoSheet(context, widget.data.lines[i]),
                     child: Text(
-                      '“${widget.data.lines[i]}”',
+                      '“${widget.data.lines[i].text}”',
                       style: OmiTextStyle.create(
                         fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.medium,

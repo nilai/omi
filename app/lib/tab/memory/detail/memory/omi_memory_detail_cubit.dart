@@ -479,7 +479,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
             MPMemoryFeedMyMemoBlock(
               MPMemoryMyMemosCardData(
                 headerTimeLabel: 'Just now',
-                lines: <String>[line],
+                lines: <MPMemoryMyMemoLine>[
+                  MPMemoryMyMemoLine(
+                    text: line,
+                    type: MPMemoType.manualMemo,
+                  ),
+                ],
               ),
             ),
           );
@@ -609,7 +614,15 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
         MPMemoryFeedMyMemoBlock(
           MPMemoryMyMemosCardData(
             headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-            lines: memos.map((MPMemoStruct memo) => memo.title).toList(growable: false),
+            lines: memos
+                .map(
+                  (MPMemoStruct memo) => MPMemoryMyMemoLine(
+                    text: memo.title,
+                    type: memo.type ?? MPMemoType.highlightMemo,
+                    memoId: memo.id.trim().isEmpty ? null : memo.id,
+                  ),
+                )
+                .toList(growable: false),
           ),
         ),
       );
