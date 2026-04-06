@@ -688,13 +688,16 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
       unknownInsightIndex++;
     }
 
+    final String insightTitle = (f.title ?? '').trim();
+    final String insightBody = (f.content ?? '').trim();
+
     feedBlocks.add(
       MPMemoryFeedInsightBlock(
         MPMemoryInsightItemData(
           tone: tone,
           timeLabel: _feedCardTimeLabel(f.createAt),
-          bodyText: f.content ?? '',
-          categoryTitle: f.title,
+          bodyText: insightBody,
+          categoryTitle: insightTitle,
         ),
       ),
     );
@@ -778,7 +781,7 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
     recordUri: sm?.recordUri,
     speakerLabels: speakerLabels,
     initialSegment: MPMemoryDetailSegment.transcript,
-    overviewText: overviewText.isNotEmpty ? overviewText : ' ',
+    overviewText: overviewText,
     transcriptItems: transcriptItems,
     actionItems: actionItems,
     feedBlocks: built.blocks,
