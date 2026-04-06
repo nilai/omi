@@ -36,6 +36,73 @@ class OmiPermissionService {
     return await PermissionManager.check(PermissionManagerPermission.microphone);
   }
 
+  /// 相册与本地文件导入所需权限列表。
+  ///
+  /// - iOS: `photos`
+  /// - Android: `mediaImages`(Android 13+) + `storage`(Android 12 及以下)
+  /// - 其他平台: 返回空列表，由系统/插件自行处理
+  static List<PermissionManagerPermission> mediaImportPermissions() {
+    if (Platform.isIOS) {
+      return <PermissionManagerPermission>[PermissionManagerPermission.photos];
+    }
+    if (Platform.isAndroid) {
+      return <PermissionManagerPermission>[
+        PermissionManagerPermission.mediaImages,
+        PermissionManagerPermission.storage,
+      ];
+    }
+    return <PermissionManagerPermission>[];
+  }
+
+  /// 申请相册与本地文件导入权限，并返回是否全部授予。
+  ///
+  /// @return `true` 表示可继续进行图片/文件导入
+  static Future<bool> requestMediaImportPermissions() async {
+    final List<PermissionManagerPermission> perms = mediaImportPermissions();
+    if (perms.isEmpty) {
+      return true;
+    }
+    final Map<PermissionManagerPermission, PermissionManagerStatus> result =
+        await PermissionManager.requestMultiple(perms);
+    return result.values.every((PermissionManagerStatus s) => s == PermissionManagerStatus.granted);
+  }
+
+  /// 检查相册与本地文件导入权限是否已全部授予。
+  static Future<bool> hasMediaImportPermissions() async {
+    final List<PermissionManagerPermission> perms = mediaImportPermissions();
+    if (perms.isEmpty) {
+      return true;
+    }
+    final Map<PermissionManagerPermission, PermissionManagerStatus> result =
+        await PermissionManager.checkMultiple(perms);
+    return result.values.every((PermissionManagerStatus s) => s == PermissionManagerStatus.granted);
+  }
+
+  /// 返回相册/本地文件导入相关权限中「最不利」的一项状态（用于 UI 提示）。
+  static Future<PermissionManagerStatus> mediaImportPermissionWorstStatus() async {
+    final List<PermissionManagerPermission> perms = mediaImportPermissions();
+    if (perms.isEmpty) {
+      return PermissionManagerStatus.granted;
+    }
+    final Map<PermissionManagerPermission, PermissionManagerStatus> result =
+        await PermissionManager.checkMultiple(perms);
+    PermissionManagerStatus worst = PermissionManagerStatus.granted;
+    for (final PermissionManagerStatus s in result.values) {
+      if (s == PermissionManagerStatus.permanentlyDenied) {
+        return PermissionManagerStatus.permanentlyDenied;
+      }
+      if (s == PermissionManagerStatus.restricted) {
+        worst = PermissionManagerStatus.restricted;
+      } else if (s == PermissionManagerStatus.limited && worst == PermissionManagerStatus.granted) {
+        worst = PermissionManagerStatus.limited;
+      } else if (s == PermissionManagerStatus.denied &&
+          (worst == PermissionManagerStatus.granted || worst == PermissionManagerStatus.limited)) {
+        worst = PermissionManagerStatus.denied;
+      }
+    }
+    return worst;
+  }
+
   /// BLE 扫描与连接所需权限列表（iOS 与 Android 策略不同；桌面/Web 返回空列表由系统处理）。
   static List<PermissionManagerPermission> bleScanConnectPermissions() {
     if (Platform.isIOS) {
