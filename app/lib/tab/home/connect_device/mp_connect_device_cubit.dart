@@ -50,10 +50,14 @@ class MPConnectDeviceState {
   const MPConnectDeviceState({
     required this.isScanning,
     this.devices = const <MPConnectDeviceItem>[],
+    this.connectingDeviceId,
   });
 
   final bool isScanning;
   final List<MPConnectDeviceItem> devices;
+
+  /// 正在 BLE 连接中的设备 [MPConnectDeviceItem.id]；未在连接时为 `null`。
+  final String? connectingDeviceId;
 
   MPConnectDeviceItem? get connectedDevice {
     for (final MPConnectDeviceItem item in devices) {
@@ -71,10 +75,15 @@ class MPConnectDeviceState {
   MPConnectDeviceState copyWith({
     bool? isScanning,
     List<MPConnectDeviceItem>? devices,
+    String? connectingDeviceId,
+    bool clearConnectingDeviceId = false,
   }) {
     return MPConnectDeviceState(
       isScanning: isScanning ?? this.isScanning,
       devices: devices ?? this.devices,
+      connectingDeviceId: clearConnectingDeviceId
+          ? null
+          : (connectingDeviceId ?? this.connectingDeviceId),
     );
   }
 }
@@ -88,7 +97,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
   StreamSubscription<List<ScanResult>>? _scanSubscription;
   BleTransport? _transport;
-  bool _connectInFlight = false;
   int _scanGeneration = 0;
 
   /// 进入页面后：若有上次退出时停放的 BLE 会话则先恢复到列表，再首轮扫描。
@@ -405,10 +413,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       return;
     }
 
-    if (_connectInFlight) {
+    if (state.connectingDeviceId != null) {
       return;
     }
-    _connectInFlight = true;
+
+    emit(state.copyWith(connectingDeviceId: id));
     await _disconnectActive();
 
     emit(
@@ -431,6 +440,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       );
       emit(
         state.copyWith(
+          clearConnectingDeviceId: true,
           devices: state.devices
               .map(
                 (MPConnectDeviceItem d) => d.id == id
@@ -445,7 +455,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       MPToastUtils.showMessage('连接失败，请靠近设备后重试');
       await _disconnectActive();
     } finally {
-      _connectInFlight = false;
+      if (!isClosed && state.connectingDeviceId != null) {
+        emit(state.copyWith(clearConnectingDeviceId: true));
+      }
     }
   }
 

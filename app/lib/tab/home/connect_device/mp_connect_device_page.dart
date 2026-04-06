@@ -105,6 +105,7 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
                       if (others.isNotEmpty)
                         _MPDeviceListCard(
                           items: others,
+                          connectingDeviceId: state.connectingDeviceId,
                           onConnectTap: (String id) => _cubit.toggleConnection(id),
                         ),
                     ] else if (connected != null) ...<Widget>[
@@ -261,10 +262,12 @@ class _MPSectionTitle extends StatelessWidget {
 class _MPDeviceListCard extends StatelessWidget {
   const _MPDeviceListCard({
     required this.items,
+    required this.connectingDeviceId,
     required this.onConnectTap,
   });
 
   final List<MPConnectDeviceItem> items;
+  final String? connectingDeviceId;
   final ValueChanged<String> onConnectTap;
 
   @override
@@ -295,7 +298,10 @@ class _MPDeviceListCard extends StatelessWidget {
                   textColor: Colors.white,
                   background: const Color(0xFF4C86F8),
                   borderColor: const Color(0xFF4C86F8),
-                  onPressed: () => onConnectTap(item.id),
+                  showProgress: connectingDeviceId == item.id,
+                  onPressed: connectingDeviceId != null
+                      ? null
+                      : () => onConnectTap(item.id),
                 ),
                 if (index < items.length - 1) ...<Widget>[
                   const SizedBox(height: 10),
@@ -492,34 +498,45 @@ class _MPActionButton extends StatelessWidget {
     required this.background,
     required this.borderColor,
     required this.onPressed,
+    this.showProgress = false,
   });
 
   final String text;
   final Color textColor;
   final Color background;
   final Color borderColor;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
+  final bool showProgress;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: onPressed,
+        onPressed: showProgress ? null : onPressed,
         style: OutlinedButton.styleFrom(
           backgroundColor: background,
           side: BorderSide(color: borderColor),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           padding: const EdgeInsets.symmetric(vertical: 12),
         ),
-        child: Text(
-          text,
-          style: OmiTextStyle.create(
-            color: textColor,
-            fontSize: OmiFontSize.t9_18,
-            fontWeight: OmiFontWeight.bold,
-          ),
-        ),
+        child: showProgress
+            ? SizedBox(
+                width: 26,
+                height: 26,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  color: textColor,
+                ),
+              )
+            : Text(
+                text,
+                style: OmiTextStyle.create(
+                  color: textColor,
+                  fontSize: OmiFontSize.t9_18,
+                  fontWeight: OmiFontWeight.bold,
+                ),
+              ),
       ),
     );
   }
