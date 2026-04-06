@@ -111,7 +111,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   Timer? _insightsTimer;
-  final Random _random = Random();
 
   static MPHomeState _initialState() {
     return const MPHomeState(
