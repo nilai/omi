@@ -115,7 +115,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildSubscriptionCard() {
     return _buildTappableCard(
       onTap: _showComingSoon,
-      padding: const EdgeInsets.fromLTRB(16, 18, 12, 18),
+      padding: const EdgeInsets.fromLTRB(24, 18, 22, 18),
       child: Row(
         children: [
           Container(
@@ -212,7 +212,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildIntegrationsCard() {
     return _buildTappableCard(
       onTap: _showComingSoon,
-      padding: const EdgeInsets.fromLTRB(16, 18, 12, 18),
+      padding: const EdgeInsets.fromLTRB(24, 18, 22, 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -350,7 +350,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildTappableCard({
     required VoidCallback onTap,
     required Widget child,
-    EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+    EdgeInsetsGeometry padding = const EdgeInsets.fromLTRB(24, 18, 22, 18),
   }) {
     final BorderRadius radius = BorderRadius.circular(18);
     return DecoratedBox(
