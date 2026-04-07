@@ -12,11 +12,13 @@ class MPAskAIChatPage extends StatelessWidget {
     required this.aboutText,
     this.conversationId,
     this.suggestedQuestions = const <String>[],
+    this.initialMessage,
   });
 
   final String aboutText;
   final String? conversationId;
   final List<String> suggestedQuestions;
+  final String? initialMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -24,18 +26,39 @@ class MPAskAIChatPage extends StatelessWidget {
       create: (_) => MPAskAIChatCubit(
         aboutText: aboutText,
         conversationId: conversationId,
-        suggestedQuestions: suggestedQuestions, 
+        suggestedQuestions: suggestedQuestions,
       )..initData(),
-      child: const _MPAskAIChatView(),
+      child: _MPAskAIChatView(initialMessage: initialMessage),
     );
   }
 }
 
-class _MPAskAIChatView extends StatelessWidget {
-  const _MPAskAIChatView();
+class _MPAskAIChatView extends StatefulWidget {
+  const _MPAskAIChatView({this.initialMessage});
+
+  final String? initialMessage;
+
+  @override
+  State<_MPAskAIChatView> createState() => _MPAskAIChatViewState();
+}
+
+class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
+  bool _hasAutoSentInitialMessage = false;
 
   void _onSubmit(BuildContext context, MPVoiceTextInputResult result) {
     context.read<MPAskAIChatCubit>().sendMessage(result.text);
+  }
+
+  void _tryAutoSendInitialMessage(MPAskAIChatState state) {
+    if (_hasAutoSentInitialMessage) return;
+    if (state.phase != MPAskAIChatPhase.loaded) return;
+    final String text = widget.initialMessage?.trim() ?? '';
+    if (text.isEmpty) return;
+    _hasAutoSentInitialMessage = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MPAskAIChatCubit>().sendMessage(text);
+    });
   }
 
   @override
@@ -47,7 +70,10 @@ class _MPAskAIChatView extends StatelessWidget {
           children: <Widget>[
             _ChatTopBar(onBack: () => Navigator.of(context).maybePop()),
             Expanded(
-              child: BlocBuilder<MPAskAIChatCubit, MPAskAIChatState>(
+              child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
+                listener: (BuildContext context, MPAskAIChatState state) {
+                  _tryAutoSendInitialMessage(state);
+                },
                 builder: (BuildContext context, MPAskAIChatState state) {
                   if (state.phase == MPAskAIChatPhase.loading) {
                     return const Center(

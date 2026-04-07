@@ -4,7 +4,6 @@ import 'package:memo_pin/common/mp_voice_text_input.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_chat_page.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_cubit.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_list_page.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -75,8 +74,23 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     context.read<MPAskAICubit>().selectModule(module);
   }
 
-  void _onSubmitInput(BuildContext context, MPVoiceTextInputResult result) {
-    MPToastUtils.showFeatureComingSoon(context: context);
+  Future<void> _onSubmitInput(BuildContext context, MPVoiceTextInputResult result) async {
+    final String text = result.text.trim();
+    if (text.isEmpty) return;
+    _dismissKeyboard();
+    final MPAskAIState askAIState = context.read<MPAskAICubit>().state;
+    final MPAskAIModule? selected = askAIState.selectedModule;
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MPAskAIChatPage(
+          aboutText: selected?.subtitle ?? 'General',
+          suggestedQuestions: selected?.questions ?? const <String>[],
+          initialMessage: text,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _dismissKeyboard();
   }
 
   Future<void> _onTapQuestion(
