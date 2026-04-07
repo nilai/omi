@@ -91,13 +91,12 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     );
     try {
       final List<MPAskAIChatMessage> messages = await _fetchMessagesFromServer();
-      final List<String> questions = await _fetchSuggestionQuestions();
       emit(
         state.copyWith(
           phase: MPAskAIChatPhase.loaded,
           messages: messages,
           aboutText: aboutText,
-          suggestedQuestions: questions,
+          suggestedQuestions: suggestedQuestions,
         ),
       );
     } catch (e) {
@@ -228,21 +227,5 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         content: item.content,
       );
     }).toList(growable: false);
-  }
-
-  Future<List<String>> _fetchSuggestionQuestions() async {
-    if (suggestedQuestions.isNotEmpty) {
-      return suggestedQuestions;
-    }
-    final MPGetChatSuggestionResponse? response =
-        await getChatSuggestion(MPGetChatSuggestionRequest());
-    if (response == null || response.baseResp.code != 0) {
-      return const <String>[];
-    }
-    final Map<String, List<String>> normal =
-        response.suggestion['normal'] ?? <String, List<String>>{};
-    final Iterable<String> values =
-        normal.values.expand((List<String> e) => e).where((String e) => e.trim().isNotEmpty);
-    return values.take(6).toList(growable: false);
   }
 }
