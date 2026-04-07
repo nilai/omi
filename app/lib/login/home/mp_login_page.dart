@@ -74,6 +74,19 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
     MPToastUtils.showMessage(message, context: context);
   }
 
+  Future<void> _openForgetPasswordPage() async {
+    _dismissKeyboard();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const MPForgetPage()),
+    );
+    if (!mounted) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _dismissKeyboard();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<MPLoginCubit, MPLoginState>(
@@ -169,9 +182,7 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                     if (state.mode == MPLoginMode.login) ...<Widget>[
                       const Spacer(),
                       GestureDetector(
-                        onTap: () => Navigator.of(
-                          context,
-                        ).push<void>(MaterialPageRoute<void>(builder: (_) => const MPForgetPage())),
+                        onTap: _openForgetPasswordPage,
                         child: Text(
                           'Forgot Password?',
                           style: TextStyle(
