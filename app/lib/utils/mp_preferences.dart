@@ -78,10 +78,7 @@ class MPPreferences {
 /// 上次成功连接并持久化到本地的 BLE 设备（仅 [remoteId] + [displayName]）。
 class MPLastBleDeviceRecord {
   /// 创建记录。
-  const MPLastBleDeviceRecord({
-    required this.remoteId,
-    required this.displayName,
-  });
+  const MPLastBleDeviceRecord({required this.remoteId, required this.displayName});
 
   /// [BluetoothDevice.remoteId] 字符串。
   final String remoteId;
@@ -108,12 +105,14 @@ class SharedPreferencesUtil extends MPPreferences {
   String? _accessToken;
   String? _refreshToken;
   String? _email;
+
   /// token 过期时间（毫秒时间戳）。
   DateTime? _tokenExpiresTime;
 
-
   /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
-  String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
+  // String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
+  String? get accessToken =>
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
 
   /// 设置访问令牌：写入本地并更新内存；登出时 `value == null` 会同时清除 [uid]。
   /// 传入 [uid] 时一并持久化（仅刷 token 可不传，保留原 uid）。
@@ -126,7 +125,6 @@ class SharedPreferencesUtil extends MPPreferences {
       _accessToken = value;
     }
   }
-
 
   /// 获取刷新令牌：优先取内存中的私有属性，其次取本地存储。
   String? get refreshToken => _refreshToken ?? MPPreferences().getString(_refreshTokenKey);
@@ -155,7 +153,8 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取 token 过期时间：优先取内存中的私有属性，其次取本地存储。
-  DateTime? get tokenExpiresTime => _tokenExpiresTime ?? DateTime.fromMillisecondsSinceEpoch(MPPreferences().getInt(_tokenExpiresTimeKey) ?? 0);
+  DateTime? get tokenExpiresTime =>
+      _tokenExpiresTime ?? DateTime.fromMillisecondsSinceEpoch(MPPreferences().getInt(_tokenExpiresTimeKey) ?? 0);
 
   /// 设置 token 过期时间：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setTokenExpiresTime(int value) async {
@@ -177,17 +176,11 @@ class SharedPreferencesUtil extends MPPreferences {
       return null;
     }
     final String name = MPPreferences().getString(_lastBleDisplayNameKey) ?? '';
-    return MPLastBleDeviceRecord(
-      remoteId: id,
-      displayName: name.isEmpty ? 'MemoPin' : name,
-    );
+    return MPLastBleDeviceRecord(remoteId: id, displayName: name.isEmpty ? 'MemoPin' : name);
   }
 
   /// 持久化上次成功连接的 BLE 设备（连接成功后调用）。
-  Future<void> setLastConnectedBleDevice({
-    required String remoteId,
-    required String displayName,
-  }) async {
+  Future<void> setLastConnectedBleDevice({required String remoteId, required String displayName}) async {
     await MPPreferences().saveString(_lastBleRemoteIdKey, remoteId);
     await MPPreferences().saveString(_lastBleDisplayNameKey, displayName);
   }
