@@ -80,12 +80,26 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
               children: <Widget>[
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  child: Material(
+                    color: const Color(0xFFF5F6F7),
+                    shape: const CircleBorder(),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pop(),
+                      customBorder: const CircleBorder(),
+                      child: const SizedBox(
+                        width: 42,
+                        height: 42,
+                        child: Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          size: 18,
+                          color: mainTextColor,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 10),
                 Text(
                   'Reset Password',
                   style: TextStyle(
@@ -93,11 +107,12 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                     color: mainTextColor,
                     letterSpacing: -1.0,
                     height: 1.05,
+                    fontWeight: OmiFontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  "Enter your email and we'll send you a link to\nreset your password.",
+                  "Enter your email and we'll send you a link to reset your password.",
                   style: TextStyle(
                     fontSize: OmiFontSize.t6_15,
                     color: secondTextColor,
@@ -135,7 +150,7 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                       fontSize: OmiFontSize.t6_15,
                       fontWeight: OmiFontWeight.medium,
                     ),
-                    prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 30),
+                    prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 24),
                     filled: true,
                     fillColor: const Color(0xFFF2F2F7),
                     border: OutlineInputBorder(
@@ -158,7 +173,7 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                   Text(
                     emailErr,
                     style: TextStyle(
-                      fontSize: OmiFontSize.t5_14,
+                      fontSize: OmiFontSize.t4_13,
                       color: redColor,
                       fontWeight: OmiFontWeight.regular,
                     ),
@@ -177,8 +192,8 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                     child: Text(
                       'Send Reset Link',
                       style: TextStyle(
-                        fontSize: OmiFontSize.t8_17,
-                        fontWeight: OmiFontWeight.bold,
+                        fontSize: OmiFontSize.t7_16,
+                        fontWeight: OmiFontWeight.medium,
                         letterSpacing: -0.4,
                       ),
                     ),

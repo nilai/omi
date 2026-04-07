@@ -181,7 +181,11 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                   const SizedBox(height: 8),
                   Text(
                     codeErr,
-                    style: TextStyle(fontSize: OmiFontSize.t5_14, color: redColor, fontWeight: OmiFontWeight.regular),
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t4_13,
+                      color: redColor,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
                   ),
                 ],
                 const SizedBox(height: 24),
