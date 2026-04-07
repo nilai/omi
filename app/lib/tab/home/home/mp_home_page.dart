@@ -269,6 +269,9 @@ class _MPHomePageState extends State<MPHomePage> {
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _onRefresh,
+                      triggerMode: RefreshIndicatorTriggerMode.anywhere,
+                      notificationPredicate: (ScrollNotification notification) =>
+                          notification.depth == 0,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
