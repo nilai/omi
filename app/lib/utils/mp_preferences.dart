@@ -21,7 +21,7 @@ class MPPreferences {
 
   /// 读取字符串。
   String? getString(String key) {
-    return _preferences?.getString(key);
+    return _preferences?.getString(key) ?? '';
   }
 
   /// 写入整型。
@@ -140,7 +140,7 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取邮箱：优先取内存中的私有属性，其次取本地存储。
-  Future<String?> get email async => _email ?? await MPPreferences().getString(_emailKey);
+  String get email => _email ?? MPPreferences().getString(_emailKey) ?? '';
 
   /// 设置邮箱：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setEmail(String? value) async {
