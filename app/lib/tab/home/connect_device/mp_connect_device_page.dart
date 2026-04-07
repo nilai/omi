@@ -179,7 +179,7 @@ class _MPScanHeader extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Make sure your MemoPin is turned on and within\nrange',
+          'Make sure your MemoPin is turned on and within range',
           textAlign: TextAlign.center,
           style: OmiTextStyle.create(
             color: const Color(0xFF9A9AA3),
