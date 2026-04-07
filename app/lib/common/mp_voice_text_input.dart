@@ -163,7 +163,12 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
               controller: _controller,
               focusNode: _focusNode,
               autofocus: widget.autofocus,
-              onChanged: widget.onChanged,
+              onChanged: (String value) {
+                if (mounted) {
+                  setState(() {});
+                }
+                widget.onChanged?.call(value);
+              },
               onSubmitted: (_) => _submitText(),
               style: OmiTextStyle.create(
                 fontSize: OmiFontSize.t6_15,
