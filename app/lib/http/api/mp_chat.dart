@@ -1,0 +1,137 @@
+import 'dart:convert';
+
+import 'package:flutter/cupertino.dart';
+
+import '../../env/env.dart';
+import '../schema/mp_chat.dart';
+import '../shared.dart';
+
+// POST /api/v1/chat/create_conversation
+Future<MPCreateConversationResponse?> createConversation(
+  MPCreateConversationRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/create_conversation',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('createConversation response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPCreateConversationResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// POST /api/v1/chat/chat
+Stream<String> chat(MPChatRequest req) {
+  return makeStreamingApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/chat',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+}
+
+// GET /api/v1/chat/get_conversation_list
+Future<MPGetConversationListResponse?> getConversationList(
+  MPGetConversationListRequest req,
+) async {
+  final response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v1/chat/get_conversation_list?page_size=${req.pageSize}${req.cursor == null || req.cursor!.isEmpty ? '' : '&cursor=${req.cursor}'}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getConversationList response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetConversationListResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/get_conversation_detail
+Future<MPGetConversationDetailResponse?> getConversationDetail(
+  MPGetConversationDetailRequest req,
+) async {
+  final response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v1/chat/get_conversation_detail?conversation_id=${req.conversationId}&page_size=${req.pageSize}${req.cursor == null || req.cursor!.isEmpty ? '' : '&cursor=${req.cursor}'}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getConversationDetail response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetConversationDetailResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// POST /api/v1/chat/transcript
+Future<MPTranscriptResponse?> transcript(MPTranscriptRequest req) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/transcript',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('transcript response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPTranscriptResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/suggestion
+Future<MPGetChatSuggestionResponse?> getChatSuggestion(
+  MPGetChatSuggestionRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/suggestion',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getChatSuggestion response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetChatSuggestionResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/get_title
+Future<MPGetConversationTitleResponse?> getConversationTitle(
+  MPGetConversationTitleRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/get_title?conversation_id=${req.conversationId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getConversationTitle response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetConversationTitleResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}

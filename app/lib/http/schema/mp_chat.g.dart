@@ -1,0 +1,224 @@
+// GENERATED CODE - DO NOT MODIFY BY HAND
+
+part of 'mp_chat.dart';
+
+// **************************************************************************
+// JsonSerializableGenerator
+// **************************************************************************
+
+MPCreateConversationRequest _$MPCreateConversationRequestFromJson(
+  Map<String, dynamic> json,
+) => MPCreateConversationRequest(
+  title: json['title'] as String?,
+  expertId: json['expert_id'] as String,
+  memoryId: json['memory_id'] as String,
+  templateId: json['template_id'] as String,
+  speakerId: json['speaker_id'] as String,
+);
+
+Map<String, dynamic> _$MPCreateConversationRequestToJson(
+  MPCreateConversationRequest instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'expert_id': instance.expertId,
+  'memory_id': instance.memoryId,
+  'template_id': instance.templateId,
+  'speaker_id': instance.speakerId,
+};
+
+MPCreateConversationResponse _$MPCreateConversationResponseFromJson(
+  Map<String, dynamic> json,
+) => MPCreateConversationResponse(
+  conversationId: json['conversation_id'] as String,
+  greet: json['greet'] as String,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPCreateConversationResponseToJson(
+  MPCreateConversationResponse instance,
+) => <String, dynamic>{
+  'conversation_id': instance.conversationId,
+  'greet': instance.greet,
+  'base_resp': instance.baseResp,
+};
+
+MPChatRequest _$MPChatRequestFromJson(Map<String, dynamic> json) =>
+    MPChatRequest(
+      message: json['message'] as String,
+      conversationId: json['conversation_id'] as String,
+    );
+
+Map<String, dynamic> _$MPChatRequestToJson(MPChatRequest instance) =>
+    <String, dynamic>{
+      'message': instance.message,
+      'conversation_id': instance.conversationId,
+    };
+
+MPGetConversationListRequest _$MPGetConversationListRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationListRequest(
+  pageSize: (json['page_size'] as num).toInt(),
+  cursor: json['cursor'] as String?,
+);
+
+Map<String, dynamic> _$MPGetConversationListRequestToJson(
+  MPGetConversationListRequest instance,
+) => <String, dynamic>{
+  'page_size': instance.pageSize,
+  'cursor': instance.cursor,
+};
+
+MPConversationHeaderStruct _$MPConversationHeaderStructFromJson(
+  Map<String, dynamic> json,
+) => MPConversationHeaderStruct(
+  id: json['id'] as String,
+  title: json['title'] as String,
+);
+
+Map<String, dynamic> _$MPConversationHeaderStructToJson(
+  MPConversationHeaderStruct instance,
+) => <String, dynamic>{'id': instance.id, 'title': instance.title};
+
+MPGetConversationListResponse _$MPGetConversationListResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationListResponse(
+  conversations: (json['conversations'] as List<dynamic>)
+      .map(
+        (e) => MPConversationHeaderStruct.fromJson(e as Map<String, dynamic>),
+      )
+      .toList(),
+  hasMore: json['has_more'] as bool,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetConversationListResponseToJson(
+  MPGetConversationListResponse instance,
+) => <String, dynamic>{
+  'conversations': instance.conversations,
+  'has_more': instance.hasMore,
+  'base_resp': instance.baseResp,
+};
+
+MPGetConversationDetailRequest _$MPGetConversationDetailRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationDetailRequest(
+  conversationId: json['conversation_id'] as String,
+  pageSize: (json['page_size'] as num).toInt(),
+  cursor: json['cursor'] as String?,
+);
+
+Map<String, dynamic> _$MPGetConversationDetailRequestToJson(
+  MPGetConversationDetailRequest instance,
+) => <String, dynamic>{
+  'conversation_id': instance.conversationId,
+  'page_size': instance.pageSize,
+  'cursor': instance.cursor,
+};
+
+MPConversationStruct _$MPConversationStructFromJson(
+  Map<String, dynamic> json,
+) => MPConversationStruct(
+  speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
+  content: json['content'] as String,
+  time: json['time'] as String,
+);
+
+Map<String, dynamic> _$MPConversationStructToJson(
+  MPConversationStruct instance,
+) => <String, dynamic>{
+  'speaker': instance.speaker,
+  'content': instance.content,
+  'time': instance.time,
+};
+
+MPGetConversationDetailResponse _$MPGetConversationDetailResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationDetailResponse(
+  title: json['title'] as String,
+  contents: (json['contents'] as List<dynamic>)
+      .map((e) => MPConversationStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  hasMore: json['has_more'] as bool,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetConversationDetailResponseToJson(
+  MPGetConversationDetailResponse instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'contents': instance.contents,
+  'has_more': instance.hasMore,
+  'base_resp': instance.baseResp,
+};
+
+MPTranscriptRequest _$MPTranscriptRequestFromJson(Map<String, dynamic> json) =>
+    MPTranscriptRequest(audioUrl: json['audio_url'] as String);
+
+Map<String, dynamic> _$MPTranscriptRequestToJson(
+  MPTranscriptRequest instance,
+) => <String, dynamic>{'audio_url': instance.audioUrl};
+
+MPTranscriptResponse _$MPTranscriptResponseFromJson(
+  Map<String, dynamic> json,
+) => MPTranscriptResponse(
+  content: json['content'] as String,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPTranscriptResponseToJson(
+  MPTranscriptResponse instance,
+) => <String, dynamic>{
+  'content': instance.content,
+  'base_resp': instance.baseResp,
+};
+
+MPGetChatSuggestionRequest _$MPGetChatSuggestionRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetChatSuggestionRequest();
+
+Map<String, dynamic> _$MPGetChatSuggestionRequestToJson(
+  MPGetChatSuggestionRequest instance,
+) => <String, dynamic>{};
+
+MPGetChatSuggestionResponse _$MPGetChatSuggestionResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetChatSuggestionResponse(
+  suggestion: (json['suggestion'] as Map<String, dynamic>).map(
+    (k, e) => MapEntry(
+      k,
+      (e as Map<String, dynamic>).map(
+        (k, e) =>
+            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
+      ),
+    ),
+  ),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetChatSuggestionResponseToJson(
+  MPGetChatSuggestionResponse instance,
+) => <String, dynamic>{
+  'suggestion': instance.suggestion,
+  'base_resp': instance.baseResp,
+};
+
+MPGetConversationTitleRequest _$MPGetConversationTitleRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationTitleRequest(
+  conversationId: json['conversation_id'] as String,
+);
+
+Map<String, dynamic> _$MPGetConversationTitleRequestToJson(
+  MPGetConversationTitleRequest instance,
+) => <String, dynamic>{'conversation_id': instance.conversationId};
+
+MPGetConversationTitleResponse _$MPGetConversationTitleResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetConversationTitleResponse(
+  title: json['title'] as String,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetConversationTitleResponseToJson(
+  MPGetConversationTitleResponse instance,
+) => <String, dynamic>{'title': instance.title, 'base_resp': instance.baseResp};
