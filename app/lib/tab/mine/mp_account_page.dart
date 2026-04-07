@@ -133,55 +133,45 @@ class _MPAccountView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (loading)
-                        Row(
-                          children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              state.displayName,
+                              style: const TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                color: mainTextColor,
+                              ),
+                            ),
+                          ),
+                          if (loading)
                             SizedBox(
-                              width: 18,
-                              height: 18,
+                              width: 16,
+                              height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 color: blueTextColor,
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Loading profile…',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                                color: secondTextColor.withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        )
-                      else
-                        Text(
-                          state.displayName,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w600,
-                            color: mainTextColor,
-                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        state.displayEmail,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: secondTextColor.withValues(alpha: 0.95),
                         ),
-                      if (!loading) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          state.displayEmail,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: secondTextColor.withValues(alpha: 0.95),
-                          ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Member since January 2024',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: secondTextColor.withValues(alpha: 0.9),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Member since January 2024',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: secondTextColor.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
                 ),

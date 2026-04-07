@@ -13,10 +13,18 @@ import 'mp_account_state.dart';
 
 /// 账户页：拉取用户资料、退出登录。
 class MPAccountCubit extends Cubit<MPAccountState> {
-  MPAccountCubit() : super(MPAccountState.initial());
+  MPAccountCubit() : super(_buildInitialState());
 
   static const String _defaultDisplayName = 'MemoPin User';
   static const String _defaultDisplayEmail = 'user@memopin.com';
+
+  static MPAccountState _buildInitialState() {
+    return MPAccountState(
+      profileStatus: MPAccountProfileStatus.loading,
+      displayName: _fallbackNameStatic(),
+      displayEmail: _fallbackEmailStatic(),
+    );
+  }
 
   /// 进入页面时拉取用户资料。
   Future<void> loadProfile() async {
@@ -79,6 +87,14 @@ class MPAccountCubit extends Cubit<MPAccountState> {
   }
 
   String _fallbackName() {
+    return _fallbackNameStatic();
+  }
+
+  String _fallbackEmail() {
+    return _fallbackEmailStatic();
+  }
+
+  static String _fallbackNameStatic() {
     final String? n = MPUser.instance.name?.trim();
     if (n != null && n.isNotEmpty) {
       return n;
@@ -86,7 +102,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     return _defaultDisplayName;
   }
 
-  String _fallbackEmail() {
+  static String _fallbackEmailStatic() {
     final String? e = MPUser.instance.email?.trim();
     if (e != null && e.isNotEmpty) {
       return e;
