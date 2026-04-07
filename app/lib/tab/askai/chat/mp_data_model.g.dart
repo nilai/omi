@@ -7,10 +7,10 @@ part of 'mp_data_model.dart';
 // **************************************************************************
 
 MPBaseResp _$MPBaseRespFromJson(Map<String, dynamic> json) => MPBaseResp(
-      code: (json['code'] as num).toInt(),
-      message: json['message'] as String,
-      logid: json['logid'] as String,
-    );
+  code: (json['code'] as num).toInt(),
+  message: json['message'] as String,
+  logid: json['logid'] as String,
+);
 
 Map<String, dynamic> _$MPBaseRespToJson(MPBaseResp instance) =>
     <String, dynamic>{
@@ -44,13 +44,13 @@ Map<String, dynamic> _$MPSpeakerStructToJson(MPSpeakerStruct instance) =>
     };
 
 MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      owner: MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
-      priority: json['priority'] as String,
-      deadline: json['deadline'] as String,
-      status: (json['status'] as num?)?.toInt(),
-    );
+  id: json['id'] as String,
+  title: json['title'] as String,
+  owner: MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
+  priority: json['priority'] as String,
+  deadline: json['deadline'] as String,
+  status: (json['status'] as num?)?.toInt(),
+);
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
     <String, dynamic>{
@@ -63,94 +63,86 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
     };
 
 MPSummaryConversationStruct _$MPSummaryConversationStructFromJson(
-        Map<String, dynamic> json) =>
-    MPSummaryConversationStruct(
-      id: json['id'] as String,
-      speaker:
-          MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
-      content: json['content'] as String,
-      time: json['time'] as String,
-    );
+  Map<String, dynamic> json,
+) => MPSummaryConversationStruct(
+  id: json['id'] as String,
+  speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
+  content: json['content'] as String,
+  time: json['time'] as String,
+);
 
 Map<String, dynamic> _$MPSummaryConversationStructToJson(
-        MPSummaryConversationStruct instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'speaker': instance.speaker,
-      'content': instance.content,
-      'time': instance.time,
-    };
+  MPSummaryConversationStruct instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'speaker': instance.speaker,
+  'content': instance.content,
+  'time': instance.time,
+};
 
 MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
-        Map<String, dynamic> json) =>
-    MPSummaryMemoryStruct(
-      participants: (json['participants'] as List<dynamic>)
-          .map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      recordUrl: json['record_url'] as String,
-      recordUri: json['record_uri'] as String?,
-      summary: json['summary'] as String,
-      transcript: (json['transcript'] as List<dynamic>)
-          .map((e) =>
-              MPSummaryConversationStruct.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      todos: (json['todos'] as List<dynamic>)
-          .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      participantsCnt: (json['participants_cnt'] as num).toInt(),
-    );
+  Map<String, dynamic> json,
+) => MPSummaryMemoryStruct(
+  participants: (json['participants'] as List<dynamic>)
+      .map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  recordUrl: json['record_url'] as String,
+  recordUri: json['record_uri'] as String?,
+  summary: json['summary'] as String,
+  transcript: (json['transcript'] as List<dynamic>)
+      .map(
+        (e) => MPSummaryConversationStruct.fromJson(e as Map<String, dynamic>),
+      )
+      .toList(),
+  todos: (json['todos'] as List<dynamic>)
+      .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  participantsCnt: (json['participants_cnt'] as num).toInt(),
+);
 
 Map<String, dynamic> _$MPSummaryMemoryStructToJson(
-        MPSummaryMemoryStruct instance) =>
-    <String, dynamic>{
-      'participants': instance.participants,
-      'participants_cnt': instance.participantsCnt,
-      'record_url': instance.recordUrl,
-      'record_uri': instance.recordUri,
-      'summary': instance.summary,
-      'transcript': instance.transcript,
-      'todos': instance.todos,
-    };
+  MPSummaryMemoryStruct instance,
+) => <String, dynamic>{
+  'participants': instance.participants,
+  'participants_cnt': instance.participantsCnt,
+  'record_url': instance.recordUrl,
+  'record_uri': instance.recordUri,
+  'summary': instance.summary,
+  'transcript': instance.transcript,
+  'todos': instance.todos,
+};
 
 MPOnlyRecordMemoryStruct _$MPOnlyRecordMemoryStructFromJson(
-        Map<String, dynamic> json) =>
-    MPOnlyRecordMemoryStruct(
-      recordFile: json['record_file'] as String,
-      recordUri: json['record_uri'] as String?,
-      source: json['source'] as String?,
-    );
+  Map<String, dynamic> json,
+) => MPOnlyRecordMemoryStruct(
+  recordFile: json['record_file'] as String,
+  recordUri: json['record_uri'] as String?,
+  source: json['source'] as String?,
+);
 
 Map<String, dynamic> _$MPOnlyRecordMemoryStructToJson(
-        MPOnlyRecordMemoryStruct instance) =>
-    <String, dynamic>{
-      'record_file': instance.recordFile,
-      'record_uri': instance.recordUri,
-      'source': instance.source,
-    };
+  MPOnlyRecordMemoryStruct instance,
+) => <String, dynamic>{
+  'record_file': instance.recordFile,
+  'record_uri': instance.recordUri,
+  'source': instance.source,
+};
 
 MPInsightMemoryStruct _$MPInsightMemoryStructFromJson(
-        Map<String, dynamic> json) =>
-    MPInsightMemoryStruct(
-      content: json['content'] as String,
-    );
+  Map<String, dynamic> json,
+) => MPInsightMemoryStruct(content: json['content'] as String);
 
 Map<String, dynamic> _$MPInsightMemoryStructToJson(
-        MPInsightMemoryStruct instance) =>
-    <String, dynamic>{
-      'content': instance.content,
-    };
+  MPInsightMemoryStruct instance,
+) => <String, dynamic>{'content': instance.content};
 
 MPAiExpertMemoryStruct _$MPAiExpertMemoryStructFromJson(
-        Map<String, dynamic> json) =>
-    MPAiExpertMemoryStruct(
-      content: json['content'] as String,
-    );
+  Map<String, dynamic> json,
+) => MPAiExpertMemoryStruct(content: json['content'] as String);
 
 Map<String, dynamic> _$MPAiExpertMemoryStructToJson(
-        MPAiExpertMemoryStruct instance) =>
-    <String, dynamic>{
-      'content': instance.content,
-    };
+  MPAiExpertMemoryStruct instance,
+) => <String, dynamic>{'content': instance.content};
 
 MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
     MPMemoryStruct(
@@ -165,19 +157,23 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
       summaryContent: json['summary_content'] == null
           ? null
           : MPSummaryMemoryStruct.fromJson(
-              json['summary_content'] as Map<String, dynamic>),
+              json['summary_content'] as Map<String, dynamic>,
+            ),
       onlyRecordContent: json['only_record_content'] == null
           ? null
           : MPOnlyRecordMemoryStruct.fromJson(
-              json['only_record_content'] as Map<String, dynamic>),
+              json['only_record_content'] as Map<String, dynamic>,
+            ),
       insightContent: json['insight_content'] == null
           ? null
           : MPInsightMemoryStruct.fromJson(
-              json['insight_content'] as Map<String, dynamic>),
+              json['insight_content'] as Map<String, dynamic>,
+            ),
       aiExpertContent: json['ai_expert_content'] == null
           ? null
           : MPAiExpertMemoryStruct.fromJson(
-              json['ai_expert_content'] as Map<String, dynamic>),
+              json['ai_expert_content'] as Map<String, dynamic>,
+            ),
       customLabels: (json['custom_labels'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
@@ -208,13 +204,13 @@ const _$MPMemoryTypeEnumMap = {
 };
 
 MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      content: json['content'] as String,
-      tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      createAt: (json['create_at'] as num?)?.toInt(),
-      relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
-    );
+  id: json['id'] as String,
+  title: json['title'] as String,
+  content: json['content'] as String,
+  tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  createAt: (json['create_at'] as num?)?.toInt(),
+  relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
+);
 
 Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) =>
     <String, dynamic>{
@@ -291,15 +287,16 @@ Map<String, dynamic> _$MPUserAISettingsToJson(MPUserAISettings instance) =>
     };
 
 MPUserStruct _$MPUserStructFromJson(Map<String, dynamic> json) => MPUserStruct(
-      userName: json['user_name'] as String,
-      email: json['email'] as String,
-      avatar: json['avatar'] as String,
-      phone: json['phone'] as String,
-      birthday: json['brithday'] as String,
-      aiSettings: MPUserAISettings.fromJson(
-          json['ai_settings'] as Map<String, dynamic>),
-      rightNowTranscribe: json['right_now_transcribe'] as bool?,
-    );
+  userName: json['user_name'] as String,
+  email: json['email'] as String,
+  avatar: json['avatar'] as String,
+  phone: json['phone'] as String,
+  birthday: json['brithday'] as String,
+  aiSettings: MPUserAISettings.fromJson(
+    json['ai_settings'] as Map<String, dynamic>,
+  ),
+  rightNowTranscribe: json['right_now_transcribe'] as bool?,
+);
 
 Map<String, dynamic> _$MPUserStructToJson(MPUserStruct instance) =>
     <String, dynamic>{
@@ -313,34 +310,30 @@ Map<String, dynamic> _$MPUserStructToJson(MPUserStruct instance) =>
     };
 
 MPSpeakerWithDetailStruct _$MPSpeakerWithDetailStructFromJson(
-        Map<String, dynamic> json) =>
-    MPSpeakerWithDetailStruct(
-      speaker:
-          MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
-      summary: json['summary'] as String,
-      last_memory_at: (json['last_memory_at'] as num).toInt(),
-      memory_total: (json['memory_total'] as num).toInt(),
-    );
+  Map<String, dynamic> json,
+) => MPSpeakerWithDetailStruct(
+  speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
+  summary: json['summary'] as String,
+  last_memory_at: (json['last_memory_at'] as num).toInt(),
+  memory_total: (json['memory_total'] as num).toInt(),
+);
 
 Map<String, dynamic> _$MPSpeakerWithDetailStructToJson(
-        MPSpeakerWithDetailStruct instance) =>
-    <String, dynamic>{
-      'speaker': instance.speaker,
-      'summary': instance.summary,
-      'last_memory_at': instance.last_memory_at,
-      'memory_total': instance.memory_total,
-    };
+  MPSpeakerWithDetailStruct instance,
+) => <String, dynamic>{
+  'speaker': instance.speaker,
+  'summary': instance.summary,
+  'last_memory_at': instance.last_memory_at,
+  'memory_total': instance.memory_total,
+};
 
 MPExpertMergeUserStruct _$MPExpertMergeUserStructFromJson(
-        Map<String, dynamic> json) =>
-    MPExpertMergeUserStruct(
-      expert: MPExpertStruct.fromJson(json['expert'] as Map<String, dynamic>),
-      isAdd: json['is_add'] as bool,
-    );
+  Map<String, dynamic> json,
+) => MPExpertMergeUserStruct(
+  expert: MPExpertStruct.fromJson(json['expert'] as Map<String, dynamic>),
+  isAdd: json['is_add'] as bool,
+);
 
 Map<String, dynamic> _$MPExpertMergeUserStructToJson(
-        MPExpertMergeUserStruct instance) =>
-    <String, dynamic>{
-      'expert': instance.expert,
-      'is_add': instance.isAdd,
-    };
+  MPExpertMergeUserStruct instance,
+) => <String, dynamic>{'expert': instance.expert, 'is_add': instance.isAdd};

@@ -6,8 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
-import 'package:memo_pin/audio/mp_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:path/path.dart' as p;
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
@@ -200,9 +200,8 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       return null;
     }
 
-    final String? localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(
-      recordFile,
-    );
+    final String? localPath =
+        await MPAudioLocalRecordsUtil.instance.getLocalRecordPath(recordFile);
     if (localPath != null && localPath.isNotEmpty) {
       return localPath;
     }
@@ -254,14 +253,12 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return null;
       }
-      final Directory docs = await getApplicationDocumentsDirectory();
-      final Directory audioDir = Directory('${docs.path}/mp_audio_records');
-      if (!await audioDir.exists()) {
-        await audioDir.create(recursive: true);
-      }
+      final String audioDirPath =
+          await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
       final String sourceForId =
           recordFile.isNotEmpty ? recordFile : downloadUrl;
-      String fileId = MPLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
+      String fileId =
+          MPAudioLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
       if (fileId.isEmpty) {
         fileId = DateTime.now().millisecondsSinceEpoch.toString();
       }
@@ -271,18 +268,23 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (dot > 0 && dot < path.length - 1) {
         ext = path.substring(dot);
       }
-      final String filePath =
-          '${audioDir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileId$ext';
+      final String filePath = p.join(
+        audioDirPath,
+        '${DateTime.now().millisecondsSinceEpoch}_$fileId$ext',
+      );
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes, flush: true);
 
-      await MPLocalRecordsUtil.instance.loadLocalRecords();
-      await MPLocalRecordsUtil.instance.addLocalRecord(
-        filePath,
-        duration: total.inSeconds > 0 ? total.inSeconds : null,
-        source: 'mp',
-        createAt: DateTime.now().millisecondsSinceEpoch,
-        fileId: fileId,
+      await MPAudioLocalRecordsUtil.instance.load();
+      await MPAudioLocalRecordsUtil.instance.add(
+        MPAudioLocalRecord(
+          path: filePath,
+          fileName: fileId,
+          createAt: DateTime.now().millisecondsSinceEpoch,
+          duration: total.inSeconds > 0 ? total.inSeconds : null,
+          source: 'mp',
+          fileId: fileId,
+        ),
       );
       return filePath;
     } catch (_) {

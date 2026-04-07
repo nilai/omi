@@ -86,3 +86,35 @@ Future<MPRenameMemoryResponse?> renameMemory(MPRenameMemoryRequest req) async {
   }
   return null;
 }
+
+// POST /api/v1/memory/create_record
+Future<MPCreateRecordResponse?> createRecord(MPCreateRecordRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/create_record',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('createRecord response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPCreateRecordResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v1/memory/summary_record
+Future<MPSummaryRecordResponse?> summaryRecord(MPSummaryRecordRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/summary_record',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('summaryRecord response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPSummaryRecordResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
