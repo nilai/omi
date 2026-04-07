@@ -49,6 +49,7 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
   }
 
   Future<void> _onTapTopRightAction(BuildContext context) async {
+    context.read<MPAskAICubit>().backToOverview();
     _dismissKeyboard();
     await Navigator.of(context).push(
       PageRouteBuilder<void>(
@@ -77,6 +78,7 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
   Future<void> _onSubmitInput(BuildContext context, MPVoiceTextInputResult result) async {
     final String text = result.text.trim();
     if (text.isEmpty) return;
+    context.read<MPAskAICubit>().backToOverview();
     _dismissKeyboard();
     final MPAskAIState askAIState = context.read<MPAskAICubit>().state;
     final MPAskAIModule? selected = askAIState.selectedModule;
@@ -98,6 +100,7 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     MPAskAIModule module,
     String question,
   ) async {
+    context.read<MPAskAICubit>().backToOverview();
     _dismissKeyboard();
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
