@@ -58,6 +58,10 @@ class _MPVerifyBody extends StatefulWidget {
 class _MPVerifyBodyState extends State<_MPVerifyBody> {
   late final TextEditingController _codeController;
 
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,8 +70,15 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
 
   @override
   void dispose() {
+    _dismissKeyboard();
     _codeController.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    _dismissKeyboard();
+    super.deactivate();
   }
 
   @override
@@ -81,11 +92,14 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
           cubit.setContext(context);
           final String? codeErr = MPVerifyState.normalizeError(state.codeError);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _dismissKeyboard,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
                 Align(
                   alignment: Alignment.centerLeft,
                   child: IconButton(
@@ -252,7 +266,8 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           );
         },

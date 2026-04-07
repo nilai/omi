@@ -43,6 +43,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
 
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,9 +57,16 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
 
   @override
   void dispose() {
+    _dismissKeyboard();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    _dismissKeyboard();
+    super.deactivate();
   }
 
   void _toast(BuildContext context, String message) {
@@ -78,11 +89,14 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
           final String? emailErr = MPLoginState.normalizeError(state.emailError);
           final String? passwordErr = MPLoginState.normalizeError(state.passwordError);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _dismissKeyboard,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
                 const SizedBox(height: 8),
                 Text(
                   state.mode == MPLoginMode.login ? 'Welcome to MemoPin' : 'Create Account',
@@ -243,7 +257,8 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           );
         },

@@ -43,6 +43,10 @@ class _MPForgetBody extends StatefulWidget {
 class _MPForgetBodyState extends State<_MPForgetBody> {
   late final TextEditingController _emailController;
 
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -51,8 +55,15 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
 
   @override
   void dispose() {
+    _dismissKeyboard();
     _emailController.dispose();
     super.dispose();
+  }
+
+  @override
+  void deactivate() {
+    _dismissKeyboard();
+    super.deactivate();
   }
 
   @override
@@ -61,6 +72,7 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
       listenWhen: (previous, current) =>
           previous.isSubmitted != current.isSubmitted && current.isSubmitted,
       listener: (context, state) {
+        _dismissKeyboard();
         Navigator.of(context).push<void>(
           MaterialPageRoute<void>(
             builder: (_) => MPForgetSuccessPage(email: state.email.trim()),
@@ -73,11 +85,14 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
           final String? emailErr = MPForgetState.normalizeError(state.emailError);
           cubit.setContext(context);
           
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
+          return GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _dismissKeyboard,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Material(
@@ -214,7 +229,8 @@ class _MPForgetBodyState extends State<_MPForgetBody> {
                     ),
                   ),
                 ),
-              ],
+                ],
+              ),
             ),
           );
         },
