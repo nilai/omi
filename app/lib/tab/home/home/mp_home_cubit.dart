@@ -129,11 +129,14 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     return MPBluetoothConnectionHelper.tryConnectLastRecordedBleDevice();
   }
 
-  void initData() async {
+  Future<void> initData() async {
     unawaited(connectBluetoothToLastRecordedDevice());
+    await _loadData();
+  }
+
+  Future<void> _loadData() async {
     final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
     if (response != null && response.baseResp.code == 0) {
-        
       final List<MPHomeTodoItem> upNextTodos = <MPHomeTodoItem>[];
       for (final MPTodoStruct e in response.focusItems) {
         String formatDeadlineToTime(int? deadline) {
@@ -227,12 +230,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       //   }
       // }
       final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
-
-      emit(state.copyWith(
-        upNextTodos: upNextTodos,
-        recentMemories: recentMemories,
-        insightOverview: insightOverview,
-      ));
+      if (!isClosed) {
+        emit(state.copyWith(
+          upNextTodos: upNextTodos,
+          recentMemories: recentMemories,
+          insightOverview: insightOverview,
+        ));
+      }
     }
   }
 

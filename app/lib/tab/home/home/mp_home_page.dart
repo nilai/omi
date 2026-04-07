@@ -76,6 +76,11 @@ class _MPHomePageState extends State<MPHomePage> {
     _cubit.clearAudioStatus();
   }
 
+  Future<void> _onRefresh() async {
+    await _cubit.initData();
+    await _refreshBleConnectionState();
+  }
+
   void _openAddOptions() {
     showModalBottomSheet<void>(
       context: context,
@@ -162,15 +167,15 @@ class _MPHomePageState extends State<MPHomePage> {
                         _cubit.clearAudioStatus();
                       },
                     ),
-                    _OptionTile(
-                      icon: Icons.cloud_sync_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)],
-                      ),
-                      title: 'Demo: Sync 3 files',
-                      subtitle: 'Progress & file index like web prototype',
-                      onTap: _simulateSyncThreeFiles,
-                    ),
+                    // _OptionTile(
+                    //   icon: Icons.cloud_sync_outlined,
+                    //   iconGradient: const LinearGradient(
+                    //     colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)],
+                    //   ),
+                    //   title: 'Demo: Sync 3 files',
+                    //   subtitle: 'Progress & file index like web prototype',
+                    //   onTap: _simulateSyncThreeFiles,
+                    // ),
                   ],
                 ),
               ),
@@ -262,34 +267,38 @@ class _MPHomePageState extends State<MPHomePage> {
                   if (state.audioStatus != null)
                     MPHomeAudioStatusBar(status: state.audioStatus!),
                   Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
-                      children: <Widget>[
-                        _TodayFocusCard(
-                          todos: state.upNextTodos,
-                          onViewAll: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()),
-                            );
-                          },
-                          onTodoTap: (MPHomeTodoItem t) =>
-                              MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
-                        ),
-                        const SizedBox(height: 16),
-                        _RecentMemoryCard(
-                          memories: state.recentMemories,
-                          onViewAll: widget.onViewAllMemories,
-                          onMemoryTap: (MPHomeMemoryItem m) =>
-                              MPToastUtils.showFeatureComingSoon(message: 'Memory 详情'),
-                        ),
-                        const SizedBox(height: 16),
-                        _InsightsCard(
-                          insightOverview: state.insightOverview,
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
+                    child: RefreshIndicator(
+                      onRefresh: _onRefresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+                        children: <Widget>[
+                          _TodayFocusCard(
+                            todos: state.upNextTodos,
+                            onViewAll: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()),
+                              );
+                            },
+                            onTodoTap: (MPHomeTodoItem t) =>
+                                MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          _RecentMemoryCard(
+                            memories: state.recentMemories,
+                            onViewAll: widget.onViewAllMemories,
+                            onMemoryTap: (MPHomeMemoryItem m) =>
+                                MPToastUtils.showFeatureComingSoon(message: 'Memory 详情'),
+                          ),
+                          const SizedBox(height: 16),
+                          _InsightsCard(
+                            insightOverview: state.insightOverview,
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
