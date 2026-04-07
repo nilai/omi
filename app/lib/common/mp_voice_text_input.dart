@@ -125,6 +125,13 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     final String t = _controller.text.trim();
     if (t.isEmpty) return;
     widget.onSubmitted?.call(MPVoiceTextInputResult(text: t, fromVoice: false));
+    _controller.clear();
+    widget.onChanged?.call('');
+    if (mounted) {
+      setState(() {});
+    }
+    _focusNode.unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   Widget _buildIconCircle({
