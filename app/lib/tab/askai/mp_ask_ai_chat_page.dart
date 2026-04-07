@@ -65,54 +65,58 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: pageColor,
-      body: SafeArea(
-        child: Column(
-          children: <Widget>[
-            _ChatTopBar(onBack: () => Navigator.of(context).maybePop()),
-            Expanded(
-              child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
-                listener: (BuildContext context, MPAskAIChatState state) {
-                  _tryAutoSendInitialMessage(state);
-                },
-                builder: (BuildContext context, MPAskAIChatState state) {
-                  if (state.phase == MPAskAIChatPhase.loading) {
-                    return const Center(
-                      child: SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    );
-                  }
-                  if (state.phase == MPAskAIChatPhase.error) {
-                    return Center(
-                      child: Text(
-                        state.errorMessage ?? '加载失败',
-                        style: OmiTextStyle.create(
-                          color: secondTextColor,
-                          fontSize: OmiFontSize.t5_14,
-                          fontWeight: OmiFontWeight.regular,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SafeArea(
+          child: Column(
+            children: <Widget>[
+              _ChatTopBar(onBack: () => Navigator.of(context).maybePop()),
+              Expanded(
+                child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
+                  listener: (BuildContext context, MPAskAIChatState state) {
+                    _tryAutoSendInitialMessage(state);
+                  },
+                  builder: (BuildContext context, MPAskAIChatState state) {
+                    if (state.phase == MPAskAIChatPhase.loading) {
+                      return const Center(
+                        child: SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      ),
-                    );
-                  }
-                  return _ChatBody(state: state);
-                },
+                      );
+                    }
+                    if (state.phase == MPAskAIChatPhase.error) {
+                      return Center(
+                        child: Text(
+                          state.errorMessage ?? '加载失败',
+                          style: OmiTextStyle.create(
+                            color: secondTextColor,
+                            fontSize: OmiFontSize.t5_14,
+                            fontWeight: OmiFontWeight.regular,
+                          ),
+                        ),
+                      );
+                    }
+                    return _ChatBody(state: state);
+                  },
+                ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF2F2F2),
-                border: Border(top: BorderSide(color: Color(0xFFE8E8E8))),
+              Container(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF2F2F2),
+                  border: Border(top: BorderSide(color: Color(0xFFE8E8E8))),
+                ),
+                child: MPVoiceTextInput(
+                  hintText: 'Ask AI anything about this memory...',
+                  onSubmitted: (MPVoiceTextInputResult result) =>
+                      _onSubmit(context, result),
+                ),
               ),
-              child: MPVoiceTextInput(
-                hintText: 'Ask AI anything about this memory...',
-                onSubmitted: (MPVoiceTextInputResult result) =>
-                    _onSubmit(context, result),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
