@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../common/mp_navigation_bar.dart';
+import '../../utils/omi_font_utils.dart';
 import 'mp_account_page.dart';
 import '../../utils/mp_toast_utils.dart';
 import '../../utils/omi_color_utils.dart';
@@ -141,8 +142,8 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   'Basic Plan',
                   style: TextStyle(
-                    fontSize: 33 / 2,
-                    fontWeight: FontWeight.w700,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
                 ),
@@ -150,8 +151,8 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   'Upgrade for more features',
                   style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
+                    fontSize: OmiFontSize.t3_12,
+                    fontWeight: OmiFontWeight.regular,
                     color: secondTextColor.withValues(alpha: 0.82),
                   ),
                 ),
@@ -189,15 +190,19 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: TextStyle(fontSize: 13, color: secondTextColor.withValues(alpha: 0.95)),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t3_12,
+                    fontWeight: OmiFontWeight.regular,
+                    color: secondTextColor.withValues(alpha: 0.95),
+                  ),
                 ),
               ],
             ),
