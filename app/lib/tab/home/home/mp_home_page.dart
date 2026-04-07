@@ -55,19 +55,6 @@ class _MPHomePageState extends State<MPHomePage> {
     super.dispose();
   }
 
-  Future<void> _simulateSyncThreeFiles() async {
-    Navigator.pop(context);
-    const int total = 3;
-    for (int file = 1; file <= total; file++) {
-      for (int p = 0; p <= 100; p += 10) {
-        _cubit.showSyncingStatus(currentFile: file, totalFiles: total, progress: p);
-        await Future<void>.delayed(Duration(milliseconds: file == 1 ? 200 : 150));
-      }
-      await Future<void>.delayed(const Duration(milliseconds: 300));
-    }
-    _cubit.clearAudioStatus();
-  }
-
   Future<void> _importFromFileWithProgress() async {
     try {
       _cubit.showImportingStatus(0);
@@ -142,22 +129,38 @@ class _MPHomePageState extends State<MPHomePage> {
                 ),
                 child: Column(
                   children: <Widget>[
-                    Align(
-                      alignment: Alignment.topRight,
-                      child: IconButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        icon: Icon(Icons.close, color: secondTextColor),
-                      ),
-                    ),
-                    _OptionTile(
-                      icon: Icons.mic_none_outlined,
-                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
-                      title: 'Start Recording',
-                      subtitle: 'Record a new audio memory',
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        await showMPAudioRecordPopup(context);
-                      },
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: <Widget>[
+                        _OptionTile(
+                          icon: Icons.mic_none_outlined,
+                          iconGradient: const LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
+                          title: 'Start Recording',
+                          subtitle: 'Record a new audio memory',
+                          onTap: () async {
+                            Navigator.pop(ctx);
+                            await showMPAudioRecordPopup(context);
+                          },
+                        ),
+                        Positioned(
+                          top: 10,
+                          right: 10,
+                          child: Material(
+                            color: const Color(0xFFF2F2F7),
+                            shape: const CircleBorder(),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => Navigator.pop(ctx),
+                              customBorder: const CircleBorder(),
+                              child: const SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: Icon(Icons.close, color: Color(0xFF3C3C43), size: 18),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const Divider(height: 1),
                     _OptionTile(
@@ -180,26 +183,6 @@ class _MPHomePageState extends State<MPHomePage> {
                         Navigator.pop(ctx);
                         _openImportAudioSheet();
                       },
-                    ),
-                    const Divider(height: 1),
-                    _OptionTile(
-                      icon: Icons.mic_none_outlined,
-                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF3B30), Color(0xFFD32F2F)]),
-                      title: 'Demo: MemoPin recording',
-                      subtitle: 'Show recording status bar (3s)',
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        _cubit.showRecordingStatus();
-                        await Future<void>.delayed(const Duration(seconds: 3));
-                        _cubit.clearAudioStatus();
-                      },
-                    ),
-                    _OptionTile(
-                      icon: Icons.cloud_sync_outlined,
-                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)]),
-                      title: 'Demo: Sync 3 files',
-                      subtitle: 'Progress & file index like web prototype',
-                      onTap: _simulateSyncThreeFiles,
                     ),
                   ],
                 ),
