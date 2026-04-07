@@ -155,7 +155,7 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 _AuthTextField(
                   controller: _emailController,
                   hintText: 'your@email.com',
-                  prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor),
+                  prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 24),
                   keyboardType: TextInputType.emailAddress,
                   autocorrect: false,
                   onChanged: cubit.setEmail,
@@ -199,7 +199,7 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                 _AuthTextField(
                   controller: _passwordController,
                   hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline, color: secondTextColor),
+                  prefixIcon: const Icon(Icons.lock_outline, color: secondTextColor, size: 24),
                   obscureText: state.obscurePassword,
                   suffixIcon: IconButton(
                     onPressed: cubit.togglePasswordVisible,
