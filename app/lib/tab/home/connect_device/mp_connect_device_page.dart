@@ -8,6 +8,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../utils/mp_toast_utils.dart';
 import 'mp_connect_device_cubit.dart';
 
 class MPConnectDevicePage extends StatefulWidget {
@@ -55,12 +56,17 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
             actions: <Widget>[
               TextButton.icon(
                 onPressed: _cubit.startScan,
-                icon: const Icon(Icons.sync, size: 18, color: blueTextColor),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.sync, size: 19, color: blueTextColor),
                 label: Text(
                   'Scan',
                   style: OmiTextStyle.create(
                     color: blueTextColor,
-                    fontSize: OmiFontSize.t7_16,
+                    fontSize: OmiFontSize.t6_15,
                     fontWeight: OmiFontWeight.medium,
                   ),
                 ),
@@ -77,7 +83,7 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
             return SafeArea(
               top: false,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
@@ -116,12 +122,12 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
                       const SizedBox(height: 6),
                     ],
                     if (showResultList) ...<Widget>[
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 20),
                       _MPSectionTitle(text: 'CONNECTION TIPS'),
                       const SizedBox(height: 10),
                       const _MPTips(),
                     ],
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 20),
                     const _MPHelpCard(),
                   ],
                 ),
@@ -181,8 +187,8 @@ class _MPScanHeader extends StatelessWidget {
           'Scanning for Devices',
           style: OmiTextStyle.create(
             color: mainTextColor,
-            fontSize: OmiFontSize.t13_22,
-            fontWeight: OmiFontWeight.bold,
+            fontSize: OmiFontSize.t7_16,
+            fontWeight: OmiFontWeight.medium,
           ),
         ),
         const SizedBox(height: 10),
@@ -191,9 +197,9 @@ class _MPScanHeader extends StatelessWidget {
           textAlign: TextAlign.center,
           style: OmiTextStyle.create(
             color: const Color(0xFF9A9AA3),
-            fontSize: OmiFontSize.t7_16,
+            fontSize: OmiFontSize.t4_13,
             fontWeight: OmiFontWeight.regular,
-            height: 1.35,
+            height: 1.42,
           ),
         ),
       ],
@@ -258,10 +264,10 @@ class _MPSectionTitle extends StatelessWidget {
     return Text(
       text,
       style: OmiTextStyle.create(
-        color: const Color(0xFF8E8E93),
-        fontSize: OmiFontSize.t4_13,
-        fontWeight: OmiFontWeight.bold,
-        letterSpacing: 0.5,
+        color: const Color(0xFF9FA1AA),
+        fontSize: OmiFontSize.t5_14,
+        fontWeight: OmiFontWeight.medium,
+        height: 1.42,
       ),
     );
   }
@@ -286,9 +292,9 @@ class _MPDeviceListCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: const <BoxShadow>[
           BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
+            color: Color(0x14000000),
+            blurRadius: 10,
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -296,24 +302,24 @@ class _MPDeviceListCard extends StatelessWidget {
         children: List<Widget>.generate(items.length, (int index) {
           final MPConnectDeviceItem item = items[index];
           return Padding(
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Column(
               children: <Widget>[
                 _MPDeviceCardHeader(item: item),
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 _MPActionButton(
                   text: 'Connect',
                   textColor: Colors.white,
-                  background: const Color(0xFF4C86F8),
-                  borderColor: const Color(0xFF4C86F8),
+                  background: const Color(0xFF3B82F6),
+                  borderColor: const Color(0xFF3B82F6),
                   showProgress: connectingDeviceId == item.id,
                   onPressed: connectingDeviceId != null
                       ? null
                       : () => onConnectTap(item.id),
                 ),
                 if (index < items.length - 1) ...<Widget>[
-                  const SizedBox(height: 10),
-                  const Divider(height: 1, color: Color(0xFFF0F1F5)),
+                  const SizedBox(height: 12),
+                  const Divider(height: 1, color: Color(0xFFF1F2F6)),
                 ],
               ],
             ),
@@ -357,11 +363,11 @@ class _MPDeviceCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       child: Column(
         children: <Widget>[
           _MPDeviceCardHeader(item: item, showConnectedBadge: showConnectedBadge),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _MPActionButton(
             text: actionText,
             textColor: actionTextColor,
@@ -389,25 +395,25 @@ class _MPDeviceCardHeader extends StatelessWidget {
     return Row(
       children: <Widget>[
         SizedBox(
-          width: 50,
-          height: 50,
+          width: 52,
+          height: 52,
           child: Stack(
             clipBehavior: Clip.none,
             children: <Widget>[
               Center(
                 child: Container(
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFEDEEF2),
-                    border: Border.all(color: const Color(0xFFD8DAE2)),
+                    color: const Color(0xFFEDEFF4),
+                    border: Border.all(color: const Color(0xFFD9DCE5)),
                   ),
                   child: ClipOval(
                     child: OmiImageLoader.localImg(
                       'assets/images/3x/mp_connect_device.png',
-                      width: 36,
-                      height: 36,
+                      width: 38,
+                      height: 38,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -418,20 +424,20 @@ class _MPDeviceCardHeader extends StatelessWidget {
                   right: -1,
                   top: -2,
                   child: Container(
-                    width: 18,
-                    height: 18,
+                    width: 16,
+                    height: 16,
                     decoration: const BoxDecoration(
                       color: Color(0xFF34C759),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
-                    child: const Icon(Icons.link, color: Colors.white, size: 11),
+                    child: const Icon(Icons.link, color: Colors.white, size: 10),
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,11 +446,11 @@ class _MPDeviceCardHeader extends StatelessWidget {
                 item.name,
                 style: OmiTextStyle.create(
                   color: mainTextColor,
-                  fontSize: OmiFontSize.t11_20,
-                  fontWeight: OmiFontWeight.bold,
+                  fontSize: OmiFontSize.t7_16,
+                  fontWeight: OmiFontWeight.medium,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 7),
               _MPSignalBar(
                 value: item.isConnected ? item.batteryPercent : 0,
               ),
@@ -462,23 +468,23 @@ class _MPSignalBar extends StatelessWidget {
   final int value;
 
   Color get _barColor {
-    if (value >= 65) return const Color(0xFF4CC35E);
-    if (value >= 25) return const Color(0xFFF0AA0B);
-    return const Color(0xFFE74545);
+    if (value >= 65) return const Color(0xFF52C41A);
+    if (value >= 25) return const Color(0xFFE8A100);
+    return const Color(0xFFE94A45);
   }
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        const Icon(Icons.battery_1_bar_outlined, size: 13, color: Color(0xFF9A9AA2)),
-        const SizedBox(width: 5),
+        const Icon(Icons.battery_0_bar_outlined, size: 13, color: Color(0xFF9FA1AA)),
+        const SizedBox(width: 6),
         Expanded(
           child: ClipRRect(
             borderRadius: BorderRadius.circular(999),
             child: Container(
-              height: 8,
-              color: const Color(0xFFEDEEF2),
+              height: 7,
+              color: const Color(0xFFF1F2F6),
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
                 widthFactor: (value.clamp(0, 100)) / 100,
@@ -492,12 +498,12 @@ class _MPSignalBar extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 9),
         Text(
           '$value%',
           style: OmiTextStyle.create(
-            color: const Color(0xFF9A9AA3),
-            fontSize: OmiFontSize.t6_15,
+            color: const Color(0xFF9FA1AA),
+            fontSize: OmiFontSize.t5_14,
             fontWeight: OmiFontWeight.medium,
           ),
         ),
@@ -532,8 +538,8 @@ class _MPActionButton extends StatelessWidget {
         style: OutlinedButton.styleFrom(
           backgroundColor: background,
           side: BorderSide(color: borderColor),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(11)),
+          padding: const EdgeInsets.symmetric(vertical: 11),
         ),
         child: showProgress
             ? SizedBox(
@@ -548,7 +554,7 @@ class _MPActionButton extends StatelessWidget {
                 text,
                 style: OmiTextStyle.create(
                   color: textColor,
-                  fontSize: OmiFontSize.t9_18,
+                  fontSize: OmiFontSize.t8_17,
                   fontWeight: OmiFontWeight.bold,
                 ),
               ),
@@ -568,28 +574,28 @@ class _MPTips extends StatelessWidget {
       'If you\'re having trouble connecting, try restarting your MemoPin',
     ];
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
+      padding: const EdgeInsets.fromLTRB(2, 0, 2, 0),
       child: Column(
         children: tips
             .map(
               (String tip) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     const Padding(
-                      padding: EdgeInsets.only(top: 7),
-                      child: Icon(Icons.circle, size: 5, color: Color(0xFF7A7A82)),
+                      padding: EdgeInsets.only(top: 8),
+                      child: Icon(Icons.circle, size: 4.5, color: Color(0xFF8C8E97)),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 11),
                     Expanded(
                       child: Text(
                         tip,
                         style: OmiTextStyle.create(
-                          color: const Color(0xFF4D4D57),
-                          fontSize: OmiFontSize.t7_16,
+                          color: const Color(0xFF4E515F),
+                          fontSize: OmiFontSize.t4_13,
                           fontWeight: OmiFontWeight.regular,
-                          height: 1.45,
+                          height: 1.42,
                         ),
                       ),
                     ),
@@ -610,11 +616,11 @@ class _MPHelpCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEFF2FA),
+        color: const Color(0xFFF0F5FF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFDDE3F5)),
+        border: Border.all(color: const Color(0xFFE1E9FA)),
       ),
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         children: <Widget>[
           Row(
@@ -624,7 +630,7 @@ class _MPHelpCard extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF4180F5),
+                  color: Color(0xFF3B82F6),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.phone_iphone_rounded, color: Colors.white, size: 20),
@@ -638,18 +644,18 @@ class _MPHelpCard extends StatelessWidget {
                       'Need Help?',
                       style: OmiTextStyle.create(
                         color: mainTextColor,
-                        fontSize: OmiFontSize.t11_20,
-                        fontWeight: OmiFontWeight.bold,
+                        fontSize: OmiFontSize.t7_16,
+                        fontWeight: OmiFontWeight.medium,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'Visit our support page for detailed setup\ninstructions and troubleshooting guides.',
                       style: OmiTextStyle.create(
-                        color: const Color(0xFF5F6270),
-                        fontSize: OmiFontSize.t6_15,
+                        color: const Color(0xFF666A79),
+                        fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.regular,
-                        height: 1.5,
+                        height: 1.42,
                       ),
                     ),
                   ],
@@ -657,18 +663,27 @@ class _MPHelpCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () {},
-              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 4)),
-              child: Text(
-                'Open Support ->',
-                style: OmiTextStyle.create(
-                  color: blueTextColor,
-                  fontSize: OmiFontSize.t9_18,
-                  fontWeight: OmiFontWeight.bold,
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 50),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () {
+                  MPToastUtils.showFeatureComingSoon(context: context);
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'Open Support ->',
+                  style: OmiTextStyle.create(
+                    color: blueTextColor,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
+                  ),
                 ),
               ),
             ),
