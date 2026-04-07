@@ -624,32 +624,60 @@ class _RecentMemoryCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: <Color>[Color(0xFFFFFCF5), Color(0xFFFFFEF9), Colors.white],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
         boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Recent Memory',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
+                    color: const Color(0xFF1A1A1A),
+                    height: 1.15,
+                  ),
                 ),
               ),
-              TextButton.icon(
+              TextButton(
                 onPressed: onViewAll ?? () => MPToastUtils.showFeatureComingSoon(message: 'Memory 列表'),
-                icon: const Icon(Icons.chevron_right, size: 18, color: Color(0xFFD97706)),
-                label: const Text('View All', style: TextStyle(color: Color(0xFFD97706), fontSize: 14)),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        color: const Color(0xFFD97706),
+                        fontSize: OmiFontSize.t5_14,
+                        fontWeight: OmiFontWeight.medium,
+                        height: 1.1,
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, size: 16, color: Color(0xFFD97706)),
+                  ],
+                ),
               ),
             ],
           ),
-          if (shown.isNotEmpty) const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 10),
           for (final MPHomeMemoryItem m in shown)
             InkWell(
               onTap: () => onMemoryTap(m),
@@ -662,12 +690,21 @@ class _RecentMemoryCard extends StatelessWidget {
                         m.titleOrDate,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 15, color: Color(0xFF3C3C43), height: 1.5),
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t5_14,
+                          color: const Color(0xFF262631),
+                          height: 1.35,
+                          fontWeight: OmiFontWeight.medium,
+                        ),
                       ),
                     ),
                     Text(
                       m.timeLabel,
-                      style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t4_13,
+                        color: const Color(0xFF9A9CAA),
+                        fontWeight: OmiFontWeight.regular,
+                      ),
                     ),
                   ],
                 ),
@@ -694,7 +731,7 @@ class _InsightsCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Ink(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -702,16 +739,20 @@ class _InsightsCard extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: <Color>[Color(0xFFFAF9FC), Color(0xFFFCFBFD), Colors.white],
             ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
             boxShadow: <BoxShadow>[
-              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
             ],
           ),
           child: Stack(
             children: <Widget>[
               Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -736,24 +777,38 @@ class _InsightsCard extends StatelessWidget {
                             children: <Widget>[
                               Text(
                                 insightOverview.title,
-                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                                style: TextStyle(
+                                  fontSize: OmiFontSize.t7_16,
+                                  fontWeight: OmiFontWeight.medium,
+                                  color: const Color(0xFF1A1A1A),
+                                  height: 1.15,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 insightOverview.subTitle,
-                                style: TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+                                style: TextStyle(
+                                  fontSize: OmiFontSize.t4_13,
+                                  color: const Color(0xFF9A9CAA),
+                                  fontWeight: OmiFontWeight.regular,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     Text(
                       insightOverview.content,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 15, height: 1.5, color: Color(0xFF3C3C43)),
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t5_14,
+                        height: 1.35,
+                        color: const Color(0xFF262631),
+                        fontWeight: OmiFontWeight.regular,
+                      ),
                     ),
                   ],
                 ),
