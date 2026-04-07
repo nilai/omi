@@ -92,6 +92,25 @@ class MPBluetoothConnectionHelper {
     }
   }
 
+  /// 当前是否存在可用的 BLE 连接（优先检查应用托管会话，其次检查系统已连接设备）。
+  static Future<bool> hasConnectedBleDevice() async {
+    final BleTransport? bg = _backgroundBleTransport;
+    if (bg != null) {
+      try {
+        if (await bg.isConnected()) {
+          return true;
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
+    try {
+      return FlutterBluePlus.connectedDevices.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// 若有本地记录的 BLE 设备：申请权限、短扫 MemoPin 类广播，再对记录 [remoteId] 建立 [BleTransport] 并 [parkBackgroundBleTransport]。
   ///
   /// 无记录、无权限、蓝牙未开、连接失败时安静返回（不打断首页）。

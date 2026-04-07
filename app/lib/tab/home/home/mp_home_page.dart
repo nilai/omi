@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
 import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
 import 'package:memo_pin/tab/home/insights/mp_home_insights_list_page.dart';
@@ -24,6 +25,25 @@ class MPHomePage extends StatefulWidget {
 
 class _MPHomePageState extends State<MPHomePage> {
   late final MPHomeCubit _cubit = MPHomeCubit()..start();
+  bool _isBleConnected = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshBleConnectionState();
+  }
+
+  Future<void> _refreshBleConnectionState() async {
+    final bool connected = await MPBluetoothConnectionHelper.hasConnectedBleDevice();
+    if (!mounted) {
+      return;
+    }
+    if (_isBleConnected != connected) {
+      setState(() {
+        _isBleConnected = connected;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -185,7 +205,7 @@ class _MPHomePageState extends State<MPHomePage> {
                                 MaterialPageRoute<void>(
                                   builder: (_) => const MPConnectDevicePage(),
                                 ),
-                              );
+                              ).then((_) => _refreshBleConnectionState());
                             },
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
@@ -196,7 +216,9 @@ class _MPHomePageState extends State<MPHomePage> {
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                               ),
-                              child: const _MPHomeNavBullseye(),
+                              child: _isBleConnected
+                                  ? const _MPHomeNavConnectedIcon()
+                                  : const _MPHomeNavBullseye(),
                             ),
                           ),
                         ),
@@ -291,6 +313,59 @@ class _MPHomeNavBullseye extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 首页导航左侧「已连接」图标：浅绿底 + 绿色同心圆点（贴合设计稿）。
+class _MPHomeNavConnectedIcon extends StatelessWidget {
+  const _MPHomeNavConnectedIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFFE9F8EE),
+      ),
+      child: const Center(
+        child: SizedBox(
+          width: 11,
+          height: 11,
+          child: CustomPaint(
+            painter: _MPHomeConnectedDotPainter(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MPHomeConnectedDotPainter extends CustomPainter {
+  const _MPHomeConnectedDotPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Offset c = Offset(size.width / 2, size.height / 2);
+    final double r = (size.width < size.height ? size.width : size.height) / 2;
+
+    final Paint stroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFF53C878)
+      ..isAntiAlias = true;
+    final Paint fill = Paint()
+      ..style = PaintingStyle.fill
+      ..color = const Color(0xFF53C878)
+      ..isAntiAlias = true;
+
+    canvas.drawCircle(c, r * 0.88, stroke);
+    canvas.drawCircle(c, r * 0.55, stroke);
+    canvas.drawCircle(c, r * 0.2, fill);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// 绘制 MemoPin 导航栏小标：外环、内环（描边）与中心实心圆。
