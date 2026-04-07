@@ -10,10 +10,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 
 /// 忘记密码发送成功页。
 class MPForgetSuccessPage extends StatelessWidget {
-  const MPForgetSuccessPage({
-    super.key,
-    required this.email,
-  });
+  const MPForgetSuccessPage({super.key, required this.email});
 
   /// 发送重置链接的目标邮箱。
   final String email;
@@ -67,8 +64,8 @@ class _MPForgetSuccessView extends StatelessWidget {
                           'Reset Link Sent!',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            fontSize: OmiFontSize.t16_25,
-                            fontWeight: OmiFontWeight.bold,
+                            fontSize: OmiFontSize.t11_20,
+                            fontWeight: OmiFontWeight.medium,
                             color: mainTextColor,
                             letterSpacing: -0.8,
                           ),
@@ -81,7 +78,7 @@ class _MPForgetSuccessView extends StatelessWidget {
                             fontSize: OmiFontSize.t6_15,
                             color: secondTextColor,
                             height: 1.4,
-                            fontWeight: OmiFontWeight.medium,
+                            fontWeight: OmiFontWeight.regular,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -91,7 +88,7 @@ class _MPForgetSuccessView extends StatelessWidget {
                           style: TextStyle(
                             fontSize: OmiFontSize.t8_17,
                             color: mainTextColor,
-                            fontWeight: OmiFontWeight.bold,
+                            fontWeight: OmiFontWeight.regular,
                           ),
                         ),
                         const SizedBox(height: 18),
@@ -124,7 +121,7 @@ class _MPForgetSuccessView extends StatelessWidget {
                             child: Text(
                               'Back to Sign In',
                               style: TextStyle(
-                                fontSize: OmiFontSize.t8_17,
+                                fontSize: OmiFontSize.t7_16,
                                 fontWeight: OmiFontWeight.bold,
                                 letterSpacing: -0.4,
                               ),
@@ -142,14 +139,10 @@ class _MPForgetSuccessView extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
               child: _LegalFooter(
                 onTermsTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms),
-                  ),
+                  MaterialPageRoute<void>(builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms)),
                 ),
                 onPrivacyTap: () => Navigator.of(context).push<void>(
-                  MaterialPageRoute<void>(
-                    builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.privacy),
-                  ),
+                  MaterialPageRoute<void>(builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.privacy)),
                 ),
               ),
             ),
@@ -162,10 +155,7 @@ class _MPForgetSuccessView extends StatelessWidget {
 
 /// 带可点击「try again」的说明文案；正确 dispose [TapGestureRecognizer]。
 class _ResendHintParagraph extends StatefulWidget {
-  const _ResendHintParagraph({
-    required this.resendInProgress,
-    required this.onTryAgain,
-  });
+  const _ResendHintParagraph({required this.resendInProgress, required this.onTryAgain});
 
   final bool resendInProgress;
   final VoidCallback onTryAgain;
@@ -204,8 +194,7 @@ class _ResendHintParagraphState extends State<_ResendHintParagraph> {
 
   @override
   Widget build(BuildContext context) {
-    final Color linkColor =
-        widget.resendInProgress ? secondTextColor.withValues(alpha: 0.45) : blueTextColor;
+    final Color linkColor = widget.resendInProgress ? secondTextColor.withValues(alpha: 0.45) : blueTextColor;
 
     return Text.rich(
       TextSpan(
@@ -216,14 +205,14 @@ class _ResendHintParagraphState extends State<_ResendHintParagraph> {
           fontWeight: OmiFontWeight.medium,
         ),
         children: <InlineSpan>[
-          const TextSpan(text: "Didn't receive the email? Check your spam folder or "),
+          TextSpan(
+            text: "Didn't receive the email? Check your spam folder or ",
+            style: TextStyle(fontWeight: OmiFontWeight.regular),
+          ),
           TextSpan(
             text: 'try again',
             recognizer: _tryAgainRecognizer,
-            style: TextStyle(
-              color: linkColor,
-              fontWeight: OmiFontWeight.bold,
-            ),
+            style: TextStyle(color: linkColor, fontWeight: OmiFontWeight.bold),
           ),
         ],
       ),
@@ -241,26 +230,14 @@ class _SuccessIcon extends StatelessWidget {
       width: 84,
       height: 84,
       margin: const EdgeInsets.only(bottom: 2),
-      decoration: const BoxDecoration(
-        color: Color(0xFF2FCB4D),
-        shape: BoxShape.circle,
-      ),
-      child: const Center(
-        child: Icon(
-          Icons.check_rounded,
-          size: 56,
-          color: Colors.white,
-        ),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFF2FCB4D), shape: BoxShape.circle),
+      child: const Center(child: Icon(Icons.check_rounded, size: 56, color: Colors.white)),
     );
   }
 }
 
 class _LegalFooter extends StatefulWidget {
-  const _LegalFooter({
-    required this.onTermsTap,
-    required this.onPrivacyTap,
-  });
+  const _LegalFooter({required this.onTermsTap, required this.onPrivacyTap});
 
   final VoidCallback onTermsTap;
   final VoidCallback onPrivacyTap;
