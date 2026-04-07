@@ -110,9 +110,9 @@ class SharedPreferencesUtil extends MPPreferences {
   DateTime? _tokenExpiresTime;
 
   /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
-  // String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
-  String? get accessToken =>
-      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
+  String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
+  // String? get accessToken =>
+  //     'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
 
   /// 设置访问令牌：写入本地并更新内存；登出时 `value == null` 会同时清除 [uid]。
   /// 传入 [uid] 时一并持久化（仅刷 token 可不传，保留原 uid）。
