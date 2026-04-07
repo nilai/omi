@@ -178,29 +178,103 @@ class _ChatBody extends StatelessWidget {
           if (state.isSending)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: blueTextColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI is responding...',
-                    style: OmiTextStyle.create(
-                      color: secondTextColor,
-                      fontSize: OmiFontSize.t5_14,
-                      fontWeight: OmiFontWeight.regular,
-                    ),
-                  ),
-                ],
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: _MPChatWaitingIndicator(),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _MPChatWaitingIndicator extends StatefulWidget {
+  const _MPChatWaitingIndicator();
+
+  @override
+  State<_MPChatWaitingIndicator> createState() => _MPChatWaitingIndicatorState();
+}
+
+class _MPChatWaitingIndicatorState extends State<_MPChatWaitingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double _opacityForDot(int index) {
+    final double value = (_controller.value + index * 0.2) % 1.0;
+    final double distance = (value - 0.5).abs();
+    return 0.35 + (1 - distance * 2) * 0.55;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Icon(
+            Icons.auto_awesome_outlined,
+            size: 14,
+            color: Color(0xFF87D5A2),
+          ),
+          const SizedBox(width: 8),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (BuildContext context, Widget? child) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List<Widget>.generate(3, (int index) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: index == 2 ? 0 : 6),
+                    child: _MPWaitingDot(opacity: _opacityForDot(index)),
+                  );
+                }),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPWaitingDot extends StatelessWidget {
+  const _MPWaitingDot({required this.opacity});
+
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: 7,
+        height: 7,
+        decoration: const BoxDecoration(
+          color: Color(0xFF8F9098),
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }
