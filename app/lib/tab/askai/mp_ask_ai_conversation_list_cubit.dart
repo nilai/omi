@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
+import 'mp_ask_ai_chat_const.dart';
 
 enum MPAskAIConversationListPhase { loading, loaded, error }
 
@@ -81,9 +82,13 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
         ),
       );
     } catch (e) {
+      _cursor = null;
+      // 首屏加载失败时降级为空列表，确保页面显示空态而不是空白/错误占位。
       emit(
         MPAskAIConversationListState(
-          phase: MPAskAIConversationListPhase.error,
+          phase: MPAskAIConversationListPhase.loaded,
+          items: const <MPAskAIConversationItem>[],
+          hasMore: false,
           errorMessage: e.toString(),
         ),
       );
@@ -135,10 +140,15 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     }
     final List<MPAskAIConversationItem> items = response.conversations
         .map(
-          (MPConversationHeaderStruct e) => MPAskAIConversationItem(
-            id: e.id,
-            title: e.title,
-          ),
+          (MPConversationHeaderStruct e) {
+            final String title = e.title.trim().isEmpty
+                ? MPAskAIChatConst.unknownConversationTitle
+                : e.title.trim();
+            return MPAskAIConversationItem(
+              id: e.id,
+              title: title,
+            );
+          },
         )
         .toList(growable: false);
     final String? nextCursor = items.isEmpty ? null : items.last.id;

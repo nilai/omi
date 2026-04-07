@@ -215,6 +215,31 @@ class _MPAskAIConversationListViewState
           ),
         );
       case MPAskAIConversationListPhase.loaded:
+        if (state.items.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: () => context.read<MPAskAIConversationListCubit>().refresh(),
+            child: ListView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+              children: <Widget>[
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: Center(
+                    child: Text(
+                      'No conversations yet',
+                      style: OmiTextStyle.create(
+                        color: secondTextColor,
+                        fontSize: OmiFontSize.t4_13,
+                        fontWeight: OmiFontWeight.regular,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
         return RefreshIndicator(
           onRefresh: () => context.read<MPAskAIConversationListCubit>().refresh(),
           child: ListView.builder(
