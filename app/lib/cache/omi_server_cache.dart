@@ -17,7 +17,7 @@ class OmiCacheKeys {
   static const String memoryFirstPage = 'mp_srv_memory_first_page';
 
   /// 首页点击进入的详情缓存键前缀（完整 key = 前缀 + id）
-  static const String _homeDetailPrefix = 'mp_srv_home_detail:';
+  static const String _homeDetailPrefix = 'mp_srv_home_detail';
 
   /// 首页详情缓存键（按 [id]）
   static String homeDetail(String id) => '$_homeDetailPrefix$id';

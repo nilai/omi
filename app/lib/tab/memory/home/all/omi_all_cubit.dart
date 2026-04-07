@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
@@ -62,7 +63,13 @@ typedef _CursorFetchResult = ({List<MPMemoryEntry> items, bool hasMore});
 
 /// Memory 页逻辑：刷新第一页 [load]、上拉更多 [loadMore]，均使用 **cursor** 而非 page
 class OmiAllCubit extends Cubit<OmiAllState> {
-  OmiAllCubit() : super(const OmiAllState(phase: OmiAllPhase.loading));
+  OmiAllCubit() : super(const OmiAllState(phase: OmiAllPhase.loading)) {
+    _recordCreatedSub = MPMemoryNotification.listenMemoryRecordCreated((_) {
+      load();
+    });
+  }
+
+  StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
 
   /// 下一页请求的游标；首屏为空字符串，首屏成功后为当前列表最后一条的 [MPMemoryEntry.id]
   String _cursor = '';
@@ -261,6 +268,12 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     final List<MPMemoryEntry> items =
         resp.memorys.map(_mpMemoryStructToEntry).toList(growable: false);
     return (items: items, hasMore: resp.hasMore);
+  }
+
+  @override
+  Future<void> close() {
+    _recordCreatedSub?.cancel();
+    return super.close();
   }
 }
 

@@ -129,3 +129,67 @@ MPRenameMemoryResponse _$MPRenameMemoryResponseFromJson(
 Map<String, dynamic> _$MPRenameMemoryResponseToJson(
   MPRenameMemoryResponse instance,
 ) => <String, dynamic>{'base_resp': instance.baseResp};
+
+MPCreateRecordRequest _$MPCreateRecordRequestFromJson(
+  Map<String, dynamic> json,
+) => MPCreateRecordRequest(
+  recordFile: json['record_file'] as String,
+  createAt: (json['create_at'] as num).toInt(),
+  duration: (json['duration'] as num).toInt(),
+  source: json['source'] as String?,
+);
+
+Map<String, dynamic> _$MPCreateRecordRequestToJson(
+  MPCreateRecordRequest instance,
+) => <String, dynamic>{
+  'record_file': instance.recordFile,
+  'create_at': instance.createAt,
+  'duration': instance.duration,
+  'source': instance.source,
+};
+
+MPCreateRecordResponse _$MPCreateRecordResponseFromJson(
+  Map<String, dynamic> json,
+) => MPCreateRecordResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+  memoryId: json['memory_id'] as String,
+  recordUrl: json['record_url'] as String,
+);
+
+Map<String, dynamic> _$MPCreateRecordResponseToJson(
+  MPCreateRecordResponse instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'record_url': instance.recordUrl,
+  'base_resp': instance.baseResp,
+};
+
+MPSummaryRecordRequest _$MPSummaryRecordRequestFromJson(
+  Map<String, dynamic> json,
+) => MPSummaryRecordRequest(
+  memoryId: json['memory_id'] as String,
+  recordUrl: json['record_url'] as String,
+  recordMemoAt: (json['record_memo_at'] as num).toInt(),
+  templateId: json['template_id'] as String?,
+  isRegen: json['is_regen'] as bool? ?? false,
+);
+
+Map<String, dynamic> _$MPSummaryRecordRequestToJson(
+  MPSummaryRecordRequest instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'record_url': instance.recordUrl,
+  'record_memo_at': instance.recordMemoAt,
+  'template_id': instance.templateId,
+  'is_regen': instance.isRegen,
+};
+
+MPSummaryRecordResponse _$MPSummaryRecordResponseFromJson(
+  Map<String, dynamic> json,
+) => MPSummaryRecordResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPSummaryRecordResponseToJson(
+  MPSummaryRecordResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};

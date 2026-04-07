@@ -188,3 +188,101 @@ class MPRenameMemoryResponse {
 
   Map<String, dynamic> toJson() => _$MPRenameMemoryResponseToJson(this);
 }
+
+
+// Create Record Request
+@JsonSerializable()
+class MPCreateRecordRequest {
+  @JsonKey(name: 'record_file')
+  final String recordFile;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'duration')
+  final int duration; // 单位是s
+
+  @JsonKey(name: 'source')
+  final String? source;
+
+  MPCreateRecordRequest({
+    required this.recordFile,
+    required this.createAt,
+    required this.duration,
+    this.source,
+  });
+
+  factory MPCreateRecordRequest.fromJson(Map<String, dynamic> json) => _$MPCreateRecordRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateRecordRequestToJson(this);
+}
+
+
+// Create Record Response
+@JsonSerializable()
+class MPCreateRecordResponse {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'record_url')
+  final String recordUrl;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPCreateRecordResponse({
+    required this.baseResp,
+    required this.memoryId,
+    required this.recordUrl,
+  });
+
+  factory MPCreateRecordResponse.fromJson(Map<String, dynamic> json) => _$MPCreateRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPCreateRecordResponseToJson(this);
+}
+
+// Summary Record Request
+@JsonSerializable()
+class MPSummaryRecordRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'record_url')
+  final String recordUrl;
+
+  @JsonKey(name: 'record_memo_at')
+  final int recordMemoAt; // 针对开启录音情况下的memo创建，这里给到memo发生时录音具体时间点，相对时间，即录音的第几秒
+
+  @JsonKey(name: 'template_id')
+  final String? templateId; // 模板ID
+
+  @JsonKey(name: 'is_regen')
+  final bool isRegen;
+
+  MPSummaryRecordRequest({
+    required this.memoryId,
+    required this.recordUrl,
+    required this.recordMemoAt,
+    this.templateId,
+    this.isRegen = false,
+  });
+
+  factory MPSummaryRecordRequest.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSummaryRecordRequestToJson(this);
+}
+
+// Summary Record Response
+@JsonSerializable()
+class MPSummaryRecordResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPSummaryRecordResponse({
+    required this.baseResp,
+  });
+
+  factory MPSummaryRecordResponse.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPSummaryRecordResponseToJson(this);
+}

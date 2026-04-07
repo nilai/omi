@@ -4,8 +4,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:memo_pin/http/api/mp_speaker.dart';
-import 'package:memo_pin/http/schema/mp_speaker.dart';
+import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -327,35 +327,47 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
 
-    final String audioUrl = Uri.file(File(outPath).absolute.path).toString();
-    final MPAddSpeakerResponse? resp = await addSpeaker(
-      MPAddSpeakerRequest(
-        audioUrl: audioUrl,
-        name: '录音',
-        avatar: '',
-        myselfVoice: true,
-        duration: total.inSeconds > 0 ? total.inSeconds : null,
-      ),
+    final File tempFile = File(outPath);
+    if (!await tempFile.exists()) {
+      if (mounted) {
+        MPToastUtils.showMessage('录音文件不存在');
+        setState(() => _busy = false);
+      }
+      return;
+    }
+
+    final String? savedPath =
+        await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
+    if (savedPath == null || savedPath.isEmpty) {
+      if (mounted) {
+        MPToastUtils.showMessage('保存到本地失败，请重试');
+        setState(() => _busy = false);
+      }
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    final File localFile = File(savedPath);
+    final int durationSec = total.inSeconds <= 0 ? 1 : total.inSeconds;
+    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await MPAudioUploadManager.instance.uploadLocalRecord(
+      localFile: localFile,
+      durationSec: durationSec,
+      createAt: createAt,
+      rightNowTranscribe: true,
+      source: 'mp',
     );
 
     if (!mounted) {
       return;
     }
 
-    if (resp == null || resp.baseResp.code != 0) {
-      MPToastUtils.showMessage(
-        resp?.baseResp.message ?? '提交声纹失败，请稍后重试',
-      );
-      setState(() {
-        _recordPath = outPath;
-        _busy = false;
-      });
-      return;
-    }
-
     _recordPath = null;
     widget.rootNavigator.pop(
-      MPAudioRecordResult(filePath: outPath, duration: total),
+      MPAudioRecordResult(filePath: savedPath, duration: total),
     );
   }
 

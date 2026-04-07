@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -102,10 +103,14 @@ class MPHomeState {
 /// 首页：Today's Focus / Recent Memory / Insights / 顶部状态条（mock + 定时刷新）
 class MPHomeCubit extends Cubit<MPHomeState> {
   MPHomeCubit() : super(_initialState()) {
+    _recordCreatedSub =
+        MPMemoryNotification.listenMemoryRecordCreated(_onMemoryRecordCreated);
     initData();
   }
 
   Timer? _insightsTimer;
+  StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
+  Timer? _syncCompletedClearTimer;
 
   static MPHomeState _initialState() {
     return MPHomeState(
@@ -181,8 +186,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     );
   }
 
-  /// 演示：文件同步（进度与 current/total 可变）
-  void showSyncingStatus({required int currentFile, required int totalFiles, required int progress}) {
+  /// 文件同步（进度与 current/total 可变）。
+  void showSyncingStatus({
+    required int currentFile,
+    required int totalFiles,
+    required int progress,
+  }) {
+    _syncCompletedClearTimer?.cancel();
     emit(
       state.copyWith(
         audioStatus: MPHomeAudioStatus(
@@ -193,6 +203,34 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         ),
       ),
     );
+  }
+
+  /// [MPMemoryNotification]：本地录音上传并创建 record 成功后更新顶部同步条。
+  void _onMemoryRecordCreated(MPMemoryRecordCreatedPayload payload) {
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+      return;
+    }
+    _syncCompletedClearTimer?.cancel();
+    final int total = payload.batchTotal < 1 ? 1 : payload.batchTotal;
+    final int index = payload.batchIndex.clamp(1, total);
+    final int progress = ((index * 100) / total).round().clamp(0, 100);
+    emit(
+      state.copyWith(
+        audioStatus: MPHomeAudioStatus(
+          type: MPHomeAudioStatusType.syncing,
+          progress: progress,
+          currentFile: index,
+          totalFiles: total,
+        ),
+      ),
+    );
+    if (index >= total) {
+      _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
+        if (!isClosed) {
+          emit(state.copyWith(clearAudioStatus: true));
+        }
+      });
+    }
   }
 
   /// 演示：导入音频
@@ -214,6 +252,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   @override
   Future<void> close() {
     _insightsTimer?.cancel();
+    _syncCompletedClearTimer?.cancel();
+    _recordCreatedSub?.cancel();
     return super.close();
   }
 }

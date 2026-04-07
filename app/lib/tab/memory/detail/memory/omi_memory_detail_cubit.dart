@@ -5,13 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
-import 'package:memo_pin/audio/mp_local_records_util.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_insight_card.dart';
@@ -185,7 +185,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (recordFile.isEmpty) {
       return null;
     }
-    final String? localPath = await MPLocalRecordsUtil.instance.getLocalRecordPath(
+    final String? localPath = await MPAudioLocalRecordsUtil.instance.getLocalRecordPath(
       recordFile,
     );
     if (localPath != null && localPath.isNotEmpty) {
@@ -237,14 +237,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return null;
       }
-      final Directory docs = await getApplicationDocumentsDirectory();
-      final Directory audioDir = Directory('${docs.path}/mp_audio_records');
-      if (!await audioDir.exists()) {
-        await audioDir.create(recursive: true);
-      }
+      final String audioDirPath =
+          await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
       final String sourceForId =
           recordFile.isNotEmpty ? recordFile : downloadUrl;
-      String fileId = MPLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
+      String fileId =
+          MPAudioLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
       if (fileId.isEmpty) {
         fileId = DateTime.now().millisecondsSinceEpoch.toString();
       }
@@ -254,18 +252,23 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (dot > 0 && dot < path.length - 1) {
         ext = path.substring(dot);
       }
-      final String filePath =
-          '${audioDir.path}/${DateTime.now().millisecondsSinceEpoch}_$fileId$ext';
+      final String filePath = p.join(
+        audioDirPath,
+        '${DateTime.now().millisecondsSinceEpoch}_$fileId$ext',
+      );
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes, flush: true);
 
-      await MPLocalRecordsUtil.instance.loadLocalRecords();
-      await MPLocalRecordsUtil.instance.addLocalRecord(
-        filePath,
-        duration: _parseDurationSeconds(durationLabel),
-        source: 'mp',
-        createAt: DateTime.now().millisecondsSinceEpoch,
-        fileId: fileId,
+      await MPAudioLocalRecordsUtil.instance.load();
+      await MPAudioLocalRecordsUtil.instance.add(
+        MPAudioLocalRecord(
+          path: filePath,
+          fileName: fileId,
+          createAt: DateTime.now().millisecondsSinceEpoch,
+          duration: _parseDurationSeconds(durationLabel),
+          source: 'mp',
+          fileId: fileId,
+        ),
       );
       return filePath;
     } catch (_) {
@@ -440,23 +443,46 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
 
     final MPMemoryDetailCardData d = cur.data!;
+    final MPMemoryCreatedTodoLineData newItem = MPMemoryCreatedTodoLineData(
+      id: '',
+      title: title,
+      priority: MPMemoryTodoPriorityKind.medium,
+      deadlineLabel: null,
+    );
+
     final List<MPMemoryFeedBlock> nextBlocks =
-        List<MPMemoryFeedBlock>.from(d.feedBlocks)
-          ..add(
-            MPMemoryFeedTodosCreatedBlock(
-              MPMemoryTodosCreatedCardData(
-                headerTimeLabel: 'Just now',
-                items: <MPMemoryCreatedTodoLineData>[
-                  MPMemoryCreatedTodoLineData(
-                    id: '',
-                    title: title,
-                    priority: MPMemoryTodoPriorityKind.medium,
-                    deadlineLabel: null,
-                  ),
-                ],
-              ),
-            ),
-          );
+        List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    int existingIndex = -1;
+    for (int i = nextBlocks.length - 1; i >= 0; i--) {
+      if (nextBlocks[i] is MPMemoryFeedTodosCreatedBlock) {
+        existingIndex = i;
+        break;
+      }
+    }
+    if (existingIndex >= 0) {
+      final MPMemoryFeedTodosCreatedBlock block =
+          nextBlocks[existingIndex] as MPMemoryFeedTodosCreatedBlock;
+      final MPMemoryTodosCreatedCardData old = block.data;
+      final List<MPMemoryCreatedTodoLineData> items =
+          List<MPMemoryCreatedTodoLineData>.from(old.items)..add(newItem);
+      nextBlocks[existingIndex] = MPMemoryFeedTodosCreatedBlock(
+        MPMemoryTodosCreatedCardData(
+          headerTimeLabel: old.headerTimeLabel.isNotEmpty
+              ? old.headerTimeLabel
+              : 'Just now',
+          items: items,
+        ),
+      );
+    } else {
+      nextBlocks.add(
+        MPMemoryFeedTodosCreatedBlock(
+          MPMemoryTodosCreatedCardData(
+            headerTimeLabel: 'Just now',
+            items: <MPMemoryCreatedTodoLineData>[newItem],
+          ),
+        ),
+      );
+    }
 
     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
       title: d.title,
@@ -477,7 +503,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(cur.copyWith(data: nextData));
   }
 
-  /// 快捷输入新增 Memo：在 [MPMemoryDetailCardData.feedBlocks] 末尾追加一条 MY MEMOS。
+  /// 快捷输入新增 Memo：合并进同一「MY MEMOS」块（与 [addTodoFromQuickInput] 行为一致）。
   void addMemoFromQuickInput(String text) {
     final String line = text.trim();
     if (line.isEmpty) return;
@@ -485,21 +511,45 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
 
     final MPMemoryDetailCardData d = cur.data!;
+    final MPMemoryMyMemoLine newLine = MPMemoryMyMemoLine(
+      text: line,
+      type: MPMemoType.manualMemo,
+    );
+
     final List<MPMemoryFeedBlock> nextBlocks =
-        List<MPMemoryFeedBlock>.from(d.feedBlocks)
-          ..add(
-            MPMemoryFeedMyMemoBlock(
-              MPMemoryMyMemosCardData(
-                headerTimeLabel: 'Just now',
-                lines: <MPMemoryMyMemoLine>[
-                  MPMemoryMyMemoLine(
-                    text: line,
-                    type: MPMemoType.manualMemo,
-                  ),
-                ],
-              ),
-            ),
-          );
+        List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    int existingIndex = -1;
+    for (int i = nextBlocks.length - 1; i >= 0; i--) {
+      if (nextBlocks[i] is MPMemoryFeedMyMemoBlock) {
+        existingIndex = i;
+        break;
+      }
+    }
+    if (existingIndex >= 0) {
+      final MPMemoryFeedMyMemoBlock block =
+          nextBlocks[existingIndex] as MPMemoryFeedMyMemoBlock;
+      final MPMemoryMyMemosCardData old = block.data;
+      final List<MPMemoryMyMemoLine> lines =
+          List<MPMemoryMyMemoLine>.from(old.lines)..add(newLine);
+      nextBlocks[existingIndex] = MPMemoryFeedMyMemoBlock(
+        MPMemoryMyMemosCardData(
+          headerTimeLabel: old.headerTimeLabel.isNotEmpty
+              ? old.headerTimeLabel
+              : 'Just now',
+          sourceLine: old.sourceLine,
+          lines: lines,
+        ),
+      );
+    } else {
+      nextBlocks.add(
+        MPMemoryFeedMyMemoBlock(
+          MPMemoryMyMemosCardData(
+            headerTimeLabel: 'Just now',
+            lines: <MPMemoryMyMemoLine>[newLine],
+          ),
+        ),
+      );
+    }
 
     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
       title: d.title,
