@@ -215,46 +215,49 @@ class _MPAskAIConversationListViewState
           ),
         );
       case MPAskAIConversationListPhase.loaded:
-        return ListView.builder(
-          controller: _scrollController,
-          itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-          itemBuilder: (BuildContext context, int index) {
-            if (index >= state.items.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Center(
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+        return RefreshIndicator(
+          onRefresh: () => context.read<MPAskAIConversationListCubit>().refresh(),
+          child: ListView.builder(
+            controller: _scrollController,
+            itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+            itemBuilder: (BuildContext context, int index) {
+              if (index >= state.items.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                   ),
-                ),
-              );
-            }
-            final MPAskAIConversationItem item = state.items[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () => _onTapConversationItem(item),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      item.title,
-                      style: OmiTextStyle.create(
-                        color: mainTextColor,
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.medium,
+                );
+              }
+              final MPAskAIConversationItem item = state.items[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => _onTapConversationItem(item),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Text(
+                        item.title,
+                        style: OmiTextStyle.create(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.medium,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
     }
   }

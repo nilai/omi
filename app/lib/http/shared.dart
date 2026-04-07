@@ -69,9 +69,7 @@ class ApiTools {
   }
 
   /// 获取访问令牌
-  // static String? get accessToken => SharedPreferencesUtil().accessToken;
-  
-  static String? get accessToken => 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
+  static String? get accessToken => SharedPreferencesUtil().accessToken;
   /// 判断是否有访问令牌
   static bool hasAccessToken() {
     return accessToken != null && accessToken!.isNotEmpty;
@@ -101,7 +99,7 @@ Future<String> getAuthHeader() async {
   //         expiry.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0)) ||
   //         (expiry.isBefore(DateTime.now().add(const Duration(minutes: 5))) && expiry.isAfter(DateTime.now())));
 
-  if (!ApiTools.hasAccessToken() || !ApiTools.tokenIsExpired()) {
+  if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
     // TODO: refersh token
     // SharedPreferencesUtil().authToken = await AuthService.instance.getIdToken() ?? '';
   }
@@ -113,7 +111,40 @@ Future<String> getAuthHeader() async {
     //   throw Exception('No auth token found');
     // }
   }
-  return 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
+  final String? accessToken = ApiTools.accessToken;
+  if (accessToken == null || accessToken.isEmpty) {
+    return '';
+  }
+  return 'Bearer $accessToken';
+}
+
+String? _extractUserIdFromJwt(String? accessToken) {
+  if (accessToken == null || accessToken.isEmpty) {
+    return null;
+  }
+  final List<String> parts = accessToken.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+  try {
+    String normalized = parts[1].replaceAll('-', '+').replaceAll('_', '/');
+    while (normalized.length % 4 != 0) {
+      normalized += '=';
+    }
+    final String payload = utf8.decode(base64.decode(normalized));
+    final Map<String, dynamic> map = jsonDecode(payload) as Map<String, dynamic>;
+    final Object? sub = map['sub'];
+    if (sub == null) {
+      return null;
+    }
+    final String uid = sub.toString().trim();
+    if (uid.isEmpty) {
+      return null;
+    }
+    return uid;
+  } catch (_) {
+    return null;
+  }
 }
 
 /// Builds common headers for API and WebSocket requests
@@ -136,7 +167,14 @@ Future<Map<String, String>> buildHeaders({
   };
 
   if (requireAuthCheck) {
-    headers['Authorization'] = await getAuthHeader();
+    final String authHeader = await getAuthHeader();
+    if (authHeader.isNotEmpty) {
+      headers['Authorization'] = authHeader;
+    }
+    final String? userId = _extractUserIdFromJwt(ApiTools.accessToken);
+    if (userId != null && userId.isNotEmpty) {
+      headers['user_id'] = userId;
+    }
   }
 
   return headers;
@@ -338,15 +376,17 @@ Stream<String> makeStreamingApiCall({
     debugPrint('🌊 STREAMING REQUEST');
     debugPrint('Method: $method');
     debugPrint('URL: $url');
-    debugPrint('Headers: ${_sanitizeHeaders(headers)}');
+    final builtHeaders = await buildHeaders(
+      requireAuthCheck: _isRequiredAuthCheck(url),
+      fromHeaders: headers,
+    );
+    debugPrint('Headers: ${_sanitizeHeaders(builtHeaders)}');
     if (body.isNotEmpty) {
       debugPrint('Body: $body');
     }
     debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     var request = http.Request(method, Uri.parse(url));
-
-    final builtHeaders = await buildHeaders(requireAuthCheck: _isRequiredAuthCheck(url), fromHeaders: headers);
     request.headers.addAll(builtHeaders);
 
     if (body.isNotEmpty) {

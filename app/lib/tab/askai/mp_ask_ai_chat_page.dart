@@ -175,6 +175,31 @@ class _ChatBody extends StatelessWidget {
             _MessageList(messages: state.messages)
           else
             _SuggestedQuestions(questions: state.suggestedQuestions),
+          if (state.isSending)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Row(
+                children: <Widget>[
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: blueTextColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'AI is responding...',
+                    style: OmiTextStyle.create(
+                      color: secondTextColor,
+                      fontSize: OmiFontSize.t5_14,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

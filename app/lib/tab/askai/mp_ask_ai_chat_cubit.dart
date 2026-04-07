@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../http/api/mp_chat.dart';
+import '../../http/schema/mp_chat.dart';
 
 enum MPAskAIChatPhase { loading, loaded, error }
 
@@ -22,15 +24,19 @@ class MPAskAIChatState {
   const MPAskAIChatState({
     required this.phase,
     required this.aboutText,
+    this.conversationId,
     this.messages = const <MPAskAIChatMessage>[],
     this.suggestedQuestions = const <String>[],
+    this.isSending = false,
     this.errorMessage,
   });
 
   final MPAskAIChatPhase phase;
   final String aboutText;
+  final String? conversationId;
   final List<MPAskAIChatMessage> messages;
   final List<String> suggestedQuestions;
+  final bool isSending;
   final String? errorMessage;
 
   bool get hasMessages => messages.isNotEmpty;
@@ -38,15 +44,19 @@ class MPAskAIChatState {
   MPAskAIChatState copyWith({
     MPAskAIChatPhase? phase,
     String? aboutText,
+    String? conversationId,
     List<MPAskAIChatMessage>? messages,
     List<String>? suggestedQuestions,
+    bool? isSending,
     String? errorMessage,
   }) {
     return MPAskAIChatState(
       phase: phase ?? this.phase,
       aboutText: aboutText ?? this.aboutText,
+      conversationId: conversationId ?? this.conversationId,
       messages: messages ?? this.messages,
       suggestedQuestions: suggestedQuestions ?? this.suggestedQuestions,
+      isSending: isSending ?? this.isSending,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -61,6 +71,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
          MPAskAIChatState(
            phase: MPAskAIChatPhase.loading,
            aboutText: aboutText,
+           conversationId: conversationId,
            suggestedQuestions: suggestedQuestions,
          ),
        );
@@ -74,19 +85,19 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       state.copyWith(
         phase: MPAskAIChatPhase.loading,
         aboutText: aboutText,
+        conversationId: conversationId,
         suggestedQuestions: suggestedQuestions,
       ),
     );
     try {
-      final List<MPAskAIChatMessage> messages = await _fetchMessagesFromServer(
-        conversationId: conversationId,
-      );
+      final List<MPAskAIChatMessage> messages = await _fetchMessagesFromServer();
+      final List<String> questions = await _fetchSuggestionQuestions();
       emit(
         state.copyWith(
           phase: MPAskAIChatPhase.loaded,
           messages: messages,
           aboutText: aboutText,
-          suggestedQuestions: suggestedQuestions,
+          suggestedQuestions: questions,
         ),
       );
     } catch (e) {
@@ -102,10 +113,10 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
   Future<void> sendMessage(String text) async {
     final String message = text.trim();
     if (message.isEmpty) return;
-    if (state.phase != MPAskAIChatPhase.loaded) return;
+    if (state.phase != MPAskAIChatPhase.loaded || state.isSending) return;
 
     final List<MPAskAIChatMessage> current = state.messages;
-    final List<MPAskAIChatMessage> next = <MPAskAIChatMessage>[
+    List<MPAskAIChatMessage> next = <MPAskAIChatMessage>[
       ...current,
       MPAskAIChatMessage(
         id: 'u_${DateTime.now().microsecondsSinceEpoch}',
@@ -113,40 +124,120 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         content: message,
       ),
     ];
-    emit(state.copyWith(messages: next));
+    emit(state.copyWith(messages: next, isSending: true));
 
-    final MPAskAIChatMessage aiReply = await _fetchAIReplyFromServer(message);
-    emit(state.copyWith(messages: <MPAskAIChatMessage>[...next, aiReply]));
+    String? activeConversationId = state.conversationId;
+    if (activeConversationId == null || activeConversationId.isEmpty) {
+      final MPCreateConversationResponse? created =
+          await createConversation(
+        MPCreateConversationRequest(
+          title: null,
+          expertId: '',
+          memoryId: '',
+          templateId: '',
+          speakerId: '',
+        ),
+      );
+      if (created == null) {
+        emit(state.copyWith(isSending: false));
+        return;
+      }
+      if (created.baseResp.code != 0) {
+        emit(
+          state.copyWith(
+            isSending: false,
+            errorMessage: created.baseResp.message,
+          ),
+        );
+        return;
+      }
+      activeConversationId = created.conversationId;
+      if (created.greet.trim().isNotEmpty) {
+        next = <MPAskAIChatMessage>[
+          ...next,
+          MPAskAIChatMessage(
+            id: 'a_${DateTime.now().microsecondsSinceEpoch}',
+            role: MPAskAIMessageRole.ai,
+            content: created.greet.trim(),
+          ),
+        ];
+      }
+      emit(
+        state.copyWith(
+          conversationId: activeConversationId,
+          messages: next,
+        ),
+      );
+    }
+
+    String aiText = '';
+    try {
+      final Stream<String> stream = chat(
+        MPChatRequest(
+          message: message,
+          conversationId: activeConversationId,
+        ),
+      );
+      await for (final String chunk in stream) {
+        aiText += chunk;
+        final List<MPAskAIChatMessage> merged = <MPAskAIChatMessage>[
+          ...next,
+          MPAskAIChatMessage(
+            id: 'a_${DateTime.now().microsecondsSinceEpoch}',
+            role: MPAskAIMessageRole.ai,
+            content: aiText,
+          ),
+        ];
+        emit(state.copyWith(messages: merged, conversationId: activeConversationId));
+      }
+    } catch (e) {
+      emit(state.copyWith(errorMessage: e.toString()));
+    } finally {
+      emit(state.copyWith(isSending: false));
+    }
   }
 
-  Future<List<MPAskAIChatMessage>> _fetchMessagesFromServer({
-    required String? conversationId,
-  }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 280));
-    if (conversationId == null || conversationId.isEmpty) {
+  Future<List<MPAskAIChatMessage>> _fetchMessagesFromServer() async {
+    final String? targetConversationId = state.conversationId;
+    if (targetConversationId == null || targetConversationId.isEmpty) {
       return const <MPAskAIChatMessage>[];
     }
-    return const <MPAskAIChatMessage>[
-      MPAskAIChatMessage(
-        id: 'u_1',
-        role: MPAskAIMessageRole.user,
-        content: 'What have I been working on recently?',
+    final MPGetConversationDetailResponse? response =
+        await getConversationDetail(
+      MPGetConversationDetailRequest(
+        conversationId: targetConversationId,
+        pageSize: 200,
       ),
-      MPAskAIChatMessage(
-        id: 'a_1',
-        role: MPAskAIMessageRole.ai,
-        content:
-            'Based on your recent memories, you focused on API migration planning, roadmap alignment, and delivery coordination.',
-      ),
-    ];
+    );
+    if (response == null) {
+      throw Exception('Failed to load conversation detail');
+    }
+    if (response.baseResp.code != 0) {
+      throw Exception(response.baseResp.message);
+    }
+    return response.contents.map((MPConversationStruct item) {
+      final bool isUser = item.speaker.myselfVoice == true;
+      return MPAskAIChatMessage(
+        id: 'history_${item.time}_${item.content.hashCode}',
+        role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
+        content: item.content,
+      );
+    }).toList(growable: false);
   }
 
-  Future<MPAskAIChatMessage> _fetchAIReplyFromServer(String text) async {
-    await Future<void>.delayed(const Duration(milliseconds: 420));
-    return MPAskAIChatMessage(
-      id: 'a_${DateTime.now().microsecondsSinceEpoch}',
-      role: MPAskAIMessageRole.ai,
-      content: '收到你的问题：$text\n我会结合近期记忆给你一个结构化总结。',
-    );
+  Future<List<String>> _fetchSuggestionQuestions() async {
+    if (suggestedQuestions.isNotEmpty) {
+      return suggestedQuestions;
+    }
+    final MPGetChatSuggestionResponse? response =
+        await getChatSuggestion(MPGetChatSuggestionRequest());
+    if (response == null || response.baseResp.code != 0) {
+      return const <String>[];
+    }
+    final Map<String, List<String>> normal =
+        response.suggestion['normal'] ?? <String, List<String>>{};
+    final Iterable<String> values =
+        normal.values.expand((List<String> e) => e).where((String e) => e.trim().isNotEmpty);
+    return values.take(6).toList(growable: false);
   }
 }

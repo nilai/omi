@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../http/api/mp_chat.dart';
+import '../../http/schema/mp_chat.dart';
 
 enum MPAskAIConversationListPhase { loading, loaded, error }
 
@@ -55,7 +57,7 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
       );
 
   static const int _pageSize = 20;
-  int _nextPage = 1;
+  String? _cursor;
 
   Future<void> initData() => refresh();
 
@@ -67,10 +69,10 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     );
     try {
       final _MPAskAIConversationPageResult result = await _fetchPageFromServer(
-        page: 1,
         pageSize: _pageSize,
+        cursor: null,
       );
-      _nextPage = 2;
+      _cursor = result.nextCursor;
       emit(
         MPAskAIConversationListState(
           phase: MPAskAIConversationListPhase.loaded,
@@ -96,10 +98,10 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     emit(cur.copyWith(isLoadingMore: true));
     try {
       final _MPAskAIConversationPageResult result = await _fetchPageFromServer(
-        page: _nextPage,
         pageSize: _pageSize,
+        cursor: _cursor,
       );
-      _nextPage += 1;
+      _cursor = result.nextCursor;
       emit(
         cur.copyWith(
           items: <MPAskAIConversationItem>[...cur.items, ...result.items],
@@ -118,36 +120,33 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
   }
 
   Future<_MPAskAIConversationPageResult> _fetchPageFromServer({
-    required int page,
     required int pageSize,
+    required String? cursor,
   }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    const List<String> seed = <String>[
-      'API migration discussion',
-      'Product positioning rethink',
-      'Hiring and team bandwidth',
-      'Q4 revenue forecasting',
-      'Brand identity refresh',
-      'Sprint planning issues',
-      'Customer feedback analysis',
-      'Work-life balance strategies',
-      'Release timeline alignment',
-      'Weekly retro highlights',
-    ];
-
-    final int start = (page - 1) * pageSize;
-    final List<MPAskAIConversationItem> items = List<MPAskAIConversationItem>.generate(
-      pageSize,
-      (int i) {
-        final int index = start + i;
-        return MPAskAIConversationItem(
-          id: 'conv_$index',
-          title: seed[index % seed.length],
-        );
-      },
-      growable: false,
+    final MPGetConversationListResponse? response =
+        await getConversationList(
+      MPGetConversationListRequest(pageSize: pageSize, cursor: cursor),
     );
-    return _MPAskAIConversationPageResult(items: items, hasMore: true);
+    if (response == null) {
+      throw Exception('Failed to load conversations');
+    }
+    if (response.baseResp.code != 0) {
+      throw Exception(response.baseResp.message);
+    }
+    final List<MPAskAIConversationItem> items = response.conversations
+        .map(
+          (MPConversationHeaderStruct e) => MPAskAIConversationItem(
+            id: e.id,
+            title: e.title,
+          ),
+        )
+        .toList(growable: false);
+    final String? nextCursor = items.isEmpty ? null : items.last.id;
+    return _MPAskAIConversationPageResult(
+      items: items,
+      hasMore: response.hasMore,
+      nextCursor: nextCursor,
+    );
   }
 }
 
@@ -155,8 +154,10 @@ class _MPAskAIConversationPageResult {
   const _MPAskAIConversationPageResult({
     required this.items,
     required this.hasMore,
+    required this.nextCursor,
   });
 
   final List<MPAskAIConversationItem> items;
   final bool hasMore;
+  final String? nextCursor;
 }
