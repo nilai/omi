@@ -4,6 +4,7 @@ import 'package:memo_pin/tab/mine/mp_account_cubit.dart';
 import 'package:memo_pin/tab/mine/mp_account_state.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
 
 /// Account & Data：账户资料、订阅、数据管理、帮助与支持
 class MPAccountPage extends StatelessWidget {
@@ -52,7 +53,7 @@ class _MPAccountView extends StatelessWidget {
       body: BlocBuilder<MPAccountCubit, MPAccountState>(
         builder: (BuildContext context, MPAccountState state) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -61,19 +62,19 @@ class _MPAccountView extends StatelessWidget {
                   state: state,
                   onSignOut: () => context.read<MPAccountCubit>().signOut(context),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 _buildSectionTitle('SUBSCRIPTION'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 _buildSubscriptionCard(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 _buildSectionTitle('DATA MANAGEMENT'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 _buildDataManagementCard(context),
-                const SizedBox(height: 24),
+                const SizedBox(height: 18),
                 _buildSectionTitle('HELP & SUPPORT'),
-                const SizedBox(height: 10),
+                const SizedBox(height: 16),
                 _buildHelpSupportCard(context),
-                const SizedBox(height: 28),
+                const SizedBox(height: 18),
                 Text(
                   'MemoPin v1.0.0',
                   textAlign: TextAlign.center,
@@ -120,13 +121,13 @@ class _MPAccountView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 64,
+                  height: 64,
                   decoration: const BoxDecoration(
                     color: blueTextColor,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.person_rounded, color: Colors.white, size: 32),
+                  child: const Icon(Icons.person_rounded, color: Colors.white, size: 36),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -138,9 +139,9 @@ class _MPAccountView extends StatelessWidget {
                           Expanded(
                             child: Text(
                               state.displayName,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t7_16,
+                                fontWeight: OmiFontWeight.medium,
                                 color: mainTextColor,
                               ),
                             ),
@@ -160,7 +161,8 @@ class _MPAccountView extends StatelessWidget {
                       Text(
                         state.displayEmail,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: OmiFontSize.t4_13,
+                          fontWeight: OmiFontWeight.regular,
                           color: secondTextColor.withValues(alpha: 0.95),
                         ),
                       ),
@@ -168,7 +170,8 @@ class _MPAccountView extends StatelessWidget {
                       Text(
                         'Member since January 2024',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: OmiFontSize.t4_13,
+                          fontWeight: OmiFontWeight.regular,
                           color: secondTextColor.withValues(alpha: 0.9),
                         ),
                       ),
@@ -230,28 +233,28 @@ class _MPAccountView extends StatelessWidget {
           onTap: () => MPAccountPage._comingSoon(context),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 42,
+                  height: 42,
                   decoration: const BoxDecoration(
                     color: Color(0xFFFFC940),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 26),
+                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Basic Plan',
                         style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontSize: OmiFontSize.t7_16,
+                          fontWeight: OmiFontWeight.medium,
                           color: mainTextColor,
                         ),
                       ),
@@ -259,7 +262,8 @@ class _MPAccountView extends StatelessWidget {
                       Text(
                         'Upgrade for more features',
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: OmiFontSize.t3_12,
+                          fontWeight: OmiFontWeight.regular,
                           color: secondTextColor.withValues(alpha: 0.95),
                         ),
                       ),
@@ -290,7 +294,7 @@ class _MPAccountView extends StatelessWidget {
             showChevron: false,
             titleColor: mainTextColor,
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 48 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildDataRow(
             context,
             circleColor: const Color(0xFFFF9500),
@@ -300,7 +304,7 @@ class _MPAccountView extends StatelessWidget {
             showChevron: true,
             titleColor: mainTextColor,
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 48 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildDataRow(
             context,
             circleColor: redColor,
@@ -329,14 +333,14 @@ class _MPAccountView extends StatelessWidget {
       child: InkWell(
         onTap: () => MPAccountPage._comingSoon(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 22),
+                child: Icon(icon, color: Colors.white, size: 21),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -346,8 +350,8 @@ class _MPAccountView extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontSize: OmiFontSize.t7_16,
+                        fontWeight: OmiFontWeight.medium,
                         color: titleColor,
                       ),
                     ),
@@ -355,7 +359,8 @@ class _MPAccountView extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: OmiFontSize.t3_12,
+                        fontWeight: OmiFontWeight.regular,
                         color: secondTextColor.withValues(alpha: 0.95),
                       ),
                     ),
@@ -383,28 +388,28 @@ class _MPAccountView extends StatelessWidget {
             icon: Icons.help_outline_rounded,
             title: 'FAQ',
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF8D6EF9),
             icon: Icons.menu_book_rounded,
             title: 'User Guide',
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: blueTextColor,
             icon: Icons.chat_bubble_outline_rounded,
             title: 'Contact Support',
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF6B7280),
             icon: Icons.description_outlined,
             title: 'Terms & Privacy',
           ),
-          Divider(height: 1, thickness: 1, color: lineColor, indent: 16 + 44 + 14, endIndent: 16),
+          Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF007AFF),
@@ -427,22 +432,22 @@ class _MPAccountView extends StatelessWidget {
       child: InkWell(
         onTap: () => MPAccountPage._comingSoon(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 22),
+                child: Icon(icon, color: Colors.white, size: 21),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
                 ),
