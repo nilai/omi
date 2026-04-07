@@ -127,7 +127,9 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                     fontWeight: OmiFontWeight.regular,
                   ),
                 ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 24),
+                const Divider(color: lineColor, height: 1),
+                const SizedBox(height: 24),
                 _SocialButton(
                   backgroundColor: Colors.black,
                   foregroundColor: Colors.white,
@@ -247,6 +249,7 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                             text: state.mode == MPLoginMode.login
                                 ? "Don't have an account? "
                                 : 'Already have an account? ',
+                            style: TextStyle(fontWeight: OmiFontWeight.medium,),
                           ),
                           TextSpan(
                             text: state.mode == MPLoginMode.login ? 'Sign Up' : 'Sign In',
