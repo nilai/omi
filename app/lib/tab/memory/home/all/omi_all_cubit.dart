@@ -282,6 +282,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   switch (m.type) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
+    print('onlyRecord: ${m.toJson()}');
       return MPMemoryEntry.audioRecording(
         id: m.id,
         audioData: MPAudioRecordingCardData(

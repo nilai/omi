@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
 
@@ -91,13 +92,12 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     );
     try {
       final List<MPAskAIChatMessage> messages = await _fetchMessagesFromServer();
-      final List<String> questions = await _fetchSuggestionQuestions();
       emit(
         state.copyWith(
           phase: MPAskAIChatPhase.loaded,
           messages: messages,
           aboutText: aboutText,
-          suggestedQuestions: questions,
+          suggestedQuestions: suggestedQuestions,
         ),
       );
     } catch (e) {
@@ -124,7 +124,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         content: message,
       ),
     ];
-    emit(state.copyWith(messages: next, isSending: true));
+    emit(state.copyWith(messages: next, isSending: true, errorMessage: ''));
 
     String? activeConversationId = state.conversationId;
     if (activeConversationId == null || activeConversationId.isEmpty) {
@@ -139,7 +139,12 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         ),
       );
       if (created == null) {
-        emit(state.copyWith(isSending: false));
+        emit(
+          state.copyWith(
+            isSending: false,
+            errorMessage: 'AI回复失败，请稍后重试',
+          ),
+        );
         return;
       }
       if (created.baseResp.code != 0) {
@@ -191,7 +196,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         emit(state.copyWith(messages: merged, conversationId: activeConversationId));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString()));
+      emit(state.copyWith(errorMessage: 'AI回复失败，请稍后重试'));
     } finally {
       emit(state.copyWith(isSending: false));
     }
@@ -202,42 +207,66 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     if (targetConversationId == null || targetConversationId.isEmpty) {
       return const <MPAskAIChatMessage>[];
     }
-    final MPGetConversationDetailResponse? response =
-        await getConversationDetail(
-      MPGetConversationDetailRequest(
-        conversationId: targetConversationId,
-        pageSize: 200,
-      ),
-    );
-    if (response == null) {
+
+    try {
+      final MPGetConversationDetailResponse? response =
+          await getConversationDetail(
+        MPGetConversationDetailRequest(
+          conversationId: targetConversationId,
+          pageSize: 200,
+        ),
+      );
+      if (response == null) {
+        throw Exception('Failed to load conversation detail');
+      }
+      if (response.baseResp.code != 0) {
+        throw Exception(response.baseResp.message);
+      }
+      final List<MPAskAIChatMessage> messages = response.contents
+          .map((MPConversationStruct item) {
+            final bool isUser = item.speaker.myselfVoice == true;
+            return MPAskAIChatMessage(
+              id: 'history_${item.time}_${item.content.hashCode}',
+              role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
+              content: item.content,
+            );
+          })
+          .toList(growable: false);
+      await MPHiveUtil.instance.putPrimitive(
+        key: targetConversationId,
+        value: messages
+            .map(
+              (MPAskAIChatMessage item) => <String, dynamic>{
+                'id': item.id,
+                'role': item.role == MPAskAIMessageRole.user ? 'user' : 'ai',
+                'content': item.content,
+              },
+            )
+            .toList(growable: false),
+      );
+      return messages;
+    } catch (_) {
+      final List<dynamic>? cached = await MPHiveUtil.instance
+          .getPrimitive<List<dynamic>>(targetConversationId);
+      if (cached != null && cached.isNotEmpty) {
+        return cached
+            .whereType<Map>()
+            .map((Map item) {
+              final Map<String, dynamic> map =
+                  Map<String, dynamic>.from(item);
+              final String role = (map['role'] ?? '').toString();
+              return MPAskAIChatMessage(
+                id: (map['id'] ?? '').toString(),
+                role: role == 'user'
+                    ? MPAskAIMessageRole.user
+                    : MPAskAIMessageRole.ai,
+                content: (map['content'] ?? '').toString(),
+              );
+            })
+            .where((MPAskAIChatMessage e) => e.content.trim().isNotEmpty)
+            .toList(growable: false);
+      }
       throw Exception('Failed to load conversation detail');
     }
-    if (response.baseResp.code != 0) {
-      throw Exception(response.baseResp.message);
-    }
-    return response.contents.map((MPConversationStruct item) {
-      final bool isUser = item.speaker.myselfVoice == true;
-      return MPAskAIChatMessage(
-        id: 'history_${item.time}_${item.content.hashCode}',
-        role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
-        content: item.content,
-      );
-    }).toList(growable: false);
-  }
-
-  Future<List<String>> _fetchSuggestionQuestions() async {
-    if (suggestedQuestions.isNotEmpty) {
-      return suggestedQuestions;
-    }
-    final MPGetChatSuggestionResponse? response =
-        await getChatSuggestion(MPGetChatSuggestionRequest());
-    if (response == null || response.baseResp.code != 0) {
-      return const <String>[];
-    }
-    final Map<String, List<String>> normal =
-        response.suggestion['normal'] ?? <String, List<String>>{};
-    final Iterable<String> values =
-        normal.values.expand((List<String> e) => e).where((String e) => e.trim().isNotEmpty);
-    return values.take(6).toList(growable: false);
   }
 }

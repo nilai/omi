@@ -13,6 +13,7 @@ dart: 3.11.0
 功能未完善提示，使用 mp_toast_utils的MPToastUtils.showFeatureComingSoon()
 字号使用omi_font_utils.dart的OmiFontSize的值
 颜色使用omi_color_utils.dart中定义的颜色
+键盘输入，页面跳转后，键盘消失，再次进入页面后，需要再次点击输入框显示键盘
 
 
 

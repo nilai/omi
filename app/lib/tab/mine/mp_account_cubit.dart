@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../blu/mp_bluetooth_connection_helper.dart';
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../http/api/mp_user.dart';
 import '../../http/schema/mp_user.dart';
@@ -22,7 +23,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     return MPAccountState(
       profileStatus: MPAccountProfileStatus.loading,
       displayName: _fallbackNameStatic(),
-      displayEmail: _fallbackEmailStatic(),
+      displayEmail: _defaultDisplayEmail,
     );
   }
 
@@ -65,7 +66,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
       state.copyWith(
         profileStatus: MPAccountProfileStatus.loaded,
         displayName: name.isNotEmpty ? name : _defaultDisplayName,
-        displayEmail: email.isNotEmpty ? email : _fallbackEmail(),
+        displayEmail: email.isNotEmpty ? email : await _fallbackEmail(),
         clearErrorMessage: true,
       ),
     );
@@ -74,13 +75,14 @@ class MPAccountCubit extends Cubit<MPAccountState> {
   void _emitProfileFallback({
     required MPAccountProfileStatus profileStatus,
     required String message,
-  }) {
+  }) async{
     MPToastUtils.showMessage(message);
+    final String email = await _fallbackEmail();
     emit(
       state.copyWith(
         profileStatus: profileStatus,
         displayName: _fallbackName(),
-        displayEmail: _fallbackEmail(),
+        displayEmail: email,
         errorMessage: message,
       ),
     );
@@ -90,7 +92,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     return _fallbackNameStatic();
   }
 
-  String _fallbackEmail() {
+  Future<String> _fallbackEmail() async {
     return _fallbackEmailStatic();
   }
 
@@ -102,14 +104,10 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     return _defaultDisplayName;
   }
 
-  static String _fallbackEmailStatic() {
-    final String? e = MPUser.instance.email?.trim();
-    if (e != null && e.isNotEmpty) {
+  static Future<String> _fallbackEmailStatic() async {
+    final String e = await SharedPreferencesUtil().email ?? '';
+    if (e.isNotEmpty) {
       return e;
-    }
-    final String? pref = SharedPreferencesUtil().email?.trim();
-    if (pref != null && pref.isNotEmpty) {
-      return pref;
     }
     return _defaultDisplayEmail;
   }
@@ -130,6 +128,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     await SharedPreferencesUtil().setAccessToken(null);
     await SharedPreferencesUtil().setRefreshToken(null);
     await SharedPreferencesUtil().setEmail(null);
+    await MPHiveUtil.instance.close();
     await SharedPreferencesUtil().clearTokenExpiresTime();
     await MPBluetoothConnectionHelper.disconnectAppBleForLogout();
     await SharedPreferencesUtil().clearLastConnectedBleDevice();

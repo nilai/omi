@@ -12,11 +12,13 @@ class MPAskAIChatPage extends StatelessWidget {
     required this.aboutText,
     this.conversationId,
     this.suggestedQuestions = const <String>[],
+    this.initialMessage,
   });
 
   final String aboutText;
   final String? conversationId;
   final List<String> suggestedQuestions;
+  final String? initialMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -26,16 +28,37 @@ class MPAskAIChatPage extends StatelessWidget {
         conversationId: conversationId,
         suggestedQuestions: suggestedQuestions,
       )..initData(),
-      child: const _MPAskAIChatView(),
+      child: _MPAskAIChatView(initialMessage: initialMessage),
     );
   }
 }
 
-class _MPAskAIChatView extends StatelessWidget {
-  const _MPAskAIChatView();
+class _MPAskAIChatView extends StatefulWidget {
+  const _MPAskAIChatView({this.initialMessage});
+
+  final String? initialMessage;
+
+  @override
+  State<_MPAskAIChatView> createState() => _MPAskAIChatViewState();
+}
+
+class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
+  bool _hasAutoSentInitialMessage = false;
 
   void _onSubmit(BuildContext context, MPVoiceTextInputResult result) {
     context.read<MPAskAIChatCubit>().sendMessage(result.text);
+  }
+
+  void _tryAutoSendInitialMessage(MPAskAIChatState state) {
+    if (_hasAutoSentInitialMessage) return;
+    if (state.phase != MPAskAIChatPhase.loaded) return;
+    final String text = widget.initialMessage?.trim() ?? '';
+    if (text.isEmpty) return;
+    _hasAutoSentInitialMessage = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<MPAskAIChatCubit>().sendMessage(text);
+    });
   }
 
   @override
@@ -47,7 +70,10 @@ class _MPAskAIChatView extends StatelessWidget {
           children: <Widget>[
             _ChatTopBar(onBack: () => Navigator.of(context).maybePop()),
             Expanded(
-              child: BlocBuilder<MPAskAIChatCubit, MPAskAIChatState>(
+              child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
+                listener: (BuildContext context, MPAskAIChatState state) {
+                  _tryAutoSendInitialMessage(state);
+                },
                 builder: (BuildContext context, MPAskAIChatState state) {
                   if (state.phase == MPAskAIChatPhase.loading) {
                     return const Center(
@@ -178,29 +204,115 @@ class _ChatBody extends StatelessWidget {
           if (state.isSending)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: blueTextColor,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'AI is responding...',
-                    style: OmiTextStyle.create(
-                      color: secondTextColor,
-                      fontSize: OmiFontSize.t5_14,
-                      fontWeight: OmiFontWeight.regular,
-                    ),
-                  ),
-                ],
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: _MPChatWaitingIndicator(),
+              ),
+            ),
+          if (!state.isSending && (state.errorMessage?.trim().isNotEmpty ?? false))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Text(
+                state.errorMessage!,
+                style: OmiTextStyle.create(
+                  color: redColor,
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.regular,
+                ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _MPChatWaitingIndicator extends StatefulWidget {
+  const _MPChatWaitingIndicator();
+
+  @override
+  State<_MPChatWaitingIndicator> createState() => _MPChatWaitingIndicatorState();
+}
+
+class _MPChatWaitingIndicatorState extends State<_MPChatWaitingIndicator>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double _opacityForDot(int index) {
+    final double value = (_controller.value + index * 0.2) % 1.0;
+    final double distance = (value - 0.5).abs();
+    return 0.35 + (1 - distance * 2) * 0.55;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F2F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          const Icon(
+            Icons.auto_awesome_outlined,
+            size: 14,
+            color: Color(0xFF87D5A2),
+          ),
+          const SizedBox(width: 8),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (BuildContext context, Widget? child) {
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List<Widget>.generate(3, (int index) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: index == 2 ? 0 : 6),
+                    child: _MPWaitingDot(opacity: _opacityForDot(index)),
+                  );
+                }),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MPWaitingDot extends StatelessWidget {
+  const _MPWaitingDot({required this.opacity});
+
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Opacity(
+      opacity: opacity,
+      child: Container(
+        width: 7,
+        height: 7,
+        decoration: const BoxDecoration(
+          color: Color(0xFF8F9098),
+          shape: BoxShape.circle,
+        ),
       ),
     );
   }
