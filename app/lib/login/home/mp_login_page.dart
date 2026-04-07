@@ -10,7 +10,6 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../legal/mp_legal_document_page.dart';
-import '../verify/mp_verify_page.dart';
 
 /// MemoPin 登录 / 注册页（BlocProvider + [MPLoginCubit]）。
 class MPLoginPage extends StatelessWidget {
@@ -231,9 +230,25 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
                       disabledForegroundColor: Colors.white70,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: Text(
-                      state.mode == MPLoginMode.login ? 'Sign In' : 'Create Account',
-                      style: TextStyle(fontSize: OmiFontSize.t8_17, fontWeight: OmiFontWeight.bold),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        if (state.isSubmitting) ...<Widget>[
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(
+                          state.mode == MPLoginMode.login ? 'Sign In' : 'Create Account',
+                          style: TextStyle(fontSize: OmiFontSize.t8_17, fontWeight: OmiFontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
                 ),

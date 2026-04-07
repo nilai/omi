@@ -25,6 +25,7 @@ class MPLoginState {
     this.emailError,
     this.passwordError,
     this.obscurePassword = true,
+    this.isSubmitting = false,
   });
 
   final MPLoginMode mode;
@@ -44,8 +45,12 @@ class MPLoginState {
   /// 是否隐藏密码。
   final bool obscurePassword;
 
+  /// 是否正在提交（登录/注册请求中）。
+  final bool isSubmitting;
+
   /// 主按钮是否可点：邮箱、密码均非空（trim 后）。
-  bool get isPrimaryButtonEnabled => email.trim().isNotEmpty && password.isNotEmpty;
+  bool get isPrimaryButtonEnabled =>
+      email.trim().isNotEmpty && password.isNotEmpty && !isSubmitting;
 
   /// 规范化错误：仅非空字符串视为有效提示。
   static String? normalizeError(String? e) {
@@ -60,6 +65,7 @@ class MPLoginState {
     Object? emailError = _kUnset,
     Object? passwordError = _kUnset,
     bool? obscurePassword,
+    bool? isSubmitting,
   }) {
     return MPLoginState(
       mode: mode ?? this.mode,
@@ -68,6 +74,7 @@ class MPLoginState {
       emailError: identical(emailError, _kUnset) ? this.emailError : emailError as String?,
       passwordError: identical(passwordError, _kUnset) ? this.passwordError : passwordError as String?,
       obscurePassword: obscurePassword ?? this.obscurePassword,
+      isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
 }

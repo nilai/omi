@@ -38,11 +38,21 @@ class MPLoginCubit extends Cubit<MPLoginState> {
   /// 登录 ↔ 注册：清空输入与错误。
   void toggleAuthMode() {
     final MPLoginMode next = state.mode == MPLoginMode.login ? MPLoginMode.signup : MPLoginMode.login;
-    emit(MPLoginState(mode: next, obscurePassword: state.obscurePassword));
+    emit(
+      state.copyWith(
+        mode: next,
+        emailError: null,
+        passwordError: null,
+        isSubmitting: false,
+      ),
+    );
   }
 
   /// 提交校验（按钮仅在邮箱、密码非空时可点）。
-  void submit() {
+  Future<void> submit() async {
+    if (state.isSubmitting) {
+      return;
+    }
     final String email = state.email.trim();
     final String password = state.password;
 
@@ -60,15 +70,22 @@ class MPLoginCubit extends Cubit<MPLoginState> {
       emit(state.copyWith(emailError: emailErr, passwordError: passwordErr));
       return;
     }
-    if (state.mode == MPLoginMode.login) {
-      _login(email, password);
-    } else {
-      _register(email, password);
+    emit(state.copyWith(isSubmitting: true));
+    try {
+      if (state.mode == MPLoginMode.login) {
+        await _login(email, password);
+      } else {
+        await _register(email, password);
+      }
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(isSubmitting: false));
+      }
     }
   }
 
   /// 登录
-  void _login(String email, String password) async {
+  Future<void> _login(String email, String password) async {
     final deviceId = await MPUuidUtil.instance.uuid;
     final req = MPLoginRequest(email: email, password: password, deviceId: deviceId);
     final response = await login(req);
@@ -88,7 +105,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
   }
 
   /// 注册
-  void _register(String email, String password) async {
+  Future<void> _register(String email, String password) async {
     /// 发送验证码
     final req = MPSendCodeRequest(email: email);
     final response = await sendCode(req);
