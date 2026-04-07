@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/common/mp_voice_text_input.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_chat_page.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_cubit.dart';
@@ -277,41 +278,44 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     return BlocBuilder<MPAskAICubit, MPAskAIState>(
       builder: (BuildContext context, MPAskAIState state) {
         final MPAskAIModule? selected = state.selectedModule;
-        return Scaffold(
-          backgroundColor: pageColor,
-          body: SafeArea(
-            child: Column(
-              children: <Widget>[
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        _buildTopBar(context, state),
-                        if (selected == null)
-                          _buildOverviewState(context, state)
-                        else
-                          _buildQuestionState(context, selected),
-                      ],
+        return MPSystemUiRegion(
+          topBarColor: pageColor,
+          child: Scaffold(
+            backgroundColor: pageColor,
+            body: SafeArea(
+              child: Column(
+                children: <Widget>[
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          _buildTopBar(context, state),
+                          if (selected == null)
+                            _buildOverviewState(context, state)
+                          else
+                            _buildQuestionState(context, selected),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-                  decoration: const BoxDecoration(
-                    color: pageColor,
-                    border: Border(top: BorderSide(color: Color(0xFFEAEAEA))),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                    decoration: const BoxDecoration(
+                      color: pageColor,
+                      border: Border(top: BorderSide(color: Color(0xFFEAEAEA))),
+                    ),
+                    child: MPVoiceTextInput(
+                      hintText: 'Ask about your memories...',
+                      focusNode: _inputFocusNode,
+                      autofocus: false,
+                      onSubmitted: (MPVoiceTextInputResult result) =>
+                          _onSubmitInput(context, result),
+                    ),
                   ),
-                  child: MPVoiceTextInput(
-                    hintText: 'Ask about your memories...',
-                    focusNode: _inputFocusNode,
-                    autofocus: false,
-                    onSubmitted: (MPVoiceTextInputResult result) =>
-                        _onSubmitInput(context, result),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );

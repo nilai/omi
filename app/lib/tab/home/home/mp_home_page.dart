@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
 import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
 import 'package:memo_pin/tab/home/insights/mp_home_insights_list_page.dart';
@@ -185,110 +186,113 @@ class _MPHomePageState extends State<MPHomePage> {
       value: _cubit,
       child: BlocBuilder<MPHomeCubit, MPHomeState>(
         builder: (BuildContext context, MPHomeState state) {
-          return ColoredBox(
-            color: const Color(0xFFF2F2F7),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                    child: Row(
-                      children: <Widget>[
-                        Material(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          child: InkWell(
-                            onTap: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(
-                                  builder: (_) => const MPConnectDevicePage(),
-                                ),
-                              ).then((_) => _refreshBleConnectionState());
-                            },
+          return MPSystemUiRegion(
+            topBarColor: const Color(0xFFF2F2F7),
+            child: ColoredBox(
+              color: const Color(0xFFF2F2F7),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                      child: Row(
+                        children: <Widget>[
+                          Material(
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                            child: InkWell(
+                              onTap: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute<void>(
+                                    builder: (_) => const MPConnectDevicePage(),
+                                  ),
+                                ).then((_) => _refreshBleConnectionState());
+                              },
+                              borderRadius: BorderRadius.circular(10),
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                                ),
+                                child: _isBleConnected
+                                    ? const _MPHomeNavConnectedIcon()
+                                    : const _MPHomeNavBullseye(),
                               ),
-                              child: _isBleConnected
-                                  ? const _MPHomeNavConnectedIcon()
-                                  : const _MPHomeNavBullseye(),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'MemoPin',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w500,
-                            color: secondTextColor,
-                            letterSpacing: -0.4,
+                          const SizedBox(width: 12),
+                          Text(
+                            'MemoPin',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w500,
+                              color: secondTextColor,
+                              letterSpacing: -0.4,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () => MPToastUtils.showFeatureComingSoon(message: '日历'),
-                          icon: Icon(Icons.calendar_today_outlined, color: blueTextColor),
-                        ),
-                        const SizedBox(width: 4),
-                        Material(
-                          color: blueTextColor,
-                          borderRadius: BorderRadius.circular(999),
-                          child: InkWell(
-                            onTap: _openAddOptions,
+                          const Spacer(),
+                          IconButton(
+                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: '日历'),
+                            icon: Icon(Icons.calendar_today_outlined, color: blueTextColor),
+                          ),
+                          const SizedBox(width: 4),
+                          Material(
+                            color: blueTextColor,
                             borderRadius: BorderRadius.circular(999),
-                            child: const SizedBox(
-                              width: 32,
-                              height: 32,
-                              child: Icon(Icons.add, color: Colors.white, size: 20),
+                            child: InkWell(
+                              onTap: _openAddOptions,
+                              borderRadius: BorderRadius.circular(999),
+                              child: const SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: Icon(Icons.add, color: Colors.white, size: 20),
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (state.audioStatus != null)
+                    MPHomeAudioStatusBar(status: state.audioStatus!),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+                      children: <Widget>[
+                        _TodayFocusCard(
+                          todos: state.upNextTodos,
+                          onViewAll: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()),
+                            );
+                          },
+                          onTodoTap: (MPHomeTodoItem t) =>
+                              MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
+                        ),
+                        const SizedBox(height: 16),
+                        _RecentMemoryCard(
+                          memories: state.recentMemories,
+                          onViewAll: widget.onViewAllMemories,
+                          onMemoryTap: (MPHomeMemoryItem m) =>
+                              MPToastUtils.showFeatureComingSoon(message: 'Memory 详情'),
+                        ),
+                        const SizedBox(height: 16),
+                        _InsightsCard(
+                          insightOverview: state.insightOverview,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                if (state.audioStatus != null)
-                  MPHomeAudioStatusBar(status: state.audioStatus!),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
-                    children: <Widget>[
-                      _TodayFocusCard(
-                        todos: state.upNextTodos,
-                        onViewAll: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()),
-                          );
-                        },
-                        onTodoTap: (MPHomeTodoItem t) =>
-                            MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
-                      ),
-                      const SizedBox(height: 16),
-                      _RecentMemoryCard(
-                        memories: state.recentMemories,
-                        onViewAll: widget.onViewAllMemories,
-                        onMemoryTap: (MPHomeMemoryItem m) =>
-                            MPToastUtils.showFeatureComingSoon(message: 'Memory 详情'),
-                      ),
-                      const SizedBox(height: 16),
-                      _InsightsCard(
-                        insightOverview: state.insightOverview,
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },

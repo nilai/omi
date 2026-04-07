@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
@@ -75,42 +76,62 @@ class MPNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double topInset = MediaQuery.paddingOf(context).top;
-    return ColoredBox(
-      color: backgroundColor,
-      child: Padding(
-        padding: EdgeInsets.only(
-          top: topInset,
-          left: _kHorizontalPadding,
-          right: _kHorizontalPadding,
-          bottom: _kBottomPadding,
-        ),
-        child: SizedBox(
-          height: _kContentMinHeight,
-          child: Row(
-            children: [
-              if (_showLeading) ...[
-                _buildLeading(),
-                const SizedBox(width: 12),
-              ],
-              Expanded(
-                child: Text(
-                  _resolvedTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: OmiTextStyle.create(
-                    fontSize: _isLargeTitle ? 44 / 2 : 40 / 2,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _resolveSystemUiOverlayStyle(backgroundColor),
+      child: ColoredBox(
+        color: backgroundColor,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: topInset,
+            left: _kHorizontalPadding,
+            right: _kHorizontalPadding,
+            bottom: _kBottomPadding,
+          ),
+          child: SizedBox(
+            height: _kContentMinHeight,
+            child: Row(
+              children: [
+                if (_showLeading) ...[
+                  _buildLeading(),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: Text(
+                    _resolvedTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmiTextStyle.create(
+                      fontSize: _isLargeTitle ? 44 / 2 : 40 / 2,
+                      fontWeight: OmiFontWeight.medium,
+                      color: mainTextColor,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              ..._buildActions(),
-            ],
+                const SizedBox(width: 12),
+                ..._buildActions(),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  /// 根据导航栏背景色自动选择状态栏图标明暗，确保状态栏与顶栏风格一致。
+  SystemUiOverlayStyle _resolveSystemUiOverlayStyle(Color barColor) {
+    final bool isDarkBackground =
+        ThemeData.estimateBrightnessForColor(barColor) == Brightness.dark;
+    return isDarkBackground
+        ? const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+          )
+        : const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+          );
   }
 
   bool get _showLeading =>
