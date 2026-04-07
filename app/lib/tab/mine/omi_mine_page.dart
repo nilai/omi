@@ -115,18 +115,25 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildSubscriptionCard() {
     return _buildTappableCard(
       onTap: _showComingSoon,
+      padding: const EdgeInsets.fromLTRB(16, 18, 12, 18),
       child: Row(
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 42,
+            height: 42,
             decoration: const BoxDecoration(
-              color: Color(0xFFFFC940),
+              color: Color(0xFFFFCC00),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 28),
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 16,
+                child: CustomPaint(painter: _MPPlanCrownPainter()),
+              ),
+            ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,15 +141,19 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   'Basic Plan',
                   style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
+                    fontSize: 33 / 2,
+                    fontWeight: FontWeight.w700,
                     color: mainTextColor,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   'Upgrade for more features',
-                  style: TextStyle(fontSize: 13, color: secondTextColor.withValues(alpha: 0.95)),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: secondTextColor.withValues(alpha: 0.82),
+                  ),
                 ),
               ],
             ),
@@ -165,10 +176,10 @@ class _OmiMinePageState extends State<OmiMinePage> {
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: Colors.white, size: 21),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -201,7 +212,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildIntegrationsCard() {
     return _buildTappableCard(
       onTap: _showComingSoon,
-      padding: const EdgeInsets.fromLTRB(16, 16, 12, 16),
+      padding: const EdgeInsets.fromLTRB(16, 18, 12, 18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -283,8 +294,8 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _calendarGlyph() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         color: blueTextColor,
         borderRadius: BorderRadius.circular(12),
@@ -304,8 +315,8 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _notionGlyph() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
@@ -325,8 +336,8 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _tasksGlyph() {
     return Container(
-      width: 48,
-      height: 48,
+      width: 42,
+      height: 42,
       decoration: const BoxDecoration(
         color: Color(0xFFFF9500),
         shape: BoxShape.circle,
@@ -339,7 +350,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   Widget _buildTappableCard({
     required VoidCallback onTap,
     required Widget child,
-    EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    EdgeInsetsGeometry padding = const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
   }) {
     final BorderRadius radius = BorderRadius.circular(18);
     return DecoratedBox(
@@ -364,4 +375,55 @@ class _OmiMinePageState extends State<OmiMinePage> {
       ),
     );
   }
+}
+
+class _MPPlanCrownPainter extends CustomPainter {
+  const _MPPlanCrownPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const Color crownColor = Colors.white;
+    final Paint stroke = Paint()
+      ..color = crownColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.9
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..isAntiAlias = true;
+
+    final Paint dot = Paint()
+      ..color = crownColor
+      ..style = PaintingStyle.fill
+      ..isAntiAlias = true;
+
+    final double w = size.width;
+    final double h = size.height;
+
+    final double left = w * 0.1;
+    final double right = w * 0.9;
+    final double baseTop = h * 0.62;
+    final double baseBottom = h * 0.84;
+
+    final Path crown = Path()
+      ..moveTo(left, baseTop)
+      ..lineTo(w * 0.24, h * 0.42)
+      ..lineTo(w * 0.42, h * 0.58)
+      ..lineTo(w * 0.5, h * 0.3)
+      ..lineTo(w * 0.58, h * 0.58)
+      ..lineTo(w * 0.76, h * 0.42)
+      ..lineTo(right, baseTop)
+      ..lineTo(right - 0.6, baseBottom)
+      ..lineTo(left + 0.6, baseBottom)
+      ..close();
+
+    canvas.drawPath(crown, stroke);
+
+    final double dotRadius = w * 0.055;
+    canvas.drawCircle(Offset(w * 0.24, h * 0.32), dotRadius, dot);
+    canvas.drawCircle(Offset(w * 0.5, h * 0.2), dotRadius, dot);
+    canvas.drawCircle(Offset(w * 0.76, h * 0.32), dotRadius, dot);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
