@@ -57,7 +57,7 @@ class _MPAskAIConversationListViewState
   }
 
   void _onTapConversationItem(MPAskAIConversationItem item) {
-    Navigator.of(context).push(
+    Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
           aboutText: item.title,
