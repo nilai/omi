@@ -9,6 +9,7 @@ import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_page.dart';
 import 'package:memo_pin/tab/home/home/widgets/mp_home_audio_status_bar.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
+import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../http/schema/mp_home.dart';
@@ -487,59 +488,84 @@ class _TodayFocusCard extends StatelessWidget {
     final List<MPHomeTodoItem> shown = todos.take(3).toList();
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[Color(0xFFF8FDF9), Color(0xFFFCFEFB), Colors.white],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.04)),
+        color: const Color(0xFFFCFCFD),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
         boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Today\'s Focus',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
+                    color: Color(0xFF1A1A1A),
+                    height: 1.25,
+                  ),
                 ),
               ),
-              TextButton.icon(
+              TextButton(
                 onPressed: onViewAll,
-                icon: const Icon(Icons.chevron_right, size: 18, color: Color(0xFF059669)),
-                label: const Text('View All', style: TextStyle(color: Color(0xFF059669), fontSize: 14)),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+                  minimumSize: const Size(0, 0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  visualDensity: VisualDensity.compact,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: <Widget>[
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        color: Color(0xFF16A34A),
+                        fontSize: OmiFontSize.t5_14,
+                        fontWeight: OmiFontWeight.medium,
+                        height: 1.1,
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, size: 18, color: Color(0xFF16A34A)),
+                  ],
+                ),
               ),
             ],
           ),
-          if (shown.isNotEmpty) const SizedBox(height: 8),
+          if (shown.isNotEmpty) const SizedBox(height: 10),
           for (final MPHomeTodoItem todo in shown) ...<Widget>[
             InkWell(
               onTap: () => onTodoTap(todo),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
                     Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Icon(Icons.star_outline, size: 18, color: Color(0xFFF59E42)),
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Icon(Icons.star_border_rounded, size: 18, color: Color(0xFFF59E0B)),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         todo.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: 15,
-                          height: 1.5,
-                          color: const Color(0xFF3C3C43),
+                          fontSize: OmiFontSize.t6_15,
+                          height: 1.42,
+                          color: const Color(0xFF262631),
+                          fontWeight: OmiFontWeight.medium,
                           decoration: todo.completed ? TextDecoration.lineThrough : null,
                         ),
                       ),
@@ -547,7 +573,11 @@ class _TodayFocusCard extends StatelessWidget {
                     if (todo.time != null)
                       Text(
                         todo.time!,
-                        style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93), fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t4_13,
+                          color: Color(0xFF9A9CAA),
+                          fontWeight: OmiFontWeight.regular,
+                        ),
                       ),
                   ],
                 ),
@@ -555,10 +585,15 @@ class _TodayFocusCard extends StatelessWidget {
             ),
             if (todo.reason != null)
               Padding(
-                padding: const EdgeInsets.only(left: 28, bottom: 4),
+                padding: const EdgeInsets.only(left: 24, bottom: 6),
                 child: Text(
                   '→ ${todo.reason}',
-                  style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t4_13,
+                    color: Color(0xFF9A9CAA),
+                    fontWeight: OmiFontWeight.regular,
+                    height: 1.2,
+                  ),
                 ),
               ),
           ],
