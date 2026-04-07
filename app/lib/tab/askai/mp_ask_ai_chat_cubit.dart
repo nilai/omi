@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
 
@@ -206,26 +207,66 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     if (targetConversationId == null || targetConversationId.isEmpty) {
       return const <MPAskAIChatMessage>[];
     }
-    final MPGetConversationDetailResponse? response =
-        await getConversationDetail(
-      MPGetConversationDetailRequest(
-        conversationId: targetConversationId,
-        pageSize: 200,
-      ),
-    );
-    if (response == null) {
+
+    try {
+      final MPGetConversationDetailResponse? response =
+          await getConversationDetail(
+        MPGetConversationDetailRequest(
+          conversationId: targetConversationId,
+          pageSize: 200,
+        ),
+      );
+      if (response == null) {
+        throw Exception('Failed to load conversation detail');
+      }
+      if (response.baseResp.code != 0) {
+        throw Exception(response.baseResp.message);
+      }
+      final List<MPAskAIChatMessage> messages = response.contents
+          .map((MPConversationStruct item) {
+            final bool isUser = item.speaker.myselfVoice == true;
+            return MPAskAIChatMessage(
+              id: 'history_${item.time}_${item.content.hashCode}',
+              role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
+              content: item.content,
+            );
+          })
+          .toList(growable: false);
+      await MPHiveUtil.instance.putPrimitive(
+        key: targetConversationId,
+        value: messages
+            .map(
+              (MPAskAIChatMessage item) => <String, dynamic>{
+                'id': item.id,
+                'role': item.role == MPAskAIMessageRole.user ? 'user' : 'ai',
+                'content': item.content,
+              },
+            )
+            .toList(growable: false),
+      );
+      return messages;
+    } catch (_) {
+      final List<dynamic>? cached = await MPHiveUtil.instance
+          .getPrimitive<List<dynamic>>(targetConversationId);
+      if (cached != null && cached.isNotEmpty) {
+        return cached
+            .whereType<Map>()
+            .map((Map item) {
+              final Map<String, dynamic> map =
+                  Map<String, dynamic>.from(item);
+              final String role = (map['role'] ?? '').toString();
+              return MPAskAIChatMessage(
+                id: (map['id'] ?? '').toString(),
+                role: role == 'user'
+                    ? MPAskAIMessageRole.user
+                    : MPAskAIMessageRole.ai,
+                content: (map['content'] ?? '').toString(),
+              );
+            })
+            .where((MPAskAIChatMessage e) => e.content.trim().isNotEmpty)
+            .toList(growable: false);
+      }
       throw Exception('Failed to load conversation detail');
     }
-    if (response.baseResp.code != 0) {
-      throw Exception(response.baseResp.message);
-    }
-    return response.contents.map((MPConversationStruct item) {
-      final bool isUser = item.speaker.myselfVoice == true;
-      return MPAskAIChatMessage(
-        id: 'history_${item.time}_${item.content.hashCode}',
-        role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
-        content: item.content,
-      );
-    }).toList(growable: false);
   }
 }
