@@ -183,6 +183,18 @@ class _ChatBody extends StatelessWidget {
                 child: _MPChatWaitingIndicator(),
               ),
             ),
+          if (!state.isSending && (state.errorMessage?.trim().isNotEmpty ?? false))
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+              child: Text(
+                state.errorMessage!,
+                style: OmiTextStyle.create(
+                  color: redColor,
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.regular,
+                ),
+              ),
+            ),
         ],
       ),
     );

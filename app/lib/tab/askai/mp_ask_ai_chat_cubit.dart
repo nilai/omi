@@ -124,7 +124,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         content: message,
       ),
     ];
-    emit(state.copyWith(messages: next, isSending: true));
+    emit(state.copyWith(messages: next, isSending: true, errorMessage: ''));
 
     String? activeConversationId = state.conversationId;
     if (activeConversationId == null || activeConversationId.isEmpty) {
@@ -139,7 +139,12 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         ),
       );
       if (created == null) {
-        emit(state.copyWith(isSending: false));
+        emit(
+          state.copyWith(
+            isSending: false,
+            errorMessage: 'AI回复失败，请稍后重试',
+          ),
+        );
         return;
       }
       if (created.baseResp.code != 0) {
@@ -191,7 +196,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         emit(state.copyWith(messages: merged, conversationId: activeConversationId));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString()));
+      emit(state.copyWith(errorMessage: 'AI回复失败，请稍后重试'));
     } finally {
       emit(state.copyWith(isSending: false));
     }
