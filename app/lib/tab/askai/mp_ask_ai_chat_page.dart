@@ -44,6 +44,21 @@ class _MPAskAIChatView extends StatefulWidget {
 
 class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   bool _hasAutoSentInitialMessage = false;
+  late final ScrollController _scrollController;
+  int _lastMessageCount = 0;
+  bool _lastIsSending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   void _onSubmit(BuildContext context, MPVoiceTextInputResult result) {
     context.read<MPAskAIChatCubit>().sendMessage(result.text);
@@ -58,6 +73,32 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<MPAskAIChatCubit>().sendMessage(text);
+    });
+  }
+
+  void _maybeAutoScroll(MPAskAIChatState state) {
+    final bool shouldScroll =
+        state.messages.length != _lastMessageCount ||
+        state.isSending != _lastIsSending;
+    _lastMessageCount = state.messages.length;
+    _lastIsSending = state.isSending;
+    if (!shouldScroll) return;
+    _scrollToBottom(animated: true);
+  }
+
+  void _scrollToBottom({required bool animated}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final double max = _scrollController.position.maxScrollExtent;
+      if (animated) {
+        _scrollController.animateTo(
+          max,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+        return;
+      }
+      _scrollController.jumpTo(max);
     });
   }
 
@@ -76,6 +117,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                 child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
                   listener: (BuildContext context, MPAskAIChatState state) {
                     _tryAutoSendInitialMessage(state);
+                    _maybeAutoScroll(state);
                   },
                   builder: (BuildContext context, MPAskAIChatState state) {
                     if (state.phase == MPAskAIChatPhase.loading) {
@@ -99,7 +141,10 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                         ),
                       );
                     }
-                    return _ChatBody(state: state);
+                    return _ChatBody(
+                      state: state,
+                      scrollController: _scrollController,
+                    );
                   },
                 ),
               ),
@@ -165,13 +210,18 @@ class _ChatTopBar extends StatelessWidget {
 }
 
 class _ChatBody extends StatelessWidget {
-  const _ChatBody({required this.state});
+  const _ChatBody({
+    required this.state,
+    required this.scrollController,
+  });
 
   final MPAskAIChatState state;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      controller: scrollController,
       padding: const EdgeInsets.only(bottom: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
