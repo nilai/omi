@@ -845,6 +845,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.1.0"
+  hive:
+    dependency: "direct main"
+    description:
+      name: hive
+      sha256: "8dcf6db979d7933da8217edcec84e9df1bdb4e4edc7fc77dbd5aa74356d6d941"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.2.3"
+  hive_flutter:
+    dependency: "direct main"
+    description:
+      name: hive_flutter
+      sha256: dca1da446b1d808a51689fb5d0c6c9510c0a2ba01e22805d492c73b68e33eecc
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.1.0"
   hooks:
     dependency: transitive
     description:
@@ -985,26 +1001,26 @@ packages:
     dependency: "direct overridden"
     description:
       name: intercom_flutter
-      sha256: "9e3a4e4bc4791973ea68c06ead03dd4b66f4331f5c63c974ae370d105c51b697"
+      sha256: "3e37ceec8d79e838662415b9f4c338234efb534421cb2d1a29299e461ded54f3"
       url: "https://pub.dev"
     source: hosted
-    version: "9.5.6"
+    version: "9.6.2"
   intercom_flutter_platform_interface:
     dependency: transitive
     description:
       name: intercom_flutter_platform_interface
-      sha256: "18d250b81dad83ff3ff6f6f9c3f62ab30b6550e6ac5d2618330900e14107ae66"
+      sha256: "8e6554d5a5e10490862986f6d155ed41888590a5a738f9ff2452cd1966fff2c7"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.0.6"
+    version: "2.0.7"
   intercom_flutter_web:
     dependency: transitive
     description:
       name: intercom_flutter_web
-      sha256: "957cf017a1e9286ea16e0f9538108f39a81dc10dbd94add5b91b241a182d5039"
+      sha256: "7f3f5c8bb877426062b87e7611250eb5acd1e03a0a5479ccce9bdbb5eeb2b612"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "1.1.11"
+    version: "1.1.12"
   internet_connection_checker_plus:
     dependency: "direct main"
     description:
@@ -1029,6 +1045,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.0.5"
+  jni:
+    dependency: transitive
+    description:
+      name: jni
+      sha256: c2230682d5bc2362c1c9e8d3c7f406d9cbba23ab3f2e203a025dd47e0fb2e68f
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.0"
+  jni_flutter:
+    dependency: transitive
+    description:
+      name: jni_flutter
+      sha256: "8b59e590786050b1cd866677dddaf76b1ade5e7bc751abe04b86e84d379d3ba6"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.0.1"
   js:
     dependency: transitive
     description:
@@ -1363,10 +1395,10 @@ packages:
     dependency: transitive
     description:
       name: path_provider_android
-      sha256: "149441ca6e4f38193b2e004c0ca6376a3d11f51fa5a77552d8bd4d2b0c0912ba"
+      sha256: "914a07484c4380e572998d30486e77e0d9cd2faec72fee268086d07bf7f302c9"
       url: "https://pub.flutter-io.cn"
     source: hosted
-    version: "2.2.23"
+    version: "2.3.0"
   path_provider_foundation:
     dependency: transitive
     description:
