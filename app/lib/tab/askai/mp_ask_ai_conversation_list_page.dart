@@ -52,8 +52,14 @@ class _MPAskAIConversationListViewState
     }
   }
 
-  void _showComingSoon() {
-    MPToastUtils.showFeatureComingSoon(context: context);
+  void _openNewChatPage() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => const MPAskAIChatPage(
+          aboutText: 'General',
+        ),
+      ),
+    );
   }
 
   void _onTapConversationItem(MPAskAIConversationItem item) {
@@ -102,7 +108,7 @@ class _MPAskAIConversationListViewState
                             child: Row(
                               children: <Widget>[
                                 InkWell(
-                                  onTap: _showComingSoon,
+                                  onTap: _openNewChatPage,
                                   borderRadius: BorderRadius.circular(14),
                                   child: Container(
                                     width: 34,
@@ -121,7 +127,7 @@ class _MPAskAIConversationListViewState
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: InkWell(
-                                    onTap: _showComingSoon,
+                                    onTap: () => MPToastUtils.showFeatureComingSoon(context: context),
                                     borderRadius: BorderRadius.circular(12),
                                     child: Container(
                                       height: 36,
