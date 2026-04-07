@@ -142,7 +142,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   'Basic Plan',
                   style: TextStyle(
-                    fontSize: OmiFontSize.t6_15,
+                    fontSize: OmiFontSize.t7_16,
                     fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
@@ -190,7 +190,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: OmiFontSize.t6_15,
+                    fontSize: OmiFontSize.t7_16,
                     fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
