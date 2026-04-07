@@ -167,15 +167,15 @@ class _MPHomePageState extends State<MPHomePage> {
                         _cubit.clearAudioStatus();
                       },
                     ),
-                    // _OptionTile(
-                    //   icon: Icons.cloud_sync_outlined,
-                    //   iconGradient: const LinearGradient(
-                    //     colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)],
-                    //   ),
-                    //   title: 'Demo: Sync 3 files',
-                    //   subtitle: 'Progress & file index like web prototype',
-                    //   onTap: _simulateSyncThreeFiles,
-                    // ),
+                    _OptionTile(
+                      icon: Icons.cloud_sync_outlined,
+                      iconGradient: const LinearGradient(
+                        colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)],
+                      ),
+                      title: 'Demo: Sync 3 files',
+                      subtitle: 'Progress & file index like web prototype',
+                      onTap: _simulateSyncThreeFiles,
+                    ),
                   ],
                 ),
               ),
