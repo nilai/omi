@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/http/shared.dart';
+import 'cache/mp_hive_util.dart';
 import 'login/home/mp_login_page.dart';
 import 'login/mp_user.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
@@ -15,7 +16,8 @@ Future<void> main() async {
   Env.init();
   PlatformManager.initializeServices();
   await MPUuidUtil.instance.uuid;
-  await MPPreferences();
+  await MPPreferences.init();
+  await MPHiveUtil.instance.initialize();
   runApp(const MyApp());
 }
 

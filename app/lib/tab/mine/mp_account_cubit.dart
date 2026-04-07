@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../blu/mp_bluetooth_connection_helper.dart';
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../http/api/mp_user.dart';
 import '../../http/schema/mp_user.dart';
@@ -130,6 +131,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     await SharedPreferencesUtil().setAccessToken(null);
     await SharedPreferencesUtil().setRefreshToken(null);
     await SharedPreferencesUtil().setEmail(null);
+    await MPHiveUtil.instance.close();
     await SharedPreferencesUtil().clearTokenExpiresTime();
     await MPBluetoothConnectionHelper.disconnectAppBleForLogout();
     await SharedPreferencesUtil().clearLastConnectedBleDevice();

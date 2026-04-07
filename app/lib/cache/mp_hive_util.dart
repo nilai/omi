@@ -25,7 +25,7 @@ class MPHiveUtil {
   /// - 同邮箱：复用已打开 box
   /// - 新邮箱：自动关闭旧 box，再打开新 box
   Future<Box<dynamic>> initialize({String? email}) async {
-    final String targetEmail = _resolveEmail(email);
+    final String targetEmail = await _resolveEmail(email);
     final String targetBoxName = _boxNameFromEmail(targetEmail);
 
     if (_box != null &&
@@ -62,14 +62,10 @@ class MPHiveUtil {
     return _box!;
   }
 
-  String _resolveEmail(String? email) {
-    final String? raw = email?.trim().isNotEmpty == true
+  Future<String> _resolveEmail(String? email) async{
+    return (email?.trim().isNotEmpty == true
         ? email?.trim()
-        : SharedPreferencesUtil().email?.trim();
-    if (raw == null || raw.isEmpty) {
-      throw Exception('MPHiveUtil initialize failed: email is empty.');
-    }
-    return raw.toLowerCase();
+        : (await SharedPreferencesUtil().email))?.trim().toLowerCase() ?? '';
   }
 
   String _boxNameFromEmail(String email) {

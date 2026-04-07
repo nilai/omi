@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/http/schema/mp_login.dart';
 import 'package:memo_pin/login/verify/mp_verify_state.dart';
 
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../tab/omi_main_tab_page.dart';
 import '../../utils/mp_preferences.dart';
@@ -35,6 +36,7 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
       await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
       SharedPreferencesUtil().setEmail(email);
+      await MPHiveUtil.instance.initialize(email: email);
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,

@@ -140,7 +140,7 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取邮箱：优先取内存中的私有属性，其次取本地存储。
-  String? get email => _email ?? MPPreferences().getString(_emailKey);
+  Future<String?> get email async => _email ?? await MPPreferences().getString(_emailKey);
 
   /// 设置邮箱：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setEmail(String? value) async {
