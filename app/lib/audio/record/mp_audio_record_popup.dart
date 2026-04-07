@@ -49,12 +49,14 @@ class MPPassThroughBarrierDialogRoute extends RawDialogRoute<MPAudioRecordResult
 ///
 /// 返回 [MPAudioRecordResult] 表示用户点击 Save；取消或关闭为 `null`。
 Future<MPAudioRecordResult?> showMPAudioRecordPopup(BuildContext context) {
-  return Navigator.of(context, rootNavigator: true).push<MPAudioRecordResult?>(
+  final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
+  final String barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
+  return rootNavigator.push<MPAudioRecordResult?>(
     MPPassThroughBarrierDialogRoute(
-      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierLabel: barrierLabel,
       pageBuilder:
           (BuildContext context, Animation<double> a1, Animation<double> a2) {
-        return const _MPAudioRecordDialog();
+        return _MPAudioRecordDialog(rootNavigator: rootNavigator);
       },
     ),
   );
@@ -69,7 +71,9 @@ enum _MPAudioRecordStep {
 }
 
 class _MPAudioRecordDialog extends StatefulWidget {
-  const _MPAudioRecordDialog();
+  const _MPAudioRecordDialog({required this.rootNavigator});
+
+  final NavigatorState rootNavigator;
 
   @override
   State<_MPAudioRecordDialog> createState() => _MPAudioRecordDialogState();
@@ -90,10 +94,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   /// `true` 时隐藏大卡与遮罩，仅保留底部胶囊条；录音不中断。
   bool _minimized = false;
 
-  late final AnimationController _waveController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 700),
-  )..repeat();
+  late final AnimationController _waveController;
 
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   bool _recorderOpened = false;
@@ -106,7 +107,17 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   bool _busy = false;
 
   @override
+  void initState() {
+    super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    )..repeat();
+  }
+
+  @override
   void dispose() {
+    _waveController.stop();
     _waveController.dispose();
     _tickTimer?.cancel();
     unawaited(_releaseRecorder(deleteFile: true));
@@ -190,8 +201,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       if (!mounted) {
         return;
       }
-      final bool ok =
-          await OmiMicrophoneManager.ensureMicrophonePermission(context);
+      final bool ok = await OmiMicrophoneManager.ensureMicrophonePermission();
       if (!ok) {
         if (mounted) {
           setState(() => _busy = false);
@@ -282,7 +292,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _showCancelConfirm = false;
     await _releaseRecorder(deleteFile: true);
     if (mounted) {
-      Navigator.of(context).pop();
+      widget.rootNavigator.pop();
     }
   }
 
@@ -344,13 +354,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
 
     _recordPath = null;
-    Navigator.of(context).pop(
+    widget.rootNavigator.pop(
       MPAudioRecordResult(filePath: outPath, duration: total),
     );
   }
 
   void _onCloseIntro() {
-    Navigator.of(context).pop();
+    widget.rootNavigator.pop();
   }
 
   @override
