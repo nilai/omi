@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -163,7 +164,14 @@ class _MPScanHeader extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: const Color(0xFFD9DEEA), width: 2),
                 ),
-                child: const Icon(Icons.blur_circular_rounded, color: Color(0xFF6F7380), size: 34),
+                child: ClipOval(
+                  child: OmiImageLoader.localImg(
+                    'assets/images/3x/mp_connect_device.png',
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
             ),
           ),
@@ -395,7 +403,14 @@ class _MPDeviceCardHeader extends StatelessWidget {
                     color: const Color(0xFFEDEEF2),
                     border: Border.all(color: const Color(0xFFD8DAE2)),
                   ),
-                  child: const Icon(Icons.blur_circular_rounded, color: Color(0xFF676B74), size: 24),
+                  child: ClipOval(
+                    child: OmiImageLoader.localImg(
+                      'assets/images/3x/mp_connect_device.png',
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
               ),
               if (showConnectedBadge)
