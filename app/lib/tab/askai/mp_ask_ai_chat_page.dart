@@ -24,7 +24,7 @@ class MPAskAIChatPage extends StatelessWidget {
       create: (_) => MPAskAIChatCubit(
         aboutText: aboutText,
         conversationId: conversationId,
-        suggestedQuestions: suggestedQuestions,
+        suggestedQuestions: suggestedQuestions, 
       )..initData(),
       child: const _MPAskAIChatView(),
     );
