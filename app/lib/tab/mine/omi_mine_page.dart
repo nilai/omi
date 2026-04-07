@@ -214,7 +214,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
       onTap: _showComingSoon,
       padding: const EdgeInsets.fromLTRB(16, 18, 12, 18),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
             child: Row(
@@ -239,12 +239,12 @@ class _OmiMinePageState extends State<OmiMinePage> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(left: 4, top: 8),
+            padding: const EdgeInsets.only(left: 4),
             child: InkWell(
               onTap: _showComingSoon,
               borderRadius: BorderRadius.circular(6),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -276,7 +276,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -294,18 +294,18 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _calendarGlyph() {
     return Container(
-      width: 42,
-      height: 42,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: blueTextColor,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: const Center(
         child: Text(
           '17',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -315,18 +315,18 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _notionGlyph() {
     return Container(
-      width: 42,
-      height: 42,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: const Center(
         child: Text(
           'N',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 22,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -336,13 +336,13 @@ class _OmiMinePageState extends State<OmiMinePage> {
 
   Widget _tasksGlyph() {
     return Container(
-      width: 42,
-      height: 42,
+      width: 32,
+      height: 32,
       decoration: const BoxDecoration(
         color: Color(0xFFFF9500),
         shape: BoxShape.circle,
       ),
-      child: const Icon(Icons.check_rounded, color: Colors.white, size: 26),
+      child: const Icon(Icons.check_rounded, color: Colors.white, size: 18),
     );
   }
 
