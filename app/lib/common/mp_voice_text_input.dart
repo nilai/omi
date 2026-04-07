@@ -22,6 +22,8 @@ class MPVoiceTextInput extends StatefulWidget {
     this.onSubmitted,
     this.onChanged,
     this.transcribeDelay = const Duration(milliseconds: 1400),
+    this.focusNode,
+    this.autofocus = false,
   });
 
   final String hintText;
@@ -29,6 +31,8 @@ class MPVoiceTextInput extends StatefulWidget {
   final ValueChanged<MPVoiceTextInputResult>? onSubmitted;
   final ValueChanged<String>? onChanged;
   final Duration transcribeDelay;
+  final FocusNode? focusNode;
+  final bool autofocus;
 
   @override
   State<MPVoiceTextInput> createState() => _MPVoiceTextInputState();
@@ -38,6 +42,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     with TickerProviderStateMixin {
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  late final bool _ownsFocusNode;
 
   MPVoiceTextInputMode _mode = MPVoiceTextInputMode.text;
   bool _sending = false;
@@ -49,7 +54,8 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialText);
-    _focusNode = FocusNode();
+    _ownsFocusNode = widget.focusNode == null;
+    _focusNode = widget.focusNode ?? FocusNode();
     _waveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -64,7 +70,9 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
   void dispose() {
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
-    _focusNode.dispose();
+    if (_ownsFocusNode) {
+      _focusNode.dispose();
+    }
     _controller.dispose();
     super.dispose();
   }
@@ -154,6 +162,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
+              autofocus: widget.autofocus,
               onChanged: widget.onChanged,
               onSubmitted: (_) => _submitText(),
               style: OmiTextStyle.create(

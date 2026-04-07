@@ -21,16 +21,42 @@ class OmiAskAIPage extends StatelessWidget {
   }
 }
 
-class _OmiAskAIView extends StatelessWidget {
+class _OmiAskAIView extends StatefulWidget {
   const _OmiAskAIView();
 
-  void _onTapTopRightAction(BuildContext context) {
-    Navigator.of(context).push(
+  @override
+  State<_OmiAskAIView> createState() => _OmiAskAIViewState();
+}
+
+class _OmiAskAIViewState extends State<_OmiAskAIView> {
+  late final FocusNode _inputFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _inputFocusNode = FocusNode();
+  }
+
+  @override
+  void dispose() {
+    _inputFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _dismissKeyboard() {
+    _inputFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    FocusManager.instance.primaryFocus?.unfocus();
+  }
+
+  Future<void> _onTapTopRightAction(BuildContext context) async {
+    _dismissKeyboard();
+    await Navigator.of(context).push(
       PageRouteBuilder<void>(
         opaque: false,
         barrierColor: Colors.transparent,
-        pageBuilder: (_, __, ___) => const MPAskAIConversationListPage(),
-        transitionsBuilder: (_, Animation<double> animation, __, Widget child) {
+        pageBuilder: (_, _, _) => const MPAskAIConversationListPage(),
+        transitionsBuilder: (_, Animation<double> animation, _, Widget child) {
           final Animation<Offset> slide = Tween<Offset>(
             begin: const Offset(1, 0),
             end: Offset.zero,
@@ -41,6 +67,8 @@ class _OmiAskAIView extends StatelessWidget {
         },
       ),
     );
+    if (!mounted) return;
+    _dismissKeyboard();
   }
 
   void _onTapModule(BuildContext context, MPAskAIModule module) {
@@ -51,12 +79,13 @@ class _OmiAskAIView extends StatelessWidget {
     MPToastUtils.showFeatureComingSoon(context: context);
   }
 
-  void _onTapQuestion(
+  Future<void> _onTapQuestion(
     BuildContext context,
     MPAskAIModule module,
     String question,
-  ) {
-    Navigator.of(context).push(
+  ) async {
+    _dismissKeyboard();
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
           aboutText: module.subtitle,
@@ -64,6 +93,8 @@ class _OmiAskAIView extends StatelessWidget {
         ),
       ),
     );
+    if (!mounted) return;
+    _dismissKeyboard();
   }
 
   Widget _buildTopBar(BuildContext context, MPAskAIState state) {
@@ -109,7 +140,9 @@ class _OmiAskAIView extends StatelessWidget {
         ),
         InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _onTapTopRightAction(context),
+          onTap: () {
+            _onTapTopRightAction(context);
+          },
           child: const Padding(
             padding: EdgeInsets.all(6),
             child: Icon(
@@ -184,7 +217,9 @@ class _OmiAskAIView extends StatelessWidget {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
-                onTap: () => _onTapQuestion(context, module, question),
+                onTap: () {
+                  _onTapQuestion(context, module, question);
+                },
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -253,6 +288,8 @@ class _OmiAskAIView extends StatelessWidget {
                   ),
                   child: MPVoiceTextInput(
                     hintText: 'Ask about your memories...',
+                    focusNode: _inputFocusNode,
+                    autofocus: false,
                     onSubmitted: (MPVoiceTextInputResult result) =>
                         _onSubmitInput(context, result),
                   ),
