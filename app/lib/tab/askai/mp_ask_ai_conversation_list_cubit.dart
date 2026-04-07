@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
 import 'mp_ask_ai_chat_const.dart';
@@ -58,6 +59,7 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
       );
 
   static const int _pageSize = 20;
+  static const String _kConversationListCacheKey = 'ask_ai_conversation_list';
   String? _cursor;
 
   Future<void> initData() => refresh();
@@ -73,6 +75,17 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
         pageSize: _pageSize,
         cursor: null,
       );
+      await MPHiveUtil.instance.putPrimitive(
+        key: _kConversationListCacheKey,
+        value: result.items
+            .map(
+              (MPAskAIConversationItem item) => <String, dynamic>{
+                'id': item.id,
+                'title': item.title,
+              },
+            )
+            .toList(growable: false),
+      );
       _cursor = result.nextCursor;
       emit(
         MPAskAIConversationListState(
@@ -82,13 +95,42 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
         ),
       );
     } catch (e) {
+      final List<dynamic>? cached = await MPHiveUtil.instance
+          .getPrimitive<List<dynamic>>(_kConversationListCacheKey);
+      final List<MPAskAIConversationItem> cachedItems = cached == null
+          ? const <MPAskAIConversationItem>[]
+          : cached
+                .whereType<Map>()
+                .map((Map raw) {
+                  final Map<String, dynamic> map =
+                      Map<String, dynamic>.from(raw);
+                  final String id = (map['id'] ?? '').toString();
+                  final String title = (map['title'] ?? '').toString();
+                  if (id.trim().isEmpty || title.trim().isEmpty) {
+                    return null;
+                  }
+                  return MPAskAIConversationItem(id: id, title: title);
+                })
+                .whereType<MPAskAIConversationItem>()
+                .toList(growable: false);
+
+      if (cachedItems.isNotEmpty) {
+        _cursor = cachedItems.last.id;
+        emit(
+          MPAskAIConversationListState(
+            phase: MPAskAIConversationListPhase.loaded,
+            items: cachedItems,
+            hasMore: false,
+            errorMessage: e.toString(),
+          ),
+        );
+        return;
+      }
+
       _cursor = null;
-      // 首屏加载失败时降级为空列表，确保页面显示空态而不是空白/错误占位。
       emit(
         MPAskAIConversationListState(
-          phase: MPAskAIConversationListPhase.loaded,
-          items: const <MPAskAIConversationItem>[],
-          hasMore: false,
+          phase: MPAskAIConversationListPhase.error,
           errorMessage: e.toString(),
         ),
       );
