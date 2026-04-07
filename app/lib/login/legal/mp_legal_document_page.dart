@@ -44,8 +44,8 @@ class MPLegalDocumentPage extends StatelessWidget {
                     child: Text(
                       title,
                       style: TextStyle(
-                        fontSize: OmiFontSize.t13_22,
-                        fontWeight: OmiFontWeight.bold,
+                        fontSize: OmiFontSize.t21_30,
+                        fontWeight: OmiFontWeight.medium,
                         color: mainTextColor,
                         height: 1.25,
                       ),
@@ -131,7 +131,7 @@ List<Widget> _buildTermsSections() {
     _MPBodyParagraphRich(
       spans: [
         const TextSpan(text: 'You must be at least '),
-        TextSpan(text: '13 years old', style: TextStyle(fontWeight: OmiFontWeight.bold)),
+        TextSpan(text: '13 years old', style: TextStyle(fontWeight: OmiFontWeight.medium)),
         const TextSpan(
           text: ' (or the minimum legal age in your jurisdiction) to use MemoPin.',
         ),
@@ -247,13 +247,13 @@ List<Widget> _buildPrivacySections() {
     const SizedBox(height: 12),
     _MPBodyParagraphRich(
       spans: [
-        TextSpan(text: 'We do not sell your personal data.', style: TextStyle(fontWeight: OmiFontWeight.bold)),
+        TextSpan(text: 'We do not sell your personal data.', style: TextStyle(fontWeight: OmiFontWeight.medium)),
       ],
     ),
     const SizedBox(height: 8),
     _MPBodyParagraphRich(
       spans: [
-        TextSpan(text: 'We do not use your data for advertising.', style: TextStyle(fontWeight: OmiFontWeight.bold)),
+        TextSpan(text: 'We do not use your data for advertising.', style: TextStyle(fontWeight: OmiFontWeight.medium)),
       ],
     ),
     const SizedBox(height: 16),
@@ -340,7 +340,7 @@ class _MPSectionHeading extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: OmiFontSize.t7_16,
-          fontWeight: OmiFontWeight.bold,
+          fontWeight: OmiFontWeight.medium,
           color: mainTextColor,
           height: 1.35,
         ),
@@ -362,7 +362,7 @@ class _MPSubHeading extends StatelessWidget {
         text,
         style: TextStyle(
           fontSize: OmiFontSize.t6_15,
-          fontWeight: OmiFontWeight.bold,
+          fontWeight: OmiFontWeight.medium,
           color: mainTextColor,
           height: 1.35,
         ),
@@ -493,7 +493,7 @@ class _MPContactCard extends StatelessWidget {
             '11. Contact Us',
             style: TextStyle(
               fontSize: OmiFontSize.t7_16,
-              fontWeight: OmiFontWeight.bold,
+              fontWeight: OmiFontWeight.medium,
               color: mainTextColor,
               height: 1.35,
             ),
@@ -548,7 +548,7 @@ class _MPContactRow extends StatelessWidget {
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(fontWeight: OmiFontWeight.bold),
+            style: TextStyle(fontWeight: OmiFontWeight.medium),
           ),
           TextSpan(text: value),
         ],
@@ -579,7 +579,7 @@ class _MPContactLinkRow extends StatelessWidget {
             fontSize: OmiFontSize.t6_15,
             height: 1.4,
             color: mainTextColor,
-            fontWeight: OmiFontWeight.bold,
+            fontWeight: OmiFontWeight.medium,
           ),
         ),
         Expanded(
