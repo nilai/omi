@@ -49,8 +49,7 @@ class MPLoginState {
   final bool isSubmitting;
 
   /// 主按钮是否可点：邮箱、密码均非空（trim 后）。
-  bool get isPrimaryButtonEnabled =>
-      email.trim().isNotEmpty && password.isNotEmpty && !isSubmitting;
+  bool get isPrimaryButtonEnabled => email.trim().isNotEmpty && password.isNotEmpty;
 
   /// 规范化错误：仅非空字符串视为有效提示。
   static String? normalizeError(String? e) {
