@@ -131,10 +131,10 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   Future<void> initData() async {
     unawaited(connectBluetoothToLastRecordedDevice());
-    await _loadData();
+    await loadData();
   }
 
-  Future<void> _loadData() async {
+  Future<void> loadData() async {
     final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
     if (response != null && response.baseResp.code == 0) {
       final List<MPHomeTodoItem> upNextTodos = <MPHomeTodoItem>[];

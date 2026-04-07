@@ -77,8 +77,7 @@ class _MPHomePageState extends State<MPHomePage> {
   }
 
   Future<void> _onRefresh() async {
-    await _cubit.initData();
-    await _refreshBleConnectionState();
+    _cubit.loadData();
   }
 
   void _openAddOptions() {
