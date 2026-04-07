@@ -112,7 +112,7 @@ class _MPHomePageState extends State<MPHomePage> {
       onImportFromFile: _importFromFileWithProgress,
       onImportFromAlbum: _importFromAlbumWithProgress,
       onImportFromOtherApp: () {
-        MPToastUtils.showFeatureComingSoon(message: '从其他 App 导入音频');
+        MPToastUtils.showFeatureComingSoon();
       },
     );
   }
@@ -128,11 +128,7 @@ class _MPHomePageState extends State<MPHomePage> {
       isScrollControlled: true,
       builder: (BuildContext ctx) {
         return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.paddingOf(ctx).bottom + 24,
-          ),
+          padding: EdgeInsets.only(left: 20, right: 20, bottom: MediaQuery.paddingOf(ctx).bottom + 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
@@ -141,11 +137,7 @@ class _MPHomePageState extends State<MPHomePage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: <BoxShadow>[
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8)),
                   ],
                 ),
                 child: Column(
@@ -159,9 +151,7 @@ class _MPHomePageState extends State<MPHomePage> {
                     ),
                     _OptionTile(
                       icon: Icons.mic_none_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)],
-                      ),
+                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
                       title: 'Start Recording',
                       subtitle: 'Record a new audio memory',
                       onTap: () async {
@@ -172,9 +162,7 @@ class _MPHomePageState extends State<MPHomePage> {
                     const Divider(height: 1),
                     _OptionTile(
                       icon: Icons.edit_note_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFFFF9F40), Color(0xFFFF8C00)],
-                      ),
+                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF9F40), Color(0xFFFF8C00)]),
                       title: 'Quick Capture',
                       subtitle: 'Type or speak a quick note',
                       onTap: () {
@@ -185,9 +173,7 @@ class _MPHomePageState extends State<MPHomePage> {
                     const Divider(height: 1),
                     _OptionTile(
                       icon: Icons.upload_file_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFF34C759), Color(0xFF28A745)],
-                      ),
+                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF34C759), Color(0xFF28A745)]),
                       title: 'Import Audio',
                       subtitle: 'Choose an audio file from your device',
                       onTap: () {
@@ -198,9 +184,7 @@ class _MPHomePageState extends State<MPHomePage> {
                     const Divider(height: 1),
                     _OptionTile(
                       icon: Icons.mic_none_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFFFF3B30), Color(0xFFD32F2F)],
-                      ),
+                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF3B30), Color(0xFFD32F2F)]),
                       title: 'Demo: MemoPin recording',
                       subtitle: 'Show recording status bar (3s)',
                       onTap: () async {
@@ -212,9 +196,7 @@ class _MPHomePageState extends State<MPHomePage> {
                     ),
                     _OptionTile(
                       icon: Icons.cloud_sync_outlined,
-                      iconGradient: const LinearGradient(
-                        colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)],
-                      ),
+                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF5856D6), Color(0xFF4B4ACF)]),
                       title: 'Demo: Sync 3 files',
                       subtitle: 'Progress & file index like web prototype',
                       onTap: _simulateSyncThreeFiles,
@@ -253,11 +235,9 @@ class _MPHomePageState extends State<MPHomePage> {
                             borderRadius: BorderRadius.circular(10),
                             child: InkWell(
                               onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute<void>(
-                                    builder: (_) => const MPConnectDevicePage(),
-                                  ),
-                                ).then((_) => _refreshBleConnectionState());
+                                Navigator.of(context)
+                                    .push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()))
+                                    .then((_) => _refreshBleConnectionState());
                               },
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
@@ -268,9 +248,7 @@ class _MPHomePageState extends State<MPHomePage> {
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                                 ),
-                                child: _isBleConnected
-                                    ? const _MPHomeNavConnectedIcon()
-                                    : const _MPHomeNavBullseye(),
+                                child: _isBleConnected ? const _MPHomeNavConnectedIcon() : const _MPHomeNavBullseye(),
                               ),
                             ),
                           ),
@@ -307,14 +285,12 @@ class _MPHomePageState extends State<MPHomePage> {
                       ),
                     ),
                   ),
-                  if (state.audioStatus != null)
-                    MPHomeAudioStatusBar(status: state.audioStatus!),
+                  if (state.audioStatus != null) MPHomeAudioStatusBar(status: state.audioStatus!),
                   Expanded(
                     child: RefreshIndicator(
                       onRefresh: _onRefresh,
                       triggerMode: RefreshIndicatorTriggerMode.anywhere,
-                      notificationPredicate: (ScrollNotification notification) =>
-                          notification.depth == 0,
+                      notificationPredicate: (ScrollNotification notification) => notification.depth == 0,
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
@@ -322,9 +298,9 @@ class _MPHomePageState extends State<MPHomePage> {
                           _TodayFocusCard(
                             todos: state.upNextTodos,
                             onViewAll: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()),
-                              );
+                              Navigator.of(
+                                context,
+                              ).push(MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()));
                             },
                             onTodoTap: (MPHomeTodoItem t) =>
                                 MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
@@ -339,9 +315,9 @@ class _MPHomePageState extends State<MPHomePage> {
                           const SizedBox(height: 16),
                           _InsightsCard(
                             insightOverview: state.insightOverview,
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage()),
-                            ),
+                            onTap: () => Navigator.of(
+                              context,
+                            ).push(MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage())),
                           ),
                         ],
                       ),
@@ -368,9 +344,7 @@ class _MPHomeNavBullseye extends StatelessWidget {
     return const SizedBox(
       width: 18,
       height: 18,
-      child: CustomPaint(
-        painter: _MPHomeBullseyePainter(color: _kMarkColor),
-      ),
+      child: CustomPaint(painter: _MPHomeBullseyePainter(color: _kMarkColor)),
     );
   }
 }
@@ -384,18 +358,9 @@ class _MPHomeNavConnectedIcon extends StatelessWidget {
     return Container(
       width: 18,
       height: 18,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFFE9F8EE),
-      ),
+      decoration: const BoxDecoration(shape: BoxShape.circle, color: Color(0xFFE9F8EE)),
       child: const Center(
-        child: SizedBox(
-          width: 11,
-          height: 11,
-          child: CustomPaint(
-            painter: _MPHomeConnectedDotPainter(),
-          ),
-        ),
+        child: SizedBox(width: 11, height: 11, child: CustomPaint(painter: _MPHomeConnectedDotPainter())),
       ),
     );
   }
@@ -490,11 +455,7 @@ class _OptionTile extends StatelessWidget {
                 gradient: iconGradient,
                 shape: BoxShape.circle,
                 boxShadow: <BoxShadow>[
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: Icon(icon, color: Colors.white, size: 22),
@@ -506,17 +467,10 @@ class _OptionTile extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1C1C1E),
-                    ),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93)),
-                  ),
+                  Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93))),
                 ],
               ),
             ),
@@ -528,11 +482,7 @@ class _OptionTile extends StatelessWidget {
 }
 
 class _TodayFocusCard extends StatelessWidget {
-  const _TodayFocusCard({
-    required this.todos,
-    required this.onViewAll,
-    required this.onTodoTap,
-  });
+  const _TodayFocusCard({required this.todos, required this.onViewAll, required this.onTodoTap});
 
   final List<MPHomeTodoItem> todos;
   final VoidCallback onViewAll;
@@ -547,11 +497,7 @@ class _TodayFocusCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
         boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -659,11 +605,7 @@ class _TodayFocusCard extends StatelessWidget {
 }
 
 class _RecentMemoryCard extends StatelessWidget {
-  const _RecentMemoryCard({
-    required this.memories,
-    required this.onViewAll,
-    required this.onMemoryTap,
-  });
+  const _RecentMemoryCard({required this.memories, required this.onViewAll, required this.onMemoryTap});
 
   final List<MPHomeMemoryItem> memories;
   final VoidCallback? onViewAll;
@@ -682,11 +624,7 @@ class _RecentMemoryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
         boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
         ],
       ),
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
@@ -772,10 +710,7 @@ class _RecentMemoryCard extends StatelessWidget {
 }
 
 class _InsightsCard extends StatelessWidget {
-  const _InsightsCard({
-    required this.insightOverview,
-    required this.onTap,
-  });
+  const _InsightsCard({required this.insightOverview, required this.onTap});
 
   final MPHomeInsightOverviewStruct insightOverview;
   final VoidCallback onTap;
@@ -797,11 +732,7 @@ class _InsightsCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
             boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
             ],
           ),
           child: Stack(
@@ -818,9 +749,7 @@ class _InsightsCard extends StatelessWidget {
                           width: 32,
                           height: 32,
                           decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: <Color>[Color(0xFFA855F7), Color(0xFFC084FC)],
-                            ),
+                            gradient: LinearGradient(colors: <Color>[Color(0xFFA855F7), Color(0xFFC084FC)]),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
@@ -875,10 +804,7 @@ class _InsightsCard extends StatelessWidget {
                   child: Container(
                     constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
                     padding: const EdgeInsets.symmetric(horizontal: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF59E0B),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFF59E0B), borderRadius: BorderRadius.circular(999)),
                     alignment: Alignment.center,
                     child: Text(
                       '${insightOverview.newInsightCount}',
