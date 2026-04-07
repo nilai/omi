@@ -143,7 +143,7 @@ class MPBluetoothConnectionHelper {
     }
 
     // 短扫 MemoPin 类设备（discoverMemoPinLikeDevices 内会等待适配器上电），再按记录的 remoteId 直接建链。
-    await discoverMemoPinLikeDevices(duration: const Duration(seconds: 6));
+    await discoverMemoPinLikeDevices(duration: const Duration(seconds: 100));
 
     final BluetoothDevice device = bluetoothDeviceFromRemoteId(r.remoteId);
     final BleTransport transport = createBleTransport(device);
