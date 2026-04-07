@@ -11,6 +11,8 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 
+import '../../../audio/import/mp_audio_import_dialog.dart';
+import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../http/schema/mp_home.dart';
 
@@ -66,14 +68,53 @@ class _MPHomePageState extends State<MPHomePage> {
     _cubit.clearAudioStatus();
   }
 
-  Future<void> _simulateImport() async {
-    Navigator.pop(context);
-    for (int p = 0; p <= 100; p += 10) {
-      _cubit.showImportingStatus(p);
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+  Future<void> _importFromFileWithProgress() async {
+    try {
+      _cubit.showImportingStatus(0);
+      final String? path = await MPAudioImportUtils.pickFromFileWithProgress(
+        onProgressPercent: _cubit.showImportingStatus,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (path != null) {
+        await MPAudioImportUtils.uploadImportedSandboxFile(path);
+      }
+    } finally {
+      if (mounted) {
+        _cubit.clearAudioStatus();
+      }
     }
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    _cubit.clearAudioStatus();
+  }
+
+  Future<void> _importFromAlbumWithProgress() async {
+    try {
+      _cubit.showImportingStatus(0);
+      final String? path = await MPAudioImportUtils.pickFromAlbumWithProgress(
+        onProgressPercent: _cubit.showImportingStatus,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (path != null) {
+        await MPAudioImportUtils.uploadImportedSandboxFile(path);
+      }
+    } finally {
+      if (mounted) {
+        _cubit.clearAudioStatus();
+      }
+    }
+  }
+
+  void _openImportAudioSheet() {
+    MPAudioImportDialog.show<void>(
+      context: context,
+      onImportFromFile: _importFromFileWithProgress,
+      onImportFromAlbum: _importFromAlbumWithProgress,
+      onImportFromOtherApp: () {
+        MPToastUtils.showFeatureComingSoon(message: '从其他 App 导入音频');
+      },
+    );
   }
 
   Future<void> _onRefresh() async {
@@ -149,7 +190,10 @@ class _MPHomePageState extends State<MPHomePage> {
                       ),
                       title: 'Import Audio',
                       subtitle: 'Choose an audio file from your device',
-                      onTap: _simulateImport,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _openImportAudioSheet();
+                      },
                     ),
                     const Divider(height: 1),
                     _OptionTile(
