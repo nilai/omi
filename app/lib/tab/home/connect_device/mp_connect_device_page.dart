@@ -477,7 +477,14 @@ class _MPSignalBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        const Icon(Icons.battery_0_bar_outlined, size: 13, color: Color(0xFF9FA1AA)),
+        Transform.rotate(
+          angle: -math.pi / 2,
+          child: const Icon(
+            Icons.battery_0_bar_outlined,
+            size: 16,
+            color: Color(0xFF9FA1AA),
+          ),
+        ),
         const SizedBox(width: 6),
         Expanded(
           child: ClipRRect(
