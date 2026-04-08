@@ -146,7 +146,7 @@ class _MPQucikCaptureConfirmDialogState
       title,
       style: TextStyle(
         fontSize: OmiFontSize.t5_14,
-        fontWeight: OmiFontWeight.bold,
+        fontWeight: OmiFontWeight.medium,
         color: secondTextColor.withValues(alpha: 0.9),
         letterSpacing: 0.7,
       ),
@@ -239,7 +239,7 @@ class _MPQucikCaptureConfirmDialogState
                 : Text(
                     _issues[index],
                     style: TextStyle(
-                      fontSize: OmiFontSize.t9_18,
+                      fontSize: OmiFontSize.t7_16,
                       fontWeight: OmiFontWeight.medium,
                       color: mainTextColor,
                       height: 1.35,
@@ -303,8 +303,8 @@ class _MPQucikCaptureConfirmDialogState
                 child: Text(
                   'Cancel',
                   style: TextStyle(
-                    fontSize: OmiFontSize.t9_18,
-                    fontWeight: OmiFontWeight.bold,
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
                     color: mainTextColor,
                   ),
                 ),
@@ -332,8 +332,8 @@ class _MPQucikCaptureConfirmDialogState
                 child: Text(
                   'Confirm',
                   style: TextStyle(
-                    fontSize: OmiFontSize.t9_18,
-                    fontWeight: OmiFontWeight.bold,
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
                     color: Colors.white,
                   ),
                 ),
