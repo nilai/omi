@@ -326,8 +326,8 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     emit(MPInsightDetailState.loading());
     try {
       await Future<void>.delayed(const Duration(milliseconds: 520));
-      // final MPInsightDetailData loaded = _buildDetailData(_item);
-      // emit(MPInsightDetailState.loaded(loaded));
+      final MPInsightDetailData loaded = await _buildDetailData(_item);
+      emit(MPInsightDetailState.loaded(loaded));
     } catch (e) {
       emit(MPInsightDetailState.error(e.toString()));
     }
@@ -335,26 +335,90 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
   Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
     final MPGetInsightDetailResponse? response = await getInsightDetail(MPGetInsightDetailRequest(insightId: item.id));
+    if (response == null) {
+      throw Exception('insight detail response is null');
+    }
+    if (response.baseResp.code != 0) {
+      throw Exception(response.baseResp.message);
+    }
 
     final int seed = item.id.hashCode & 0x7fffffff;
     final Random r = Random(seed);
 
     switch (item.type) {
       case MPInsightCardType.daily:
-        return _buildDailyDetailData(item, r);
+        // return _buildDailyDetailDataWithMock(item, r);
+        return _buildDailyDetailData(item, response.insightDetail.dailyDetail, r);
 
       case MPInsightCardType.weekly:
-        return _buildWeeklyDetailData(item, r);
+        // return _buildWeeklyDetailDataWithMock(item, r);
+        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail, r);
 
       case MPInsightCardType.monthly:
-        return _buildMonthlyDetailData(item, seed);
+        // return _buildMonthlyDetailDataWithMock(item, seed);
+        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail, seed);
 
       case MPInsightCardType.pattern:
-        return _buildPatternDetailData(item, r);
+        // return _buildPatternDetailDataWithMock(item, r);
+        return _buildPatternDetailData(item, response.insightDetail.patternDetail, r);
     }
   }
 
-  MPInsightDetailData _buildDailyDetailData(MPInsightListItem item, Random r) {
+  MPInsightDetailData _buildDailyDetailData(
+    MPInsightListItem item,
+    MPDailyInsightDetailStruct? detail,
+    Random r,
+  ) {
+    if (detail == null) {
+      throw Exception('daily_detail is null');
+    }
+    final List<String> decisionsMade = detail.decisionsMade.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> openQuestions = detail.openQuestions.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> ideasCaptured = detail.ideasCaptured.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<MPDailyFocusItem> tomorrowFocus = detail.tomorrowFocus
+        .map((String e) => MPDailyFocusItem(text: e))
+        .toList();
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.narrative.content,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: detail.tomorrowFocus.isNotEmpty
+          ? detail.tomorrowFocus
+          : <String>[
+              '把下一步写成一句可执行句',
+              '将后续提醒合并到同一个时间窗口',
+              if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
+            ],
+      daily: MPDailyInsightDetailData(
+        dateLabel: 'Daily Insight · ${item.periodLabel}',
+        narrativeTitle: detail.narrative.content.isNotEmpty
+            ? detail.decisionsMade.title
+            : 'Today\'s narrative',
+        narrativeBody: detail.narrative.content,
+        decisionsMade: decisionsMade,
+        openQuestions: openQuestions,
+        patternsEmerging: detail.patternsEmerging.content,
+        ideasCaptured: ideasCaptured,
+        tomorrowFocus: tomorrowFocus,
+        askAiButtonText: 'Ask AI about today',
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  MPInsightDetailData _buildDailyDetailDataWithMock(MPInsightListItem item, Random r) {
     final List<String> decisionsMade = <String>[
       'Delay external rollout until recording is stable',
       'Prioritize audio reliability over new features',
@@ -399,7 +463,102 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildWeeklyDetailData(MPInsightListItem item, Random r) {
+  MPInsightDetailData _buildWeeklyDetailData(
+    MPInsightListItem item,
+    MPWeeklyInsightDetailStruct? detail,
+    Random r,
+  ) {
+    if (detail == null) {
+      throw Exception('weekly_detail is null');
+    }
+    final List<MPWeeklyMetricItem> metrics = detail.weekSummary.keyMetrics
+        .map(
+          (MPWeeklyInsightMetricItemStruct e) => MPWeeklyMetricItem(
+            value: '${e.value}',
+            label: e.label,
+          ),
+        )
+        .toList();
+    final List<MPWeeklyAccomplishmentItem> accomplishmentItems = detail.accomplishments
+        .map(
+          (MPWeeklyInsightAccomplishmentItemStruct e) =>
+              MPWeeklyAccomplishmentItem(title: e.title, description: e.description),
+        )
+        .toList();
+    final List<String> accomplishments = detail.accomplishments
+        .map((MPWeeklyInsightAccomplishmentItemStruct e) => e.title)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> pendingItems = detail.pendingItems
+        .map((MPWeeklyInsightPendingItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<MPWeeklyPendingItem> pendingItemCards = detail.pendingItems
+        .map((MPWeeklyInsightPendingItemStruct e) => MPWeeklyPendingItem(text: e.content, visible: true))
+        .toList();
+    final List<MPWeeklyChallengeLearningItem> challengeLearningItems = detail.challengesAndLearnings
+        .map(
+          (MPWeeklyInsightChallengeItemStruct e) => MPWeeklyChallengeLearningItem(
+            title: e.title,
+            description: e.description,
+            backgroundColorValue: 0xFFF5F1E7,
+            borderColorValue: 0xFFECD8A5,
+          ),
+        )
+        .toList();
+    final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
+        .map(
+          (MPWeeklyInsightPriorityItemStruct e) => MPWeeklyPriorityItem(
+            text: e.title,
+            subtitle: e.subTitle ?? '',
+            visible: true,
+          ),
+        )
+        .toList();
+    final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
+        .map(
+          (MPWeeklyInsightExpertFeedbackItemStruct e) => MPWeeklyExpertFeedbackItem(
+            title: e.expertName,
+            content: e.feedback,
+            iconKey: 'business',
+            iconColorValue: 0xFF3A75F0,
+          ),
+        )
+        .toList();
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.header.summary,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: <String>[
+        '把 follow-up 放到“工作后立刻做”',
+        '每周复盘一次，删掉低价值任务',
+        if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
+      ],
+      weekly: MPWeeklyInsightDetailData(
+        titleLabel: detail.header.title.isNotEmpty ? detail.header.title : 'Week of ${item.periodLabel}',
+        subLabel: detail.header.subTitle,
+        headerSummary: detail.header.summary,
+        weekSummaryText: detail.weekSummary.focusAreas,
+        metrics: metrics,
+        accomplishmentItems: accomplishmentItems,
+        accomplishments: accomplishments,
+        challengesAndLearnings:
+            detail.challengesAndLearnings.map((MPWeeklyInsightChallengeItemStruct e) => e.description).join('\n'),
+        challengeLearningItems: challengeLearningItems,
+        pendingItems: pendingItems,
+        pendingItemCards: pendingItemCards,
+        nextWeekPriorities: nextWeekPriorities,
+        expertWeeklyFeedback: expertFeedback,
+        askAiButtonText: 'Ask AI about this week',
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  MPInsightDetailData _buildWeeklyDetailDataWithMock(MPInsightListItem item, Random r) {
     final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
       const MPWeeklyMetricItem(value: '8', label: 'tasks'),
       const MPWeeklyMetricItem(value: '5', label: 'decisions'),
@@ -521,7 +680,73 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildMonthlyDetailData(MPInsightListItem item, int seed) {
+  MPInsightDetailData _buildMonthlyDetailData(
+    MPInsightListItem item,
+    MPMonthlyInsightDetailStruct? detail,
+    int seed,
+  ) {
+    if (detail == null) {
+      throw Exception('monthly_detail is null');
+    }
+    final List<MPMonthlyBarItem> attentionDistribution = detail.attentionDistribution.items
+        .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyBarItem(label: e.name, value: e.value))
+        .toList();
+    final List<MPMonthlyKeyPersonItem> keyPeople = detail.keyPeople.items
+        .map(
+          (MPMonthlyInsightDistributionItemStruct e) => MPMonthlyKeyPersonItem(
+            name: e.name,
+            count: e.value,
+            value: e.value,
+          ),
+        )
+        .toList();
+    final List<MPMonthlyTopicItem> topicsSurfacing = detail.topicsResurfacing.items
+        .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyTopicItem(label: e.name, value: e.value))
+        .toList();
+    final List<String> longRunningOpenThreads =
+        detail.openThreads.items.map((MPMonthlyInsightOpenThreadItemStruct e) => e.content).toList();
+    final List<MPMonthlyDecisionItem> decisionsCannotSlip = detail.decisions.items
+        .asMap()
+        .entries
+        .map((MapEntry<int, String> e) => MPMonthlyDecisionItem(rank: e.key + 1, text: e.value))
+        .toList();
+    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = detail.suggestedFocusNextMonth
+        .asMap()
+        .entries
+        .map((MapEntry<int, String> e) => MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value))
+        .toList();
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.overview.contentMd,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: <String>[
+        'Use suggested focus items to generate action todos for next month.',
+      ],
+      monthly: MPMonthlyInsightDetailData(
+        monthSubtitle: item.periodLabel,
+        monthOverviewSummary: detail.overview.contentMd,
+        attentionDistribution: attentionDistribution,
+        keyPeopleThisMonth: keyPeople,
+        topicsSurfacing: topicsSurfacing,
+        attentionDistributionSummary: detail.attentionDistribution.summary ?? '',
+        keyPeopleThisMonthSummary: detail.keyPeople.summary ?? '',
+        topicsSurfacingSummary: detail.topicsResurfacing.summary ?? '',
+        longRunningOpenThreads: longRunningOpenThreads,
+        longRunningOpenThreadsSummary: detail.openThreads.summary ?? '',
+        monthToMonthTrend: detail.monthToMonthTrend,
+        decisionsThatCannotSlipAgain: decisionsCannotSlip,
+        decisionsThatCannotSlipAgainSummary: detail.decisions.intro,
+        suggestedFocusNextMonth: suggestedFocusNextMonth,
+        askAiButtonText: 'Ask AI about this month',
+      ),
+    );
+  }
+
+  // ignore: unused_element
+  MPInsightDetailData _buildMonthlyDetailDataWithMock(MPInsightListItem item, int seed) {
     final List<MPMonthlyBarItem> attentionDistribution = <MPMonthlyBarItem>[
       const MPMonthlyBarItem(label: 'Product', value: 70),
       const MPMonthlyBarItem(label: 'Engineering', value: 55),
@@ -592,7 +817,28 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildPatternDetailData(MPInsightListItem item, Random r) {
+  MPInsightDetailData _buildPatternDetailData(
+    MPInsightListItem item,
+    MPPatternInsightDetailStruct? detail,
+    Random r,
+  ) {
+    if (detail == null) {
+      throw Exception('pattern_detail is null');
+    }
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        detail.detected.contentMd,
+        detail.whyThisMatters,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: <String>[
+        ...detail.nextStep,
+      ],
+    );
+  }
+
+  // ignore: unused_element
+  MPInsightDetailData _buildPatternDetailDataWithMock(MPInsightListItem item, Random r) {
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[
