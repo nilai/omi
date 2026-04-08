@@ -101,8 +101,10 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
           final String? emailErr = MPLoginState.normalizeError(state.emailError);
           final String? passwordErr = MPLoginState.normalizeError(state.passwordError);
 
+          /// 使用 [HitTestBehavior.deferToChild]，避免点击「邮箱 → 密码」等输入框切换时
+          /// 父级抢先 `unfocus` 导致键盘先收起再弹起。
           return GestureDetector(
-            behavior: HitTestBehavior.translucent,
+            behavior: HitTestBehavior.deferToChild,
             onTap: _dismissKeyboard,
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),

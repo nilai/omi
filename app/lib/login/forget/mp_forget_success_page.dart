@@ -52,83 +52,93 @@ class _MPForgetSuccessView extends StatelessWidget {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: BlocBuilder<MPForgetSuccessCubit, MPForgetSuccessState>(
-                  builder: (BuildContext context, MPForgetSuccessState state) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        const _SuccessIcon(),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Reset Link Sent!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: OmiFontSize.t11_20,
-                            fontWeight: OmiFontWeight.medium,
-                            color: mainTextColor,
-                            letterSpacing: -0.8,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          "We've sent a password reset link to",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: OmiFontSize.t6_15,
-                            color: secondTextColor,
-                            height: 1.4,
-                            fontWeight: OmiFontWeight.regular,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          state.email,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: OmiFontSize.t8_17,
-                            color: mainTextColor,
-                            fontWeight: OmiFontWeight.regular,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF5F6FA),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: _ResendHintParagraph(
-                            resendInProgress: state.resendInProgress,
-                            onTryAgain: () => context.read<MPForgetSuccessCubit>().tryResendCode(),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          height: 56,
-                          child: FilledButton(
-                            onPressed: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute<void>(builder: (_) => const MPLoginPage()),
-                                (Route<dynamic> route) => false,
-                              );
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: blueTextColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints viewportConstraints) {
+                    return BlocBuilder<MPForgetSuccessCubit, MPForgetSuccessState>(
+                      builder: (BuildContext context, MPForgetSuccessState state) {
+                        return SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: viewportConstraints.maxHeight),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: <Widget>[
+                                const _SuccessIcon(),
+                                const SizedBox(height: 24),
+                                Text(
+                                  'Reset Link Sent!',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: OmiFontSize.t11_20,
+                                    fontWeight: OmiFontWeight.medium,
+                                    color: mainTextColor,
+                                    letterSpacing: -0.8,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  "We've sent a password reset link to",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: OmiFontSize.t6_15,
+                                    color: secondTextColor,
+                                    height: 1.4,
+                                    fontWeight: OmiFontWeight.regular,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  state.email,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: OmiFontSize.t8_17,
+                                    color: mainTextColor,
+                                    fontWeight: OmiFontWeight.regular,
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF5F6FA),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: _ResendHintParagraph(
+                                    resendInProgress: state.resendInProgress,
+                                    onTryAgain: () => context.read<MPForgetSuccessCubit>().tryResendCode(),
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  height: 56,
+                                  child: FilledButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pushAndRemoveUntil(
+                                        MaterialPageRoute<void>(builder: (_) => const MPLoginPage()),
+                                        (Route<dynamic> route) => false,
+                                      );
+                                    },
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor: blueTextColor,
+                                      foregroundColor: Colors.white,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                    ),
+                                    child: Text(
+                                      'Back to Sign In',
+                                      style: TextStyle(
+                                        fontSize: OmiFontSize.t7_16,
+                                        fontWeight: OmiFontWeight.bold,
+                                        letterSpacing: -0.4,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: Text(
-                              'Back to Sign In',
-                              style: TextStyle(
-                                fontSize: OmiFontSize.t7_16,
-                                fontWeight: OmiFontWeight.bold,
-                                letterSpacing: -0.4,
-                              ),
-                            ),
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     );
                   },
                 ),
