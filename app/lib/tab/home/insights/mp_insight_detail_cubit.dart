@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/mp_share_export_sheet.dart';
 import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../utils/mp_toast_utils.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -323,6 +326,23 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
 
   final MPInsightListItem _item;
+
+  /// 打开 insight 导出分享弹窗。
+  Future<void> showShareExportSheet(BuildContext context) async {
+    final MPShareExportKind? selected = await showMPShareExportSheet(context);
+    if (selected == null) {
+      return;
+    }
+    final String label = switch (selected) {
+      MPShareExportKind.link => 'Link',
+      MPShareExportKind.image => 'Image',
+      MPShareExportKind.pdf => 'PDF',
+      MPShareExportKind.word => 'Word',
+      MPShareExportKind.markdown => 'Markdown',
+      MPShareExportKind.systemShare => 'Share',
+    };
+    MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
+  }
 
   /// 页面初始化：拉取详情
   Future<void> initData() async {

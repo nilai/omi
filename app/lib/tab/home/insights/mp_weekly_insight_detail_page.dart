@@ -116,9 +116,7 @@ class _MPWeeklyAppBar extends StatelessWidget {
                 children: <Widget>[
                   IconButton(
                     icon: const Icon(Icons.share_outlined, color: blueTextColor),
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Share weekly insight',
-                    ),
+                    onPressed: () => context.read<MPInsightDetailCubit>().showShareExportSheet(context),
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: blueTextColor),
