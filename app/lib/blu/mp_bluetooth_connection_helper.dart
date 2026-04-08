@@ -113,18 +113,20 @@ class MPBluetoothConnectionHelper {
 
   /// 若有本地记录的 BLE 设备：申请权限、短扫 MemoPin 类广播，再对记录 [remoteId] 建立 [BleTransport] 并 [parkBackgroundBleTransport]。
   ///
-  /// 无记录、无权限、蓝牙未开、连接失败时安静返回（不打断首页）。
-  static Future<void> tryConnectLastRecordedBleDevice() async {
+  /// 返回最终连接状态：
+  /// - `true`：已连接（复用已有连接或本次连接成功）
+  /// - `false`：无记录、无权限、蓝牙未开、连接失败
+  static Future<bool> tryConnectLastRecordedBleDevice() async {
     final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
-      return;
+      return false;
     }
 
     final BleTransport? bg = _backgroundBleTransport;
     if (bg != null) {
       try {
         if (bg.deviceId == r.remoteId && await bg.isConnected()) {
-          return;
+          return true;
         }
       } catch (_) {
         // ignore
@@ -134,12 +136,12 @@ class MPBluetoothConnectionHelper {
 
     final bool supported = await isBleSupported;
     if (!supported) {
-      return;
+      return false;
     }
 
     final bool permitted = await ensureBlePermissions();
     if (!permitted) {
-      return;
+      return false;
     }
 
     // 短扫 MemoPin 类设备（discoverMemoPinLikeDevices 内会等待适配器上电），再按记录的 remoteId 直接建链。
@@ -150,12 +152,14 @@ class MPBluetoothConnectionHelper {
     try {
       await transport.connect();
       parkBackgroundBleTransport(transport);
+      return true;
     } catch (_) {
       try {
         await transport.dispose();
       } catch (_) {
         // ignore
       }
+      return false;
     }
   }
 

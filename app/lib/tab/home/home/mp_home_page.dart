@@ -33,7 +33,6 @@ class _MPHomePageState extends State<MPHomePage> {
   @override
   void initState() {
     super.initState();
-    _cubit.refreshBleConnectionState();
   }
 
   @override
@@ -205,9 +204,7 @@ class _MPHomePageState extends State<MPHomePage> {
                             borderRadius: BorderRadius.circular(10),
                             child: InkWell(
                               onTap: () {
-                                Navigator.of(
-                                  context,
-                                )
+                                Navigator.of(context)
                                     .push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()))
                                     .then((_) => _cubit.refreshBleConnectionState());
                               },
@@ -220,7 +217,9 @@ class _MPHomePageState extends State<MPHomePage> {
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                                 ),
-                                child: state.isBleConnected ? const _MPHomeNavConnectedIcon() : const _MPHomeNavBullseye(),
+                                child: state.isBleConnected
+                                    ? const _MPHomeNavConnectedIcon()
+                                    : const _MPHomeNavBullseye(),
                               ),
                             ),
                           ),
