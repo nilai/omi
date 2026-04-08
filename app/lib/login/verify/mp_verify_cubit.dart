@@ -26,7 +26,7 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       error = 'Please enter the verification code.';
     }
     if (error != null) {
-      emit(state.copyWith(codeError: error)); 
+      emit(state.copyWith(codeError: error));
       return;
     }
     final req = MPRegisterRequest(email: email, code: code, password: password);
@@ -37,12 +37,12 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       await MPUser.instance.setRefreshToken(response.refreshToken);
       await MPUser.instance.setTokenExpiresTime(response.expiresIn);
       await MPUser.instance.setEmail(email);
-      await MPHiveUtil.instance.initialize(email: email);
+      await MPHiveUtil.instance.initialize();
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,
       );
-    }else {
+    } else {
       MPToastUtils.showMessage(response?.baseResp.message ?? 'Register failed');
     }
   }

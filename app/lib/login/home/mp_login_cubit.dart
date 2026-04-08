@@ -38,14 +38,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
   /// 登录 ↔ 注册：清空输入与错误。
   void toggleAuthMode() {
     final MPLoginMode next = state.mode == MPLoginMode.login ? MPLoginMode.signup : MPLoginMode.login;
-    emit(
-      state.copyWith(
-        mode: next,
-        emailError: null,
-        passwordError: null,
-        isSubmitting: false,
-      ),
-    );
+    emit(state.copyWith(mode: next, emailError: null, passwordError: null, isSubmitting: false));
   }
 
   /// 提交校验（按钮仅在邮箱、密码非空时可点）。
@@ -95,7 +88,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
       await MPUser.instance.setRefreshToken(response.refreshToken);
       await MPUser.instance.setTokenExpiresTime(response.expiresIn);
       await MPUser.instance.setEmail(email);
-      await MPHiveUtil.instance.initialize(email: email);
+      await MPHiveUtil.instance.initialize();
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,

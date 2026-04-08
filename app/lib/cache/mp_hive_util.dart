@@ -24,9 +24,8 @@ class MPHiveUtil {
   /// 若多次调用：
   /// - 同邮箱：复用已打开 box
   /// - 新邮箱：自动关闭旧 box，再打开新 box
-  Future<Box<dynamic>> initialize({String? email}) async {
-    final String targetEmail = await _resolveEmail(email);
-    final String targetBoxName = _boxNameFromEmail(targetEmail);
+  Future<Box<dynamic>> initialize() async {
+    final String targetBoxName = MPUser().userId;
 
     if (_box != null &&
         _box!.isOpen &&
@@ -60,16 +59,6 @@ class MPHiveUtil {
     _box = await Hive.openBox<dynamic>(targetBoxName);
     _activeBoxName = targetBoxName;
     return _box!;
-  }
-
-  Future<String> _resolveEmail(String? email) async{
-    return (email?.trim().isNotEmpty == true
-        ? email?.trim()
-        : MPUser.instance.email)?.trim().toLowerCase() ?? '';
-  }
-
-  String _boxNameFromEmail(String email) {
-    return md5.convert(utf8.encode(email)).toString();
   }
 
   Future<Box<dynamic>> _ensureBox() async {
