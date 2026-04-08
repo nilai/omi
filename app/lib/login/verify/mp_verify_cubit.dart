@@ -19,6 +19,32 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
     _context = context;
   }
 
+  /// 重新发送邮箱验证码；仅调 [sendCode]，**不**进行页面跳转。
+  Future<void> resendVerificationCode(String email) async {
+    if (state.isResendInProgress) {
+      return;
+    }
+    final String trimmed = email.trim();
+    if (trimmed.isEmpty) {
+      MPToastUtils.showMessage('Please enter a valid email address.');
+      return;
+    }
+    emit(state.copyWith(isResendInProgress: true));
+    try {
+      final MPSendCodeRequest req = MPSendCodeRequest(email: trimmed);
+      final response = await sendCode(req);
+      if (response != null && response.baseResp.code == 0) {
+        MPToastUtils.showMessage('Verification code sent');
+      } else {
+        MPToastUtils.showMessage(response?.baseResp.message ?? 'Send code failed');
+      }
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(isResendInProgress: false));
+      }
+    }
+  }
+
   /// 提交校验。
   void submit(String email, String password, String code) async {
     String? error;

@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../login/legal/mp_legal_document_page.dart';
-import '../../utils/mp_toast_utils.dart';
 import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';
 import 'mp_verify_cubit.dart';
@@ -227,29 +226,34 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                 const SizedBox(height: 20),
                 Center(
                   child: GestureDetector(
-                    onTap: () => MPToastUtils.showFeatureComingSoon(message: '重新发送验证码'),
-                    child: Text.rich(
-                      TextSpan(
-                        children: <InlineSpan>[
-                          TextSpan(
-                            text: "Didn't receive the code? ",
-                            style: TextStyle(
-                              fontSize: OmiFontSize.t5_14,
-                              color: blueTextColor,
-                              fontWeight: OmiFontWeight.medium,
+                    onTap: state.isResendInProgress
+                        ? null
+                        : () => cubit.resendVerificationCode(widget.email),
+                    child: Opacity(
+                      opacity: state.isResendInProgress ? 0.45 : 1,
+                      child: Text.rich(
+                        TextSpan(
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: "Didn't receive the code? ",
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t5_14,
+                                color: blueTextColor,
+                                fontWeight: OmiFontWeight.medium,
+                              ),
                             ),
-                          ),
-                          TextSpan(
-                            text: 'Resend',
-                            style: TextStyle(
-                              fontSize: OmiFontSize.t5_14,
-                              color: blueTextColor,
-                              fontWeight: OmiFontWeight.bold,
+                            TextSpan(
+                              text: 'Resend',
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t5_14,
+                                color: blueTextColor,
+                                fontWeight: OmiFontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ),
                 ),
