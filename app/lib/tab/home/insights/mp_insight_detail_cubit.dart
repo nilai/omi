@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../http/api/mp_insight.dart';
@@ -372,6 +373,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     if (detail == null) {
       throw Exception('daily_detail is null');
     }
+    debugPrint('-----hjj-----daily_detail: ${detail.toJson()}');
     final List<String> decisionsMade = detail.decisionsMade.items
         .map((MPDailyInsightTextItemStruct e) => e.content)
         .where((String e) => e.isNotEmpty)
@@ -394,13 +396,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         item.content,
         detail.narrative.content,
       ].where((String e) => e.isNotEmpty).toList(),
-      tips: detail.tomorrowFocus.isNotEmpty
-          ? detail.tomorrowFocus
-          : <String>[
-              '把下一步写成一句可执行句',
-              '将后续提醒合并到同一个时间窗口',
-              if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
-            ],
+      tips: [],
       daily: MPDailyInsightDetailData(
         dateLabel: 'Daily Insight · ${item.periodLabel}',
         narrativeTitle: detail.narrative.content.isNotEmpty
@@ -471,6 +467,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     if (detail == null) {
       throw Exception('weekly_detail is null');
     }
+    debugPrint('-----hjj-----weekly_detail: ${detail.toJson()}');
     final List<MPWeeklyMetricItem> metrics = detail.weekSummary.keyMetrics
         .map(
           (MPWeeklyInsightMetricItemStruct e) => MPWeeklyMetricItem(
@@ -532,11 +529,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         item.content,
         detail.header.summary,
       ].where((String e) => e.isNotEmpty).toList(),
-      tips: <String>[
-        '把 follow-up 放到“工作后立刻做”',
-        '每周复盘一次，删掉低价值任务',
-        if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
-      ],
+      tips: [],
       weekly: MPWeeklyInsightDetailData(
         titleLabel: detail.header.title.isNotEmpty ? detail.header.title : 'Week of ${item.periodLabel}',
         subLabel: detail.header.subTitle,
@@ -688,6 +681,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     if (detail == null) {
       throw Exception('monthly_detail is null');
     }
+    debugPrint('-----hjj-----monthly_detail: ${detail.toJson()}');
     final List<MPMonthlyBarItem> attentionDistribution = detail.attentionDistribution.items
         .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyBarItem(label: e.name, value: e.value))
         .toList();
@@ -722,9 +716,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         item.content,
         detail.overview.contentMd,
       ].where((String e) => e.isNotEmpty).toList(),
-      tips: <String>[
-        'Use suggested focus items to generate action todos for next month.',
-      ],
+      tips:[],
       monthly: MPMonthlyInsightDetailData(
         monthSubtitle: item.periodLabel,
         monthOverviewSummary: detail.overview.contentMd,
@@ -825,6 +817,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     if (detail == null) {
       throw Exception('pattern_detail is null');
     }
+    debugPrint('-----hjj-----pattern_detail: ${detail.toJson()}');
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[
