@@ -261,24 +261,24 @@ class MPAudioUploadManager {
         }
 
         if (rightNowTranscribe) {
-          _emitUploadProgress(
-            onPerFileProgress,
-            batchIndex: i + 1,
-            batchTotal: n,
-            progress: 96,
-          );
-          final MPSummaryRecordResponse? summary = await summaryRecord(
-            MPSummaryRecordRequest(
-              memoryId: created.memoryId,
-              recordUrl: created.recordUrl,
-              recordMemoAt: recordMemoAt,
-              templateId: templateId,
-            ),
-          );
-          if (summary == null || summary.baseResp.code != 0) {
-            MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
-            return lastCreated;
-          }
+          // _emitUploadProgress(
+          //   onPerFileProgress,
+          //   batchIndex: i + 1,
+          //   batchTotal: n,
+          //   progress: 96,
+          // );
+          // final MPSummaryRecordResponse? summary = await summaryRecord(
+          //   MPSummaryRecordRequest(
+          //     memoryId: created.memoryId,
+          //     recordUrl: created.recordUrl,
+          //     recordMemoAt: recordMemoAt,
+          //     templateId: templateId,
+          //   ),
+          // );
+          // if (summary == null || summary.baseResp.code != 0) {
+          //   MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
+          //   return lastCreated;
+          // }
         }
 
         _emitUploadProgress(
