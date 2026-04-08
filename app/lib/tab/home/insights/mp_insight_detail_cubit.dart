@@ -7,7 +7,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/mp_share_export_sheet.dart';
 import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_insight.dart';
+import '../../../http/api/mp_memo.dart';
+import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../http/schema/mp_memo.dart';
+import '../../../http/schema/mp_memory.dart';
+import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
 import 'dialog/mp_insights_more_dialog.dart';
 import 'mp_insights_list_cubit.dart';
@@ -350,7 +355,20 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     await MPInsightsMoreDialog.show(
       context: context,
       onDeleteTap: () {
-        MPToastUtils.showFeatureComingSoon(message: 'Delete memory');
+        deleteMemo(MPDeleteMemoRequest(memoId: _item.id)).then((MPDeleteMemoResponse? response) {
+          if (response != null && response.baseResp.code == 0) {
+            if (context.mounted) {
+              Navigator.of(context).pop();
+            } else {
+              final BuildContext? targetContext = MyApp.navigatorKey.currentContext;
+              if (targetContext != null && targetContext.mounted) {
+                Navigator.of(targetContext).pop();
+              }
+            }
+          } else {
+            MPToastUtils.showMessage(response?.baseResp.message ?? '删除失败，请稍后重试');
+          }
+        });
       },
     );
   }
@@ -376,18 +394,14 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       );
       if (serverResponse != null && serverResponse.baseResp.code == 0) {
         response = serverResponse;
-        await MPHiveUtil.instance.putMap(
-          key: cacheKey,
-          value: response.toJson(),
-        );
+        await MPHiveUtil.instance.putMap(key: cacheKey, value: response.toJson());
       }
     } catch (_) {}
 
     if (response == null) {
       final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(cacheKey);
       if (cached != null) {
-        final MPGetInsightDetailResponse cachedResponse =
-            MPGetInsightDetailResponse.fromJson(cached);
+        final MPGetInsightDetailResponse cachedResponse = MPGetInsightDetailResponse.fromJson(cached);
         if (cachedResponse.baseResp.code == 0) {
           response = cachedResponse;
         }
@@ -413,10 +427,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     }
   }
 
-  MPInsightDetailData _buildDailyDetailData(
-    MPInsightListItem item,
-    MPDailyInsightDetailStruct? detail,
-  ) {
+  MPInsightDetailData _buildDailyDetailData(MPInsightListItem item, MPDailyInsightDetailStruct? detail) {
     if (detail == null) {
       throw Exception('daily_detail is null');
     }
@@ -439,16 +450,11 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
     return MPInsightDetailData(
       item: item,
-      paragraphs: <String>[
-        item.content,
-        detail.narrative.content,
-      ].where((String e) => e.isNotEmpty).toList(),
+      paragraphs: <String>[item.content, detail.narrative.content].where((String e) => e.isNotEmpty).toList(),
       tips: [],
       daily: MPDailyInsightDetailData(
         dateLabel: 'Daily Insight · ${item.periodLabel}',
-        narrativeTitle: detail.narrative.content.isNotEmpty
-            ? detail.decisionsMade.title
-            : 'Today\'s narrative',
+        narrativeTitle: detail.narrative.content.isNotEmpty ? detail.decisionsMade.title : 'Today\'s narrative',
         narrativeBody: detail.narrative.content,
         decisionsMade: decisionsMade,
         openQuestions: openQuestions,
@@ -460,21 +466,13 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildWeeklyDetailData(
-    MPInsightListItem item,
-    MPWeeklyInsightDetailStruct? detail,
-  ) {
+  MPInsightDetailData _buildWeeklyDetailData(MPInsightListItem item, MPWeeklyInsightDetailStruct? detail) {
     if (detail == null) {
       throw Exception('weekly_detail is null');
     }
     debugPrint('-----hjj-----weekly_detail: ${detail.toJson()}');
     final List<MPWeeklyMetricItem> metrics = detail.weekSummary.keyMetrics
-        .map(
-          (MPWeeklyInsightMetricItemStruct e) => MPWeeklyMetricItem(
-            value: '${e.value}',
-            label: e.label,
-          ),
-        )
+        .map((MPWeeklyInsightMetricItemStruct e) => MPWeeklyMetricItem(value: '${e.value}', label: e.label))
         .toList();
     final List<MPWeeklyAccomplishmentItem> accomplishmentItems = detail.accomplishments
         .map(
@@ -505,11 +503,8 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         .toList();
     final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
         .map(
-          (MPWeeklyInsightPriorityItemStruct e) => MPWeeklyPriorityItem(
-            text: e.title,
-            subtitle: e.subTitle ?? '',
-            visible: true,
-          ),
+          (MPWeeklyInsightPriorityItemStruct e) =>
+              MPWeeklyPriorityItem(text: e.title, subtitle: e.subTitle ?? '', visible: true),
         )
         .toList();
     final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
@@ -525,10 +520,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
     return MPInsightDetailData(
       item: item,
-      paragraphs: <String>[
-        item.content,
-        detail.header.summary,
-      ].where((String e) => e.isNotEmpty).toList(),
+      paragraphs: <String>[item.content, detail.header.summary].where((String e) => e.isNotEmpty).toList(),
       tips: [],
       weekly: MPWeeklyInsightDetailData(
         titleLabel: detail.header.title.isNotEmpty ? detail.header.title : 'Week of ${item.periodLabel}',
@@ -538,8 +530,9 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         metrics: metrics,
         accomplishmentItems: accomplishmentItems,
         accomplishments: accomplishments,
-        challengesAndLearnings:
-            detail.challengesAndLearnings.map((MPWeeklyInsightChallengeItemStruct e) => e.description).join('\n'),
+        challengesAndLearnings: detail.challengesAndLearnings
+            .map((MPWeeklyInsightChallengeItemStruct e) => e.description)
+            .join('\n'),
         challengeLearningItems: challengeLearningItems,
         pendingItems: pendingItems,
         pendingItemCards: pendingItemCards,
@@ -550,10 +543,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildMonthlyDetailData(
-    MPInsightListItem item,
-    MPMonthlyInsightDetailStruct? detail,
-  ) {
+  MPInsightDetailData _buildMonthlyDetailData(MPInsightListItem item, MPMonthlyInsightDetailStruct? detail) {
     if (detail == null) {
       throw Exception('monthly_detail is null');
     }
@@ -563,18 +553,16 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         .toList();
     final List<MPMonthlyKeyPersonItem> keyPeople = detail.keyPeople.items
         .map(
-          (MPMonthlyInsightDistributionItemStruct e) => MPMonthlyKeyPersonItem(
-            name: e.name,
-            count: e.value,
-            value: e.value,
-          ),
+          (MPMonthlyInsightDistributionItemStruct e) =>
+              MPMonthlyKeyPersonItem(name: e.name, count: e.value, value: e.value),
         )
         .toList();
     final List<MPMonthlyTopicItem> topicsSurfacing = detail.topicsResurfacing.items
         .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyTopicItem(label: e.name, value: e.value))
         .toList();
-    final List<String> longRunningOpenThreads =
-        detail.openThreads.items.map((MPMonthlyInsightOpenThreadItemStruct e) => e.content).toList();
+    final List<String> longRunningOpenThreads = detail.openThreads.items
+        .map((MPMonthlyInsightOpenThreadItemStruct e) => e.content)
+        .toList();
     final List<MPMonthlyDecisionItem> decisionsCannotSlip = detail.decisions.items
         .asMap()
         .entries
@@ -588,11 +576,8 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
     return MPInsightDetailData(
       item: item,
-      paragraphs: <String>[
-        item.content,
-        detail.overview.contentMd,
-      ].where((String e) => e.isNotEmpty).toList(),
-      tips:[],
+      paragraphs: <String>[item.content, detail.overview.contentMd].where((String e) => e.isNotEmpty).toList(),
+      tips: [],
       monthly: MPMonthlyInsightDetailData(
         monthSubtitle: item.periodLabel,
         monthOverviewSummary: detail.overview.contentMd,
@@ -613,24 +598,15 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     );
   }
 
-  MPInsightDetailData _buildPatternDetailData(
-    MPInsightListItem item,
-    MPPatternInsightDetailStruct? detail,
-  ) {
+  MPInsightDetailData _buildPatternDetailData(MPInsightListItem item, MPPatternInsightDetailStruct? detail) {
     if (detail == null) {
       throw Exception('pattern_detail is null');
     }
     debugPrint('-----hjj-----pattern_detail: ${detail.toJson()}');
     return MPInsightDetailData(
       item: item,
-      paragraphs: <String>[
-        detail.detected.contentMd,
-        detail.whyThisMatters,
-      ].where((String e) => e.isNotEmpty).toList(),
-      tips: <String>[
-        ...detail.nextStep,
-      ],
+      paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
+      tips: <String>[...detail.nextStep],
     );
   }
-
 }
