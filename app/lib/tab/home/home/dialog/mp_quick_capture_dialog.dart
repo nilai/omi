@@ -14,7 +14,7 @@ import '../../../../permission/omi_microphone_manager.dart';
 import '../../../../utils/mp_toast_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
-import '../../../memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
+import 'mp_qucik_capture_confirm_dialog.dart';
 
 enum _MPQuickCaptureState {
   idle,
@@ -108,6 +108,32 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     if (!hasText && _state == _MPQuickCaptureState.textReady) {
       setState(() => _state = _MPQuickCaptureState.idle);
     }
+  }
+
+  /// 组装分析结果并展示确认弹窗。
+  Future<void> _showAnalyzeConfirmDialog({
+    required String originalText,
+    required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
+  }) async {
+    final String fallbackText = originalText.trim();
+    final List<String> issues = structuredSuggestions
+        .map((MPAnalyzeMemoSuggestionStruct e) {
+          final String content = e.content.trim();
+          if (content.isEmpty) {
+            return '';
+          }
+          final String prefix = e.type == MPAnalyzeMemoSuggestionType.todo
+              ? 'Todo: '
+              : 'Memo: ';
+          return '$prefix$content';
+        })
+        .where((String e) => e.isNotEmpty)
+        .toList(growable: false);
+    await MPQucikCaptureConfirmDialog.show(
+      widget.hostContext,
+      originalText: fallbackText,
+      issues: issues,
+    );
   }
 
   Future<String> _ensureQuickCaptureDirectory() async {
@@ -243,10 +269,6 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     final String memoText = response.originalText.trim().isNotEmpty
         ? response.originalText
         : content;
-    final List<String> suggestions = response.structuredSuggestions
-        .map((MPAnalyzeMemoSuggestionStruct e) => e.content.trim())
-        .where((String e) => e.isNotEmpty)
-        .toList(growable: false);
     _isClosing = true;
     if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
       _sheetNavigator.pop();
@@ -254,10 +276,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     if (!widget.hostContext.mounted) {
       return;
     }
-    await showMPAnalyzeSuggestedTasksSheet(
-      widget.hostContext,
-      memoText: memoText,
-      onAnalyze: (_) async => suggestions,
+    await _showAnalyzeConfirmDialog(
+      originalText: memoText,
+      structuredSuggestions: response.structuredSuggestions,
     );
   }
 
@@ -346,10 +367,6 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       return;
     }
     final String memoText = response.originalText.trim();
-    final List<String> suggestions = response.structuredSuggestions
-        .map((MPAnalyzeMemoSuggestionStruct e) => e.content.trim())
-        .where((String e) => e.isNotEmpty)
-        .toList(growable: false);
     _isClosing = true;
     if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
       _sheetNavigator.pop();
@@ -357,10 +374,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     if (!widget.hostContext.mounted) {
       return;
     }
-    await showMPAnalyzeSuggestedTasksSheet(
-      widget.hostContext,
-      memoText: memoText,
-      onAnalyze: (_) async => suggestions,
+    await _showAnalyzeConfirmDialog(
+      originalText: memoText,
+      structuredSuggestions: response.structuredSuggestions,
     );
   }
 
