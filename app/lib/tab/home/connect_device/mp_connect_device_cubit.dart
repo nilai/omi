@@ -4,8 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
+import 'package:memo_pin/blu/mp_ble_preferences.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 /// 连接页设备模型
@@ -142,13 +142,13 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   /// 已连接设备往往不出现在扫描结果里，必须依赖 GATT 会话展示。
   Future<MPConnectDeviceItem> _connectedDeviceItemForActiveTransport() async {
     final String id = _transport!.deviceId;
-    MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     String displayName;
     if (r != null && r.remoteId == id) {
       displayName = r.displayName;
     } else {
       displayName = await _displayNameForBleRemoteId(id);
-      await SharedPreferencesUtil().setLastConnectedBleDevice(
+      await MPBlePreferences.instance.setLastConnectedBleDevice(
         remoteId: id,
         displayName: displayName,
       );
@@ -164,7 +164,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
   /// 解析展示名：优先本地记录，其次广播名，最后退回占位文案。
   Future<String> _displayNameForBleRemoteId(String remoteId) async {
-    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r != null && r.remoteId == remoteId) {
       return r.displayName;
     }
@@ -204,7 +204,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     required List<MPConnectDeviceItem> keepConnected,
   }) {
     final List<MPConnectDeviceItem> out = List<MPConnectDeviceItem>.from(keepConnected);
-    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
       return out;
     }
@@ -225,7 +225,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
   /// 若本地有上次设备记录且本次扫描结果中尚无该 id，则追加一行（便于离线或未广播时仍显示）。
   void _appendPersistedLastDeviceIfMissing(List<MPConnectDeviceItem> next) {
-    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
       return;
     }
@@ -400,7 +400,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
     if (target.isConnected) {
       await _disconnectActive();
-      await SharedPreferencesUtil().clearLastConnectedBleDevice();
+      await MPBlePreferences.instance.clearLastConnectedBleDevice();
       emit(
         state.copyWith(
           devices: state.devices
@@ -434,7 +434,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       final BluetoothDevice device = MPBluetoothConnectionHelper.bluetoothDeviceFromRemoteId(id);
       _transport = MPBluetoothConnectionHelper.createBleTransport(device);
       await _transport!.connect();
-      await SharedPreferencesUtil().setLastConnectedBleDevice(
+      await MPBlePreferences.instance.setLastConnectedBleDevice(
         remoteId: id,
         displayName: target.name,
       );

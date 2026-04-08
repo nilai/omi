@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/http/schema/mp_login.dart';
+import 'package:memo_pin/login/mp_user.dart';
 import 'package:memo_pin/login/verify/mp_verify_state.dart';
 
 import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../tab/omi_main_tab_page.dart';
-import '../../utils/mp_preferences.dart';
 import '../../utils/mp_toast_utils.dart';
 
 /// 验证码页面 Cubit：输入管理与提交校验。
@@ -26,22 +26,23 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
       error = 'Please enter the verification code.';
     }
     if (error != null) {
-      emit(state.copyWith(codeError: error)); 
+      emit(state.copyWith(codeError: error));
       return;
     }
     final req = MPRegisterRequest(email: email, code: code, password: password);
     final response = await register(req);
     if (response != null && response.baseResp.code == 0) {
-      await SharedPreferencesUtil().setAccessToken(response.accessToken);
-      await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
-      await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
-      SharedPreferencesUtil().setEmail(email);
-      await MPHiveUtil.instance.initialize(email: email);
+      await MPUser.instance.setAccessToken(response.accessToken);
+      await MPUser.instance.setUserId(response.userId);
+      await MPUser.instance.setRefreshToken(response.refreshToken);
+      await MPUser.instance.setTokenExpiresTime(response.expiresIn);
+      await MPUser.instance.setEmail(email);
+      await MPHiveUtil.instance.initialize();
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,
       );
-    }else {
+    } else {
       MPToastUtils.showMessage(response?.baseResp.message ?? 'Register failed');
     }
   }

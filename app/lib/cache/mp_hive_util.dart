@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
+import 'package:memo_pin/login/mp_user.dart';
 
 /// Hive 工具类（按用户邮箱分箱存储）。
 ///
@@ -24,9 +24,8 @@ class MPHiveUtil {
   /// 若多次调用：
   /// - 同邮箱：复用已打开 box
   /// - 新邮箱：自动关闭旧 box，再打开新 box
-  Future<Box<dynamic>> initialize({String? email}) async {
-    final String targetEmail = await _resolveEmail(email);
-    final String targetBoxName = _boxNameFromEmail(targetEmail);
+  Future<Box<dynamic>> initialize() async {
+    final String targetBoxName = MPUser().userId;
 
     if (_box != null &&
         _box!.isOpen &&
@@ -60,16 +59,6 @@ class MPHiveUtil {
     _box = await Hive.openBox<dynamic>(targetBoxName);
     _activeBoxName = targetBoxName;
     return _box!;
-  }
-
-  Future<String> _resolveEmail(String? email) async{
-    return (email?.trim().isNotEmpty == true
-        ? email?.trim()
-        : (await SharedPreferencesUtil().email))?.trim().toLowerCase() ?? '';
-  }
-
-  String _boxNameFromEmail(String email) {
-    return md5.convert(utf8.encode(email)).toString();
   }
 
   Future<Box<dynamic>> _ensureBox() async {
