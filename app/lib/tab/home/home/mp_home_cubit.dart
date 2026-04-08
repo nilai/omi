@@ -28,10 +28,11 @@ class MPHomeAudioStatus {
 
   final MPHomeAudioStatusType type;
 
-  /// 0–100，同步 / 导入时使用
+  /// 同步：当前**正在上传的这一条文件**的进度 0–100（非整批累加）；第 N 条完成后，第 N+1 条从 0 再到 100。
+  /// 导入：导入单文件的进度 0–100。
   final int? progress;
 
-  /// 多文件同步时的当前序号（从 1 开始）
+  /// 多文件同步时当前条序号（从 1 开始），与 [progress] 表示的「当前条」一致。
   final int? currentFile;
 
   final int? totalFiles;
@@ -105,11 +106,14 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   MPHomeCubit() : super(_initialState()) {
     _recordCreatedSub =
         MPMemoryNotification.listenMemoryRecordCreated(_onMemoryRecordCreated);
+    _uploadProgressSub =
+        MPMemoryNotification.listenUploadProgress(_onUploadProgress);
     initData();
   }
 
   Timer? _insightsTimer;
   StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
+  StreamSubscription<MPMemoryRecordUploadProgressPayload>? _uploadProgressSub;
   Timer? _syncCompletedClearTimer;
 
   static MPHomeState _initialState() {
@@ -260,7 +264,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     );
   }
 
-  /// 文件同步（进度与 current/total 可变）。
+  /// 文件同步：`progress` 为**当前条**上传进度 0–100；多文件时换条后从 0 重新计。
   void showSyncingStatus({
     required int currentFile,
     required int totalFiles,
@@ -279,7 +283,21 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     );
   }
 
-  /// [MPMemoryNotification]：本地录音上传并创建 record 成功后更新顶部同步条。
+  /// 与 [MPMemoryRecordUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
+  void _onUploadProgress(MPMemoryRecordUploadProgressPayload payload) {
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+      return;
+    }
+    final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
+    final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
+    showSyncingStatus(
+      currentFile: batchIndex,
+      totalFiles: batchTotal,
+      progress: payload.progress.clamp(0, 100),
+    );
+  }
+
+  /// [MPMemoryNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
   void _onMemoryRecordCreated(MPMemoryRecordCreatedPayload payload) {
     if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
       return;
@@ -287,12 +305,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _syncCompletedClearTimer?.cancel();
     final int total = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int index = payload.batchIndex.clamp(1, total);
-    final int progress = ((index * 100) / total).round().clamp(0, 100);
+    // 本条已创建完成，与 [_onUploadProgress] 单文件进度语义一致（不再用批次折算，避免从 100% 回跳）。
+    const int progress = 100;
     emit(
       state.copyWith(
         audioStatus: MPHomeAudioStatus(
           type: MPHomeAudioStatusType.syncing,
-          progress: progress,
+          progress: progress.clamp(0, 100),
           currentFile: index,
           totalFiles: total,
         ),
@@ -328,6 +347,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _insightsTimer?.cancel();
     _syncCompletedClearTimer?.cancel();
     _recordCreatedSub?.cancel();
+    _uploadProgressSub?.cancel();
     return super.close();
   }
 }

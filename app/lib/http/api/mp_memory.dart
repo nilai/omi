@@ -118,3 +118,19 @@ Future<MPSummaryRecordResponse?> summaryRecord(MPSummaryRecordRequest req) async
   }
   return null;
 }
+
+// GET /api/v1/memory/get_upload_record_url
+Future<MPGetUploadRecordUrlResponse?> getUploadRecordUrl(MPGetUploadRecordUrlRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/get_upload_record_url?content_type=${req.contentType}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getUploadRecordUrl response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetUploadRecordUrlResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

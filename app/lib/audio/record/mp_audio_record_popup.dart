@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -105,6 +106,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   Timer? _tickTimer;
 
   bool _busy = false;
+
+  /// 上传阶段进度（`null` 表示未在上传）；由 [MPAudioUploadManager.uploadLocalRecord] 的 [onPerFileProgress] 更新。
+  int? _uploadProgressPct;
+  int _uploadBatchIndex = 1;
+  int _uploadBatchTotal = 1;
 
   @override
   void initState() {
@@ -353,7 +359,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     final File localFile = File(savedPath);
     final int durationSec = total.inSeconds <= 0 ? 1 : total.inSeconds;
     final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await MPAudioUploadManager.instance.uploadLocalRecord(
+    setState(() {
+      _uploadProgressPct = 0;
+      _uploadBatchIndex = 1;
+      _uploadBatchTotal = 1;
+    });
+    final MPCreateRecordResponse? created =
+        await MPAudioUploadManager.instance.uploadLocalRecord(
       localFile: localFile,
       durationSec: durationSec,
       createAt: createAt,
@@ -365,6 +377,15 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
 
+    if (created == null) {
+      setState(() {
+        _busy = false;
+        _uploadProgressPct = null;
+      });
+      return;
+    }
+
+    setState(() => _uploadProgressPct = null);
     _recordPath = null;
     widget.rootNavigator.pop(
       MPAudioRecordResult(filePath: savedPath, duration: total),

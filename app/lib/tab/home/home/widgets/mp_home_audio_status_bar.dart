@@ -4,7 +4,8 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 
 /// 首页录音 / 同步 / 导入状态条（对齐 react `AudioStatusBar`）。
 ///
-/// 同步态下序号与进度可由上传完成通知经 [MPHomeCubit] 写入。
+/// 同步态：进度条为**当前文件**上传进度（0–100）；多文件时每条独立完成后再从 0 走到 100。
+/// 序号与进度由 [MPHomeCubit] 经上传进度 / 创建通知写入。
 class MPHomeAudioStatusBar extends StatelessWidget {
   const MPHomeAudioStatusBar({super.key, required this.status});
 

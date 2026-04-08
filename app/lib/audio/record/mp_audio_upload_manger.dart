@@ -1,18 +1,48 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:memo_pin/audio/audio_picker_utils.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path/path.dart' as p;
 
-/// 本地录音落盘后，用 **本地路径** 调 [createRecord]（不再走 `v2/files` multipart）。
+/// 单条文件上传进度（0–100，对应当前第 [batchIndex] 条）；由 **调用方页面** 更新进度条，不在本类内做 UI 模拟。
+typedef MPAudioUploadPerFileProgress = void Function({
+  required int batchIndex,
+  required int batchTotal,
+  required int progress,
+});
+
+void _emitUploadProgress(
+  MPAudioUploadPerFileProgress? onPerFileProgress, {
+  required int batchIndex,
+  required int batchTotal,
+  required int progress,
+}) {
+  final int p = progress.clamp(0, 100);
+  onPerFileProgress?.call(
+    batchIndex: batchIndex,
+    batchTotal: batchTotal,
+    progress: p,
+  );
+  MPMemoryNotification.notifyUploadProgress(
+    MPMemoryRecordUploadProgressPayload(
+      batchTotal: batchTotal,
+      batchIndex: batchIndex,
+      progress: p,
+    ),
+  );
+}
+
+/// 本地录音落盘后，先 [MPAudioUploadService.uploadMPAudio] 上传，再用返回的 **远端 URI** 调 [createRecord]。
 ///
 /// 流程：
 /// 1) [MPAudioLocalRecordsUtil.add] 写入当前文件索引
-/// 2) 枚举本地存储目录下待上传录音（`omi_record_` 前缀），逐个 [createRecord]（`record_file` 为 `file://` 绝对路径）
+/// 2) 枚举本地存储目录下待上传录音（`omi_record_` 前缀），逐个：读时长 → 上传 → [createRecord]（`record_file` 为上传后的 URI）
 /// 3) 若 [rightNowTranscribe] 为 true，每条成功后 [summaryRecord]
 /// 4) 成功后删除对应本地文件并 [MPAudioLocalRecordsUtil.removeHard]
 class MPAudioUploadManager {
@@ -88,10 +118,11 @@ class MPAudioUploadManager {
     return r.createAt;
   }
 
-  /// 将本地录音同步为服务端 record：先 [add] 索引，再对目录内待上传文件逐个 [createRecord]（`record_file` 为本地 `file://`）。
+  /// 将本地录音同步为服务端 record：先 [add] 索引，再对目录内待上传文件逐个 [createRecord]（`record_file` 为上传后的 URI）。
   ///
   /// - **rightNowTranscribe**: 为 true 时每条 createRecord 成功后继续 summaryRecord。
   /// - **recordMemoAt** / **templateId**: 仅作用于每条转写请求。
+  /// - **onPerFileProgress**: 可选；由 **上传页面**（如录音弹窗）传入以更新进度条，本类不实现模拟动画。
   Future<MPCreateRecordResponse?> uploadLocalRecord({
     required File localFile,
     required int durationSec,
@@ -102,6 +133,7 @@ class MPAudioUploadManager {
     String? templateId,
     int batchTotal = 1,
     int batchIndex = 1,
+    MPAudioUploadPerFileProgress? onPerFileProgress,
   }) async {
     try {
       if (!await localFile.exists()) {
@@ -173,13 +205,53 @@ class MPAudioUploadManager {
           }
         }
 
-        final String recordFile = Uri.file(f.absolute.path).toString();
+        // 每条文件单独一条进度条：新文件开始时从 0 计。
+        _emitUploadProgress(
+          onPerFileProgress,
+          batchIndex: i + 1,
+          batchTotal: n,
+          progress: 0,
+        );
+
+        final File file = File(f.path);
+        final Duration? duration = await AudioPickerUtils.getAudioDuration(file);
+        debugPrint('uploadLocalRecords duration: $duration');
+        final String? uri = await MPAudioUploadService().uploadMPAudio(
+          file,
+          onProgress: (int current, int total) {
+            if (total <= 0) {
+              return;
+            }
+            _emitUploadProgress(
+              onPerFileProgress,
+              batchIndex: i + 1,
+              batchTotal: n,
+              progress: (current * 90 ~/ total).clamp(0, 90),
+            );
+          },
+        );
+        if (uri == null || uri.isEmpty) {
+          MPToastUtils.showMessage('音频上传失败');
+          return lastCreated;
+        }
+
+        int effectiveDurSec = durSec;
+        if (duration != null && duration.inSeconds > 0) {
+          effectiveDurSec = duration.inSeconds;
+        }
+
+        _emitUploadProgress(
+          onPerFileProgress,
+          batchIndex: i + 1,
+          batchTotal: n,
+          progress: 92,
+        );
 
         final MPCreateRecordResponse? created = await createRecord(
           MPCreateRecordRequest(
-            recordFile: recordFile,
+            recordFile: uri,
             createAt: createAtSec,
-            duration: durSec,
+            duration: effectiveDurSec,
             source: source,
           ),
         );
@@ -189,6 +261,12 @@ class MPAudioUploadManager {
         }
 
         if (rightNowTranscribe) {
+          _emitUploadProgress(
+            onPerFileProgress,
+            batchIndex: i + 1,
+            batchTotal: n,
+            progress: 96,
+          );
           final MPSummaryRecordResponse? summary = await summaryRecord(
             MPSummaryRecordRequest(
               memoryId: created.memoryId,
@@ -202,6 +280,13 @@ class MPAudioUploadManager {
             return lastCreated;
           }
         }
+
+        _emitUploadProgress(
+          onPerFileProgress,
+          batchIndex: i + 1,
+          batchTotal: n,
+          progress: 100,
+        );
 
         try {
           await f.delete();

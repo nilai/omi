@@ -193,3 +193,55 @@ MPSummaryRecordResponse _$MPSummaryRecordResponseFromJson(
 Map<String, dynamic> _$MPSummaryRecordResponseToJson(
   MPSummaryRecordResponse instance,
 ) => <String, dynamic>{'base_resp': instance.baseResp};
+
+MPGetUploadRecordUrlRequest _$MPGetUploadRecordUrlRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetUploadRecordUrlRequest(contentType: json['content_type'] as String);
+
+Map<String, dynamic> _$MPGetUploadRecordUrlRequestToJson(
+  MPGetUploadRecordUrlRequest instance,
+) => <String, dynamic>{'content_type': instance.contentType};
+
+MPGetUploadRecordUrlResponse _$MPGetUploadRecordUrlResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetUploadRecordUrlResponse(
+  uploadUrl: json['upload_url'] as String,
+  uri: json['uri'] as String,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetUploadRecordUrlResponseToJson(
+  MPGetUploadRecordUrlResponse instance,
+) => <String, dynamic>{
+  'upload_url': instance.uploadUrl,
+  'uri': instance.uri,
+  'base_resp': instance.baseResp,
+};
+
+PresignedUrlResponse _$PresignedUrlResponseFromJson(
+  Map<String, dynamic> json,
+) => PresignedUrlResponse(
+  uploadUrl: json['upload_url'] as String,
+  uri: json['uri'] as String,
+);
+
+Map<String, dynamic> _$PresignedUrlResponseToJson(
+  PresignedUrlResponse instance,
+) => <String, dynamic>{'upload_url': instance.uploadUrl, 'uri': instance.uri};
+
+AudioRecord _$AudioRecordFromJson(Map<String, dynamic> json) => AudioRecord(
+  audioRecordId: json['audio_record_id'] as String,
+  audioUri: json['audio_uri'] as String,
+  recordTs: (json['record_ts'] as num).toInt(),
+  statusCode: (json['status_code'] as num).toInt(),
+  statusMessage: json['status_message'] as String,
+);
+
+Map<String, dynamic> _$AudioRecordToJson(AudioRecord instance) =>
+    <String, dynamic>{
+      'audio_record_id': instance.audioRecordId,
+      'audio_uri': instance.audioUri,
+      'record_ts': instance.recordTs,
+      'status_code': instance.statusCode,
+      'status_message': instance.statusMessage,
+    };
