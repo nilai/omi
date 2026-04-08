@@ -12,30 +12,19 @@ enum MPInsightDetailPhase { loading, loaded, error }
 
 /// 详情页状态
 class MPInsightDetailState {
-  const MPInsightDetailState({
-    required this.phase,
-    this.data,
-    this.errorMessage,
-  });
+  const MPInsightDetailState({required this.phase, this.data, this.errorMessage});
 
   final MPInsightDetailPhase phase;
   final MPInsightDetailData? data;
   final String? errorMessage;
 
-  factory MPInsightDetailState.loading() => const MPInsightDetailState(
-        phase: MPInsightDetailPhase.loading,
-      );
+  factory MPInsightDetailState.loading() => const MPInsightDetailState(phase: MPInsightDetailPhase.loading);
 
   factory MPInsightDetailState.loaded(MPInsightDetailData data) =>
-      MPInsightDetailState(
-        phase: MPInsightDetailPhase.loaded,
-        data: data,
-      );
+      MPInsightDetailState(phase: MPInsightDetailPhase.loaded, data: data);
 
-  factory MPInsightDetailState.error(String message) => MPInsightDetailState(
-        phase: MPInsightDetailPhase.error,
-        errorMessage: message,
-      );
+  factory MPInsightDetailState.error(String message) =>
+      MPInsightDetailState(phase: MPInsightDetailPhase.error, errorMessage: message);
 }
 
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
@@ -65,9 +54,7 @@ class MPInsightDetailData {
 
 /// Daily 详情页中的可执行建议（Tomorrow's focus）
 class MPDailyFocusItem {
-  const MPDailyFocusItem({
-    required this.text,
-  });
+  const MPDailyFocusItem({required this.text});
 
   final String text;
 }
@@ -116,10 +103,7 @@ class MPDailyInsightDetailData {
 
 /// Weekly 详情页中的统计项
 class MPWeeklyMetricItem {
-  const MPWeeklyMetricItem({
-    required this.value,
-    required this.label,
-  });
+  const MPWeeklyMetricItem({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -127,11 +111,7 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({
-    required this.text,
-    required this.subtitle,
-    this.visible = true,
-  });
+  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true});
 
   final String text;
   final String subtitle;
@@ -140,10 +120,7 @@ class MPWeeklyPriorityItem {
 
 /// Weekly 详情页中的完成项
 class MPWeeklyAccomplishmentItem {
-  const MPWeeklyAccomplishmentItem({
-    required this.title,
-    required this.description,
-  });
+  const MPWeeklyAccomplishmentItem({required this.title, required this.description});
 
   final String title;
   final String description;
@@ -183,10 +160,7 @@ class MPWeeklyChallengeLearningItem {
 
 /// Weekly 详情页中的 pending item
 class MPWeeklyPendingItem {
-  const MPWeeklyPendingItem({
-    required this.text,
-    required this.visible,
-  });
+  const MPWeeklyPendingItem({required this.text, required this.visible});
 
   final String text;
   final bool visible;
@@ -229,10 +203,7 @@ class MPWeeklyInsightDetailData {
 
 /// Monthly 详情页卡片中的条目：注意力分布
 class MPMonthlyBarItem {
-  const MPMonthlyBarItem({
-    required this.label,
-    required this.value,
-  });
+  const MPMonthlyBarItem({required this.label, required this.value});
 
   /// 左侧标签，如 `Product`
   final String label;
@@ -243,11 +214,7 @@ class MPMonthlyBarItem {
 
 /// Monthly 详情页卡片中的条目：关键人物
 class MPMonthlyKeyPersonItem {
-  const MPMonthlyKeyPersonItem({
-    required this.name,
-    required this.count,
-    required this.value,
-  });
+  const MPMonthlyKeyPersonItem({required this.name, required this.count, required this.value});
 
   final String name;
   final int count;
@@ -258,10 +225,7 @@ class MPMonthlyKeyPersonItem {
 
 /// Monthly 详情页卡片中的条目：Topics
 class MPMonthlyTopicItem {
-  const MPMonthlyTopicItem({
-    required this.label,
-    required this.value,
-  });
+  const MPMonthlyTopicItem({required this.label, required this.value});
 
   final String label;
 
@@ -271,10 +235,7 @@ class MPMonthlyTopicItem {
 
 /// Monthly 详情页卡片中的条目：决策项
 class MPMonthlyDecisionItem {
-  const MPMonthlyDecisionItem({
-    required this.rank,
-    required this.text,
-  });
+  const MPMonthlyDecisionItem({required this.rank, required this.text});
 
   final int rank;
   final String text;
@@ -282,10 +243,7 @@ class MPMonthlyDecisionItem {
 
 /// Monthly 详情页卡片中的条目：下月关注建议
 class MPMonthlySuggestedFocusItem {
-  const MPMonthlySuggestedFocusItem({
-    required this.rank,
-    required this.text,
-  });
+  const MPMonthlySuggestedFocusItem({required this.rank, required this.text});
 
   final int rank;
   final String text;
@@ -359,10 +317,7 @@ class MPMonthlyInsightDetailData {
 
 /// 详情页 Cubit：根据列表项类型模拟后台拉取详情
 class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
-  MPInsightDetailCubit({
-    required MPInsightListItem item,
-  })  : _item = item,
-        super(MPInsightDetailState.loading());
+  MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
 
   final MPInsightListItem _item;
 
@@ -371,17 +326,15 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     emit(MPInsightDetailState.loading());
     try {
       await Future<void>.delayed(const Duration(milliseconds: 520));
-      final MPInsightDetailData loaded = _buildDetailData(_item);
-      emit(MPInsightDetailState.loaded(loaded));
+      // final MPInsightDetailData loaded = _buildDetailData(_item);
+      // emit(MPInsightDetailState.loaded(loaded));
     } catch (e) {
       emit(MPInsightDetailState.error(e.toString()));
     }
   }
 
   Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
-
-
-  final MPGetInsightDetailResponse? response = await getInsightDetail(MPGetInsightDetailRequest(insightId: item.id));
+    final MPGetInsightDetailResponse? response = await getInsightDetail(MPGetInsightDetailRequest(insightId: item.id));
 
     final int seed = item.id.hashCode & 0x7fffffff;
     final Random r = Random(seed);
@@ -429,11 +382,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
         'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
       ],
-      tips: <String>[
-        '把下一步写成一句可执行句',
-        '将后续提醒合并到同一个时间窗口',
-        if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
-      ],
+      tips: <String>['把下一步写成一句可执行句', '将后续提醒合并到同一个时间窗口', if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟'],
       daily: MPDailyInsightDetailData(
         dateLabel: 'Daily Insight · ${item.periodLabel}',
         narrativeTitle: 'Today\'s narrative',
@@ -456,8 +405,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       const MPWeeklyMetricItem(value: '5', label: 'decisions'),
       const MPWeeklyMetricItem(value: '12', label: 'meetings'),
     ];
-    final List<MPWeeklyAccomplishmentItem> accomplishmentItems =
-        <MPWeeklyAccomplishmentItem>[
+    final List<MPWeeklyAccomplishmentItem> accomplishmentItems = <MPWeeklyAccomplishmentItem>[
       const MPWeeklyAccomplishmentItem(
         title: 'API Migration Completed',
         description: 'Successfully migrated 3 core endpoints to new architecture',
@@ -483,25 +431,12 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       'Schedule follow-up with sales thread',
     ];
     final List<MPWeeklyPendingItem> pendingItemCards = <MPWeeklyPendingItem>[
-      const MPWeeklyPendingItem(
-        text: 'Review migration milestones with infrastructure team',
-        visible: true,
-      ),
-      const MPWeeklyPendingItem(
-        text: 'Update API documentation for v2 endpoints',
-        visible: true,
-      ),
-      const MPWeeklyPendingItem(
-        text: 'Schedule follow-up with lead investor',
-        visible: true,
-      ),
-      const MPWeeklyPendingItem(
-        text: 'Explore productivity ideas',
-        visible: true,
-      ),
+      const MPWeeklyPendingItem(text: 'Review migration milestones with infrastructure team', visible: true),
+      const MPWeeklyPendingItem(text: 'Update API documentation for v2 endpoints', visible: true),
+      const MPWeeklyPendingItem(text: 'Schedule follow-up with lead investor', visible: true),
+      const MPWeeklyPendingItem(text: 'Explore productivity ideas', visible: true),
     ];
-    final List<MPWeeklyChallengeLearningItem> challengeLearningItems =
-        <MPWeeklyChallengeLearningItem>[
+    final List<MPWeeklyChallengeLearningItem> challengeLearningItems = <MPWeeklyChallengeLearningItem>[
       const MPWeeklyChallengeLearningItem(
         title: 'Resource Constraints',
         description:
@@ -511,32 +446,21 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       ),
       const MPWeeklyChallengeLearningItem(
         title: 'Communication Win',
-        description:
-            'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
+        description: 'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
         backgroundColorValue: 0xFFD9E3F5,
         borderColorValue: 0xFFB6CAE9,
       ),
     ];
-    final List<MPWeeklyPriorityItem> nextWeekPriorities =
-        <MPWeeklyPriorityItem>[
-      const MPWeeklyPriorityItem(
-        text: 'Launch Mobile Beta',
-        subtitle: 'Target: Thursday EOD',
-        visible: true,
-      ),
-      const MPWeeklyPriorityItem(
-        text: 'Q1 Planning Session',
-        subtitle: 'All-hands meeting on Tuesday',
-        visible: true,
-      ),
+    final List<MPWeeklyPriorityItem> nextWeekPriorities = <MPWeeklyPriorityItem>[
+      const MPWeeklyPriorityItem(text: 'Launch Mobile Beta', subtitle: 'Target: Thursday EOD', visible: true),
+      const MPWeeklyPriorityItem(text: 'Q1 Planning Session', subtitle: 'All-hands meeting on Tuesday', visible: true),
       const MPWeeklyPriorityItem(
         text: 'Performance Optimization',
         subtitle: 'Focus on API response times',
         visible: true,
       ),
     ];
-    final List<MPWeeklyExpertFeedbackItem> expertFeedback =
-        <MPWeeklyExpertFeedbackItem>[
+    final List<MPWeeklyExpertFeedbackItem> expertFeedback = <MPWeeklyExpertFeedbackItem>[
       const MPWeeklyExpertFeedbackItem(
         title: 'Business Expert',
         content:
@@ -574,11 +498,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
         'Follow-ups were most effective when they were grouped and scheduled right after key work.',
       ],
-      tips: <String>[
-        '把 follow-up 放到“工作后立刻做”',
-        '每周复盘一次，删掉低价值任务',
-        if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
-      ],
+      tips: <String>['把 follow-up 放到“工作后立刻做”', '每周复盘一次，删掉低价值任务', if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标'],
       weekly: MPWeeklyInsightDetailData(
         titleLabel: 'Week of ${item.periodLabel}',
         subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
@@ -609,21 +529,9 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     ];
 
     final List<MPMonthlyKeyPersonItem> keyPeople = <MPMonthlyKeyPersonItem>[
-      MPMonthlyKeyPersonItem(
-        name: 'Jordan',
-        count: 12 + (seed % 3),
-        value: 72,
-      ),
-      MPMonthlyKeyPersonItem(
-        name: 'Alex',
-        count: 10 + (seed % 4),
-        value: 58,
-      ),
-      MPMonthlyKeyPersonItem(
-        name: 'Sarah',
-        count: 8 + (seed % 5),
-        value: 42,
-      ),
+      MPMonthlyKeyPersonItem(name: 'Jordan', count: 12 + (seed % 3), value: 72),
+      MPMonthlyKeyPersonItem(name: 'Alex', count: 10 + (seed % 4), value: 58),
+      MPMonthlyKeyPersonItem(name: 'Sarah', count: 8 + (seed % 5), value: 42),
     ];
 
     final List<MPMonthlyTopicItem> topicsSurfacing = <MPMonthlyTopicItem>[
@@ -644,27 +552,16 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       'Still track unresolved follow-ups from early month',
     ];
 
-    final List<MPMonthlyDecisionItem> decisionsCannotSlip =
-        <MPMonthlyDecisionItem>[
+    final List<MPMonthlyDecisionItem> decisionsCannotSlip = <MPMonthlyDecisionItem>[
       MPMonthlyDecisionItem(rank: 1, text: 'Stabilize hiring capacity'),
       MPMonthlyDecisionItem(rank: 2, text: 'Record pricing decision'),
       MPMonthlyDecisionItem(rank: 3, text: 'Clarify API ownership'),
     ];
 
-    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth =
-        <MPMonthlySuggestedFocusItem>[
-      MPMonthlySuggestedFocusItem(
-        rank: 1,
-        text: 'Close ownership loop this month to unblock delivery',
-      ),
-      MPMonthlySuggestedFocusItem(
-        rank: 2,
-        text: 'Reduce hiring friction with weekly checkpoints',
-      ),
-      MPMonthlySuggestedFocusItem(
-        rank: 3,
-        text: 'Align pricing assumptions with unit economics early',
-      ),
+    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = <MPMonthlySuggestedFocusItem>[
+      MPMonthlySuggestedFocusItem(rank: 1, text: 'Close ownership loop this month to unblock delivery'),
+      MPMonthlySuggestedFocusItem(rank: 2, text: 'Reduce hiring friction with weekly checkpoints'),
+      MPMonthlySuggestedFocusItem(rank: 3, text: 'Align pricing assumptions with unit economics early'),
     ];
 
     return MPInsightDetailData(
@@ -673,9 +570,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         item.content,
         'The month showed stable capture habits paired with improved execution focus.',
       ],
-      tips: <String>[
-        'Use suggested focus items to generate action todos for next month.',
-      ],
+      tips: <String>['Use suggested focus items to generate action todos for next month.'],
       monthly: MPMonthlyInsightDetailData(
         monthSubtitle: item.periodLabel,
         monthOverviewSummary: item.content,
@@ -684,17 +579,13 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         topicsSurfacing: topicsSurfacing,
         attentionDistributionSummary:
             'Most effort went into execution, while hiring constraints continued to slow delivery.',
-        keyPeopleThisMonthSummary:
-            'Conversations repeatedly involved delivery ownership and coordination.',
-        topicsSurfacingSummary:
-            'These topics appeared across multiple weeks without clear resolution.',
+        keyPeopleThisMonthSummary: 'Conversations repeatedly involved delivery ownership and coordination.',
+        topicsSurfacingSummary: 'These topics appeared across multiple weeks without clear resolution.',
         longRunningOpenThreads: longRunningOpenThreads,
-        longRunningOpenThreadsSummary:
-            'These issues repeatedly delayed progress.',
+        longRunningOpenThreadsSummary: 'These issues repeatedly delayed progress.',
         monthToMonthTrend: monthToMonthTrend,
         decisionsThatCannotSlipAgain: decisionsCannotSlip,
-        decisionsThatCannotSlipAgainSummary:
-            'If unresolved next month, these will continue to slow execution.',
+        decisionsThatCannotSlipAgainSummary: 'If unresolved next month, these will continue to slow execution.',
         suggestedFocusNextMonth: suggestedFocusNextMonth,
         askAiButtonText: 'Ask AI about this month',
       ),
@@ -710,10 +601,8 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       ],
       tips: <String>[
         'Clarify API ownership and rollout sequence in next infrastructure sync.',
-        if (r.nextBool())
-          'Capture the outcome of each meeting and connect it back to this pattern.',
+        if (r.nextBool()) 'Capture the outcome of each meeting and connect it back to this pattern.',
       ],
     );
   }
 }
-
