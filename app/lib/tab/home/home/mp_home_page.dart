@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
 import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
@@ -30,11 +29,11 @@ class MPHomePage extends StatefulWidget {
 
 class _MPHomePageState extends State<MPHomePage> {
   late final MPHomeCubit _cubit = MPHomeCubit()..start();
-  bool _isBleConnected = false;
 
   @override
   void initState() {
     super.initState();
+    _cubit.refreshBleConnectionState();
   }
 
   @override
@@ -208,7 +207,9 @@ class _MPHomePageState extends State<MPHomePage> {
                               onTap: () {
                                 Navigator.of(
                                   context,
-                                ).push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()));
+                                )
+                                    .push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()))
+                                    .then((_) => _cubit.refreshBleConnectionState());
                               },
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
@@ -219,7 +220,7 @@ class _MPHomePageState extends State<MPHomePage> {
                                   borderRadius: BorderRadius.circular(10),
                                   border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
                                 ),
-                                child: _isBleConnected ? const _MPHomeNavConnectedIcon() : const _MPHomeNavBullseye(),
+                                child: state.isBleConnected ? const _MPHomeNavConnectedIcon() : const _MPHomeNavBullseye(),
                               ),
                             ),
                           ),

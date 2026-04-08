@@ -73,6 +73,7 @@ class MPHomeState {
     required this.upNextTodos,
     required this.recentMemories,
     required this.insightOverview,
+    required this.isBleConnected,
     this.audioStatus,
   });
 
@@ -82,6 +83,9 @@ class MPHomeState {
   /// Insights 卡片角标（动态演示）
   final MPHomeInsightOverviewStruct insightOverview;
 
+  /// 是否已连接 BLE 设备。
+  final bool isBleConnected;
+
   /// 
   final MPHomeAudioStatus? audioStatus;
 
@@ -89,6 +93,7 @@ class MPHomeState {
     List<MPHomeTodoItem>? upNextTodos,
     List<MPHomeMemoryItem>? recentMemories,
     MPHomeInsightOverviewStruct? insightOverview,
+    bool? isBleConnected,
     MPHomeAudioStatus? audioStatus,
     bool clearAudioStatus = false,
   }) {
@@ -96,6 +101,7 @@ class MPHomeState {
       upNextTodos: upNextTodos ?? this.upNextTodos,
       recentMemories: recentMemories ?? this.recentMemories,
       insightOverview: insightOverview ?? this.insightOverview,
+      isBleConnected: isBleConnected ?? this.isBleConnected,
       audioStatus: clearAudioStatus ? null : (audioStatus ?? this.audioStatus),
     );
   }
@@ -125,6 +131,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         subTitle: '',
         newInsightCount: 0,
         content: '',),
+      isBleConnected: false,
     );
   }
 
@@ -134,8 +141,18 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   Future<void> initData() async {
+    await refreshBleConnectionState();
     unawaited(connectBluetoothToLastRecordedDevice());
     await loadData();
+  }
+
+  /// 刷新 BLE 连接状态到 state。
+  Future<void> refreshBleConnectionState() async {
+    final bool connected =
+        await MPBluetoothConnectionHelper.hasConnectedBleDevice();
+    if (!isClosed && state.isBleConnected != connected) {
+      emit(state.copyWith(isBleConnected: connected));
+    }
   }
 
   Future<void> loadData() async {
