@@ -87,6 +87,7 @@ class ApiTools {
 
   /// 判断 token 是否过期
   static bool tokenIsExpired() {
+    return false;
     final DateTime? tokenExpiresTime = MPUser.instance.tokenExpiresTime;
     if (tokenExpiresTime == null) {
       return false;
