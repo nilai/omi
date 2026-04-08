@@ -26,7 +26,7 @@ class MPLoginUtil {
     await SharedPreferencesUtil.clearAll();
     await MPHiveUtil.instance.close();
     await MPBluetoothConnectionHelper.disconnectAppBleForLogout();
-    MPUser.instance.clear();
+    await MPUser.instance.clear();
 
     final BuildContext? targetContext = context ?? MyApp.navigatorKey.currentContext;
     if (targetContext == null || !targetContext.mounted) {

@@ -120,16 +120,12 @@ class MPUser {
     _tokenExpiresTime = null;
   }
 
-  /// 清除登录会话（token/email）。
-  Future<void> clearSession() async {
+  /// 清空用户信息与登录会话（登出）。
+  Future<void> clear() async {
     await setAccessToken(null);
     await setRefreshToken(null);
     await setEmail(null);
     await clearTokenExpiresTime();
-  }
-
-  /// 清空用户信息（登出）
-  void clear() {
     name = null;
     _accessToken = null;
     _refreshToken = null;

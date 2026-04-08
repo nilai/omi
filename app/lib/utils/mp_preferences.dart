@@ -124,7 +124,7 @@ class SharedPreferencesUtil extends MPPreferences {
 
   /// 清除所有本地数据。
   static Future<void> clearAll() async {
-    await MPUser.instance.clearSession();
+    await MPUser.instance.clear();
     await _instance.clearLastConnectedBleDevice();
   }
 }
