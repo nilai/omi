@@ -5,7 +5,6 @@ import '../../http/api/mp_user.dart';
 import '../../http/schema/mp_user.dart';
 import '../../login/mp_login_util.dart';
 import '../../login/mp_user.dart';
-import '../../utils/mp_preferences.dart';
 import '../../utils/mp_toast_utils.dart';
 import 'mp_account_state.dart';
 
@@ -46,7 +45,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     final String name = response.user.userName.trim();
     final String email = response.user.email.trim();
     MPUser.instance.name = name.isNotEmpty ? name : null;
-    SharedPreferencesUtil().setEmail(email.isNotEmpty ? email : null);
+    await MPUser.instance.setEmail(email.isNotEmpty ? email : null);
 
     emit(
       state.copyWith(
@@ -88,7 +87,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
   }
 
   static Future<String> _fallbackEmailStatic() async {
-    final String e = SharedPreferencesUtil().email;
+    final String e = MPUser.instance.email;
     if (e.isNotEmpty) {
       return e;
     }

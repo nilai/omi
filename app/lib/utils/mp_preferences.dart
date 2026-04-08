@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../login/mp_user.dart';
+
 /// 应用本地偏好存储（核心精简版）。
 class MPPreferences {
   static final MPPreferences _instance = MPPreferences._internal();
@@ -95,109 +97,8 @@ class SharedPreferencesUtil extends MPPreferences {
 
   SharedPreferencesUtil._internal() : super._internal();
 
-  static const String _accessTokenKey = 'mp_accessToken';
-  static const String _refreshTokenKey = 'mp_refreshToken';
-  static const String _emailKey = 'mp_email';
-  static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
   static const String _lastBleRemoteIdKey = 'mp_last_ble_remote_id';
   static const String _lastBleDisplayNameKey = 'mp_last_ble_display_name';
-
-  String? _accessToken;
-  String? _refreshToken;
-  String? _email;
-
-  /// token 过期时间（毫秒时间戳）。
-  DateTime? _tokenExpiresTime;
-
-  /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
-  // String get accessToken => _accessToken?.isEmpty == false ? _accessToken! : getAccessToken();
-  // String getAccessToken() {
-  //   final token = MPPreferences().getString(_accessTokenKey);
-  //   if (token.isEmpty) {
-  //     return '';
-  //   }
-  //   _accessToken = token;
-  //   return token;
-  // }
-  String? get accessToken =>
-      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
-
-  /// 设置访问令牌：写入本地并更新内存；登出时 `value == null` 会同时清除 [uid]。
-  /// 传入 [uid] 时一并持久化（仅刷 token 可不传，保留原 uid）。
-  Future<void> setAccessToken(String? value, {String? uid}) async {
-    if (value == null) {
-      await MPPreferences().remove(_accessTokenKey);
-      _accessToken = null;
-    } else {
-      await MPPreferences().saveString(_accessTokenKey, value);
-      _accessToken = value;
-    }
-  }
-
-  /// 获取刷新令牌：优先取内存中的私有属性，其次取本地存储。
-  String get refreshToken => _refreshToken?.isEmpty == false ? _refreshToken! : getRefreshToken();
-  String getRefreshToken() {
-    final token = MPPreferences().getString(_refreshTokenKey);
-    if (token.isEmpty) {
-      return '';
-    }
-    _refreshToken = token;
-    return token;
-  }
-
-  /// 设置刷新令牌：优先写入本地存储，再更新内存中的私有属性。
-  Future<void> setRefreshToken(String? value) async {
-    if (value == null) {
-      await MPPreferences().remove(_refreshTokenKey);
-    } else {
-      await MPPreferences().saveString(_refreshTokenKey, value);
-    }
-    _refreshToken = value;
-  }
-
-  /// 获取邮箱：优先取内存中的私有属性，其次取本地存储。
-  String get email => _email?.isEmpty == false ? _email! : getEmail();
-  String getEmail() {
-    final email = MPPreferences().getString(_emailKey);
-    if (email.isEmpty) {
-      return '';
-    }
-    _email = email;
-    return email;
-  }
-
-  /// 设置邮箱：优先写入本地存储，再更新内存中的私有属性。
-  Future<void> setEmail(String? value) async {
-    if (value == null) {
-      await MPPreferences().remove(_emailKey);
-    } else {
-      await MPPreferences().saveString(_emailKey, value);
-    }
-    _email = value;
-  }
-
-  /// 获取 token 过期时间：优先取内存中的私有属性，其次取本地存储。
-  DateTime get tokenExpiresTime => _tokenExpiresTime ?? getTokenExpiresTime();
-  DateTime getTokenExpiresTime() {
-    final timestamp = MPPreferences().getInt(_tokenExpiresTimeKey);
-    if (timestamp == null) {
-      return DateTime.fromMillisecondsSinceEpoch(0);
-    }
-    return DateTime.fromMillisecondsSinceEpoch(timestamp);
-  }
-
-  /// 设置 token 过期时间：优先写入本地存储，再更新内存中的私有属性。
-  Future<void> setTokenExpiresTime(int value) async {
-    final int timestamp = DateTime.now().add(Duration(seconds: value - 2)).millisecondsSinceEpoch;
-    await MPPreferences().saveInt(_tokenExpiresTimeKey, timestamp);
-    _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
-  }
-
-  /// 清除本地记录的 token 过期时间（登出时使用）。
-  Future<void> clearTokenExpiresTime() async {
-    await MPPreferences().remove(_tokenExpiresTimeKey);
-    _tokenExpiresTime = null;
-  }
 
   /// 读取上次连接成功的 BLE 设备；未记录时返回 `null`。
   MPLastBleDeviceRecord? readLastConnectedBleDevice() {
@@ -223,14 +124,7 @@ class SharedPreferencesUtil extends MPPreferences {
 
   /// 清除所有本地数据。
   static Future<void> clearAll() async {
-    await _instance.setAccessToken(null);
-    await _instance.setRefreshToken(null);
-    await _instance.setEmail(null);
-    await _instance.clearTokenExpiresTime();
+    await MPUser.instance.clearSession();
     await _instance.clearLastConnectedBleDevice();
-    _instance._accessToken = null;
-    _instance._refreshToken = null;
-    _instance._email = null;
-    _instance._tokenExpiresTime = null;
   }
 }

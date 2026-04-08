@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/login/home/mp_login_state.dart';
+import 'package:memo_pin/login/mp_user.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';
 import '../../tab/omi_main_tab_page.dart';
-import '../../utils/mp_preferences.dart';
 import '../../utils/mp_uuid_util.dart';
 import '../verify/mp_verify_page.dart';
 
@@ -90,10 +90,10 @@ class MPLoginCubit extends Cubit<MPLoginState> {
     final req = MPLoginRequest(email: email, password: password, deviceId: deviceId);
     final response = await login(req);
     if (response != null && response.baseResp.code == 0) {
-      await SharedPreferencesUtil().setAccessToken(response.accessToken);
-      await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
-      await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
-      SharedPreferencesUtil().setEmail(email);
+      await MPUser.instance.setAccessToken(response.accessToken);
+      await MPUser.instance.setRefreshToken(response.refreshToken);
+      await MPUser.instance.setTokenExpiresTime(response.expiresIn);
+      await MPUser.instance.setEmail(email);
       await MPHiveUtil.instance.initialize(email: email);
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),

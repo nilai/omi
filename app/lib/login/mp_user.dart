@@ -1,6 +1,13 @@
+import '../utils/mp_preferences.dart';
+
 class MPUser {
   /// 用户信息
   String? name;
+
+  String? _accessToken;
+  String? _refreshToken;
+  String? _email;
+  DateTime? _tokenExpiresTime;
 
   // 单例实例
   static final MPUser _instance = MPUser._internal();
@@ -14,8 +21,116 @@ class MPUser {
   /// 静态便捷方式
   static MPUser get instance => _instance;
 
+  static const String _accessTokenKey = 'mp_accessToken';
+  static const String _refreshTokenKey = 'mp_refreshToken';
+  static const String _emailKey = 'mp_email';
+  static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
+
+  /// 获取访问令牌：优先内存，其次本地。
+  String get accessToken {
+    if (_accessToken?.isNotEmpty == true) {
+      return _accessToken!;
+    }
+    final String token = MPPreferences().getString(_accessTokenKey);
+    if (token.isNotEmpty) {
+      _accessToken = token;
+    }
+    return token;
+  }
+
+  /// 设置访问令牌：null 时清除。
+  Future<void> setAccessToken(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_accessTokenKey);
+      _accessToken = null;
+      return;
+    }
+    await MPPreferences().saveString(_accessTokenKey, value);
+    _accessToken = value;
+  }
+
+  /// 获取刷新令牌：优先内存，其次本地。
+  String get refreshToken {
+    if (_refreshToken?.isNotEmpty == true) {
+      return _refreshToken!;
+    }
+    final String token = MPPreferences().getString(_refreshTokenKey);
+    if (token.isNotEmpty) {
+      _refreshToken = token;
+    }
+    return token;
+  }
+
+  /// 设置刷新令牌：null 时清除。
+  Future<void> setRefreshToken(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_refreshTokenKey);
+    } else {
+      await MPPreferences().saveString(_refreshTokenKey, value);
+    }
+    _refreshToken = value;
+  }
+
+  /// 获取邮箱：优先内存，其次本地。
+  String get email {
+    if (_email?.isNotEmpty == true) {
+      return _email!;
+    }
+    final String e = MPPreferences().getString(_emailKey);
+    if (e.isNotEmpty) {
+      _email = e;
+    }
+    return e;
+  }
+
+  /// 设置邮箱：null 时清除。
+  Future<void> setEmail(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_emailKey);
+    } else {
+      await MPPreferences().saveString(_emailKey, value);
+    }
+    _email = value;
+  }
+
+  /// token 过期时间（毫秒时间戳）。
+  DateTime? get tokenExpiresTime =>
+      _tokenExpiresTime ??
+      (() {
+        final int? ts = MPPreferences().getInt(_tokenExpiresTimeKey);
+        if (ts == null) {
+          return null;
+        }
+        return DateTime.fromMillisecondsSinceEpoch(ts);
+      })();
+
+  /// 设置 token 过期时间（秒）。
+  Future<void> setTokenExpiresTime(int value) async {
+    final int timestamp = DateTime.now().add(Duration(seconds: value - 2)).millisecondsSinceEpoch;
+    await MPPreferences().saveInt(_tokenExpiresTimeKey, timestamp);
+    _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  }
+
+  /// 清除 token 过期时间。
+  Future<void> clearTokenExpiresTime() async {
+    await MPPreferences().remove(_tokenExpiresTimeKey);
+    _tokenExpiresTime = null;
+  }
+
+  /// 清除登录会话（token/email）。
+  Future<void> clearSession() async {
+    await setAccessToken(null);
+    await setRefreshToken(null);
+    await setEmail(null);
+    await clearTokenExpiresTime();
+  }
+
   /// 清空用户信息（登出）
   void clear() {
     name = null;
+    _accessToken = null;
+    _refreshToken = null;
+    _email = null;
+    _tokenExpiresTime = null;
   }
 }

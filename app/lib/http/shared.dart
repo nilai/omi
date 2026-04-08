@@ -5,13 +5,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as http_io;
-import 'package:memo_pin/utils/mp_preferences.dart';
 import 'package:memo_pin/utils/mp_uuid_util.dart';
 import 'package:path/path.dart';
 import 'package:memo_pin/utils/platform/platform_manager.dart';
 import '../../env/env.dart';
-import '../cache/mp_hive_util.dart';
 import '../login/mp_login_util.dart';
+import '../login/mp_user.dart';
 import 'api/mp_login.dart';
 import 'schema/mp_login.dart';
 
@@ -73,7 +72,7 @@ class ApiTools {
   }
 
   /// 获取访问令牌
-  static String get accessToken => SharedPreferencesUtil().accessToken ?? '';
+  static String get accessToken => MPUser.instance.accessToken ?? '';
 
   /// 判断是否有访问令牌
   static bool hasAccessToken() {
@@ -81,14 +80,14 @@ class ApiTools {
   }
 
   /// 获取邮箱
-  static String get email => SharedPreferencesUtil().email;
+  static String get email => MPUser.instance.email;
 
   /// 获取 token 过期时间
-  static DateTime? get tokenExpiresTime => SharedPreferencesUtil().tokenExpiresTime;
+  static DateTime? get tokenExpiresTime => MPUser.instance.tokenExpiresTime;
 
   /// 判断 token 是否过期
   static bool tokenIsExpired() {
-    final tokenExpiresTime = SharedPreferencesUtil().tokenExpiresTime;
+    final DateTime? tokenExpiresTime = MPUser.instance.tokenExpiresTime;
     if (tokenExpiresTime == null) {
       return false;
     }
@@ -97,35 +96,33 @@ class ApiTools {
   }
 
   static Future<void> refreshToken() async {
-    final refreshToken = SharedPreferencesUtil().refreshToken;
-    if (refreshToken == null || refreshToken.isEmpty) {
+    final String refreshToken = MPUser.instance.refreshToken;
+    if (refreshToken.isEmpty) {
       throw Exception('Refresh token is empty');
     }
     final MPRefreshTokenRequest req = MPRefreshTokenRequest(refreshToken: refreshToken);
     final MPTokenResponse? response = await refresh(req);
     if (response == null) return;
-    await SharedPreferencesUtil().setAccessToken(response.accessToken);
-    await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
-    await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
+    await MPUser.instance.setAccessToken(response.accessToken);
+    await MPUser.instance.setRefreshToken(response.refreshToken);
+    await MPUser.instance.setTokenExpiresTime(response.expiresIn);
   }
 }
 
 Future<String> getAuthHeader() async {
-  //TODO: 测试数据
-  return 'Bearer ${ApiTools.accessToken}';
   if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
     // 刷新 token
     await ApiTools.refreshToken();
   }
 
   if (!ApiTools.hasAccessToken()) {
-    final String refreshToken = SharedPreferencesUtil().refreshToken ?? '';
+    final String refreshToken = MPUser.instance.refreshToken;
     if (refreshToken.isEmpty) {
       return '';
     }
     await ApiTools.refreshToken();
   }
-  final String accessToken = ApiTools.accessToken ?? '';
+  final String accessToken = ApiTools.accessToken;
   return accessToken.isEmpty ? '' : 'Bearer $accessToken';
 }
 

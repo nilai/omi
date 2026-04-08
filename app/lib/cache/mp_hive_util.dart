@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
+import 'package:memo_pin/login/mp_user.dart';
 
 /// Hive 工具类（按用户邮箱分箱存储）。
 ///
@@ -65,7 +65,7 @@ class MPHiveUtil {
   Future<String> _resolveEmail(String? email) async{
     return (email?.trim().isNotEmpty == true
         ? email?.trim()
-        : (await SharedPreferencesUtil().email))?.trim().toLowerCase() ?? '';
+        : MPUser.instance.email)?.trim().toLowerCase() ?? '';
   }
 
   String _boxNameFromEmail(String email) {
