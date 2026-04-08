@@ -170,43 +170,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         }
         upNextTodos.add(MPHomeTodoItem(id: e.id ?? '', title: e.title ?? '', time: formatDeadlineToTime(e.deadline), reason: e.priority ?? ''));
       }
-      // if (upNextTodos.length < 4) {
-      //   const List<MPHomeTodoItem> mockTodoItems = <MPHomeTodoItem>[
-      //     MPHomeTodoItem(
-      //       id: 'mock_todo_1',
-      //       title: 'Review weekly highlights',
-      //       time: '09:30',
-      //       reason: 'high',
-      //     ),
-      //     MPHomeTodoItem(
-      //       id: 'mock_todo_2',
-      //       title: 'Prepare standup notes',
-      //       time: '11:00',
-      //       reason: 'medium',
-      //     ),
-      //     MPHomeTodoItem(
-      //       id: 'mock_todo_3',
-      //       title: 'Sync family reminders',
-      //       time: '14:20',
-      //       reason: 'low',
-      //     ),
-      //     MPHomeTodoItem(
-      //       id: 'mock_todo_4',
-      //       title: 'Clean up old tags',
-      //       time: '18:45',
-      //       reason: 'low',
-      //     ),
-      //   ];
-      //   for (final MPHomeTodoItem mockItem in mockTodoItems) {
-      //     if (upNextTodos.length >= 4) {
-      //       break;
-      //     }
-      //     final bool existed = upNextTodos.any((MPHomeTodoItem e) => e.id == mockItem.id);
-      //     if (!existed) {
-      //       upNextTodos.add(mockItem);
-      //     }
-      //   }
-      // }
       final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
       for (final MPMemoryStruct e in response.recentMemories) {
         recentMemories.add(
@@ -217,39 +180,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           ),
         );
       }
-      // if (recentMemories.length < 4) {
-      //   const List<MPHomeMemoryItem> mockMemoryItems = <MPHomeMemoryItem>[
-      //     MPHomeMemoryItem(
-      //       id: 'mock_memory_1',
-      //       titleOrDate: 'Morning walking reflection',
-      //       timeLabel: '2h ago',
-      //     ),
-      //     MPHomeMemoryItem(
-      //       id: 'mock_memory_2',
-      //       titleOrDate: 'Team retro key decisions',
-      //       timeLabel: 'Yesterday',
-      //     ),
-      //     MPHomeMemoryItem(
-      //       id: 'mock_memory_3',
-      //       titleOrDate: 'Family trip checklist',
-      //       timeLabel: '2d ago',
-      //     ),
-      //     MPHomeMemoryItem(
-      //       id: 'mock_memory_4',
-      //       titleOrDate: 'Book notes summary',
-      //       timeLabel: '3d ago',
-      //     ),
-      //   ];
-      //   for (final MPHomeMemoryItem mockItem in mockMemoryItems) {
-      //     if (recentMemories.length >= 4) {
-      //       break;
-      //     }
-      //     final bool existed = recentMemories.any((MPHomeMemoryItem e) => e.id == mockItem.id);
-      //     if (!existed) {
-      //       recentMemories.add(mockItem);
-      //     }
-      //   }
-      // }
       final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
       if (!isClosed) {
         emit(state.copyWith(
