@@ -320,12 +320,14 @@ MPTemplateStruct _$MPTemplateStructFromJson(Map<String, dynamic> json) =>
       icon: json['icon'] as String?,
       type: json['type'] as String?,
       prompt: json['prompt'] as String?,
+      subTitle: json['sub_title'] as String?,
     );
 
 Map<String, dynamic> _$MPTemplateStructToJson(MPTemplateStruct instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
+      'sub_title': instance.subTitle,
       'icon': instance.icon,
       'type': instance.type,
       'prompt': instance.prompt,

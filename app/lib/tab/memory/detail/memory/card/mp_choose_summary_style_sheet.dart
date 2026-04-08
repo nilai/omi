@@ -5,69 +5,19 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
+import '../../../../../http/schema/mp_data_model.dart';
 import '../../../../../utils/omi_image_loader.dart';
 
-/// 可选的摘要风格（与 UI 列表一一对应）
-enum MPSummaryStyleId {
-  /// Autopilot（推荐）
-  autopilot,
-
-  /// Meeting secretary
-  meetingSecretary,
-
-  /// Sales follow-up
-  salesFollowUp,
-
-  /// Learning notes
-  learningNotes,
-
-  /// ADHD-friendly
-  adhdFriendly,
-}
-
-/// 各风格在上一层「Generate resummary」弹窗模式卡片中的主副文案（与列表条目一致）
-extension MPSummaryStyleIdCopy on MPSummaryStyleId {
-  /// 模式卡片主标题
-  String get modeCardTitle {
-    switch (this) {
-      case MPSummaryStyleId.autopilot:
-        return 'Autopilot';
-      case MPSummaryStyleId.meetingSecretary:
-        return 'Meeting secretary';
-      case MPSummaryStyleId.salesFollowUp:
-        return 'Sales follow-up';
-      case MPSummaryStyleId.learningNotes:
-        return 'Learning notes';
-      case MPSummaryStyleId.adhdFriendly:
-        return 'ADHD-friendly';
-    }
-  }
-
-  /// 模式卡片副标题（说明）
-  String get modeCardSubtitle {
-    switch (this) {
-      case MPSummaryStyleId.autopilot:
-        return "Let AI decide what's worth generating based on the content";
-      case MPSummaryStyleId.meetingSecretary:
-        return 'Clear, structured meeting notes';
-      case MPSummaryStyleId.salesFollowUp:
-        return 'Client needs, objections, next steps';
-      case MPSummaryStyleId.learningNotes:
-        return 'Concepts, examples, personal takeaways';
-      case MPSummaryStyleId.adhdFriendly:
-        return 'Extra structure, clarity, no overload';
-    }
-  }
-}
-
-/// 自底部弹出「Choose summary style」：选择摘要风格（叠在上一层 sheet 之上）
+/// 自底部弹出「Choose summary style」：顶部为最近使用的 [recentTemplate]，下方列表为 [recommendTemplates]。
 ///
-/// [onStyleConfirmed] 用户点击「Use this style」时回调当前选中项
+/// [onTemplateConfirmed] 用户点击「Use this style」时回调当前选中模板。
 /// [onBrowseAllStyles] 点击「Browse all styles」
 Future<void> showMPChooseSummaryStyleSheet(
   BuildContext context, {
-  MPSummaryStyleId initialStyle = MPSummaryStyleId.autopilot,
-  void Function(MPSummaryStyleId style)? onStyleConfirmed,
+  MPTemplateStruct? recentTemplate,
+  List<MPTemplateStruct> recommendTemplates = const [],
+  MPTemplateStruct? initialSelected,
+  void Function(MPTemplateStruct tpl)? onTemplateConfirmed,
   VoidCallback? onBrowseAllStyles,
 }) {
   return showModalBottomSheet<void>(
@@ -79,8 +29,10 @@ Future<void> showMPChooseSummaryStyleSheet(
     barrierColor: Colors.black54,
     builder: (BuildContext ctx) {
       return _MPChooseSummaryStyleSheet(
-        initialStyle: initialStyle,
-        onStyleConfirmed: onStyleConfirmed,
+        recentTemplate: recentTemplate,
+        recommendTemplates: recommendTemplates,
+        initialSelected: initialSelected,
+        onTemplateConfirmed: onTemplateConfirmed,
         onBrowseAllStyles: onBrowseAllStyles,
       );
     },
@@ -89,13 +41,17 @@ Future<void> showMPChooseSummaryStyleSheet(
 
 class _MPChooseSummaryStyleSheet extends StatefulWidget {
   const _MPChooseSummaryStyleSheet({
-    required this.initialStyle,
-    this.onStyleConfirmed,
+    required this.recommendTemplates,
+    this.recentTemplate,
+    this.initialSelected,
+    this.onTemplateConfirmed,
     this.onBrowseAllStyles,
   });
 
-  final MPSummaryStyleId initialStyle;
-  final void Function(MPSummaryStyleId style)? onStyleConfirmed;
+  final MPTemplateStruct? recentTemplate;
+  final List<MPTemplateStruct> recommendTemplates;
+  final MPTemplateStruct? initialSelected;
+  final void Function(MPTemplateStruct tpl)? onTemplateConfirmed;
   final VoidCallback? onBrowseAllStyles;
 
   static const Color _kCardBg = Color(0xFFF2F2F7);
@@ -107,21 +63,100 @@ class _MPChooseSummaryStyleSheet extends StatefulWidget {
 }
 
 class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> {
-  late MPSummaryStyleId _selected;
+  MPTemplateStruct? _selected;
 
   @override
   void initState() {
     super.initState();
-    _selected = widget.initialStyle;
+    _selected = widget.initialSelected ??
+        widget.recentTemplate ??
+        (widget.recommendTemplates.isNotEmpty
+            ? widget.recommendTemplates.first
+            : null);
   }
 
   void _pop() {
     Navigator.of(context).pop();
   }
 
+  bool _isSameTemplate(MPTemplateStruct? a, MPTemplateStruct? b) {
+    if (a == null || b == null) return false;
+    final String? idA = a.id;
+    final String? idB = b.id;
+    if (idA != null &&
+        idB != null &&
+        idA.isNotEmpty &&
+        idB.isNotEmpty) {
+      return idA == idB;
+    }
+    return identical(a, b);
+  }
+
+  String _tplTitle(MPTemplateStruct t) {
+    final String x = (t.title ?? '').trim();
+    return x;
+  }
+
+  String _tplSubtitle(MPTemplateStruct t) {
+    return (t.subTitle ?? '').trim();
+  }
+
+  /// 标题右侧小标签（与「Recent」同款：浅蓝底 + 蓝字）
+  Widget _buildTitleTag(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _MPChooseSummaryStyleSheet._kRecommendedBadgeBg,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: OmiTextStyle.create(
+          fontSize: OmiFontSize.t2_11,
+          fontWeight: OmiFontWeight.medium,
+          color: blueTextColor,
+          height: 1.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _iconForIndex(int idx) {
+    final List<Widget> icons = <Widget>[
+      OmiImageLoader.localImg(
+        Assets.omiUsers,
+        width: 12,
+        height: 12,
+        color: blueTextColor,
+        fit: BoxFit.contain,
+      ),
+      OmiImageLoader.localImg(
+        Assets.omiDetailPhone,
+        width: 12,
+        height: 12,
+        color: blueTextColor,
+        fit: BoxFit.contain,
+      ),
+      OmiImageLoader.localImg(
+        Assets.omiBookText,
+        width: 12,
+        height: 12,
+        color: blueTextColor,
+        fit: BoxFit.contain,
+      ),
+      OmiImageLoader.localImg(
+        Assets.omiBrain,
+        width: 12,
+        height: 12,
+        color: blueTextColor,
+        fit: BoxFit.contain,
+      ),
+    ];
+    return icons[idx % icons.length];
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 最大高度为屏幕的 80%
     final double maxH = MediaQuery.sizeOf(context).height * 0.8;
     final double kb = MediaQuery.viewInsetsOf(context).bottom;
     final double bottomPad = 12 + MediaQuery.paddingOf(context).bottom;
@@ -151,7 +186,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                           color: orangeTextColor,
                           fit: BoxFit.contain,
                         ),
-                        SizedBox(height: 4,),
+                        const SizedBox(height: 4),
                         Text(
                           "Choose how you'd like this summarized",
                           style: OmiTextStyle.create(
@@ -172,58 +207,43 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                           ),
                         ),
                         const SizedBox(height: 6),
-                        _buildAutopilotCard(),
-                        const SizedBox(height: 16),
-                        _buildYourStylesDivider(),
+                        if (widget.recentTemplate != null) ...<Widget>[
+                          _buildRecentTemplateCard(widget.recentTemplate!),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildRecommendedDivider(),
                         const SizedBox(height: 6),
-                        _buildStyleListTile(
-                          id: MPSummaryStyleId.meetingSecretary,
-                          icon: OmiImageLoader.localImg(
-                            Assets.omiUsers,
-                            width: 12,
-                            height: 12,
-                            color: blueTextColor,
-                            fit: BoxFit.contain,
+                        if (widget.recommendTemplates.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'No recommended templates',
+                              style: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t4_13,
+                                fontWeight: OmiFontWeight.regular,
+                                color: secondTextColor,
+                              ),
+                            ),
+                          )
+                        else
+                          ...List<Widget>.generate(
+                            widget.recommendTemplates.length,
+                            (int i) {
+                              final MPTemplateStruct t =
+                                  widget.recommendTemplates[i];
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  bottom: i == widget.recommendTemplates.length - 1
+                                      ? 0
+                                      : 10,
+                                ),
+                                child: _buildTemplateTile(
+                                  tpl: t,
+                                  icon: _iconForIndex(i),
+                                ),
+                              );
+                            },
                           ),
-                          title: 'Meeting secretary',
-                          subtitle: 'Clear, structured meeting notes',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStyleListTile(
-                          id: MPSummaryStyleId.salesFollowUp,
-                          icon: OmiImageLoader.localImg(Assets.omiDetailPhone, color: blueTextColor, width: 12, height: 12, fit: BoxFit.contain),
-                          title: 'Sales follow-up',
-                          subtitle:
-                              'Client needs, objections, next steps',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStyleListTile(
-                          id: MPSummaryStyleId.learningNotes,
-                          icon: OmiImageLoader.localImg(
-                            Assets.omiBookText,
-                            width: 12,
-                            height: 12,
-                            color: blueTextColor,
-                            fit: BoxFit.contain,
-                          ),
-                          title: 'Learning notes',
-                          subtitle:
-                              'Concepts, examples, personal takeaways',
-                        ),
-                        const SizedBox(height: 10),
-                        _buildStyleListTile(
-                          id: MPSummaryStyleId.adhdFriendly,
-                          icon: OmiImageLoader.localImg(
-                            Assets.omiBrain,
-                            width: 12,
-                            height: 12,
-                            color: blueTextColor,
-                            fit: BoxFit.contain,
-                          ),
-                          title: 'ADHD-friendly',
-                          subtitle:
-                              'Extra structure, clarity, no overload',
-                        ),
                         const SizedBox(height: 12),
                         Text(
                           'Looking for a specific role or style?',
@@ -237,33 +257,36 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                         ),
                         const SizedBox(height: 4),
                         GestureDetector(
-                            onTap: () {
-                              widget.onBrowseAllStyles?.call();
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 0,
-                                vertical: 4,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: <Widget>[
-                                  Text(
-                                    'Browse all styles',
-                                    style: OmiTextStyle.create(
-                                      fontSize: OmiFontSize.t4_13,
-                                      fontWeight: OmiFontWeight.medium,
-                                      color: blueTextColor,
-                                    ),
+                          onTap: () {
+                            widget.onBrowseAllStyles?.call();
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 0,
+                              vertical: 4,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: <Widget>[
+                                Text(
+                                  'Browse all styles',
+                                  style: OmiTextStyle.create(
+                                    fontSize: OmiFontSize.t4_13,
+                                    fontWeight: OmiFontWeight.medium,
+                                    color: blueTextColor,
                                   ),
-                                  const SizedBox(width: 4),
-                                  OmiImageLoader.localImg(Assets.omiBlueRighrArrow, width: 12, height: 12, fit: BoxFit.contain)
-
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 4),
+                                OmiImageLoader.localImg(
+                                  Assets.omiBlueRighrArrow,
+                                  width: 12,
+                                  height: 12,
+                                  fit: BoxFit.contain,
+                                ),
+                              ],
                             ),
                           ),
-
+                        ),
                       ],
                     ),
                   ),
@@ -286,10 +309,12 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                       color: Colors.white,
                       fit: BoxFit.contain,
                     ),
-                    onPressed: () {
-                      widget.onStyleConfirmed?.call(_selected);
-                      _pop();
-                    },
+                    onPressed: _selected == null
+                        ? null
+                        : () {
+                            widget.onTemplateConfirmed?.call(_selected!);
+                            _pop();
+                          },
                   ),
                 ),
               ],
@@ -300,7 +325,6 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     );
   }
 
-  /// 顶部：返回 / 标题 / 关闭
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -323,8 +347,13 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    OmiImageLoader.localImg(Assets.omiLeftBack, width: 20, height: 20, color: blueTextColor),
-                    SizedBox(width: 4,),
+                    OmiImageLoader.localImg(
+                      Assets.omiLeftBack,
+                      width: 20,
+                      height: 20,
+                      color: blueTextColor,
+                    ),
+                    const SizedBox(width: 4),
                     Text(
                       'Back',
                       style: OmiTextStyle.create(
@@ -364,13 +393,13 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     );
   }
 
-  /// Autopilot 推荐卡片（可选中）
-  Widget _buildAutopilotCard() {
-    final bool sel = _selected == MPSummaryStyleId.autopilot;
+  /// 顶部：最近使用的模板（recentTemplate）
+  Widget _buildRecentTemplateCard(MPTemplateStruct recent) {
+    final bool sel = _isSameTemplate(_selected, recent);
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selected = MPSummaryStyleId.autopilot),
+        onTap: () => setState(() => _selected = recent),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(14),
@@ -399,46 +428,34 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                   children: <Widget>[
                     Row(
                       children: <Widget>[
-                        Text(
-                          'Autopilot',
-                          style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t5_14,
-                            fontWeight: OmiFontWeight.medium,
-                            color: mainTextColor,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _MPChooseSummaryStyleSheet._kRecommendedBadgeBg,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                        Flexible(
                           child: Text(
-                            'Recommended',
+                            _tplTitle(recent),
                             style: OmiTextStyle.create(
-                              fontSize: OmiFontSize.t2_11,
+                              fontSize: OmiFontSize.t5_14,
                               fontWeight: OmiFontWeight.medium,
-                              color: blueTextColor,
-                              height: 1.2,
+                              color: mainTextColor,
                             ),
+                            
                           ),
                         ),
+                         const SizedBox(width: 8),
+                        _buildTitleTag('Recommended'),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      "Let AI decide what's worth generating based on the content",
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t3_12,
-                        fontWeight: OmiFontWeight.regular,
-                        color: secondTextColor,
-                        height: 1.4,
+                    if (_tplSubtitle(recent).isNotEmpty) ...<Widget>[
+                      const SizedBox(height: 4),
+                      Text(
+                        _tplSubtitle(recent),
+                        style: OmiTextStyle.create(
+                          fontSize: OmiFontSize.t3_12,
+                          fontWeight: OmiFontWeight.regular,
+                          color: secondTextColor,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
+                    ],
+
                   ],
                 ),
               ),
@@ -449,8 +466,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     );
   }
 
-  /// 「Your styles」分隔标题
-  Widget _buildYourStylesDivider() {
+  Widget _buildRecommendedDivider() {
     return Row(
       children: <Widget>[
         Expanded(
@@ -474,18 +490,17 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     );
   }
 
-  /// 列表风格卡片
-  Widget _buildStyleListTile({
-    required MPSummaryStyleId id,
+  Widget _buildTemplateTile({
+    required MPTemplateStruct tpl,
     required Widget icon,
-    required String title,
-    required String subtitle,
   }) {
-    final bool sel = _selected == id;
+    final bool sel = _isSameTemplate(_selected, tpl);
+    final String sub = _tplSubtitle(tpl);
+    final bool hasSub = sub.isNotEmpty;
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () => setState(() => _selected = id),
+        onTap: () => setState(() => _selected = tpl),
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(12),
@@ -498,40 +513,52 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
             ),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                hasSub ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: <Widget>[
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                  width: 30, height: 30,
-                  child: Center(child: icon)
+                width: 30,
+                height: 30,
+                child: Center(child: icon),
               ),
               const SizedBox(width: 8),
-              Expanded(
+              Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    Text(
-                      title,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.medium,
-                        color: mainTextColor,
-                        height: 1.25,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          child: Text(
+                            _tplTitle(tpl),
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t5_14,
+                              fontWeight: OmiFontWeight.medium,
+                              color: mainTextColor,
+                              height: 1.25,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t3_12,
-                        fontWeight: OmiFontWeight.regular,
-                        color: secondTextColor,
-                        height: 1.4,
+                    if (hasSub) ...<Widget>[
+                      const SizedBox(height: 2),
+                      Text(
+                        sub,
+                        style: OmiTextStyle.create(
+                          fontSize: OmiFontSize.t3_12,
+                          fontWeight: OmiFontWeight.regular,
+                          color: secondTextColor,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

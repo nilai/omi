@@ -4,7 +4,11 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../../../http/api/mp_template.dart';
+import '../../../../../http/schema/mp_data_model.dart';
+import '../../../../../http/schema/mp_template.dart';
 import '../../../../../generated/assets.dart';
+import '../../../../../utils/mp_toast_utils.dart';
 import '../../../../../utils/omi_image_loader.dart';
 import 'mp_choose_summary_style_sheet.dart';
 
@@ -47,12 +51,49 @@ class _MPGenerateSummarySheet extends StatefulWidget {
 }
 
 class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
-  /// 当前选中的摘要风格（与下层选择器同步）
-  MPSummaryStyleId _selectedStyle = MPSummaryStyleId.autopilot;
+  MPGetTemplateListResponse? _tplResp;
+  MPTemplateStruct? _selectedTemplate;
 
   static const Color _kFeatureCardBg = Color(0xFFF2F2F7);
   static const Color _kAutopilotBg = Color(0xFFF7F2E8);
   static const Color _kAutopilotBorder = Color(0xFFE8DCC8);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTemplates();
+  }
+
+  Future<void> _loadTemplates() async {
+    try {
+      final MPGetTemplateListResponse? resp = await getTemplateList(
+        MPGetTemplateListRequest(pageSize: 50, cursor: ''),
+      );
+      if (!mounted || resp == null) return;
+      if (resp.baseResp.code != 0) return;
+      setState(() {
+        _tplResp = resp;
+        _selectedTemplate ??= resp.recentTemplate ??
+            (resp.recommendTemplates.isNotEmpty
+                ? resp.recommendTemplates.first
+                : (resp.customTemplates.isNotEmpty
+                    ? resp.customTemplates.first
+                    : null));
+      });
+    } catch (_) {
+      // ignore: avoid_catches_without_on_clauses
+    }
+  }
+
+  String get _modeTitle {
+    final String t = (_selectedTemplate?.title ?? '').trim();
+    return t;
+  }
+
+  String get _modeSubtitle {
+    final MPTemplateStruct? tpl = _selectedTemplate;
+    return tpl?.subTitle ?? '';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +240,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: <Widget>[
                                     Text(
-                                      _selectedStyle.modeCardTitle,
+                                      _modeTitle,
                                       style: OmiTextStyle.create(
                                         fontSize: OmiFontSize.t5_14,
                                         fontWeight: OmiFontWeight.medium,
@@ -209,7 +250,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      _selectedStyle.modeCardSubtitle,
+                                      _modeSubtitle,
                                       style: OmiTextStyle.create(
                                         fontSize: OmiFontSize.t3_12,
                                         fontWeight: OmiFontWeight.regular,
@@ -222,13 +263,18 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                               ),
                               InkWell(
                                 onTap: () {
+                                  final MPGetTemplateListResponse? resp =
+                                      _tplResp;
+                                  if (resp == null) return;
                                   showMPChooseSummaryStyleSheet(
                                     context,
-                                    initialStyle: _selectedStyle,
-                                    onStyleConfirmed:
-                                        (MPSummaryStyleId style) {
+                                    recentTemplate: resp.recentTemplate,
+                                    recommendTemplates: resp.recommendTemplates,
+                                    initialSelected: _selectedTemplate,
+                                    onTemplateConfirmed:
+                                        (MPTemplateStruct tpl) {
                                       setState(() {
-                                        _selectedStyle = style;
+                                        _selectedTemplate = tpl;
                                       });
                                       widget.onChangeMode?.call();
                                     },

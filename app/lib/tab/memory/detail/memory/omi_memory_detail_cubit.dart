@@ -212,20 +212,21 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(state.copyWith(data: state.data!.copyWith(title: t)));
   }
 
-  Future<void> onPlayTap() async {
+  /// 返回 `true` 表示已暂停或已开始播放；`false` 表示未执行（如下载失败）。
+  Future<bool> onPlayTap() async {
     final OmiMemoryDetailState cur = state;
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
-      return;
+      return false;
     }
     if (_isAudioPlaying) {
       await _audioPlayer.pause();
       _isAudioPlaying = false;
-      return;
+      return true;
     }
     final String? localPath = await _ensurePlayableLocalPath(cur.data!);
     if (localPath == null || localPath.isEmpty) {
       MPToastUtils.showMessage('音频下载失败，请稍后重试');
-      return;
+      return false;
     }
     try {
       if (_playingLocalPath != localPath) {
@@ -234,16 +235,15 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       await _audioPlayer.play();
       _isAudioPlaying = true;
+      return true;
     } catch (_) {
       MPToastUtils.showMessage('音频播放失败');
+      return false;
     }
   }
 
   Future<String?> _ensurePlayableLocalPath(MPMemoryDetailCardData data) async {
     final String recordFile = (data.recordFile ?? '').trim();
-    if (recordFile.isEmpty) {
-      return null;
-    }
     final String? localPath = await MPAudioLocalRecordsUtil.instance.getLocalRecordPath(
       recordFile,
     );
