@@ -115,13 +115,13 @@ class _MPWeeklyAppBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
                   IconButton(
-                    icon: const Icon(Icons.share_outlined),
+                    icon: const Icon(Icons.share_outlined, color: blueTextColor),
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Share weekly insight',
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.more_vert),
+                    icon: const Icon(Icons.more_vert, color: blueTextColor),
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Weekly options',
                     ),

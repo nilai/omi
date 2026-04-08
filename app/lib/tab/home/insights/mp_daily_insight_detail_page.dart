@@ -37,13 +37,13 @@ class MPDailyInsightDetailPage extends StatelessWidget {
                 onBack: () => Navigator.of(context).maybePop(),
                 actions: <Widget>[
                   IconButton(
-                    icon: const Icon(Icons.share_outlined),
+                    icon: const Icon(Icons.share_outlined, color: blueTextColor),
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Share daily insight',
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.more_vert),
+                    icon: const Icon(Icons.more_vert, color: blueTextColor),
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Daily options',
                     ),

@@ -35,7 +35,7 @@ class MPPatternInsightDetailPage extends StatelessWidget {
                 onBack: () => Navigator.of(context).maybePop(),
                 actions: <Widget>[
                   IconButton(
-                    icon: const Icon(Icons.share_outlined),
+                    icon: const Icon(Icons.share_outlined, color: blueTextColor),
                     tooltip: 'Share',
                     onPressed: () => MPToastUtils.showFeatureComingSoon(
                       message: 'Share pattern',
