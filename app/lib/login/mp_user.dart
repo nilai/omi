@@ -94,15 +94,18 @@ class MPUser {
   }
 
   /// token 过期时间（毫秒时间戳）。
-  DateTime? get tokenExpiresTime =>
-      _tokenExpiresTime ??
-      (() {
-        final int? ts = MPPreferences().getInt(_tokenExpiresTimeKey);
-        if (ts == null) {
-          return null;
-        }
-        return DateTime.fromMillisecondsSinceEpoch(ts);
-      })();
+  DateTime get tokenExpiresTime {
+    if (_tokenExpiresTime != null) {
+      return _tokenExpiresTime!;
+    }
+    final int? ts = MPPreferences().getInt(_tokenExpiresTimeKey);
+    if (ts == null) {
+      _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(0);
+    } else {
+      _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(ts);
+    }
+    return _tokenExpiresTime!;
+  }
 
   /// 设置 token 过期时间（秒）。
   Future<void> setTokenExpiresTime(int value) async {
