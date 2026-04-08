@@ -147,7 +147,7 @@ class _MPShareExportSheet extends StatelessWidget {
                       physics: const NeverScrollableScrollPhysics(),
                       mainAxisSpacing: 18,
                       crossAxisSpacing: 18,
-                      childAspectRatio: 0.78,
+                      childAspectRatio: 0.74,
                       children: tiles.map((_MPExportTileData tile) {
                         return _MPExportTile(data: tile);
                       }).toList(),
