@@ -73,15 +73,15 @@ class ApiTools {
   }
 
   /// 获取访问令牌
-  static String? get accessToken => SharedPreferencesUtil().accessToken;
+  static String get accessToken => SharedPreferencesUtil().accessToken ?? '';
 
   /// 判断是否有访问令牌
   static bool hasAccessToken() {
-    return accessToken != null && accessToken!.isNotEmpty;
+    return accessToken.isNotEmpty;
   }
 
   /// 获取邮箱
-  static String? get email => SharedPreferencesUtil().email;
+  static String get email => SharedPreferencesUtil().email;
 
   /// 获取 token 过期时间
   static DateTime? get tokenExpiresTime => SharedPreferencesUtil().tokenExpiresTime;
@@ -111,6 +111,8 @@ class ApiTools {
 }
 
 Future<String> getAuthHeader() async {
+  //TODO: 测试数据
+  return 'Bearer ${ApiTools.accessToken}';
   if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
     // 刷新 token
     await ApiTools.refreshToken();
