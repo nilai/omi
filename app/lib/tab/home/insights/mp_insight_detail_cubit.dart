@@ -325,7 +325,6 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   Future<void> initData() async {
     emit(MPInsightDetailState.loading());
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 520));
       final MPInsightDetailData loaded = await _buildDetailData(_item);
       emit(MPInsightDetailState.loaded(loaded));
     } catch (e) {
