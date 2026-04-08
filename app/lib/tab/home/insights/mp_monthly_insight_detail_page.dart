@@ -124,9 +124,7 @@ class _MPMonthlyAppBar extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: blueTextColor),
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Monthly options',
-                    ),
+                    onPressed: () => context.read<MPInsightDetailCubit>().showMoreDialog(context),
                   ),
                 ],
               ),

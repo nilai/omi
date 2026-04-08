@@ -42,9 +42,7 @@ class MPDailyInsightDetailPage extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, color: blueTextColor),
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Daily options',
-                    ),
+                    onPressed: () => context.read<MPInsightDetailCubit>().showMoreDialog(context),
                   ),
                 ],
               ),

@@ -9,6 +9,7 @@ import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../../utils/mp_toast_utils.dart';
+import 'dialog/mp_insights_more_dialog.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -342,6 +343,16 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       MPShareExportKind.systemShare => 'Share',
     };
     MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
+  }
+
+  /// 打开 insight 详情页更多弹窗。
+  Future<void> showMoreDialog(BuildContext context) async {
+    await MPInsightsMoreDialog.show(
+      context: context,
+      onDeleteTap: () {
+        MPToastUtils.showFeatureComingSoon(message: 'Delete memory');
+      },
+    );
   }
 
   /// 页面初始化：拉取详情
