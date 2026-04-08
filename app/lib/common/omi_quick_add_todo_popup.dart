@@ -1,8 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:memo_pin/common/mp_todo_manager.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
@@ -71,17 +69,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     final String text = _controller.text.trim();
     if (text.isEmpty) return;
     setState(() => _isSubmitting = true);
-    final bool ok = await MPTodoManager().createTodo(
-      title: text,
-      priority: 'normal',
-      deadline: '${DateTime.now().millisecondsSinceEpoch ~/ 1000}',
-    );
     if (!mounted) {
-      return;
-    }
-    if (!ok) {
-      setState(() => _isSubmitting = false);
-      MPToastUtils.showMessage('创建失败');
       return;
     }
     Navigator.of(context).pop(OmiQuickAddTodoResult(text: text));

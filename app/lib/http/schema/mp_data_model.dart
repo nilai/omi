@@ -545,6 +545,9 @@ class MPTemplateStruct {
   @JsonKey(name: 'title')
   final String? title;
 
+  @JsonKey(name: 'sub_title')
+  final String? subTitle;
+
   @JsonKey(name: 'icon')
   final String? icon;
 
@@ -560,6 +563,7 @@ class MPTemplateStruct {
     this.icon,
     this.type,
     this.prompt,
+    this.subTitle,
   });
 
   factory MPTemplateStruct.fromJson(Map<String, dynamic> json) => _$MPTemplateStructFromJson(json);

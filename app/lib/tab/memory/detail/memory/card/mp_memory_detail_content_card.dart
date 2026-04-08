@@ -121,7 +121,8 @@ class MPMemoryDetailContentCard extends StatefulWidget {
   /// 分段切换回调
   final ValueChanged<MPMemoryDetailSegment>? onSegmentChanged;
 
-  final VoidCallback? onPlayTap;
+  /// 与 [OmiMemoryDetailCubit.onPlayTap] 对齐：成功为 `true`，失败（如未下载到本地）为 `false`。
+  final Future<bool> Function()? onPlayTap;
   final bool showBackground;
   final bool segmentBodyScrollWithParent;
   final MPMemoryDetailCardType cardType;
@@ -202,38 +203,83 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     }
   }
 
-  void _togglePlayFromHeader() {
+  Future<void> _togglePlayFromHeader() async {
+    if (_elapsed >= _total && _total > Duration.zero) {
+      _elapsed = Duration.zero;
+    }
+
+    if (_playing) {
+      setState(() {
+        _playing = false;
+      });
+      _syncTimerByPlayingState();
+      await widget.onPlayTap?.call();
+      return;
+    }
+
+    final Future<bool>? fut = widget.onPlayTap?.call();
+    if (fut == null) {
+      setState(() {
+        _playing = true;
+        _playingTranscriptIndex ??= _transcriptItems.isNotEmpty ? 0 : null;
+      });
+      _syncTimerByPlayingState();
+      return;
+    }
+
+    final bool ok = await fut;
+    if (!mounted) return;
+    if (!ok) return;
+
     setState(() {
-      if (_elapsed >= _total && _total > Duration.zero) {
-        _elapsed = Duration.zero;
-      }
-      _playing = !_playing;
+      _playing = true;
       _playingTranscriptIndex ??= _transcriptItems.isNotEmpty ? 0 : null;
     });
     _syncTimerByPlayingState();
-    widget.onPlayTap?.call();
   }
 
-  void _onTranscriptPlayTap(int index) {
-    setState(() {
-      final bool isSameIndex = _playingTranscriptIndex == index;
-      if (isSameIndex && _playing) {
+  Future<void> _onTranscriptPlayTap(int index) async {
+    final bool isSameIndex = _playingTranscriptIndex == index;
+    if (isSameIndex && _playing) {
+      setState(() {
         _playing = false;
-      } else {
-        final Duration fromTranscript =
-            Duration(seconds: _transcriptItems[index].timeSeconds);
-        if (fromTranscript <= _total) {
-          _elapsed = fromTranscript;
-        }
-        if (_elapsed >= _total && _total > Duration.zero) {
-          _elapsed = Duration.zero;
-        }
-        _playing = true;
-        _playingTranscriptIndex = index;
+      });
+      _syncTimerByPlayingState();
+      await widget.onPlayTap?.call();
+      return;
+    }
+
+    setState(() {
+      final Duration fromTranscript =
+          Duration(seconds: _transcriptItems[index].timeSeconds);
+      if (fromTranscript <= _total) {
+        _elapsed = fromTranscript;
       }
+      if (_elapsed >= _total && _total > Duration.zero) {
+        _elapsed = Duration.zero;
+      }
+      _playingTranscriptIndex = index;
+      _playing = false;
     });
     _syncTimerByPlayingState();
-    widget.onPlayTap?.call();
+
+    final Future<bool>? fut = widget.onPlayTap?.call();
+    if (fut == null) {
+      setState(() {
+        _playing = true;
+      });
+      _syncTimerByPlayingState();
+      return;
+    }
+
+    final bool ok = await fut;
+    if (!mounted) return;
+    if (!ok) return;
+
+    setState(() {
+      _playing = true;
+    });
+    _syncTimerByPlayingState();
   }
 
   void _syncTimerByPlayingState() {
