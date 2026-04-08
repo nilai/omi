@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
@@ -80,20 +81,74 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   /// 首次进入：等价于 [load]
   Future<void> initData() => load();
 
+  bool _isRenderableEntry(MPMemoryEntry e) {
+    switch (e.kind) {
+      case MPMemoryEntryKind.conversation:
+        return e.variant != null && e.data != null && e.conversationKind != null;
+      case MPMemoryEntryKind.memoGroup:
+        return e.memoVariant != null && e.memoData != null;
+      case MPMemoryEntryKind.audioRecording:
+        return e.audioData != null;
+    }
+  }
+
+  List<MPMemoryEntry> _loadCachedFirstPage() {
+    final dynamic cached = OmiCacheManager().getMemoryFirstPage();
+    if (cached is! Map) return const <MPMemoryEntry>[];
+    final dynamic rawList = cached['memorys'];
+    if (rawList is! List) return const <MPMemoryEntry>[];
+
+    final List<MPMemoryStruct> structs = <MPMemoryStruct>[];
+    for (final dynamic e in rawList) {
+      if (e is Map) {
+        try {
+          structs.add(MPMemoryStruct.fromJson(Map<String, dynamic>.from(e)));
+        } catch (_) {
+          // ignore malformed entry
+        }
+      }
+    }
+    if (structs.isEmpty) return const <MPMemoryEntry>[];
+    final List<MPMemoryEntry> entries =
+        structs.map(_mpMemoryStructToEntry).toList(growable: false);
+    return entries.where(_isRenderableEntry).toList(growable: false);
+  }
+
   /// 刷新第一页：重置 cursor、hasMore，再拉首屏（对齐 [MemoryProvider.loadMemories]）
   ///
   /// - **当前无列表数据**：先检测网络，离线则 [OmiAllPhase.noNetwork]；在线则全屏 loading 再请求
   /// - **当前已有列表**（下拉刷新）：不展示三态图，保持列表展示；请求失败则仍显示原数据
   Future<void> load() async {
     final List<MPMemoryEntry> before = List<MPMemoryEntry>.from(state.items);
-    final bool hasData = before.isNotEmpty;
+    bool hasData = before.isNotEmpty;
 
+    // 首屏无数据时，优先用缓存兜底展示（离线也能看到上次列表）。
     if (!hasData) {
-      final bool online = await _hasNetworkConnectivity();
-      if (!online) {
-        emit(const OmiAllState(phase: OmiAllPhase.noNetwork));
-        return;
+      // 确保缓存已从持久化介质恢复到内存，否则冷启动/重进时可能读到空导致离线白屏。
+      await OmiCacheManager().initialize();
+      final List<MPMemoryEntry> cachedItems = _loadCachedFirstPage();
+      if (cachedItems.isNotEmpty) {
+        emit(
+          OmiAllState(
+            phase: OmiAllPhase.loaded,
+            items: cachedItems,
+            // 首屏缓存只兜底展示，hasMore 仍以真实接口为准；这里默认 true 以允许后续网络刷新/加载更多。
+            hasMore: true,
+          ),
+        );
+        hasData = true;
       }
+    }
+
+    final bool online = await _hasNetworkConnectivity();
+    if (!online) {
+      // 无网络：若已展示缓存则保持当前列表；否则进入 noNetwork 三态页。
+      if (!hasData) {
+        emit(const OmiAllState(phase: OmiAllPhase.noNetwork));
+      }
+      return;
+    }
+    if (!hasData) {
       emit(const OmiAllState(phase: OmiAllPhase.loading));
     }
 
@@ -265,6 +320,13 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     if (resp.baseResp.code != 0) {
       throw StateError(resp.baseResp.message);
     }
+    // 仅缓存首屏（cursor 为空）数据：All 列表的第一页。
+    if (cursor.isEmpty) {
+      OmiCacheManager().putMemoryFirstPage(<String, Object?>{
+        'memorys': resp.memorys.map((MPMemoryStruct e) => e.toJson()).toList(),
+        'has_more': resp.hasMore,
+      });
+    }
     final List<MPMemoryEntry> items =
         resp.memorys.map(_mpMemoryStructToEntry).toList(growable: false);
     return (items: items, hasMore: resp.hasMore);
@@ -282,7 +344,6 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   switch (m.type) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
-    print('onlyRecord: ${m.toJson()}');
       return MPMemoryEntry.audioRecording(
         id: m.id,
         audioData: MPAudioRecordingCardData(

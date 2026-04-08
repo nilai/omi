@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:path/path.dart' as p;
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -116,8 +117,45 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
 
   Future<void> initData() => load();
 
+  bool _isInCachedFirstPage() {
+    final dynamic cached = OmiCacheManager().getMemoryFirstPage();
+    if (cached is! Map) return false;
+    final dynamic rawList = cached['memorys'];
+    if (rawList is! List) return false;
+    for (final dynamic e in rawList) {
+      if (e is Map) {
+        final dynamic id = e['id'];
+        if (id is String && id == memoryId) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  MPAudioDetailData? _loadCachedAudioDetailIfAllowed() {
+    if (!_isInCachedFirstPage()) return null;
+    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
+    if (cached is! Map) return null;
+    try {
+      final MPMemoryStruct m =
+          MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
+      final MPOnlyRecordMemoryStruct? only = m.onlyRecordContent;
+      if (only == null) return null;
+      return _mapOnlyRecordToAudioData(m, only);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> load() async {
-    emit(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
+    final MPAudioDetailData? cached = _loadCachedAudioDetailIfAllowed();
+    final bool hasCached = cached != null;
+    if (hasCached) {
+      emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: cached));
+    } else {
+      emit(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
+    }
     try {
       final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
         MPGetMemoryV2DetailRequest(memoryId: memoryId),
@@ -130,15 +168,20 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (only == null) {
         throw StateError('only_record_content is empty');
       }
+      if (_isInCachedFirstPage()) {
+        OmiCacheManager().putMemoryDetail(memoryId, m.toJson());
+      }
       final MPAudioDetailData data = _mapOnlyRecordToAudioData(m, only);
       emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: data));
     } catch (e) {
-      emit(
-        MPAudioDetailState(
-          phase: MPAudioDetailPhase.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      if (!hasCached) {
+        emit(
+          MPAudioDetailState(
+            phase: MPAudioDetailPhase.error,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
     }
   }
 

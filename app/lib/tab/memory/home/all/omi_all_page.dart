@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_page.dart';
@@ -9,7 +8,6 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';
-import '../../../../utils/mp_toast_utils.dart';
 import '../../detail/audio/omi_audio_detail_page.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -132,8 +130,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
                 onButtonPressed: () async {
-                  final MPAudioRecordResult? r = await showMPAudioRecordPopup(context);
-
+                  await showMPAudioRecordPopup(context);
                 },
               ),
             );
@@ -159,6 +156,27 @@ class _OmiAllViewState extends State<_OmiAllView> {
               ),
             );
           case OmiAllPhase.loaded:
+            if (state.items.isEmpty) {
+              return MPTristatePage(
+                type: MPTristateType.empty,
+                data: MPTristatePageData(
+                  icon: OmiImageLoader.localImg(
+                    Assets.omiBrain,
+                    width: 60,
+                    height: 60,
+                    color: blueTextColor,
+                    fit: BoxFit.cover,
+                  ),
+                  title: 'No memories yet',
+                  description:
+                      'Start recording to capture your first ideas and conversations.',
+                  buttonText: 'Start Recording',
+                  onButtonPressed: () async {
+                    await showMPAudioRecordPopup(context);
+                  },
+                ),
+              );
+            }
             return RefreshIndicator(
               onRefresh: _onRefresh,
               child: ListView.builder(

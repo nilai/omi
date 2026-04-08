@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -105,8 +106,61 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   Future<void> initData() => load();
 
+  bool _isInCachedFirstPage() {
+    final dynamic cached = OmiCacheManager().getMemoryFirstPage();
+    if (cached is! Map) return false;
+    final dynamic rawList = cached['memorys'];
+    if (rawList is! List) return false;
+    for (final dynamic e in rawList) {
+      if (e is Map) {
+        final dynamic id = e['id'];
+        if (id is String && id == memoryId) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  ({
+    MPMemoryDetailCardData data,
+    int nextUnknownInsightIndex,
+    String feedCursor,
+    bool feedHasMore,
+  })? _loadCachedDetailBundleIfAllowed() {
+    if (!_isInCachedFirstPage()) return null;
+    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
+    if (cached is! Map) return null;
+    try {
+      final MPMemoryStruct m =
+          MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
+      return _mapDetailResponse(m);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> load() async {
-    emit(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
+    final ({
+      MPMemoryDetailCardData data,
+      int nextUnknownInsightIndex,
+      String feedCursor,
+      bool feedHasMore,
+    })? cached = _loadCachedDetailBundleIfAllowed();
+    final bool hasCached = cached != null;
+    if (hasCached) {
+      _unknownInsightIndex = cached.nextUnknownInsightIndex;
+      _feedCursor = cached.feedCursor;
+      emit(
+        OmiMemoryDetailState(
+          phase: OmiMemoryDetailPhase.loaded,
+          data: cached.data,
+          feedHasMore: cached.feedHasMore,
+        ),
+      );
+    } else {
+      emit(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
+    }
     try {
       final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
         MPGetMemoryV2DetailRequest(memoryId: memoryId),
@@ -120,6 +174,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         String feedCursor,
         bool feedHasMore,
       }) bundle = _mapDetailResponse(resp.memoryDetail);
+      if (_isInCachedFirstPage()) {
+        OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
+      }
       _unknownInsightIndex = bundle.nextUnknownInsightIndex;
       _feedCursor = bundle.feedCursor;
       emit(
@@ -130,12 +187,14 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         ),
       );
     } catch (e) {
-      emit(
-        OmiMemoryDetailState(
-          phase: OmiMemoryDetailPhase.error,
-          errorMessage: e.toString(),
-        ),
-      );
+      if (!hasCached) {
+        emit(
+          OmiMemoryDetailState(
+            phase: OmiMemoryDetailPhase.error,
+            errorMessage: e.toString(),
+          ),
+        );
+      }
     }
   }
 
@@ -334,6 +393,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         String feedCursor,
         bool feedHasMore,
       }) bundle = _mapDetailResponse(resp.memoryDetail);
+      if (_isInCachedFirstPage()) {
+        OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
+      }
       _unknownInsightIndex = bundle.nextUnknownInsightIndex;
       _feedCursor = bundle.feedCursor;
       emit(

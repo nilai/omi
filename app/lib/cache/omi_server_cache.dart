@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
 
-import 'package:path_provider/path_provider.dart';
+import 'package:memo_pin/cache/mp_hive_util.dart';
 
 /// 服务端数据缓存的键名（避免魔法字符串、统一多场景）
 ///
@@ -15,6 +14,14 @@ class OmiCacheKeys {
 
   /// Memory 列表第一页
   static const String memoryFirstPage = 'mp_srv_memory_first_page';
+
+  /// 详情缓存键前缀（完整 key = 前缀 + memoryId）
+  ///
+  /// 注意：仅用于“列表第一页”的详情缓存场景；第二页及以后不做详情缓存。
+  static const String _memoryDetailPrefix = 'mp_srv_memory_detail_';
+
+  /// 详情缓存键（按 [memoryId]）
+  static String memoryDetail(String memoryId) => '$_memoryDetailPrefix$memoryId';
 
   /// 首页点击进入的详情缓存键前缀（完整 key = 前缀 + id）
   static const String _homeDetailPrefix = 'mp_srv_home_detail';
@@ -43,32 +50,26 @@ class OmiServerCache {
   /// 与 [instance] 等价
   factory OmiServerCache() => instance;
 
-  static const String _fileName = 'server_cache.json';
+  /// Hive 内用于持久化整张缓存表的 key（值为 JSON 字符串）。
+  static const String _hiveKey = 'mp_srv_server_cache_map_v1';
 
   final Map<String, String> _store = <String, String>{};
-
-  /// 磁盘是否可用（路径创建失败时仅内存缓存）
-  bool _diskReady = false;
 
   /// [initialize] 是否已执行结束（成功或失败都算，避免重复初始化）
   bool _initialized = false;
 
-  /// 串行化磁盘写入，避免并发写导致文件损坏
+  /// 串行化持久化写入，避免并发写导致覆盖
   Future<void> _persistChain = Future<void>.value();
 
-  /// 从磁盘恢复数据到内存；请在 `runApp` 前调用一次（需先 [WidgetsFlutterBinding.ensureInitialized]）
+  /// 从持久化介质恢复数据到内存；请在 `runApp` 前调用一次（需先 [WidgetsFlutterBinding.ensureInitialized]）
   ///
   /// 重复调用会直接返回，不会重复读盘。
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
     try {
-      final Directory dir = await _cacheDirectory();
-      _diskReady = true;
-      final File file = File('${dir.path}/$_fileName');
-      if (!file.existsSync()) return;
-      final String text = await file.readAsString();
-      if (text.trim().isEmpty) return;
+      final String? text = await MPHiveUtil.instance.getString(_hiveKey);
+      if (text == null || text.trim().isEmpty) return;
       final Object? decoded = jsonDecode(text);
       if (decoded is! Map) return;
       final Map<String, dynamic> map = Map<String, dynamic>.from(decoded);
@@ -78,32 +79,20 @@ class OmiServerCache {
         _store[e.key] = v is String ? v : jsonEncode(v);
       }
     } catch (_) {
-      _diskReady = false;
+      // 读取失败时仅使用内存缓存
     }
-  }
-
-  Future<Directory> _cacheDirectory() async {
-    final Directory base = await getApplicationSupportDirectory();
-    final Directory dir = Directory('${base.path}/omi_server_cache');
-    if (!dir.existsSync()) {
-      dir.createSync(recursive: true);
-    }
-    return dir;
   }
 
   void _schedulePersist() {
-    if (!_diskReady) return;
     _persistChain = _persistChain.then((_) => _persistToDisk());
   }
 
   Future<void> _persistToDisk() async {
     try {
-      final Directory dir = await _cacheDirectory();
-      final File file = File('${dir.path}/$_fileName');
       final String payload = jsonEncode(_store);
-      await file.writeAsString(payload, flush: true);
+      await MPHiveUtil.instance.putString(key: _hiveKey, value: payload);
     } catch (_) {
-      // 写盘失败时保留内存数据，下次启动若磁盘恢复则仍以旧文件为准；如需可在此打日志
+      // 写入失败时保留内存数据；下次启动读取时仍以旧持久化数据为准
     }
   }
 
