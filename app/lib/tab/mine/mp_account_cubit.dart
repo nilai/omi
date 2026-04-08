@@ -26,30 +26,19 @@ class MPAccountCubit extends Cubit<MPAccountState> {
 
   /// 进入页面时拉取用户资料。
   Future<void> loadProfile() async {
-    emit(
-      state.copyWith(
-        profileStatus: MPAccountProfileStatus.loading,
-        clearErrorMessage: true,
-      ),
-    );
+    emit(state.copyWith(profileStatus: MPAccountProfileStatus.loading, clearErrorMessage: true));
 
-    final MPGetUserProfileResponse? response =
-        await getUserProfile(MPGetUserProfileRequest());
+    final MPGetUserProfileResponse? response = await getUserProfile(MPGetUserProfileRequest());
 
     if (response == null) {
-      _emitProfileFallback(
-        profileStatus: MPAccountProfileStatus.error,
-        message: 'Failed to load profile',
-      );
+      _emitProfileFallback(profileStatus: MPAccountProfileStatus.error, message: 'Failed to load profile');
       return;
     }
 
     if (response.baseResp.code != 0) {
       _emitProfileFallback(
         profileStatus: MPAccountProfileStatus.error,
-        message: response.baseResp.message.isNotEmpty
-            ? response.baseResp.message
-            : 'Failed to load profile',
+        message: response.baseResp.message.isNotEmpty ? response.baseResp.message : 'Failed to load profile',
       );
       return;
     }
@@ -57,7 +46,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     final String name = response.user.userName.trim();
     final String email = response.user.email.trim();
     MPUser.instance.name = name.isNotEmpty ? name : null;
-    MPUser.instance.email = email.isNotEmpty ? email : null;
+    SharedPreferencesUtil().setEmail(email.isNotEmpty ? email : null);
 
     emit(
       state.copyWith(
@@ -69,10 +58,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     );
   }
 
-  void _emitProfileFallback({
-    required MPAccountProfileStatus profileStatus,
-    required String message,
-  }) async{
+  void _emitProfileFallback({required MPAccountProfileStatus profileStatus, required String message}) async {
     MPToastUtils.showMessage(message);
     final String email = await _fallbackEmail();
     emit(
