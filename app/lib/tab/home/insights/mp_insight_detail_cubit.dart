@@ -330,8 +330,20 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
 
   static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
+  static final StreamController<void> _insightDeletedController = StreamController<void>.broadcast();
 
   final MPInsightListItem _item;
+
+  /// insight 删除成功通知监听（列表页用于触发刷新）。
+  static StreamSubscription<void> listenInsightDeleted(void Function() onEvent) {
+    return _insightDeletedController.stream.listen((_) => onEvent());
+  }
+
+  static void _notifyInsightDeleted() {
+    if (!_insightDeletedController.isClosed) {
+      _insightDeletedController.add(null);
+    }
+  }
 
   /// 打开 insight 导出分享弹窗。
   Future<void> showShareExportSheet(BuildContext context) async {
@@ -355,8 +367,9 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     await MPInsightsMoreDialog.show(
       context: context,
       onDeleteTap: () {
-        deleteMemo(MPDeleteMemoRequest(memoId: _item.id)).then((MPDeleteMemoResponse? response) {
+        deleteMemory(MPDeleteMemoryRequest(memoryId: _item.id)).then((MPDeleteMemoryResponse? response) {
           if (response != null && response.baseResp.code == 0) {
+            _notifyInsightDeleted();
             if (context.mounted) {
               Navigator.of(context).pop();
             } else {

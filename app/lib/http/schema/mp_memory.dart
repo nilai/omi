@@ -189,6 +189,62 @@ class MPRenameMemoryResponse {
   Map<String, dynamic> toJson() => _$MPRenameMemoryResponseToJson(this);
 }
 
+// Share Memory Request
+@JsonSerializable()
+class MPShareMemoryRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPShareMemoryRequest({
+    required this.memoryId,
+  });
+
+  factory MPShareMemoryRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryRequestToJson(this);
+}
+
+// Share Memory Response
+@JsonSerializable()
+class MPShareMemoryResponse {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'share_code')
+  final String shareCode;
+
+  @JsonKey(name: 'share_url')
+  final String shareUrl;
+
+  @JsonKey(name: 'short_url')
+  final String shortUrl;
+
+  @JsonKey(name: 'expires_at')
+  final int expiresAt;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPShareMemoryResponse({
+    required this.id,
+    required this.shareCode,
+    required this.shareUrl,
+    required this.shortUrl,
+    required this.expiresAt,
+    required this.createAt,
+    required this.baseResp,
+  });
+
+  factory MPShareMemoryResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
+}
+
 
 // Create Record Request
 @JsonSerializable()

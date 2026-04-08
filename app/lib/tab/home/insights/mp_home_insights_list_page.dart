@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -11,6 +13,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 列表（对齐 react `AllInsightsListPage`）：
@@ -39,15 +42,23 @@ class _MPHomeInsightsListView extends StatefulWidget {
 
 class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
   final ScrollController _scrollController = ScrollController();
+  StreamSubscription<void>? _insightDeletedSub;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _insightDeletedSub = MPInsightDetailCubit.listenInsightDeleted(() {
+      if (!mounted) {
+        return;
+      }
+      context.read<MPInsightsListCubit>().load();
+    });
   }
 
   @override
   void dispose() {
+    _insightDeletedSub?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();

@@ -87,6 +87,22 @@ Future<MPRenameMemoryResponse?> renameMemory(MPRenameMemoryRequest req) async {
   return null;
 }
 
+// GET /api/v1/memory/share
+Future<MPShareMemoryResponse?> shareMemory(MPShareMemoryRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/share?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('shareMemory response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPShareMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
 // POST /api/v1/memory/create_record
 Future<MPCreateRecordResponse?> createRecord(MPCreateRecordRequest req) async {
   var response = await makeApiCall(

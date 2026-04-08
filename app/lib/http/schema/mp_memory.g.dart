@@ -130,6 +130,38 @@ Map<String, dynamic> _$MPRenameMemoryResponseToJson(
   MPRenameMemoryResponse instance,
 ) => <String, dynamic>{'base_resp': instance.baseResp};
 
+MPShareMemoryRequest _$MPShareMemoryRequestFromJson(
+  Map<String, dynamic> json,
+) => MPShareMemoryRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPShareMemoryRequestToJson(
+  MPShareMemoryRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
+MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
+  Map<String, dynamic> json,
+) => MPShareMemoryResponse(
+  id: json['id'] as String,
+  shareCode: json['share_code'] as String,
+  shareUrl: json['share_url'] as String,
+  shortUrl: json['short_url'] as String,
+  expiresAt: (json['expires_at'] as num).toInt(),
+  createAt: (json['create_at'] as num).toInt(),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPShareMemoryResponseToJson(
+  MPShareMemoryResponse instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'share_code': instance.shareCode,
+  'share_url': instance.shareUrl,
+  'short_url': instance.shortUrl,
+  'expires_at': instance.expiresAt,
+  'create_at': instance.createAt,
+  'base_resp': instance.baseResp,
+};
+
 MPCreateRecordRequest _$MPCreateRecordRequestFromJson(
   Map<String, dynamic> json,
 ) => MPCreateRecordRequest(
