@@ -26,7 +26,12 @@ enum _MPQuickCaptureState {
 
 /// Quick Capture 弹窗（图1~图5五种状态）。
 class MPQuickCaptureDialog extends StatefulWidget {
-  const MPQuickCaptureDialog({super.key});
+  const MPQuickCaptureDialog({
+    super.key,
+    required this.hostContext,
+  });
+
+  final BuildContext hostContext;
 
   /// 显示 Quick Capture 底部弹窗。
   static Future<void> show(BuildContext context) {
@@ -36,7 +41,7 @@ class MPQuickCaptureDialog extends StatefulWidget {
       useSafeArea: false,
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
-        return const MPQuickCaptureDialog();
+        return MPQuickCaptureDialog(hostContext: context);
       },
     );
   }
@@ -54,20 +59,29 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
   final FocusNode _focusNode = FocusNode();
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
 
-  late final AnimationController _waveController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
+  AnimationController? _waveController;
 
   _MPQuickCaptureState _state = _MPQuickCaptureState.idle;
   bool _recorderOpened = false;
   String? _recordPath;
   bool _busy = false;
+  bool _isClosing = false;
+  late NavigatorState _sheetNavigator;
 
   @override
   void initState() {
     super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
     _textController.addListener(_handleTextChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sheetNavigator = Navigator.of(context);
   }
 
   @override
@@ -75,7 +89,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     _textController.removeListener(_handleTextChanged);
     _textController.dispose();
     _focusNode.dispose();
-    _waveController.dispose();
+    _waveController?.stop();
+    _waveController?.dispose();
+    _waveController = null;
     unawaited(_stopRecorder(deleteFile: true));
     super.dispose();
   }
@@ -125,11 +141,15 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
   }
 
   Future<void> _closeDialog() async {
+    if (_isClosing) {
+      return;
+    }
+    _isClosing = true;
     _focusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
     await _stopRecorder(deleteFile: true);
-    if (mounted) {
-      Navigator.of(context).pop();
+    if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
+      _sheetNavigator.pop();
     }
   }
 
@@ -209,7 +229,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       ),
     );
-    if (!mounted) {
+    if (!mounted || _isClosing) {
       return;
     }
     if (response == null || response.baseResp.code != 0) {
@@ -227,9 +247,15 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         .map((MPAnalyzeMemoSuggestionStruct e) => e.content.trim())
         .where((String e) => e.isNotEmpty)
         .toList(growable: false);
-    Navigator.of(context).pop();
+    _isClosing = true;
+    if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
+      _sheetNavigator.pop();
+    }
+    if (!widget.hostContext.mounted) {
+      return;
+    }
     await showMPAnalyzeSuggestedTasksSheet(
-      context,
+      widget.hostContext,
       memoText: memoText,
       onAnalyze: (_) async => suggestions,
     );
@@ -308,7 +334,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       ),
     );
     await _stopRecorder(deleteFile: true);
-    if (!mounted) {
+    if (!mounted || _isClosing) {
       return;
     }
     if (response == null || response.baseResp.code != 0) {
@@ -324,9 +350,15 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         .map((MPAnalyzeMemoSuggestionStruct e) => e.content.trim())
         .where((String e) => e.isNotEmpty)
         .toList(growable: false);
-    Navigator.of(context).pop();
+    _isClosing = true;
+    if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
+      _sheetNavigator.pop();
+    }
+    if (!widget.hostContext.mounted) {
+      return;
+    }
     await showMPAnalyzeSuggestedTasksSheet(
-      context,
+      widget.hostContext,
       memoText: memoText,
       onAnalyze: (_) async => suggestions,
     );
@@ -416,9 +448,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       24,
     ];
     return AnimatedBuilder(
-      animation: _waveController,
+      animation: _waveController!,
       builder: (BuildContext context, Widget? child) {
-        final double t = _waveController.value * 2 * math.pi;
+        final double t = _waveController!.value * 2 * math.pi;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List<Widget>.generate(base.length, (int index) {
@@ -464,7 +496,27 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       return _buildRecordingWave();
     }
     if (_state == _MPQuickCaptureState.analyzingText) {
-      return _buildLoadingLabel('Analyzing...');
+      return SizedBox.expand(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Text(
+                _textController.text,
+                style: TextStyle(
+                  fontSize: OmiFontSize.t8_17,
+                  color: mainTextColor,
+                  fontWeight: OmiFontWeight.regular,
+                ),
+              ),
+            ),
+            const Spacer(),
+            Center(child: _buildLoadingLabel('Analyzing...')),
+            const SizedBox(height: 14),
+          ],
+        ),
+      );
     }
     if (_state == _MPQuickCaptureState.transcribingVoice) {
       return _buildLoadingLabel('Transcribing...');
@@ -590,25 +642,33 @@ class _MPQuickCaptureDots extends StatefulWidget {
 
 class _MPQuickCaptureDotsState extends State<_MPQuickCaptureDots>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 900),
-  )..repeat();
+  AnimationController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat();
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.stop();
+    _controller?.dispose();
+    _controller = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: _controller,
+      animation: _controller!,
       builder: (BuildContext context, Widget? child) {
         return Row(
           children: List<Widget>.generate(3, (int index) {
-            final double t = (_controller.value + index * 0.2) % 1.0;
+            final double t = (_controller!.value + index * 0.2) % 1.0;
             final double opacity = 0.25 + 0.75 * (1 - (t - 0.5).abs() * 2);
             return Padding(
               padding: EdgeInsets.only(right: index == 2 ? 0 : 6),
