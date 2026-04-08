@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_insight.dart';
 import 'mp_insights_list_cubit.dart';
@@ -319,6 +320,8 @@ class MPMonthlyInsightDetailData {
 class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
 
+  static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
+
   final MPInsightListItem _item;
 
   /// 页面初始化：拉取详情
@@ -333,12 +336,35 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   }
 
   Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
-    final MPGetInsightDetailResponse? response = await getInsightDetail(MPGetInsightDetailRequest(insightId: item.id));
+    final String cacheKey = '$_insightDetailCacheKeyPrefix${item.id}';
+    MPGetInsightDetailResponse? response;
+
+    try {
+      final MPGetInsightDetailResponse? serverResponse = await getInsightDetail(
+        MPGetInsightDetailRequest(insightId: item.id),
+      );
+      if (serverResponse != null && serverResponse.baseResp.code == 0) {
+        response = serverResponse;
+        await MPHiveUtil.instance.putMap(
+          key: cacheKey,
+          value: response.toJson(),
+        );
+      }
+    } catch (_) {}
+
     if (response == null) {
-      throw Exception('insight detail response is null');
+      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(cacheKey);
+      if (cached != null) {
+        final MPGetInsightDetailResponse cachedResponse =
+            MPGetInsightDetailResponse.fromJson(cached);
+        if (cachedResponse.baseResp.code == 0) {
+          response = cachedResponse;
+        }
+      }
     }
-    if (response.baseResp.code != 0) {
-      throw Exception(response.baseResp.message);
+
+    if (response == null) {
+      throw Exception('insight detail request failed and cache missing');
     }
 
     switch (item.type) {
