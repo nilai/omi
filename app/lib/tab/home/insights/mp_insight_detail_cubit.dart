@@ -344,31 +344,29 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     }
 
     final int seed = item.id.hashCode & 0x7fffffff;
-    final Random r = Random(seed);
 
     switch (item.type) {
       case MPInsightCardType.daily:
-        // return _buildDailyDetailDataWithMock(item, r);
-        return _buildDailyDetailData(item, response.insightDetail.dailyDetail, r);
+        // return _buildDailyDetailDataWithMock(item, Random(seed));
+        return _buildDailyDetailData(item, response.insightDetail.dailyDetail);
 
       case MPInsightCardType.weekly:
-        // return _buildWeeklyDetailDataWithMock(item, r);
-        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail, r);
+        // return _buildWeeklyDetailDataWithMock(item, Random(seed));
+        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail);
 
       case MPInsightCardType.monthly:
         // return _buildMonthlyDetailDataWithMock(item, seed);
         return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail, seed);
 
       case MPInsightCardType.pattern:
-        // return _buildPatternDetailDataWithMock(item, r);
-        return _buildPatternDetailData(item, response.insightDetail.patternDetail, r);
+        // return _buildPatternDetailDataWithMock(item, Random(seed));
+        return _buildPatternDetailData(item, response.insightDetail.patternDetail);
     }
   }
 
   MPInsightDetailData _buildDailyDetailData(
     MPInsightListItem item,
     MPDailyInsightDetailStruct? detail,
-    Random r,
   ) {
     if (detail == null) {
       throw Exception('daily_detail is null');
@@ -414,7 +412,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   }
 
   // ignore: unused_element
-  MPInsightDetailData _buildDailyDetailDataWithMock(MPInsightListItem item, Random r) {
+  MPInsightDetailData _buildDailyDetailDataWithMock(MPInsightListItem item) {
     final List<String> decisionsMade = <String>[
       'Delay external rollout until recording is stable',
       'Prioritize audio reliability over new features',
@@ -442,7 +440,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
         'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
       ],
-      tips: <String>['把下一步写成一句可执行句', '将后续提醒合并到同一个时间窗口', if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟'],
+      tips: <String>['把下一步写成一句可执行句', '将后续提醒合并到同一个时间窗口', '为高消耗任务留出缓冲 15 分钟'],
       daily: MPDailyInsightDetailData(
         dateLabel: 'Daily Insight · ${item.periodLabel}',
         narrativeTitle: 'Today\'s narrative',
@@ -462,7 +460,6 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailData _buildWeeklyDetailData(
     MPInsightListItem item,
     MPWeeklyInsightDetailStruct? detail,
-    Random r,
   ) {
     if (detail == null) {
       throw Exception('weekly_detail is null');
@@ -551,7 +548,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   }
 
   // ignore: unused_element
-  MPInsightDetailData _buildWeeklyDetailDataWithMock(MPInsightListItem item, Random r) {
+  MPInsightDetailData _buildWeeklyDetailDataWithMock(MPInsightListItem item) {
     final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
       const MPWeeklyMetricItem(value: '8', label: 'tasks'),
       const MPWeeklyMetricItem(value: '5', label: 'decisions'),
@@ -650,7 +647,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
         'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
         'Follow-ups were most effective when they were grouped and scheduled right after key work.',
       ],
-      tips: <String>['把 follow-up 放到“工作后立刻做”', '每周复盘一次，删掉低价值任务', if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标'],
+      tips: <String>['把 follow-up 放到“工作后立刻做”', '每周复盘一次，删掉低价值任务', '设置任务上限：一次只追求 1 个关键目标'],
       weekly: MPWeeklyInsightDetailData(
         titleLabel: 'Week of ${item.periodLabel}',
         subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
@@ -812,7 +809,6 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailData _buildPatternDetailData(
     MPInsightListItem item,
     MPPatternInsightDetailStruct? detail,
-    Random r,
   ) {
     if (detail == null) {
       throw Exception('pattern_detail is null');
