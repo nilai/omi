@@ -499,61 +499,79 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
 
   @override
   Widget build(BuildContext context) {
-    final double bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(0, 0, 0, bottomInset),
-            child: SizedBox(
-              height: 380,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 8, 14),
-                    child: Row(
-                      children: <Widget>[
-                        Text(
-                          'Quick Capture',
-                          style: TextStyle(
-                            fontSize: OmiFontSize.t9_18,
-                            color: mainTextColor,
-                            fontWeight: OmiFontWeight.bold,
+    final MediaQueryData mq = MediaQuery.of(context);
+    final double safeBottom = mq.viewPadding.bottom;
+    final double keyboardInset = mq.viewInsets.bottom;
+    final bool isInputState = _state == _MPQuickCaptureState.idle ||
+        _state == _MPQuickCaptureState.textReady;
+
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 180),
+      curve: Curves.easeOut,
+      padding: EdgeInsets.only(bottom: keyboardInset),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, safeBottom),
+              child: SizedBox(
+                height: 380,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 8, 14),
+                      child: Row(
+                        children: <Widget>[
+                          Text(
+                            'Quick Capture',
+                            style: TextStyle(
+                              fontSize: OmiFontSize.t9_18,
+                              color: mainTextColor,
+                              fontWeight: OmiFontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            onPressed: _closeDialog,
+                            icon: const Icon(Icons.close_rounded),
+                            color: secondTextColor,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Align(
+                          alignment: isInputState
+                              ? Alignment.topLeft
+                              : Alignment.center,
+                          child: Padding(
+                            padding: EdgeInsets.only(top: isInputState ? 12 : 0),
+                            child: _buildCenterContent(),
                           ),
                         ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: _closeDialog,
-                          icon: const Icon(Icons.close_rounded),
-                          color: secondTextColor,
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Center(child: _buildCenterContent()),
+                    Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: _buildBottomAction(),
+                      ),
                     ),
-                  ),
-                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: _buildBottomAction(),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
