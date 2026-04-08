@@ -382,7 +382,8 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         );
       case _MPQuickCaptureState.recording:
         return Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             _circleActionButton(
               icon: Icons.close_rounded,
@@ -617,10 +618,12 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
                     Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: _buildBottomAction(),
-                      ),
+                      child: _state == _MPQuickCaptureState.recording
+                          ? _buildBottomAction()
+                          : Align(
+                              alignment: Alignment.centerRight,
+                              child: _buildBottomAction(),
+                            ),
                     ),
                   ],
                 ),
