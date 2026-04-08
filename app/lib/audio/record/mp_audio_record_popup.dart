@@ -17,10 +17,7 @@ import 'package:path_provider/path_provider.dart';
 
 /// 录音结束并保存后的结果（临时文件路径 + 时长）。
 class MPAudioRecordResult {
-  const MPAudioRecordResult({
-    required this.filePath,
-    required this.duration,
-  });
+  const MPAudioRecordResult({required this.filePath, required this.duration});
 
   final String filePath;
   final Duration duration;
@@ -28,21 +25,16 @@ class MPAudioRecordResult {
 
 /// 模态路由默认会插入全屏 [ModalBarrier]，即便透明也会拦截点击；覆盖为不参与命中，下层页面才可操作。
 class MPPassThroughBarrierDialogRoute extends RawDialogRoute<MPAudioRecordResult?> {
-  MPPassThroughBarrierDialogRoute({
-    required super.pageBuilder,
-    required String super.barrierLabel,
-  }) : super(
-          barrierDismissible: false,
-          barrierColor: Colors.transparent,
-          transitionDuration: const Duration(milliseconds: 200),
-        );
+  MPPassThroughBarrierDialogRoute({required super.pageBuilder, required String super.barrierLabel})
+    : super(
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+        transitionDuration: const Duration(milliseconds: 200),
+      );
 
   @override
   Widget buildModalBarrier() {
-    return const IgnorePointer(
-      ignoring: true,
-      child: SizedBox.shrink(),
-    );
+    return const IgnorePointer(ignoring: true, child: SizedBox.shrink());
   }
 }
 
@@ -55,8 +47,7 @@ Future<MPAudioRecordResult?> showMPAudioRecordPopup(BuildContext context) {
   return rootNavigator.push<MPAudioRecordResult?>(
     MPPassThroughBarrierDialogRoute(
       barrierLabel: barrierLabel,
-      pageBuilder:
-          (BuildContext context, Animation<double> a1, Animation<double> a2) {
+      pageBuilder: (BuildContext context, Animation<double> a1, Animation<double> a2) {
         return _MPAudioRecordDialog(rootNavigator: rootNavigator);
       },
     ),
@@ -80,8 +71,7 @@ class _MPAudioRecordDialog extends StatefulWidget {
   State<_MPAudioRecordDialog> createState() => _MPAudioRecordDialogState();
 }
 
-class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
-    with SingleTickerProviderStateMixin {
+class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleTickerProviderStateMixin {
   static const Color _kBlue = Color(0xFF007AFF);
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
   static const Color _kCancelSheetBg = Color(0xFFF2F2F7);
@@ -115,10 +105,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   @override
   void initState() {
     super.initState();
-    _waveController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    )..repeat();
+    _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
   }
 
   @override
@@ -215,10 +202,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         return;
       }
       final Directory dir = await getTemporaryDirectory();
-      final String path = p.join(
-        dir.path,
-        'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac',
-      );
+      final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
       await _recorder.openRecorder();
       _recorderOpened = true;
       await _recorder.startRecorder(
@@ -342,8 +326,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
 
-    final String? savedPath =
-        await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
+    final String? savedPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
     if (savedPath == null || savedPath.isEmpty) {
       if (mounted) {
         MPToastUtils.showMessage('保存到本地失败，请重试');
@@ -364,8 +347,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       _uploadBatchIndex = 1;
       _uploadBatchTotal = 1;
     });
-    final MPCreateRecordResponse? created =
-        await MPAudioUploadManager.instance.uploadLocalRecord(
+    
+    widget.rootNavigator.pop(MPAudioRecordResult(filePath: savedPath, duration: total));
+
+    final MPCreateRecordResponse? created = await MPAudioUploadManager.instance.uploadLocalRecord(
       localFile: localFile,
       durationSec: durationSec,
       createAt: createAt,
@@ -387,9 +372,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
     setState(() => _uploadProgressPct = null);
     _recordPath = null;
-    widget.rootNavigator.pop(
-      MPAudioRecordResult(filePath: savedPath, duration: total),
-    );
   }
 
   void _onCloseIntro() {
@@ -399,8 +381,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mq = MediaQuery.of(context);
-    final bool showDimAndCard =
-        !_minimized || _step == _MPAudioRecordStep.intro;
+    final bool showDimAndCard = !_minimized || _step == _MPAudioRecordStep.intro;
 
     return Material(
       type: MaterialType.transparency,
@@ -410,19 +391,12 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           if (_step == _MPAudioRecordStep.recording && _minimized)
             Positioned.fill(
               child: IgnorePointer(
-                child: ColoredBox(
-                  color: Colors.transparent,
-                  child: SizedBox.expand(),
-                ),
+                child: ColoredBox(color: Colors.transparent, child: SizedBox.expand()),
               ),
             ),
           if (showDimAndCard)
             Positioned.fill(
-              child: IgnorePointer(
-                child: ColoredBox(
-                  color: Colors.black.withValues(alpha: 0.45),
-                ),
-              ),
+              child: IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.45))),
             ),
           if (!_minimized)
             Center(
@@ -431,16 +405,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                 child: Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.center,
-                  children: <Widget>[
-                    _buildMainSheet(),
-                  ],
+                  children: <Widget>[_buildMainSheet()],
                 ),
               ),
             ),
-          if (_showCancelConfirm && !_minimized)
-            Positioned.fill(
-              child: _buildCancelConfirmLayer(),
-            ),
+          if (_showCancelConfirm && !_minimized) Positioned.fill(child: _buildCancelConfirmLayer()),
           if (_step == _MPAudioRecordStep.recording && _minimized)
             Positioned(
               left: 16,
@@ -463,11 +432,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           gradient: const LinearGradient(
-            colors: <Color>[
-              Color(0xFFB8D4FF),
-              Color(0xFFD8E4FF),
-              Color(0xFFE8DDF8),
-            ],
+            colors: <Color>[Color(0xFFB8D4FF), Color(0xFFD8E4FF), Color(0xFFE8DDF8)],
             begin: Alignment.centerLeft,
             end: Alignment.centerRight,
           ),
@@ -485,27 +450,22 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                     children: <Widget>[
                       SizedBox(
                         height: 28,
-                        child: _MPMinimizedWaveform(
-                          animation: _waveController,
-                          active: !_isPaused,
-                          color: _kWaveGreen,
-                        ),
+                        child: _MPMinimizedWaveform(animation: _waveController, active: !_isPaused, color: _kWaveGreen),
                       ),
-                   
                     ],
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-               Text(
-                        _formatMinSec(_elapsed),
-                        style: OmiTextStyle.create(
-                          color: mainTextColor,
-                          fontSize: OmiFontSize.t7_16,
-                          fontWeight: OmiFontWeight.bold,
-                        ),
-                      ),
+            Text(
+              _formatMinSec(_elapsed),
+              style: OmiTextStyle.create(
+                color: mainTextColor,
+                fontSize: OmiFontSize.t7_16,
+                fontWeight: OmiFontWeight.bold,
+              ),
+            ),
             const SizedBox(width: 12),
 
             GestureDetector(
@@ -513,15 +473,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
               child: Container(
                 width: 44,
                 height: 44,
-                decoration: const BoxDecoration(
-                  color: redColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  _isPaused ? Icons.play_arrow : Icons.pause,
-                  color: Colors.white,
-                  size: 22,
-                ),
+                decoration: const BoxDecoration(color: redColor, shape: BoxShape.circle),
+                child: Icon(_isPaused ? Icons.play_arrow : Icons.pause, color: Colors.white, size: 22),
               ),
             ),
             if (!_isPaused) ...<Widget>[
@@ -529,10 +482,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
               Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: redColor,
-                  shape: BoxShape.circle,
-                ),
+                decoration: const BoxDecoration(color: redColor, shape: BoxShape.circle),
               ),
             ] else
               const SizedBox(width: 18),
@@ -551,9 +501,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         constraints: const BoxConstraints(maxWidth: 360),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 30),
-          child: _step == _MPAudioRecordStep.intro
-              ? _buildIntroBody()
-              : _buildRecordingBody(),
+          child: _step == _MPAudioRecordStep.intro ? _buildIntroBody() : _buildRecordingBody(),
         ),
       ),
     );
@@ -577,10 +525,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                 ),
               ),
             ),
-            _circleIconButton(
-              icon: Icons.close,
-              onTap: _busy ? () {} : _onCloseIntro,
-            ),
+            _circleIconButton(icon: Icons.close, onTap: _busy ? () {} : _onCloseIntro),
           ],
         ),
         const SizedBox(height: 16),
@@ -589,10 +534,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           child: Container(
             width: 66,
             height: 66,
-            decoration: const BoxDecoration(
-              color: _kBlue,
-              shape: BoxShape.circle,
-            ),
+            decoration: const BoxDecoration(color: _kBlue, shape: BoxShape.circle),
             child: const Icon(Icons.mic, color: Colors.white, size: 30),
           ),
         ),
@@ -615,10 +557,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       children: <Widget>[
         Row(
           children: <Widget>[
-            _circleIconButton(
-              icon: Icons.fullscreen_exit,
-              onTap: _busy ? () {} : _minimizeToPillBar,
-            ),
+            _circleIconButton(icon: Icons.fullscreen_exit, onTap: _busy ? () {} : _minimizeToPillBar),
             Expanded(
               child: Text(
                 'Record Audio',
@@ -630,10 +569,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                 ),
               ),
             ),
-            _circleIconButton(
-              icon: Icons.close,
-              onTap: _busy ? () {} : _openCancelConfirm,
-            ),
+            _circleIconButton(icon: Icons.close, onTap: _busy ? () {} : _openCancelConfirm),
           ],
         ),
         const SizedBox(height: 20),
@@ -651,15 +587,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           child: Container(
             width: 66,
             height: 66,
-            decoration: const BoxDecoration(
-              color: redColor,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _isPaused ? Icons.play_arrow : Icons.pause,
-              color: Colors.white,
-              size: 30,
-            ),
+            decoration: const BoxDecoration(color: redColor, shape: BoxShape.circle),
+            child: Icon(_isPaused ? Icons.play_arrow : Icons.pause, color: Colors.white, size: 30),
           ),
         ),
         const SizedBox(height: 12),
@@ -702,11 +631,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       fit: StackFit.expand,
       children: <Widget>[
         Positioned.fill(
-          child: IgnorePointer(
-            child: ColoredBox(
-              color: Colors.black.withValues(alpha: 0.35),
-            ),
-          ),
+          child: IgnorePointer(child: ColoredBox(color: Colors.black.withValues(alpha: 0.35))),
         ),
         Center(
           child: Material(
@@ -734,10 +659,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                             ),
                           ),
                         ),
-                        _circleIconButton(
-                          icon: Icons.close,
-                          onTap: _busy ? () {} : _closeCancelConfirm,
-                        ),
+                        _circleIconButton(icon: Icons.close, onTap: _busy ? () {} : _closeCancelConfirm),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -786,21 +708,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     );
   }
 
-  Widget _circleIconButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _circleIconButton({required IconData icon, required VoidCallback onTap}) {
     return Material(
       color: _kGreyCircleBg,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,
-        child: SizedBox(
-          width: 36,
-          height: 36,
-          child: Icon(icon, size: 20, color: secondTextColor),
-        ),
+        child: SizedBox(width: 36, height: 36, child: Icon(icon, size: 20, color: secondTextColor)),
       ),
     );
   }
@@ -840,11 +755,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
 /// 底部胶囊条内的简易波形（非真实电平，仅示意）。
 class _MPMinimizedWaveform extends StatelessWidget {
-  const _MPMinimizedWaveform({
-    required this.animation,
-    required this.active,
-    required this.color,
-  });
+  const _MPMinimizedWaveform({required this.animation, required this.active, required this.color});
 
   final Animation<double> animation;
   final bool active;
@@ -860,18 +771,13 @@ class _MPMinimizedWaveform extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: List<Widget>.generate(7, (int i) {
-            final double h = active
-                ? 4 + (math.sin(phase + i * 0.82) + 1) * 7
-                : 5.0 + (i % 3) * 1.5;
+            final double h = active ? 4 + (math.sin(phase + i * 0.82) + 1) * 7 : 5.0 + (i % 3) * 1.5;
             return Padding(
               padding: EdgeInsets.only(right: i == 6 ? 0 : 3),
               child: Container(
                 width: 3,
                 height: h.clamp(4.0, 18.0),
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(1.5),
-                ),
+                decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1.5)),
               ),
             );
           }),
