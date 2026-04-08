@@ -343,8 +343,6 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       throw Exception(response.baseResp.message);
     }
 
-    final int seed = item.id.hashCode & 0x7fffffff;
-
     switch (item.type) {
       case MPInsightCardType.daily:
         // return _buildDailyDetailDataWithMock(item, Random(seed));
@@ -356,7 +354,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
 
       case MPInsightCardType.monthly:
         // return _buildMonthlyDetailDataWithMock(item, seed);
-        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail, seed);
+        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail);
 
       case MPInsightCardType.pattern:
         // return _buildPatternDetailDataWithMock(item, Random(seed));
@@ -673,7 +671,6 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailData _buildMonthlyDetailData(
     MPInsightListItem item,
     MPMonthlyInsightDetailStruct? detail,
-    int seed,
   ) {
     if (detail == null) {
       throw Exception('monthly_detail is null');
