@@ -68,3 +68,115 @@ class MPDeleteMemoResponse {
 
   Map<String, dynamic> toJson() => _$MPDeleteMemoResponseToJson(this);
 }
+
+/// 与后端 `AnalyzeMemoSuggestionType` 对齐。
+enum MPAnalyzeMemoSuggestionType {
+  @JsonValue(1)
+  todo,
+
+  @JsonValue(2)
+  memo,
+}
+
+@JsonSerializable()
+class MPAnalyzeMemoSuggestionStruct {
+  @JsonKey(name: 'type')
+  final MPAnalyzeMemoSuggestionType type;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  MPAnalyzeMemoSuggestionStruct({
+    required this.type,
+    required this.content,
+  });
+
+  factory MPAnalyzeMemoSuggestionStruct.fromJson(Map<String, dynamic> json) =>
+      _$MPAnalyzeMemoSuggestionStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAnalyzeMemoSuggestionStructToJson(this);
+}
+
+@JsonSerializable()
+class MPAnalyzeMemoRecordRequest {
+  @JsonKey(name: 'record_url')
+  final String recordUrl;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  MPAnalyzeMemoRecordRequest({
+    required this.recordUrl,
+    required this.createAt,
+  });
+
+  factory MPAnalyzeMemoRecordRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPAnalyzeMemoRecordRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAnalyzeMemoRecordRequestToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true)
+class MPAnalyzeMemoRecordResponse {
+  @JsonKey(name: 'original_text')
+  final String originalText;
+
+  @JsonKey(name: 'structured_suggestions')
+  final List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPAnalyzeMemoRecordResponse({
+    required this.originalText,
+    required this.structuredSuggestions,
+    required this.baseResp,
+  });
+
+  factory MPAnalyzeMemoRecordResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPAnalyzeMemoRecordResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAnalyzeMemoRecordResponseToJson(this);
+}
+
+@JsonSerializable()
+class MPAnalyzeMemoTextRequest {
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  MPAnalyzeMemoTextRequest({
+    required this.content,
+    required this.createAt,
+  });
+
+  factory MPAnalyzeMemoTextRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPAnalyzeMemoTextRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAnalyzeMemoTextRequestToJson(this);
+}
+
+@JsonSerializable(explicitToJson: true)
+class MPAnalyzeMemoTextResponse {
+  @JsonKey(name: 'original_text')
+  final String originalText;
+
+  @JsonKey(name: 'structured_suggestions')
+  final List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPAnalyzeMemoTextResponse({
+    required this.originalText,
+    required this.structuredSuggestions,
+    required this.baseResp,
+  });
+
+  factory MPAnalyzeMemoTextResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPAnalyzeMemoTextResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPAnalyzeMemoTextResponseToJson(this);
+}
