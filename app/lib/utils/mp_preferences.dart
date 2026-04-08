@@ -190,4 +190,17 @@ class SharedPreferencesUtil extends MPPreferences {
     await MPPreferences().remove(_lastBleRemoteIdKey);
     await MPPreferences().remove(_lastBleDisplayNameKey);
   }
+
+  /// 清除所有本地数据。
+  static Future<void> clearAll() async {
+    await _instance.setAccessToken(null);
+    await _instance.setRefreshToken(null);
+    await _instance.setEmail(null);
+    await _instance.clearTokenExpiresTime();
+    await _instance.clearLastConnectedBleDevice();
+    _instance._accessToken = null;
+    _instance._refreshToken = null;
+    _instance._email = null;
+    _instance._tokenExpiresTime = null;
+  }
 }

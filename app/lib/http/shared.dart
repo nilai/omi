@@ -10,6 +10,10 @@ import 'package:memo_pin/utils/mp_uuid_util.dart';
 import 'package:path/path.dart';
 import 'package:memo_pin/utils/platform/platform_manager.dart';
 import '../../env/env.dart';
+import '../cache/mp_hive_util.dart';
+import '../login/mp_login_util.dart';
+import 'api/mp_login.dart';
+import 'schema/mp_login.dart';
 
 class Logger {
   static void log(String message) {
@@ -70,52 +74,57 @@ class ApiTools {
 
   /// 获取访问令牌
   static String? get accessToken => SharedPreferencesUtil().accessToken;
+
   /// 判断是否有访问令牌
   static bool hasAccessToken() {
     return accessToken != null && accessToken!.isNotEmpty;
   }
-  /// 获取刷新令牌
-  static String? get refreshToken => SharedPreferencesUtil().refreshToken;
+
   /// 获取邮箱
   static String? get email => SharedPreferencesUtil().email;
+
   /// 获取 token 过期时间
   static DateTime? get tokenExpiresTime => SharedPreferencesUtil().tokenExpiresTime;
+
   /// 判断 token 是否过期
   static bool tokenIsExpired() {
     final tokenExpiresTime = SharedPreferencesUtil().tokenExpiresTime;
     if (tokenExpiresTime == null) {
       return false;
     }
-    return DateTime.now().isAfter(tokenExpiresTime) || tokenExpiresTime.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0));
+    return DateTime.now().isAfter(tokenExpiresTime) ||
+        tokenExpiresTime.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0));
+  }
+
+  static Future<void> refreshToken() async {
+    final refreshToken = SharedPreferencesUtil().refreshToken;
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw Exception('Refresh token is empty');
+    }
+    final MPRefreshTokenRequest req = MPRefreshTokenRequest(refreshToken: refreshToken);
+    final MPTokenResponse? response = await refresh(req);
+    if (response == null) return;
+    await SharedPreferencesUtil().setAccessToken(response.accessToken);
+    await SharedPreferencesUtil().setRefreshToken(response.refreshToken);
+    await SharedPreferencesUtil().setTokenExpiresTime(response.expiresIn);
   }
 }
 
 Future<String> getAuthHeader() async {
-  // DateTime? expiry = DateTime.fromMillisecondsSinceEpoch(SharedPreferencesUtil().tokenExpirationTime);
-  // bool hasAuthToken = SharedPreferencesUtil().authToken.isNotEmpty;
-
-  // bool isExpirationDateValid =
-  //     !(expiry.isBefore(DateTime.now()) ||
-  //         expiry.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0)) ||
-  //         (expiry.isBefore(DateTime.now().add(const Duration(minutes: 5))) && expiry.isAfter(DateTime.now())));
-
   if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
-    // TODO: refersh token
-    // SharedPreferencesUtil().authToken = await AuthService.instance.getIdToken() ?? '';
+    // 刷新 token
+    await ApiTools.refreshToken();
   }
 
   if (!ApiTools.hasAccessToken()) {
-    // if (AuthService.instance.isSignedIn()) {
-    //   // should only throw if the user is signed in but the token is not found
-    //   // if the user is not signed in, the token will always be empty
-    //   throw Exception('No auth token found');
-    // }
+    final String refreshToken = SharedPreferencesUtil().refreshToken ?? '';
+    if (refreshToken.isEmpty) {
+      return '';
+    }
+    await ApiTools.refreshToken();
   }
-  final String? accessToken = ApiTools.accessToken;
-  if (accessToken == null || accessToken.isEmpty) {
-    return '';
-  }
-  return 'Bearer $accessToken';
+  final String accessToken = ApiTools.accessToken ?? '';
+  return accessToken.isEmpty ? '' : 'Bearer $accessToken';
 }
 
 String? _extractUserIdFromJwt(String? accessToken) {
@@ -211,15 +220,15 @@ Future<http.Response?> makeApiCall({
     http.Response? response = await _performRequest(url, builtHeaders, body, method);
     if (requireAuthCheck && response.statusCode == 401) {
       Logger.log('Token expired on 1st attempt');
-      // TODO: refresh token
-      // SharedPreferencesUtil().authToken = await AuthService.instance.getIdToken() ?? '';
+      // 刷新 token
+      await ApiTools.refreshToken();
       if (ApiTools.hasAccessToken()) {
         final refreshedHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
         response = await _performRequest(url, refreshedHeaders, body, method);
         Logger.log('Token refreshed and request retried');
         if (response.statusCode == 401) {
-          //TODO: Force user to sign in again. 退出登陆 重新登陆
-          // await AuthService.instance.signOut();
+          // 退出登陆 重新登陆
+          await MPLoginUtil.signOut();
           Logger.handle(
             Exception('Authentication failed. Please sign in again.'),
             StackTrace.current,
@@ -227,8 +236,8 @@ Future<http.Response?> makeApiCall({
           );
         }
       } else {
-        // TODO: Force user to sign in again
-        // await AuthService.instance.signOut();
+        // 退出登陆 重新登陆
+        await MPLoginUtil.signOut();
         Logger.handle(
           Exception('Authentication failed. Please sign in again.'),
           StackTrace.current,
@@ -376,10 +385,7 @@ Stream<String> makeStreamingApiCall({
     debugPrint('🌊 STREAMING REQUEST');
     debugPrint('Method: $method');
     debugPrint('URL: $url');
-    final builtHeaders = await buildHeaders(
-      requireAuthCheck: _isRequiredAuthCheck(url),
-      fromHeaders: headers,
-    );
+    final builtHeaders = await buildHeaders(requireAuthCheck: _isRequiredAuthCheck(url), fromHeaders: headers);
     debugPrint('Headers: ${_sanitizeHeaders(builtHeaders)}');
     if (body.isNotEmpty) {
       debugPrint('Body: $body');

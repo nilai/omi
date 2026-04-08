@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../blu/mp_bluetooth_connection_helper.dart';
-import '../../cache/mp_hive_util.dart';
-import '../../http/api/mp_login.dart';
 import '../../http/api/mp_user.dart';
 import '../../http/schema/mp_user.dart';
-import '../../login/home/mp_login_page.dart';
+import '../../login/mp_login_util.dart';
 import '../../login/mp_user.dart';
 import '../../utils/mp_preferences.dart';
 import '../../utils/mp_toast_utils.dart';
@@ -105,7 +102,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
   }
 
   static Future<String> _fallbackEmailStatic() async {
-    final String e = await SharedPreferencesUtil().email ?? '';
+    final String e = SharedPreferencesUtil().email;
     if (e.isNotEmpty) {
       return e;
     }
@@ -118,29 +115,12 @@ class MPAccountCubit extends Cubit<MPAccountState> {
       return;
     }
     emit(state.copyWith(signOutInProgress: true));
-
     try {
-      await logout();
-    } catch (_) {
-      // 仍执行本地清理与跳转，避免用户无法退出。
+      await MPLoginUtil.signOut(context: context);
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(signOutInProgress: false));
+      }
     }
-
-    await SharedPreferencesUtil().setAccessToken(null);
-    await SharedPreferencesUtil().setRefreshToken(null);
-    await SharedPreferencesUtil().setEmail(null);
-    await MPHiveUtil.instance.close();
-    await SharedPreferencesUtil().clearTokenExpiresTime();
-    await MPBluetoothConnectionHelper.disconnectAppBleForLogout();
-    await SharedPreferencesUtil().clearLastConnectedBleDevice();
-    MPUser.instance.clear();
-
-    if (!context.mounted) {
-      return;
-    }
-    emit(state.copyWith(signOutInProgress: false));
-    await Navigator.of(context).pushAndRemoveUntil<void>(
-      MaterialPageRoute<void>(builder: (_) => const MPLoginPage()),
-      (Route<dynamic> route) => false,
-    );
   }
 }
