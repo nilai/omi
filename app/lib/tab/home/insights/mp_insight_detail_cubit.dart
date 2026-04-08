@@ -1,8 +1,11 @@
 import 'dart:async';
-import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../cache/mp_hive_util.dart';
+import '../../../http/api/mp_insight.dart';
+import '../../../http/schema/mp_insight.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -10,30 +13,19 @@ enum MPInsightDetailPhase { loading, loaded, error }
 
 /// 详情页状态
 class MPInsightDetailState {
-  const MPInsightDetailState({
-    required this.phase,
-    this.data,
-    this.errorMessage,
-  });
+  const MPInsightDetailState({required this.phase, this.data, this.errorMessage});
 
   final MPInsightDetailPhase phase;
   final MPInsightDetailData? data;
   final String? errorMessage;
 
-  factory MPInsightDetailState.loading() => const MPInsightDetailState(
-        phase: MPInsightDetailPhase.loading,
-      );
+  factory MPInsightDetailState.loading() => const MPInsightDetailState(phase: MPInsightDetailPhase.loading);
 
   factory MPInsightDetailState.loaded(MPInsightDetailData data) =>
-      MPInsightDetailState(
-        phase: MPInsightDetailPhase.loaded,
-        data: data,
-      );
+      MPInsightDetailState(phase: MPInsightDetailPhase.loaded, data: data);
 
-  factory MPInsightDetailState.error(String message) => MPInsightDetailState(
-        phase: MPInsightDetailPhase.error,
-        errorMessage: message,
-      );
+  factory MPInsightDetailState.error(String message) =>
+      MPInsightDetailState(phase: MPInsightDetailPhase.error, errorMessage: message);
 }
 
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
@@ -63,9 +55,7 @@ class MPInsightDetailData {
 
 /// Daily 详情页中的可执行建议（Tomorrow's focus）
 class MPDailyFocusItem {
-  const MPDailyFocusItem({
-    required this.text,
-  });
+  const MPDailyFocusItem({required this.text});
 
   final String text;
 }
@@ -114,10 +104,7 @@ class MPDailyInsightDetailData {
 
 /// Weekly 详情页中的统计项
 class MPWeeklyMetricItem {
-  const MPWeeklyMetricItem({
-    required this.value,
-    required this.label,
-  });
+  const MPWeeklyMetricItem({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -125,11 +112,7 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({
-    required this.text,
-    required this.subtitle,
-    this.visible = true,
-  });
+  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true});
 
   final String text;
   final String subtitle;
@@ -138,10 +121,7 @@ class MPWeeklyPriorityItem {
 
 /// Weekly 详情页中的完成项
 class MPWeeklyAccomplishmentItem {
-  const MPWeeklyAccomplishmentItem({
-    required this.title,
-    required this.description,
-  });
+  const MPWeeklyAccomplishmentItem({required this.title, required this.description});
 
   final String title;
   final String description;
@@ -181,10 +161,7 @@ class MPWeeklyChallengeLearningItem {
 
 /// Weekly 详情页中的 pending item
 class MPWeeklyPendingItem {
-  const MPWeeklyPendingItem({
-    required this.text,
-    required this.visible,
-  });
+  const MPWeeklyPendingItem({required this.text, required this.visible});
 
   final String text;
   final bool visible;
@@ -227,10 +204,7 @@ class MPWeeklyInsightDetailData {
 
 /// Monthly 详情页卡片中的条目：注意力分布
 class MPMonthlyBarItem {
-  const MPMonthlyBarItem({
-    required this.label,
-    required this.value,
-  });
+  const MPMonthlyBarItem({required this.label, required this.value});
 
   /// 左侧标签，如 `Product`
   final String label;
@@ -241,11 +215,7 @@ class MPMonthlyBarItem {
 
 /// Monthly 详情页卡片中的条目：关键人物
 class MPMonthlyKeyPersonItem {
-  const MPMonthlyKeyPersonItem({
-    required this.name,
-    required this.count,
-    required this.value,
-  });
+  const MPMonthlyKeyPersonItem({required this.name, required this.count, required this.value});
 
   final String name;
   final int count;
@@ -256,10 +226,7 @@ class MPMonthlyKeyPersonItem {
 
 /// Monthly 详情页卡片中的条目：Topics
 class MPMonthlyTopicItem {
-  const MPMonthlyTopicItem({
-    required this.label,
-    required this.value,
-  });
+  const MPMonthlyTopicItem({required this.label, required this.value});
 
   final String label;
 
@@ -269,10 +236,7 @@ class MPMonthlyTopicItem {
 
 /// Monthly 详情页卡片中的条目：决策项
 class MPMonthlyDecisionItem {
-  const MPMonthlyDecisionItem({
-    required this.rank,
-    required this.text,
-  });
+  const MPMonthlyDecisionItem({required this.rank, required this.text});
 
   final int rank;
   final String text;
@@ -280,10 +244,7 @@ class MPMonthlyDecisionItem {
 
 /// Monthly 详情页卡片中的条目：下月关注建议
 class MPMonthlySuggestedFocusItem {
-  const MPMonthlySuggestedFocusItem({
-    required this.rank,
-    required this.text,
-  });
+  const MPMonthlySuggestedFocusItem({required this.rank, required this.text});
 
   final int rank;
   final String text;
@@ -357,10 +318,9 @@ class MPMonthlyInsightDetailData {
 
 /// 详情页 Cubit：根据列表项类型模拟后台拉取详情
 class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
-  MPInsightDetailCubit({
-    required MPInsightListItem item,
-  })  : _item = item,
-        super(MPInsightDetailState.loading());
+  MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
+
+  static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
 
   final MPInsightListItem _item;
 
@@ -368,333 +328,278 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
   Future<void> initData() async {
     emit(MPInsightDetailState.loading());
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 520));
-      final MPInsightDetailData loaded = _buildDetailData(_item);
+      final MPInsightDetailData loaded = await _buildDetailData(_item);
       emit(MPInsightDetailState.loaded(loaded));
     } catch (e) {
       emit(MPInsightDetailState.error(e.toString()));
     }
   }
 
-  MPInsightDetailData _buildDetailData(MPInsightListItem item) {
-    final int seed = item.id.hashCode & 0x7fffffff;
-    final Random r = Random(seed);
+  Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
+    final String cacheKey = '$_insightDetailCacheKeyPrefix${item.id}';
+    MPGetInsightDetailResponse? response;
+
+    try {
+      final MPGetInsightDetailResponse? serverResponse = await getInsightDetail(
+        MPGetInsightDetailRequest(insightId: item.id),
+      );
+      if (serverResponse != null && serverResponse.baseResp.code == 0) {
+        response = serverResponse;
+        await MPHiveUtil.instance.putMap(
+          key: cacheKey,
+          value: response.toJson(),
+        );
+      }
+    } catch (_) {}
+
+    if (response == null) {
+      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(cacheKey);
+      if (cached != null) {
+        final MPGetInsightDetailResponse cachedResponse =
+            MPGetInsightDetailResponse.fromJson(cached);
+        if (cachedResponse.baseResp.code == 0) {
+          response = cachedResponse;
+        }
+      }
+    }
+
+    if (response == null) {
+      throw Exception('insight detail request failed and cache missing');
+    }
 
     switch (item.type) {
       case MPInsightCardType.daily:
-        final List<String> decisionsMade = <String>[
-          'Delay external rollout until recording is stable',
-          'Prioritize audio reliability over new features',
-          'Proceed with phased API migration to reduce risk',
-        ];
-        final List<String> openQuestions = <String>[
-          'Migration timeline still unclear under infra limits',
-          'User segmentation strategy not aligned yet',
-          'Who owns onboarding improvements is undefined',
-        ];
-        final List<String> ideasCaptured = <String>[
-          'Simplify onboarding steps for ADHD users',
-          'Add a lightweight daily review loop',
-          'Improve hardware status feedback clarity',
-        ];
-        final List<MPDailyFocusItem> tomorrowFocus = <MPDailyFocusItem>[
-          const MPDailyFocusItem(text: 'Review migration milestones'),
-          const MPDailyFocusItem(text: 'Align infrastructure support priorities'),
-        ];
-
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
-            'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
-          ],
-          tips: <String>[
-            '把下一步写成一句可执行句',
-            '将后续提醒合并到同一个时间窗口',
-            if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
-          ],
-          daily: MPDailyInsightDetailData(
-            dateLabel: 'Daily Insight · ${item.periodLabel}',
-            narrativeTitle: 'Today\'s narrative',
-            narrativeBody:
-                'Today\'s conversations centered on API architecture and product positioning. Several threads returned to the same tension: shipping fast vs. stabilizing recording reliability. Concerns about scalability and team bandwidth kept resurfacing.',
-            decisionsMade: decisionsMade,
-            openQuestions: openQuestions,
-            patternsEmerging:
-                'Architecture concerns have surfaced repeatedly for several days, suggesting systemic friction rather than isolated implementation issues.',
-            ideasCaptured: ideasCaptured,
-            tomorrowFocus: tomorrowFocus,
-            askAiButtonText: 'Ask AI about today',
-          ),
-        );
+        return _buildDailyDetailData(item, response.insightDetail.dailyDetail);
 
       case MPInsightCardType.weekly:
-        final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
-          const MPWeeklyMetricItem(value: '8', label: 'tasks'),
-          const MPWeeklyMetricItem(value: '5', label: 'decisions'),
-          const MPWeeklyMetricItem(value: '12', label: 'meetings'),
-        ];
-        final List<MPWeeklyAccomplishmentItem> accomplishmentItems =
-            <MPWeeklyAccomplishmentItem>[
-          const MPWeeklyAccomplishmentItem(
-            title: 'API Migration Completed',
-            description:
-                'Successfully migrated 3 core endpoints to new architecture',
-          ),
-          const MPWeeklyAccomplishmentItem(
-            title: 'Design System Updates',
-            description: 'Shipped 12 new components with documentation',
-          ),
-          const MPWeeklyAccomplishmentItem(
-            title: 'Client Onboarding',
-            description: 'Completed onboarding for 2 new enterprise clients',
-          ),
-        ];
+        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail);
 
-        final List<String> accomplishments = <String>[
-          'API Migration Completed',
-          'Design System Updates',
-          'Client Onboarding',
-        ];
-        final List<String> pendingItems = <String>[
-          'Resolve migration bottlenecks with infra team',
-          'Update API documentation for V2 endpoints',
-          'Schedule follow-up with sales thread',
-        ];
-        final List<MPWeeklyPendingItem> pendingItemCards =
-            <MPWeeklyPendingItem>[
-          const MPWeeklyPendingItem(
-            text: 'Review migration milestones with infrastructure team',
-            visible: true,
+      case MPInsightCardType.monthly:
+        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail);
+
+      case MPInsightCardType.pattern:
+        return _buildPatternDetailData(item, response.insightDetail.patternDetail);
+    }
+  }
+
+  MPInsightDetailData _buildDailyDetailData(
+    MPInsightListItem item,
+    MPDailyInsightDetailStruct? detail,
+  ) {
+    if (detail == null) {
+      throw Exception('daily_detail is null');
+    }
+    debugPrint('-----hjj-----daily_detail: ${detail.toJson()}');
+    final List<String> decisionsMade = detail.decisionsMade.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> openQuestions = detail.openQuestions.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> ideasCaptured = detail.ideasCaptured.items
+        .map((MPDailyInsightTextItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<MPDailyFocusItem> tomorrowFocus = detail.tomorrowFocus
+        .map((String e) => MPDailyFocusItem(text: e))
+        .toList();
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.narrative.content,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: [],
+      daily: MPDailyInsightDetailData(
+        dateLabel: 'Daily Insight · ${item.periodLabel}',
+        narrativeTitle: detail.narrative.content.isNotEmpty
+            ? detail.decisionsMade.title
+            : 'Today\'s narrative',
+        narrativeBody: detail.narrative.content,
+        decisionsMade: decisionsMade,
+        openQuestions: openQuestions,
+        patternsEmerging: detail.patternsEmerging.content,
+        ideasCaptured: ideasCaptured,
+        tomorrowFocus: tomorrowFocus,
+        askAiButtonText: 'Ask AI about today',
+      ),
+    );
+  }
+
+  MPInsightDetailData _buildWeeklyDetailData(
+    MPInsightListItem item,
+    MPWeeklyInsightDetailStruct? detail,
+  ) {
+    if (detail == null) {
+      throw Exception('weekly_detail is null');
+    }
+    debugPrint('-----hjj-----weekly_detail: ${detail.toJson()}');
+    final List<MPWeeklyMetricItem> metrics = detail.weekSummary.keyMetrics
+        .map(
+          (MPWeeklyInsightMetricItemStruct e) => MPWeeklyMetricItem(
+            value: '${e.value}',
+            label: e.label,
           ),
-          const MPWeeklyPendingItem(
-            text: 'Update API documentation for v2 endpoints',
-            visible: true,
-          ),
-          const MPWeeklyPendingItem(
-            text: 'Schedule follow-up with lead investor',
-            visible: true,
-          ),
-          const MPWeeklyPendingItem(
-            text: 'Explore productivity ideas',
-            visible: true,
-          ),
-        ];
-        final List<MPWeeklyChallengeLearningItem> challengeLearningItems =
-            <MPWeeklyChallengeLearningItem>[
-          const MPWeeklyChallengeLearningItem(
-            title: 'Resource Constraints',
-            description:
-                'Team bandwidth became a bottleneck mid-week. Consider redistributing workload or postponing non-critical items.',
+        )
+        .toList();
+    final List<MPWeeklyAccomplishmentItem> accomplishmentItems = detail.accomplishments
+        .map(
+          (MPWeeklyInsightAccomplishmentItemStruct e) =>
+              MPWeeklyAccomplishmentItem(title: e.title, description: e.description),
+        )
+        .toList();
+    final List<String> accomplishments = detail.accomplishments
+        .map((MPWeeklyInsightAccomplishmentItemStruct e) => e.title)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<String> pendingItems = detail.pendingItems
+        .map((MPWeeklyInsightPendingItemStruct e) => e.content)
+        .where((String e) => e.isNotEmpty)
+        .toList();
+    final List<MPWeeklyPendingItem> pendingItemCards = detail.pendingItems
+        .map((MPWeeklyInsightPendingItemStruct e) => MPWeeklyPendingItem(text: e.content, visible: true))
+        .toList();
+    final List<MPWeeklyChallengeLearningItem> challengeLearningItems = detail.challengesAndLearnings
+        .map(
+          (MPWeeklyInsightChallengeItemStruct e) => MPWeeklyChallengeLearningItem(
+            title: e.title,
+            description: e.description,
             backgroundColorValue: 0xFFF5F1E7,
             borderColorValue: 0xFFECD8A5,
           ),
-          const MPWeeklyChallengeLearningItem(
-            title: 'Communication Win',
-            description:
-                'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
-            backgroundColorValue: 0xFFD9E3F5,
-            borderColorValue: 0xFFB6CAE9,
-          ),
-        ];
-        final List<MPWeeklyPriorityItem> nextWeekPriorities =
-            <MPWeeklyPriorityItem>[
-          const MPWeeklyPriorityItem(
-            text: 'Launch Mobile Beta',
-            subtitle: 'Target: Thursday EOD',
+        )
+        .toList();
+    final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
+        .map(
+          (MPWeeklyInsightPriorityItemStruct e) => MPWeeklyPriorityItem(
+            text: e.title,
+            subtitle: e.subTitle ?? '',
             visible: true,
           ),
-          const MPWeeklyPriorityItem(
-            text: 'Q1 Planning Session',
-            subtitle: 'All-hands meeting on Tuesday',
-            visible: true,
-          ),
-          const MPWeeklyPriorityItem(
-            text: 'Performance Optimization',
-            subtitle: 'Focus on API response times',
-            visible: true,
-          ),
-        ];
-        final List<MPWeeklyExpertFeedbackItem> expertFeedback =
-            <MPWeeklyExpertFeedbackItem>[
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Business Expert',
-            content:
-                'Pricing direction remains unclear across multiple conversations. Aligning ownership and decision checkpoints could prevent strategic drift next month.',
+        )
+        .toList();
+    final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
+        .map(
+          (MPWeeklyInsightExpertFeedbackItemStruct e) => MPWeeklyExpertFeedbackItem(
+            title: e.expertName,
+            content: e.feedback,
             iconKey: 'business',
             iconColorValue: 0xFF3A75F0,
           ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Creative Expert',
-            content:
-                'Recurring discussions suggest onboarding simplification and user education may offer untapped differentiation opportunities. Exploration here could unlock growth.',
-            iconKey: 'creative',
-            iconColorValue: 0xFFB061F0,
-          ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Execution Expert',
-            content:
-                'Delivery risk persists due to infrastructure dependencies and cross-team coordination. Earlier escalation of blockers may help avoid timeline slippage.',
-            iconKey: 'execution',
-            iconColorValue: 0xFFE89A2F,
-          ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Wellness Expert',
-            content:
-                'Energy dipped mid-week as workload peaked. Protecting recovery windows and avoiding stacked deadlines could sustain performance.',
-            iconKey: 'wellness',
-            iconColorValue: 0xFF33B95F,
-          ),
-        ];
+        )
+        .toList();
 
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
-            'Follow-ups were most effective when they were grouped and scheduled right after key work.',
-          ],
-          tips: <String>[
-            '把 follow-up 放到“工作后立刻做”',
-            '每周复盘一次，删掉低价值任务',
-            if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
-          ],
-          weekly: MPWeeklyInsightDetailData(
-            titleLabel: 'Week of ${item.periodLabel}',
-            subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
-            headerSummary:
-                'A productive week with strong momentum on the product roadmap. You balanced strategic planning with hands-on execution, improving delivery for key initiatives.',
-            weekSummaryText:
-                'Product development, team coordination, and client engagement dominated this week. You spent approximately 60% of time in execution and 40% in delivery/meetings.',
-            metrics: metrics,
-            accomplishmentItems: accomplishmentItems,
-            accomplishments: accomplishments,
-            challengesAndLearnings:
-                'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
-            challengeLearningItems: challengeLearningItems,
-            pendingItems: pendingItems,
-            pendingItemCards: pendingItemCards,
-            nextWeekPriorities: nextWeekPriorities,
-            expertWeeklyFeedback: expertFeedback,
-            askAiButtonText: 'Ask AI about this week',
-          ),
-        );
-
-      case MPInsightCardType.monthly:
-        final List<MPMonthlyBarItem> attentionDistribution =
-            <MPMonthlyBarItem>[
-          const MPMonthlyBarItem(label: 'Product', value: 70),
-          const MPMonthlyBarItem(label: 'Engineering', value: 55),
-          const MPMonthlyBarItem(label: 'Hiring', value: 35),
-        ];
-
-        final List<MPMonthlyKeyPersonItem> keyPeople =
-            <MPMonthlyKeyPersonItem>[
-          MPMonthlyKeyPersonItem(
-            name: 'Jordan',
-            count: 12 + (seed % 3),
-            value: 72,
-          ),
-          MPMonthlyKeyPersonItem(
-            name: 'Alex',
-            count: 10 + (seed % 4),
-            value: 58,
-          ),
-          MPMonthlyKeyPersonItem(
-            name: 'Sarah',
-            count: 8 + (seed % 5),
-            value: 42,
-          ),
-        ];
-
-        final List<MPMonthlyTopicItem> topicsSurfacing = <MPMonthlyTopicItem>[
-          const MPMonthlyTopicItem(label: 'API migration', value: 68),
-          const MPMonthlyTopicItem(label: 'Hiring bandwidth', value: 52),
-          const MPMonthlyTopicItem(label: 'Pricing strategy', value: 32),
-        ];
-
-        final List<String> longRunningOpenThreads = <String>[
-          'Hiring planning reflects ongoing bottlenecks',
-          'Pricing model needs alignment with unit economics',
-          'API ownership still unclear since December',
-        ];
-
-        final List<String> monthToMonthTrend = <String>[
-          'Execution spent improved vs last month',
-          'Team coordination reduced after decisions stabilized',
-          'Still track unresolved follow-ups from early month',
-        ];
-
-        final List<MPMonthlyDecisionItem> decisionsCannotSlip =
-            <MPMonthlyDecisionItem>[
-          MPMonthlyDecisionItem(rank: 1, text: 'Stabilize hiring capacity'),
-          MPMonthlyDecisionItem(rank: 2, text: 'Record pricing decision'),
-          MPMonthlyDecisionItem(rank: 3, text: 'Clarify API ownership'),
-        ];
-
-        final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth =
-            <MPMonthlySuggestedFocusItem>[
-          MPMonthlySuggestedFocusItem(
-            rank: 1,
-            text: 'Close ownership loop this month to unblock delivery',
-          ),
-          MPMonthlySuggestedFocusItem(
-            rank: 2,
-            text: 'Reduce hiring friction with weekly checkpoints',
-          ),
-          MPMonthlySuggestedFocusItem(
-            rank: 3,
-            text: 'Align pricing assumptions with unit economics early',
-          ),
-        ];
-
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'The month showed stable capture habits paired with improved execution focus.',
-          ],
-          tips: <String>[
-            'Use suggested focus items to generate action todos for next month.',
-          ],
-          monthly: MPMonthlyInsightDetailData(
-            monthSubtitle: item.periodLabel,
-            monthOverviewSummary: item.content,
-            attentionDistribution: attentionDistribution,
-            keyPeopleThisMonth: keyPeople,
-            topicsSurfacing: topicsSurfacing,
-            attentionDistributionSummary:
-                'Most effort went into execution, while hiring constraints continued to slow delivery.',
-            keyPeopleThisMonthSummary:
-                'Conversations repeatedly involved delivery ownership and coordination.',
-            topicsSurfacingSummary:
-                'These topics appeared across multiple weeks without clear resolution.',
-            longRunningOpenThreads: longRunningOpenThreads,
-            longRunningOpenThreadsSummary:
-                'These issues repeatedly delayed progress.',
-            monthToMonthTrend: monthToMonthTrend,
-            decisionsThatCannotSlipAgain: decisionsCannotSlip,
-            decisionsThatCannotSlipAgainSummary:
-                'If unresolved next month, these will continue to slow execution.',
-            suggestedFocusNextMonth: suggestedFocusNextMonth,
-            askAiButtonText: 'Ask AI about this month',
-          ),
-        );
-
-      case MPInsightCardType.pattern:
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            'API migration blockers have resurfaced across multiple conversations over the past two weeks. Ownership and delivery sequencing remain unclear, causing repeated execution friction.',
-            'Continued ambiguity may delay rollout and increase cross-team coordination costs, affecting delivery confidence.',
-          ],
-          tips: <String>[
-            'Clarify API ownership and rollout sequence in next infrastructure sync.',
-            if (r.nextBool()) 'Capture the outcome of each meeting and connect it back to this pattern.',
-          ],
-        );
-    }
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.header.summary,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: [],
+      weekly: MPWeeklyInsightDetailData(
+        titleLabel: detail.header.title.isNotEmpty ? detail.header.title : 'Week of ${item.periodLabel}',
+        subLabel: detail.header.subTitle,
+        headerSummary: detail.header.summary,
+        weekSummaryText: detail.weekSummary.focusAreas,
+        metrics: metrics,
+        accomplishmentItems: accomplishmentItems,
+        accomplishments: accomplishments,
+        challengesAndLearnings:
+            detail.challengesAndLearnings.map((MPWeeklyInsightChallengeItemStruct e) => e.description).join('\n'),
+        challengeLearningItems: challengeLearningItems,
+        pendingItems: pendingItems,
+        pendingItemCards: pendingItemCards,
+        nextWeekPriorities: nextWeekPriorities,
+        expertWeeklyFeedback: expertFeedback,
+        askAiButtonText: 'Ask AI about this week',
+      ),
+    );
   }
-}
 
+  MPInsightDetailData _buildMonthlyDetailData(
+    MPInsightListItem item,
+    MPMonthlyInsightDetailStruct? detail,
+  ) {
+    if (detail == null) {
+      throw Exception('monthly_detail is null');
+    }
+    debugPrint('-----hjj-----monthly_detail: ${detail.toJson()}');
+    final List<MPMonthlyBarItem> attentionDistribution = detail.attentionDistribution.items
+        .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyBarItem(label: e.name, value: e.value))
+        .toList();
+    final List<MPMonthlyKeyPersonItem> keyPeople = detail.keyPeople.items
+        .map(
+          (MPMonthlyInsightDistributionItemStruct e) => MPMonthlyKeyPersonItem(
+            name: e.name,
+            count: e.value,
+            value: e.value,
+          ),
+        )
+        .toList();
+    final List<MPMonthlyTopicItem> topicsSurfacing = detail.topicsResurfacing.items
+        .map((MPMonthlyInsightDistributionItemStruct e) => MPMonthlyTopicItem(label: e.name, value: e.value))
+        .toList();
+    final List<String> longRunningOpenThreads =
+        detail.openThreads.items.map((MPMonthlyInsightOpenThreadItemStruct e) => e.content).toList();
+    final List<MPMonthlyDecisionItem> decisionsCannotSlip = detail.decisions.items
+        .asMap()
+        .entries
+        .map((MapEntry<int, String> e) => MPMonthlyDecisionItem(rank: e.key + 1, text: e.value))
+        .toList();
+    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = detail.suggestedFocusNextMonth
+        .asMap()
+        .entries
+        .map((MapEntry<int, String> e) => MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value))
+        .toList();
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        detail.overview.contentMd,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips:[],
+      monthly: MPMonthlyInsightDetailData(
+        monthSubtitle: item.periodLabel,
+        monthOverviewSummary: detail.overview.contentMd,
+        attentionDistribution: attentionDistribution,
+        keyPeopleThisMonth: keyPeople,
+        topicsSurfacing: topicsSurfacing,
+        attentionDistributionSummary: detail.attentionDistribution.summary ?? '',
+        keyPeopleThisMonthSummary: detail.keyPeople.summary ?? '',
+        topicsSurfacingSummary: detail.topicsResurfacing.summary ?? '',
+        longRunningOpenThreads: longRunningOpenThreads,
+        longRunningOpenThreadsSummary: detail.openThreads.summary ?? '',
+        monthToMonthTrend: detail.monthToMonthTrend,
+        decisionsThatCannotSlipAgain: decisionsCannotSlip,
+        decisionsThatCannotSlipAgainSummary: detail.decisions.intro,
+        suggestedFocusNextMonth: suggestedFocusNextMonth,
+        askAiButtonText: 'Ask AI about this month',
+      ),
+    );
+  }
+
+  MPInsightDetailData _buildPatternDetailData(
+    MPInsightListItem item,
+    MPPatternInsightDetailStruct? detail,
+  ) {
+    if (detail == null) {
+      throw Exception('pattern_detail is null');
+    }
+    debugPrint('-----hjj-----pattern_detail: ${detail.toJson()}');
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        detail.detected.contentMd,
+        detail.whyThisMatters,
+      ].where((String e) => e.isNotEmpty).toList(),
+      tips: <String>[
+        ...detail.nextStep,
+      ],
+    );
+  }
+
+}

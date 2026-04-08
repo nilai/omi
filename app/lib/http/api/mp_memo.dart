@@ -37,3 +37,43 @@ Future<MPDeleteMemoResponse?> deleteMemo(MPDeleteMemoRequest req) async {
   }
   return null;
 }
+
+// POST /api/v2/memo/analyze_record
+Future<MPAnalyzeMemoRecordResponse?> analyzeMemoRecord(
+  MPAnalyzeMemoRecordRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/memo/analyze_record',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('analyzeMemoRecord response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPAnalyzeMemoRecordResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// POST /api/v2/memo/analyze_text
+Future<MPAnalyzeMemoTextResponse?> analyzeMemoText(
+  MPAnalyzeMemoTextRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/memo/analyze_text',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('analyzeMemoText response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPAnalyzeMemoTextResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}

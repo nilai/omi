@@ -34,3 +34,27 @@ Future<MPGetInsightFeedListResponse?> getInsightFeedList(
   }
   return null;
 }
+
+/// GET /api/v2/insight/get_detail — Insight 详情。
+Future<MPGetInsightDetailResponse?> getInsightDetail(
+  MPGetInsightDetailRequest req,
+) async {
+  final String url =
+      '${Env.apiBaseUrl}api/v2/insight/get_detail?insight_id=${req.insightId}';
+  final response = await makeApiCall(
+    url: url,
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('getInsightDetail response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetInsightDetailResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
