@@ -35,19 +35,6 @@ class _MPHomePageState extends State<MPHomePage> {
   @override
   void initState() {
     super.initState();
-    _refreshBleConnectionState();
-  }
-
-  Future<void> _refreshBleConnectionState() async {
-    final bool connected = await MPBluetoothConnectionHelper.hasConnectedBleDevice();
-    if (!mounted) {
-      return;
-    }
-    if (_isBleConnected != connected) {
-      setState(() {
-        _isBleConnected = connected;
-      });
-    }
   }
 
   @override
@@ -219,9 +206,9 @@ class _MPHomePageState extends State<MPHomePage> {
                             borderRadius: BorderRadius.circular(10),
                             child: InkWell(
                               onTap: () {
-                                Navigator.of(context)
-                                    .push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()))
-                                    .then((_) => _refreshBleConnectionState());
+                                Navigator.of(
+                                  context,
+                                ).push(MaterialPageRoute<void>(builder: (_) => const MPConnectDevicePage()));
                               },
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
