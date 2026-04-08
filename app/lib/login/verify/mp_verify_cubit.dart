@@ -33,6 +33,7 @@ class MPVerifyCubit extends Cubit<MPVerifyState> {
     final response = await register(req);
     if (response != null && response.baseResp.code == 0) {
       await MPUser.instance.setAccessToken(response.accessToken);
+      await MPUser.instance.setUserId(response.userId);
       await MPUser.instance.setRefreshToken(response.refreshToken);
       await MPUser.instance.setTokenExpiresTime(response.expiresIn);
       await MPUser.instance.setEmail(email);

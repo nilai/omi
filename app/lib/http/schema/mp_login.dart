@@ -84,12 +84,14 @@ class MPTokenResponse {
     required this.accessToken,
     required this.refreshToken,
     required this.expiresIn,
+    required this.userId,
   });
 
   final MPBaseResp baseResp;
   final String accessToken;
   final String refreshToken;
   final int expiresIn;
+  final String userId;
 
   factory MPTokenResponse.fromJson(Map<String, dynamic> json) {
     return MPTokenResponse(
@@ -97,6 +99,7 @@ class MPTokenResponse {
       accessToken: json['access_token'] as String? ?? '',
       refreshToken: json['refresh_token'] as String? ?? '',
       expiresIn: (json['expires_in'] as num?)?.toInt() ?? -1,
+      userId: json['user_id'] as String? ?? '',
     );
   }
 
@@ -106,6 +109,7 @@ class MPTokenResponse {
       'access_token': accessToken,
       'refresh_token': refreshToken,
       'expires_in': expiresIn,
+      'user_id': userId,
     };
   }
 }

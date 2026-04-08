@@ -5,6 +5,7 @@ class MPUser {
   String? name;
 
   String? _accessToken;
+  String? _userId;
   String? _refreshToken;
   String? _email;
   DateTime? _tokenExpiresTime;
@@ -22,6 +23,7 @@ class MPUser {
   static MPUser get instance => _instance;
 
   static const String _accessTokenKey = 'mp_accessToken';
+  static const String _userIdKey = 'mp_userId';
   static const String _refreshTokenKey = 'mp_refreshToken';
   static const String _emailKey = 'mp_email';
   static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
@@ -47,6 +49,29 @@ class MPUser {
     }
     await MPPreferences().saveString(_accessTokenKey, value);
     _accessToken = value;
+  }
+
+  /// 获取用户 ID：优先内存，其次本地。
+  String get userId {
+    if (_userId?.isNotEmpty == true) {
+      return _userId!;
+    }
+    final String id = MPPreferences().getString(_userIdKey);
+    if (id.isNotEmpty) {
+      _userId = id;
+    }
+    return id;
+  }
+
+  /// 设置用户 ID：null 时清除。
+  Future<void> setUserId(String? value) async {
+    if (value == null) {
+      await MPPreferences().remove(_userIdKey);
+      _userId = null;
+      return;
+    }
+    await MPPreferences().saveString(_userIdKey, value);
+    _userId = value;
   }
 
   /// 获取刷新令牌：优先内存，其次本地。
@@ -123,11 +148,13 @@ class MPUser {
   /// 清空用户信息与登录会话（登出）。
   Future<void> clear() async {
     await setAccessToken(null);
+    await setUserId(null);
     await setRefreshToken(null);
     await setEmail(null);
     await clearTokenExpiresTime();
     name = null;
     _accessToken = null;
+    _userId = null;
     _refreshToken = null;
     _email = null;
     _tokenExpiresTime = null;
