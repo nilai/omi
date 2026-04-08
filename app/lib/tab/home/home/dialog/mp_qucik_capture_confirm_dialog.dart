@@ -158,7 +158,7 @@ class _MPQucikCaptureConfirmDialogState
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFAFAFC),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: lineColor.withValues(alpha: 0.9)),
       ),
