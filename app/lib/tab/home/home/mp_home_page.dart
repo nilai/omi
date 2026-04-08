@@ -15,6 +15,7 @@ import '../../../audio/import/mp_audio_import_dialog.dart';
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../http/schema/mp_home.dart';
+import 'dialog/mp_quick_capture_dialog.dart';
 
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
@@ -168,9 +169,9 @@ class _MPHomePageState extends State<MPHomePage> {
                       iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF9F40), Color(0xFFFF8C00)]),
                       title: 'Quick Capture',
                       subtitle: 'Type or speak a quick note',
-                      onTap: () {
+                      onTap: () async {
                         Navigator.pop(ctx);
-                        MPToastUtils.showFeatureComingSoon(message: '快速捕捉');
+                        await MPQuickCaptureDialog.show(context);
                       },
                     ),
                     const Divider(height: 1),
