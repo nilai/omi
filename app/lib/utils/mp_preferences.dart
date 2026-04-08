@@ -110,7 +110,15 @@ class SharedPreferencesUtil extends MPPreferences {
   DateTime? _tokenExpiresTime;
 
   /// 获取访问令牌：优先取内存中的私有属性，其次取本地存储。
-  // String? get accessToken => _accessToken ?? MPPreferences().getString(_accessTokenKey);
+  // String get accessToken => _accessToken?.isEmpty == false ? _accessToken! : getAccessToken();
+  // String getAccessToken() {
+  //   final token = MPPreferences().getString(_accessTokenKey);
+  //   if (token.isEmpty) {
+  //     return '';
+  //   }
+  //   _accessToken = token;
+  //   return token;
+  // }
   String? get accessToken =>
       'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
 
@@ -127,7 +135,15 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取刷新令牌：优先取内存中的私有属性，其次取本地存储。
-  String? get refreshToken => _refreshToken ?? MPPreferences().getString(_refreshTokenKey);
+  String get refreshToken => _refreshToken?.isEmpty == false ? _refreshToken! : getRefreshToken();
+  String getRefreshToken() {
+    final token = MPPreferences().getString(_refreshTokenKey);
+    if (token.isEmpty) {
+      return '';
+    }
+    _refreshToken = token;
+    return token;
+  }
 
   /// 设置刷新令牌：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setRefreshToken(String? value) async {
@@ -140,7 +156,15 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取邮箱：优先取内存中的私有属性，其次取本地存储。
-  String get email => _email ?? MPPreferences().getString(_emailKey);
+  String get email => _email?.isEmpty == false ? _email! : getEmail();
+  String getEmail() {
+    final email = MPPreferences().getString(_emailKey);
+    if (email.isEmpty) {
+      return '';
+    }
+    _email = email;
+    return email;
+  }
 
   /// 设置邮箱：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setEmail(String? value) async {
@@ -153,8 +177,14 @@ class SharedPreferencesUtil extends MPPreferences {
   }
 
   /// 获取 token 过期时间：优先取内存中的私有属性，其次取本地存储。
-  DateTime? get tokenExpiresTime =>
-      _tokenExpiresTime ?? DateTime.fromMillisecondsSinceEpoch(MPPreferences().getInt(_tokenExpiresTimeKey) ?? 0);
+  DateTime get tokenExpiresTime => _tokenExpiresTime ?? getTokenExpiresTime();
+  DateTime getTokenExpiresTime() {
+    final timestamp = MPPreferences().getInt(_tokenExpiresTimeKey);
+    if (timestamp == null) {
+      return DateTime.fromMillisecondsSinceEpoch(0);
+    }
+    return DateTime.fromMillisecondsSinceEpoch(timestamp);
+  }
 
   /// 设置 token 过期时间：优先写入本地存储，再更新内存中的私有属性。
   Future<void> setTokenExpiresTime(int value) async {
@@ -171,11 +201,11 @@ class SharedPreferencesUtil extends MPPreferences {
 
   /// 读取上次连接成功的 BLE 设备；未记录时返回 `null`。
   MPLastBleDeviceRecord? readLastConnectedBleDevice() {
-    final String? id = MPPreferences().getString(_lastBleRemoteIdKey);
-    if (id == null || id.isEmpty) {
+    final String id = MPPreferences().getString(_lastBleRemoteIdKey);
+    if (id.isEmpty) {
       return null;
     }
-    final String name = MPPreferences().getString(_lastBleDisplayNameKey) ?? '';
+    final String name = MPPreferences().getString(_lastBleDisplayNameKey);
     return MPLastBleDeviceRecord(remoteId: id, displayName: name.isEmpty ? 'MemoPin' : name);
   }
 
