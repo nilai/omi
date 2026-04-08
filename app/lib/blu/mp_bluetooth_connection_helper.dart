@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
 
 import 'ble_transport.dart';
+import 'mp_ble_preferences.dart';
 
 /// 单次扫描聚合结果：用于 UI 列表，无需依赖完整 [BtDevice] 模型。
 class MPBleScanEntry {
@@ -115,7 +115,7 @@ class MPBluetoothConnectionHelper {
   ///
   /// 无记录、无权限、蓝牙未开、连接失败时安静返回（不打断首页）。
   static Future<void> tryConnectLastRecordedBleDevice() async {
-    final MPLastBleDeviceRecord? r = SharedPreferencesUtil().readLastConnectedBleDevice();
+    final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
       return;
     }

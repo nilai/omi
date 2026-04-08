@@ -3,8 +3,9 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
 import 'package:uuid/uuid.dart';
+
+import 'mp_preferences.dart';
 
 /**
  * 设备 UUID 工具类。
@@ -35,8 +36,8 @@ class MPUuidUtil {
     }
 
     // 1) 先读 SharedPreferences 缓存。
-    final cachedUuid = SharedPreferencesUtil().getString(_uuidStorageKey);
-    if (cachedUuid != null && cachedUuid.isNotEmpty && cachedUuid != 'unknown') {
+    final String cachedUuid = MPPreferences().getString(_uuidStorageKey);
+    if (cachedUuid.isNotEmpty && cachedUuid != 'unknown') {
       _uuid = cachedUuid;
       return _uuid!;
     }
@@ -46,7 +47,7 @@ class MPUuidUtil {
       final secureUuid = await _secureStorage.read(key: _uuidStorageKey);
       if (secureUuid != null && secureUuid.isNotEmpty && secureUuid != 'unknown') {
         _uuid = secureUuid;
-        await SharedPreferencesUtil().saveString(_uuidStorageKey, _uuid!);
+        await MPPreferences().saveString(_uuidStorageKey, _uuid!);
         return _uuid!;
       }
     } catch (e) {
@@ -78,7 +79,7 @@ class MPUuidUtil {
     // 5) 写回双存储。
     try {
       await _secureStorage.write(key: _uuidStorageKey, value: _uuid!);
-      await SharedPreferencesUtil().saveString(_uuidStorageKey, _uuid!);
+      await MPPreferences().saveString(_uuidStorageKey, _uuid!);
     } catch (e) {
       debugPrint('MPUuidUtil persist uuid failed: $e');
     }

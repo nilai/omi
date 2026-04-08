@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../blu/mp_ble_preferences.dart';
 import '../blu/mp_bluetooth_connection_helper.dart';
 import '../cache/mp_hive_util.dart';
 import '../http/api/mp_login.dart';
 import '../main.dart';
-import '../utils/mp_preferences.dart';
 import 'home/mp_login_page.dart';
 import 'mp_user.dart';
 
@@ -23,10 +23,10 @@ class MPLoginUtil {
       // 网络失败不阻断本地退出。
     }
 
-    await SharedPreferencesUtil.clearAll();
+    await MPUser.instance.clear();
+    await MPBlePreferences.instance.clearLastConnectedBleDevice();
     await MPHiveUtil.instance.close();
     await MPBluetoothConnectionHelper.disconnectAppBleForLogout();
-    await MPUser.instance.clear();
 
     final BuildContext? targetContext = context ?? MyApp.navigatorKey.currentContext;
     if (targetContext == null || !targetContext.mounted) {
