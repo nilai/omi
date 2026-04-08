@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/mp_memory_share_dialog.dart';
 import '../../../common/mp_share_export_sheet.dart';
 import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_insight.dart';
@@ -359,7 +360,11 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       MPShareExportKind.markdown => 'Markdown',
       MPShareExportKind.systemShare => 'Share',
     };
-    MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
+    if (selected == MPShareExportKind.link) {
+      MPShareMemoryDialog.show(context: context, memoryId: _item.id);
+    }else {
+      MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
+    }
   }
 
   /// 打开 insight 详情页更多弹窗。
