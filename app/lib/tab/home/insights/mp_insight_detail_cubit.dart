@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../http/api/mp_insight.dart';
+import '../../../http/schema/mp_insight.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -376,325 +378,342 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     }
   }
 
-  MPInsightDetailData _buildDetailData(MPInsightListItem item) {
+  Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
+
+
+  final MPGetInsightDetailResponse? response = await getInsightDetail(MPGetInsightDetailRequest(insightId: item.id));
+
     final int seed = item.id.hashCode & 0x7fffffff;
     final Random r = Random(seed);
 
     switch (item.type) {
       case MPInsightCardType.daily:
-        final List<String> decisionsMade = <String>[
-          'Delay external rollout until recording is stable',
-          'Prioritize audio reliability over new features',
-          'Proceed with phased API migration to reduce risk',
-        ];
-        final List<String> openQuestions = <String>[
-          'Migration timeline still unclear under infra limits',
-          'User segmentation strategy not aligned yet',
-          'Who owns onboarding improvements is undefined',
-        ];
-        final List<String> ideasCaptured = <String>[
-          'Simplify onboarding steps for ADHD users',
-          'Add a lightweight daily review loop',
-          'Improve hardware status feedback clarity',
-        ];
-        final List<MPDailyFocusItem> tomorrowFocus = <MPDailyFocusItem>[
-          const MPDailyFocusItem(text: 'Review migration milestones'),
-          const MPDailyFocusItem(text: 'Align infrastructure support priorities'),
-        ];
-
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
-            'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
-          ],
-          tips: <String>[
-            '把下一步写成一句可执行句',
-            '将后续提醒合并到同一个时间窗口',
-            if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
-          ],
-          daily: MPDailyInsightDetailData(
-            dateLabel: 'Daily Insight · ${item.periodLabel}',
-            narrativeTitle: 'Today\'s narrative',
-            narrativeBody:
-                'Today\'s conversations centered on API architecture and product positioning. Several threads returned to the same tension: shipping fast vs. stabilizing recording reliability. Concerns about scalability and team bandwidth kept resurfacing.',
-            decisionsMade: decisionsMade,
-            openQuestions: openQuestions,
-            patternsEmerging:
-                'Architecture concerns have surfaced repeatedly for several days, suggesting systemic friction rather than isolated implementation issues.',
-            ideasCaptured: ideasCaptured,
-            tomorrowFocus: tomorrowFocus,
-            askAiButtonText: 'Ask AI about today',
-          ),
-        );
+        return _buildDailyDetailData(item, r);
 
       case MPInsightCardType.weekly:
-        final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
-          const MPWeeklyMetricItem(value: '8', label: 'tasks'),
-          const MPWeeklyMetricItem(value: '5', label: 'decisions'),
-          const MPWeeklyMetricItem(value: '12', label: 'meetings'),
-        ];
-        final List<MPWeeklyAccomplishmentItem> accomplishmentItems =
-            <MPWeeklyAccomplishmentItem>[
-          const MPWeeklyAccomplishmentItem(
-            title: 'API Migration Completed',
-            description:
-                'Successfully migrated 3 core endpoints to new architecture',
-          ),
-          const MPWeeklyAccomplishmentItem(
-            title: 'Design System Updates',
-            description: 'Shipped 12 new components with documentation',
-          ),
-          const MPWeeklyAccomplishmentItem(
-            title: 'Client Onboarding',
-            description: 'Completed onboarding for 2 new enterprise clients',
-          ),
-        ];
-
-        final List<String> accomplishments = <String>[
-          'API Migration Completed',
-          'Design System Updates',
-          'Client Onboarding',
-        ];
-        final List<String> pendingItems = <String>[
-          'Resolve migration bottlenecks with infra team',
-          'Update API documentation for V2 endpoints',
-          'Schedule follow-up with sales thread',
-        ];
-        final List<MPWeeklyPendingItem> pendingItemCards =
-            <MPWeeklyPendingItem>[
-          const MPWeeklyPendingItem(
-            text: 'Review migration milestones with infrastructure team',
-            visible: true,
-          ),
-          const MPWeeklyPendingItem(
-            text: 'Update API documentation for v2 endpoints',
-            visible: true,
-          ),
-          const MPWeeklyPendingItem(
-            text: 'Schedule follow-up with lead investor',
-            visible: true,
-          ),
-          const MPWeeklyPendingItem(
-            text: 'Explore productivity ideas',
-            visible: true,
-          ),
-        ];
-        final List<MPWeeklyChallengeLearningItem> challengeLearningItems =
-            <MPWeeklyChallengeLearningItem>[
-          const MPWeeklyChallengeLearningItem(
-            title: 'Resource Constraints',
-            description:
-                'Team bandwidth became a bottleneck mid-week. Consider redistributing workload or postponing non-critical items.',
-            backgroundColorValue: 0xFFF5F1E7,
-            borderColorValue: 0xFFECD8A5,
-          ),
-          const MPWeeklyChallengeLearningItem(
-            title: 'Communication Win',
-            description:
-                'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
-            backgroundColorValue: 0xFFD9E3F5,
-            borderColorValue: 0xFFB6CAE9,
-          ),
-        ];
-        final List<MPWeeklyPriorityItem> nextWeekPriorities =
-            <MPWeeklyPriorityItem>[
-          const MPWeeklyPriorityItem(
-            text: 'Launch Mobile Beta',
-            subtitle: 'Target: Thursday EOD',
-            visible: true,
-          ),
-          const MPWeeklyPriorityItem(
-            text: 'Q1 Planning Session',
-            subtitle: 'All-hands meeting on Tuesday',
-            visible: true,
-          ),
-          const MPWeeklyPriorityItem(
-            text: 'Performance Optimization',
-            subtitle: 'Focus on API response times',
-            visible: true,
-          ),
-        ];
-        final List<MPWeeklyExpertFeedbackItem> expertFeedback =
-            <MPWeeklyExpertFeedbackItem>[
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Business Expert',
-            content:
-                'Pricing direction remains unclear across multiple conversations. Aligning ownership and decision checkpoints could prevent strategic drift next month.',
-            iconKey: 'business',
-            iconColorValue: 0xFF3A75F0,
-          ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Creative Expert',
-            content:
-                'Recurring discussions suggest onboarding simplification and user education may offer untapped differentiation opportunities. Exploration here could unlock growth.',
-            iconKey: 'creative',
-            iconColorValue: 0xFFB061F0,
-          ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Execution Expert',
-            content:
-                'Delivery risk persists due to infrastructure dependencies and cross-team coordination. Earlier escalation of blockers may help avoid timeline slippage.',
-            iconKey: 'execution',
-            iconColorValue: 0xFFE89A2F,
-          ),
-          const MPWeeklyExpertFeedbackItem(
-            title: 'Wellness Expert',
-            content:
-                'Energy dipped mid-week as workload peaked. Protecting recovery windows and avoiding stacked deadlines could sustain performance.',
-            iconKey: 'wellness',
-            iconColorValue: 0xFF33B95F,
-          ),
-        ];
-
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
-            'Follow-ups were most effective when they were grouped and scheduled right after key work.',
-          ],
-          tips: <String>[
-            '把 follow-up 放到“工作后立刻做”',
-            '每周复盘一次，删掉低价值任务',
-            if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
-          ],
-          weekly: MPWeeklyInsightDetailData(
-            titleLabel: 'Week of ${item.periodLabel}',
-            subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
-            headerSummary:
-                'A productive week with strong momentum on the product roadmap. You balanced strategic planning with hands-on execution, improving delivery for key initiatives.',
-            weekSummaryText:
-                'Product development, team coordination, and client engagement dominated this week. You spent approximately 60% of time in execution and 40% in delivery/meetings.',
-            metrics: metrics,
-            accomplishmentItems: accomplishmentItems,
-            accomplishments: accomplishments,
-            challengesAndLearnings:
-                'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
-            challengeLearningItems: challengeLearningItems,
-            pendingItems: pendingItems,
-            pendingItemCards: pendingItemCards,
-            nextWeekPriorities: nextWeekPriorities,
-            expertWeeklyFeedback: expertFeedback,
-            askAiButtonText: 'Ask AI about this week',
-          ),
-        );
+        return _buildWeeklyDetailData(item, r);
 
       case MPInsightCardType.monthly:
-        final List<MPMonthlyBarItem> attentionDistribution =
-            <MPMonthlyBarItem>[
-          const MPMonthlyBarItem(label: 'Product', value: 70),
-          const MPMonthlyBarItem(label: 'Engineering', value: 55),
-          const MPMonthlyBarItem(label: 'Hiring', value: 35),
-        ];
-
-        final List<MPMonthlyKeyPersonItem> keyPeople =
-            <MPMonthlyKeyPersonItem>[
-          MPMonthlyKeyPersonItem(
-            name: 'Jordan',
-            count: 12 + (seed % 3),
-            value: 72,
-          ),
-          MPMonthlyKeyPersonItem(
-            name: 'Alex',
-            count: 10 + (seed % 4),
-            value: 58,
-          ),
-          MPMonthlyKeyPersonItem(
-            name: 'Sarah',
-            count: 8 + (seed % 5),
-            value: 42,
-          ),
-        ];
-
-        final List<MPMonthlyTopicItem> topicsSurfacing = <MPMonthlyTopicItem>[
-          const MPMonthlyTopicItem(label: 'API migration', value: 68),
-          const MPMonthlyTopicItem(label: 'Hiring bandwidth', value: 52),
-          const MPMonthlyTopicItem(label: 'Pricing strategy', value: 32),
-        ];
-
-        final List<String> longRunningOpenThreads = <String>[
-          'Hiring planning reflects ongoing bottlenecks',
-          'Pricing model needs alignment with unit economics',
-          'API ownership still unclear since December',
-        ];
-
-        final List<String> monthToMonthTrend = <String>[
-          'Execution spent improved vs last month',
-          'Team coordination reduced after decisions stabilized',
-          'Still track unresolved follow-ups from early month',
-        ];
-
-        final List<MPMonthlyDecisionItem> decisionsCannotSlip =
-            <MPMonthlyDecisionItem>[
-          MPMonthlyDecisionItem(rank: 1, text: 'Stabilize hiring capacity'),
-          MPMonthlyDecisionItem(rank: 2, text: 'Record pricing decision'),
-          MPMonthlyDecisionItem(rank: 3, text: 'Clarify API ownership'),
-        ];
-
-        final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth =
-            <MPMonthlySuggestedFocusItem>[
-          MPMonthlySuggestedFocusItem(
-            rank: 1,
-            text: 'Close ownership loop this month to unblock delivery',
-          ),
-          MPMonthlySuggestedFocusItem(
-            rank: 2,
-            text: 'Reduce hiring friction with weekly checkpoints',
-          ),
-          MPMonthlySuggestedFocusItem(
-            rank: 3,
-            text: 'Align pricing assumptions with unit economics early',
-          ),
-        ];
-
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            item.content,
-            'The month showed stable capture habits paired with improved execution focus.',
-          ],
-          tips: <String>[
-            'Use suggested focus items to generate action todos for next month.',
-          ],
-          monthly: MPMonthlyInsightDetailData(
-            monthSubtitle: item.periodLabel,
-            monthOverviewSummary: item.content,
-            attentionDistribution: attentionDistribution,
-            keyPeopleThisMonth: keyPeople,
-            topicsSurfacing: topicsSurfacing,
-            attentionDistributionSummary:
-                'Most effort went into execution, while hiring constraints continued to slow delivery.',
-            keyPeopleThisMonthSummary:
-                'Conversations repeatedly involved delivery ownership and coordination.',
-            topicsSurfacingSummary:
-                'These topics appeared across multiple weeks without clear resolution.',
-            longRunningOpenThreads: longRunningOpenThreads,
-            longRunningOpenThreadsSummary:
-                'These issues repeatedly delayed progress.',
-            monthToMonthTrend: monthToMonthTrend,
-            decisionsThatCannotSlipAgain: decisionsCannotSlip,
-            decisionsThatCannotSlipAgainSummary:
-                'If unresolved next month, these will continue to slow execution.',
-            suggestedFocusNextMonth: suggestedFocusNextMonth,
-            askAiButtonText: 'Ask AI about this month',
-          ),
-        );
+        return _buildMonthlyDetailData(item, seed);
 
       case MPInsightCardType.pattern:
-        return MPInsightDetailData(
-          item: item,
-          paragraphs: <String>[
-            'API migration blockers have resurfaced across multiple conversations over the past two weeks. Ownership and delivery sequencing remain unclear, causing repeated execution friction.',
-            'Continued ambiguity may delay rollout and increase cross-team coordination costs, affecting delivery confidence.',
-          ],
-          tips: <String>[
-            'Clarify API ownership and rollout sequence in next infrastructure sync.',
-            if (r.nextBool()) 'Capture the outcome of each meeting and connect it back to this pattern.',
-          ],
-        );
+        return _buildPatternDetailData(item, r);
     }
+  }
+
+  MPInsightDetailData _buildDailyDetailData(MPInsightListItem item, Random r) {
+    final List<String> decisionsMade = <String>[
+      'Delay external rollout until recording is stable',
+      'Prioritize audio reliability over new features',
+      'Proceed with phased API migration to reduce risk',
+    ];
+    final List<String> openQuestions = <String>[
+      'Migration timeline still unclear under infra limits',
+      'User segmentation strategy not aligned yet',
+      'Who owns onboarding improvements is undefined',
+    ];
+    final List<String> ideasCaptured = <String>[
+      'Simplify onboarding steps for ADHD users',
+      'Add a lightweight daily review loop',
+      'Improve hardware status feedback clarity',
+    ];
+    final List<MPDailyFocusItem> tomorrowFocus = <MPDailyFocusItem>[
+      const MPDailyFocusItem(text: 'Review migration milestones'),
+      const MPDailyFocusItem(text: 'Align infrastructure support priorities'),
+    ];
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        'Today’s focus worked best when you reduced context switching and kept your next steps visible.',
+        'If you get stuck, try capturing the “why” behind the task—clarity usually restores momentum.',
+      ],
+      tips: <String>[
+        '把下一步写成一句可执行句',
+        '将后续提醒合并到同一个时间窗口',
+        if (r.nextBool()) '为高消耗任务留出缓冲 15 分钟',
+      ],
+      daily: MPDailyInsightDetailData(
+        dateLabel: 'Daily Insight · ${item.periodLabel}',
+        narrativeTitle: 'Today\'s narrative',
+        narrativeBody:
+            'Today\'s conversations centered on API architecture and product positioning. Several threads returned to the same tension: shipping fast vs. stabilizing recording reliability. Concerns about scalability and team bandwidth kept resurfacing.',
+        decisionsMade: decisionsMade,
+        openQuestions: openQuestions,
+        patternsEmerging:
+            'Architecture concerns have surfaced repeatedly for several days, suggesting systemic friction rather than isolated implementation issues.',
+        ideasCaptured: ideasCaptured,
+        tomorrowFocus: tomorrowFocus,
+        askAiButtonText: 'Ask AI about today',
+      ),
+    );
+  }
+
+  MPInsightDetailData _buildWeeklyDetailData(MPInsightListItem item, Random r) {
+    final List<MPWeeklyMetricItem> metrics = <MPWeeklyMetricItem>[
+      const MPWeeklyMetricItem(value: '8', label: 'tasks'),
+      const MPWeeklyMetricItem(value: '5', label: 'decisions'),
+      const MPWeeklyMetricItem(value: '12', label: 'meetings'),
+    ];
+    final List<MPWeeklyAccomplishmentItem> accomplishmentItems =
+        <MPWeeklyAccomplishmentItem>[
+      const MPWeeklyAccomplishmentItem(
+        title: 'API Migration Completed',
+        description: 'Successfully migrated 3 core endpoints to new architecture',
+      ),
+      const MPWeeklyAccomplishmentItem(
+        title: 'Design System Updates',
+        description: 'Shipped 12 new components with documentation',
+      ),
+      const MPWeeklyAccomplishmentItem(
+        title: 'Client Onboarding',
+        description: 'Completed onboarding for 2 new enterprise clients',
+      ),
+    ];
+
+    final List<String> accomplishments = <String>[
+      'API Migration Completed',
+      'Design System Updates',
+      'Client Onboarding',
+    ];
+    final List<String> pendingItems = <String>[
+      'Resolve migration bottlenecks with infra team',
+      'Update API documentation for V2 endpoints',
+      'Schedule follow-up with sales thread',
+    ];
+    final List<MPWeeklyPendingItem> pendingItemCards = <MPWeeklyPendingItem>[
+      const MPWeeklyPendingItem(
+        text: 'Review migration milestones with infrastructure team',
+        visible: true,
+      ),
+      const MPWeeklyPendingItem(
+        text: 'Update API documentation for v2 endpoints',
+        visible: true,
+      ),
+      const MPWeeklyPendingItem(
+        text: 'Schedule follow-up with lead investor',
+        visible: true,
+      ),
+      const MPWeeklyPendingItem(
+        text: 'Explore productivity ideas',
+        visible: true,
+      ),
+    ];
+    final List<MPWeeklyChallengeLearningItem> challengeLearningItems =
+        <MPWeeklyChallengeLearningItem>[
+      const MPWeeklyChallengeLearningItem(
+        title: 'Resource Constraints',
+        description:
+            'Team bandwidth became a bottleneck mid-week. Consider redistributing workload or postponing non-critical items.',
+        backgroundColorValue: 0xFFF5F1E7,
+        borderColorValue: 0xFFECD8A5,
+      ),
+      const MPWeeklyChallengeLearningItem(
+        title: 'Communication Win',
+        description:
+            'Daily stand-ups proved highly effective this week. Team alignment improved significantly.',
+        backgroundColorValue: 0xFFD9E3F5,
+        borderColorValue: 0xFFB6CAE9,
+      ),
+    ];
+    final List<MPWeeklyPriorityItem> nextWeekPriorities =
+        <MPWeeklyPriorityItem>[
+      const MPWeeklyPriorityItem(
+        text: 'Launch Mobile Beta',
+        subtitle: 'Target: Thursday EOD',
+        visible: true,
+      ),
+      const MPWeeklyPriorityItem(
+        text: 'Q1 Planning Session',
+        subtitle: 'All-hands meeting on Tuesday',
+        visible: true,
+      ),
+      const MPWeeklyPriorityItem(
+        text: 'Performance Optimization',
+        subtitle: 'Focus on API response times',
+        visible: true,
+      ),
+    ];
+    final List<MPWeeklyExpertFeedbackItem> expertFeedback =
+        <MPWeeklyExpertFeedbackItem>[
+      const MPWeeklyExpertFeedbackItem(
+        title: 'Business Expert',
+        content:
+            'Pricing direction remains unclear across multiple conversations. Aligning ownership and decision checkpoints could prevent strategic drift next month.',
+        iconKey: 'business',
+        iconColorValue: 0xFF3A75F0,
+      ),
+      const MPWeeklyExpertFeedbackItem(
+        title: 'Creative Expert',
+        content:
+            'Recurring discussions suggest onboarding simplification and user education may offer untapped differentiation opportunities. Exploration here could unlock growth.',
+        iconKey: 'creative',
+        iconColorValue: 0xFFB061F0,
+      ),
+      const MPWeeklyExpertFeedbackItem(
+        title: 'Execution Expert',
+        content:
+            'Delivery risk persists due to infrastructure dependencies and cross-team coordination. Earlier escalation of blockers may help avoid timeline slippage.',
+        iconKey: 'execution',
+        iconColorValue: 0xFFE89A2F,
+      ),
+      const MPWeeklyExpertFeedbackItem(
+        title: 'Wellness Expert',
+        content:
+            'Energy dipped mid-week as workload peaked. Protecting recovery windows and avoiding stacked deadlines could sustain performance.',
+        iconKey: 'wellness',
+        iconColorValue: 0xFF33B95F,
+      ),
+    ];
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        'Over the week, your progress correlated with short capture sessions followed by one deep work block.',
+        'Follow-ups were most effective when they were grouped and scheduled right after key work.',
+      ],
+      tips: <String>[
+        '把 follow-up 放到“工作后立刻做”',
+        '每周复盘一次，删掉低价值任务',
+        if (r.nextBool()) '设置任务上限：一次只追求 1 个关键目标',
+      ],
+      weekly: MPWeeklyInsightDetailData(
+        titleLabel: 'Week of ${item.periodLabel}',
+        subLabel: 'Jan 19, 08:00 AM - Jan 25, 06:00 PM',
+        headerSummary:
+            'A productive week with strong momentum on the product roadmap. You balanced strategic planning with hands-on execution, improving delivery for key initiatives.',
+        weekSummaryText:
+            'Product development, team coordination, and client engagement dominated this week. You spent approximately 60% of time in execution and 40% in delivery/meetings.',
+        metrics: metrics,
+        accomplishmentItems: accomplishmentItems,
+        accomplishments: accomplishments,
+        challengesAndLearnings:
+            'Resource constraints and transition pressure surfaced repeatedly. Clearer role alignment reduced execution friction by week end.',
+        challengeLearningItems: challengeLearningItems,
+        pendingItems: pendingItems,
+        pendingItemCards: pendingItemCards,
+        nextWeekPriorities: nextWeekPriorities,
+        expertWeeklyFeedback: expertFeedback,
+        askAiButtonText: 'Ask AI about this week',
+      ),
+    );
+  }
+
+  MPInsightDetailData _buildMonthlyDetailData(MPInsightListItem item, int seed) {
+    final List<MPMonthlyBarItem> attentionDistribution = <MPMonthlyBarItem>[
+      const MPMonthlyBarItem(label: 'Product', value: 70),
+      const MPMonthlyBarItem(label: 'Engineering', value: 55),
+      const MPMonthlyBarItem(label: 'Hiring', value: 35),
+    ];
+
+    final List<MPMonthlyKeyPersonItem> keyPeople = <MPMonthlyKeyPersonItem>[
+      MPMonthlyKeyPersonItem(
+        name: 'Jordan',
+        count: 12 + (seed % 3),
+        value: 72,
+      ),
+      MPMonthlyKeyPersonItem(
+        name: 'Alex',
+        count: 10 + (seed % 4),
+        value: 58,
+      ),
+      MPMonthlyKeyPersonItem(
+        name: 'Sarah',
+        count: 8 + (seed % 5),
+        value: 42,
+      ),
+    ];
+
+    final List<MPMonthlyTopicItem> topicsSurfacing = <MPMonthlyTopicItem>[
+      const MPMonthlyTopicItem(label: 'API migration', value: 68),
+      const MPMonthlyTopicItem(label: 'Hiring bandwidth', value: 52),
+      const MPMonthlyTopicItem(label: 'Pricing strategy', value: 32),
+    ];
+
+    final List<String> longRunningOpenThreads = <String>[
+      'Hiring planning reflects ongoing bottlenecks',
+      'Pricing model needs alignment with unit economics',
+      'API ownership still unclear since December',
+    ];
+
+    final List<String> monthToMonthTrend = <String>[
+      'Execution spent improved vs last month',
+      'Team coordination reduced after decisions stabilized',
+      'Still track unresolved follow-ups from early month',
+    ];
+
+    final List<MPMonthlyDecisionItem> decisionsCannotSlip =
+        <MPMonthlyDecisionItem>[
+      MPMonthlyDecisionItem(rank: 1, text: 'Stabilize hiring capacity'),
+      MPMonthlyDecisionItem(rank: 2, text: 'Record pricing decision'),
+      MPMonthlyDecisionItem(rank: 3, text: 'Clarify API ownership'),
+    ];
+
+    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth =
+        <MPMonthlySuggestedFocusItem>[
+      MPMonthlySuggestedFocusItem(
+        rank: 1,
+        text: 'Close ownership loop this month to unblock delivery',
+      ),
+      MPMonthlySuggestedFocusItem(
+        rank: 2,
+        text: 'Reduce hiring friction with weekly checkpoints',
+      ),
+      MPMonthlySuggestedFocusItem(
+        rank: 3,
+        text: 'Align pricing assumptions with unit economics early',
+      ),
+    ];
+
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        item.content,
+        'The month showed stable capture habits paired with improved execution focus.',
+      ],
+      tips: <String>[
+        'Use suggested focus items to generate action todos for next month.',
+      ],
+      monthly: MPMonthlyInsightDetailData(
+        monthSubtitle: item.periodLabel,
+        monthOverviewSummary: item.content,
+        attentionDistribution: attentionDistribution,
+        keyPeopleThisMonth: keyPeople,
+        topicsSurfacing: topicsSurfacing,
+        attentionDistributionSummary:
+            'Most effort went into execution, while hiring constraints continued to slow delivery.',
+        keyPeopleThisMonthSummary:
+            'Conversations repeatedly involved delivery ownership and coordination.',
+        topicsSurfacingSummary:
+            'These topics appeared across multiple weeks without clear resolution.',
+        longRunningOpenThreads: longRunningOpenThreads,
+        longRunningOpenThreadsSummary:
+            'These issues repeatedly delayed progress.',
+        monthToMonthTrend: monthToMonthTrend,
+        decisionsThatCannotSlipAgain: decisionsCannotSlip,
+        decisionsThatCannotSlipAgainSummary:
+            'If unresolved next month, these will continue to slow execution.',
+        suggestedFocusNextMonth: suggestedFocusNextMonth,
+        askAiButtonText: 'Ask AI about this month',
+      ),
+    );
+  }
+
+  MPInsightDetailData _buildPatternDetailData(MPInsightListItem item, Random r) {
+    return MPInsightDetailData(
+      item: item,
+      paragraphs: <String>[
+        'API migration blockers have resurfaced across multiple conversations over the past two weeks. Ownership and delivery sequencing remain unclear, causing repeated execution friction.',
+        'Continued ambiguity may delay rollout and increase cross-team coordination costs, affecting delivery confidence.',
+      ],
+      tips: <String>[
+        'Clarify API ownership and rollout sequence in next infrastructure sync.',
+        if (r.nextBool())
+          'Capture the outcome of each meeting and connect it back to this pattern.',
+      ],
+    );
   }
 }
 
