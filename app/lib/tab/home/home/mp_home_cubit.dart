@@ -102,6 +102,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _recordCreatedSub = MPHomeNotification.listenRecordCreated(_onMemoryRecordCreated);
     _uploadProgressSub = MPHomeNotification.listenUploadProgress(_onUploadProgress);
     _homeListRefreshSub = MPHomeNotification.listenHomeListRefresh(_onHomeListRefresh);
+    _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
+    _todoDeletedSub = MPHomeNotification.listenTodoDeleted(_onTodoDeleted);
     initData();
   }
 
@@ -109,6 +111,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   StreamSubscription<MPHomeRecordCreatedPayload>? _recordCreatedSub;
   StreamSubscription<MPHomeUploadProgressPayload>? _uploadProgressSub;
   StreamSubscription<void>? _homeListRefreshSub;
+  StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
+  StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
   Timer? _syncCompletedClearTimer;
 
   static MPHomeState _initialState() {
@@ -294,6 +298,42 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
+  /// 收到 todo 完成通知后，首页 Up Next 直接移除对应项。
+  ///
+  /// @param {MPHomeTodoDonePayload} payload
+  /// @returns {void}
+  void _onTodoDone(MPHomeTodoDonePayload payload) {
+    final String todoId = payload.todoId.trim();
+    if (todoId.isEmpty) {
+      return;
+    }
+    final List<MPHomeTodoItem> next = state.upNextTodos
+        .where((MPHomeTodoItem e) => e.id.trim() != todoId)
+        .toList(growable: false);
+    if (next.length == state.upNextTodos.length) {
+      return;
+    }
+    emit(state.copyWith(upNextTodos: next));
+  }
+
+  /// 收到 todo 删除通知后，首页 Up Next 直接移除对应项。
+  ///
+  /// @param {MPHomeTodoDeletedPayload} payload
+  /// @returns {void}
+  void _onTodoDeleted(MPHomeTodoDeletedPayload payload) {
+    final String todoId = payload.todoId.trim();
+    if (todoId.isEmpty) {
+      return;
+    }
+    final List<MPHomeTodoItem> next = state.upNextTodos
+        .where((MPHomeTodoItem e) => e.id.trim() != todoId)
+        .toList(growable: false);
+    if (next.length == state.upNextTodos.length) {
+      return;
+    }
+    emit(state.copyWith(upNextTodos: next));
+  }
+
   @override
   Future<void> close() {
     _insightsTimer?.cancel();
@@ -303,6 +343,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _recordCreatedSub?.cancel();
     _uploadProgressSub?.cancel();
     _homeListRefreshSub?.cancel();
+    _todoDoneSub?.cancel();
+    _todoDeletedSub?.cancel();
     return super.close();
   }
 }
