@@ -168,6 +168,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
+      print('-------------------------------- getMemoryDetail resp: ${resp.toJson()}');
       final ({
         MPMemoryDetailCardData data,
         int nextUnknownInsightIndex,
