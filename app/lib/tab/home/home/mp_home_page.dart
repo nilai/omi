@@ -13,6 +13,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import '../../../audio/import/mp_audio_import_dialog.dart';
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_home.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
@@ -92,6 +93,26 @@ class _MPHomePageState extends State<MPHomePage> {
 
   Future<void> _onRefresh() async {
     _cubit.loadData();
+  }
+
+  Future<void> _onTapHomeTodo(MPHomeTodoItem item) async {
+    if (!mounted) {
+      return;
+    }
+    await showOmiEditTodoPopup(
+      context,
+      params: OmiEditTodoPopupParams(
+        title: item.title,
+        notes: item.reason ?? '',
+        whenLabel: 'Today',
+        timeLabel: (item.time == null || item.time!.isEmpty) ? '--:--' : item.time!,
+        todoId: item.id,
+      ),
+      onDelete: () async {
+        await _cubit.loadData();
+        return true;
+      },
+    );
   }
 
   void _openAddOptions() {
@@ -273,8 +294,7 @@ class _MPHomePageState extends State<MPHomePage> {
                                 context,
                               ).push(MaterialPageRoute<void>(builder: (_) => const MPTodayFocusPage()));
                             },
-                            onTodoTap: (MPHomeTodoItem t) =>
-                                MPToastUtils.showFeatureComingSoon(message: '待办「${t.title}」详情'),
+                            onTodoTap: _onTapHomeTodo,
                           ),
                           const SizedBox(height: 16),
                           _RecentMemoryCard(
