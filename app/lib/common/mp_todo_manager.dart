@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:memo_pin/common/mp_todo_notification.dart';
 import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_todo.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 
@@ -46,23 +45,22 @@ class MPTodoManager {
   /// 通过 API 创建 Todo 任务
   /// [title] 任务标题
   /// [priority] 优先级（high, normal, low）
-  /// [deadline] 截止日期（ISO 8601 格式字符串，如 "2025-01-15"）
+  /// [deadline] Unix **秒**时间戳；`null` 时使用**当前时刻**的时间戳。
   /// 返回 true 表示创建成功，false 表示创建失败
   Future<bool> createTodo({
     required String title,
     String priority = 'normal',
-    /// `null` 表示使用当天日期（`YYYY-MM-DD`）；非 `null` 时原样提交（可为 `''` 或 Unix 秒字符串等，与接口约定一致）。
-    String? deadline,
+    int? deadline,
   }) async {
     try {
-      final String deadlineStr =
-          deadline ?? DateTime.now().toIso8601String().split('T')[0];
+      final int deadlineUnix =
+          deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
 
       // 创建请求
       final request = MPCreateTodoRequest(
         title: title,
         priority: priority,
-        deadline: deadlineStr,
+        deadline: deadlineUnix,
       );
 
       // 调用 API
@@ -101,39 +99,62 @@ class MPTodoManager {
         priority = todo.priorityTag!.toLowerCase();
       }
 
-      // 转换 date 为 API 需要的格式（ISO 8601）
-      // date 格式可能是 "Dec 16" 或 "YYYY-MM-DD"
-      String deadlineStr;
+      // 转换 date 为 Unix 秒（date 可能是 "YYYY-MM-DD" 或 "Dec 16"）
+      int deadlineUnix;
       try {
-        // 尝试解析日期
         if (todo.date.contains('-')) {
-          // 格式是 "YYYY-MM-DD"
-          deadlineStr = todo.date;
+          final List<String> p = todo.date.split('-');
+          if (p.length == 3) {
+            final int? y = int.tryParse(p[0]);
+            final int? m = int.tryParse(p[1]);
+            final int? d = int.tryParse(p[2]);
+            if (y != null && m != null && d != null) {
+              deadlineUnix =
+                  DateTime(y, m, d).millisecondsSinceEpoch ~/ 1000;
+            } else {
+              deadlineUnix =
+                  DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            }
+          } else {
+            deadlineUnix =
+                DateTime.now().millisecondsSinceEpoch ~/ 1000;
+          }
         } else {
-          // 格式是 "Dec 16"，需要转换为当前年份的日期
-          final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          final months = [
+            'Jan',
+            'Feb',
+            'Mar',
+            'Apr',
+            'May',
+            'Jun',
+            'Jul',
+            'Aug',
+            'Sep',
+            'Oct',
+            'Nov',
+            'Dec',
+          ];
           final parts = todo.date.split(' ');
           if (parts.length == 2) {
             final monthIndex = months.indexOf(parts[0]);
             final day = int.tryParse(parts[1]) ?? DateTime.now().day;
             final now = DateTime.now();
-            final deadline = DateTime(now.year, monthIndex + 1, day);
-            deadlineStr = deadline.toIso8601String().split('T')[0];
+            final dt = DateTime(now.year, monthIndex + 1, day);
+            deadlineUnix = dt.millisecondsSinceEpoch ~/ 1000;
           } else {
-            // 解析失败，使用当前日期
-            deadlineStr = DateTime.now().toIso8601String().split('T')[0];
+            deadlineUnix =
+                DateTime.now().millisecondsSinceEpoch ~/ 1000;
           }
         }
       } catch (e) {
-        // 解析失败，使用当前日期
-        deadlineStr = DateTime.now().toIso8601String().split('T')[0];
+        deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       }
 
       // 调用 API 创建 Todo
       final success = await createTodo(
         title: todo.title,
         priority: priority,
-        deadline: deadlineStr,
+        deadline: deadlineUnix,
       );
 
       if (success) {
