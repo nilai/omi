@@ -79,6 +79,7 @@ class MPShareSheetParams {
 Future<MPShareSheetResult?> showMPShareSheet(
   BuildContext context, {
   MPShareSheetParams params = const MPShareSheetParams(),
+  VoidCallback? onShare,
 }) {
   return showModalBottomSheet<MPShareSheetResult>(
     context: context,
@@ -87,16 +88,17 @@ Future<MPShareSheetResult?> showMPShareSheet(
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext sheetContext) {
-      return _MPShareSheet(params: params, rootContext: context);
+      return _MPShareSheet(params: params, rootContext: context, onShare: onShare);
     },
   );
 }
 
 class _MPShareSheet extends StatefulWidget {
-  const _MPShareSheet({required this.params, required this.rootContext});
+  const _MPShareSheet({required this.params, required this.rootContext, this.onShare});
 
   final MPShareSheetParams params;
   final BuildContext rootContext;
+  final VoidCallback? onShare;
 
   @override
   State<_MPShareSheet> createState() => _MPShareSheetState();
@@ -136,8 +138,9 @@ class _MPShareSheetState extends State<_MPShareSheet> {
     );
     Navigator.of(context).pop(result);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await showMPShareExportSheet(widget.rootContext);
+      // await showMPShareExportSheet(widget.rootContext);
       // TODO: 可根据导出方式 + result 执行真实分享/导出
+      widget.onShare?.call();
     });
   }
 

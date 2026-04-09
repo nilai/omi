@@ -483,7 +483,7 @@ class _TodayFocusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<MPHomeTodoItem> shown = todos.take(3).toList();
-    final bool showAddMoreCard = shown.length < 3;
+    final bool showAddMoreCard = shown.isNotEmpty && shown.length < 3;
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFCFCFD),

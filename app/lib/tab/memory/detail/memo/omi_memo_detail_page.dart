@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
+import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
@@ -18,6 +19,7 @@ import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_cubit.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 
+import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
 
@@ -58,9 +60,19 @@ class _OmiMemoDetailView extends StatelessWidget {
               onTap: () async {
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
+                  onShare: () {
+                    showMPShareExportSheet(context).then((MPShareExportKind? kind) {
+                      if (kind == null) return;
+                      if (!context.mounted) return;
+                      if (kind == MPShareExportKind.link) {
+                        MPShareMemoryDialog.show(context: context, memoryId: memoryId);
+                      } else {
+                        MPToastUtils.showFeatureComingSoon();
+                      }
+                    });
+                  },
                 );
                 if (result == null) return;
-                // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
               },
               child: OmiImageLoader.localImg(
                 Assets.omiShare,

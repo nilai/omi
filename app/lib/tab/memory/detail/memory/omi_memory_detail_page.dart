@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
+import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
@@ -13,6 +14,7 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 
+import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
 import 'card/mp_memory_detail_content_card.dart';
@@ -54,17 +56,22 @@ class _OmiMemoryDetailView extends StatelessWidget {
               onTap: () async {
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
+                  onShare: () {
+                    showMPShareExportSheet(context).then((MPShareExportKind? kind) {
+                      if (kind == null) return;
+                      if (!context.mounted) return;
+                      if (kind == MPShareExportKind.link) {
+                        MPShareMemoryDialog.show(context: context, memoryId: memoryId);
+                      } else {
+                        MPToastUtils.showFeatureComingSoon();
+                      }
+                    });
+                  },
                 );
                 if (result == null) return;
-                // TODO: 根据 result.summaryOptionId 与 result.additionalContent 执行分享
               },
               child: Container(
-                child: OmiImageLoader.localImg(
-                  Assets.omiShare,
-                  width: 20,
-                  height: 20,
-                  color: blueTextColor,
-                ),
+                child: OmiImageLoader.localImg(Assets.omiShare, width: 20, height: 20, color: blueTextColor),
               ),
             ),
             SizedBox(width: 16.0),
@@ -72,10 +79,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
               onTap: () async {
                 final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
                   context,
-                  params: MPMemoryOptionsSheetParams(
-                    manageProjectsCount: 1,
-                    memoryId: memoryId,
-                  ),
+                  params: MPMemoryOptionsSheetParams(manageProjectsCount: 1, memoryId: memoryId),
                 );
                 if (kind == null) return;
                 if (!context.mounted) return;
@@ -84,11 +88,9 @@ class _OmiMemoryDetailView extends StatelessWidget {
                     // TODO: Manage projects
                     break;
                   case MPMemoryOptionKind.editTitle:
-                    final OmiMemoryDetailCubit cubit =
-                        context.read<OmiMemoryDetailCubit>();
+                    final OmiMemoryDetailCubit cubit = context.read<OmiMemoryDetailCubit>();
                     final OmiMemoryDetailState s = cubit.state;
-                    if (s.phase != OmiMemoryDetailPhase.loaded ||
-                        s.data == null) {
+                    if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
                       MPToastUtils.showMessage('请等待加载完成');
                       break;
                     }
@@ -110,12 +112,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                 }
               },
               child: Container(
-                child: OmiImageLoader.localImg(
-                  Assets.omiMemoryDetialMore,
-                  width: 20,
-                  height: 20,
-                  color: blueTextColor,
-                ),
+                child: OmiImageLoader.localImg(Assets.omiMemoryDetialMore, width: 20, height: 20, color: blueTextColor),
               ),
             ),
           ],
@@ -165,8 +162,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                           child: MPMemoryDetailContentCard(
                             data: data,
                             onSegmentChanged: (MPMemoryDetailSegment s) {},
-                            onPlayTap: () =>
-                                context.read<OmiMemoryDetailCubit>().onPlayTap(),
+                            onPlayTap: () => context.read<OmiMemoryDetailCubit>().onPlayTap(),
                           ),
                         ),
                         MPMemoryDetailFeedSection(data: data),
@@ -174,11 +170,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                           const Padding(
                             padding: EdgeInsets.only(top: 16, bottom: 8),
                             child: Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              ),
+                              child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)),
                             ),
                           ),
                       ],
@@ -191,9 +183,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
       ),
       bottomNavigationBar: MPMemoryDetailBottomBar(
         onAddTodo: () async {
-          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
-            context,
-          );
+          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(context);
           if (result == null) return;
           if (!context.mounted) return;
           final String line = result.text.trim();
@@ -219,35 +209,24 @@ class _OmiMemoryDetailView extends StatelessWidget {
           if (line.isEmpty) return;
           if (!context.mounted) return;
           final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
-            MPCreateMemoWithTextRequest(
-              content: line,
-              createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-            ),
+            MPCreateMemoWithTextRequest(content: line, createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000),
           );
           if (!context.mounted) return;
           if (resp == null || resp.baseResp.code != 0) {
-            MPToastUtils.showMessage(
-              resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试',
-            );
+            MPToastUtils.showMessage(resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试');
             return;
           }
           context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
         },
         onAskAi: () {
-          final OmiMemoryDetailState s =
-              context.read<OmiMemoryDetailCubit>().state;
+          final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
           if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
             return;
           }
-          final String aboutText = s.data!.title.trim().isEmpty
-              ? 'Memory'
-              : s.data!.title;
+          final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
           Navigator.of(context).push(
             MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(
-                aboutText: aboutText,
-                suggestedQuestions: const <String>[],
-              ),
+              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[]),
             ),
           );
         },
