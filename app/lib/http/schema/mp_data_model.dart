@@ -256,7 +256,7 @@ class MPSummaryMemoryStruct {
 @JsonSerializable()
 class MPOnlyRecordMemoryStruct {
   @JsonKey(name: 'record_file')
-  final String recordFile;
+  final String? recordFile;
 
   @JsonKey(name: 'record_uri')
   final String? recordUri;
@@ -265,7 +265,7 @@ class MPOnlyRecordMemoryStruct {
   final String? source;
 
   MPOnlyRecordMemoryStruct({
-    required this.recordFile,
+    this.recordFile,
     this.recordUri,
     this.source,
   });
@@ -328,6 +328,11 @@ class MPMemoryStruct {
 
   @JsonKey(name: 'duration')
   final int? duration;
+
+  // 仅 MEMORY_FEED 类型有意义
+  @JsonKey(name: 'unread_item_cnt')
+  final int? unreadItemCnt;
+
   /// 后端约定：当 type 为 MEMO_LIST 时，这里可能为空，需要从 `memo_list` 拼装展示内容
   @JsonKey(name: 'memo_list')
   final List<MPMemoStruct>? memoList;
@@ -358,6 +363,7 @@ class MPMemoryStruct {
     this.memoryFeed,
     this.summaryContent,
     this.onlyRecordContent,
+    this.unreadItemCnt,
   });
 
   factory MPMemoryStruct.fromJson(Map<String, dynamic> json) => _$MPMemoryStructFromJson(json);

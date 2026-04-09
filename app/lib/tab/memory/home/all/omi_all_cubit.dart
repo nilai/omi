@@ -342,47 +342,47 @@ class OmiAllCubit extends Cubit<OmiAllState> {
 /// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   print('----------------memory struct to entry: ${m.toJson()}');
-  switch (m.type) {
+  switch (m.type ?? MPMemoryType.onlyRecord) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
       return MPMemoryEntry.audioRecording(
-        id: m.id,
-        type: m.type,
+        id: m.id ?? '',
+        type: m.type ?? MPMemoryType.onlyRecord,
         audioData: MPAudioRecordingCardData(
-          primaryTimeLabel: m.title,
-          secondaryTimeLabel: m.content,
+          primaryTimeLabel: m.title ?? '',
+          secondaryTimeLabel: m.content ?? '',
           sourceLabel: m.source ?? '',
           durationLabel: _formatDurationSeconds(m.duration ?? 0),
         ),
       );
     case MPMemoryType.summary:
       return MPMemoryEntry.conversation(
-        id: m.id,
-        type: m.type,
+        id: m.id ??  '',
+        type: m.type ?? MPMemoryType.summary,
         conversationKind: MPMemoryConversationKind.summary,
         variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
           showActivity: false,
-          title: m.title,
-          timeLabel: _shortTimeLabel(m.createAt),
-          createAt: m.createAt,
-          preview: m.content,
+          title: m.title ?? '',
+          timeLabel: _shortTimeLabel(m.createAt ?? 0),
+          createAt: m.createAt ?? 0,
+          preview: m.content ?? '',
           badgeCount: 0,
           statusLabel: null,
         ),
       );
     case MPMemoryType.memoryFeed:
       return MPMemoryEntry.conversation(
-        id: m.id,
-        type: m.type,
+        id: m.id ?? '',
+        type: m.type ?? MPMemoryType.memoryFeed,
         conversationKind: MPMemoryConversationKind.memoryFeed,
         variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
           showActivity: true,
-          title: m.title,
-          timeLabel: _shortTimeLabel(m.createAt),
-          createAt: m.createAt,
-          preview: m.content,
+          title: m.title ?? '',
+          timeLabel: _shortTimeLabel(m.createAt ?? 0),
+          createAt: m.createAt ?? 0,
+          preview: m.content ?? '',
           badgeCount: 0,
           statusLabel: null,
         ),
@@ -402,12 +402,12 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
       : MPMemoGroupCardVariant.listFull;
 
   return MPMemoryEntry.memoGroup(
-    id: m.id,
-    type: m.type,
+    id: m.id ?? '',
+    type: m.type ?? MPMemoryType.memoList,
     memoVariant: variant,
     memoData: MPMemoGroupCardData(
       subtitle: m.subTitle,
-      title: m.title,
+      title: m.title ?? '',
       items: memos,
     ),
   );

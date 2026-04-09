@@ -186,6 +186,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
           : MPOnlyRecordMemoryStruct.fromJson(
               json['only_record_content'] as Map<String, dynamic>,
             ),
+        unreadItemCnt: (json['unread_item_cnt'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
@@ -202,6 +203,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'memory_feed': instance.memoryFeed,
       'summary_content': instance.summaryContent,
       'only_record_content': instance.onlyRecordContent,
+      'unread_item_cnt': instance.unreadItemCnt,
     };
 
 const _$MPMemoryTypeEnumMap = {

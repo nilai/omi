@@ -84,12 +84,17 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
   bool get _needsCollapse => _total > _kCollapsedPreviewCount;
 
   int get _visibleCount {
-    if (widget.variant == MPMemoGroupCardVariant.single ||
-        widget.variant == MPMemoGroupCardVariant.listFull) {
+    // single：设计为 1 条摘要；仍与列表条数一致（通常为 1）。
+    if (widget.variant == MPMemoGroupCardVariant.single) {
       return _total;
     }
-    if (!_needsCollapse) return _total;
-    if (_expanded) return _total;
+    // listFull：最多先展示 3 条，超过 3 条才出现展开/「Show less」。
+    if (!_needsCollapse) {
+      return _total;
+    }
+    if (_expanded) {
+      return _total;
+    }
     return _kCollapsedPreviewCount.clamp(0, _total);
   }
 
