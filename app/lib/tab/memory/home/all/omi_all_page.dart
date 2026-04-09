@@ -76,7 +76,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
       case MPMemoryType.summary:
         Navigator.of(
           context,
-        ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoryDetailPage(memoryId: entry.id)));
+        ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoDetailPage(memoryId: entry.id)));
         break;
       case MPMemoryType.memoryFeed:
         Navigator.of(
