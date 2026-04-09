@@ -8,6 +8,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';
+import '../../../../http/schema/mp_data_model.dart';
 import '../../detail/audio/omi_audio_detail_page.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -20,10 +21,7 @@ class OmiAllPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => OmiAllCubit()..initData(),
-      child: const _OmiAllView(),
-    );
+    return BlocProvider(create: (_) => OmiAllCubit()..initData(), child: const _OmiAllView());
   }
 }
 
@@ -70,39 +68,58 @@ class _OmiAllViewState extends State<_OmiAllView> {
 
   /// 按 [MPMemoryEntry.kind] 区分跳转或埋点（示例：`[entry.id]` + `kind`）
   void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
-    switch (entry.kind) {
-      case MPMemoryEntryKind.conversation:
-        final MPMemoryConversationKind kind = entry.conversationKind!;
-        if (kind == MPMemoryConversationKind.memoryFeed) {
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (BuildContext context) => OmiMemoryDetailPage(
-                memoryId: entry.id,
-              ),
-            ),
-          );
-        }else {
-          Navigator.of(context).push(
-           MaterialPageRoute<void>(
-            builder: (BuildContext context) => OmiMemoDetailPage(
-              memoryId: entry.id,
-            ),
-          ),
-        );
-        }
-      
+    // switch (entry.kind) {
+    //   case MPMemoryEntryKind.conversation:
+    //     final MPMemoryConversationKind kind = entry.conversationKind!;
+    //     if (kind == MPMemoryConversationKind.memoryFeed) {
+    //       Navigator.of(context).push(
+    //         MaterialPageRoute<void>(
+    //           builder: (BuildContext context) => OmiMemoryDetailPage(
+    //             memoryId: entry.id,
+    //           ),
+    //         ),
+    //       );
+    //     }else {
+    //       Navigator.of(context).push(
+    //        MaterialPageRoute<void>(
+    //         builder: (BuildContext context) => OmiMemoDetailPage(
+    //           memoryId: entry.id,
+    //         ),
+    //       ),
+    //     );
+    //     }
+
+    //     break;
+    //   case MPMemoryEntryKind.memoGroup:
+    //     break;
+    //   case MPMemoryEntryKind.audioRecording:
+    //     // TODO: 打开录音详情
+    //     Navigator.of(context).push(
+    //       MaterialPageRoute<void>(
+    //         builder: (BuildContext context) => OmiAudioDetailPage(
+    //           memoryId: entry.id,
+    //         ),
+    //       ),
+    //     );
+    //     break;
+    // }
+    switch (entry.type) {
+      case MPMemoryType.onlyRecord:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiAudioDetailPage(memoryId: entry.id)));
         break;
-      case MPMemoryEntryKind.memoGroup:
+      case MPMemoryType.summary:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoryDetailPage(memoryId: entry.id)));
         break;
-      case MPMemoryEntryKind.audioRecording:
-        // TODO: 打开录音详情
-        Navigator.of(context).push(
-          MaterialPageRoute<void>(
-            builder: (BuildContext context) => OmiAudioDetailPage(
-              memoryId: entry.id,
-            ),
-          ),
-        );
+      case MPMemoryType.memoryFeed:
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoryDetailPage(memoryId: entry.id)));
+        break;
+      case MPMemoryType.memoList:
         break;
     }
   }
@@ -126,8 +143,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                   fit: BoxFit.cover,
                 ),
                 title: 'No memories yet',
-                description:
-                    'Start recording to capture your first ideas and conversations.',
+                description: 'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
                 onButtonPressed: () async {
                   await showMPAudioRecordPopup(context);
@@ -168,8 +184,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
                     fit: BoxFit.cover,
                   ),
                   title: 'No memories yet',
-                  description:
-                      'Start recording to capture your first ideas and conversations.',
+                  description: 'Start recording to capture your first ideas and conversations.',
                   buttonText: 'Start Recording',
                   onButtonPressed: () async {
                     await showMPAudioRecordPopup(context);
@@ -183,44 +198,37 @@ class _OmiAllViewState extends State<_OmiAllView> {
                 controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                itemCount: state.items.length +
-                    (state.hasMore && state.isLoadingMore ? 1 : 0),
+                itemCount: state.items.length + (state.hasMore && state.isLoadingMore ? 1 : 0),
                 itemBuilder: (BuildContext context, int index) {
                   if (index == state.items.length) {
                     return const Padding(
                       padding: EdgeInsets.all(16),
                       child: Center(
-                        child: SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2)),
                       ),
                     );
                   }
                   final MPMemoryEntry entry = state.items[index];
                   final Widget card = switch (entry.kind) {
                     MPMemoryEntryKind.conversation => MPMemoryCard(
-                        variant: entry.variant!,
-                        data: entry.data!,
-                        onTap: () => _onMemoryEntryTap(context, entry),
-                      ),
+                      variant: entry.variant!,
+                      data: entry.data!,
+                      onTap: () => _onMemoryEntryTap(context, entry),
+                    ),
                     MPMemoryEntryKind.memoGroup => MPMemoGroupCard(
-                        variant: entry.memoVariant!,
-                        data: entry.memoData!,
-                        onTap: () => _onMemoryEntryTap(context, entry),
-                      ),
+                      variant: entry.memoVariant!,
+                      data: entry.memoData!,
+                      onTap: () => _onMemoryEntryTap(context, entry),
+                    ),
                     // 对应服务端 [MPMemoryType.onlyRecord]
                     MPMemoryEntryKind.audioRecording => MPAudioRecordingCard(
-                        data: entry.audioData!,
-                        memoryId: entry.id,
-                        onTap: () => _onMemoryEntryTap(context, entry),
-                      ),
+                      data: entry.audioData!,
+                      memoryId: entry.id,
+                      onTap: () => _onMemoryEntryTap(context, entry),
+                    ),
                   };
                   return Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index < state.items.length - 1 ? 12 : 0,
-                    ),
+                    padding: EdgeInsets.only(bottom: index < state.items.length - 1 ? 12 : 0),
                     child: card,
                   );
                 },

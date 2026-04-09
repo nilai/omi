@@ -346,6 +346,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
     case MPMemoryType.onlyRecord:
       return MPMemoryEntry.audioRecording(
         id: m.id,
+        type: m.type,
         audioData: MPAudioRecordingCardData(
           primaryTimeLabel: m.title,
           secondaryTimeLabel: m.content,
@@ -356,6 +357,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
     case MPMemoryType.summary:
       return MPMemoryEntry.conversation(
         id: m.id,
+        type: m.type,
         conversationKind: MPMemoryConversationKind.summary,
         variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
@@ -370,6 +372,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
     case MPMemoryType.memoryFeed:
       return MPMemoryEntry.conversation(
         id: m.id,
+        type: m.type,
         conversationKind: MPMemoryConversationKind.memoryFeed,
         variant: MPMemoryCardVariant.newUpdates,
         data: MPMemoryCardData(
@@ -397,6 +400,7 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
 
   return MPMemoryEntry.memoGroup(
     id: m.id,
+    type: m.type,
     memoVariant: variant,
     memoData: MPMemoGroupCardData(
       subtitle: m.subTitle,

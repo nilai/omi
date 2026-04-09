@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../http/schema/mp_data_model.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
 import '../memory/omi_memory_detail_page.dart';
@@ -14,24 +13,33 @@ import 'mp_memory_transition_cubit.dart';
 class MPMemoryTransitionBlocPage extends StatelessWidget {
   const MPMemoryTransitionBlocPage({
     super.key,
-    required this.memory,
+    required this.memoryId,
+    required this.createAt,
   });
 
-  final MPMemoryStruct memory;
+  final String memoryId;
+  final int createAt;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPMemoryTransitionCubit>(
-      create: (_) => MPMemoryTransitionCubit(memoryId: memory.id)..startPolling(),
-      child: _MPMemoryTransitionView(memory: memory),
+      create: (_) => MPMemoryTransitionCubit(memoryId: memoryId)..startPolling(),
+      child: _MPMemoryTransitionView(
+        memoryId: memoryId,
+        createAt: createAt,
+      ),
     );
   }
 }
 
 class _MPMemoryTransitionView extends StatefulWidget {
-  const _MPMemoryTransitionView({required this.memory});
+  const _MPMemoryTransitionView({
+    required this.memoryId,
+    required this.createAt,
+  });
 
-  final MPMemoryStruct memory;
+  final String memoryId;
+  final int createAt;
 
   @override
   State<_MPMemoryTransitionView> createState() => _MPMemoryTransitionViewState();
@@ -49,7 +57,7 @@ class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
           if (!context.mounted) return;
           Navigator.of(context).pushReplacement(
             MaterialPageRoute<void>(
-              builder: (_) => OmiMemoryDetailPage(memoryId: widget.memory.id),
+              builder: (_) => OmiMemoryDetailPage(memoryId: widget.memoryId),
             ),
           );
         });
@@ -74,7 +82,7 @@ class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          _buildTimestamp(widget.memory.createAt),
+                          _buildTimestamp(widget.createAt),
                           const SizedBox(height: 24),
                           _buildSkeletonPlaceholder(),
                           const SizedBox(height: 48),

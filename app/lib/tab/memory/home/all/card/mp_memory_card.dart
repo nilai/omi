@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../../generated/assets.dart';
@@ -73,6 +74,7 @@ class MPMemoryEntry {
     required this.conversationKind,
     required this.variant,
     required this.data,
+    required this.type,
   })  : kind = MPMemoryEntryKind.conversation,
         memoVariant = null,
         memoData = null,
@@ -82,6 +84,7 @@ class MPMemoryEntry {
     required this.id,
     required this.memoVariant,
     required this.memoData,
+    required this.type,
   })  : kind = MPMemoryEntryKind.memoGroup,
         variant = null,
         data = null,
@@ -90,6 +93,7 @@ class MPMemoryEntry {
 
   const MPMemoryEntry.audioRecording({
     required this.id,
+    required this.type,
     required this.audioData,
   })  : kind = MPMemoryEntryKind.audioRecording,
         variant = null,
@@ -102,6 +106,8 @@ class MPMemoryEntry {
   final String id;
 
   final MPMemoryEntryKind kind;
+
+  final MPMemoryType type;
 
   /// [kind] 为 [MPMemoryEntryKind.conversation] 时使用（服务端 summary / memoryFeed）。
   final MPMemoryConversationKind? conversationKind;
