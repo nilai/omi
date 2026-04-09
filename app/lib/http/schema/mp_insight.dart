@@ -207,6 +207,81 @@ class MPGetInsightDetailRequest {
       };
 }
 
+/// 首页聚合概览请求（后端 `GetHomeInsightOverviewRequest`）。
+class MPGetHomeInsightOverviewRequest {
+  MPGetHomeInsightOverviewRequest();
+
+  /// 从 JSON 解析。
+  factory MPGetHomeInsightOverviewRequest.fromJson(Map<String, dynamic> json) {
+    return MPGetHomeInsightOverviewRequest();
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{};
+}
+
+/// 首页聚合概览结构（后端 `HomeInsightOverviewStruct`）。
+class MPHomeInsightOverviewStruct {
+  MPHomeInsightOverviewStruct({
+    required this.title,
+    required this.subTitle,
+    required this.newInsightCount,
+    required this.content,
+  });
+
+  final String title;
+  final String subTitle;
+  final int newInsightCount;
+  final String content;
+
+  /// 从 JSON 解析。
+  factory MPHomeInsightOverviewStruct.fromJson(Map<String, dynamic> json) {
+    return MPHomeInsightOverviewStruct(
+      title: _mpAsString(json['title']),
+      subTitle: _mpAsString(json['sub_title']),
+      newInsightCount: _mpAsInt(json['new_insight_count']),
+      content: _mpAsString(json['content']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'title': title,
+        'sub_title': subTitle,
+        'new_insight_count': newInsightCount,
+        'content': content,
+      };
+}
+
+/// 首页聚合概览响应（后端 `GetHomeInsightOverviewResponse`）。
+class MPGetHomeInsightOverviewResponse {
+  MPGetHomeInsightOverviewResponse({
+    required this.insightOverview,
+    required this.baseResp,
+  });
+
+  final MPHomeInsightOverviewStruct insightOverview;
+  final MPBaseResp baseResp;
+
+  /// 从 JSON 解析。
+  factory MPGetHomeInsightOverviewResponse.fromJson(Map<String, dynamic> json) {
+    return MPGetHomeInsightOverviewResponse(
+      insightOverview: MPHomeInsightOverviewStruct.fromJson(
+        _mpAsMap(json['insight_overview']),
+      ),
+      baseResp: MPBaseResp.fromJson(
+        _mpAsMap(json['base_resp']),
+      ),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'insight_overview': insightOverview.toJson(),
+        'base_resp': baseResp.toJson(),
+      };
+}
+
 /// Pattern Insight「Where This Appeared」列表项。
 class MPPatternInsightAppearedItemStruct {
   MPPatternInsightAppearedItemStruct({

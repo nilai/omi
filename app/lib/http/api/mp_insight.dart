@@ -58,3 +58,25 @@ Future<MPGetInsightDetailResponse?> getInsightDetail(
   }
   return null;
 }
+
+/// GET /api/v2/home/get_insight_overview — 首页 Insight 聚合概览。
+Future<MPGetHomeInsightOverviewResponse?> getHomeInsightOverview(
+  MPGetHomeInsightOverviewRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/home/get_insight_overview',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('getHomeInsightOverview response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetHomeInsightOverviewResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
