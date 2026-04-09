@@ -85,10 +85,46 @@ Future<void> showMPMemoDetailSheet(
                 padding: const EdgeInsets.only(left: 16, right: 16),
                 child: InkWell(
                   onTap: () {
+                    final String content = memoKey.trim();
+                    if (content.isEmpty) {
+                      MPToastUtils.showMessage('内容为空');
+                      return;
+                    }
                     showMPAnalyzeSuggestedTasksSheet(
                       sheetContext,
-                      memoText: memoKey,
-                      onAnalyze: onAnalyze,
+                      memoText: content,
+                      onAnalyzeStructured: (String memoText) async {
+                        try {
+                          final MPAnalyzeMemoTextResponse? resp =
+                              await analyzeMemoText(
+                            MPAnalyzeMemoTextRequest(
+                              content: memoText.trim(),
+                              createAt:
+                                  DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                            ),
+                          );
+                          if (resp == null) {
+                            MPToastUtils.showMessage('分析失败');
+                            return <MPAnalyzeMemoSuggestionStruct>[];
+                          }
+                          if (resp.baseResp.code != 0) {
+                            MPToastUtils.showMessage(resp.baseResp.message);
+                            return <MPAnalyzeMemoSuggestionStruct>[];
+                          }
+                          return resp.structuredSuggestions
+                              .map(
+                                (s) => MPAnalyzeMemoSuggestionStruct(
+                                  type: s.type,
+                                  content: s.content.trim(),
+                                ),
+                              )
+                              .where((s) => s.content.isNotEmpty)
+                              .toList();
+                        } catch (_) {
+                          MPToastUtils.showMessage('分析失败');
+                          return <MPAnalyzeMemoSuggestionStruct>[];
+                        }
+                      },
                     );
                   },
                   borderRadius: BorderRadius.circular(8),
