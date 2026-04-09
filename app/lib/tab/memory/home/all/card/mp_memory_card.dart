@@ -46,6 +46,7 @@ class MPMemoryCardData {
     required this.title,
     required this.timeLabel,
     required this.preview,
+    required this.createAt,
     this.badgeCount,
     this.statusLabel,
     this.showActivity,
@@ -54,6 +55,7 @@ class MPMemoryCardData {
   final String title;
   final String timeLabel;
   final String preview;
+  final int createAt;
 
   /// [MPMemoryCardVariant.newUpdates] 时右上角数字角标；为 `null` 不展示
   final int? badgeCount;
