@@ -69,41 +69,6 @@ class _OmiAllViewState extends State<_OmiAllView> {
 
   /// 按 [MPMemoryEntry.kind] 区分跳转或埋点（示例：`[entry.id]` + `kind`）
   void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
-    // switch (entry.kind) {
-    //   case MPMemoryEntryKind.conversation:
-    //     final MPMemoryConversationKind kind = entry.conversationKind!;
-    //     if (kind == MPMemoryConversationKind.memoryFeed) {
-    //       Navigator.of(context).push(
-    //         MaterialPageRoute<void>(
-    //           builder: (BuildContext context) => OmiMemoryDetailPage(
-    //             memoryId: entry.id,
-    //           ),
-    //         ),
-    //       );
-    //     }else {
-    //       Navigator.of(context).push(
-    //        MaterialPageRoute<void>(
-    //         builder: (BuildContext context) => OmiMemoDetailPage(
-    //           memoryId: entry.id,
-    //         ),
-    //       ),
-    //     );
-    //     }
-
-    //     break;
-    //   case MPMemoryEntryKind.memoGroup:
-    //     break;
-    //   case MPMemoryEntryKind.audioRecording:
-    //     // TODO: 打开录音详情
-    //     Navigator.of(context).push(
-    //       MaterialPageRoute<void>(
-    //         builder: (BuildContext context) => OmiAudioDetailPage(
-    //           memoryId: entry.id,
-    //         ),
-    //       ),
-    //     );
-    //     break;
-    // }
     switch (entry.type) {
       case MPMemoryType.onlyRecord:
         MPMemoryPageClient.navigateToDetailPage(context, entry.id, MPMemoryType.onlyRecord, createAt: entry.data?.createAt);
