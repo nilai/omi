@@ -30,7 +30,7 @@ class MPUser {
 
   /// 获取访问令牌：优先内存，其次本地。
   String get accessToken {
-    // return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
+    return 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiAiMTgiLCAiZGV2aWNlX2lkIjogIjExMTExMTExIiwgImlhdCI6IDE3NzQ5NzcxMzcsICJleHAiOiAxNzc3NTY5MTM3fQ.r7QWpUTVt9uJMR2-lwJwlb6S5pkug0EIALTpLBO-Ci8';
     if (_accessToken?.isNotEmpty == true) {
       return _accessToken!;
     }
@@ -54,7 +54,7 @@ class MPUser {
 
   /// 获取用户 ID：优先内存，其次本地。
   String get userId {
-    // return '18';
+    return '18';
     if (_userId?.isNotEmpty == true) {
       return _userId!;
     }
