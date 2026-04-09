@@ -26,6 +26,24 @@ class MPHomeRecordCreatedPayload {
   final int batchIndex;
 }
 
+/// Todo 完成通知载荷。
+class MPHomeTodoDonePayload {
+  const MPHomeTodoDonePayload({
+    required this.todoId,
+  });
+
+  final String todoId;
+}
+
+/// Todo 删除通知载荷。
+class MPHomeTodoDeletedPayload {
+  const MPHomeTodoDeletedPayload({
+    required this.todoId,
+  });
+
+  final String todoId;
+}
+
 /// 首页事件通知：用于跨页面触发首页数据刷新。
 class MPHomeNotification {
   MPHomeNotification._();
@@ -36,12 +54,20 @@ class MPHomeNotification {
       StreamController<MPHomeUploadProgressPayload>.broadcast();
   static final StreamController<MPHomeRecordCreatedPayload> _recordCreatedBus =
       StreamController<MPHomeRecordCreatedPayload>.broadcast();
+  static final StreamController<MPHomeTodoDonePayload> _todoDoneBus =
+      StreamController<MPHomeTodoDonePayload>.broadcast();
+  static final StreamController<MPHomeTodoDeletedPayload> _todoDeletedBus =
+      StreamController<MPHomeTodoDeletedPayload>.broadcast();
 
   static Stream<void> get homeRefreshEvents => _homeRefreshBus.stream;
   static Stream<MPHomeUploadProgressPayload> get uploadProgressEvents =>
       _uploadProgressBus.stream;
   static Stream<MPHomeRecordCreatedPayload> get recordCreatedEvents =>
       _recordCreatedBus.stream;
+  static Stream<MPHomeTodoDonePayload> get todoDoneEvents =>
+      _todoDoneBus.stream;
+  static Stream<MPHomeTodoDeletedPayload> get todoDeletedEvents =>
+      _todoDeletedBus.stream;
 
   static void _emitHomeRefresh() {
     if (!_homeRefreshBus.isClosed) {
@@ -61,6 +87,18 @@ class MPHomeNotification {
     }
   }
 
+  static void _emitTodoDone(MPHomeTodoDonePayload payload) {
+    if (!_todoDoneBus.isClosed) {
+      _todoDoneBus.add(payload);
+    }
+  }
+
+  static void _emitTodoDeleted(MPHomeTodoDeletedPayload payload) {
+    if (!_todoDeletedBus.isClosed) {
+      _todoDeletedBus.add(payload);
+    }
+  }
+
   /// 任意页面主动调用：通知首页刷新列表数据。
   static void notifyHomeListRefresh() => _emitHomeRefresh();
 
@@ -71,6 +109,14 @@ class MPHomeNotification {
   /// 上传侧调用：通知首页某条 record 已创建完成。
   static void notifyRecordCreated(MPHomeRecordCreatedPayload payload) =>
       _emitRecordCreated(payload);
+
+  /// Todo 操作调用：通知首页某条 todo 已完成。
+  static void notifyTodoDone(MPHomeTodoDonePayload payload) =>
+      _emitTodoDone(payload);
+
+  /// Todo 操作调用：通知首页某条 todo 已删除。
+  static void notifyTodoDeleted(MPHomeTodoDeletedPayload payload) =>
+      _emitTodoDeleted(payload);
 
   /// 首页监听：收到后执行 `loadData` 刷新。
   static StreamSubscription<void> listenHomeListRefresh(
@@ -91,5 +137,19 @@ class MPHomeNotification {
     void Function(MPHomeRecordCreatedPayload payload) onCreated,
   ) {
     return recordCreatedEvents.listen(onCreated);
+  }
+
+  /// 首页监听 Todo 完成事件。
+  static StreamSubscription<MPHomeTodoDonePayload> listenTodoDone(
+    void Function(MPHomeTodoDonePayload payload) onDone,
+  ) {
+    return todoDoneEvents.listen(onDone);
+  }
+
+  /// 首页监听 Todo 删除事件。
+  static StreamSubscription<MPHomeTodoDeletedPayload> listenTodoDeleted(
+    void Function(MPHomeTodoDeletedPayload payload) onDeleted,
+  ) {
+    return todoDeletedEvents.listen(onDeleted);
   }
 }

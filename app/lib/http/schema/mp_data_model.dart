@@ -26,15 +26,19 @@ class MPBaseResp {
 }
 
 enum MPMemoryType {
+  /// memory summary
   @JsonValue(1)
   summary,
 
+  /// memory only audio
   @JsonValue(2)
   onlyRecord,
 
+  /// memory detail
   @JsonValue(5)
   memoryFeed,
 
+  /// 
   @JsonValue(6)
   memoList,
 }
@@ -113,6 +117,48 @@ int? mpTodoDeadlineFromJson(Object? json) {
 }
 
 Object? mpTodoDeadlineToJson(int? value) => value;
+
+/// 兼容 JSON 为 int、num、数字字符串的整型解析（非空）。
+int mpIntFromJson(Object? json, {int defaultValue = 0}) {
+  if (json == null) {
+    return defaultValue;
+  }
+  if (json is int) {
+    return json;
+  }
+  if (json is num) {
+    return json.toInt();
+  }
+  if (json is String) {
+    final String s = json.trim();
+    if (s.isEmpty) {
+      return defaultValue;
+    }
+    return int.tryParse(s) ?? double.tryParse(s)?.toInt() ?? defaultValue;
+  }
+  return defaultValue;
+}
+
+/// 兼容 JSON 为 int、num、数字字符串的可空整型解析。
+int? mpNullableIntFromJson(Object? json) {
+  if (json == null) {
+    return null;
+  }
+  if (json is int) {
+    return json;
+  }
+  if (json is num) {
+    return json.toInt();
+  }
+  if (json is String) {
+    final String s = json.trim();
+    if (s.isEmpty) {
+      return null;
+    }
+    return int.tryParse(s) ?? double.tryParse(s)?.toInt();
+  }
+  return null;
+}
 
 // Todo Struct
 @JsonSerializable()
