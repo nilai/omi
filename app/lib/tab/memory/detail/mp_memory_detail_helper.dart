@@ -7,7 +7,7 @@ import 'audio/omi_audio_detail_page.dart';
 import 'memory/omi_memory_detail_page.dart';
 import 'trans/mp_memory_transition_page.dart';
 
-class MPMemoryPageClient {
+class MPMemoryDetailPageHelper {
   static bool isOpening = false;
 
   /// 打开详情页统一入口。
