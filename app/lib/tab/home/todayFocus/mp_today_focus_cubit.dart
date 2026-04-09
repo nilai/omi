@@ -1,8 +1,11 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/common/mp_todo_voice_input.dart';
+import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
@@ -293,12 +296,62 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!_isInteractive) return;
     final String t = text.trim();
     if (t.isEmpty) return;
+    _insertTodayTodo(t);
+  }
+
+  /// 文本走 [analyzeMemoText]，语音（已上传 [MPTodoVoiceInputResult.recordUrl]）走 [analyzeMemoRecord]。
+  Future<void> addTodoFromAnalyzedInput(MPTodoVoiceInputResult r) async {
+    if (!_isInteractive) return;
+    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+    if (!r.fromVoice) {
+      final String t = r.text.trim();
+      if (t.isEmpty) return;
+      final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
+        MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
+      );
+      if (response == null || response.baseResp.code != 0) {
+        MPToastUtils.showMessage(
+          response?.baseResp.message ?? '分析失败，请稍后重试',
+        );
+        return;
+      }
+      final String title = response.originalText.trim().isNotEmpty
+          ? response.originalText.trim()
+          : t;
+      _insertTodayTodo(title);
+      return;
+    }
+
+    final String? url = r.recordUrl?.trim();
+    if (url == null || url.isEmpty) {
+      MPToastUtils.showMessage('录音无效');
+      return;
+    }
+    final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
+      MPAnalyzeMemoRecordRequest(recordUrl: url, createAt: createAt),
+    );
+    if (response == null || response.baseResp.code != 0) {
+      MPToastUtils.showMessage(
+        response?.baseResp.message ?? '分析失败，请稍后重试',
+      );
+      return;
+    }
+    final String title = response.originalText.trim();
+    if (title.isEmpty) {
+      MPToastUtils.showMessage('未识别到有效内容');
+      return;
+    }
+    _insertTodayTodo(title);
+  }
+
+  void _insertTodayTodo(String title) {
     final List<MPTodayFocusTodoRowData> next = List<MPTodayFocusTodoRowData>.of(
       state.todayItems,
     );
     next.insert(
       0,
-      MPTodayFocusTodoRowData(title: t, timeLabel: '', todoId: ''),
+      MPTodayFocusTodoRowData(title: title, timeLabel: '', todoId: ''),
     );
     emit(state.copyWith(todayItems: next));
   }

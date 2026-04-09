@@ -355,7 +355,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       durationSec: durationSec,
       createAt: createAt,
       rightNowTranscribe: false,
-      source: 'mp',
+      source: 'MobilePhone',
     );
 
     if (!mounted) {
