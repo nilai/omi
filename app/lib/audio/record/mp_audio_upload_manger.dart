@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:memo_pin/audio/audio_picker_utils.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
-import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -29,8 +29,8 @@ void _emitUploadProgress(
     batchTotal: batchTotal,
     progress: p,
   );
-  MPMemoryNotification.notifyUploadProgress(
-    MPMemoryRecordUploadProgressPayload(
+  MPHomeNotification.notifyUploadProgress(
+    MPHomeUploadProgressPayload(
       batchTotal: batchTotal,
       batchIndex: batchIndex,
       progress: p,
@@ -304,8 +304,8 @@ class MPAudioUploadManager {
 
         final int notifyTotal = batchTotal < 1 ? 1 : batchTotal;
         final int notifyIndex = batchIndex.clamp(1, notifyTotal);
-        MPMemoryNotification.notifyMemoryRecordCreated(
-          MPMemoryRecordCreatedPayload(
+        MPHomeNotification.notifyRecordCreated(
+          MPHomeRecordCreatedPayload(
             memoryId: created.memoryId,
             batchTotal: n > 1 ? n : notifyTotal,
             batchIndex: n > 1 ? i + 1 : notifyIndex,

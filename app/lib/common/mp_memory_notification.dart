@@ -17,11 +17,7 @@ class MPMemoryRecordUploadProgressPayload {
 
 /// 本地录音上传并创建 record 成功后的通知载荷。
 class MPMemoryRecordCreatedPayload {
-  const MPMemoryRecordCreatedPayload({
-    required this.memoryId,
-    this.batchTotal = 1,
-    this.batchIndex = 1,
-  });
+  const MPMemoryRecordCreatedPayload({required this.memoryId, this.batchTotal = 1, this.batchIndex = 1});
 
   /// 新建记录对应的 `memory_id`。
   final String memoryId;
@@ -45,8 +41,7 @@ class MPMemoryNotification {
 
   static Stream<MPMemoryRecordCreatedPayload> get events => _bus.stream;
 
-  static Stream<MPMemoryRecordUploadProgressPayload> get progressEvents =>
-      _progressBus.stream;
+  static Stream<MPMemoryRecordUploadProgressPayload> get progressEvents => _progressBus.stream;
 
   static void _emit(MPMemoryRecordCreatedPayload payload) {
     if (!_bus.isClosed) {
@@ -61,25 +56,21 @@ class MPMemoryNotification {
   }
 
   /// 与 [MPAudioUploadManager] 内上报的进度一致（非 UI 模拟，仅转发）。
-  static void notifyUploadProgress(MPMemoryRecordUploadProgressPayload payload) =>
-      _emitProgress(payload);
+  static void notifyUploadProgress(MPMemoryRecordUploadProgressPayload payload) => _emitProgress(payload);
 
   /// [createRecord]（及可选 [summaryRecord]）全部成功后调用。
-  static void notifyMemoryRecordCreated(MPMemoryRecordCreatedPayload payload) =>
-      _emit(payload);
+  static void notifyMemoryRecordCreated(MPMemoryRecordCreatedPayload payload) => _emit(payload);
 
   /// 监听「本地录音上传并创建 record 成功」。
   ///
   /// 返回 [StreamSubscription]，请在 Cubit [close] 或 State [dispose] 里 [cancel]。
-  static StreamSubscription<MPMemoryRecordCreatedPayload>
-      listenMemoryRecordCreated(
+  static StreamSubscription<MPMemoryRecordCreatedPayload> listenMemoryRecordCreated(
     void Function(MPMemoryRecordCreatedPayload payload) onCreated,
   ) {
     return events.listen(onCreated);
   }
 
-  static StreamSubscription<MPMemoryRecordUploadProgressPayload>
-      listenUploadProgress(
+  static StreamSubscription<MPMemoryRecordUploadProgressPayload> listenUploadProgress(
     void Function(MPMemoryRecordUploadProgressPayload payload) onProgress,
   ) {
     return progressEvents.listen(onProgress);
