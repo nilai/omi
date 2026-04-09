@@ -382,6 +382,42 @@ class MPGetUploadRecordUrlResponse {
   Map<String, dynamic> toJson() => _$MPGetUploadRecordUrlResponseToJson(this);
 }
 
+// Get Summary Status Request
+@JsonSerializable()
+class MPGetSummaryStatusRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPGetSummaryStatusRequest({
+    required this.memoryId,
+  });
+
+  factory MPGetSummaryStatusRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetSummaryStatusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryStatusRequestToJson(this);
+}
+
+// Get Summary Status Response
+@JsonSerializable()
+class MPGetSummaryStatusResponse {
+  @JsonKey(name: 'status')
+  final int status;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetSummaryStatusResponse({
+    required this.status,
+    required this.baseResp,
+  });
+
+  factory MPGetSummaryStatusResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetSummaryStatusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetSummaryStatusResponseToJson(this);
+}
+
 /// 预签名URL响应模型
 /// 用于获取S3上传的预签名URL
 @JsonSerializable()

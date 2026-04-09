@@ -150,3 +150,19 @@ Future<MPGetUploadRecordUrlResponse?> getUploadRecordUrl(MPGetUploadRecordUrlReq
   }
   return null;
 }
+
+// GET /api/v1/memory/summary/get_status
+Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/summary/get_status?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getSummaryStatus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetSummaryStatusResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
