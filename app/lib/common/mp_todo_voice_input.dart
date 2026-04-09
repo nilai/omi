@@ -1,17 +1,34 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
+import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 enum MPTodoVoiceInputMode { text, recording, transcribing }
 
 class MPTodoVoiceInputResult {
-  const MPTodoVoiceInputResult({required this.text, required this.fromVoice});
+  const MPTodoVoiceInputResult({
+    required this.text,
+    required this.fromVoice,
+    this.recordUrl,
+  });
 
   final String text;
+
+  /// `false`：键盘输入；`true`：语音录制并上传后得到 [recordUrl]，由上层走 [analyzeMemoRecord]。
   final bool fromVoice;
+
+  /// 语音路径下、上传成功后的录音 URL；纯文本时为空。
+  final String? recordUrl;
 }
 
 class MPTodoVoiceInput extends StatefulWidget {
@@ -40,11 +57,16 @@ class MPTodoVoiceInput extends StatefulWidget {
 
 class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     with TickerProviderStateMixin {
+  static const String _kRecordDirName = 'mp_todo_voice_input_records';
+
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
 
   MPTodoVoiceInputMode _mode = MPTodoVoiceInputMode.text;
   bool _busy = false;
+  bool _recorderOpened = false;
+  String? _recordPath;
 
   late final AnimationController _waveCtrl;
   late final AnimationController _dotsCtrl;
@@ -66,11 +88,43 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   @override
   void dispose() {
+    unawaited(_stopRecorder(deleteFile: true));
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
     _focusNode.dispose();
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<String> _ensureRecordDirectory() async {
+    final Directory docs = await getApplicationDocumentsDirectory();
+    final String dir = p.join(docs.path, _kRecordDirName);
+    await Directory(dir).create(recursive: true);
+    return dir;
+  }
+
+  Future<void> _stopRecorder({required bool deleteFile}) async {
+    try {
+      if (_recorderOpened &&
+          (_recorder.isRecording || _recorder.isPaused)) {
+        await _recorder.stopRecorder();
+      }
+    } catch (_) {}
+    try {
+      if (_recorderOpened) {
+        await _recorder.closeRecorder();
+      }
+    } catch (_) {}
+    _recorderOpened = false;
+    if (deleteFile && _recordPath != null) {
+      final File file = File(_recordPath!);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+    _recordPath = null;
   }
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
@@ -80,20 +134,59 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   void _submitTyped() {
     final String t = _controller.text.trim();
     if (t.isEmpty) return;
-    widget.onSubmitted?.call(MPTodoVoiceInputResult(text: t, fromVoice: false));
+    widget.onSubmitted?.call(
+      MPTodoVoiceInputResult(text: t, fromVoice: false),
+    );
   }
 
   Future<void> _startRecording() async {
     if (_busy) return;
     _focusNode.unfocus();
-    setState(() {
-      _mode = MPTodoVoiceInputMode.recording;
-    });
-    _waveCtrl.repeat();
+    setState(() => _busy = true);
+    try {
+      final bool hasPermission =
+          await OmiMicrophoneManager.ensureMicrophonePermission();
+      if (!hasPermission) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+      final String dir = await _ensureRecordDirectory();
+      final String path = p.join(
+        dir,
+        'omi_todo_voice_${DateTime.now().millisecondsSinceEpoch}.aac',
+      );
+      await _recorder.openRecorder();
+      _recorderOpened = true;
+      await _recorder.startRecorder(
+        toFile: path,
+        codec: Codec.aacADTS,
+        bitRate: 8000,
+        numChannels: 1,
+        sampleRate: 8000,
+      );
+      if (!mounted) {
+        await _stopRecorder(deleteFile: true);
+        return;
+      }
+      _recordPath = path;
+      setState(() {
+        _busy = false;
+        _mode = MPTodoVoiceInputMode.recording;
+      });
+      _waveCtrl.repeat();
+    } catch (e) {
+      await _stopRecorder(deleteFile: true);
+      if (mounted) {
+        setState(() => _busy = false);
+        MPToastUtils.showMessage('开始录音失败: $e');
+      }
+    }
   }
 
-  void _cancelRecording() {
+  Future<void> _cancelRecording() async {
     _waveCtrl.stop();
+    await _stopRecorder(deleteFile: true);
+    if (!mounted) return;
     setState(() {
       _mode = MPTodoVoiceInputMode.text;
     });
@@ -101,6 +194,10 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   Future<void> _confirmRecording() async {
     if (_busy) return;
+    if (_recordPath == null || _recordPath!.isEmpty) {
+      MPToastUtils.showMessage('录音文件无效');
+      return;
+    }
     _waveCtrl.stop();
     setState(() {
       _mode = MPTodoVoiceInputMode.transcribing;
@@ -108,16 +205,80 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     });
     _dotsCtrl.repeat();
 
-    await Future<void>.delayed(widget.transcribeDelay);
-    if (!mounted) return;
+    String? filePath = _recordPath;
+    try {
+      if (_recorderOpened) {
+        filePath = await _recorder.stopRecorder() ?? filePath;
+        await _recorder.closeRecorder();
+        _recorderOpened = false;
+      }
+    } catch (e) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _mode = MPTodoVoiceInputMode.text;
+        });
+        MPToastUtils.showMessage('停止录音失败: $e');
+      }
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    if (filePath == null || filePath.isEmpty) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _mode = MPTodoVoiceInputMode.text;
+        });
+      }
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    final File file = File(filePath);
+    if (!await file.exists()) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _mode = MPTodoVoiceInputMode.text;
+        });
+      }
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('录音文件不存在');
+      return;
+    }
+
+    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
     _dotsCtrl.stop();
 
-    // TODO: 替换真实录音 + 转写接口
-    final String transcribed =
-        "Review the new product roadmap and prepare feedback for tomorrow's meeting";
-    _controller.text = transcribed;
-    widget.onChanged?.call(transcribed);
+    if (!mounted) {
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
 
+    if (recordUri == null || recordUri.isEmpty) {
+      setState(() {
+        _busy = false;
+        _mode = MPTodoVoiceInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('音频上传失败');
+      return;
+    }
+
+    widget.onSubmitted?.call(
+      MPTodoVoiceInputResult(
+        text: '',
+        fromVoice: true,
+        recordUrl: recordUri,
+      ),
+    );
+
+    await _stopRecorder(deleteFile: true);
+    if (!mounted) return;
     setState(() {
       _mode = MPTodoVoiceInputMode.text;
       _busy = false;

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
+import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/omi_edit_todo_popup.dart';
@@ -236,8 +237,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                           ],
                           const SizedBox(height: 20),
                           MPAllTodosInputCard(
-                            onSubmitted: (r) =>
-                                _cubit.addTodoFromInput(r.text),
+                            onSubmitted: (MPTodoVoiceInputResult r) async {
+                              await _cubit.addTodoFromAnalyzedInput(r);
+                            },
                           ),
                           const SizedBox(height: 24),
                           MPTodayFocusTodoGroupedList(
