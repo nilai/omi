@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
@@ -512,6 +513,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!ok || !_isInteractive) {
       return false;
     }
+    MPHomeNotification.notifyHomeListRefresh();
     final List<MPTodayFocusCardItem> latest = state.focusCard.items;
     final int i = latest.indexWhere(
       (MPTodayFocusCardItem e) => e.todoId.trim() == todoId,

@@ -12,6 +12,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
+import 'mp_home_notification.dart';
 
 class OmiEditTodoPopupParams {
   const OmiEditTodoPopupParams({
@@ -741,6 +742,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                         : '',
                                     isCompleted: true,
                                   );
+                                  MPHomeNotification.notifyHomeListRefresh();
                                   if (!context.mounted) {
                                     return;
                                   }
