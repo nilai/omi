@@ -483,6 +483,7 @@ class _TodayFocusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<MPHomeTodoItem> shown = todos.take(3).toList();
+    final bool showAddMoreCard = shown.length < 3;
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFFCFCFD),
@@ -589,6 +590,51 @@ class _TodayFocusCard extends StatelessWidget {
                   ),
                 ),
               ),
+          ],
+          if (showAddMoreCard) ...<Widget>[
+            SizedBox(height: shown.isNotEmpty ? 8 : 12),
+            Container(
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF4FFFA),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFDDF5EA)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text(
+                    'Add more tasks to Today\'s Focus to stay productive',
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t5_14,
+                      color: const Color(0xFF30303A),
+                      fontWeight: OmiFontWeight.regular,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: onViewAll,
+                      style: ElevatedButton.styleFrom(
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        backgroundColor: const Color(0xFF2EA86D),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        textStyle: TextStyle(
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.medium,
+                          height: 1.2,
+                        ),
+                      ),
+                      child: const Text('Add to Today\'s Focus'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ],
       ),
