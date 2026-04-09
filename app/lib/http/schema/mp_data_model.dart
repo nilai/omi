@@ -26,15 +26,19 @@ class MPBaseResp {
 }
 
 enum MPMemoryType {
+  /// memory summary
   @JsonValue(1)
   summary,
 
+  /// memory only audio
   @JsonValue(2)
   onlyRecord,
 
+  /// memory detail
   @JsonValue(5)
   memoryFeed,
 
+  /// 
   @JsonValue(6)
   memoList,
 }
