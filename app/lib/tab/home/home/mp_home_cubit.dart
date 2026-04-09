@@ -176,8 +176,29 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _insightsTimer = Timer.periodic(Duration(seconds: 1), (_) => _tickInsights());
   }
 
-  void _tickInsights() {
-    // TODO: 定时刷新 insights
+  Future<void> _tickInsights() async {
+    if (!isClosed) {
+      final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
+      if (response != null && response.baseResp.code == 0) {
+        final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
+        bool shouldUpdate = false;
+        if (state.insightOverview.newInsightCount != insightOverview.newInsightCount) {
+          shouldUpdate = true;
+        }
+        if (state.insightOverview.content != insightOverview.content) {
+          shouldUpdate = true;
+        }
+        if (state.insightOverview.title != insightOverview.title) {
+          shouldUpdate = true;  
+        }
+        if (state.insightOverview.subTitle != insightOverview.subTitle) {
+          shouldUpdate = true;
+        }
+        if (!isClosed && shouldUpdate) {
+          emit(state.copyWith(insightOverview: insightOverview));
+        }
+      }
+    }
   }
 
   /// 演示：设备录音中（对齐 react `setRecording`）
@@ -255,7 +276,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   @override
   Future<void> close() {
     _insightsTimer?.cancel();
+    _insightsTimer = null;
     _syncCompletedClearTimer?.cancel();
+    _syncCompletedClearTimer = null;
     _recordCreatedSub?.cancel();
     _uploadProgressSub?.cancel();
     return super.close();
