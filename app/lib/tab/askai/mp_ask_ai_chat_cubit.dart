@@ -222,16 +222,16 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       if (response.baseResp.code != 0) {
         throw Exception(response.baseResp.message);
       }
-      final List<MPAskAIChatMessage> messages = response.contents
-          .map((MPConversationStruct item) {
-            final bool isUser = item.speaker.myselfVoice == true;
-            return MPAskAIChatMessage(
-              id: 'history_${item.time}_${item.content.hashCode}',
-              role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
-              content: item.content,
-            );
-          })
-          .toList(growable: false);
+      List<MPAskAIChatMessage> messages = [];
+      for (final (index, element) in response.contents.indexed) {
+        final bool isUser = index % 2 == 0;
+        messages.add(MPAskAIChatMessage(
+          id: 'history_${element.time}_${element.content.hashCode}',
+          role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,
+          content: element.content,
+        ));
+      }
+      messages = messages.reversed.toList(growable: false);
       await MPHiveUtil.instance.putPrimitive(
         key: targetConversationId,
         value: messages
