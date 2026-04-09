@@ -472,25 +472,32 @@ class _MPTodoMiniWaveform extends StatelessWidget {
       animation: controller,
       builder: (BuildContext context, Widget? child) {
         final double p = controller.value;
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List<Widget>.generate(_bars, (int i) {
-            final double h = _barHeight(i, p);
-            final bool strong = i > _bars * 0.6;
-            return Padding(
-              padding: EdgeInsets.only(right: i == _bars - 1 ? 0 : 4),
-              child: Container(
-                width: 3,
-                height: h,
-                decoration: BoxDecoration(
-                  color: strong
-                      ? blueTextColor
-                      : blueTextColor.withValues(alpha: 0.35),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
+        return LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double slotWidth = constraints.maxWidth / _bars;
+            final double barWidth = math.min(3.0, math.max(1.0, slotWidth * 0.48));
+            return Row(
+              children: List<Widget>.generate(_bars, (int i) {
+                final double h = _barHeight(i, p);
+                final bool strong = i > _bars * 0.6;
+                return Expanded(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Container(
+                      width: barWidth,
+                      height: h,
+                      decoration: BoxDecoration(
+                        color: strong
+                            ? blueTextColor
+                            : blueTextColor.withValues(alpha: 0.35),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                );
+              }),
             );
-          }),
+          },
         );
       },
     );
