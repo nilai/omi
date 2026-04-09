@@ -42,11 +42,13 @@ class MPHomeTodoItem {
 
 /// Recent Memory 一行
 class MPHomeMemoryItem {
-  const MPHomeMemoryItem({required this.id, required this.titleOrDate, required this.timeLabel});
+  const MPHomeMemoryItem({required this.id, required this.titleOrDate, required this.timeLabel, required this.createAt, required this.type});
 
   final String id;
   final String titleOrDate;
   final String timeLabel;
+  final int createAt;
+  final MPMemoryType type;
 }
 
 class MPHomeState {
@@ -157,7 +159,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
       for (final MPMemoryStruct e in response.recentMemories) {
         recentMemories.add(
-          MPHomeMemoryItem(id: e.id, titleOrDate: e.title, timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt)),
+          MPHomeMemoryItem(id: e.id, titleOrDate: e.title, timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt), createAt: e.createAt, type: e.type),
         );
       }
       final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
