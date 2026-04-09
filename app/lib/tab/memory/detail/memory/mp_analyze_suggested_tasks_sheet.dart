@@ -1,6 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/http/schema/mp_memo.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -8,11 +12,22 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';
 
+class _MPSuggestedItem {
+  _MPSuggestedItem({required this.type, required this.content});
+
+  MPAnalyzeMemoSuggestionType type;
+  String content;
+}
+
 /// 展示「Suggested tasks」分析结果底部弹窗（高度上限为屏高的 60%，中间区域可滚动）。
 Future<void> showMPAnalyzeSuggestedTasksSheet(
   BuildContext context, {
-  required String memoText,
-  required Future<List<String>> Function(String memoText) onAnalyze,
+  List<MPAnalyzeMemoSuggestionStruct>? initialStructuredSuggestions,
+  List<String>? initialSuggestions,
+  String memoText = '',
+  Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
+      onAnalyzeStructured,
+  Future<List<String>> Function(String memoText)? onAnalyze,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -26,7 +41,10 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
     builder: (BuildContext context) {
       return _MPAnalyzeSuggestedTasksSheet(
         memoText: memoText,
+        onAnalyzeStructured: onAnalyzeStructured,
+        initialStructuredSuggestions: initialStructuredSuggestions,
         onAnalyze: onAnalyze,
+        initialSuggestions: initialSuggestions,
       );
     },
   );
@@ -35,11 +53,18 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
 class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
   const _MPAnalyzeSuggestedTasksSheet({
     required this.memoText,
+    required this.onAnalyzeStructured,
+    required this.initialStructuredSuggestions,
     required this.onAnalyze,
+    required this.initialSuggestions,
   });
 
   final String memoText;
-  final Future<List<String>> Function(String memoText) onAnalyze;
+  final Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
+      onAnalyzeStructured;
+  final List<MPAnalyzeMemoSuggestionStruct>? initialStructuredSuggestions;
+  final Future<List<String>> Function(String memoText)? onAnalyze;
+  final List<String>? initialSuggestions;
 
   @override
   State<_MPAnalyzeSuggestedTasksSheet> createState() =>
@@ -49,8 +74,9 @@ class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
 class _MPAnalyzeSuggestedTasksSheetState
     extends State<_MPAnalyzeSuggestedTasksSheet> {
   bool _loading = true;
-  List<String> _suggestions = <String>[];
+  List<_MPSuggestedItem> _suggestions = <_MPSuggestedItem>[];
   int? _selectedIndex = 0;
+  bool _creating = false;
 
   /// 当前处于行内编辑的建议下标；非空时展示输入框与确认勾。
   int? _editingIndex;
@@ -61,6 +87,32 @@ class _MPAnalyzeSuggestedTasksSheetState
   @override
   void initState() {
     super.initState();
+    final List<MPAnalyzeMemoSuggestionStruct>? initStructured =
+        widget.initialStructuredSuggestions;
+    if (initStructured != null) {
+      _loading = false;
+      _suggestions = initStructured
+          .map(
+            (s) => _MPSuggestedItem(type: s.type, content: s.content),
+          )
+          .toList();
+      _selectedIndex = _suggestions.isEmpty ? null : 0;
+      return;
+    }
+    final List<String>? init = widget.initialSuggestions;
+    if (init != null) {
+      _loading = false;
+      _suggestions = init
+          .map(
+            (t) => _MPSuggestedItem(
+              type: MPAnalyzeMemoSuggestionType.todo,
+              content: t,
+            ),
+          )
+          .toList();
+      _selectedIndex = _suggestions.isEmpty ? null : 0;
+      return;
+    }
     _load();
   }
 
@@ -72,11 +124,47 @@ class _MPAnalyzeSuggestedTasksSheetState
   }
 
   Future<void> _load() async {
-    final List<String> result = await widget.onAnalyze(widget.memoText);
+    final onAnalyzeStructured = widget.onAnalyzeStructured;
+    if (onAnalyzeStructured != null) {
+      final List<MPAnalyzeMemoSuggestionStruct> result =
+          await onAnalyzeStructured(widget.memoText);
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _suggestions = result
+            .map(
+              (s) => _MPSuggestedItem(type: s.type, content: s.content),
+            )
+            .toList();
+        _selectedIndex = _suggestions.isEmpty ? null : 0;
+        _editingIndex = null;
+        _editController?.dispose();
+        _editController = null;
+      });
+      return;
+    }
+    final onAnalyze = widget.onAnalyze;
+    if (onAnalyze == null) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _suggestions = <_MPSuggestedItem>[];
+        _selectedIndex = null;
+      });
+      return;
+    }
+    final List<String> result = await onAnalyze(widget.memoText);
     if (!mounted) return;
     setState(() {
       _loading = false;
-      _suggestions = List<String>.from(result);
+      _suggestions = result
+          .map(
+            (t) => _MPSuggestedItem(
+              type: MPAnalyzeMemoSuggestionType.todo,
+              content: t,
+            ),
+          )
+          .toList();
       _selectedIndex = result.isEmpty ? null : 0;
       _editingIndex = null;
       _editController?.dispose();
@@ -95,14 +183,15 @@ class _MPAnalyzeSuggestedTasksSheetState
       final int prev = _editingIndex!;
       final String t = _editController!.text.trim();
       if (t.isNotEmpty) {
-        _suggestions[prev] = t;
+        _suggestions[prev].content = t;
       }
       _editController!.dispose();
       _editController = null;
     }
     setState(() {
       _editingIndex = index;
-      _editController = TextEditingController(text: _suggestions[index]);
+      _editController =
+          TextEditingController(text: _suggestions[index].content);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -118,12 +207,57 @@ class _MPAnalyzeSuggestedTasksSheetState
     final String t = _editController!.text.trim();
     setState(() {
       if (t.isNotEmpty) {
-        _suggestions[i] = t;
+        _suggestions[i].content = t;
       }
       _editingIndex = null;
     });
     _editController!.dispose();
     _editController = null;
+  }
+
+  Future<void> _createSelectedSuggestion() async {
+    if (_creating) return;
+    final int? i = _selectedIndex;
+    if (i == null || i < 0 || i >= _suggestions.length) return;
+    final _MPSuggestedItem item = _suggestions[i];
+    final String content = item.content.trim();
+    if (content.isEmpty) {
+      MPToastUtils.showMessage('内容为空');
+      return;
+    }
+
+    setState(() => _creating = true);
+    bool ok = false;
+    try {
+      if (item.type == MPAnalyzeMemoSuggestionType.todo) {
+        ok = await MPTodoManager().createTodo(title: content);
+        if (!ok) {
+          MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
+        }
+      } else {
+        final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
+          MPCreateMemoWithTextRequest(
+            content: content,
+            createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+          ),
+        );
+        ok = resp != null && resp.baseResp.code == 0;
+        if (!ok) {
+          MPToastUtils.showMessage(
+            resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试',
+          );
+        }
+      }
+    } catch (_) {
+      ok = false;
+      MPToastUtils.showMessage('创建失败');
+    }
+
+    if (!mounted) return;
+    setState(() => _creating = false);
+    if (ok) {
+      Navigator.of(context).pop();
+    }
   }
 
   static const Color _kCheckboxBlue = Color(0xFF1A73E8);
@@ -264,7 +398,7 @@ class _MPAnalyzeSuggestedTasksSheetState
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _suggestions[i],
+                  _suggestions[i].content,
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t5_14,
                     fontWeight: OmiFontWeight.medium,
@@ -434,12 +568,8 @@ class _MPAnalyzeSuggestedTasksSheetState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: _selectedIndex == null
-                    ? null
-                    : () {
-                        // TODO: 调用创建 tasks 接口（使用 _suggestions[_selectedIndex]）
-                        Navigator.of(context).pop();
-                      },
+                onPressed:
+                    (_selectedIndex == null || _creating) ? null : _createSelectedSuggestion,
                 style: TextButton.styleFrom(
                   backgroundColor: blueTextColor,
                   foregroundColor: Colors.white,
@@ -448,7 +578,7 @@ class _MPAnalyzeSuggestedTasksSheetState
                   ),
                 ),
                 child: Text(
-                  'Create tasks',
+                  _creating ? 'Creating…' : 'Create tasks',
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t8_17,
                     fontWeight: OmiFontWeight.medium,
