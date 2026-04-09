@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
-import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -42,7 +42,13 @@ class MPHomeTodoItem {
 
 /// Recent Memory 一行
 class MPHomeMemoryItem {
-  const MPHomeMemoryItem({required this.id, required this.titleOrDate, required this.timeLabel, required this.createAt, required this.type});
+  const MPHomeMemoryItem({
+    required this.id,
+    required this.titleOrDate,
+    required this.timeLabel,
+    required this.createAt,
+    required this.type,
+  });
 
   final String id;
   final String titleOrDate;
@@ -93,14 +99,16 @@ class MPHomeState {
 /// 首页：Today's Focus / Recent Memory / Insights / 顶部状态条（mock + 定时刷新）
 class MPHomeCubit extends Cubit<MPHomeState> {
   MPHomeCubit() : super(_initialState()) {
-    _recordCreatedSub = MPMemoryNotification.listenMemoryRecordCreated(_onMemoryRecordCreated);
-    _uploadProgressSub = MPMemoryNotification.listenUploadProgress(_onUploadProgress);
+    _recordCreatedSub = MPHomeNotification.listenRecordCreated(_onMemoryRecordCreated);
+    _uploadProgressSub = MPHomeNotification.listenUploadProgress(_onUploadProgress);
+    _homeListRefreshSub = MPHomeNotification.listenHomeListRefresh(_onHomeListRefresh);
     initData();
   }
 
   Timer? _insightsTimer;
-  StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
-  StreamSubscription<MPMemoryRecordUploadProgressPayload>? _uploadProgressSub;
+  StreamSubscription<MPHomeRecordCreatedPayload>? _recordCreatedSub;
+  StreamSubscription<MPHomeUploadProgressPayload>? _uploadProgressSub;
+  StreamSubscription<void>? _homeListRefreshSub;
   Timer? _syncCompletedClearTimer;
 
   static MPHomeState _initialState() {
@@ -159,7 +167,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
       for (final MPMemoryStruct e in response.recentMemories) {
         recentMemories.add(
-          MPHomeMemoryItem(id: e.id, titleOrDate: e.title, timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt), createAt: e.createAt, type: e.type),
+          MPHomeMemoryItem(
+            id: e.id,
+            titleOrDate: e.title,
+            timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
+            createAt: e.createAt,
+            type: e.type,
+          ),
         );
       }
       final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
@@ -189,7 +203,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           shouldUpdate = true;
         }
         if (state.insightOverview.title != insightOverview.title) {
-          shouldUpdate = true;  
+          shouldUpdate = true;
         }
         if (state.insightOverview.subTitle != insightOverview.subTitle) {
           shouldUpdate = true;
@@ -221,8 +235,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     );
   }
 
-  /// 与 [MPMemoryRecordUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
-  void _onUploadProgress(MPMemoryRecordUploadProgressPayload payload) {
+  /// 与 [MPHomeUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
+  void _onUploadProgress(MPHomeUploadProgressPayload payload) {
     if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
       return;
     }
@@ -231,8 +245,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     showSyncingStatus(currentFile: batchIndex, totalFiles: batchTotal, progress: payload.progress.clamp(0, 100));
   }
 
-  /// [MPMemoryNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
-  void _onMemoryRecordCreated(MPMemoryRecordCreatedPayload payload) {
+  /// [MPHomeNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
+  void _onMemoryRecordCreated(MPHomeRecordCreatedPayload payload) {
     if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
       return;
     }
@@ -273,6 +287,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     emit(state.copyWith(clearAudioStatus: true));
   }
 
+  /// 外部页面触发首页刷新通知后，重新拉取首页聚合数据。
+  ///
+  /// @returns {void}
+  void _onHomeListRefresh() {
+    loadData();
+  }
+
   @override
   Future<void> close() {
     _insightsTimer?.cancel();
@@ -281,6 +302,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _syncCompletedClearTimer = null;
     _recordCreatedSub?.cancel();
     _uploadProgressSub?.cancel();
+    _homeListRefreshSub?.cancel();
     return super.close();
   }
 }
