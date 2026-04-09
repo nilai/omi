@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
-import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
@@ -110,28 +109,11 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       timeLabel = row.timeLabel;
     }
     if (section == MPTodayFocusTodoSection.completed) {
-      final String todoId = row.todoId.trim();
       await showMPCompletedTodoActionPopup(
         context,
         params: MPCompletedTodoActionPopupParams(title: row.title),
-        onRestore: () async {
-          final bool ok = await _cubit.restoreCompletedAt(index);
-          if (!ok) {
-            return false;
-          }
-          MPHomeNotification.notifyHomeListRefresh();
-          return true;
-        },
-        onDelete: () async {
-          final bool ok = await _cubit.deleteCompletedAt(index);
-          if (!ok || todoId.isEmpty) {
-            return false;
-          }
-          MPHomeNotification.notifyTodoDeleted(
-            MPHomeTodoDeletedPayload(todoId: todoId),
-          );
-          return true;
-        },
+        onRestore: () => _cubit.restoreCompletedAt(index),
+        onDelete: () => _cubit.deleteCompletedAt(index),
       );
       return;
     }
@@ -144,23 +126,6 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         timeLabel: timeLabel,
         todoId: row.todoId,
       ),
-      onMarkAsDone: () {
-        final String todoId = row.todoId.trim();
-        if (todoId.isEmpty) {
-          return;
-        }
-        MPHomeNotification.notifyTodoDone(MPHomeTodoDonePayload(todoId: todoId));
-      },
-      onDelete: () async {
-        await _cubit.initData();
-        final String todoId = row.todoId.trim();
-        if (todoId.isNotEmpty) {
-          MPHomeNotification.notifyTodoDeleted(
-            MPHomeTodoDeletedPayload(todoId: todoId),
-          );
-        }
-        return true;
-      },
     );
   }
 
