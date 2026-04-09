@@ -163,6 +163,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
+      print('-------------------------------- getMemoryDetail resp: ${resp.toJson()}');
       final MPMemoryStruct m = resp.memoryDetail;
       final MPOnlyRecordMemoryStruct? only = m.onlyRecordContent;
       if (only == null) {

@@ -10,7 +10,7 @@ import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';
 import '../../../../http/schema/mp_data_model.dart';
 import '../../detail/audio/omi_audio_detail_page.dart';
-import '../../detail/mp_memory_detail_client.dart';
+import '../../detail/mp_memory_detail_helper.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
@@ -71,7 +71,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
   void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
     switch (entry.type) {
       case MPMemoryType.onlyRecord:
-        MPMemoryPageClient.navigateToDetailPage(context, entry.id, MPMemoryType.onlyRecord, createAt: entry.data?.createAt);
+        MPMemoryDetailPageHelper.navigateToDetailPage(context, entry.id, MPMemoryType.onlyRecord, createAt: entry.data?.createAt);
         break;
       case MPMemoryType.summary:
         Navigator.of(

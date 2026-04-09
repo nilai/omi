@@ -341,6 +341,7 @@ class OmiAllCubit extends Cubit<OmiAllState> {
 
 /// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
+  print('----------------memory struct to entry: ${m.toJson()}');
   switch (m.type) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:

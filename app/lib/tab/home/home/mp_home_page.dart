@@ -15,7 +15,7 @@ import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_home.dart';
-import '../../memory/detail/mp_memory_detail_client.dart';
+import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
@@ -302,7 +302,7 @@ class _MPHomePageState extends State<MPHomePage> {
                             memories: state.recentMemories,
                             onViewAll: widget.onViewAllMemories,
                             onMemoryTap: (MPHomeMemoryItem m) =>
-                                MPMemoryPageClient.navigateToDetailPage(context, m.id, m.type, createAt: m.createAt),
+                                MPMemoryDetailPageHelper.navigateToDetailPage(context, m.id, m.type, createAt: m.createAt),
                           ),
                           const SizedBox(height: 16),
                           _InsightsCard(
