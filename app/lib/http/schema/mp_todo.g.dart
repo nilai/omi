@@ -24,7 +24,7 @@ MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
     MPCreateTodoRequest(
       title: json['title'] as String,
       priority: json['priority'] as String,
-      deadline: json['deadline'] as String,
+      deadline: json['deadline'] as int,
     );
 
 Map<String, dynamic> _$MPCreateTodoRequestToJson(

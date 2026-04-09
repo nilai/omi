@@ -48,7 +48,7 @@ class MPCreateTodoRequest {
   final String priority;
 
   @JsonKey(name: 'deadline')
-  final String deadline;
+  final int? deadline;
 
   MPCreateTodoRequest({
     required this.title,

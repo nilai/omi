@@ -592,9 +592,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                   await MPTodoManager().createTodo(
                                 title: titleTrim,
                                 priority: MPTodoUtils.mapPriorityToApi(_priority),
-                                deadline: _deadlineUnixSec != null
-                                    ? '${_deadlineUnixSec!}'
-                                    : '',
+                                deadline: _deadlineUnixSec,
                               );
                               if (!context.mounted) {
                                 return;
