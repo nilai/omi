@@ -57,7 +57,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
 
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
-  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  late FlutterSoundRecorder _recorder;
 
   AnimationController? _waveController;
 
@@ -71,6 +71,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
   @override
   void initState() {
     super.initState();
+    _recorder = FlutterSoundRecorder();
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),

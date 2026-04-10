@@ -61,7 +61,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
-  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  late FlutterSoundRecorder _recorder;
 
   MPTodoVoiceInputMode _mode = MPTodoVoiceInputMode.text;
   bool _busy = false;
@@ -76,6 +76,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     super.initState();
     _controller = TextEditingController(text: widget.initialText);
     _focusNode = FocusNode();
+    _recorder = FlutterSoundRecorder();
     _waveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
