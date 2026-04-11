@@ -168,13 +168,12 @@ class MPMemoryCard extends StatelessWidget {
         children: [
           if (showUnreadBadge)
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Expanded(
                   child: Text(
                     data.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
                     style: OmiTextStyle.create(
                       fontSize: 16,
                       fontWeight: OmiFontWeight.medium,
@@ -184,7 +183,10 @@ class MPMemoryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _Badge(count: data.badgeCount!),
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _Badge(count: data.badgeCount!),
+                ),
               ],
             )
           else
@@ -197,7 +199,7 @@ class MPMemoryCard extends StatelessWidget {
                 height: 1.2,
               ),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           if (_showBadgeAndStatus && data.statusLabel != null) ...[
             Row(
               children: [
@@ -221,7 +223,7 @@ class MPMemoryCard extends StatelessWidget {
               data.timeLabel,
               style: OmiTextStyle.create(fontSize: 12, color: secondTextColor, fontWeight: OmiFontWeight.regular),
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Text(
             data.preview,
             maxLines: 2,
