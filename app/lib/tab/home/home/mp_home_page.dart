@@ -368,7 +368,7 @@ class _MPHomeHeroEmptyCard extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: OmiFontSize.t8_17,
-              fontWeight: FontWeight.w600,
+              fontWeight: OmiFontWeight.bold,
               height: 1.25,
               color: omiMainBodyText,
             ),
@@ -545,10 +545,17 @@ class _OptionTile extends StatelessWidget {
                 children: <Widget>[
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Color(0xFF1C1C1E)),
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t8_17,
+                      fontWeight: OmiFontWeight.bold,
+                      color: omiMainBodyText,
+                    ),
                   ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF8E8E93))),
+                  Text(
+                    subtitle,
+                    style: TextStyle(fontSize: OmiFontSize.t4_13, color: omiAuxiliaryText),
+                  ),
                 ],
               ),
             ),
@@ -590,7 +597,7 @@ class _TodayFocusCard extends StatelessWidget {
                   'Today\'s Focus',
                   style: TextStyle(
                     fontSize: OmiFontSize.t8_17,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: OmiFontWeight.bold,
                     color: omiMainBodyText,
                     height: 1.25,
                   ),
@@ -667,7 +674,7 @@ class _TodayFocusCard extends StatelessWidget {
                           fontSize: OmiFontSize.t6_15,
                           height: 1.5,
                           color: omiSecondaryBodyText,
-                          fontWeight: OmiFontWeight.regular,
+                          fontWeight: OmiFontWeight.medium,
                           decoration: todo.completed ? TextDecoration.lineThrough : null,
                         ),
                       ),
@@ -785,7 +792,7 @@ class _RecentMemoryCard extends StatelessWidget {
                   'Recent Memory',
                   style: TextStyle(
                     fontSize: OmiFontSize.t8_17,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: OmiFontWeight.bold,
                     color: omiMainBodyText,
                     height: 1.25,
                   ),
@@ -856,7 +863,7 @@ class _RecentMemoryCard extends StatelessWidget {
                           fontSize: OmiFontSize.t6_15,
                           color: omiSecondaryBodyText,
                           height: 1.5,
-                          fontWeight: OmiFontWeight.regular,
+                          fontWeight: OmiFontWeight.medium,
                         ),
                       ),
                     ),
@@ -943,30 +950,11 @@ class _InsightsCard extends StatelessWidget {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: OmiFontSize.t8_17,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: OmiFontWeight.bold,
                                         color: omiMainBodyText,
                                         height: 1.25,
                                       ),
                                     ),
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Text(
-                                        'View All',
-                                        style: TextStyle(
-                                          color: omiAuxiliaryText.withValues(alpha: 0.5),
-                                          fontSize: OmiFontSize.t5_14,
-                                          fontWeight: OmiFontWeight.medium,
-                                          height: 1.1,
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.chevron_right,
-                                        size: 16,
-                                        color: omiAuxiliaryText.withValues(alpha: 0.5),
-                                      ),
-                                    ],
                                   ),
                                 ],
                               ),
@@ -979,7 +967,7 @@ class _InsightsCard extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: OmiFontSize.t5_14,
                                     color: omiAuxiliaryText,
-                                    fontWeight: OmiFontWeight.regular,
+                                    fontWeight: OmiFontWeight.medium,
                                     height: 1.35,
                                   ),
                                 ),
@@ -998,8 +986,8 @@ class _InsightsCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: OmiFontSize.t5_14,
                           height: 1.4,
-                          color: omiAuxiliaryText,
-                          fontWeight: OmiFontWeight.regular,
+                          color: omiMainBodyText,
+                          fontWeight: OmiFontWeight.medium,
                         ),
                       )
                     else
@@ -1026,7 +1014,11 @@ class _InsightsCard extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Text(
                       '${insightOverview.newInsightCount}',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t2_11,
+                        fontWeight: OmiFontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
