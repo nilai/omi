@@ -1,5 +1,30 @@
 import 'dart:ui';
 
+// ---------------------------------------------------------------------------
+// 常用色值（设计规范）
+// ---------------------------------------------------------------------------
+
+/// 主文本色（深黑） `#1c1c1e`
+const Color omiMainBodyText = Color(0xFF1C1C1E);
+
+/// 次要文本色（中灰） `#3c3c43`
+const Color omiSecondaryBodyText = Color(0xFF3C3C43);
+
+/// 辅助文本色（浅灰） `#8e8e93`
+const Color omiAuxiliaryText = Color(0xFF8E8E93);
+
+/// 白色文本 `#ffffff`
+const Color omiWhiteText = Color(0xFFFFFFFF);
+
+/// 强调色-绿色 `#059669`
+const Color omiEmphasisGreen = Color(0xFF059669);
+
+/// 强调色-橙色 `#d97706`
+const Color omiEmphasisOrange = Color(0xFFD97706);
+
+/// 强调色-蓝色 `#007aff`
+const Color omiEmphasisBlue = Color(0xFF007AFF);
+
 ///主标题文本颜色
  const Color mainTextColor = Color(0xFF1A1A1A);
 ///次标题文本颜色
