@@ -53,6 +53,14 @@ class MPDateUtils {
     return '$when · $time';
   }
 
+  static String formatDeadlineLineText(int? deadline) {
+    final DateTime? dt = dateTimeFromUnixEpoch(deadline);
+    if (dt == null) {
+      return '';
+    }
+    return DateFormat('yyyy-MM-dd HH:mm').format(dt);
+  }
+
   /// 相对过去时间（英文）：同一天为 `Xm ago` / `Xh ago`，上一日历日为 `Yesterday`，
   /// 2–6 日前为 `Xd ago`，满 7 日及以上为 `weekly`。
   static String formatRelativeTimeAgo(int? raw) {
