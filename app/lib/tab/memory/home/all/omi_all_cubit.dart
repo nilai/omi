@@ -339,9 +339,17 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   }
 }
 
+/// [MPMemoryStruct.unreadItemCnt] 后端约定主要对 MEMORY_FEED 有意义；为 `null` 或 `<0` 视为 0。
+int _unreadItemCount(MPMemoryStruct m) {
+  final int? u = m.unreadItemCnt;
+  if (u == null || u < 0) {
+    return 0;
+  }
+  return u;
+}
+
 /// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
-  print('----------------memory struct to entry: ${m.toJson()}');
   switch (m.type ?? MPMemoryType.onlyRecord) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
@@ -356,35 +364,43 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         ),
       );
     case MPMemoryType.summary:
+      final int unread = _unreadItemCount(m);
+      final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
-        id: m.id ??  '',
+        id: m.id ?? '',
         type: m.type ?? MPMemoryType.summary,
         conversationKind: MPMemoryConversationKind.summary,
-        variant: MPMemoryCardVariant.newUpdates,
+        variant: hasUnread
+            ? MPMemoryCardVariant.newUpdates
+            : MPMemoryCardVariant.standard,
         data: MPMemoryCardData(
           showActivity: false,
           title: m.title ?? '',
           timeLabel: _shortTimeLabel(m.createAt ?? 0),
           createAt: m.createAt ?? 0,
           preview: m.content ?? '',
-          badgeCount: 0,
-          statusLabel: null,
+          badgeCount: hasUnread ? unread : null,
+          statusLabel: hasUnread ? 'New updates' : null,
         ),
       );
     case MPMemoryType.memoryFeed:
+      final int unread = _unreadItemCount(m);
+      final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
         id: m.id ?? '',
         type: m.type ?? MPMemoryType.memoryFeed,
         conversationKind: MPMemoryConversationKind.memoryFeed,
-        variant: MPMemoryCardVariant.newUpdates,
+        variant: hasUnread
+            ? MPMemoryCardVariant.newUpdates
+            : MPMemoryCardVariant.standard,
         data: MPMemoryCardData(
           showActivity: true,
           title: m.title ?? '',
           timeLabel: _shortTimeLabel(m.createAt ?? 0),
           createAt: m.createAt ?? 0,
           preview: m.content ?? '',
-          badgeCount: 0,
-          statusLabel: null,
+          badgeCount: hasUnread ? unread : null,
+          statusLabel: hasUnread ? 'New updates' : null,
         ),
       );
     case MPMemoryType.memoList:
