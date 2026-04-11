@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -231,13 +232,20 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
     try {
       if (_playingLocalPath != localPath) {
-        await _audioPlayer.setFilePath(localPath);
+        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
+          _audioPlayer,
+          localPath,
+        );
         _playingLocalPath = localPath;
+      }
+      if (_audioPlayer.processingState == ProcessingState.completed) {
+        await _audioPlayer.seek(Duration.zero);
       }
       await _audioPlayer.play();
       _isAudioPlaying = true;
       return true;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('OmiMemoryDetailCubit.onPlayTap: $e\n$st');
       MPToastUtils.showMessage('音频播放失败');
       return false;
     }
@@ -269,19 +277,30 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     required String recordFile,
     required String recordUri,
   }) {
-    final Uri? recordFileUri = Uri.tryParse(recordFile);
-    if (recordFileUri != null &&
-        recordFileUri.hasScheme &&
-        recordFileUri.host.isNotEmpty) {
-      return recordFile;
+    final String rf = recordFile.trim();
+    final String ru = recordUri.trim();
+
+    if (rf.isNotEmpty) {
+      final Uri? recordFileUri = Uri.tryParse(rf);
+      if (recordFileUri != null &&
+          recordFileUri.hasScheme &&
+          recordFileUri.host.isNotEmpty) {
+        return rf;
+      }
     }
-    final Uri? recordUriParsed = Uri.tryParse(recordUri);
+
+    final Uri? recordUriParsed = Uri.tryParse(ru);
     if (recordUriParsed != null &&
         recordUriParsed.hasScheme &&
         recordUriParsed.host.isNotEmpty) {
-      return recordFileUri == null
-          ? recordUri
-          : recordUriParsed.resolveUri(recordFileUri).toString();
+      if (rf.isEmpty) {
+        return ru;
+      }
+      final Uri? ref = Uri.tryParse(rf);
+      if (ref == null) {
+        return ru;
+      }
+      return recordUriParsed.resolveUri(ref).toString();
     }
     return null;
   }
@@ -293,8 +312,11 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }) async {
     try {
       final Uri uri = Uri.parse(downloadUrl);
-      final http.Response response = await http.get(uri);
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      final http.Response? response =
+          await MPAudioLocalRecordsUtil.httpGetAudioDownloadUrl(downloadUrl);
+      if (response == null ||
+          response.statusCode < 200 ||
+          response.statusCode >= 300) {
         return null;
       }
       final String audioDirPath =
@@ -318,11 +340,16 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       );
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes, flush: true);
+      final String? playablePath =
+          await MPAudioLocalRecordsUtil.adjustAudioFileIfWrongExtension(filePath);
+      if (playablePath == null) {
+        return null;
+      }
 
       await MPAudioLocalRecordsUtil.instance.load();
       await MPAudioLocalRecordsUtil.instance.add(
         MPAudioLocalRecord(
-          path: filePath,
+          path: playablePath,
           fileName: fileId,
           createAt: DateTime.now().millisecondsSinceEpoch,
           duration: _parseDurationSeconds(durationLabel),
@@ -330,7 +357,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           fileId: fileId,
         ),
       );
-      return filePath;
+      return playablePath;
     } catch (_) {
       return null;
     }
@@ -833,6 +860,17 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
   );
 }
 
+/// 依次取第一个非空（trim 后）字符串；用于录音路径：`summary` 与 `only_record` 可能分开展示字段。
+String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
+  for (final String? c in candidates) {
+    final String t = (c ?? '').trim();
+    if (t.isNotEmpty) {
+      return t;
+    }
+  }
+  return null;
+}
+
 /// 详情映射结果：主卡片数据 + 分页加载 Feed 所需的游标与 unknown insight 计数。
 ({
   MPMemoryDetailCardData data,
@@ -897,13 +935,23 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
   final String metaLine =
       '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
 
+  final MPOnlyRecordMemoryStruct? only = m.onlyRecordContent;
+  final String? recordFileForPlay = _firstNonEmptyDetailString(<String?>[
+    sm?.recordUrl,
+    only?.recordFile,
+  ]);
+  final String? recordUriForPlay = _firstNonEmptyDetailString(<String?>[
+    sm?.recordUri,
+    only?.recordUri,
+  ]);
+
   final MPMemoryDetailCardData data = MPMemoryDetailCardData(
     title: title,
     metaLine: metaLine,
     audioTimeStart: '0:00',
     audioTimeEnd: durationLabel,
-    recordFile: sm?.recordUrl,
-    recordUri: sm?.recordUri,
+    recordFile: recordFileForPlay,
+    recordUri: recordUriForPlay,
     speakerLabels: speakerLabels,
     initialSegment: MPMemoryDetailSegment.transcript,
     overviewText: overviewText,

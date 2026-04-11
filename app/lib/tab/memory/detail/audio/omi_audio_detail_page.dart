@@ -184,7 +184,7 @@ class _OmiAudioDetailView extends StatelessWidget {
                             Row(
                               children: <Widget>[
                                 Text(
-                                  d.leftTime,
+                                  state.elapsedLabel,
                                   style: OmiTextStyle.create(
                                     fontSize: OmiFontSize.t6_15,
                                     fontWeight: OmiFontWeight.medium,
@@ -211,6 +211,7 @@ class _OmiAudioDetailView extends StatelessWidget {
                             Center(
                               child: _PlayButton(
                                 isPlaying: state.isPlaying,
+                                isLoading: state.playPreparing,
                                 onTap: () {
                                   context
                                       .read<MPAudioDetailCubit>()
@@ -422,9 +423,14 @@ class _AudioWaveformState extends State<_AudioWaveform>
 }
 
 class _PlayButton extends StatelessWidget {
-  const _PlayButton({required this.isPlaying, this.onTap});
+  const _PlayButton({
+    required this.isPlaying,
+    required this.isLoading,
+    this.onTap,
+  });
 
   final bool isPlaying;
+  final bool isLoading;
   final VoidCallback? onTap;
 
   @override
@@ -435,7 +441,7 @@ class _PlayButton extends StatelessWidget {
       elevation: 0,
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         child: Container(
           width: 60,
           height: 60,
@@ -451,13 +457,22 @@ class _PlayButton extends StatelessWidget {
             ],
           ),
           child: Center(
-            child: OmiImageLoader.localImg(
-              isPlaying ? Assets.omiPause : Assets.omiPlay,
-              width: 26,
-              height: 26,
-              color: mainTextColor,
-              fit: BoxFit.contain,
-            ),
+            child: isLoading
+                ? SizedBox(
+                    width: 26,
+                    height: 26,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: mainTextColor,
+                    ),
+                  )
+                : OmiImageLoader.localImg(
+                    isPlaying ? Assets.omiPause : Assets.omiPlay,
+                    width: 26,
+                    height: 26,
+                    color: mainTextColor,
+                    fit: BoxFit.contain,
+                  ),
           ),
         ),
       ),

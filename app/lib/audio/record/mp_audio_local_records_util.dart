@@ -1,7 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' show min;
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart';
+import 'package:memo_pin/env/env.dart';
+import 'package:memo_pin/http/shared.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -108,6 +113,159 @@ class MPAudioLocalRecordsUtil {
     final String dir = p.join(docs.path, kLocalStorageDirName);
     await Directory(dir).create(recursive: true);
     return dir;
+  }
+
+  /// 拉取远端录音字节：落在 [Env.apiBaseUrl] 下的地址走 [makeRawApiCall]（带登录态），否则裸 `GET`。
+  static Future<http.Response?> httpGetAudioDownloadUrl(String downloadUrl) async {
+    try {
+      final String trimmed = downloadUrl.trim();
+      if (trimmed.isEmpty) {
+        return null;
+      }
+      final String? base = Env.apiBaseUrl;
+      if (base != null &&
+          base.isNotEmpty &&
+          trimmed.startsWith(base)) {
+        final http.StreamedResponse streamed = await makeRawApiCall(
+          url: trimmed,
+          method: 'GET',
+          headers: const <String, String>{},
+        );
+        final List<int> bytes = await streamed.stream.toBytes();
+        return http.Response.bytes(
+          bytes,
+          streamed.statusCode,
+          headers: streamed.headers,
+        );
+      }
+      return await http.get(Uri.parse(trimmed));
+    } catch (e, st) {
+      debugPrint('httpGetAudioDownloadUrl failed: $e\n$st');
+      return null;
+    }
+  }
+
+  static bool _bytesLookLikeJsonOrHtml(Uint8List head) {
+    if (head.isEmpty) {
+      return false;
+    }
+    final int b0 = head[0];
+    if (b0 == 0x7b || b0 == 0x5b) {
+      return true;
+    }
+    if (head.length >= 3 && b0 == 0xef && head[1] == 0xbb && head[2] == 0xbf) {
+      return head.length > 3 && (head[3] == 0x7b || head[3] == 0x5b);
+    }
+    if (b0 == 0x3c) {
+      return true;
+    }
+    return false;
+  }
+
+  static bool _bytesAreMp4Ftyp(Uint8List head) {
+    return head.length >= 8 &&
+        head[4] == 0x66 &&
+        head[5] == 0x74 &&
+        head[6] == 0x79 &&
+        head[7] == 0x70;
+  }
+
+  static bool _bytesAreAdtsAac(Uint8List head) {
+    return head.length >= 2 &&
+        (head[0] & 0xff) == 0xff &&
+        (head[1] & 0xf0) == 0xf0;
+  }
+
+  /// 根据文件头修正扩展名：裸 ADTS 常被误存为 `.m4a`，iOS 会报 **-11829 Cannot Open**。
+  /// 返回新路径（可能与入参相同）；明显为 JSON/HTML 时删文件并返回 `null`。
+  static Future<String?> adjustAudioFileIfWrongExtension(String savedPath) async {
+    final File f = File(p.normalize(savedPath.trim()));
+    if (!await f.exists()) {
+      return null;
+    }
+    final int len = await f.length();
+    if (len < 2) {
+      try {
+        await f.delete();
+      } catch (_) {}
+      return null;
+    }
+    RandomAccessFile? raf;
+    try {
+      raf = await f.open(mode: FileMode.read);
+      final int n = min(64, len);
+      final Uint8List head = await raf.read(n);
+      if (_bytesLookLikeJsonOrHtml(head)) {
+        debugPrint('adjustAudioFileIfWrongExtension: payload is not audio');
+        await raf.close();
+        raf = null;
+        try {
+          await f.delete();
+        } catch (_) {}
+        return null;
+      }
+      if (_bytesAreMp4Ftyp(head)) {
+        return f.path;
+      }
+      if (_bytesAreAdtsAac(head)) {
+        final String ext = p.extension(f.path).toLowerCase();
+        if (ext == '.m4a' || ext == '.mp4') {
+          await raf.close();
+          raf = null;
+          String newPath = p.join(
+            p.dirname(f.path),
+            '${p.basenameWithoutExtension(f.path)}.aac',
+          );
+          if (File(newPath).existsSync()) {
+            newPath = p.join(
+              p.dirname(f.path),
+              '${p.basenameWithoutExtension(f.path)}_${DateTime.now().millisecondsSinceEpoch}.aac',
+            );
+          }
+          await f.rename(newPath);
+          return newPath;
+        }
+        return f.path;
+      }
+      return f.path;
+    } finally {
+      if (raf != null) {
+        try {
+          await raf.close();
+        } catch (_) {}
+      }
+    }
+  }
+
+  /// 将已落盘的本地文件交给 [just_audio]：先 [AudioPlayer.stop] 再 [setAudioSource]，
+  /// 使用 [Uri.file]（iOS 上比裸 [setFilePath] 换源更稳）。
+  static Future<void> bindLocalAudioForPlayback(
+    AudioPlayer player,
+    String localPath,
+  ) async {
+    final String normalized = p.normalize(localPath.trim());
+    final String? fixed = await adjustAudioFileIfWrongExtension(normalized);
+    if (fixed == null) {
+      throw StateError('Invalid or non-audio file: $normalized');
+    }
+    if (fixed != normalized) {
+      await instance.migrateRecordPathIfExists(normalized, fixed);
+    }
+    final File f = File(fixed);
+    if (!await f.exists()) {
+      throw StateError('Local audio not found: $fixed');
+    }
+    if (await f.length() <= 0) {
+      throw StateError('Local audio is empty: $fixed');
+    }
+    try {
+      await player.stop();
+    } catch (_) {}
+    final Uri uri = Uri.file(f.absolute.path);
+    await player.setAudioSource(
+      AudioSource.uri(uri),
+      preload: true,
+    );
   }
 
   /// 将临时录音复制到 [ensureLocalStorageDirectoryPath] 目录下（与详情下载、索引路径一致）。
@@ -294,6 +452,20 @@ class MPAudioLocalRecordsUtil {
       if (e.fileId == fileId) return e;
     }
     return null;
+  }
+
+  /// 磁盘上文件已从 [oldPath] 改名到 [newPath] 时，同步更新持久化索引（如 `.m4a` → `.aac`）。
+  Future<void> migrateRecordPathIfExists(String oldPath, String newPath) async {
+    if (oldPath.isEmpty || newPath.isEmpty || oldPath == newPath) {
+      return;
+    }
+    await load();
+    final int i = _records.indexWhere((MPAudioLocalRecord e) => e.path == oldPath);
+    if (i < 0) {
+      return;
+    }
+    _records[i] = _records[i].copyWith(path: newPath);
+    await _persist();
   }
 
   /// 新增或同路径覆盖后写入。
