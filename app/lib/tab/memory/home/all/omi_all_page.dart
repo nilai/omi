@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_page.dart';
@@ -9,7 +12,6 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import '../../../../audio/record/mp_audio_record_popup.dart';
 import '../../../../generated/assets.dart';
 import '../../../../http/schema/mp_data_model.dart';
-import '../../detail/audio/omi_audio_detail_page.dart';
 import '../../detail/mp_memory_detail_helper.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -36,14 +38,24 @@ class _OmiAllView extends StatefulWidget {
 class _OmiAllViewState extends State<_OmiAllView> {
   final ScrollController _scrollController = ScrollController();
 
+  StreamSubscription<void>? _memoryListRefreshSub;
+
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    _memoryListRefreshSub = MPMemoryNotification.listenMemoryListRefresh(() {
+      if (!mounted) {
+        return;
+      }
+      context.read<OmiAllCubit>().load();
+    });
   }
 
   @override
   void dispose() {
+    _memoryListRefreshSub?.cancel();
+    _memoryListRefreshSub = null;
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();

@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -282,6 +283,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         if (!isClosed) {
           emit(state.copyWith(clearAudioStatus: true));
           loadData();
+          MPMemoryNotification.notifyMemoryListRefresh();
         }
       });
     }
