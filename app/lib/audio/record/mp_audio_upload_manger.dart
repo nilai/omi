@@ -127,7 +127,7 @@ class MPAudioUploadManager {
     required File localFile,
     required int durationSec,
     required int createAt,
-    required bool rightNowTranscribe,
+    bool rightNowTranscribe = false,
     String source = 'mp',
     int recordMemoAt = 0,
     String? templateId,

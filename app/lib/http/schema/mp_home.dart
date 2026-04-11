@@ -1,37 +1,7 @@
+import 'package:memo_pin/http/schema/mp_insight.dart';
+
 import 'mp_data_model.dart';
 
-/// 首页 Insight 概览区块（后端 `HomeInsightOverviewStruct`）。
-class MPHomeInsightOverviewStruct {
-  MPHomeInsightOverviewStruct({
-    required this.title,
-    required this.subTitle,
-    required this.newInsightCount,
-    required this.content,
-  });
-
-  final String title;
-  final String subTitle;
-  final int newInsightCount;
-  final String content;
-
-  /// 从 JSON 解析。
-  factory MPHomeInsightOverviewStruct.fromJson(Map<String, dynamic> json) {
-    return MPHomeInsightOverviewStruct(
-      title: json['title'] as String? ?? '',
-      subTitle: json['sub_title'] as String? ?? '',
-      newInsightCount: (json['new_insight_count'] as num?)?.toInt() ?? 0,
-      content: json['content'] as String? ?? '',
-    );
-  }
-
-  /// 序列化为 JSON。
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'title': title,
-        'sub_title': subTitle,
-        'new_insight_count': newInsightCount,
-        'content': content,
-      };
-}
 
 /// 获取首页聚合数据请求（后端 `GetHomeOverviewRequest`，当前无字段）。
 class MPGetHomeOverviewRequest {

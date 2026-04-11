@@ -8,8 +8,10 @@ import 'package:memo_pin/common/mp_memory_notification.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
+import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_home.dart';
+import '../../../http/schema/mp_insight.dart';
 
 /// 首页音频条状态类型（对齐 react `AudioStatusBar`）
 enum MPHomeAudioStatusType { recording, syncing, importing }
@@ -205,7 +207,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   Future<void> _tickInsights() async {
     if (!isClosed) {
-      final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
+      final MPGetHomeInsightOverviewResponse? response = await getHomeInsightOverview(MPGetHomeInsightOverviewRequest());
       if (response != null && response.baseResp.code == 0) {
         final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
         bool shouldUpdate = false;
@@ -224,6 +226,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         if (!isClosed && shouldUpdate) {
           emit(state.copyWith(insightOverview: insightOverview));
         }
+
       }
     }
   }

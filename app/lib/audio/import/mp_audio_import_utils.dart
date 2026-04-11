@@ -93,7 +93,6 @@ class MPAudioImportUtils {
       localFile: file,
       durationSec: durationSec,
       createAt: createAt,
-      rightNowTranscribe: true,
       source: 'MobilePhone',
     );
   }
