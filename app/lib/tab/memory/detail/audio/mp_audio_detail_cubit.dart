@@ -275,7 +275,12 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     final MPAudioDetailData? cached = _loadCachedAudioDetailIfAllowed();
     final bool hasCached = cached != null;
     if (hasCached) {
-      emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: cached));
+      final MPAudioDetailState beforeCache = state;
+      if (beforeCache.phase == MPAudioDetailPhase.loaded) {
+        emit(beforeCache.copyWith(data: cached));
+      } else {
+        emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: cached));
+      }
     } else {
       emit(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
     }
@@ -295,7 +300,17 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         OmiCacheManager().putMemoryDetail(memoryId, m.toJson());
       }
       final MPAudioDetailData data = _mapOnlyRecordToAudioData(m, only);
-      emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: data));
+      if (isClosed) {
+        return;
+      }
+      // 勿用「全新 MPAudioDetailState」覆盖：用户在等接口时若已开始播，
+      // 会把 isPlaying/progress/elapsedLabel 打回默认，出现「只有声音在播、时间和波纹不动」。
+      final MPAudioDetailState cur = state;
+      if (cur.phase == MPAudioDetailPhase.loaded) {
+        emit(cur.copyWith(data: data));
+      } else {
+        emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: data));
+      }
     } catch (e) {
       if (!hasCached) {
         emit(
@@ -352,7 +367,24 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (_audioPlayer.processingState == ProcessingState.completed) {
         await _audioPlayer.seek(Duration.zero);
       }
-      await _audioPlayer.play();
+      // 首次换源后 [play] 返回的 Future 在部分机型上会拖到「整段播完」才完成，
+      // 若 await 则 emit / 定时器要等播完才执行，表现为时间与波纹全程不动。
+      unawaited(
+        _audioPlayer.play().catchError((Object e, StackTrace st) {
+          if (isClosed) {
+            return;
+          }
+          debugPrint('MPAudioDetailCubit.onPlayTap play future: $e\n$st');
+          _stopPlaybackUiTimer();
+          MPToastUtils.showMessage('音频播放失败');
+          emit(
+            state.copyWith(
+              isPlaying: false,
+              playPreparing: false,
+            ),
+          );
+        }),
+      );
 
       if (kDebugMode) {
         debugPrint(
@@ -386,7 +418,8 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         emit(state.copyWith(playPreparing: false));
       }
     }
-    if (!isClosed && shouldRunPlaybackUi && state.isPlaying) {
+    // 勿依赖此处的 state.isPlaying：emit 后个别时机下读到的 state 可能尚未更新，会导致定时器未启动。
+    if (!isClosed && shouldRunPlaybackUi) {
       _startPlaybackUiTimer();
     }
   }

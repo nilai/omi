@@ -346,6 +346,21 @@ class _AudioWaveformState extends State<_AudioWaveform>
   static const int _n = 86;
   static const double _h = 74;
 
+  void _ensurePulseRepeating() {
+    if (!widget.isPlaying) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.isPlaying) {
+        return;
+      }
+      // 首帧或部分机型上，在 initState / didUpdateWidget 同步调 repeat 时 Ticker 未就绪，动画不跑。
+      if (!_pulse.isAnimating) {
+        _pulse.repeat();
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -354,19 +369,22 @@ class _AudioWaveformState extends State<_AudioWaveform>
       duration: const Duration(milliseconds: 1200),
     );
     if (widget.isPlaying) {
-      _pulse.repeat();
+      _ensurePulseRepeating();
     }
   }
 
   @override
   void didUpdateWidget(covariant _AudioWaveform oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying != oldWidget.isPlaying) {
-      if (widget.isPlaying) {
-        _pulse.repeat();
-      } else {
+    if (!widget.isPlaying) {
+      if (oldWidget.isPlaying) {
         _pulse.stop();
       }
+      return;
+    }
+    // 正在播：除 false→true 外，若应播但未在动画（漏掉 didUpdate），补一次 repeat。
+    if (!oldWidget.isPlaying || !_pulse.isAnimating) {
+      _ensurePulseRepeating();
     }
   }
 
