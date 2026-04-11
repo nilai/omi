@@ -175,6 +175,60 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 与 OmiAll / MemorySearch 等页的 [retry] 一致
   Future<void> retry() => initData();
 
+  /// 在 [loaded] / [empty] 时重新拉取分组待办（供弹层关闭后同步等场景；失败 Toast）。
+  Future<bool> refreshGroupedTodoLists() => _refreshTodoListsFromServer();
+
+  /// 再次拉取分组待办并替换当前状态（不改变全屏 loading / error 页）。
+  /// 用于添加/完成/删除/更新等成功后与服务端对齐；失败仅 Toast，返回 `false`。
+  Future<bool> _refreshTodoListsFromServer() async {
+    if (state.phase != MPTodayFocusPhase.loaded &&
+        state.phase != MPTodayFocusPhase.empty) {
+      return false;
+    }
+    final List<MPTodayFocusAISuggestionItem> keepAi = state.aiFocusSuggestions;
+    final int keepAiIdx = state.aiFocusSuggestionIndex;
+    try {
+      final GetTodoGroupedListResponse? raw = await getTodoList(
+        GetTodoGroupedListRequest(pageSize: 200, pageno: 1),
+      );
+      if (raw == null) {
+        MPToastUtils.showMessage('刷新待办失败，请稍后重试');
+        return false;
+      }
+      if (raw.baseResp.code != 0) {
+        MPToastUtils.showMessage(
+          raw.baseResp.message.isEmpty ? '刷新待办失败' : raw.baseResp.message,
+        );
+        return false;
+      }
+      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw)
+          .copyWith(
+            aiFocusSuggestions: keepAi,
+            aiFocusSuggestionIndex: keepAiIdx,
+          );
+      if (!loaded.hasRenderableContent) {
+        emit(
+          loaded.copyWith(
+            phase: MPTodayFocusPhase.empty,
+            clearErrorMessage: true,
+          ),
+        );
+      } else {
+        emit(
+          loaded.copyWith(
+            phase: MPTodayFocusPhase.loaded,
+            clearErrorMessage: true,
+          ),
+        );
+      }
+      MPHomeNotification.notifyHomeListRefresh();
+      return true;
+    } catch (_) {
+      MPToastUtils.showMessage('刷新待办失败，请稍后重试');
+      return false;
+    }
+  }
+
   /// `focus_items` → 顶部 Today's Focus；`sections` → 下方分组（按 [TodoListSectionType] 填入对应列表）。
   static MPTodayFocusState _stateFromGroupedListResponse(
     GetTodoGroupedListResponse resp,
@@ -301,13 +355,14 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   }
 
   /// 文本走 [analyzeMemoText]，语音（已上传 [MPTodoVoiceInputResult.recordUrl]）走 [analyzeMemoRecord]。
-  Future<void> addTodoFromAnalyzedInput(MPTodoVoiceInputResult r) async {
-    if (!_isInteractive) return;
+  /// 返回 `true` 表示分析成功且 [getTodoList] 刷新成功；`false` 表示失败或刷新失败（可保留输入框内容）。
+  Future<bool> addTodoFromAnalyzedInput(MPTodoVoiceInputResult r) async {
+    if (!_isInteractive) return false;
     final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
     if (!r.fromVoice) {
       final String t = r.text.trim();
-      if (t.isEmpty) return;
+      if (t.isEmpty) return false;
       final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
         MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
       );
@@ -315,19 +370,15 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         MPToastUtils.showMessage(
           response?.baseResp.message ?? '分析失败，请稍后重试',
         );
-        return;
+        return false;
       }
-      final String title = response.originalText.trim().isNotEmpty
-          ? response.originalText.trim()
-          : t;
-      _insertTodayTodo(title);
-      return;
+      return _refreshTodoListsFromServer();
     }
 
     final String? url = r.recordUrl?.trim();
     if (url == null || url.isEmpty) {
       MPToastUtils.showMessage('录音无效');
-      return;
+      return false;
     }
     final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
       MPAnalyzeMemoRecordRequest(recordUrl: url, createAt: createAt),
@@ -336,14 +387,14 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage(
         response?.baseResp.message ?? '分析失败，请稍后重试',
       );
-      return;
+      return false;
     }
     final String title = response.originalText.trim();
     if (title.isEmpty) {
       MPToastUtils.showMessage('未识别到有效内容');
-      return;
+      return false;
     }
-    _insertTodayTodo(title);
+    return _refreshTodoListsFromServer();
   }
 
   void _insertTodayTodo(String title) {
@@ -405,41 +456,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!ok || !_isInteractive) {
       return;
     }
-
-    final List<MPTodayFocusTodoRowData> latestSrc = List<MPTodayFocusTodoRowData>.of(
-      _itemsForSection(state, section),
-    );
-    if (index < 0 || index >= latestSrc.length) return;
-    final MPTodayFocusTodoRowData row = latestSrc.removeAt(index);
-    final MPTodayFocusTodoRowData completedRow = MPTodayFocusTodoRowData(
-      todoId: row.todoId,
-      status: 2,
-      title: row.title,
-      timeLabel: row.timeLabel,
-      isChecked: true,
-      highlighted: false,
-    );
-    final List<MPTodayFocusTodoRowData> nextCompleted =
-        List<MPTodayFocusTodoRowData>.of(state.completedItems)
-          ..insert(0, completedRow);
-
-    switch (section) {
-      case MPTodayFocusTodoSection.today:
-        emit(state.copyWith(todayItems: latestSrc, completedItems: nextCompleted));
-      case MPTodayFocusTodoSection.upcomingWithinSevenDays:
-        emit(
-          state.copyWith(
-            upcomingItems: latestSrc,
-            completedItems: nextCompleted,
-          ),
-        );
-      case MPTodayFocusTodoSection.futureBeyondSevenDays:
-        emit(state.copyWith(futureItems: latestSrc, completedItems: nextCompleted));
-      case MPTodayFocusTodoSection.overdue:
-        emit(state.copyWith(overdueItems: latestSrc, completedItems: nextCompleted));
-      case MPTodayFocusTodoSection.completed:
-        return;
-    }
+    await _refreshTodoListsFromServer();
   }
 
   Future<bool> restoreCompletedAt(int index) async {
@@ -465,29 +482,28 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!ok) {
       return false;
     }
-    await initData();
-    return true;
+    return _refreshTodoListsFromServer();
   }
 
   Future<bool> deleteCompletedAt(int index) async {
     if (!_isInteractive) {
       return false;
     }
-    final List<MPTodayFocusTodoRowData> completed =
-        List<MPTodayFocusTodoRowData>.of(state.completedItems);
-    if (index < 0 || index >= completed.length) {
+    if (index < 0 || index >= state.completedItems.length) {
       return false;
     }
-    final String todoId = completed[index].todoId.trim();
-    if (todoId.isNotEmpty) {
-      final bool ok = await MPTodoManager().deleteTodo(todoId);
-      if (!ok) {
-        return false;
-      }
+    final String todoId = state.completedItems[index].todoId.trim();
+    if (todoId.isEmpty) {
+      final List<MPTodayFocusTodoRowData> next =
+          List<MPTodayFocusTodoRowData>.of(state.completedItems)..removeAt(index);
+      emit(state.copyWith(completedItems: next));
+      return true;
     }
-    completed.removeAt(index);
-    emit(state.copyWith(completedItems: completed));
-    return true;
+    final bool ok = await MPTodoManager().deleteTodo(todoId);
+    if (!ok) {
+      return false;
+    }
+    return _refreshTodoListsFromServer();
   }
 
   void clearOverdue() {
@@ -513,18 +529,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (!ok || !_isInteractive) {
       return false;
     }
-    MPHomeNotification.notifyHomeListRefresh();
-    final List<MPTodayFocusCardItem> latest = state.focusCard.items;
-    final int i = latest.indexWhere(
-      (MPTodayFocusCardItem e) => e.todoId.trim() == todoId,
-    );
-    if (i < 0) {
-      return false;
-    }
-    final List<MPTodayFocusCardItem> next =
-        List<MPTodayFocusCardItem>.of(latest)..removeAt(i);
-    emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
-    return true;
+    return _refreshTodoListsFromServer();
   }
 
   /// 将当前 AI 推荐加入 Today's Focus；**TODO: 替换为真实加 Focus 接口**。

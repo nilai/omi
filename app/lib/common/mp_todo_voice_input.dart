@@ -6,6 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
+
+import '../http/api/mp_chat.dart';
+import '../http/schema/mp_chat.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -14,6 +17,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 enum MPTodoVoiceInputMode { text, recording, transcribing }
+
+/// 返回 `true` 表示提交成功，输入框将清空；`false` 表示失败或取消，保留原文。
+typedef MPTodoVoiceInputOnSubmitted =
+    Future<bool> Function(MPTodoVoiceInputResult result);
 
 class MPTodoVoiceInputResult {
   const MPTodoVoiceInputResult({
@@ -24,10 +31,10 @@ class MPTodoVoiceInputResult {
 
   final String text;
 
-  /// `false`：键盘输入；`true`：语音录制并上传后得到 [recordUrl]，由上层走 [analyzeMemoRecord]。
+  /// `false`：键盘输入（含先录音转写再编辑后提交）；`true`：仍由上层按 [recordUrl] 走 [analyzeMemoRecord]（本组件确认录音后已改为先转写再文本提交）。
   final bool fromVoice;
 
-  /// 语音路径下、上传成功后的录音 URL；纯文本时为空。
+  /// 语音路径下、上传成功后的录音 URL；纯文本或先转写再提交时为空。
   final String? recordUrl;
 }
 
@@ -44,7 +51,7 @@ class MPTodoVoiceInput extends StatefulWidget {
 
   final String hintText;
   final String initialText;
-  final ValueChanged<MPTodoVoiceInputResult>? onSubmitted;
+  final MPTodoVoiceInputOnSubmitted? onSubmitted;
   final ValueChanged<String>? onChanged;
   final Duration transcribeDelay;
 
@@ -65,16 +72,29 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   MPTodoVoiceInputMode _mode = MPTodoVoiceInputMode.text;
   bool _busy = false;
+  bool _sending = false;
   bool _recorderOpened = false;
   String? _recordPath;
 
+  /// 与 [_controller] 是否含非空 trim 同步，用于右侧「发送 / 麦克风」切换，避免仅依赖外层 rebuild。
+  bool _hasTrimmedText = false;
+
   late final AnimationController _waveCtrl;
   late final AnimationController _dotsCtrl;
+
+  void _onControllerChanged() {
+    if (!mounted) return;
+    final bool next = _controller.text.trim().isNotEmpty;
+    if (next == _hasTrimmedText) return;
+    setState(() => _hasTrimmedText = next);
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialText);
+    _hasTrimmedText = widget.initialText.trim().isNotEmpty;
+    _controller.addListener(_onControllerChanged);
     _focusNode = FocusNode();
     _recorder = FlutterSoundRecorder();
     _waveCtrl = AnimationController(
@@ -93,6 +113,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
     _focusNode.dispose();
+    _controller.removeListener(_onControllerChanged);
     _controller.dispose();
     super.dispose();
   }
@@ -128,20 +149,36 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     _recordPath = null;
   }
 
-  bool get _hasText => _controller.text.trim().isNotEmpty;
-
   double get _cornerRadius => widget.showOutline ? 12.0 : 16.0;
 
-  void _submitTyped() {
+  Future<void> _submitTyped() async {
+    if (_sending || _busy) return;
     final String t = _controller.text.trim();
     if (t.isEmpty) return;
-    widget.onSubmitted?.call(
-      MPTodoVoiceInputResult(text: t, fromVoice: false),
-    );
+    final MPTodoVoiceInputOnSubmitted? handler = widget.onSubmitted;
+    if (handler == null) return;
+
+    setState(() => _sending = true);
+    _focusNode.unfocus();
+
+    try {
+      final bool ok = await handler(
+        MPTodoVoiceInputResult(text: t, fromVoice: false),
+      );
+      if (!mounted) return;
+      if (ok) {
+        _controller.clear();
+        widget.onChanged?.call('');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+      }
+    }
   }
 
   Future<void> _startRecording() async {
-    if (_busy) return;
+    if (_busy || _sending) return;
     _focusNode.unfocus();
     setState(() => _busy = true);
     try {
@@ -194,7 +231,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   }
 
   Future<void> _confirmRecording() async {
-    if (_busy) return;
+    if (_busy || _sending) return;
     if (_recordPath == null || _recordPath!.isEmpty) {
       MPToastUtils.showMessage('录音文件无效');
       return;
@@ -253,14 +290,15 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     }
 
     final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
-    _dotsCtrl.stop();
 
     if (!mounted) {
+      _dotsCtrl.stop();
       await _stopRecorder(deleteFile: true);
       return;
     }
 
     if (recordUri == null || recordUri.isEmpty) {
+      _dotsCtrl.stop();
       setState(() {
         _busy = false;
         _mode = MPTodoVoiceInputMode.text;
@@ -270,13 +308,43 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       return;
     }
 
-    widget.onSubmitted?.call(
-      MPTodoVoiceInputResult(
-        text: '',
-        fromVoice: true,
-        recordUrl: recordUri,
-      ),
+    final MPTranscriptResponse? transcriptResp = await transcript(
+      MPTranscriptRequest(audioUrl: recordUri),
     );
+    _dotsCtrl.stop();
+
+    if (!mounted) {
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    if (transcriptResp == null || transcriptResp.baseResp.code != 0) {
+      final String msg = transcriptResp?.baseResp.message.isNotEmpty == true
+          ? transcriptResp!.baseResp.message
+          : '语音转文字失败';
+      setState(() {
+        _busy = false;
+        _mode = MPTodoVoiceInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage(msg);
+      return;
+    }
+
+    final String text = transcriptResp.content.trim();
+    if (text.isEmpty) {
+      setState(() {
+        _busy = false;
+        _mode = MPTodoVoiceInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('未识别到文字');
+      return;
+    }
+
+    _controller.text = text;
+    _controller.selection = TextSelection.collapsed(offset: text.length);
+    widget.onChanged?.call(text);
 
     await _stopRecorder(deleteFile: true);
     if (!mounted) return;
@@ -331,8 +399,9 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
+              readOnly: _sending,
               onChanged: widget.onChanged,
-              onSubmitted: (_) => _submitTyped(),
+              onSubmitted: (_) => unawaited(_submitTyped()),
               style: OmiTextStyle.create(
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.medium,
@@ -352,20 +421,38 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
             ),
           ),
           const SizedBox(width: 10),
-          if (_hasText)
-            _circleButton(
-              bg: blueTextColor,
-              onTap: _submitTyped,
-              child: const Icon(
-                Icons.arrow_upward_rounded,
-                size: 20,
-                color: Colors.white,
-              ),
-            )
+          if (_hasTrimmedText)
+            _sending
+                ? Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: blueTextColor,
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white.withValues(alpha: 0.95),
+                      ),
+                    ),
+                  )
+                : _circleButton(
+                    bg: blueTextColor,
+                    onTap: () => unawaited(_submitTyped()),
+                    child: const Icon(
+                      Icons.arrow_upward_rounded,
+                      size: 20,
+                      color: Colors.white,
+                    ),
+                  )
           else
             _circleButton(
               bg: const Color(0xFFEAF7EF),
-              onTap: _startRecording,
+              onTap: _sending ? null : _startRecording,
               child: const Icon(
                 Icons.mic_none_rounded,
                 size: 20,

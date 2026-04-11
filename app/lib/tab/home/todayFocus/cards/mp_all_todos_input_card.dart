@@ -19,7 +19,7 @@ class MPAllTodosInputCard extends StatelessWidget {
   final String headerTitle;
   final String hintText;
   final String initialText;
-  final ValueChanged<MPTodoVoiceInputResult>? onSubmitted;
+  final MPTodoVoiceInputOnSubmitted? onSubmitted;
   final ValueChanged<String>? onChanged;
   final Duration transcribeDelay;
 

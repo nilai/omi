@@ -127,6 +127,10 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         todoId: row.todoId,
       ),
     );
+    if (!mounted) {
+      return;
+    }
+    await _cubit.refreshGroupedTodoLists();
   }
 
   @override
@@ -237,8 +241,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                           ],
                           const SizedBox(height: 20),
                           MPAllTodosInputCard(
-                            onSubmitted: (MPTodoVoiceInputResult r) async {
-                              await _cubit.addTodoFromAnalyzedInput(r);
+                            onSubmitted: (MPTodoVoiceInputResult r) {
+                              return _cubit.addTodoFromAnalyzedInput(r);
                             },
                           ),
                           const SizedBox(height: 24),
