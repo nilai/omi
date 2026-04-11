@@ -158,38 +158,58 @@ class MPMemoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool showUnreadBadge =
+        data.badgeCount != null && data.badgeCount! > 0;
+
     final Widget content = Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        _showBadgeAndStatus ? 40 : 16,
-        16,
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            data.title,
-            style: OmiTextStyle.create(
-              fontSize: 17,
-              fontWeight: OmiFontWeight.medium,
-              color: mainTextColor,
-              height: 1.25,
+          if (showUnreadBadge)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    data.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmiTextStyle.create(
+                      fontSize: 16,
+                      fontWeight: OmiFontWeight.medium,
+                      color: mainTextColor,
+                      height: 1.2,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                _Badge(count: data.badgeCount!),
+              ],
+            )
+          else
+            Text(
+              data.title,
+              style: OmiTextStyle.create(
+                fontSize: 16,
+                fontWeight: OmiFontWeight.medium,
+                color: mainTextColor,
+                height: 1.2,
+              ),
             ),
-          ),
           const SizedBox(height: 8),
           if (_showBadgeAndStatus && data.statusLabel != null) ...[
             Row(
               children: [
                 Text(
                   data.timeLabel,
-                  style: OmiTextStyle.create(fontSize: 13, color: secondTextColor, fontWeight: OmiFontWeight.regular),
+                  style: OmiTextStyle.create(fontSize: 12, color: secondTextColor, fontWeight: OmiFontWeight.regular),
                 ),
                 Text(' · ', style: OmiTextStyle.create(color: secondTextColor, fontWeight: OmiFontWeight.regular)),
                 Text(
                   data.statusLabel!,
                   style: OmiTextStyle.create(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: OmiFontWeight.medium,
                     color: purpleTextColor,
                   ),
@@ -199,7 +219,7 @@ class MPMemoryCard extends StatelessWidget {
           ] else
             Text(
               data.timeLabel,
-              style: OmiTextStyle.create(fontSize: 13, color: secondTextColor, fontWeight: OmiFontWeight.regular),
+              style: OmiTextStyle.create(fontSize: 12, color: secondTextColor, fontWeight: OmiFontWeight.regular),
             ),
           const SizedBox(height: 8),
           Text(
@@ -207,8 +227,8 @@ class MPMemoryCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: OmiTextStyle.create(
-              fontSize: 14,
-              height: 1.35,
+              fontSize: 13,
+              height: 1.25,
               color: _kBody,
               fontWeight: OmiFontWeight.regular,
             ),
@@ -252,19 +272,7 @@ class MPMemoryCard extends StatelessWidget {
             border: Border.all(color: borderColor, width: 1),
           ),
           clipBehavior: Clip.antiAlias,
-          child: _showBadgeAndStatus
-              ? Stack(
-                  children: [
-                    inner,
-                    if (data.badgeCount != null && data.badgeCount! > 0)
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: _Badge(count: data.badgeCount!),
-                      ),
-                  ],
-                )
-              : inner,
+          child: inner,
         ),
       ),
     );

@@ -353,12 +353,25 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   switch (m.type ?? MPMemoryType.onlyRecord) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
+      final String titleTrim = (m.title ?? '').trim();
+      final String contentTrim = (m.content ?? '').trim();
+      final int createAt = m.createAt;
+      final String primaryTimeLabel;
+      final String secondaryTimeLabel;
+      if (titleTrim.isEmpty && contentTrim.isEmpty) {
+        primaryTimeLabel = _audioRecordingTimePrimaryFromCreateAt(createAt);
+        secondaryTimeLabel =
+            _audioRecordingTimeSecondaryFromCreateAt(createAt);
+      } else {
+        primaryTimeLabel = m.title ?? '';
+        secondaryTimeLabel = m.content ?? '';
+      }
       return MPMemoryEntry.audioRecording(
         id: m.id ?? '',
         type: m.type ?? MPMemoryType.onlyRecord,
         audioData: MPAudioRecordingCardData(
-          primaryTimeLabel: m.title ?? '',
-          secondaryTimeLabel: m.content ?? '',
+          primaryTimeLabel: primaryTimeLabel,
+          secondaryTimeLabel: secondaryTimeLabel,
           sourceLabel: m.source ?? '',
           durationLabel: _formatDurationSeconds(m.duration ?? 0),
         ),
@@ -438,6 +451,23 @@ DateTime _memoryDateTimeFromServer(int createAt) {
 
 String _shortTimeLabel(int createAt) {
   return DateFormat('MMM d, y, h:mm a').format(_memoryDateTimeFromServer(createAt));
+}
+
+/// 录音卡片无标题/正文时，首行时间（与列表其它 Memory 时间风格一致）。
+String _audioRecordingTimePrimaryFromCreateAt(int createAt) {
+  if (createAt <= 0) {
+    return '';
+  }
+  return _shortTimeLabel(createAt);
+}
+
+/// 录音卡片无标题/正文时，第二行时间（略长，与 [MPAudioRecordingCardData] 设计双行时间一致）。
+String _audioRecordingTimeSecondaryFromCreateAt(int createAt) {
+  if (createAt <= 0) {
+    return '';
+  }
+  return DateFormat('MMMM d, y · h:mm a')
+      .format(_memoryDateTimeFromServer(createAt));
 }
 
 String _formatDurationSeconds(int seconds) {
