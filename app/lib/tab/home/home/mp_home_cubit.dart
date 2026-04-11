@@ -281,6 +281,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
         if (!isClosed) {
           emit(state.copyWith(clearAudioStatus: true));
+          loadData();
         }
       });
     }
