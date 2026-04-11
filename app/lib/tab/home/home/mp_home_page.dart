@@ -18,17 +18,6 @@ import '../../../http/schema/mp_home.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
-/// 是否展示 Hero 空状态引导（Today's Focus / Recent / Insights 均无实质内容时）。
-bool _mpHomeShowHeroEmpty(MPHomeState state) {
-  final MPHomeInsightOverviewStruct o = state.insightOverview;
-  return state.upNextTodos.isEmpty &&
-      state.recentMemories.isEmpty &&
-      o.content.trim().isEmpty &&
-      o.title.trim().isEmpty &&
-      o.subTitle.trim().isEmpty &&
-      o.newInsightCount == 0;
-}
-
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
   const MPHomePage({super.key, this.onViewAllMemories});
@@ -299,11 +288,6 @@ class _MPHomePageState extends State<MPHomePage> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
                         children: <Widget>[
-                          if (_mpHomeShowHeroEmpty(state))
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: _MPHomeHeroEmptyCard(onPrimaryAction: _openAddOptions),
-                            ),
                           _TodayFocusCard(
                             todos: state.upNextTodos,
                             onViewAll: () {
@@ -336,76 +320,6 @@ class _MPHomePageState extends State<MPHomePage> {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-/// 首页 Hero：无 Today's Focus / Recent / Insights 内容时展示的引导卡片。
-class _MPHomeHeroEmptyCard extends StatelessWidget {
-  const _MPHomeHeroEmptyCard({required this.onPrimaryAction});
-
-  final VoidCallback onPrimaryAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
-        boxShadow: <BoxShadow>[
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Text(
-            'Welcome to MemoPin',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: OmiFontSize.t8_17,
-              fontWeight: OmiFontWeight.bold,
-              height: 1.25,
-              color: omiMainBodyText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Capture conversations and turn them into searchable memories.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.regular,
-              height: 1.5,
-              color: omiAuxiliaryText,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 44,
-            child: ElevatedButton(
-              onPressed: onPrimaryAction,
-              style: ElevatedButton.styleFrom(
-                elevation: 0,
-                shadowColor: Colors.transparent,
-                backgroundColor: omiEmphasisGreen,
-                foregroundColor: omiWhiteText,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                textStyle: TextStyle(
-                  fontSize: OmiFontSize.t5_14,
-                  fontWeight: OmiFontWeight.medium,
-                  height: 1.2,
-                  color: omiWhiteText,
-                ),
-              ),
-              child: const Text('Get started'),
-            ),
-          ),
-        ],
       ),
     );
   }
