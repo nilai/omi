@@ -170,10 +170,17 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       }
       final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
       for (final MPMemoryStruct e in response.recentMemories) {
+        String titleOrDate = e.title;
+        if (titleOrDate.isEmpty) {
+          titleOrDate = e.content;
+        }
+        if (titleOrDate.isEmpty) {
+          titleOrDate = MPDateUtils.formatWhenLabelFromDeadline(e.createAt);
+        }
         recentMemories.add(
           MPHomeMemoryItem(
             id: e.id,
-            titleOrDate: e.title,
+            titleOrDate: titleOrDate,
             timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
             createAt: e.createAt,
             type: e.type,
