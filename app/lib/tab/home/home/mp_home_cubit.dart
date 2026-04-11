@@ -175,7 +175,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           titleOrDate = e.content;
         }
         if (titleOrDate.isEmpty) {
-          titleOrDate = MPDateUtils.formatWhenLabelFromDeadline(e.createAt);
+          final String date = MPDateUtils.formatWhenLabelFromDeadline(e.createAt);
+          final String time = MPDateUtils.formatTimeLabelFromDeadline(e.createAt);
+          titleOrDate = '$date $time音频文件';
         }
         recentMemories.add(
           MPHomeMemoryItem(
