@@ -18,6 +18,17 @@ import '../../../http/schema/mp_home.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
+/// 是否展示 Hero 空状态引导（Today's Focus / Recent / Insights 均无实质内容时）。
+bool _mpHomeShowHeroEmpty(MPHomeState state) {
+  final MPHomeInsightOverviewStruct o = state.insightOverview;
+  return state.upNextTodos.isEmpty &&
+      state.recentMemories.isEmpty &&
+      o.content.trim().isEmpty &&
+      o.title.trim().isEmpty &&
+      o.subTitle.trim().isEmpty &&
+      o.newInsightCount == 0;
+}
+
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
   const MPHomePage({super.key, this.onViewAllMemories});
@@ -249,9 +260,9 @@ class _MPHomePageState extends State<MPHomePage> {
                           Text(
                             'MemoPin',
                             style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w500,
-                              color: secondTextColor,
+                              fontSize: OmiFontSize.t8_17,
+                              fontWeight: OmiFontWeight.medium,
+                              color: omiSecondaryBodyText,
                               letterSpacing: -0.4,
                             ),
                           ),
@@ -288,6 +299,11 @@ class _MPHomePageState extends State<MPHomePage> {
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
                         children: <Widget>[
+                          if (_mpHomeShowHeroEmpty(state))
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _MPHomeHeroEmptyCard(onPrimaryAction: _openAddOptions),
+                            ),
                           _TodayFocusCard(
                             todos: state.upNextTodos,
                             onViewAll: () {
@@ -320,6 +336,76 @@ class _MPHomePageState extends State<MPHomePage> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// 首页 Hero：无 Today's Focus / Recent / Insights 内容时展示的引导卡片。
+class _MPHomeHeroEmptyCard extends StatelessWidget {
+  const _MPHomeHeroEmptyCard({required this.onPrimaryAction});
+
+  final VoidCallback onPrimaryAction;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Text(
+            'Welcome to MemoPin',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: FontWeight.w600,
+              height: 1.25,
+              color: omiMainBodyText,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Capture conversations and turn them into searchable memories.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: OmiFontSize.t6_15,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.5,
+              color: omiAuxiliaryText,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 44,
+            child: ElevatedButton(
+              onPressed: onPrimaryAction,
+              style: ElevatedButton.styleFrom(
+                elevation: 0,
+                shadowColor: Colors.transparent,
+                backgroundColor: omiEmphasisGreen,
+                foregroundColor: omiWhiteText,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                textStyle: TextStyle(
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.medium,
+                  height: 1.2,
+                  color: omiWhiteText,
+                ),
+              ),
+              child: const Text('Get started'),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -503,9 +589,9 @@ class _TodayFocusCard extends StatelessWidget {
                 child: Text(
                   'Today\'s Focus',
                   style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: Color(0xFF1A1A1A),
+                    fontSize: OmiFontSize.t8_17,
+                    fontWeight: FontWeight.w600,
+                    color: omiMainBodyText,
                     height: 1.25,
                   ),
                 ),
@@ -524,18 +610,40 @@ class _TodayFocusCard extends StatelessWidget {
                     Text(
                       'View All',
                       style: TextStyle(
-                        color: Color(0xFF16A34A),
+                        color: omiEmphasisGreen,
                         fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.medium,
                         height: 1.1,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, size: 18, color: Color(0xFF16A34A)),
+                    Icon(Icons.chevron_right, size: 18, color: omiEmphasisGreen),
                   ],
                 ),
               ),
             ],
           ),
+          if (shown.isEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(
+              'No tasks yet',
+              style: TextStyle(
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.medium,
+                color: omiMainBodyText,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Your upcoming tasks from recordings will appear here.',
+              style: TextStyle(
+                fontSize: OmiFontSize.t5_14,
+                fontWeight: OmiFontWeight.regular,
+                color: omiAuxiliaryText,
+                height: 1.4,
+              ),
+            ),
+          ],
           if (shown.isNotEmpty) const SizedBox(height: 10),
           for (final MPHomeTodoItem todo in shown) ...<Widget>[
             InkWell(
@@ -557,9 +665,9 @@ class _TodayFocusCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: OmiFontSize.t6_15,
-                          height: 1.42,
-                          color: const Color(0xFF262631),
-                          fontWeight: OmiFontWeight.medium,
+                          height: 1.5,
+                          color: omiSecondaryBodyText,
+                          fontWeight: OmiFontWeight.regular,
                           decoration: todo.completed ? TextDecoration.lineThrough : null,
                         ),
                       ),
@@ -569,8 +677,8 @@ class _TodayFocusCard extends StatelessWidget {
                         todo.time!,
                         style: TextStyle(
                           fontSize: OmiFontSize.t4_13,
-                          color: Color(0xFF9A9CAA),
-                          fontWeight: OmiFontWeight.regular,
+                          color: omiAuxiliaryText,
+                          fontWeight: OmiFontWeight.medium,
                         ),
                       ),
                   ],
@@ -584,7 +692,7 @@ class _TodayFocusCard extends StatelessWidget {
                   '→ ${todo.reason}',
                   style: TextStyle(
                     fontSize: OmiFontSize.t4_13,
-                    color: Color(0xFF9A9CAA),
+                    color: omiAuxiliaryText,
                     fontWeight: OmiFontWeight.regular,
                     height: 1.2,
                   ),
@@ -607,9 +715,9 @@ class _TodayFocusCard extends StatelessWidget {
                     'Add more tasks to Today\'s Focus to stay productive',
                     style: TextStyle(
                       fontSize: OmiFontSize.t5_14,
-                      color: const Color(0xFF30303A),
+                      color: omiSecondaryBodyText,
                       fontWeight: OmiFontWeight.regular,
-                      height: 1.35,
+                      height: 1.4,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -620,13 +728,14 @@ class _TodayFocusCard extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         elevation: 0,
                         shadowColor: Colors.transparent,
-                        backgroundColor: const Color(0xFF2EA86D),
-                        foregroundColor: Colors.white,
+                        backgroundColor: omiEmphasisGreen,
+                        foregroundColor: omiWhiteText,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         textStyle: TextStyle(
                           fontSize: OmiFontSize.t5_14,
                           fontWeight: OmiFontWeight.medium,
                           height: 1.2,
+                          color: omiWhiteText,
                         ),
                       ),
                       child: const Text('Add to Today\'s Focus'),
@@ -675,10 +784,10 @@ class _RecentMemoryCard extends StatelessWidget {
                 child: Text(
                   'Recent Memory',
                   style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: const Color(0xFF1A1A1A),
-                    height: 1.15,
+                    fontSize: OmiFontSize.t8_17,
+                    fontWeight: FontWeight.w600,
+                    color: omiMainBodyText,
+                    height: 1.25,
                   ),
                 ),
               ),
@@ -696,18 +805,40 @@ class _RecentMemoryCard extends StatelessWidget {
                     Text(
                       'View All',
                       style: TextStyle(
-                        color: const Color(0xFFD97706),
+                        color: omiEmphasisOrange,
                         fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.medium,
                         height: 1.1,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, size: 16, color: Color(0xFFD97706)),
+                    Icon(Icons.chevron_right, size: 16, color: omiEmphasisOrange),
                   ],
                 ),
               ),
             ],
           ),
+          if (shown.isEmpty) ...<Widget>[
+            const SizedBox(height: 12),
+            Text(
+              'No memories yet',
+              style: TextStyle(
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: OmiFontWeight.medium,
+                color: omiMainBodyText,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Voice memos you capture will show up here.',
+              style: TextStyle(
+                fontSize: OmiFontSize.t5_14,
+                fontWeight: OmiFontWeight.regular,
+                color: omiAuxiliaryText,
+                height: 1.4,
+              ),
+            ),
+          ],
           if (shown.isNotEmpty) const SizedBox(height: 10),
           for (final MPHomeMemoryItem m in shown)
             InkWell(
@@ -722,10 +853,10 @@ class _RecentMemoryCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontSize: OmiFontSize.t5_14,
-                          color: const Color(0xFF262631),
-                          height: 1.35,
-                          fontWeight: OmiFontWeight.medium,
+                          fontSize: OmiFontSize.t6_15,
+                          color: omiSecondaryBodyText,
+                          height: 1.5,
+                          fontWeight: OmiFontWeight.regular,
                         ),
                       ),
                     ),
@@ -733,7 +864,7 @@ class _RecentMemoryCard extends StatelessWidget {
                       m.timeLabel,
                       style: TextStyle(
                         fontSize: OmiFontSize.t4_13,
-                        color: const Color(0xFF9A9CAA),
+                        color: omiAuxiliaryText,
                         fontWeight: OmiFontWeight.regular,
                       ),
                     ),
@@ -755,6 +886,12 @@ class _InsightsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String titleLine =
+        insightOverview.title.trim().isEmpty ? 'Insights' : insightOverview.title.trim();
+    final String sub = insightOverview.subTitle.trim();
+    final String body = insightOverview.content.trim();
+    final bool hasBody = body.isNotEmpty;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -797,41 +934,84 @@ class _InsightsCard extends StatelessWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: <Widget>[
-                              Text(
-                                insightOverview.title,
-                                style: TextStyle(
-                                  fontSize: OmiFontSize.t7_16,
-                                  fontWeight: OmiFontWeight.medium,
-                                  color: const Color(0xFF1A1A1A),
-                                  height: 1.15,
-                                ),
+                              Row(
+                                children: <Widget>[
+                                  Expanded(
+                                    child: Text(
+                                      titleLine,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: OmiFontSize.t8_17,
+                                        fontWeight: FontWeight.w600,
+                                        color: omiMainBodyText,
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(
+                                        'View All',
+                                        style: TextStyle(
+                                          color: omiAuxiliaryText.withValues(alpha: 0.5),
+                                          fontSize: OmiFontSize.t5_14,
+                                          fontWeight: OmiFontWeight.medium,
+                                          height: 1.1,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.chevron_right,
+                                        size: 16,
+                                        color: omiAuxiliaryText.withValues(alpha: 0.5),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                insightOverview.subTitle,
-                                style: TextStyle(
-                                  fontSize: OmiFontSize.t4_13,
-                                  color: const Color(0xFF9A9CAA),
-                                  fontWeight: OmiFontWeight.regular,
+                              if (sub.isNotEmpty) ...<Widget>[
+                                const SizedBox(height: 2),
+                                Text(
+                                  sub,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: OmiFontSize.t5_14,
+                                    color: omiAuxiliaryText,
+                                    fontWeight: OmiFontWeight.regular,
+                                    height: 1.35,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      insightOverview.content,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: OmiFontSize.t5_14,
-                        height: 1.35,
-                        color: const Color(0xFF262631),
-                        fontWeight: OmiFontWeight.regular,
+                    if (hasBody)
+                      Text(
+                        body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t5_14,
+                          height: 1.4,
+                          color: omiAuxiliaryText,
+                          fontWeight: OmiFontWeight.regular,
+                        ),
+                      )
+                    else
+                      Text(
+                        'No insights yet',
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.medium,
+                          color: omiMainBodyText,
+                          height: 1.5,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
