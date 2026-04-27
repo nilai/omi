@@ -424,7 +424,7 @@ int _unreadItemCount(MPMemoryStruct m) {
 
 /// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
-  switch (m.type) {
+  switch (m.type ?? MPMemoryType.onlyRecord) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
       final String titleTrim = m.title ?? ''.trim();
@@ -442,7 +442,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       }
       return MPMemoryEntry.audioRecording(
         id: m.id ?? '',
-        type: m.type,
+        type: m.type ?? MPMemoryType.onlyRecord,
         audioData: MPAudioRecordingCardData(
           primaryTimeLabel: primaryTimeLabel,
           secondaryTimeLabel: secondaryTimeLabel,
@@ -455,7 +455,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
         id: m.id ?? '',
-        type: m.type,
+        type: m.type ?? MPMemoryType.summary,
         conversationKind: MPMemoryConversationKind.summary,
         variant: hasUnread
             ? MPMemoryCardVariant.newUpdates
@@ -475,7 +475,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
         id: m.id ?? '',
-        type: m.type,
+        type: m.type ?? MPMemoryType.memoryFeed,
         conversationKind: MPMemoryConversationKind.memoryFeed,
         variant: hasUnread
             ? MPMemoryCardVariant.newUpdates
@@ -506,7 +506,7 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
 
   return MPMemoryEntry.memoGroup(
     id: m.id ?? '',
-    type: m.type,
+    type: m.type ?? MPMemoryType.memoList,
     memoVariant: variant,
     memoData: MPMemoGroupCardData(
       subtitle: m.subTitle,

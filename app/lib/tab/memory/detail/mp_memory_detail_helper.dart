@@ -34,12 +34,6 @@ class MPMemoryDetailPageHelper {
       if (!context.mounted) {
         return;
       }
-
-      if (type == MPMemoryType.onlyRecord) {
-        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
-        return;
-      }
-
       final MPGetSummaryStatusResponse? summaryStatus = await getSummaryStatus(MPGetSummaryStatusRequest(memoryId: id));
       final int status = summaryStatus?.status ?? 0;
       if (!context.mounted) {
@@ -51,6 +45,10 @@ class MPMemoryDetailPageHelper {
             builder: (_) => MPMemoryTransitionBlocPage(memoryId: id, createAt: createAt ?? 0),
           ),
         );
+        return;
+      }
+      if (type == MPMemoryType.onlyRecord) {
+        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
         return;
       }
       Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiMemoryDetailPage(memoryId: id)));

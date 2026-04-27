@@ -367,7 +367,7 @@ class MPMemoryStruct {
   final String? subTitle;
 
   @JsonKey(name: 'type')
-  final MPMemoryType type;
+  final MPMemoryType? type;
 
   @JsonKey(name: 'content')
   final String? content;

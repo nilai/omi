@@ -187,7 +187,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
             titleOrDate: titleOrDate,
             timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
             createAt: e.createAt,
-            type: e.type,
+            type: e.type ?? MPMemoryType.onlyRecord,
           ),
         );
       }
@@ -286,7 +286,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         if (!isClosed) {
           emit(state.copyWith(clearAudioStatus: true));
           loadData();
-          MPMemoryNotification.notifyMemoryListRefresh();
         }
       });
     }
