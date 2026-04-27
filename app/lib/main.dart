@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/http/shared.dart';
-import 'cache/mp_hive_util.dart';
+import 'app/mp_app_session_bootstrap.dart';
 import 'login/home/mp_login_page.dart';
-import 'login/mp_user.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/tab/omi_main_tab_page.dart';
 import 'env/env.dart';
@@ -17,7 +16,9 @@ Future<void> main() async {
   PlatformManager.initializeServices();
   await MPUuidUtil.instance.uuid;
   await MPPreferences.init();
-  await MPHiveUtil.instance.initialize();
+  if (ApiTools.hasAccessToken()) {
+    await MPAppSessionBootstrap.run(fromLoginSuccess: false);
+  }
   runApp(const MyApp());
 }
 
