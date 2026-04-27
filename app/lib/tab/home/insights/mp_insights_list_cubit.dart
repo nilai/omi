@@ -216,14 +216,14 @@ class _PageResult {
 Future<_PageResult> _fetchPage({
   required int page,
 }) async {
-// {"cards":[{"id":"91003","cycle_type":1,"title":"Daily focus insight","sub_title":"Apr 05","create_at":1775433084,"content":"You have a recurring pattern: tasks with concrete owners close 2x faster."},
-//{"id":"91002","cycle_type":2,"title":"Weekly execution insight","sub_title":"This week","create_at":1775429484,"content":"Cross-team updates are delayed mostly at handoff stage; add one summary owner."},
-//{"id":"91001","cycle_type":3,"title":"Monthly growth insight","sub_title":"This month","create_at":1775425884,"content":"Meeting outcomes improved after adding explicit next-action sections in summaries."}]
   final MPGetInsightFeedListResponse? response = await getInsightFeedList(MPGetInsightFeedListRequest(pageSize: MPInsightsListCubit._pageSize, cursor: page == 0 ? null : '${page * MPInsightsListCubit._pageSize}'));
   if (response != null && response.baseResp.code == 0) {
     final cards = response.cards;
     final List<MPInsightListItem> list = <MPInsightListItem>[];
     for (final MPInsightCardStruct card in cards) {
+      if (card.id.isEmpty) continue;
+      if (card.cycleType <= 0) continue;
+      if (card.cycleType > 4) continue;
       list.add(MPInsightListItem(
         id: card.id,
         type: MPInsightCardType.values[card.cycleType - 1],
