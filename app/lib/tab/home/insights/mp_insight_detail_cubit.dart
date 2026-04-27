@@ -372,7 +372,7 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
     await MPInsightsMoreDialog.show(
       context: context,
       onDeleteTap: () {
-        deleteMemory(MPDeleteMemoryRequest(memoryId: _item.id)).then((MPDeleteMemoryResponse? response) {
+        deleteInsight(MPDeleteInsightRequest(insightId: _item.id)).then((MPDeleteInsightResponse? response) {
           if (response != null && response.baseResp.code == 0) {
             _notifyInsightDeleted();
             if (context.mounted) {
