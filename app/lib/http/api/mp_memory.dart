@@ -104,6 +104,24 @@ Future<MPShareMemoryResponse?> shareMemory(MPShareMemoryRequest req) async {
   return null;
 }
 
+// POST /api/v1/memory/share_v2/options
+Future<MPGetShareOptionsResponse?> getShareOptionsV2(
+  MPShareMemoryWithOptionsRequest req,
+) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/memory/share_v2/options',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('getShareOptionsV2 response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetShareOptionsResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
 // POST /api/v2/memory/get_unread_count
 Future<MPGetMemoryV2UnreadCountResponse?> getMemoryV2UnreadCount(
   MPGetMemoryV2UnreadCountRequest req,

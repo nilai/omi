@@ -10,6 +10,7 @@ import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
@@ -44,6 +45,7 @@ class OmiMemoryDetailState {
     this.isRefreshing = false,
     this.isLoadingMore = false,
     this.feedHasMore = false,
+    this.isSummaryGenerating = false,
   });
 
   final OmiMemoryDetailPhase phase;
@@ -59,6 +61,9 @@ class OmiMemoryDetailState {
   /// 是否仍可请求更多 Feed（由详情首屏与 [getMemoryFeed] 的 `has_more` 更新）
   final bool feedHasMore;
 
+  /// Memo 等场景：summary 正在生成时展示过渡 UI。
+  final bool isSummaryGenerating;
+
   OmiMemoryDetailState copyWith({
     OmiMemoryDetailPhase? phase,
     MPMemoryDetailCardData? data,
@@ -66,6 +71,7 @@ class OmiMemoryDetailState {
     bool? isRefreshing,
     bool? isLoadingMore,
     bool? feedHasMore,
+    bool? isSummaryGenerating,
   }) {
     return OmiMemoryDetailState(
       phase: phase ?? this.phase,
@@ -74,6 +80,7 @@ class OmiMemoryDetailState {
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       feedHasMore: feedHasMore ?? this.feedHasMore,
+      isSummaryGenerating: isSummaryGenerating ?? this.isSummaryGenerating,
     );
   }
 }
@@ -297,6 +304,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     int nextUnknownInsightIndex,
     String feedCursor,
     bool feedHasMore,
+    bool isSummaryGenerating,
   })? _loadCachedDetailBundleIfAllowed() {
     if (!_isInCachedFirstPage()) return null;
     final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
@@ -316,6 +324,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       int nextUnknownInsightIndex,
       String feedCursor,
       bool feedHasMore,
+      bool isSummaryGenerating,
     })? cached = _loadCachedDetailBundleIfAllowed();
     final bool hasCached = cached != null;
     if (hasCached) {
@@ -326,6 +335,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           phase: OmiMemoryDetailPhase.loaded,
           data: cached.data,
           feedHasMore: cached.feedHasMore,
+          isSummaryGenerating: cached.isSummaryGenerating,
         ),
       );
     } else {
@@ -338,12 +348,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
-      print('-------------------------------- getMemoryDetail resp: ${resp.toJson()}');
       final ({
         MPMemoryDetailCardData data,
         int nextUnknownInsightIndex,
         String feedCursor,
         bool feedHasMore,
+        bool isSummaryGenerating,
       }) bundle = _mapDetailResponse(resp.memoryDetail);
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
@@ -355,6 +365,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           phase: OmiMemoryDetailPhase.loaded,
           data: bundle.data,
           feedHasMore: bundle.feedHasMore,
+          isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
     } catch (e) {
@@ -385,6 +396,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         );
         return;
       }
+      MPMemoryNotification.notifyMemoryListRefresh();
       await refresh();
     } catch (_) {
       if (!isClosed) {
@@ -604,6 +616,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     int nextUnknownInsightIndex,
     String feedCursor,
     bool feedHasMore,
+    bool isSummaryGenerating,
   }) _mapDetailResponse(MPMemoryStruct m) {
     return switch (detailSource) {
       OmiMemoryDetailSource.memoryFeedSummary => mpMemoryStructToDetailBundle(m),
@@ -632,6 +645,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         int nextUnknownInsightIndex,
         String feedCursor,
         bool feedHasMore,
+        bool isSummaryGenerating,
       }) bundle = _mapDetailResponse(resp.memoryDetail);
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
@@ -645,6 +659,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           feedHasMore: bundle.feedHasMore,
           isRefreshing: false,
           isLoadingMore: false,
+          isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
     } catch (e) {
@@ -1112,11 +1127,13 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
   int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
+  bool isSummaryGenerating,
 }) _mpMemoryStructToDetailBundleFromSources(
   MPMemoryStruct m, {
   required MPSummaryMemoryStruct? sm,
   required List<MPFeedCardStruct> feedCards,
 }) {
+  final bool isSummaryGenerating = (sm?.status ?? 0) == 1;
   final String rawTitle = (sm?.title ?? '').trim();
   final String title = rawTitle.isNotEmpty ? rawTitle : m.title ?? ''.trim();
 
@@ -1204,6 +1221,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
     nextUnknownInsightIndex: built.nextUnknownInsightIndex,
     feedCursor: feedCursor,
     feedHasMore: feedHasMore,
+    isSummaryGenerating: isSummaryGenerating,
   );
 }
 
@@ -1213,6 +1231,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
   int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
+  bool isSummaryGenerating,
 }) mpMemoryStructToDetailBundle(MPMemoryStruct m) {
   final MPMemoryFeedStruct? mf = m.memoryFeed;
   return _mpMemoryStructToDetailBundleFromSources(
@@ -1228,6 +1247,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
   int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
+  bool isSummaryGenerating,
 }) mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
   return _mpMemoryStructToDetailBundleFromSources(
     m,

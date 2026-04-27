@@ -172,6 +172,22 @@ Map<String, dynamic> _$MPShareMemoryRequestToJson(
   MPShareMemoryRequest instance,
 ) => <String, dynamic>{'memory_id': instance.memoryId};
 
+MPShareMemoryWithOptionsRequest _$MPShareMemoryWithOptionsRequestFromJson(
+  Map<String, dynamic> json,
+) => MPShareMemoryWithOptionsRequest(
+  memoryId: json['memory_id'] as String,
+  optionIds: (json['option_ids'] as List<dynamic>)
+      .map((e) => (e as num).toInt())
+      .toList(),
+);
+
+Map<String, dynamic> _$MPShareMemoryWithOptionsRequestToJson(
+  MPShareMemoryWithOptionsRequest instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'option_ids': instance.optionIds,
+};
+
 MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
   Map<String, dynamic> json,
 ) => MPShareMemoryResponse(
@@ -179,8 +195,8 @@ MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
   shareCode: json['share_code'] as String,
   shareUrl: json['share_url'] as String,
   shortUrl: json['short_url'] as String,
-  expiresAt: (json['expires_at'] as num).toInt(),
-  createAt: (json['create_at'] as num).toInt(),
+  expiresAt: mpIntFromJson(json['expires_at']),
+  createAt: mpIntFromJson(json['create_at']),
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
@@ -194,6 +210,42 @@ Map<String, dynamic> _$MPShareMemoryResponseToJson(
   'expires_at': instance.expiresAt,
   'create_at': instance.createAt,
   'base_resp': instance.baseResp,
+};
+
+MPShareOptionItem _$MPShareOptionItemFromJson(Map<String, dynamic> json) =>
+    MPShareOptionItem(
+      optionId: mpIntFromJson(json['option_id']),
+      optionKey: json['option_key'] as String,
+      optionName: json['option_name'] as String,
+      required: json['required'] as bool,
+    );
+
+Map<String, dynamic> _$MPShareOptionItemToJson(MPShareOptionItem instance) =>
+    <String, dynamic>{
+      'option_id': instance.optionId,
+      'option_key': instance.optionKey,
+      'option_name': instance.optionName,
+      'required': instance.required,
+    };
+
+MPGetShareOptionsResponse _$MPGetShareOptionsResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetShareOptionsResponse(
+  memoryId: json['memory_id'] as String,
+  options:
+      (json['options'] as List<dynamic>?)
+          ?.map((e) => MPShareOptionItem.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      [],
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetShareOptionsResponseToJson(
+  MPGetShareOptionsResponse instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'options': instance.options.map((e) => e.toJson()).toList(),
+  'base_resp': instance.baseResp.toJson(),
 };
 
 MPCreateRecordRequest _$MPCreateRecordRequestFromJson(

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
+import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
+
+/// Memo Actions：已创建 Todo 时标题 / 药丸使用的绿色。
+const Color _kMemoActionAddedGreen = Color(0xFF6BBF8E);
 
 /// AI 建议 follow-up 单条状态
 enum MPMemoryActionItemStatus {
@@ -192,7 +196,7 @@ class _MPMemoryActionCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: useMemoStyle
-            ? const Color(0xFFF5F5F7)
+            ? omiWhiteText
             : Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
@@ -213,7 +217,7 @@ class _MPMemoryActionCard extends StatelessWidget {
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.medium,
               color: useMemoStyle
-                  ? const Color(0xFF1C1C1E)
+                  ? mainTextColor
                   : Colors.white.withValues(alpha: 0.92),
               height: 1.45,
             ),
@@ -264,6 +268,10 @@ class _MPActionPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool enabled = onPressed != null;
+    /// Memo：未添加黑色，已添加绿色；Memory 绿底卡片仍为白色字。
+    final Color memoPillFg =
+        useMemoStyle ? (enabled ? mainTextColor : _kMemoActionAddedGreen) : Colors.white;
+    final double memoFgAlpha = useMemoStyle ? 1.0 : 0.95;
     final Widget child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
@@ -285,8 +293,8 @@ class _MPActionPillButton extends StatelessWidget {
             width: 18,
             height: 18,
             color: useMemoStyle
-                ? const Color(0xFF6BBF8E)
-                : Colors.white.withValues(alpha: 0.95),
+                ? memoPillFg
+                : Colors.white.withValues(alpha: memoFgAlpha),
             fit: BoxFit.cover,
           ),
           const SizedBox(width: 4),
@@ -296,8 +304,8 @@ class _MPActionPillButton extends StatelessWidget {
               fontSize: OmiFontSize.t3_12,
               fontWeight: OmiFontWeight.medium,
               color: useMemoStyle
-                  ? const Color(0xFF6BBF8E)
-                  : Colors.white.withValues(alpha: 0.95),
+                  ? memoPillFg
+                  : Colors.white.withValues(alpha: memoFgAlpha),
               height: 1.2,
             ),
           ),

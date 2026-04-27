@@ -5,6 +5,7 @@ import 'package:memo_pin/audio/audio_picker_utils.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -279,6 +280,7 @@ class MPAudioUploadManager {
             MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
             return lastCreated;
           }
+          MPMemoryNotification.notifyMemoryListRefresh();
         }
 
         _emitUploadProgress(

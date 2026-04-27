@@ -9,6 +9,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:path/path.dart' as p;
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -435,6 +436,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         );
         return;
       }
+      MPMemoryNotification.notifyMemoryListRefresh();
       final bool completed = await _pollSummaryUntilComplete();
       if (isClosed) return;
       emit(state.copyWith(isSummaryGenerating: false));

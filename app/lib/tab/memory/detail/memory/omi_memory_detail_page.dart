@@ -5,6 +5,7 @@ import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
+import 'package:memo_pin/common/mp_share_options_manager.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
@@ -54,8 +55,15 @@ class _OmiMemoryDetailView extends StatelessWidget {
           actions: <Widget>[
             GestureDetector(
               onTap: () async {
+                final MPShareSheetParams params =
+                    await MPShareOptionsManager.instance.getShareSheetParams(
+                  memoryId: memoryId,
+                );
+
+                if (!context.mounted) return;
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
+                  params: params,
                   onShare: () {
                     showMPShareExportSheet(context).then((MPShareExportKind? kind) {
                       if (kind == null) return;

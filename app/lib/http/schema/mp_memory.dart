@@ -250,6 +250,29 @@ class MPShareMemoryRequest {
   Map<String, dynamic> toJson() => _$MPShareMemoryRequestToJson(this);
 }
 
+/// Thrift `ShareMemoryRequest`（带 option_ids）。
+///
+/// 注意：项目内已存在旧版 [MPShareMemoryRequest]（仅 memory_id，GET query），
+/// 此类用于新接口（body 形式）避免命名冲突。
+@JsonSerializable()
+class MPShareMemoryWithOptionsRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'option_ids')
+  final List<int> optionIds;
+
+  MPShareMemoryWithOptionsRequest({
+    required this.memoryId,
+    required this.optionIds,
+  });
+
+  factory MPShareMemoryWithOptionsRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryWithOptionsRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryWithOptionsRequestToJson(this);
+}
+
 // Share Memory Response
 @JsonSerializable()
 class MPShareMemoryResponse {
@@ -265,10 +288,10 @@ class MPShareMemoryResponse {
   @JsonKey(name: 'short_url')
   final String shortUrl;
 
-  @JsonKey(name: 'expires_at')
+  @JsonKey(name: 'expires_at', fromJson: mpIntFromJson)
   final int expiresAt;
 
-  @JsonKey(name: 'create_at')
+  @JsonKey(name: 'create_at', fromJson: mpIntFromJson)
   final int createAt;
 
   @JsonKey(name: 'base_resp')
@@ -288,6 +311,58 @@ class MPShareMemoryResponse {
       _$MPShareMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
+}
+
+/// Share option item（后端 `ShareOptionItem`）。
+@JsonSerializable()
+class MPShareOptionItem {
+  @JsonKey(name: 'option_id', fromJson: mpIntFromJson)
+  final int optionId;
+
+  @JsonKey(name: 'option_key')
+  final String optionKey;
+
+  @JsonKey(name: 'option_name')
+  final String optionName;
+
+  @JsonKey(name: 'required')
+  final bool required;
+
+  MPShareOptionItem({
+    required this.optionId,
+    required this.optionKey,
+    required this.optionName,
+    required this.required,
+  });
+
+  factory MPShareOptionItem.fromJson(Map<String, dynamic> json) =>
+      _$MPShareOptionItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareOptionItemToJson(this);
+}
+
+/// Thrift `GetShareOptionsResponse`。
+@JsonSerializable(explicitToJson: true)
+class MPGetShareOptionsResponse {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'options', defaultValue: <MPShareOptionItem>[])
+  final List<MPShareOptionItem> options;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetShareOptionsResponse({
+    required this.memoryId,
+    required this.options,
+    required this.baseResp,
+  });
+
+  factory MPGetShareOptionsResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetShareOptionsResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetShareOptionsResponseToJson(this);
 }
 
 

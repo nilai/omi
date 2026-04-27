@@ -8,12 +8,14 @@ import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/common/mp_share_options_manager.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
+import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_summary_generating_panel.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_cubit.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
@@ -24,7 +26,7 @@ import '../../../askai/mp_ask_ai_chat_page.dart';
 
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
 /// 区别：
-/// 1. 主卡片不带背景色；
+/// 1. 主卡片不带背景色；仅 Actions 分段内每条跟进卡片为白底；
 /// 2. Segment 下内容与页面主滚动保持同一滚动容器；
 /// 3. 不展示主卡片下方 Feed（Todo / Memo 等卡片）；底部 Add Todo / Add Memo 仅提交接口，不追加本地卡片。
 class OmiMemoDetailPage extends StatelessWidget {
@@ -58,8 +60,15 @@ class _OmiMemoDetailView extends StatelessWidget {
           actions: <Widget>[
             GestureDetector(
               onTap: () async {
+                final MPShareSheetParams params =
+                    await MPShareOptionsManager.instance.getShareSheetParams(
+                  memoryId: memoryId,
+                );
+
+                if (!context.mounted) return;
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
+                  params: params,
                   onShare: () {
                     showMPShareExportSheet(context).then((MPShareExportKind? kind) {
                       if (kind == null) return;
@@ -148,6 +157,20 @@ class _OmiMemoDetailView extends StatelessWidget {
               );
             case OmiMemoryDetailPhase.loaded:
               final MPMemoryDetailCardData data = state.data!;
+              if (state.isSummaryGenerating) {
+                return SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                    child: MPSummaryGeneratingPanel(
+                      headline: data.title.trim().isNotEmpty
+                          ? data.title
+                          : 'Memory',
+                      metaLine: data.metaLine,
+                    ),
+                  ),
+                );
+              }
               return SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 child: Column(

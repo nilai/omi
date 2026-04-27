@@ -6,6 +6,7 @@ import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_share_sheet.dart';
+import 'package:memo_pin/common/mp_share_options_manager.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -50,8 +51,15 @@ class _OmiAudioDetailView extends StatelessWidget {
           actions: <Widget>[
             GestureDetector(
               onTap: () async {
+                final MPShareSheetParams params =
+                    await MPShareOptionsManager.instance.getShareSheetParams(
+                  memoryId: memoryId,
+                );
+
+                if (!context.mounted) return;
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
+                  params: params,
                   onShare: () {
                     showMPShareExportSheet(context).then((MPShareExportKind? kind) {
                       if (kind == null) return;
