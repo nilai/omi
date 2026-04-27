@@ -4,8 +4,10 @@ import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -45,6 +47,7 @@ class MPTodayFocusState {
     this.completedItems = const <MPTodayFocusTodoRowData>[],
     this.aiFocusSuggestions = const <MPTodayFocusAISuggestionItem>[],
     this.aiFocusSuggestionIndex = 0,
+    this.isGroupedTodosRefreshing = false,
   });
 
   final MPTodayFocusPhase phase;
@@ -61,6 +64,9 @@ class MPTodayFocusState {
 
   /// 当前展示的推荐在 [aiFocusSuggestions] 中的下标。
   final int aiFocusSuggestionIndex;
+
+  /// 正在重新拉取分组待办（如编辑 Todo 关闭后同步）；首屏加载看 [phase]==loading。
+  final bool isGroupedTodosRefreshing;
 
   /// 当前应展示的 AI 推荐；[focusCard] ≥3 或队列为空时为 `null`。
   MPTodayFocusAISuggestionItem? get currentAiFocusSuggestion {
@@ -99,6 +105,7 @@ class MPTodayFocusState {
     List<MPTodayFocusTodoRowData>? completedItems,
     List<MPTodayFocusAISuggestionItem>? aiFocusSuggestions,
     int? aiFocusSuggestionIndex,
+    bool? isGroupedTodosRefreshing,
   }) {
     return MPTodayFocusState(
       phase: phase ?? this.phase,
@@ -113,6 +120,8 @@ class MPTodayFocusState {
       aiFocusSuggestions: aiFocusSuggestions ?? this.aiFocusSuggestions,
       aiFocusSuggestionIndex:
           aiFocusSuggestionIndex ?? this.aiFocusSuggestionIndex,
+      isGroupedTodosRefreshing:
+          isGroupedTodosRefreshing ?? this.isGroupedTodosRefreshing,
     );
   }
 }
@@ -126,27 +135,38 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return MPTodayFocusState(
       phase: MPTodayFocusPhase.loading,
       focusCard: const MPTodayFocusCardData(items: <MPTodayFocusCardItem>[]),
+      aiFocusSuggestions: [],
+      aiFocusSuggestionIndex: 0,
     );
   }
 
   /// 首次进入 / [retry] / 下拉刷新
   Future<void> initData() async {
-    final bool showFullScreenLoading =
-        state.phase != MPTodayFocusPhase.loaded;
-    if (showFullScreenLoading) {
+    /// 仅首屏（loading）与错误重试时全屏占位；已 loaded / empty 时下拉刷新不闪全屏。
+    final bool useFullScreenLoading =
+        state.phase == MPTodayFocusPhase.loading ||
+        state.phase == MPTodayFocusPhase.error;
+    if (useFullScreenLoading) {
       emit(_loadingState());
     }
     try {
-      final GetTodoGroupedListResponse? raw = await getTodoList(
-        GetTodoGroupedListRequest(pageSize: 200, pageno: 1),
-      );
+      final List<Object?> bundled = await Future.wait<Object?>(<Future<Object?>>[
+        getTodoList(GetTodoGroupedListRequest(pageSize: 200, pageno: 1)),
+        getTodayFocusCandidates(const MPGetTodayFocusCandidatesRequest()),
+      ]);
+      final GetTodoGroupedListResponse? raw =
+          bundled[0] as GetTodoGroupedListResponse?;
+      final GetTodoListResponse? candidates = bundled[1] as GetTodoListResponse?;
       if (raw == null) {
         throw StateError('getTodoList failed');
       }
       if (raw.baseResp.code != 0) {
         throw StateError(raw.baseResp.message);
       }
-      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw);
+      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw).copyWith(
+        aiFocusSuggestions: _aiSuggestionsFromCandidates(candidates),
+        aiFocusSuggestionIndex: 0,
+      );
       if (!loaded.hasRenderableContent) {
         emit(
           loaded.copyWith(
@@ -175,22 +195,24 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 与 OmiAll / MemorySearch 等页的 [retry] 一致
   Future<void> retry() => initData();
 
-  /// 在 [loaded] / [empty] 时重新拉取分组待办（供弹层关闭后同步等场景；失败 Toast）。
+  /// 重新拉取分组待办（供弹层关闭后同步等场景；失败 Toast）。
   Future<bool> refreshGroupedTodoLists() => _refreshTodoListsFromServer();
 
   /// 再次拉取分组待办并替换当前状态（不改变全屏 loading / error 页）。
   /// 用于添加/完成/删除/更新等成功后与服务端对齐；失败仅 Toast，返回 `false`。
   Future<bool> _refreshTodoListsFromServer() async {
-    if (state.phase != MPTodayFocusPhase.loaded &&
-        state.phase != MPTodayFocusPhase.empty) {
+    if (isClosed) {
       return false;
     }
-    final List<MPTodayFocusAISuggestionItem> keepAi = state.aiFocusSuggestions;
-    final int keepAiIdx = state.aiFocusSuggestionIndex;
+    emit(state.copyWith(isGroupedTodosRefreshing: true));
     try {
-      final GetTodoGroupedListResponse? raw = await getTodoList(
-        GetTodoGroupedListRequest(pageSize: 200, pageno: 1),
-      );
+      final List<Object?> bundled = await Future.wait<Object?>(<Future<Object?>>[
+        getTodoList(GetTodoGroupedListRequest(pageSize: 200, pageno: 1)),
+        getTodayFocusCandidates(const MPGetTodayFocusCandidatesRequest()),
+      ]);
+      final GetTodoGroupedListResponse? raw =
+          bundled[0] as GetTodoGroupedListResponse?;
+      final GetTodoListResponse? candidates = bundled[1] as GetTodoListResponse?;
       if (raw == null) {
         MPToastUtils.showMessage('刷新待办失败，请稍后重试');
         return false;
@@ -201,16 +223,17 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         );
         return false;
       }
-      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw)
-          .copyWith(
-            aiFocusSuggestions: keepAi,
-            aiFocusSuggestionIndex: keepAiIdx,
-          );
+      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw).copyWith(
+        aiFocusSuggestions: _aiSuggestionsFromCandidates(candidates),
+        aiFocusSuggestionIndex: 0,
+        isGroupedTodosRefreshing: false,
+      );
       if (!loaded.hasRenderableContent) {
         emit(
           loaded.copyWith(
             phase: MPTodayFocusPhase.empty,
             clearErrorMessage: true,
+            isGroupedTodosRefreshing: false,
           ),
         );
       } else {
@@ -218,6 +241,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
           loaded.copyWith(
             phase: MPTodayFocusPhase.loaded,
             clearErrorMessage: true,
+            isGroupedTodosRefreshing: false,
           ),
         );
       }
@@ -226,7 +250,29 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     } catch (_) {
       MPToastUtils.showMessage('刷新待办失败，请稍后重试');
       return false;
+    } finally {
+      if (!isClosed && state.isGroupedTodosRefreshing) {
+        emit(state.copyWith(isGroupedTodosRefreshing: false));
+      }
     }
+  }
+
+  static List<MPTodayFocusAISuggestionItem> _aiSuggestionsFromCandidates(
+    GetTodoListResponse? resp,
+  ) {
+    if (resp == null || resp.baseResp.code != 0) {
+      return const <MPTodayFocusAISuggestionItem>[];
+    }
+    final List<MPTodoStruct> items = resp.focusItems ?? <MPTodoStruct>[];
+    return items
+        .map((MPTodoStruct t) {
+          final String title = (t.title ?? '').trim();
+          return MPTodayFocusAISuggestionItem(
+            title: title.isEmpty ? '—' : title,
+            scheduledTimeLabel: _formatDeadlineLabel(t.deadline),
+          );
+        })
+        .toList(growable: false);
   }
 
   /// `focus_items` → 顶部 Today's Focus；`sections` → 下方分组（按 [TodoListSectionType] 填入对应列表）。
@@ -345,7 +391,9 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return DateFormat('MMM d').format(dt);
   }
 
-  bool get _isInteractive => state.phase == MPTodayFocusPhase.loaded;
+  /// 页面在 loading/empty/error 时也常驻展示「ALL TO DOS」输入框，
+  /// 因此提交/刷新等交互不应仅限于 [loaded]。
+  bool get _isInteractive => true;
 
   void addTodoFromInput(String text) {
     if (!_isInteractive) return;

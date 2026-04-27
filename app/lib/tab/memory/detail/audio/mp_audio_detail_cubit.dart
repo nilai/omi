@@ -72,6 +72,7 @@ class MPAudioDetailState {
     this.progress = 0,
     this.elapsedLabel = '0:00',
     this.playPreparing = false,
+    this.isSummaryGenerating = false,
   });
 
   final MPAudioDetailPhase phase;
@@ -88,6 +89,9 @@ class MPAudioDetailState {
   /// 点击播放后：下载 / 绑定解码器 / [play] 完成前的等待态
   final bool playPreparing;
 
+  /// 仅 [OmiAudioDetailPage]：[summaryRecord] 进行中展示 [MPSummaryGeneratingPanel]。
+  final bool isSummaryGenerating;
+
   MPAudioDetailState copyWith({
     MPAudioDetailPhase? phase,
     MPAudioDetailData? data,
@@ -96,6 +100,7 @@ class MPAudioDetailState {
     double? progress,
     String? elapsedLabel,
     bool? playPreparing,
+    bool? isSummaryGenerating,
   }) {
     return MPAudioDetailState(
       phase: phase ?? this.phase,
@@ -105,6 +110,7 @@ class MPAudioDetailState {
       progress: progress ?? this.progress,
       elapsedLabel: elapsedLabel ?? this.elapsedLabel,
       playPreparing: playPreparing ?? this.playPreparing,
+      isSummaryGenerating: isSummaryGenerating ?? this.isSummaryGenerating,
     );
   }
 }
@@ -112,11 +118,42 @@ class MPAudioDetailState {
 /// Audio 详情页 Cubit：拉取 [getMemoryDetail]，展示数据来自 [MPMemoryStruct.onlyRecordMemory]（JSON `only_record_content`）。
 class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   MPAudioDetailCubit({required this.memoryId})
-    : super(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
+    : super(const MPAudioDetailState(phase: MPAudioDetailPhase.loading)) {
+    _decoderDurationSub = _audioPlayer.durationStream.listen((Duration? d) {
+      if (isClosed) {
+        return;
+      }
+      if (d == null || d <= Duration.zero) {
+        return;
+      }
+      final MPAudioDetailState s = state;
+      if (s.phase != MPAudioDetailPhase.loaded || s.data == null) {
+        return;
+      }
+      final MPAudioDetailData cur = s.data!;
+      if (cur.total == d) {
+        return;
+      }
+      emit(
+        s.copyWith(
+          data: cur.copyWith(
+            total: d,
+            rightTime: _formatDurationLabel(d.inSeconds),
+          ),
+        ),
+      );
+      if (s.isPlaying && !s.playPreparing) {
+        scheduleMicrotask(_tickPlaybackUiFromPlayer);
+      }
+    });
+  }
 
   final String memoryId;
 
   final AudioPlayer _audioPlayer = AudioPlayer();
+
+  /// 解码器上报时长后补齐 [MPAudioDetailData.total]（接口 [MPMemoryStruct.duration] 在仅录音类型下可能为 0）。
+  StreamSubscription<Duration?>? _decoderDurationSub;
 
   /// 进度 UI：定时器轮询 [AudioPlayer.position]（播中即可读，不依赖「整段播完」）。
   /// 首次常走 [bindLocalAudioForPlayback] 换源；第二次同路径多跳过换源，状态更简单。
@@ -197,7 +234,10 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       final bool nearEndByDecoder = dur != null &&
           dur > Duration.zero &&
           _reachedEndByPosition(pos, dur, _kEndSlackMs * 4);
-      if (nearEnd || nearEndByDecoder) {
+      // 接口/解码器均未给出有效总时长时，nearEnd 恒为 false，需仍结束播放态以免波纹不停。
+      final bool completedWithoutTotal =
+          totalRef <= Duration.zero && (dur == null || dur <= Duration.zero);
+      if (nearEnd || nearEndByDecoder || completedWithoutTotal) {
         _stopPlaybackUiTimer();
         final Duration end = totalRef > Duration.zero
             ? totalRef
@@ -232,7 +272,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       prog = (pos.inMilliseconds / totalRef.inMilliseconds).clamp(0.0, 1.0);
     }
     final String elapsed = _formatMmSs(pos);
-    if (elapsed == s.elapsedLabel && (prog - s.progress).abs() < 0.003) {
+    if (elapsed == s.elapsedLabel && (prog - s.progress).abs() < 0.0008) {
       return;
     }
     emit(s.copyWith(progress: prog, elapsedLabel: elapsed));
@@ -277,9 +317,15 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     if (hasCached) {
       final MPAudioDetailState beforeCache = state;
       if (beforeCache.phase == MPAudioDetailPhase.loaded) {
-        emit(beforeCache.copyWith(data: cached));
+        emit(beforeCache.copyWith(data: cached, isSummaryGenerating: false));
       } else {
-        emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: cached));
+        emit(
+          MPAudioDetailState(
+            phase: MPAudioDetailPhase.loaded,
+            data: cached,
+            isSummaryGenerating: false,
+          ),
+        );
       }
     } else {
       emit(const MPAudioDetailState(phase: MPAudioDetailPhase.loading));
@@ -288,6 +334,9 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
         MPGetMemoryV2DetailRequest(memoryId: memoryId),
       );
+      if (isClosed) {
+        return;
+      }
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
@@ -307,11 +356,20 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       // 会把 isPlaying/progress/elapsedLabel 打回默认，出现「只有声音在播、时间和波纹不动」。
       final MPAudioDetailState cur = state;
       if (cur.phase == MPAudioDetailPhase.loaded) {
-        emit(cur.copyWith(data: data));
+        emit(cur.copyWith(data: data, isSummaryGenerating: false));
       } else {
-        emit(MPAudioDetailState(phase: MPAudioDetailPhase.loaded, data: data));
+        emit(
+          MPAudioDetailState(
+            phase: MPAudioDetailPhase.loaded,
+            data: data,
+            isSummaryGenerating: false,
+          ),
+        );
       }
     } catch (e) {
+      if (isClosed) {
+        return;
+      }
       if (!hasCached) {
         emit(
           MPAudioDetailState(
@@ -323,7 +381,92 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     }
   }
 
+  /// 与 [MPMemoryTransitionCubit] 一致：`status == 2` 表示服务端总结已完成。
+  static const Duration _kSummaryPollInterval = Duration(seconds: 5);
+  static const int _kSummaryPollMaxAttempts = 120;
+
+  Future<bool> _pollSummaryUntilComplete() async {
+    for (int attempt = 0; attempt < _kSummaryPollMaxAttempts; attempt++) {
+      if (isClosed) {
+        return false;
+      }
+      final MPGetSummaryStatusResponse? res = await getSummaryStatus(
+        MPGetSummaryStatusRequest(memoryId: memoryId),
+      );
+      if (isClosed) {
+        return false;
+      }
+      if (res == null) {
+        if (attempt < _kSummaryPollMaxAttempts - 1) {
+          await Future<void>.delayed(_kSummaryPollInterval);
+        }
+        continue;
+      }
+      if (res.baseResp.code != 0) {
+        MPToastUtils.showMessage(
+          res.baseResp.message.isEmpty ? '查询摘要状态失败' : res.baseResp.message,
+        );
+        return false;
+      }
+      if (res.status == 2) {
+        return true;
+      }
+      if (attempt < _kSummaryPollMaxAttempts - 1) {
+        await Future<void>.delayed(_kSummaryPollInterval);
+      }
+    }
+    MPToastUtils.showMessage('生成超时，请稍后重试');
+    return false;
+  }
+
+  Future<void> runSummaryRegeneration(MPSummaryRecordRequest req) async {
+    if (state.phase != MPAudioDetailPhase.loaded || state.data == null) {
+      return;
+    }
+    if (isClosed) return;
+    emit(state.copyWith(isSummaryGenerating: true));
+    try {
+      final MPSummaryRecordResponse? summary = await summaryRecord(req);
+      if (isClosed) return;
+      if (summary == null || summary.baseResp.code != 0) {
+        emit(state.copyWith(isSummaryGenerating: false));
+        MPToastUtils.showMessage(
+          summary?.baseResp.message ?? '生成失败，请稍后重试',
+        );
+        return;
+      }
+      final bool completed = await _pollSummaryUntilComplete();
+      if (isClosed) return;
+      emit(state.copyWith(isSummaryGenerating: false));
+      if (completed) {
+        await load();
+      }
+    } catch (_) {
+      if (!isClosed) {
+        emit(state.copyWith(isSummaryGenerating: false));
+        MPToastUtils.showMessage('生成失败，请稍后重试');
+      }
+    }
+  }
+
   Future<void> retry() => load();
+
+  Future<void> pauseIfPlaying() async {
+    if (state.phase != MPAudioDetailPhase.loaded) return;
+    if (!state.isPlaying) return;
+    _stopPlaybackUiTimer();
+    try {
+      await _audioPlayer.pause();
+    } catch (_) {}
+    if (!isClosed) {
+      emit(
+        state.copyWith(
+          isPlaying: false,
+          playPreparing: false,
+        ),
+      );
+    }
+  }
 
   /// 重命名成功后更新本地标题（接口由 [MPMemoryUpdateNameDialog] 调用）。
   void updateTitle(String newTitle) {
@@ -547,21 +690,27 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
 
   @override
   Future<void> close() {
+    _decoderDurationSub?.cancel();
+    _decoderDurationSub = null;
     _stopPlaybackUiTimer();
     _audioPlayer.dispose();
     return super.close();
   }
 
-  void onSummarizeTap(BuildContext context) {
-    showMPMemoryGenerateSummarySheet(
+  Future<void> onSummarizeTap(BuildContext context) async {
+    final String recordUrl = (state.data?.recordUri ?? '').trim();
+    final MPSummaryRecordRequest? req = await showMPMemoryGenerateSummarySheet(
       context,
-      onGenerateResummary: () {
-        // TODO: 调用生成 resummary 接口
-      },
+      memoryId: memoryId,
+      recordUrl: recordUrl,
+      isRegen: false,
       onChangeMode: () {
         // TODO: 切换 Autopilot / 其它模式
       },
     );
+    if (!context.mounted) return;
+    if (req == null) return;
+    await runSummaryRegeneration(req);
   }
 }
 

@@ -153,6 +153,9 @@ class GetTodoGroupedListResponse {
   Map<String, dynamic> toJson() => _$GetTodoGroupedListResponseToJson(this);
 }
 
+/// Thrift `GetTodoListResponse`；HTTP 与 [GetTodoGroupedListResponse] 使用同一 JSON 结构。
+typedef GetTodoListResponse = GetTodoGroupedListResponse;
+
 @JsonSerializable()
 class TodoListSectionStruct {
 

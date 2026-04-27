@@ -15,6 +15,7 @@ import '../../../../common/mp_custom_nav_bar.dart';
 import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';
+import '../memory/card/mp_memory_summary_generating_panel.dart';
 import 'mp_audio_detail_cubit.dart';
 
 /// Audio Memory 详情页（UI 对齐设计稿）。
@@ -145,6 +146,20 @@ class _OmiAudioDetailView extends StatelessWidget {
               );
             case MPAudioDetailPhase.loaded:
               final MPAudioDetailData d = state.data!;
+              if (state.isSummaryGenerating) {
+                return SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                    child: MPSummaryGeneratingPanel(
+                      headline: d.title.trim().isNotEmpty
+                          ? d.title
+                          : 'Audio Memory',
+                      metaLine: d.subtitle,
+                    ),
+                  ),
+                );
+              }
               return SafeArea(
                 top: false,
                 child: Column(
@@ -280,10 +295,12 @@ class _OmiAudioDetailView extends StatelessWidget {
                         height: 56,
                         width: 240,
                         child: TextButton(
-                          onPressed: () {
-                            context.read<MPAudioDetailCubit>().onSummarizeTap(
-                              context,
-                            );
+                          onPressed: () async {
+                            final MPAudioDetailCubit cubit =
+                                context.read<MPAudioDetailCubit>();
+                            await cubit.pauseIfPlaying();
+                            if (!context.mounted) return;
+                            await cubit.onSummarizeTap(context);
                           },
                           style: TextButton.styleFrom(
                             backgroundColor: const Color(0xFFE8F0FF),
@@ -367,7 +384,11 @@ class _AudioWaveformState extends State<_AudioWaveform>
     _pulse = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
-    );
+    )..addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
     if (widget.isPlaying) {
       _ensurePulseRepeating();
     }
@@ -396,45 +417,40 @@ class _AudioWaveformState extends State<_AudioWaveform>
 
   @override
   Widget build(BuildContext context) {
+    final double p = widget.isPlaying ? _pulse.value : 0.0;
     return SizedBox(
       height: _h,
-      child: AnimatedBuilder(
-        animation: _pulse,
-        builder: (BuildContext context, Widget? child) {
-          final double p = widget.isPlaying ? _pulse.value : 0.0;
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: List<Widget>.generate(_n, (int i) {
-              final bool isPlayed = (i + 1) / _n <= widget.progress;
-              final double t = i / (_n - 1);
-              final double base =
-                  0.28 +
-                  0.52 *
-                      (0.5 +
-                          0.5 *
-                              math.sin((t * 5.6 + 0.35) * 2 * math.pi) *
-                              math.sin((t * 2.1 + 0.1) * 2 * math.pi));
-              final double wobble = widget.isPlaying
-                  ? (0.92 + 0.12 * math.sin((p * 2 * math.pi) + t * 10.0))
-                  : 1.0;
-              final double v = (base * wobble).clamp(0.0, 1.0);
-              final double barH = 10 + v * (_h - 10);
-              return Expanded(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                    width: 2,
-                    height: barH,
-                    decoration: BoxDecoration(
-                      color: isPlayed ? Colors.black : const Color(0xFFD1D1D6),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: List<Widget>.generate(_n, (int i) {
+          final bool isPlayed = (i + 1) / _n <= widget.progress;
+          final double t = i / (_n - 1);
+          final double base =
+              0.28 +
+              0.52 *
+                  (0.5 +
+                      0.5 *
+                          math.sin((t * 5.6 + 0.35) * 2 * math.pi) *
+                          math.sin((t * 2.1 + 0.1) * 2 * math.pi));
+          final double wobble = widget.isPlaying
+              ? (0.92 + 0.12 * math.sin((p * 2 * math.pi) + t * 10.0))
+              : 1.0;
+          final double v = (base * wobble).clamp(0.0, 1.0);
+          final double barH = 10 + v * (_h - 10);
+          return Expanded(
+            child: Align(
+              alignment: Alignment.center,
+              child: Container(
+                width: 2,
+                height: barH,
+                decoration: BoxDecoration(
+                  color: isPlayed ? Colors.black : const Color(0xFFD1D1D6),
+                  borderRadius: BorderRadius.circular(999),
                 ),
-              );
-            }),
+              ),
+            ),
           );
-        },
+        }),
       ),
     );
   }

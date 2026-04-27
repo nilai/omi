@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 
 import '../../env/env.dart';
 import '../schema/mp_memory.dart';
+import '../schema/mp_todo.dart';
 import '../shared.dart';
 
 // GET /api/v1/memory/get_list
@@ -99,6 +100,42 @@ Future<MPShareMemoryResponse?> shareMemory(MPShareMemoryRequest req) async {
   debugPrint('shareMemory response: ${response.body}');
   if (response.statusCode == 200) {
     return MPShareMemoryResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// POST /api/v2/memory/get_unread_count
+Future<MPGetMemoryV2UnreadCountResponse?> getMemoryV2UnreadCount(
+  MPGetMemoryV2UnreadCountRequest req,
+) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/memory/get_unread_count',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('getMemoryV2UnreadCount response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemoryV2UnreadCountResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v2/todo/focus/candidates
+Future<GetTodoListResponse?> getTodayFocusCandidates(MPGetTodayFocusCandidatesRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/todo/focus/candidates',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getTodayFocusCandidates response: ${response.body}');
+  if (response.statusCode == 200) {
+    return GetTodoListResponse.fromJson(jsonDecode(response.body));
   }
   return null;
 }

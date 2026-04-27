@@ -6,19 +6,23 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../../../http/api/mp_template.dart';
 import '../../../../../http/schema/mp_data_model.dart';
+import '../../../../../http/schema/mp_memory.dart';
 import '../../../../../http/schema/mp_template.dart';
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/mp_toast_utils.dart';
 import '../../../../../utils/omi_image_loader.dart';
 import 'mp_choose_summary_style_sheet.dart';
 
-/// 自底部弹出「Generate resummary」说明与确认（白底圆角 sheet）
-Future<void> showMPMemoryGenerateSummarySheet(
+/// 底部说明与确认；确认后返回 [MPSummaryRecordRequest]（含 [MPSummaryRecordRequest.isRegen] 对应接口 `is_regen`）。
+Future<MPSummaryRecordRequest?> showMPMemoryGenerateSummarySheet(
   BuildContext context, {
-  VoidCallback? onGenerateResummary,
+  required String memoryId,
+  required String recordUrl,
+  required bool isRegen,
+  int recordMemoAt = 0,
   VoidCallback? onChangeMode,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<MPSummaryRecordRequest?>(
     context: context,
     isScrollControlled: true,
     /// 使用根 Navigator，避免嵌套路由（如 Tab）时底部 sheet 不显示或层级异常
@@ -28,7 +32,10 @@ Future<void> showMPMemoryGenerateSummarySheet(
     barrierColor: Colors.black54,
     builder: (BuildContext ctx) {
       return _MPGenerateSummarySheet(
-        onGenerate: onGenerateResummary,
+        memoryId: memoryId,
+        recordUrl: recordUrl,
+        isRegen: isRegen,
+        recordMemoAt: recordMemoAt,
         onChangeMode: onChangeMode,
       );
     },
@@ -37,11 +44,17 @@ Future<void> showMPMemoryGenerateSummarySheet(
 
 class _MPGenerateSummarySheet extends StatefulWidget {
   const _MPGenerateSummarySheet({
-    this.onGenerate,
+    required this.memoryId,
+    required this.recordUrl,
+    required this.isRegen,
+    this.recordMemoAt = 0,
     this.onChangeMode,
   });
 
-  final VoidCallback? onGenerate;
+  final String memoryId;
+  final String recordUrl;
+  final bool isRegen;
+  final int recordMemoAt;
 
   final VoidCallback? onChangeMode;
 
@@ -95,9 +108,31 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
     return tpl?.subTitle ?? '';
   }
 
+  void _onConfirmGenerate() {
+    final String url = widget.recordUrl.trim();
+    if (url.isEmpty) {
+      MPToastUtils.showMessage('暂无录音地址');
+      return;
+    }
+    final String mid = widget.memoryId.trim();
+    if (mid.isEmpty) {
+      MPToastUtils.showMessage('Memory 无效');
+      return;
+    }
+    final String? tplId = _selectedTemplate?.id?.trim();
+    Navigator.of(context).pop(
+      MPSummaryRecordRequest(
+        memoryId: mid,
+        recordUrl: url,
+        recordMemoAt: widget.recordMemoAt,
+        templateId: (tplId != null && tplId.isNotEmpty) ? tplId : null,
+        isRegen: widget.isRegen,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 最大高度为屏幕的 80%
     final double maxH = MediaQuery.sizeOf(context).height * 0.8;
     final double kb = MediaQuery.viewInsetsOf(context).bottom;
 
@@ -334,11 +369,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                             color: Colors.white,
                             fit: BoxFit.contain,
                           ),
-                          onPressed: () {
-                            final NavigatorState nav = Navigator.of(context);
-                            widget.onGenerate?.call();
-                            nav.pop();
-                          },
+                          onPressed: _onConfirmGenerate,
                         ),
                         const SizedBox(height: 10),
                         Text(

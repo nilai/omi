@@ -176,6 +176,42 @@ class MPAudioLocalRecordsUtil {
         (head[1] & 0xf0) == 0xf0;
   }
 
+  static bool _bytesAreMp3(Uint8List head) {
+    if (head.length >= 3 && head[0] == 0x49 && head[1] == 0x44 && head[2] == 0x33) {
+      return true; // ID3
+    }
+    // MP3 frame sync: 0xFFEx (very loose but useful)
+    return head.length >= 2 && (head[0] & 0xff) == 0xff && (head[1] & 0xe0) == 0xe0;
+  }
+
+  static bool _bytesAreWavRiff(Uint8List head) {
+    // "RIFF....WAVE"
+    return head.length >= 12 &&
+        head[0] == 0x52 &&
+        head[1] == 0x49 &&
+        head[2] == 0x46 &&
+        head[3] == 0x46 &&
+        head[8] == 0x57 &&
+        head[9] == 0x41 &&
+        head[10] == 0x56 &&
+        head[11] == 0x45;
+  }
+
+  static Future<String> _renameToExt(File f, String ext) async {
+    String newPath = p.join(
+      p.dirname(f.path),
+      '${p.basenameWithoutExtension(f.path)}$ext',
+    );
+    if (File(newPath).existsSync()) {
+      newPath = p.join(
+        p.dirname(f.path),
+        '${p.basenameWithoutExtension(f.path)}_${DateTime.now().millisecondsSinceEpoch}$ext',
+      );
+    }
+    await f.rename(newPath);
+    return newPath;
+  }
+
   /// 根据文件头修正扩展名：裸 ADTS 常被误存为 `.m4a`，iOS 会报 **-11829 Cannot Open**。
   /// 返回新路径（可能与入参相同）；明显为 JSON/HTML 时删文件并返回 `null`。
   static Future<String?> adjustAudioFileIfWrongExtension(String savedPath) async {
@@ -212,18 +248,25 @@ class MPAudioLocalRecordsUtil {
         if (ext == '.m4a' || ext == '.mp4') {
           await raf.close();
           raf = null;
-          String newPath = p.join(
-            p.dirname(f.path),
-            '${p.basenameWithoutExtension(f.path)}.aac',
-          );
-          if (File(newPath).existsSync()) {
-            newPath = p.join(
-              p.dirname(f.path),
-              '${p.basenameWithoutExtension(f.path)}_${DateTime.now().millisecondsSinceEpoch}.aac',
-            );
-          }
-          await f.rename(newPath);
-          return newPath;
+          return await _renameToExt(f, '.aac');
+        }
+        return f.path;
+      }
+      if (_bytesAreWavRiff(head)) {
+        final String ext = p.extension(f.path).toLowerCase();
+        if (ext != '.wav') {
+          await raf.close();
+          raf = null;
+          return await _renameToExt(f, '.wav');
+        }
+        return f.path;
+      }
+      if (_bytesAreMp3(head)) {
+        final String ext = p.extension(f.path).toLowerCase();
+        if (ext != '.mp3') {
+          await raf.close();
+          raf = null;
+          return await _renameToExt(f, '.mp3');
         }
         return f.path;
       }

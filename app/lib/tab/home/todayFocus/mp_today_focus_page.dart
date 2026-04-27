@@ -9,9 +9,7 @@ import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/omi_edit_todo_popup.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
-import 'package:memo_pin/utils/omi_image_loader.dart';
 
-import '../../../generated/assets.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
 import 'cards/mp_today_focus_card.dart';
@@ -153,118 +151,106 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
           builder: (BuildContext context, MPTodayFocusState state) {
             switch (state.phase) {
               case MPTodayFocusPhase.loading:
-                return ColoredBox(
-                  color: pageColor,
-                  child: const Material(
-                    color: Colors.transparent,
-                    child: MPTristatePage(type: MPTristateType.loading),
-                  ),
-                );
-              case MPTodayFocusPhase.empty:
-                return ColoredBox(
-                  color: pageColor,
-                  child: MPTristatePage(
-                    type: MPTristateType.empty,
-                    data: MPTristatePageData(
-                      icon: OmiImageLoader.localImg(
-                        Assets.omiBrain,
-                        width: 60,
-                        height: 60,
-                        color: blueTextColor,
-                        fit: BoxFit.cover,
-                      ),
-                      title: 'Nothing for today yet',
-                      description:
-                          'Pull to refresh or add a task below when data loads.',
-                      buttonText: 'Retry',
-                      onButtonPressed: () {
-                        context.read<MPTodayFocusCubit>().retry();
-                      },
-                    ),
-                  ),
+                return const SafeArea(
+                  top: false,
+                  child: MPTristatePage(type: MPTristateType.loading),
                 );
               case MPTodayFocusPhase.error:
-                return ColoredBox(
-                  color: pageColor,
+                return SafeArea(
+                  top: false,
                   child: MPTristatePage(
                     type: MPTristateType.error,
                     data: MPTristatePageData(
-                      title: 'Unable to load Today Focus',
+                      title: '加载失败',
                       description: state.errorMessage ?? '请稍后重试',
-                      buttonText: 'Retry',
-                      onButtonPressed: () {
-                        context.read<MPTodayFocusCubit>().retry();
-                      },
+                      onButtonPressed: () => _cubit.retry(),
                     ),
                   ),
                 );
               case MPTodayFocusPhase.loaded:
-                // 单轴滚动：SingleChildScrollView + 一个 Column(min)。
-                // ListView 多子项各自受「纵向无限高」约束，易与内层 Column/TextField 冲突导致空白。
-                return SafeArea(
-                  top: false,
-                  child: RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          MPTodayFocusCard(
-                            data: state.focusCard,
-                            onItemDeleted: (int i) async {
-                              await _cubit.removeFocusItemAt(i);
-                            },
-                            onItemTap: _onTapFocusItem,
-                          ),
-                          if (state.focusCard.items.length < 3 &&
-                              !_aiAddCardDismissedThisSession &&
-                              state.currentAiFocusSuggestion != null) ...<Widget>[
-                            const SizedBox(height: 16),
-                            MPTodayFocusAddCard(
-                              title: state.currentAiFocusSuggestion!.title,
-                              scheduledTimeLabel: state
-                                  .currentAiFocusSuggestion!.scheduledTimeLabel,
-                              addButtonText: _addingAiFocus
-                                  ? 'Adding…'
-                                  : 'Add to Focus',
-                              onDismiss: () {
-                                setState(() {
-                                  _aiAddCardDismissedThisSession = true;
-                                });
-                              },
-                              onAddToFocus:
-                                  _addingAiFocus ? null : _onTapAddAiFocus,
-                            ),
-                          ],
-                          const SizedBox(height: 20),
-                          MPAllTodosInputCard(
-                            onSubmitted: (MPTodoVoiceInputResult r) {
-                              return _cubit.addTodoFromAnalyzedInput(r);
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          MPTodayFocusTodoGroupedList(
-                            todayItems: state.todayItems,
-                            upcomingItems: state.upcomingItems,
-                            futureItems: state.futureItems,
-                            overdueItems: state.overdueItems,
-                            completedItems: state.completedItems,
-                            initialFutureExpanded: true,
-                            onOverdueClear: _cubit.clearOverdue,
-                            onItemCheckChanged: _cubit.setTodoChecked,
-                            onItemTap: (MPTodayFocusTodoSection section, int index) {
-                              _onTapTodoItem(state, section, index);
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
+              case MPTodayFocusPhase.empty:
+                break;
             }
+
+            final bool showFocusCard = state.phase == MPTodayFocusPhase.loaded;
+            final bool canAddAi = state.phase == MPTodayFocusPhase.loaded;
+            final bool showListLoadingBar = state.isGroupedTodosRefreshing;
+
+            return SafeArea(
+              top: false,
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      if (showListLoadingBar) ...<Widget>[
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            minHeight: 2,
+                            color: blueTextColor,
+                            backgroundColor: lineColor,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (showFocusCard) ...<Widget>[
+                        MPTodayFocusCard(
+                          data: state.focusCard,
+                          onItemDeleted: (int i) async {
+                            await _cubit.removeFocusItemAt(i);
+                          },
+                          onItemTap: _onTapFocusItem,
+                        ),
+                      ],
+                      if (!_aiAddCardDismissedThisSession &&
+                          state.currentAiFocusSuggestion != null) ...<Widget>[
+                        if (showFocusCard) const SizedBox(height: 16),
+                        MPTodayFocusAddCard(
+                          title: state.currentAiFocusSuggestion!.title,
+                          scheduledTimeLabel:
+                              state.currentAiFocusSuggestion!.scheduledTimeLabel,
+                          addButtonText: _addingAiFocus ? 'Adding…' : 'Add to Focus',
+                          onDismiss: () {
+                            setState(() {
+                              _aiAddCardDismissedThisSession = true;
+                            });
+                          },
+                          onAddToFocus: (!canAddAi || _addingAiFocus)
+                              ? null
+                              : _onTapAddAiFocus,
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      MPAllTodosInputCard(
+                        onSubmitted: (MPTodoVoiceInputResult r) {
+                          return _cubit.addTodoFromAnalyzedInput(r);
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      MPTodayFocusTodoGroupedList(
+                        todayItems: state.todayItems,
+                        upcomingItems: state.upcomingItems,
+                        futureItems: state.futureItems,
+                        overdueItems: state.overdueItems,
+                        completedItems: state.completedItems,
+                        initialFutureExpanded: true,
+                        onOverdueClear: _cubit.clearOverdue,
+                        onItemCheckChanged: _cubit.setTodoChecked,
+                        onItemTap:
+                            (MPTodayFocusTodoSection section, int index) {
+                          _onTapTodoItem(state, section, index);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
           },
         ),
       ),

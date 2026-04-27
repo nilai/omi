@@ -22,6 +22,40 @@ Map<String, dynamic> _$MPGetMemoryV2ListRequestToJson(
   'day': instance.day,
 };
 
+MPGetMemoryV2UnreadCountRequest _$MPGetMemoryV2UnreadCountRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2UnreadCountRequest(
+  memberIds: (json['member_ids'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+);
+
+Map<String, dynamic> _$MPGetMemoryV2UnreadCountRequestToJson(
+  MPGetMemoryV2UnreadCountRequest instance,
+) => <String, dynamic>{'member_ids': instance.memberIds};
+
+MPGetTodayFocusCandidatesRequest _$MPGetTodayFocusCandidatesRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetTodayFocusCandidatesRequest();
+
+Map<String, dynamic> _$MPGetTodayFocusCandidatesRequestToJson(
+  MPGetTodayFocusCandidatesRequest instance,
+) => <String, dynamic>{};
+
+MPGetMemoryV2UnreadCountResponse _$MPGetMemoryV2UnreadCountResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2UnreadCountResponse(
+  unreadCounts: Map<String, int>.from(json['unread_counts'] as Map),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetMemoryV2UnreadCountResponseToJson(
+  MPGetMemoryV2UnreadCountResponse instance,
+) => <String, dynamic>{
+  'unread_counts': instance.unreadCounts,
+  'base_resp': instance.baseResp,
+};
+
 MPGetMemoryListResponse _$MPGetMemoryListResponseFromJson(
   Map<String, dynamic> json,
 ) => MPGetMemoryListResponse(
@@ -267,7 +301,10 @@ MPGetSummaryStatusResponse _$MPGetSummaryStatusResponseFromJson(
 
 Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
   MPGetSummaryStatusResponse instance,
-) => <String, dynamic>{'status': instance.status, 'base_resp': instance.baseResp};
+) => <String, dynamic>{
+  'status': instance.status,
+  'base_resp': instance.baseResp,
+};
 
 PresignedUrlResponse _$PresignedUrlResponseFromJson(
   Map<String, dynamic> json,

@@ -2,9 +2,13 @@ import 'dart:math' as math;
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/omi_button.dart';
-import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_generate_summary_sheet.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
+
+import '../omi_memory_detail_cubit.dart';
+import 'mp_memory_generate_summary_sheet.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_overview_content.dart';
@@ -29,6 +33,7 @@ enum MPMemoryDetailCardType { memory, memo }
 /// Memory 详情主卡片数据
 class MPMemoryDetailCardData {
   const MPMemoryDetailCardData({
+    required this.memoryId,
     required this.title,
     required this.metaLine,
     required this.audioTimeStart,
@@ -43,6 +48,9 @@ class MPMemoryDetailCardData {
     this.initialSegment = MPMemoryDetailSegment.transcript,
     this.feedBlocks = const <MPMemoryFeedBlock>[],
   });
+
+  /// 与详情接口 [MPMemoryStruct.id] 一致，用于 resummary 等接口。
+  final String memoryId;
 
   final String title;
 
@@ -68,6 +76,7 @@ class MPMemoryDetailCardData {
   final List<MPMemoryFeedBlock> feedBlocks;
 
   MPMemoryDetailCardData copyWith({
+    String? memoryId,
     String? title,
     String? metaLine,
     String? audioTimeStart,
@@ -83,6 +92,7 @@ class MPMemoryDetailCardData {
     List<MPMemoryFeedBlock>? feedBlocks,
   }) {
     return MPMemoryDetailCardData(
+      memoryId: memoryId ?? this.memoryId,
       title: title ?? this.title,
       metaLine: metaLine ?? this.metaLine,
       audioTimeStart: audioTimeStart ?? this.audioTimeStart,
@@ -114,6 +124,7 @@ class MPMemoryDetailContentCard extends StatefulWidget {
     this.showBackground = true,
     this.segmentBodyScrollWithParent = false,
     this.cardType = MPMemoryDetailCardType.memory,
+    this.useExternalPlaybackProgress = false,
   });
 
   final MPMemoryDetailCardData data;
@@ -123,9 +134,13 @@ class MPMemoryDetailContentCard extends StatefulWidget {
 
   /// 与 [OmiMemoryDetailCubit.onPlayTap] 对齐：成功为 `true`，失败（如未下载到本地）为 `false`。
   final Future<bool> Function()? onPlayTap;
+
   final bool showBackground;
   final bool segmentBodyScrollWithParent;
   final MPMemoryDetailCardType cardType;
+
+  /// 为 true 时不使用本地 1s 定时器推进进度；由 [OmiMemoryDetailCubit] 更新 [MPMemoryDetailCardData.audioTimeStart]（播放中可为纯毫秒数字串）与 [audioTimeEnd]。
+  final bool useExternalPlaybackProgress;
 
   @override
   State<MPMemoryDetailContentCard> createState() =>
@@ -137,6 +152,9 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
 
   /// 是否正在播放（未播放 [Assets.omiPlay]，播放中 [Assets.omiStop]）
   bool _playing = false;
+
+  /// 点击播放后等待 [onPlayTap]（下载 / 解码）完成
+  bool _playPreparing = false;
   int? _playingTranscriptIndex;
   Timer? _progressTimer;
   Duration _elapsed = Duration.zero;
@@ -167,8 +185,11 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       _segment = widget.data.initialSegment;
     }
     if (oldWidget.data.audioTimeStart != widget.data.audioTimeStart ||
-        oldWidget.data.audioTimeEnd != widget.data.audioTimeEnd) {
+        oldWidget.data.audioTimeEnd != widget.data.audioTimeEnd ||
+        oldWidget.useExternalPlaybackProgress !=
+            widget.useExternalPlaybackProgress) {
       _syncDurationFromData(widget.data);
+      _scheduleStopPlayingIfExternalPlaybackEnded();
     }
     if (oldWidget.data.transcriptItems != widget.data.transcriptItems) {
       _transcriptItems = List<MPMemoryTranscriptItemData>.from(
@@ -195,15 +216,58 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     return List<double>.generate(80, (_) => 0.15 + r.nextDouble() * 0.85);
   }
 
+  bool _isRawElapsedMsString(String s) => RegExp(r'^\d{1,9}$').hasMatch(s);
+
+  /// 外部进度由 [OmiMemoryDetailCubit] 驱动时，自然播完不会走本地暂停分支，需根据进度把 [_playing] 置否以停波形动画。
+  void _scheduleStopPlayingIfExternalPlaybackEnded() {
+    if (!widget.useExternalPlaybackProgress || !_playing) {
+      return;
+    }
+    if (_total <= Duration.zero) {
+      return;
+    }
+    const int kEndSlackMs = 120;
+    if (_elapsed.inMilliseconds < _total.inMilliseconds - kEndSlackMs) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (!widget.useExternalPlaybackProgress || !_playing) {
+        return;
+      }
+      if (_total <= Duration.zero) {
+        return;
+      }
+      if (_elapsed.inMilliseconds < _total.inMilliseconds - kEndSlackMs) {
+        return;
+      }
+      setState(() {
+        _playing = false;
+      });
+    });
+  }
+
   void _syncDurationFromData(MPMemoryDetailCardData data) {
-    _elapsed = Duration(seconds: _parseToSeconds(data.audioTimeStart));
+    final String startRaw = data.audioTimeStart.trim();
+    if (widget.useExternalPlaybackProgress && _isRawElapsedMsString(startRaw)) {
+      _elapsed = Duration(milliseconds: int.tryParse(startRaw) ?? 0);
+    } else {
+      _elapsed = Duration(seconds: _parseToSeconds(data.audioTimeStart));
+    }
     _total = Duration(seconds: _parseToSeconds(data.audioTimeEnd));
     if (_total <= Duration.zero || _elapsed > _total) {
-      _total = _elapsed;
+      if (!widget.useExternalPlaybackProgress || _total > Duration.zero) {
+        _total = _elapsed;
+      }
     }
   }
 
   Future<void> _togglePlayFromHeader() async {
+    if (_playPreparing) {
+      return;
+    }
     if (_elapsed >= _total && _total > Duration.zero) {
       _elapsed = Duration.zero;
     }
@@ -227,18 +291,34 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       return;
     }
 
-    final bool ok = await fut;
-    if (!mounted) return;
-    if (!ok) return;
-
     setState(() {
-      _playing = true;
-      _playingTranscriptIndex ??= _transcriptItems.isNotEmpty ? 0 : null;
+      _playPreparing = true;
     });
-    _syncTimerByPlayingState();
+    try {
+      final bool ok = await fut;
+      if (!mounted) {
+        return;
+      }
+      if (ok) {
+        setState(() {
+          _playing = true;
+          _playingTranscriptIndex ??= _transcriptItems.isNotEmpty ? 0 : null;
+        });
+        _syncTimerByPlayingState();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _playPreparing = false;
+        });
+      }
+    }
   }
 
   Future<void> _onTranscriptPlayTap(int index) async {
+    if (_playPreparing) {
+      return;
+    }
     final bool isSameIndex = _playingTranscriptIndex == index;
     if (isSameIndex && _playing) {
       setState(() {
@@ -272,18 +352,34 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       return;
     }
 
-    final bool ok = await fut;
-    if (!mounted) return;
-    if (!ok) return;
-
     setState(() {
-      _playing = true;
+      _playPreparing = true;
     });
-    _syncTimerByPlayingState();
+    try {
+      final bool ok = await fut;
+      if (!mounted) {
+        return;
+      }
+      if (ok) {
+        setState(() {
+          _playing = true;
+        });
+        _syncTimerByPlayingState();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _playPreparing = false;
+        });
+      }
+    }
   }
 
   void _syncTimerByPlayingState() {
     _progressTimer?.cancel();
+    if (widget.useExternalPlaybackProgress) {
+      return;
+    }
     if (!_playing || _total <= Duration.zero) return;
     _progressTimer = Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       if (!mounted) return;
@@ -299,15 +395,24 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   }
 
   int _parseToSeconds(String raw) {
+    final String t = raw.trim();
+    final RegExp hms = RegExp(r'^(\d+):(\d{2}):(\d{2})$');
+    final Match? hmsMatch = hms.firstMatch(t);
+    if (hmsMatch != null) {
+      final int h = int.tryParse(hmsMatch.group(1) ?? '') ?? 0;
+      final int m = int.tryParse(hmsMatch.group(2) ?? '') ?? 0;
+      final int s = int.tryParse(hmsMatch.group(3) ?? '') ?? 0;
+      return h * 3600 + m * 60 + s;
+    }
     final RegExp mmss = RegExp(r'^(\d+):(\d{2})$');
-    final Match? mmssMatch = mmss.firstMatch(raw.trim());
+    final Match? mmssMatch = mmss.firstMatch(t);
     if (mmssMatch != null) {
       final int m = int.tryParse(mmssMatch.group(1) ?? '') ?? 0;
       final int s = int.tryParse(mmssMatch.group(2) ?? '') ?? 0;
       return m * 60 + s;
     }
     final RegExp ms = RegExp(r'(?:(\d+)m)?\s*(?:(\d+)s)?');
-    final Match? msMatch = ms.firstMatch(raw.trim());
+    final Match? msMatch = ms.firstMatch(t);
     if (msMatch != null) {
       final int m = int.tryParse(msMatch.group(1) ?? '') ?? 0;
       final int s = int.tryParse(msMatch.group(2) ?? '') ?? 0;
@@ -480,6 +585,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
               const SizedBox(width: 10),
               _PlayButton(
                 isPlaying: _playing,
+                isLoading: _playPreparing,
                 useMemoStyle: _isMemoCard,
                 onTap: _togglePlayFromHeader,
               ),
@@ -546,16 +652,23 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
               text: 'Generate Resummary',
               width: double.infinity,
               height: 50,
-              onPressed: () {
-                showMPMemoryGenerateSummarySheet(
+              onPressed: () async {
+                final MPSummaryRecordRequest? req =
+                    await showMPMemoryGenerateSummarySheet(
                   context,
-                  onGenerateResummary: () {
-                    // TODO: 调用生成 resummary 接口
-                  },
+                  memoryId: widget.data.memoryId,
+                  recordUrl: (widget.data.recordUri ?? '').trim(),
+                  isRegen: true,
                   onChangeMode: () {
                     // TODO: 切换 Autopilot / 其它模式
                   },
                 );
+                if (!context.mounted) return;
+                if (req != null) {
+                  await context
+                      .read<OmiMemoryDetailCubit>()
+                      .runSummaryRegeneration(req);
+                }
               },
             ),
             const SizedBox(height: 12),
@@ -668,13 +781,15 @@ class _WaveformBarState extends State<_WaveformBar>
 
   @override
   Widget build(BuildContext context) {
+    /// Memo 与右侧播放钮同高 44，避免 Row 垂直居中时在条带下方露出透明缝（像底部无背景）。
+    final double trackH = widget.useMemoStyle ? 44 : 40;
     return Container(
-      height: 40,
+      height: trackH,
       clipBehavior: Clip.antiAlias,
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       decoration: BoxDecoration(
         color: widget.useMemoStyle
-            ? const Color(0xFFF0F0F5)
+            ? Colors.transparent
             : Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
@@ -690,7 +805,7 @@ class _WaveformBarState extends State<_WaveformBar>
           final double gap = n > 1
               ? math.max(0.0, (c.maxWidth - n * barW) / (n - 1))
               : 0.0;
-          final double maxInnerH = (c.maxHeight - 8).clamp(4.0, 40.0);
+          final double maxInnerH = (c.maxHeight - 8).clamp(4.0, 48.0);
           return Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
@@ -723,47 +838,96 @@ class _WaveformBarState extends State<_WaveformBar>
 class _PlayButton extends StatelessWidget {
   const _PlayButton({
     required this.isPlaying,
+    required this.isLoading,
     required this.useMemoStyle,
     this.onTap,
   });
 
   final bool isPlaying;
+  final bool isLoading;
   final bool useMemoStyle;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
+    final Color iconColor =
+        useMemoStyle ? const Color(0xFF1C1C1E) : Colors.white;
+    final Widget content = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: useMemoStyle
+            ? Colors.white
+            : Colors.white.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+        boxShadow: useMemoStyle
+            ? const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x1A000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
+              ]
+            : null,
+      ),
+      child: Center(
+        child: isLoading
+            ? SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: useMemoStyle ? mainTextColor : Colors.white,
+                ),
+              )
+            : OmiImageLoader.localImg(
+                isPlaying ? Assets.omiPause : Assets.omiPlay,
+                width: 20,
+                height: 20,
+                color: iconColor,
+                fit: BoxFit.contain,
+              ),
+      ),
+    );
+
+    /// Memo 样式不用 [InkWell]，避免水波纹在圆钮底部呈灰底。
+    if (useMemoStyle) {
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: isLoading ? null : onTap,
+        child: content,
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap,
+        onTap: isLoading ? null : onTap,
         customBorder: const CircleBorder(),
         child: Ink(
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: useMemoStyle
-                ? Colors.white
-                : Colors.white.withValues(alpha: 0.15),
+            color: Colors.white.withValues(alpha: 0.15),
             shape: BoxShape.circle,
-            boxShadow: useMemoStyle
-                ? const <BoxShadow>[
-                    BoxShadow(
-                      color: Color(0x1A000000),
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ]
-                : null,
           ),
           child: Center(
-            child: OmiImageLoader.localImg(
-              isPlaying ? Assets.omiPause : Assets.omiPlay,
-              width: 20,
-              height: 20,
-              color: useMemoStyle ? const Color(0xFF1C1C1E) : Colors.white,
-              fit: BoxFit.contain,
-            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : OmiImageLoader.localImg(
+                    isPlaying ? Assets.omiPause : Assets.omiPlay,
+                    width: 20,
+                    height: 20,
+                    color: iconColor,
+                    fit: BoxFit.contain,
+                  ),
           ),
         ),
       ),

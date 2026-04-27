@@ -161,6 +161,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: MPMemoryDetailContentCard(
                             data: data,
+                            useExternalPlaybackProgress: true,
                             onSegmentChanged: (MPMemoryDetailSegment s) {},
                             onPlayTap: () => context.read<OmiMemoryDetailCubit>().onPlayTap(),
                           ),

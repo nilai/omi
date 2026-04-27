@@ -10,7 +10,7 @@ MPCreateMemoWithTextRequest _$MPCreateMemoWithTextRequestFromJson(
   Map<String, dynamic> json,
 ) => MPCreateMemoWithTextRequest(
   content: json['content'] as String,
-  createAt: (json['create_at'] as num).toInt(),
+  createAt: _memoParseCreateAtForCtor(json['create_at']),
 );
 
 Map<String, dynamic> _$MPCreateMemoWithTextRequestToJson(

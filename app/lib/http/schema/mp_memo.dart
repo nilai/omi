@@ -4,19 +4,33 @@ import 'mp_base.dart';
 
 part 'mp_memo.g.dart';
 
+/// 解析 JSON 中的 `create_at`；缺失或非数字时得到 `0`，再由构造过程兜底为当前秒。
+int _memoParseCreateAtForCtor(Object? raw) {
+  if (raw is num) {
+    return raw.toInt();
+  }
+  return 0;
+}
+
+int _memoNormalizeUnixSeconds(int value) {
+  if (value <= 0) {
+    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+  }
+  return value;
+}
 
 @JsonSerializable()
 class MPCreateMemoWithTextRequest {
   @JsonKey(name: 'content')
   final String content;
 
-  @JsonKey(name: 'create_at')
+  @JsonKey(name: 'create_at', fromJson: _memoParseCreateAtForCtor)
   final int createAt;
 
   MPCreateMemoWithTextRequest({
     required this.content,
-    required this.createAt,
-  });
+    required int createAt,
+  }) : createAt = _memoNormalizeUnixSeconds(createAt);
 
   factory MPCreateMemoWithTextRequest.fromJson(Map<String, dynamic> json) =>
       _$MPCreateMemoWithTextRequestFromJson(json);

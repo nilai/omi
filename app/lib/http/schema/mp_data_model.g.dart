@@ -7,7 +7,7 @@ part of 'mp_data_model.dart';
 // **************************************************************************
 
 MPBaseResp _$MPBaseRespFromJson(Map<String, dynamic> json) => MPBaseResp(
-  code: mpIntFromJson(json['code']),
+  code: (json['code'] as num).toInt(),
   message: json['message'] as String,
   logid: json['logid'] as String,
 );
@@ -27,8 +27,8 @@ MPSpeakerStruct _$MPSpeakerStructFromJson(Map<String, dynamic> json) =>
       isTemporary: json['is_temporary'] as bool,
       myselfVoice: json['myself_voice'] as bool?,
       audioUrl: json['audio_url'] as String?,
-      createdAt: mpNullableIntFromJson(json['created_at']),
-      duration: mpNullableIntFromJson(json['duration']),
+      createdAt: (json['created_at'] as num?)?.toInt(),
+      duration: (json['duration'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$MPSpeakerStructToJson(MPSpeakerStruct instance) =>
@@ -51,7 +51,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
       : MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
   priority: json['priority'] as String?,
   deadline: mpTodoDeadlineFromJson(json['deadline']),
-  status: mpNullableIntFromJson(json['status']),
+  status: (json['status'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
@@ -70,7 +70,7 @@ MPRecordConversationStruct _$MPRecordConversationStructFromJson(
   id: json['id'] as String,
   speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
   content: json['content'] as String,
-  time: mpNullableIntFromJson(json['time']),
+  time: (json['time'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPRecordConversationStructToJson(
@@ -87,12 +87,12 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
 ) => MPSummaryMemoryStruct(
   title: json['title'] as String?,
   content: json['content'] as String?,
-  createAt: mpNullableIntFromJson(json['create_at']),
-  duration: mpNullableIntFromJson(json['duration']),
+  createAt: (json['create_at'] as num?)?.toInt(),
+  duration: (json['duration'] as num?)?.toInt(),
   participants: (json['participants'] as List<dynamic>?)
       ?.map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
-  participantsCnt: mpNullableIntFromJson(json['participants_cnt']),
+  participantsCnt: (json['participants_cnt'] as num?)?.toInt(),
   recordUrl: json['record_url'] as String?,
   recordUri: json['record_uri'] as String?,
   summary: json['summary'] as String?,
@@ -104,7 +104,7 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
   todos: (json['todos'] as List<dynamic>?)
       ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
-  status: mpNullableIntFromJson(json['status']),
+  status: (json['status'] as num?)?.toInt(),
   source: json['source'] as String?,
 );
 
@@ -129,7 +129,7 @@ Map<String, dynamic> _$MPSummaryMemoryStructToJson(
 MPOnlyRecordMemoryStruct _$MPOnlyRecordMemoryStructFromJson(
   Map<String, dynamic> json,
 ) => MPOnlyRecordMemoryStruct(
-  recordFile: json['record_file'] as String,
+  recordFile: json['record_file'] as String?,
   recordUri: json['record_uri'] as String?,
   source: json['source'] as String?,
 );
@@ -186,7 +186,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
           : MPOnlyRecordMemoryStruct.fromJson(
               json['only_record_content'] as Map<String, dynamic>,
             ),
-        unreadItemCnt: (json['unread_item_cnt'] as num?)?.toInt(),
+      unreadItemCnt: mpNullableIntFromJson(json['unread_item_cnt']),
     );
 
 Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
@@ -198,12 +198,12 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'type': _$MPMemoryTypeEnumMap[instance.type]!,
       'content': instance.content,
       'duration': instance.duration,
+      'unread_item_cnt': instance.unreadItemCnt,
       'memo_list': instance.memoList,
       'source': instance.source,
       'memory_feed': instance.memoryFeed,
       'summary_content': instance.summaryContent,
       'only_record_content': instance.onlyRecordContent,
-      'unread_item_cnt': instance.unreadItemCnt,
     };
 
 const _$MPMemoryTypeEnumMap = {
@@ -216,9 +216,9 @@ const _$MPMemoryTypeEnumMap = {
 MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
     MPFeedCardStruct(
       id: json['id'] as String?,
-      type: mpNullableIntFromJson(json['type']),
+      type: (json['type'] as num?)?.toInt(),
       title: json['title'] as String?,
-      createAt: mpNullableIntFromJson(json['create_at']),
+      createAt: (json['create_at'] as num?)?.toInt(),
       content: json['content'] as String?,
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
@@ -266,8 +266,8 @@ MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
   title: json['title'] as String,
   content: json['content'] as String,
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-  createAt: mpNullableIntFromJson(json['create_at']),
-  relateMemoryId: mpNullableIntFromJson(json['relate_memory_id']),
+  createAt: (json['create_at'] as num?)?.toInt(),
+  relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
   type: $enumDecodeNullable(_$MPMemoTypeEnumMap, json['type']),
 );
 
@@ -381,8 +381,8 @@ MPSpeakerWithDetailStruct _$MPSpeakerWithDetailStructFromJson(
 ) => MPSpeakerWithDetailStruct(
   speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
   summary: json['summary'] as String,
-  last_memory_at: mpIntFromJson(json['last_memory_at']),
-  memory_total: mpIntFromJson(json['memory_total']),
+  last_memory_at: (json['last_memory_at'] as num).toInt(),
+  memory_total: (json['memory_total'] as num).toInt(),
 );
 
 Map<String, dynamic> _$MPSpeakerWithDetailStructToJson(

@@ -13,7 +13,6 @@ import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
-import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_feed_section.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_cubit.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -26,7 +25,8 @@ import '../../../askai/mp_ask_ai_chat_page.dart';
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
 /// 区别：
 /// 1. 主卡片不带背景色；
-/// 2. Segment 下内容与页面主滚动保持同一滚动容器。
+/// 2. Segment 下内容与页面主滚动保持同一滚动容器；
+/// 3. 不展示主卡片下方 Feed（Todo / Memo 等卡片）；底部 Add Todo / Add Memo 仅提交接口，不追加本地卡片。
 class OmiMemoDetailPage extends StatelessWidget {
   const OmiMemoDetailPage({super.key, required this.memoryId});
 
@@ -54,7 +54,7 @@ class _OmiMemoDetailView extends StatelessWidget {
       appBar: PreferredSize(
         preferredSize: MPCustomNavBar.preferredSizeOf(context),
         child: MPCustomNavBar(
-          title: 'Memo',
+          title: 'Memory',
           actions: <Widget>[
             GestureDetector(
               onTap: () async {
@@ -160,12 +160,12 @@ class _OmiMemoDetailView extends StatelessWidget {
                         showBackground: false,
                         segmentBodyScrollWithParent: true,
                         cardType: MPMemoryDetailCardType.memo,
+                        useExternalPlaybackProgress: true,
                         onSegmentChanged: (MPMemoryDetailSegment s) {},
                         onPlayTap: () =>
                             context.read<OmiMemoryDetailCubit>().onPlayTap(),
                       ),
                     ),
-                    MPMemoryDetailFeedSection(data: data),
                   ],
                 ),
               );
@@ -187,7 +187,7 @@ class _OmiMemoDetailView extends StatelessWidget {
             MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
             return;
           }
-          context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(line);
+          MPToastUtils.showMessage('Todo 创建成功');
         },
         onAddMemo: () async {
           final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
@@ -214,7 +214,7 @@ class _OmiMemoDetailView extends StatelessWidget {
             );
             return;
           }
-          context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
+          MPToastUtils.showMessage('Memo 创建成功');
         },
         onAskAi: () {
           final OmiMemoryDetailState s =

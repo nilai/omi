@@ -355,13 +355,13 @@ class MPAiExpertMemoryStruct {
 @JsonSerializable()
 class MPMemoryStruct {
   @JsonKey(name: 'id')
-  final String id;
+  final String? id;
 
-  @JsonKey(name: 'create_at')
+  @JsonKey(name: 'create_at', fromJson: mpIntFromJson)
   final int createAt;
 
   @JsonKey(name: 'title')
-  final String title;
+  final String? title;
 
   @JsonKey(name: 'sub_title')
   final String? subTitle;
@@ -370,13 +370,13 @@ class MPMemoryStruct {
   final MPMemoryType type;
 
   @JsonKey(name: 'content')
-  final String content;
+  final String? content;
 
-  @JsonKey(name: 'duration')
+  @JsonKey(name: 'duration', fromJson: mpNullableIntFromJson)
   final int? duration;
 
   // 仅 MEMORY_FEED 类型有意义
-  @JsonKey(name: 'unread_item_cnt')
+  @JsonKey(name: 'unread_item_cnt', fromJson: mpNullableIntFromJson)
   final int? unreadItemCnt;
 
   /// 后端约定：当 type 为 MEMO_LIST 时，这里可能为空，需要从 `memo_list` 拼装展示内容
@@ -432,6 +432,7 @@ class MPFeedCardStruct {
   final String? title;
 
   @JsonKey(name: 'create_at')
+  @JsonKey(name: 'create_at', fromJson: mpNullableIntFromJson)
   final int? createAt;
 
   @JsonKey(name: 'content')

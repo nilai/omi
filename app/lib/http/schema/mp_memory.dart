@@ -27,6 +27,51 @@ class MPGetMemoryV2ListRequest {
   Map<String, dynamic> toJson() => _$MPGetMemoryV2ListRequestToJson(this);
 }
 
+@JsonSerializable()
+class MPGetMemoryV2UnreadCountRequest {
+  @JsonKey(name: 'member_ids')
+  final List<String> memberIds;
+
+  MPGetMemoryV2UnreadCountRequest({
+    required this.memberIds,
+  });
+
+  factory MPGetMemoryV2UnreadCountRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryV2UnreadCountRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2UnreadCountRequestToJson(this);
+}
+
+/// Thrift `GetTodayFocusCandidatesRequest`（当前无字段，占位扩展）。
+@JsonSerializable()
+class MPGetTodayFocusCandidatesRequest {
+  const MPGetTodayFocusCandidatesRequest();
+
+  factory MPGetTodayFocusCandidatesRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetTodayFocusCandidatesRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetTodayFocusCandidatesRequestToJson(this);
+}
+
+@JsonSerializable()
+class MPGetMemoryV2UnreadCountResponse {
+  @JsonKey(name: 'unread_counts')
+  final Map<String, int> unreadCounts;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoryV2UnreadCountResponse({
+    required this.unreadCounts,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoryV2UnreadCountResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryV2UnreadCountResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2UnreadCountResponseToJson(this);
+}
+
 // Get Memory List Response
 @JsonSerializable()
 class MPGetMemoryListResponse {

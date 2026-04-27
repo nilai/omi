@@ -68,9 +68,15 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     _recordCreatedSub = MPMemoryNotification.listenMemoryRecordCreated((_) {
       load();
     });
+    _unreadPollTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      unawaited(_pollUnreadCounts());
+    });
   }
 
   StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
+
+  /// 每分钟拉取未读数并刷新列表（仅 [OmiAllPhase.loaded] 且列表非空时生效）。
+  Timer? _unreadPollTimer;
 
   /// 下一页请求的游标；首屏为空字符串，首屏成功后为当前列表最后一条的 [MPMemoryEntry.id]
   String _cursor = '';
@@ -334,8 +340,76 @@ class OmiAllCubit extends Cubit<OmiAllState> {
 
   @override
   Future<void> close() {
+    _unreadPollTimer?.cancel();
+    _unreadPollTimer = null;
     _recordCreatedSub?.cancel();
     return super.close();
+  }
+
+  /// [getMemoryV2UnreadCount]：`member_ids` 使用列表项 [MPMemoryEntry.id]；返回的 `unread_counts` key 与之对齐。
+  Future<void> _pollUnreadCounts() async {
+    if (isClosed) {
+      return;
+    }
+    if (state.phase != OmiAllPhase.loaded || state.items.isEmpty) {
+      return;
+    }
+    final List<String> memberIds = state.items
+        .map((MPMemoryEntry e) => e.id.trim())
+        .where((String id) => id.isNotEmpty)
+        .toList();
+    if (memberIds.isEmpty) {
+      return;
+    }
+    try {
+      final MPGetMemoryV2UnreadCountResponse? resp = await getMemoryV2UnreadCount(
+        MPGetMemoryV2UnreadCountRequest(memberIds: memberIds),
+      );
+      if (isClosed || resp == null) {
+        return;
+      }
+      if (resp.baseResp.code != 0) {
+        return;
+      }
+      final Map<String, int> counts = resp.unreadCounts;
+      final List<MPMemoryEntry> next = state.items.map((MPMemoryEntry e) {
+        if (e.kind != MPMemoryEntryKind.conversation || e.data == null) {
+          return e;
+        }
+        if (!counts.containsKey(e.id)) {
+          return e;
+        }
+        final int unread = counts[e.id]!;
+        final bool hasUnread = unread > 0;
+        return MPMemoryEntry.conversation(
+          id: e.id,
+          type: e.type,
+          conversationKind: e.conversationKind!,
+          variant: hasUnread
+              ? MPMemoryCardVariant.newUpdates
+              : MPMemoryCardVariant.standard,
+          data: MPMemoryCardData(
+            title: e.data!.title,
+            timeLabel: e.data!.timeLabel,
+            preview: e.data!.preview,
+            createAt: e.data!.createAt,
+            showActivity: e.data!.showActivity,
+            badgeCount: hasUnread ? unread : null,
+            statusLabel: hasUnread ? 'New updates' : null,
+          ),
+        );
+      }).toList();
+      emit(
+        OmiAllState(
+          phase: OmiAllPhase.loaded,
+          items: next,
+          hasMore: state.hasMore,
+          isLoadingMore: state.isLoadingMore,
+        ),
+      );
+    } catch (_) {
+      // 静默失败：不影响列表与下拉刷新主流程
+    }
   }
 }
 
@@ -350,11 +424,11 @@ int _unreadItemCount(MPMemoryStruct m) {
 
 /// 服务端 [MPMemoryStruct] → 列表 [MPMemoryEntry]（与 [OmiAllPage] 中按 [MPMemoryEntryKind] 分支的卡片一致）。
 MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
-  switch (m.type ?? MPMemoryType.onlyRecord) {
+  switch (m.type) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
-      final String titleTrim = (m.title ?? '').trim();
-      final String contentTrim = (m.content ?? '').trim();
+      final String titleTrim = m.title ?? ''.trim();
+      final String contentTrim = m.content ?? ''.trim();
       final int createAt = m.createAt;
       final String primaryTimeLabel;
       final String secondaryTimeLabel;
@@ -368,7 +442,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       }
       return MPMemoryEntry.audioRecording(
         id: m.id ?? '',
-        type: m.type ?? MPMemoryType.onlyRecord,
+        type: m.type,
         audioData: MPAudioRecordingCardData(
           primaryTimeLabel: primaryTimeLabel,
           secondaryTimeLabel: secondaryTimeLabel,
@@ -381,7 +455,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
         id: m.id ?? '',
-        type: m.type ?? MPMemoryType.summary,
+        type: m.type,
         conversationKind: MPMemoryConversationKind.summary,
         variant: hasUnread
             ? MPMemoryCardVariant.newUpdates
@@ -389,8 +463,8 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: false,
           title: m.title ?? '',
-          timeLabel: _shortTimeLabel(m.createAt ?? 0),
-          createAt: m.createAt ?? 0,
+          timeLabel: _shortTimeLabel(m.createAt),
+          createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
           statusLabel: hasUnread ? 'New updates' : null,
@@ -401,7 +475,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       final bool hasUnread = unread > 0;
       return MPMemoryEntry.conversation(
         id: m.id ?? '',
-        type: m.type ?? MPMemoryType.memoryFeed,
+        type: m.type,
         conversationKind: MPMemoryConversationKind.memoryFeed,
         variant: hasUnread
             ? MPMemoryCardVariant.newUpdates
@@ -409,8 +483,8 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: true,
           title: m.title ?? '',
-          timeLabel: _shortTimeLabel(m.createAt ?? 0),
-          createAt: m.createAt ?? 0,
+          timeLabel: _shortTimeLabel(m.createAt),
+          createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
           statusLabel: hasUnread ? 'New updates' : null,
@@ -432,7 +506,7 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
 
   return MPMemoryEntry.memoGroup(
     id: m.id ?? '',
-    type: m.type ?? MPMemoryType.memoList,
+    type: m.type,
     memoVariant: variant,
     memoData: MPMemoGroupCardData(
       subtitle: m.subTitle,
