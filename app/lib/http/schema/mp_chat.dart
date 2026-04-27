@@ -248,35 +248,6 @@ class MPTranscriptResponse {
 }
 
 @JsonSerializable()
-class MPGetChatSuggestionRequest {
-  MPGetChatSuggestionRequest();
-
-  factory MPGetChatSuggestionRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetChatSuggestionRequestFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MPGetChatSuggestionRequestToJson(this);
-}
-
-@JsonSerializable()
-class MPGetChatSuggestionResponse {
-  @JsonKey(name: 'suggestion')
-  final Map<String, Map<String, List<String>>> suggestion;
-
-  @JsonKey(name: 'base_resp')
-  final MPBaseResp baseResp;
-
-  MPGetChatSuggestionResponse({
-    required this.suggestion,
-    required this.baseResp,
-  });
-
-  factory MPGetChatSuggestionResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetChatSuggestionResponseFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MPGetChatSuggestionResponseToJson(this);
-}
-
-@JsonSerializable()
 class MPGetChatSuggestionCardRequest {
   MPGetChatSuggestionCardRequest();
 

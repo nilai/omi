@@ -172,36 +172,6 @@ Map<String, dynamic> _$MPTranscriptResponseToJson(
   'base_resp': instance.baseResp,
 };
 
-MPGetChatSuggestionRequest _$MPGetChatSuggestionRequestFromJson(
-  Map<String, dynamic> json,
-) => MPGetChatSuggestionRequest();
-
-Map<String, dynamic> _$MPGetChatSuggestionRequestToJson(
-  MPGetChatSuggestionRequest instance,
-) => <String, dynamic>{};
-
-MPGetChatSuggestionResponse _$MPGetChatSuggestionResponseFromJson(
-  Map<String, dynamic> json,
-) => MPGetChatSuggestionResponse(
-  suggestion: (json['suggestion'] as Map<String, dynamic>).map(
-    (k, e) => MapEntry(
-      k,
-      (e as Map<String, dynamic>).map(
-        (k, e) =>
-            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
-      ),
-    ),
-  ),
-  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
-);
-
-Map<String, dynamic> _$MPGetChatSuggestionResponseToJson(
-  MPGetChatSuggestionResponse instance,
-) => <String, dynamic>{
-  'suggestion': instance.suggestion,
-  'base_resp': instance.baseResp,
-};
-
 MPGetChatSuggestionCardRequest _$MPGetChatSuggestionCardRequestFromJson(
   Map<String, dynamic> json,
 ) => MPGetChatSuggestionCardRequest();
