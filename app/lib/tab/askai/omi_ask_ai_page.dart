@@ -15,7 +15,7 @@ class OmiAskAIPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPAskAICubit>(
-      create: (_) => MPAskAICubit(),
+      create: (_) => MPAskAICubit()..initData(),
       child: const _OmiAskAIView(),
     );
   }
