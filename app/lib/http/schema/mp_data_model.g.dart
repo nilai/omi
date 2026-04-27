@@ -70,7 +70,7 @@ MPRecordConversationStruct _$MPRecordConversationStructFromJson(
   id: json['id'] as String,
   speaker: MPSpeakerStruct.fromJson(json['speaker'] as Map<String, dynamic>),
   content: json['content'] as String,
-  time: (json['time'] as num?)?.toInt(),
+  time: mpNullableIntFromJson(json['time']),
 );
 
 Map<String, dynamic> _$MPRecordConversationStructToJson(
@@ -160,12 +160,12 @@ Map<String, dynamic> _$MPAiExpertMemoryStructToJson(
 
 MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
     MPMemoryStruct(
-      id: json['id'] as String,
+      id: json['id'] as String?,
       createAt: mpIntFromJson(json['create_at']),
-      title: json['title'] as String,
+      title: json['title'] as String?,
       subTitle: json['sub_title'] as String?,
       type: $enumDecode(_$MPMemoryTypeEnumMap, json['type']),
-      content: json['content'] as String,
+      content: json['content'] as String?,
       duration: mpNullableIntFromJson(json['duration']),
       memoList: (json['memo_list'] as List<dynamic>?)
           ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))

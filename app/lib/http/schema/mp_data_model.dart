@@ -212,7 +212,7 @@ class MPRecordConversationStruct {
   @JsonKey(name: 'content')
   final String content;
 
-  @JsonKey(name: 'time')
+  @JsonKey(name: 'time', fromJson: mpNullableIntFromJson)
   final int? time;
 
   MPRecordConversationStruct({
