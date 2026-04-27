@@ -135,3 +135,43 @@ Future<MPGetConversationTitleResponse?> getConversationTitle(
   }
   return null;
 }
+
+// GET /api/v1/chat/suggestion_cards
+Future<MPGetChatSuggestionCardsResponse?> getChatSuggestionCards(
+  MPGetChatSuggestionCardRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/suggestion_cards',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getChatSuggestionCards response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetChatSuggestionCardsResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/get_last_conversation_id
+Future<MPGetLastConversationResponse?> getLastConversation(
+  MPGetLastConversationRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/get_last_conversation_id',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getLastConversation response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetLastConversationResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
