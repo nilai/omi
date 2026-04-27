@@ -4,6 +4,7 @@ import 'package:memo_pin/login/home/mp_login_state.dart';
 import 'package:memo_pin/login/mp_user.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
+import '../../app/mp_app_session_bootstrap.dart';
 import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
 import '../../http/schema/mp_login.dart';
@@ -88,7 +89,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
       await MPUser.instance.setRefreshToken(response.refreshToken);
       await MPUser.instance.setTokenExpiresTime(response.expiresIn);
       await MPUser.instance.setEmail(email);
-      await MPHiveUtil.instance.initialize();
+      await MPAppSessionBootstrap.run(fromLoginSuccess: true);
       await Navigator.of(_context!).pushAndRemoveUntil<void>(
         MaterialPageRoute<void>(builder: (_) => const MainTabPage()),
         (Route<dynamic> route) => false,

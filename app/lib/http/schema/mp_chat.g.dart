@@ -172,33 +172,71 @@ Map<String, dynamic> _$MPTranscriptResponseToJson(
   'base_resp': instance.baseResp,
 };
 
-MPGetChatSuggestionRequest _$MPGetChatSuggestionRequestFromJson(
+MPGetChatSuggestionCardRequest _$MPGetChatSuggestionCardRequestFromJson(
   Map<String, dynamic> json,
-) => MPGetChatSuggestionRequest();
+) => MPGetChatSuggestionCardRequest();
 
-Map<String, dynamic> _$MPGetChatSuggestionRequestToJson(
-  MPGetChatSuggestionRequest instance,
+Map<String, dynamic> _$MPGetChatSuggestionCardRequestToJson(
+  MPGetChatSuggestionCardRequest instance,
 ) => <String, dynamic>{};
 
-MPGetChatSuggestionResponse _$MPGetChatSuggestionResponseFromJson(
+MPChatSuggestionCard _$MPChatSuggestionCardFromJson(
   Map<String, dynamic> json,
-) => MPGetChatSuggestionResponse(
-  suggestion: (json['suggestion'] as Map<String, dynamic>).map(
-    (k, e) => MapEntry(
-      k,
-      (e as Map<String, dynamic>).map(
-        (k, e) =>
-            MapEntry(k, (e as List<dynamic>).map((e) => e as String).toList()),
-      ),
-    ),
-  ),
+) => MPChatSuggestionCard(
+  title: json['title'] as String,
+  subtitle: json['subtitle'] as String,
+  content: json['content'] as String,
+  detail: json['detail'] as String,
+  suggestions: (json['suggestions'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+);
+
+Map<String, dynamic> _$MPChatSuggestionCardToJson(
+  MPChatSuggestionCard instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'subtitle': instance.subtitle,
+  'content': instance.content,
+  'detail': instance.detail,
+  'suggestions': instance.suggestions,
+};
+
+MPGetChatSuggestionCardsResponse _$MPGetChatSuggestionCardsResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetChatSuggestionCardsResponse(
+  suggestion: (json['suggestion'] as List<dynamic>)
+      .map((e) => MPChatSuggestionCard.fromJson(e as Map<String, dynamic>))
+      .toList(),
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
-Map<String, dynamic> _$MPGetChatSuggestionResponseToJson(
-  MPGetChatSuggestionResponse instance,
+Map<String, dynamic> _$MPGetChatSuggestionCardsResponseToJson(
+  MPGetChatSuggestionCardsResponse instance,
 ) => <String, dynamic>{
   'suggestion': instance.suggestion,
+  'base_resp': instance.baseResp,
+};
+
+MPGetLastConversationRequest _$MPGetLastConversationRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetLastConversationRequest();
+
+Map<String, dynamic> _$MPGetLastConversationRequestToJson(
+  MPGetLastConversationRequest instance,
+) => <String, dynamic>{};
+
+MPGetLastConversationResponse _$MPGetLastConversationResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetLastConversationResponse(
+  conversationId: json['conversation_id'] as String,
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetLastConversationResponseToJson(
+  MPGetLastConversationResponse instance,
+) => <String, dynamic>{
+  'conversation_id': instance.conversationId,
   'base_resp': instance.baseResp,
 };
 

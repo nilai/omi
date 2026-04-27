@@ -96,26 +96,6 @@ Future<MPTranscriptResponse?> transcript(MPTranscriptRequest req) async {
   return null;
 }
 
-// GET /api/v1/chat/suggestion
-Future<MPGetChatSuggestionResponse?> getChatSuggestion(
-  MPGetChatSuggestionRequest req,
-) async {
-  final response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/chat/suggestion',
-    headers: {},
-    method: 'GET',
-    body: '',
-  );
-  if (response == null) return null;
-  debugPrint('getChatSuggestion response: ${response.body}');
-  if (response.statusCode == 200) {
-    return MPGetChatSuggestionResponse.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
-  }
-  return null;
-}
-
 // GET /api/v1/chat/get_title
 Future<MPGetConversationTitleResponse?> getConversationTitle(
   MPGetConversationTitleRequest req,
@@ -130,6 +110,46 @@ Future<MPGetConversationTitleResponse?> getConversationTitle(
   debugPrint('getConversationTitle response: ${response.body}');
   if (response.statusCode == 200) {
     return MPGetConversationTitleResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/suggestion_cards
+Future<MPGetChatSuggestionCardsResponse?> getChatSuggestionCards(
+  MPGetChatSuggestionCardRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/suggestion_cards',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getChatSuggestionCards response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetChatSuggestionCardsResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+// GET /api/v1/chat/get_last_conversation_id
+Future<MPGetLastConversationResponse?> getLastConversation(
+  MPGetLastConversationRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/get_last_conversation_id',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getLastConversation response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetLastConversationResponse.fromJson(
       jsonDecode(response.body) as Map<String, dynamic>,
     );
   }

@@ -207,6 +207,177 @@ class MPGetInsightDetailRequest {
       };
 }
 
+/// 获取 Insight 建议问题请求（后端 `GetInsightSuggestionRequest`）。
+class MPGetInsightSuggestionRequest {
+  MPGetInsightSuggestionRequest({
+    required this.insightId,
+  });
+
+  final String insightId;
+
+  /// 从 JSON 解析。
+  factory MPGetInsightSuggestionRequest.fromJson(Map<String, dynamic> json) {
+    return MPGetInsightSuggestionRequest(
+      insightId: _mpAsString(json['insight_id']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'insight_id': insightId,
+      };
+}
+
+/// 获取 Insight 建议问题响应（后端 `GetInsightSuggestionResponse`）。
+class MPGetInsightSuggestionResponse {
+  MPGetInsightSuggestionResponse({
+    required this.insightType,
+    required this.suggestion,
+    required this.baseResp,
+  });
+
+  /// 取值见 [MPInsightCycleType]（DAILY / MONTHLY / PATTERN ...）。
+  final int insightType;
+  final List<String> suggestion;
+  final MPBaseResp baseResp;
+
+  /// 从 JSON 解析。
+  factory MPGetInsightSuggestionResponse.fromJson(Map<String, dynamic> json) {
+    return MPGetInsightSuggestionResponse(
+      insightType: _mpAsInt(
+        json['insight_type'],
+        defaultValue: MPInsightCycleType.daily,
+      ),
+      suggestion: _mpAsList(json['suggestion'])
+          .map((dynamic e) => _mpAsString(e))
+          .where((String e) => e.isNotEmpty)
+          .toList(),
+      baseResp: MPBaseResp.fromJson(
+        _mpAsMap(json['base_resp']),
+      ),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'insight_type': insightType,
+        'suggestion': suggestion,
+        'base_resp': baseResp.toJson(),
+      };
+}
+
+/// 删除 Insight 请求（后端 `DeleteInsightRequest`）。
+class MPDeleteInsightRequest {
+  MPDeleteInsightRequest({
+    required this.insightId,
+  });
+
+  final String insightId;
+
+  /// 从 JSON 解析。
+  factory MPDeleteInsightRequest.fromJson(Map<String, dynamic> json) {
+    return MPDeleteInsightRequest(
+      insightId: _mpAsString(json['insight_id']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'insight_id': insightId,
+      };
+}
+
+/// 删除 Insight 响应（后端 `DeleteInsightResponse`）。
+class MPDeleteInsightResponse {
+  MPDeleteInsightResponse({
+    required this.baseResp,
+  });
+
+  final MPBaseResp baseResp;
+
+  /// 从 JSON 解析。
+  factory MPDeleteInsightResponse.fromJson(Map<String, dynamic> json) {
+    return MPDeleteInsightResponse(
+      baseResp: MPBaseResp.fromJson(
+        _mpAsMap(json['base_resp']),
+      ),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'base_resp': baseResp.toJson(),
+      };
+}
+
+/// 分享 Insight 请求（后端 `ShareInsightRequest`）。
+class MPShareInsightRequest {
+  MPShareInsightRequest({
+    required this.insightId,
+  });
+
+  final String insightId;
+
+  /// 从 JSON 解析。
+  factory MPShareInsightRequest.fromJson(Map<String, dynamic> json) {
+    return MPShareInsightRequest(
+      insightId: _mpAsString(json['insight_id']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'insight_id': insightId,
+      };
+}
+
+/// 分享 Insight 响应（后端 `ShareInsightResponse`）。
+class MPShareInsightResponse {
+  MPShareInsightResponse({
+    required this.id,
+    required this.shareCode,
+    required this.shareUrl,
+    required this.shortUrl,
+    required this.expiresAt,
+    required this.createAt,
+    required this.baseResp,
+  });
+
+  final String id;
+  final String shareCode;
+  final String shareUrl;
+  final String shortUrl;
+  final int expiresAt;
+  final int createAt;
+  final MPBaseResp baseResp;
+
+  /// 从 JSON 解析。
+  factory MPShareInsightResponse.fromJson(Map<String, dynamic> json) {
+    return MPShareInsightResponse(
+      id: _mpAsString(json['id']),
+      shareCode: _mpAsString(json['share_code']),
+      shareUrl: _mpAsString(json['share_url']),
+      shortUrl: _mpAsString(json['short_url']),
+      expiresAt: _mpAsInt(json['expires_at']),
+      createAt: _mpAsInt(json['create_at']),
+      baseResp: MPBaseResp.fromJson(
+        _mpAsMap(json['base_resp']),
+      ),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'id': id,
+        'share_code': shareCode,
+        'share_url': shareUrl,
+        'short_url': shortUrl,
+        'expires_at': expiresAt,
+        'create_at': createAt,
+        'base_resp': baseResp.toJson(),
+      };
+}
+
 /// 首页聚合概览请求（后端 `GetHomeInsightOverviewRequest`）。
 class MPGetHomeInsightOverviewRequest {
   MPGetHomeInsightOverviewRequest();

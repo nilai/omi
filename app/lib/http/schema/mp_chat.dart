@@ -248,32 +248,96 @@ class MPTranscriptResponse {
 }
 
 @JsonSerializable()
-class MPGetChatSuggestionRequest {
-  MPGetChatSuggestionRequest();
+class MPGetChatSuggestionCardRequest {
+  MPGetChatSuggestionCardRequest();
 
-  factory MPGetChatSuggestionRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetChatSuggestionRequestFromJson(json);
+  factory MPGetChatSuggestionCardRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetChatSuggestionCardRequestFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MPGetChatSuggestionRequestToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$MPGetChatSuggestionCardRequestToJson(this);
 }
 
 @JsonSerializable()
-class MPGetChatSuggestionResponse {
+class MPChatSuggestionCard {
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'subtitle')
+  final String subtitle;
+
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'detail')
+  final String detail;
+
+  @JsonKey(name: 'suggestions')
+  final List<String> suggestions;
+
+  MPChatSuggestionCard({
+    required this.title,
+    required this.subtitle,
+    required this.content,
+    required this.detail,
+    required this.suggestions,
+  });
+
+  factory MPChatSuggestionCard.fromJson(Map<String, dynamic> json) =>
+      _$MPChatSuggestionCardFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPChatSuggestionCardToJson(this);
+}
+
+@JsonSerializable()
+class MPGetChatSuggestionCardsResponse {
   @JsonKey(name: 'suggestion')
-  final Map<String, Map<String, List<String>>> suggestion;
+  final List<MPChatSuggestionCard> suggestion;
 
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPGetChatSuggestionResponse({
+  MPGetChatSuggestionCardsResponse({
     required this.suggestion,
     required this.baseResp,
   });
 
-  factory MPGetChatSuggestionResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetChatSuggestionResponseFromJson(json);
+  factory MPGetChatSuggestionCardsResponse.fromJson(
+    Map<String, dynamic> json,
+  ) =>
+      _$MPGetChatSuggestionCardsResponseFromJson(json);
 
-  Map<String, dynamic> toJson() => _$MPGetChatSuggestionResponseToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$MPGetChatSuggestionCardsResponseToJson(this);
+}
+
+@JsonSerializable()
+class MPGetLastConversationRequest {
+  MPGetLastConversationRequest();
+
+  factory MPGetLastConversationRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetLastConversationRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetLastConversationRequestToJson(this);
+}
+
+@JsonSerializable()
+class MPGetLastConversationResponse {
+  @JsonKey(name: 'conversation_id')
+  final String conversationId;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetLastConversationResponse({
+    required this.conversationId,
+    required this.baseResp,
+  });
+
+  factory MPGetLastConversationResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetLastConversationResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetLastConversationResponseToJson(this);
 }
 
 @JsonSerializable()
