@@ -80,3 +80,73 @@ Future<MPGetHomeInsightOverviewResponse?> getHomeInsightOverview(
   }
   return null;
 }
+
+/// GET /api/v2/insight/insight_suggestion — 获取 Insight 建议问题。
+Future<MPGetInsightSuggestionResponse?> getInsightSuggestion(
+  MPGetInsightSuggestionRequest req,
+) async {
+  final String url =
+      '${Env.apiBaseUrl}api/v2/insight/insight_suggestion?insight_id=${req.insightId}';
+  final response = await makeApiCall(
+    url: url,
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('getInsightSuggestion response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetInsightSuggestionResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+/// POST /api/v2/insight/delete — 删除 Insight。
+Future<MPDeleteInsightResponse?> deleteInsight(
+  MPDeleteInsightRequest req,
+) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/insight/delete',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('deleteInsight response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPDeleteInsightResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
+/// GET /api/v2/insight/share — 获取 Insight 分享信息。
+Future<MPShareInsightResponse?> shareInsight(
+  MPShareInsightRequest req,
+) async {
+  final String url =
+      '${Env.apiBaseUrl}api/v2/insight/share?insight_id=${req.insightId}';
+  final response = await makeApiCall(
+    url: url,
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('shareInsight response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPShareInsightResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
