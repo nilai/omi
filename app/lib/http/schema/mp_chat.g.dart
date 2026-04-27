@@ -220,11 +220,17 @@ Map<String, dynamic> _$MPGetChatSuggestionCardsResponseToJson(
 
 MPGetLastConversationRequest _$MPGetLastConversationRequestFromJson(
   Map<String, dynamic> json,
-) => MPGetLastConversationRequest();
+) => MPGetLastConversationRequest(
+  conversationType: (json['conversation_type'] as num).toInt(),
+  paramId: json['param_id'] as String,
+);
 
 Map<String, dynamic> _$MPGetLastConversationRequestToJson(
   MPGetLastConversationRequest instance,
-) => <String, dynamic>{};
+) => <String, dynamic>{
+  'conversation_type': instance.conversationType,
+  'param_id': instance.paramId,
+};
 
 MPGetLastConversationResponse _$MPGetLastConversationResponseFromJson(
   Map<String, dynamic> json,
