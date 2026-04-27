@@ -56,8 +56,7 @@ class MPAskAICubit extends Cubit<MPAskAIState> {
   MPAskAICubit() : super(const MPAskAIState(modules: <MPAskAIModule>[]));
 
   Future<void> initData() async {
-    final List<MPChatSuggestionCard> cards =
-        await MPAskAIQuestionUtil.fetchQuestionsAndCache();
+    final List<MPChatSuggestionCard> cards = await MPAskAIQuestionUtil.getAllQuestionsFromHive();
     final List<MPAskAIModule> modules = _buildModulesFromCards(cards);
     emit(state.copyWith(modules: modules, clearSelectedModule: true));
   }

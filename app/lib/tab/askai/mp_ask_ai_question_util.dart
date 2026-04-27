@@ -12,13 +12,13 @@ class MPAskAIQuestionUtil {
 
   /// 从后台接口获取问题并写入 Hive。
   ///
-  /// @returns {Future<List<MPChatSuggestionCard>>} 接口卡片列表；接口失败时回退到缓存/默认值。
-  static Future<List<MPChatSuggestionCard>> fetchQuestionsAndCache() async {
+  /// @returns {Future<void>}
+  static Future<void> fetchQuestionsAndCache() async {
     try {
       final MPGetChatSuggestionCardsResponse? response =
           await getChatSuggestionCards(MPGetChatSuggestionCardRequest());
       if (response == null || response.baseResp.code != 0) {
-        return getAllQuestionsFromHive();
+        return;
       }
       final List<MPChatSuggestionCard> cards = response.suggestion
           .where(
@@ -27,15 +27,14 @@ class MPAskAIQuestionUtil {
           )
           .toList(growable: false);
       if (cards.isEmpty) {
-        return getAllQuestionsFromHive();
+        return;
       }
       await MPHiveUtil.instance.putPrimitive(
         key: _kQuestionsCacheKey,
         value: _cardsToCache(cards),
       );
-      return cards;
     } catch (_) {
-      return getAllQuestionsFromHive();
+      return;
     }
   }
 
