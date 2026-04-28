@@ -361,7 +361,13 @@ class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
       MPShareExportKind.systemShare => 'Share',
     };
     if (selected == MPShareExportKind.link) {
-      MPShareMemoryDialog.show(context: context, memoryId: _item.id);
+      final MPShareInsightResponse? resp = await shareInsight(MPShareInsightRequest(insightId: _item.id));
+      if (resp == null || resp.baseResp.code != 0) {
+        MPToastUtils.showMessage(resp?.baseResp.message ?? '分享失败，请稍后重试');
+        return;
+      }
+      if (!context.mounted) return;
+      MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
     }else {
       MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
     }
