@@ -68,7 +68,10 @@ class _OmiMemoryDetailView extends StatelessWidget {
                 final MPShareSheetResult? result = await showMPShareSheet(
                   context,
                   params: params,
-                  onShare: () {
+                  onShare: ({
+                    required String summaryOptionId,
+                    required Set<String> optionalOptionIds,
+                  }) {
                     showMPShareExportSheet(context).then((MPShareExportKind? kind) {
                       if (kind == null) return;
                       if (!context.mounted) return;

@@ -88,7 +88,10 @@ class MPShareSheetParams {
 Future<MPShareSheetResult?> showMPShareSheet(
   BuildContext context, {
   MPShareSheetParams params = const MPShareSheetParams(),
-  VoidCallback? onShare,
+  void Function({
+    required String summaryOptionId,
+    required Set<String> optionalOptionIds,
+  })? onShare,
 }) {
   return showModalBottomSheet<MPShareSheetResult>(
     context: context,
@@ -107,7 +110,10 @@ class _MPShareSheet extends StatefulWidget {
 
   final MPShareSheetParams params;
   final BuildContext rootContext;
-  final VoidCallback? onShare;
+  final void Function({
+    required String summaryOptionId,
+    required Set<String> optionalOptionIds,
+  })? onShare;
 
   @override
   State<_MPShareSheet> createState() => _MPShareSheetState();
@@ -141,7 +147,10 @@ class _MPShareSheetState extends State<_MPShareSheet> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // await showMPShareExportSheet(widget.rootContext);
       // TODO: 可根据导出方式 + result 执行真实分享/导出
-      widget.onShare?.call();
+      widget.onShare?.call(
+        summaryOptionId: result.summaryOptionId,
+        optionalOptionIds: result.optionalOptionIds,
+      );
     });
   }
 
