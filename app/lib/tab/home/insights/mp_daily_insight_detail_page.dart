@@ -14,10 +14,7 @@ const Color _kDailyPageBgColor = Color(0xFFF2F2F7);
 
 /// Daily Insight 详情页
 class MPDailyInsightDetailPage extends StatelessWidget {
-  const MPDailyInsightDetailPage({
-    super.key,
-    required this.item,
-  });
+  const MPDailyInsightDetailPage({super.key, required this.item});
 
   final MPInsightListItem item;
 
@@ -72,8 +69,7 @@ class _MPDailyInsightBody extends StatelessWidget {
             title: 'Unable to load Daily insight',
             description: state.errorMessage ?? '请稍后重试',
             buttonText: 'Retry',
-            onButtonPressed: () =>
-                context.read<MPInsightDetailCubit>().initData(),
+            onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
         );
       case MPInsightDetailPhase.loaded:
@@ -123,10 +119,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconColor: const Color(0xFF3FB26E),
                   iconBgColor: const Color(0xFFE8F7EE),
                   contentBgColor: const Color(0xFFF2FAF4),
-                  child: _MPDotTextList(
-                    items: daily.decisionsMade,
-                    dotColor: const Color(0xFF8FA76D),
-                  ),
+                  child: _MPDotTextList(items: daily.decisionsMade, dotColor: const Color(0xFF8FA76D)),
                 ),
               ],
               if (daily.openQuestions.isNotEmpty) ...<Widget>[
@@ -137,10 +130,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconColor: const Color(0xFFDA8A3F),
                   iconBgColor: const Color(0xFFFFF1E3),
                   contentBgColor: const Color(0xFFFFF7EE),
-                  child: _MPDotTextList(
-                    items: daily.openQuestions,
-                    dotColor: const Color(0xFFDA8A3F),
-                  ),
+                  child: _MPDotTextList(items: daily.openQuestions, dotColor: const Color(0xFFDA8A3F)),
                 ),
               ],
               if (daily.patternsEmerging.isNotEmpty) ...<Widget>[
@@ -170,10 +160,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconColor: const Color(0xFFD39F3E),
                   iconBgColor: const Color(0xFFFFF5E0),
                   contentBgColor: const Color(0xFFFFF9EB),
-                  child: _MPDotTextList(
-                    items: daily.ideasCaptured,
-                    dotColor: const Color(0xFFD39F3E),
-                  ),
+                  child: _MPDotTextList(items: daily.ideasCaptured, dotColor: const Color(0xFFD39F3E)),
                 ),
               ],
               if (daily.tomorrowFocus.isNotEmpty) ...<Widget>[
@@ -182,18 +169,14 @@ class _MPDailyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(
-                  message: daily.askAiButtonText,
-                ),
+                onPressed: () => MPToastUtils.showFeatureComingSoon(message: daily.askAiButtonText),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
-                child: const Text('Ask AI about today'),
+                child: Text(daily.askAiButtonText),
               ),
             ],
           ),
@@ -236,10 +219,7 @@ class _MPDailyCard extends StatelessWidget {
               Container(
                 width: 20,
                 height: 20,
-                decoration: BoxDecoration(
-                  color: iconBgColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
+                decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(999)),
                 alignment: Alignment.center,
                 child: Icon(icon, color: iconColor, size: 14),
               ),
@@ -259,10 +239,7 @@ class _MPDailyCard extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 10),
           Container(
-            decoration: BoxDecoration(
-              color: contentBgColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: contentBgColor, borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
             child: child,
           ),
@@ -273,10 +250,7 @@ class _MPDailyCard extends StatelessWidget {
 }
 
 class _MPDotTextList extends StatelessWidget {
-  const _MPDotTextList({
-    required this.items,
-    required this.dotColor,
-  });
+  const _MPDotTextList({required this.items, required this.dotColor});
 
   final List<String> items;
   final Color dotColor;
@@ -344,10 +318,7 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 8),
           Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF2F6FF),
-              borderRadius: BorderRadius.circular(8),
-            ),
+            decoration: BoxDecoration(color: const Color(0xFFF2F6FF), borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: Column(
               children: items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
@@ -357,9 +328,7 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     border: entry.key == items.length - 1
                         ? null
-                        : const Border(
-                            bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
-                          ),
+                        : const Border(bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1)),
                   ),
                   child: Row(
                     children: <Widget>[
@@ -381,26 +350,16 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       TextButton(
-                        onPressed: () => MPToastUtils.showFeatureComingSoon(
-                          message: 'Add to Todo: ${focus.text}',
-                        ),
+                        onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Add to Todo: ${focus.text}'),
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF4A82E8),
                           backgroundColor: const Color(0xFFEAF0FA),
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           minimumSize: const Size(0, 0),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: const Text(
-                          'Add to Todo',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: const Text('Add to Todo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ),
@@ -413,4 +372,3 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
     );
   }
 }
-
