@@ -461,7 +461,7 @@ class _MPOptionalTile extends StatelessWidget {
               height: 18,
               decoration: BoxDecoration(
                 color: selected ? _kBlue : Colors.white,
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(999),
                 border: Border.all(
                   color: selected ? _kBlue : const Color(0xFFC7C7CC),
                   width: 1.6,
