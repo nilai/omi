@@ -104,15 +104,15 @@ Future<MPShareMemoryResponse?> shareMemory(MPShareMemoryRequest req) async {
   return null;
 }
 
-// POST /api/v1/memory/share_v2/options
+// GET /api/v1/memory/share_v2/options
 Future<MPGetShareOptionsResponse?> getShareOptionsV2(
-  MPShareMemoryWithOptionsRequest req,
+  MPGetShareOptionsRequest req,
 ) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/memory/share_v2/options',
+    url: '${Env.apiBaseUrl}api/v1/memory/share_v2/options?memory_id=${req.memoryId}',
     headers: {},
-    method: 'POST',
-    body: jsonEncode(req.toJson()),
+    method: 'GET',
+    body: '',
   );
   if (response == null) return null;
   debugPrint('getShareOptionsV2 response: ${response.body}');

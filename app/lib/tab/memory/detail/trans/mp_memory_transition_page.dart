@@ -15,11 +15,19 @@ class MPMemoryTransitionBlocPage extends StatelessWidget {
   const MPMemoryTransitionBlocPage({
     super.key,
     required this.memoryId,
-    required this.createAt,
+    this.createAt,
+    this.headline,
+    this.metaLine,
   });
 
   final String memoryId;
-  final int createAt;
+
+  /// 列表页传入的 createAt（秒或毫秒）；为空或非正时不展示时间标题。
+  final int? createAt;
+
+  /// 可选：直接传入展示用标题/副标题（优先级高于 [createAt]）。
+  final String? headline;
+  final String? metaLine;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +36,8 @@ class MPMemoryTransitionBlocPage extends StatelessWidget {
       child: _MPMemoryTransitionView(
         memoryId: memoryId,
         createAt: createAt,
+        headline: headline,
+        metaLine: metaLine,
       ),
     );
   }
@@ -36,11 +46,15 @@ class MPMemoryTransitionBlocPage extends StatelessWidget {
 class _MPMemoryTransitionView extends StatefulWidget {
   const _MPMemoryTransitionView({
     required this.memoryId,
-    required this.createAt,
+    this.createAt,
+    this.headline,
+    this.metaLine,
   });
 
   final String memoryId;
-  final int createAt;
+  final int? createAt;
+  final String? headline;
+  final String? metaLine;
 
   @override
   State<_MPMemoryTransitionView> createState() => _MPMemoryTransitionViewState();
@@ -75,8 +89,12 @@ class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
             child: Padding(
               padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
               child: MPSummaryGeneratingPanel(
-                headline: _headlineFromCreateAt(widget.createAt),
-                metaLine: _metaLineFromCreateAt(widget.createAt),
+                headline: (widget.headline ?? '').trim().isNotEmpty
+                    ? widget.headline!
+                    : _headlineFromCreateAt(widget.createAt),
+                metaLine: (widget.metaLine ?? '').trim().isNotEmpty
+                    ? widget.metaLine!
+                    : _metaLineFromCreateAt(widget.createAt),
               ),
             ),
           ),
@@ -86,14 +104,20 @@ class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
   }
 }
 
-String _headlineFromCreateAt(int ts) {
+String _headlineFromCreateAt(int? ts) {
+  if (ts == null || ts <= 0) {
+    return 'Audio Memory';
+  }
   final DateTime dt = ts > 10000000000
       ? DateTime.fromMillisecondsSinceEpoch(ts)
       : DateTime.fromMillisecondsSinceEpoch(ts * 1000);
   return DateFormat('MMM d, y, h:mm a').format(dt);
 }
 
-String _metaLineFromCreateAt(int ts) {
+String _metaLineFromCreateAt(int? ts) {
+  if (ts == null || ts <= 0) {
+    return '';
+  }
   final DateTime dt = ts > 10000000000
       ? DateTime.fromMillisecondsSinceEpoch(ts)
       : DateTime.fromMillisecondsSinceEpoch(ts * 1000);

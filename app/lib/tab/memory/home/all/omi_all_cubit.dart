@@ -68,12 +68,21 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     _recordCreatedSub = MPMemoryNotification.listenMemoryRecordCreated((_) {
       load();
     });
+    _memoryDeletedSub = MPMemoryNotification.listenMemoryDeleted((String id) {
+      removeLocalMemory(id);
+    });
+    _memoryTitleUpdatedSub =
+        MPMemoryNotification.listenMemoryTitleUpdated((MPMemoryTitleUpdatedPayload p) {
+      updateLocalTitle(p.memoryId, p.title);
+    });
     _unreadPollTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       unawaited(_pollUnreadCounts());
     });
   }
 
   StreamSubscription<MPMemoryRecordCreatedPayload>? _recordCreatedSub;
+  StreamSubscription<String>? _memoryDeletedSub;
+  StreamSubscription<MPMemoryTitleUpdatedPayload>? _memoryTitleUpdatedSub;
 
   /// 每分钟拉取未读数并刷新列表（仅 [OmiAllPhase.loaded] 且列表非空时生效）。
   Timer? _unreadPollTimer;
@@ -343,7 +352,95 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     _unreadPollTimer?.cancel();
     _unreadPollTimer = null;
     _recordCreatedSub?.cancel();
+    _memoryDeletedSub?.cancel();
+    _memoryDeletedSub = null;
+    _memoryTitleUpdatedSub?.cancel();
+    _memoryTitleUpdatedSub = null;
     return super.close();
+  }
+
+  void removeLocalMemory(String memoryId) {
+    final String id = memoryId.trim();
+    if (id.isEmpty) return;
+    final OmiAllState s = state;
+    if (s.items.isEmpty) return;
+    final List<MPMemoryEntry> next =
+        s.items.where((MPMemoryEntry e) => e.id != id).toList(growable: false);
+    if (next.length == s.items.length) return;
+    if (next.isEmpty) {
+      emit(const OmiAllState(phase: OmiAllPhase.empty, items: <MPMemoryEntry>[]));
+      return;
+    }
+    emit(
+      OmiAllState(
+        phase: OmiAllPhase.loaded,
+        items: next,
+        isLoadingMore: false,
+        hasMore: s.hasMore,
+      ),
+    );
+  }
+
+  void updateLocalTitle(String memoryId, String title) {
+    final String id = memoryId.trim();
+    final String t = title.trim();
+    if (id.isEmpty || t.isEmpty) return;
+    final OmiAllState s = state;
+    if (s.items.isEmpty) return;
+
+    bool changed = false;
+    final List<MPMemoryEntry> next = s.items.map((MPMemoryEntry e) {
+      if (e.id != id) return e;
+      changed = true;
+      switch (e.kind) {
+        case MPMemoryEntryKind.conversation:
+          final MPMemoryCardData? d = e.data;
+          if (d == null) return e;
+          return MPMemoryEntry.conversation(
+            id: e.id,
+            conversationKind: e.conversationKind!,
+            variant: e.variant!,
+            type: e.type,
+            data: MPMemoryCardData(
+              title: t,
+              timeLabel: d.timeLabel,
+              preview: d.preview,
+              createAt: d.createAt,
+              badgeCount: d.badgeCount,
+              statusLabel: d.statusLabel,
+              showActivity: d.showActivity,
+            ),
+          );
+        case MPMemoryEntryKind.memoGroup:
+          final MPMemoGroupCardData? d = e.memoData;
+          if (d == null) return e;
+          return MPMemoryEntry.memoGroup(
+            id: e.id,
+            type: e.type,
+            memoVariant: e.memoVariant!,
+            memoData: MPMemoGroupCardData(
+              title: t,
+              items: d.items,
+              itemMuted: d.itemMuted,
+              subtitle: d.subtitle,
+            ),
+          );
+        case MPMemoryEntryKind.audioRecording:
+          // 音频卡片标题是时间/录音信息，不跟随编辑标题更新。
+          return e;
+      }
+    }).toList(growable: false);
+
+    if (!changed) return;
+    emit(
+      OmiAllState(
+        phase: s.phase,
+        items: next,
+        errorMessage: s.errorMessage,
+        isLoadingMore: s.isLoadingMore,
+        hasMore: s.hasMore,
+      ),
+    );
   }
 
   /// [getMemoryV2UnreadCount]：`member_ids` 使用列表项 [MPMemoryEntry.id]；返回的 `unread_counts` key 与之对齐。

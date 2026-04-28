@@ -13,10 +13,7 @@ class MPShareOptionsManager {
     MPShareSheetParams params = const MPShareSheetParams();
     try {
       final MPGetShareOptionsResponse? resp = await getShareOptionsV2(
-        MPShareMemoryWithOptionsRequest(
-          memoryId: memoryId,
-          optionIds: const <int>[],
-        ),
+        MPGetShareOptionsRequest(memoryId: memoryId),
       );
       if (resp == null || resp.baseResp.code != 0) {
         return params;

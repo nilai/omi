@@ -273,6 +273,20 @@ class MPShareMemoryWithOptionsRequest {
   Map<String, dynamic> toJson() => _$MPShareMemoryWithOptionsRequestToJson(this);
 }
 
+/// Thrift `GetShareOptionsRequest`（GET query 参数：memory_id）。
+@JsonSerializable()
+class MPGetShareOptionsRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  const MPGetShareOptionsRequest({required this.memoryId});
+
+  factory MPGetShareOptionsRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetShareOptionsRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetShareOptionsRequestToJson(this);
+}
+
 // Share Memory Response
 @JsonSerializable()
 class MPShareMemoryResponse {

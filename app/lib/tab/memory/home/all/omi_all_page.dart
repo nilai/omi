@@ -83,7 +83,12 @@ class _OmiAllViewState extends State<_OmiAllView> {
   void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
     switch (entry.type) {
       case MPMemoryType.onlyRecord:
-        MPMemoryDetailPageHelper.navigateToDetailPage(context, entry.id, MPMemoryType.onlyRecord, createAt: entry.data?.createAt);
+        MPMemoryDetailPageHelper.navigateToDetailPage(
+          context,
+          entry.id,
+          MPMemoryType.onlyRecord,
+          title: entry.audioData?.primaryTimeLabel,
+        );
         break;
       case MPMemoryType.summary:
         Navigator.of(

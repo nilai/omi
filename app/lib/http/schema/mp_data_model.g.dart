@@ -164,7 +164,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
       createAt: mpIntFromJson(json['create_at']),
       title: json['title'] as String?,
       subTitle: json['sub_title'] as String?,
-      type: $enumDecode(_$MPMemoryTypeEnumMap, json['type']),
+      type: $enumDecodeNullable(_$MPMemoryTypeEnumMap, json['type']),
       content: json['content'] as String?,
       duration: mpNullableIntFromJson(json['duration']),
       memoList: (json['memo_list'] as List<dynamic>?)
@@ -195,7 +195,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'create_at': instance.createAt,
       'title': instance.title,
       'sub_title': instance.subTitle,
-      'type': _$MPMemoryTypeEnumMap[instance.type]!,
+      'type': _$MPMemoryTypeEnumMap[instance.type],
       'content': instance.content,
       'duration': instance.duration,
       'unread_item_cnt': instance.unreadItemCnt,

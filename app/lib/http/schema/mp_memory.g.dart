@@ -188,6 +188,14 @@ Map<String, dynamic> _$MPShareMemoryWithOptionsRequestToJson(
   'option_ids': instance.optionIds,
 };
 
+MPGetShareOptionsRequest _$MPGetShareOptionsRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetShareOptionsRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPGetShareOptionsRequestToJson(
+  MPGetShareOptionsRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
 MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
   Map<String, dynamic> json,
 ) => MPShareMemoryResponse(

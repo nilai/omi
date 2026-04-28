@@ -3,8 +3,6 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
-import 'mp_share_export_sheet.dart';
-
 /// 分享弹窗的 Summary 版本选项。
 class MPShareSummaryOption {
   const MPShareSummaryOption({
@@ -196,124 +194,144 @@ class _MPShareSheetState extends State<_MPShareSheet> {
               clipBehavior: Clip.antiAlias,
               child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + bottomSafe),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Center(
-                      child: Container(
-                        width: 36,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFD1D1D6),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      p.title,
-                      textAlign: TextAlign.center,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t9_18,
-                        fontWeight: OmiFontWeight.bold,
-                        color: mainTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      p.subtitle,
-                      textAlign: TextAlign.center,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.regular,
-                        color: secondTextColor,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      p.summarySectionTitle,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t3_12,
-                        fontWeight: OmiFontWeight.medium,
-                        color: secondTextColor.withValues(alpha: 0.9),
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _MPSummaryOptionCard(
-                      options: options,
-                      selectedId: _selectedSummaryId,
-                      onChanged: (String id) {
-                        setState(() {
-                          _selectedSummaryId = id;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      p.additionalSectionTitle,
-                      style: OmiTextStyle.create(
-                        fontSize: OmiFontSize.t3_12,
-                        fontWeight: OmiFontWeight.medium,
-                        color: secondTextColor.withValues(alpha: 0.9),
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _MPCardContainer(child: Column(children: additionalTiles)),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 50,
-                      child: TextButton(
-                        onPressed: _onContinue,
-                        style: TextButton.styleFrom(
-                          backgroundColor: blueTextColor,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD1D1D6),
+                            borderRadius: BorderRadius.circular(999),
                           ),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: <Widget>[
-                            Text(
-                              p.continueText,
-                              style: OmiTextStyle.create(
-                                fontSize: OmiFontSize.t7_16,
-                                fontWeight: OmiFontWeight.medium,
-                                color: Colors.white,
+                      ),
+                      const SizedBox(height: 14),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              Text(
+                                p.title,
+                                textAlign: TextAlign.center,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t9_18,
+                                  fontWeight: OmiFontWeight.bold,
+                                  color: mainTextColor,
+                                ),
                               ),
+                              const SizedBox(height: 6),
+                              Text(
+                                p.subtitle,
+                                textAlign: TextAlign.center,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t5_14,
+                                  fontWeight: OmiFontWeight.regular,
+                                  color: secondTextColor,
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              Text(
+                                p.summarySectionTitle,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t3_12,
+                                  fontWeight: OmiFontWeight.medium,
+                                  color:
+                                      secondTextColor.withValues(alpha: 0.9),
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _MPSummaryOptionCard(
+                                options: options,
+                                selectedId: _selectedSummaryId,
+                                onChanged: (String id) {
+                                  setState(() {
+                                    _selectedSummaryId = id;
+                                  });
+                                },
+                              ),
+                              const SizedBox(height: 18),
+                              Text(
+                                p.additionalSectionTitle,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t3_12,
+                                  fontWeight: OmiFontWeight.medium,
+                                  color:
+                                      secondTextColor.withValues(alpha: 0.9),
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              _MPCardContainer(
+                                child: Column(children: additionalTiles),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 50,
+                        child: TextButton(
+                          onPressed: _onContinue,
+                          style: TextButton.styleFrom(
+                            backgroundColor: blueTextColor,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            const SizedBox(width: 8),
-                            const Icon(Icons.chevron_right_rounded, size: 22),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 50,
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: blueTextColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
                           ),
-                        ),
-                        child: Text(
-                          p.cancelText,
-                          style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t7_16,
-                            fontWeight: OmiFontWeight.medium,
-                            color: blueTextColor,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: <Widget>[
+                              Text(
+                                p.continueText,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t7_16,
+                                  fontWeight: OmiFontWeight.medium,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.chevron_right_rounded, size: 22),
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 50,
+                        child: TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: blueTextColor,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            p.cancelText,
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t7_16,
+                              fontWeight: OmiFontWeight.medium,
+                              color: blueTextColor,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -2,11 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
-import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
-import 'package:memo_pin/common/mp_share_sheet.dart';
-import 'package:memo_pin/common/mp_share_options_manager.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -51,28 +52,15 @@ class _OmiAudioDetailView extends StatelessWidget {
           actions: <Widget>[
             GestureDetector(
               onTap: () async {
-                final MPShareSheetParams params =
-                    await MPShareOptionsManager.instance.getShareSheetParams(
-                  memoryId: memoryId,
-                );
-
+                final MPShareExportKind? kind =
+                    await showMPShareExportSheet(context);
+                if (kind == null) return;
                 if (!context.mounted) return;
-                final MPShareSheetResult? result = await showMPShareSheet(
-                  context,
-                  params: params,
-                  onShare: () {
-                    showMPShareExportSheet(context).then((MPShareExportKind? kind) {
-                      if (kind == null) return;
-                      if (!context.mounted) return;
-                      if (kind == MPShareExportKind.link) {
-                        MPShareMemoryDialog.show(context: context, memoryId: memoryId);
-                      } else {
-                        MPToastUtils.showFeatureComingSoon();
-                      }
-                    });
-                  },
-                );
-                if (result == null) return;
+                if (kind == MPShareExportKind.link) {
+                  MPShareMemoryDialog.show(context: context, memoryId: memoryId);
+                } else {
+                  MPToastUtils.showFeatureComingSoon();
+                }
               },
               child: OmiImageLoader.localImg(
                 Assets.omiShare,
@@ -86,38 +74,44 @@ class _OmiAudioDetailView extends StatelessWidget {
               onTap: () async {
                 final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
                   context,
-                  params: MPMemoryOptionsSheetParams(memoryId: memoryId),
+                  params: MPMemoryOptionsSheetParams(
+                    showManageProjects: false,
+                    showEditTitle: false,
+                    showModifyDate: false,
+                    showDelete: true,
+                  ),
                 );
                 if (kind == null) return;
                 if (!context.mounted) return;
-                switch (kind) {
-                  case MPMemoryOptionKind.manageProjects:
-                    // TODO: Manage projects
-                    break;
-                  case MPMemoryOptionKind.editTitle:
-                    final MPAudioDetailCubit cubit =
-                        context.read<MPAudioDetailCubit>();
-                    final MPAudioDetailState s = cubit.state;
-                    if (s.phase != MPAudioDetailPhase.loaded ||
-                        s.data == null) {
-                      MPToastUtils.showMessage('请等待加载完成');
-                      break;
-                    }
-                    MPMemoryUpdateNameDialog.show(
-                      context: context,
-                      memoryId: memoryId,
-                      currentTitle: s.data!.title,
-                      onSuccess: cubit.updateTitle,
+
+                if (kind == MPMemoryOptionKind.delete) {
+                  final bool ok = await showMPConfirmDeleteDialog(
+                    context,
+                    params: const MPConfirmDeleteDialogParams(
+                      title: 'Delete Memory',
+                      messageLine1: 'Are you sure you want to delete this memory?',
+                      messageLine2: 'This action cannot be undone.',
+                      cancelText: 'No, Keep',
+                      confirmText: 'Yes, Delete',
+                    ),
+                  );
+                  if (!context.mounted) return;
+                  if (!ok) return;
+
+                  final MPDeleteMemoryResponse? resp = await deleteMemory(
+                    MPDeleteMemoryRequest(memoryId: memoryId),
+                  );
+                  if (!context.mounted) return;
+                  if (resp == null || resp.baseResp.code != 0) {
+                    MPToastUtils.showMessage(
+                      resp?.baseResp.message ?? '删除失败，请稍后重试',
                     );
-                    break;
-                  case MPMemoryOptionKind.modifyDate:
-                    // TODO: Modify date
-                    break;
-                  case MPMemoryOptionKind.delete:
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
-                    break;
+                    return;
+                  }
+
+                  MPMemoryNotification.notifyMemoryDeleted(memoryId);
+                  Navigator.of(context).pop();
+                  return;
                 }
               },
               child: OmiImageLoader.localImg(

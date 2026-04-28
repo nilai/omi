@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
@@ -9,8 +10,11 @@ import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_share_options_manager.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
+import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
@@ -116,16 +120,45 @@ class _OmiMemoDetailView extends StatelessWidget {
                       context: context,
                       memoryId: memoryId,
                       currentTitle: s.data!.title,
-                      onSuccess: cubit.updateTitle,
+                      onSuccess: (String t) {
+                        cubit.updateTitle(t);
+                        MPMemoryNotification.notifyMemoryTitleUpdated(
+                          memoryId: memoryId,
+                          title: t,
+                        );
+                      },
                     );
                     break;
                   case MPMemoryOptionKind.modifyDate:
                     // TODO: Modify date
                     break;
                   case MPMemoryOptionKind.delete:
-                    if (context.mounted) {
-                      Navigator.of(context).pop();
-                    }
+                     final bool ok = await showMPConfirmDeleteDialog(
+                    context,
+                    params: const MPConfirmDeleteDialogParams(
+                      title: 'Delete Memory',
+                      messageLine1: 'Are you sure you want to delete this memory?',
+                      messageLine2: 'This action cannot be undone.',
+                      cancelText: 'No, Keep',
+                      confirmText: 'Yes, Delete',
+                    ),
+                  );
+                  if (!context.mounted) return;
+                  if (!ok) return;
+
+                  final MPDeleteMemoryResponse? resp = await deleteMemory(
+                    MPDeleteMemoryRequest(memoryId: memoryId),
+                  );
+                  if (!context.mounted) return;
+                  if (resp == null || resp.baseResp.code != 0) {
+                    MPToastUtils.showMessage(
+                      resp?.baseResp.message ?? '删除失败，请稍后重试',
+                    );
+                    return;
+                  }
+
+                  MPMemoryNotification.notifyMemoryDeleted(memoryId);
+                  Navigator.of(context).pop();
                     break;
                 }
               },

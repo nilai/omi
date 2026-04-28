@@ -15,12 +15,13 @@ class MPMemoryDetailPageHelper {
   /// @param {BuildContext} context
   /// @param {String} memoryId
   /// @param {MPMemoryType} type
-  /// @returns {Future<void>}
+  /// @returns `Future<void>`
   static Future<void> navigateToDetailPage(
     BuildContext context,
     String memoryId,
     MPMemoryType type, {
     int? createAt,
+    String? title,
   }) async {
     if (isOpening) {
       return;
@@ -42,7 +43,11 @@ class MPMemoryDetailPageHelper {
       if (status == 1) {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => MPMemoryTransitionBlocPage(memoryId: id, createAt: createAt ?? 0),
+            builder: (_) => MPMemoryTransitionBlocPage(
+              memoryId: id,
+              createAt: createAt,
+              headline: title,
+            ),
           ),
         );
         return;
