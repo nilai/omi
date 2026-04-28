@@ -313,7 +313,16 @@ class MPGetChatSuggestionCardsResponse {
 
 @JsonSerializable()
 class MPGetLastConversationRequest {
-  MPGetLastConversationRequest();
+  @JsonKey(name: 'conversation_type')
+  final int conversationType;
+
+  @JsonKey(name: 'param_id')
+  final String paramId;
+
+  MPGetLastConversationRequest({
+    required this.conversationType,
+    required this.paramId,
+  });
 
   factory MPGetLastConversationRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetLastConversationRequestFromJson(json);

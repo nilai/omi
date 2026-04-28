@@ -141,7 +141,8 @@ Future<MPGetLastConversationResponse?> getLastConversation(
   MPGetLastConversationRequest req,
 ) async {
   final response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/chat/get_last_conversation_id',
+    url:
+        '${Env.apiBaseUrl}api/v1/chat/get_last_conversation_id?conversation_type=${req.conversationType}&param_id=${req.paramId}',
     headers: {},
     method: 'GET',
     body: '',
