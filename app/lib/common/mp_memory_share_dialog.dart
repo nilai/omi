@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
-import '../http/api/mp_memory.dart';
-import '../http/schema/mp_memory.dart';
 import '../main.dart';
 import '../utils/platform/platform_service.dart';
 
@@ -13,11 +11,11 @@ class MPShareMemoryDialog {
 
   /// 显示分享对话框。
   ///
-  /// - 入参仅支持 [context] 与 [memoryId]
+  /// - 入参仅支持 [context] 与 [url]
   /// - 当 [context] 为空时，自动使用全局 context
   static Future<void> show({
     BuildContext? context,
-    required String memoryId,
+    required String url,
   }) async {
     final BuildContext? targetContext = context ?? MyApp.navigatorKey.currentContext;
     if (targetContext == null || !targetContext.mounted) {
@@ -27,15 +25,7 @@ class MPShareMemoryDialog {
     HapticFeedback.mediumImpact();
 
     try {
-      final MPShareMemoryResponse? response = await shareMemory(
-        MPShareMemoryRequest(memoryId: memoryId),
-      );
-      if (response == null || response.baseResp.code != 0) {
-        _showErrorSnackBar(targetContext, response?.baseResp.message ?? '分享链接无法生成，请稍后重试。');
-        return;
-      }
-
-      final String shareUrl = response.shareUrl.trim();
+      final String shareUrl = url.trim();
       if (shareUrl.isEmpty) {
         _showErrorSnackBar(targetContext, '分享链接无法生成，请稍后重试。');
         return;

@@ -188,6 +188,22 @@ Map<String, dynamic> _$MPShareMemoryWithOptionsRequestToJson(
   'option_ids': instance.optionIds,
 };
 
+MPShareMemoryV2Request _$MPShareMemoryV2RequestFromJson(
+  Map<String, dynamic> json,
+) => MPShareMemoryV2Request(
+  memoryId: json['memory_id'] as String,
+  optionIds: (json['option_ids'] as List<dynamic>)
+      .map((e) => (e as num).toInt())
+      .toList(),
+);
+
+Map<String, dynamic> _$MPShareMemoryV2RequestToJson(
+  MPShareMemoryV2Request instance,
+) => <String, dynamic>{
+  'memory_id': instance.memoryId,
+  'option_ids': instance.optionIds,
+};
+
 MPGetShareOptionsRequest _$MPGetShareOptionsRequestFromJson(
   Map<String, dynamic> json,
 ) => MPGetShareOptionsRequest(memoryId: json['memory_id'] as String);
@@ -210,6 +226,30 @@ MPShareMemoryResponse _$MPShareMemoryResponseFromJson(
 
 Map<String, dynamic> _$MPShareMemoryResponseToJson(
   MPShareMemoryResponse instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'share_code': instance.shareCode,
+  'share_url': instance.shareUrl,
+  'short_url': instance.shortUrl,
+  'expires_at': instance.expiresAt,
+  'create_at': instance.createAt,
+  'base_resp': instance.baseResp,
+};
+
+MPShareMemoryV2Response _$MPShareMemoryV2ResponseFromJson(
+  Map<String, dynamic> json,
+) => MPShareMemoryV2Response(
+  id: json['id'] as String,
+  shareCode: json['share_code'] as String,
+  shareUrl: json['share_url'] as String,
+  shortUrl: json['short_url'] as String,
+  expiresAt: mpIntFromJson(json['expires_at']),
+  createAt: mpIntFromJson(json['create_at']),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPShareMemoryV2ResponseToJson(
+  MPShareMemoryV2Response instance,
 ) => <String, dynamic>{
   'id': instance.id,
   'share_code': instance.shareCode,

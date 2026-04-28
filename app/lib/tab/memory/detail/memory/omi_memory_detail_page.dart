@@ -72,14 +72,16 @@ class _OmiMemoryDetailView extends StatelessWidget {
                     required String summaryOptionId,
                     required Set<String> optionalOptionIds,
                   }) {
-                    showMPShareExportSheet(context).then((MPShareExportKind? kind) {
+                    showMPShareExportSheet(context).then((MPShareExportKind? kind) async {
                       if (kind == null) return;
+                      final List<int> optionIds = <int>[int.parse(summaryOptionId)] + optionalOptionIds.map((String id) => int.parse(id)).toList();
+                      final MPShareMemoryV2Response? resp = await shareMemoryV2(MPShareMemoryV2Request(memoryId: memoryId, optionIds: optionIds));
                       if (!context.mounted) return;
-                      if (kind == MPShareExportKind.link) {
-                        MPShareMemoryDialog.show(context: context, memoryId: memoryId);
-                      } else {
-                        MPToastUtils.showFeatureComingSoon();
+                      if (resp == null || resp.baseResp.code != 0) {
+                        MPToastUtils.showMessage(resp?.baseResp.message ?? '分享失败，请稍后重试');
+                        return;
                       }
+                      MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
                     });
                   },
                 );

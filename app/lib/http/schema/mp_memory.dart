@@ -273,6 +273,26 @@ class MPShareMemoryWithOptionsRequest {
   Map<String, dynamic> toJson() => _$MPShareMemoryWithOptionsRequestToJson(this);
 }
 
+/// POST /api/v1/memory/share_v2 请求（协议：ShareMemoryRequest）。
+@JsonSerializable()
+class MPShareMemoryV2Request {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  @JsonKey(name: 'option_ids')
+  final List<int> optionIds;
+
+  MPShareMemoryV2Request({
+    required this.memoryId,
+    required this.optionIds,
+  });
+
+  factory MPShareMemoryV2Request.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryV2RequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryV2RequestToJson(this);
+}
+
 /// Thrift `GetShareOptionsRequest`（GET query 参数：memory_id）。
 @JsonSerializable()
 class MPGetShareOptionsRequest {
@@ -325,6 +345,46 @@ class MPShareMemoryResponse {
       _$MPShareMemoryResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPShareMemoryResponseToJson(this);
+}
+
+/// POST /api/v1/memory/share_v2 响应（协议：ShareMemoryResponse）。
+@JsonSerializable()
+class MPShareMemoryV2Response {
+  @JsonKey(name: 'id')
+  final String id;
+
+  @JsonKey(name: 'share_code')
+  final String shareCode;
+
+  @JsonKey(name: 'share_url')
+  final String shareUrl;
+
+  @JsonKey(name: 'short_url')
+  final String shortUrl;
+
+  @JsonKey(name: 'expires_at', fromJson: mpIntFromJson)
+  final int expiresAt;
+
+  @JsonKey(name: 'create_at', fromJson: mpIntFromJson)
+  final int createAt;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPShareMemoryV2Response({
+    required this.id,
+    required this.shareCode,
+    required this.shareUrl,
+    required this.shortUrl,
+    required this.expiresAt,
+    required this.createAt,
+    required this.baseResp,
+  });
+
+  factory MPShareMemoryV2Response.fromJson(Map<String, dynamic> json) =>
+      _$MPShareMemoryV2ResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPShareMemoryV2ResponseToJson(this);
 }
 
 /// Share option item（后端 `ShareOptionItem`）。
