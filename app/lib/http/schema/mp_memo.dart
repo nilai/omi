@@ -24,7 +24,7 @@ class MPCreateMemoWithTextRequest {
   @JsonKey(name: 'content')
   final String content;
 
-  @JsonKey(name: 'record_create_at', fromJson: _memoParseCreateAtForCtor)
+  @JsonKey(name: 'create_at', fromJson: _memoParseCreateAtForCtor)
   final int createAt;
 
   MPCreateMemoWithTextRequest({

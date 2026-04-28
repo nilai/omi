@@ -10,14 +10,14 @@ MPCreateMemoWithTextRequest _$MPCreateMemoWithTextRequestFromJson(
   Map<String, dynamic> json,
 ) => MPCreateMemoWithTextRequest(
   content: json['content'] as String,
-  createAt: _memoParseCreateAtForCtor(json['record_create_at']),
+  createAt: _memoParseCreateAtForCtor(json['create_at']),
 );
 
 Map<String, dynamic> _$MPCreateMemoWithTextRequestToJson(
   MPCreateMemoWithTextRequest instance,
 ) => <String, dynamic>{
   'content': instance.content,
-  'record_create_at': instance.createAt,
+  'create_at': instance.createAt,
 };
 
 MPDeleteMemoRequest _$MPDeleteMemoRequestFromJson(Map<String, dynamic> json) =>

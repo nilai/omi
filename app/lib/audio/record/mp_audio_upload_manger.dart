@@ -94,7 +94,7 @@ class MPAudioUploadManager {
     try {
       final String path = localFile.absolute.path;
       final String name = p.basename(path);
-      final int createAtMs = createAt * 1000;
+      final int createAtMs = createAt;
       final MPAudioLocalRecord record = MPAudioLocalRecord(
         path: path,
         fileName: name,
