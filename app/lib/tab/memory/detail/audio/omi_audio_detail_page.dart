@@ -57,7 +57,9 @@ class _OmiAudioDetailView extends StatelessWidget {
                 if (kind == null) return;
                 if (!context.mounted) return;
                 if (kind == MPShareExportKind.link) {
-                  MPShareMemoryDialog.show(context: context, memoryId: memoryId);
+                  final MPShareMemoryResponse? resp = await shareMemory(MPShareMemoryRequest(memoryId: memoryId));
+                  if (!context.mounted) return;
+                  MPShareMemoryDialog.show(context: context, url: resp?.shareUrl ?? '');
                 } else {
                   MPToastUtils.showFeatureComingSoon();
                 }
