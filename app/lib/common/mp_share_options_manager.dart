@@ -20,23 +20,36 @@ class MPShareOptionsManager {
       }
 
       String? requiredId;
-      final List<MPShareSummaryOption> options =
-          resp.options.map((MPShareOptionItem item) {
+      final List<MPShareSummaryOption> requiredOptions = <MPShareSummaryOption>[];
+      final List<MPShareSummaryOption> optionalOptions = <MPShareSummaryOption>[];
+      for (final MPShareOptionItem item in resp.options) {
         if (item.required && requiredId == null) {
           requiredId = item.optionId.toString();
         }
-        return MPShareSummaryOption(
+        final String key = item.optionKey.trim();
+        final String keyLower = key.toLowerCase();
+        if (keyLower == 'transcript') {
+          // 产品要求：不展示 transcript 标签
+        }
+        final String badge = (item.required ? 'Required' : '');
+        final MPShareSummaryOption opt = MPShareSummaryOption(
           id: item.optionId.toString(),
           title: item.optionName,
-          badge: item.optionKey.trim(),
+          badge: badge,
           timeLabel: '',
         );
-      }).toList();
-      if (options.isEmpty) {
+        if (item.required) {
+          requiredOptions.add(opt);
+        } else {
+          optionalOptions.add(opt);
+        }
+      }
+      if (requiredOptions.isEmpty && optionalOptions.isEmpty) {
         return params;
       }
       return MPShareSheetParams(
-        summaryOptions: options,
+        requiredSummaryOptions: requiredOptions,
+        optionalSummaryOptions: optionalOptions,
         initialSummaryOptionId: requiredId,
       );
     } catch (_) {

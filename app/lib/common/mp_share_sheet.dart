@@ -26,10 +26,14 @@ class MPShareSheetResult {
   const MPShareSheetResult({
     required this.summaryOptionId,
     required this.additionalContent,
+    required this.optionalOptionIds,
   });
 
   final String summaryOptionId;
   final Set<MPShareAdditionalContent> additionalContent;
+
+  /// required==false 的 options 勾选结果（可多选，可取消）。
+  final Set<String> optionalOptionIds;
 }
 
 /// 分享弹窗参数（用于回显与配置）。
@@ -43,7 +47,9 @@ class MPShareSheetParams {
     this.cancelText = 'Cancel',
     this.initialSummaryOptionId,
     this.initialAdditionalContent = const <MPShareAdditionalContent>{},
-    this.summaryOptions = const <MPShareSummaryOption>[
+    this.initialOptionalOptionIds = const <String>{},
+    this.requiredSummaryOptions = const <MPShareSummaryOption>[],
+    this.optionalSummaryOptions = const <MPShareSummaryOption>[
       MPShareSummaryOption(
         id: 'original',
         title: 'Original Summary',
@@ -65,8 +71,13 @@ class MPShareSheetParams {
 
   final String? initialSummaryOptionId;
   final Set<MPShareAdditionalContent> initialAdditionalContent;
+  final Set<String> initialOptionalOptionIds;
 
-  final List<MPShareSummaryOption> summaryOptions;
+  /// required==true 的 options（展示在上面）。
+  final List<MPShareSummaryOption> requiredSummaryOptions;
+
+  /// required==false 的 options（展示在下面）。
+  final List<MPShareSummaryOption> optionalSummaryOptions;
 
   final bool showTranscript;
   final bool showAudioRecording;
@@ -104,35 +115,27 @@ class _MPShareSheet extends StatefulWidget {
 
 class _MPShareSheetState extends State<_MPShareSheet> {
   late String _selectedSummaryId;
-  late final Set<MPShareAdditionalContent> _additional;
+  late final Set<String> _optionalSelectedIds;
 
   static const Color _kSheetBg = Color(0xFFF2F2F7);
 
   @override
   void initState() {
     super.initState();
-    final List<MPShareSummaryOption> options = widget.params.summaryOptions;
+    final List<MPShareSummaryOption> options = <MPShareSummaryOption>[
+      ...widget.params.requiredSummaryOptions,
+      ...widget.params.optionalSummaryOptions,
+    ];
     final String fallback = options.isNotEmpty ? options.first.id : 'original';
     _selectedSummaryId = widget.params.initialSummaryOptionId ?? fallback;
-    _additional = Set<MPShareAdditionalContent>.from(
-      widget.params.initialAdditionalContent,
-    );
-  }
-
-  void _toggleAdditional(MPShareAdditionalContent kind) {
-    setState(() {
-      if (_additional.contains(kind)) {
-        _additional.remove(kind);
-      } else {
-        _additional.add(kind);
-      }
-    });
+    _optionalSelectedIds = Set<String>.from(widget.params.initialOptionalOptionIds);
   }
 
   void _onContinue() {
     final MPShareSheetResult result = MPShareSheetResult(
       summaryOptionId: _selectedSummaryId,
-      additionalContent: Set<MPShareAdditionalContent>.from(_additional),
+      additionalContent: const <MPShareAdditionalContent>{},
+      optionalOptionIds: Set<String>.from(_optionalSelectedIds),
     );
     Navigator.of(context).pop(result);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -148,32 +151,8 @@ class _MPShareSheetState extends State<_MPShareSheet> {
     final double keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
 
     final MPShareSheetParams p = widget.params;
-    final List<MPShareSummaryOption> options = p.summaryOptions;
-
-    final List<Widget> additionalTiles = <Widget>[
-      if (p.showTranscript)
-        _MPAdditionalTile(
-          title: 'Transcript',
-          leadingIcon: Icons.chat_bubble_outline_rounded,
-          leadingColor: secondTextColor,
-          selected: _additional.contains(MPShareAdditionalContent.transcript),
-          onTap: () => _toggleAdditional(MPShareAdditionalContent.transcript),
-        ),
-      if (p.showAudioRecording) ...<Widget>[
-        if (p.showTranscript) const Divider(height: 1, color: lineColor,),
-        _MPAdditionalTile(
-          title: 'Audio recording',
-          subtitle: p.audioSubtitle,
-          leadingIcon: Icons.mic_none_rounded,
-          leadingColor: redColor,
-          selected: _additional.contains(
-            MPShareAdditionalContent.audioRecording,
-          ),
-          onTap: () =>
-              _toggleAdditional(MPShareAdditionalContent.audioRecording),
-        ),
-      ],
-    ];
+    final List<MPShareSummaryOption> requiredOptions = p.requiredSummaryOptions;
+    final List<MPShareSummaryOption> optionalOptions = p.optionalSummaryOptions;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
@@ -196,7 +175,7 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                 padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + bottomSafe),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.sizeOf(context).height * 0.86,
+                    maxHeight: MediaQuery.sizeOf(context).height * 0.6,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -212,7 +191,8 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Expanded(
+                      Flexible(
+                        fit: FlexFit.loose,
                         child: SingleChildScrollView(
                           physics: const BouncingScrollPhysics(
                             parent: AlwaysScrollableScrollPhysics(),
@@ -252,7 +232,9 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                               ),
                               const SizedBox(height: 10),
                               _MPSummaryOptionCard(
-                                options: options,
+                                options: requiredOptions.isNotEmpty
+                                    ? requiredOptions
+                                    : optionalOptions,
                                 selectedId: _selectedSummaryId,
                                 onChanged: (String id) {
                                   setState(() {
@@ -272,9 +254,20 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-                              _MPCardContainer(
-                                child: Column(children: additionalTiles),
-                              ),
+                              if (optionalOptions.isNotEmpty)
+                                _MPOptionalOptionsCard(
+                                  options: optionalOptions,
+                                  selectedIds: _optionalSelectedIds,
+                                  onToggle: (String id) {
+                                    setState(() {
+                                      if (_optionalSelectedIds.contains(id)) {
+                                        _optionalSelectedIds.remove(id);
+                                      } else {
+                                        _optionalSelectedIds.add(id);
+                                      }
+                                    });
+                                  },
+                                ),
                             ],
                           ),
                         ),
@@ -396,6 +389,150 @@ class _MPSummaryOptionCard extends StatelessWidget {
   }
 }
 
+class _MPOptionalOptionsCard extends StatelessWidget {
+  const _MPOptionalOptionsCard({
+    required this.options,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+
+  final List<MPShareSummaryOption> options;
+  final Set<String> selectedIds;
+  final ValueChanged<String> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return _MPCardContainer(
+      child: Column(
+        children: List<Widget>.generate(options.length, (int i) {
+          final MPShareSummaryOption opt = options[i];
+          final bool selected = selectedIds.contains(opt.id);
+          return Column(
+            children: <Widget>[
+              _MPOptionalTile(
+                title: opt.title,
+                badge: opt.badge,
+                timeLabel: opt.timeLabel,
+                selected: selected,
+                onTap: () => onToggle(opt.id),
+              ),
+              if (i != options.length - 1)
+                const Divider(height: 1, color: lineColor,),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _MPOptionalTile extends StatelessWidget {
+  const _MPOptionalTile({
+    required this.title,
+    required this.badge,
+    required this.timeLabel,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String badge;
+  final String timeLabel;
+  final bool selected;
+  final VoidCallback onTap;
+
+  static const Color _kBlue = Color(0xFF1A73E8);
+
+  @override
+  Widget build(BuildContext context) {
+    final String b = badge.trim();
+    final String t = timeLabel.trim();
+    final bool hasBadge = b.isNotEmpty;
+    final bool hasTime = t.isNotEmpty;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: selected ? _kBlue : Colors.white,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: selected ? _kBlue : const Color(0xFFC7C7CC),
+                  width: 1.6,
+                ),
+              ),
+              alignment: Alignment.center,
+              child: selected
+                  ? const Icon(Icons.check, size: 12, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment:
+                    hasTime ? MainAxisAlignment.start : MainAxisAlignment.center,
+                children: <Widget>[
+                  Row(
+                    children: <Widget>[
+                      Text(
+                        title,
+                        style: OmiTextStyle.create(
+                          fontSize: OmiFontSize.t5_14,
+                          fontWeight: OmiFontWeight.regular,
+                          color: mainTextColor,
+                        ),
+                      ),
+                      if (hasBadge) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEDEBFF),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            b,
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t3_12,
+                              fontWeight: OmiFontWeight.regular,
+                              color: const Color(0xFF6B5CFF),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (hasTime) ...<Widget>[
+                    const SizedBox(height: 2),
+                    Text(
+                      t,
+                      style: OmiTextStyle.create(
+                        fontSize: OmiFontSize.t4_13,
+                        fontWeight: OmiFontWeight.regular,
+                        color: secondTextColor,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MPSummaryTile extends StatelessWidget {
   const _MPSummaryTile({
     required this.title,
@@ -415,6 +552,10 @@ class _MPSummaryTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String b = badge.trim();
+    final String t = timeLabel.trim();
+    final bool hasBadge = b.isNotEmpty;
+    final bool hasTime = t.isNotEmpty;
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -450,6 +591,8 @@ class _MPSummaryTile extends StatelessWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment:
+                    hasTime ? MainAxisAlignment.start : MainAxisAlignment.center,
                 children: <Widget>[
                   Row(
                     children: <Widget>[
@@ -461,92 +604,33 @@ class _MPSummaryTile extends StatelessWidget {
                           color: mainTextColor,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDEBFF),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          badge,
-                          style: OmiTextStyle.create(
-                            fontSize: OmiFontSize.t3_12,
-                            fontWeight: OmiFontWeight.regular,
-                            color: const Color(0xFF6B5CFF),
+                      if (hasBadge) ...<Widget>[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEDEBFF),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            b,
+                            style: OmiTextStyle.create(
+                              fontSize: OmiFontSize.t3_12,
+                              fontWeight: OmiFontWeight.regular,
+                              color: const Color(0xFF6B5CFF),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    timeLabel,
-                    style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t4_13,
-                      fontWeight: OmiFontWeight.regular,
-                      color: secondTextColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MPAdditionalTile extends StatelessWidget {
-  const _MPAdditionalTile({
-    required this.title,
-    this.subtitle,
-    required this.leadingIcon,
-    required this.leadingColor,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String title;
-  final String? subtitle;
-  final IconData leadingIcon;
-  final Color leadingColor;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            _MPCheckbox(selected: selected),
-            const SizedBox(width: 8),
-            Icon(leadingIcon, size: 16, color: leadingColor),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    title,
-                    style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t6_15,
-                      fontWeight: OmiFontWeight.regular,
-                      color: mainTextColor,
-                    ),
-                  ),
-                  if (subtitle != null) ...<Widget>[
+                  if (hasTime) ...<Widget>[
                     const SizedBox(height: 2),
                     Text(
-                      subtitle!,
+                      t,
                       style: OmiTextStyle.create(
                         fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.regular,
@@ -564,29 +648,4 @@ class _MPAdditionalTile extends StatelessWidget {
   }
 }
 
-class _MPCheckbox extends StatelessWidget {
-  const _MPCheckbox({required this.selected});
-
-  final bool selected;
-
-  static const Color _kBlue = Color(0xFF1A73E8);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 18,
-      height: 18,
-      decoration: BoxDecoration(
-        color: selected ? _kBlue : Colors.white,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: selected ? _kBlue : const Color(0xFFC7C7CC),
-          width: 1.6,
-        ),
-      ),
-      child: selected
-          ? const Icon(Icons.check, size: 12, color: Colors.white)
-          : null,
-    );
-  }
-}
+// _MPCheckbox 已不再使用（Include additional content 现展示更多 options 而非勾选项）。
