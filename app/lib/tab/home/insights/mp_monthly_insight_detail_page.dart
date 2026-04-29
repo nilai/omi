@@ -879,10 +879,17 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
   }
 }
 
-class _MPMonthlySuggestedFocusCard extends StatelessWidget {
+class _MPMonthlySuggestedFocusCard extends StatefulWidget {
   const _MPMonthlySuggestedFocusCard({required this.items});
 
   final List<MPMonthlySuggestedFocusItem> items;
+
+  @override
+  State<_MPMonthlySuggestedFocusCard> createState() => _MPMonthlySuggestedFocusCardState();
+}
+
+class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCard> {
+  final Set<int> _addedIndexes = <int>{};
 
   static const Color _kFocusBlue = Color(0xFF3C7BEE);
 
@@ -926,13 +933,14 @@ class _MPMonthlySuggestedFocusCard extends StatelessWidget {
             height: 1,
           ),
           const SizedBox(height: 6),
-          ...items.asMap().entries.map((MapEntry<int, MPMonthlySuggestedFocusItem> e) {
+          ...widget.items.asMap().entries.map((MapEntry<int, MPMonthlySuggestedFocusItem> e) {
             final int idx = e.key;
             final MPMonthlySuggestedFocusItem f = e.value;
+            final bool isAdded = _addedIndexes.contains(idx);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                border: idx == items.length - 1
+                border: idx == widget.items.length - 1
                     ? null
                     : const Border(
                         bottom: BorderSide(color: Color(0xFFEDEDED), width: 1),
@@ -962,6 +970,8 @@ class _MPMonthlySuggestedFocusCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       f.text,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: OmiTextStyle.create(
                         color: mainTextColor,
                         fontSize: OmiFontSize.t6_15,
@@ -971,39 +981,78 @@ class _MPMonthlySuggestedFocusCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFEFF3FA),
-                      foregroundColor: _kFocusBlue,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      minimumSize: const Size(0, 0),
-                    ),
-                    onPressed: () async{
-                      final MPAddTodoPopupResult? result = await showMPAddTodoPopup(context, params: MPAddTodoPopupParams(initialTitle: f.text));
-                      if (result != null) {
-                        MPToastUtils.showMessage('Todo 创建成功');
-                      }
-                      if (result == null) {
-                        MPToastUtils.showMessage('Todo 创建失败');
-                      }
-                    },
-                    child: const Text(
-                      'Add to Todo',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  isAdded
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F7EE),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Icon(
+                                Icons.check,
+                                size: 13,
+                                color: Color(0xFF34C759),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Added',
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF1BAA52),
+                                  fontSize: OmiFontSize.t4_13,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFFEAF2FF),
+                            foregroundColor: const Color(0xFF0A84FF),
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 7,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            minimumSize: const Size(0, 0),
+                          ),
+                          onPressed: () async {
+                            final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                              context,
+                              params: MPAddTodoPopupParams(initialTitle: f.text),
+                            );
+                            if (!mounted) {
+                              return;
+                            }
+                            
+                            if (result != null) {
+                              setState(() {
+                                _addedIndexes.add(idx);
+                              });
+                              MPToastUtils.showMessage('Todo 创建成功');
+                            } else {
+                              MPToastUtils.showMessage('Todo 创建失败');
+                            }
+                          },
+                          child: Text(
+                            'Add to Todo',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: OmiTextStyle.create(
+                              color: const Color(0xFF0A84FF),
+                              fontSize: OmiFontSize.t4_13,
+                              fontWeight: OmiFontWeight.medium,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
                 ],
               ),
             );

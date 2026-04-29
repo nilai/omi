@@ -658,10 +658,17 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
   }
 }
 
-class _MPWeeklyPrioritiesCard extends StatelessWidget {
+class _MPWeeklyPrioritiesCard extends StatefulWidget {
   const _MPWeeklyPrioritiesCard({required this.items});
 
   final List<MPWeeklyPriorityItem> items;
+
+  @override
+  State<_MPWeeklyPrioritiesCard> createState() => _MPWeeklyPrioritiesCardState();
+}
+
+class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
+  final Set<int> _addedIndexes = <int>{};
 
   @override
   Widget build(BuildContext context) {
@@ -678,12 +685,13 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          ...items.asMap().entries.map((MapEntry<int, MPWeeklyPriorityItem> e) {
+          ...widget.items.asMap().entries.map((MapEntry<int, MPWeeklyPriorityItem> e) {
             final MPWeeklyPriorityItem item = e.value;
+            final bool isAdded = _addedIndexes.contains(e.key);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                border: e.key == items.length - 1
+                border: e.key == widget.items.length - 1
                     ? null
                     : const Border(
                         bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
@@ -695,7 +703,7 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                     width: 18,
                     height: 18,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF44B0C6).withValues(alpha: 50),
+                      color: const Color(0xFF0A84FF),
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
@@ -716,6 +724,8 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                       children: <Widget>[
                         Text(
                           item.text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: OmiTextStyle.create(
                             color: mainTextColor,
                             fontSize: OmiFontSize.t6_15,
@@ -739,34 +749,72 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () async{
-                      final MPAddTodoPopupResult? result = await showMPAddTodoPopup(context, params: MPAddTodoPopupParams(initialTitle: item.text));
-                      if (result != null) {
-                        MPToastUtils.showMessage('Todo 创建成功');
-                      }
-                      if (result == null) {
-                        MPToastUtils.showMessage('Todo 创建失败');
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF4A82E8),
-                      backgroundColor: const Color(0xFFEAF0FA),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      minimumSize: const Size(0, 0),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: const Text(
-                      'Add to Todo',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                  isAdded
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F7EE),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Icon(
+                                Icons.check,
+                                size: 13,
+                                color: Color(0xFF34C759),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Added',
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF1BAA52),
+                                  fontSize: OmiFontSize.t4_13,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : TextButton(
+                          onPressed: () async {
+                            final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                              context,
+                              params: MPAddTodoPopupParams(initialTitle: item.text),
+                            );
+                            if (!mounted) {
+                              return;
+                            }
+                            if (result != null) {
+                              setState(() {
+                                _addedIndexes.add(e.key);
+                              });
+                              MPToastUtils.showMessage('Todo 创建成功');
+                            } else {
+                              MPToastUtils.showMessage('Todo 创建失败');
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF0A84FF),
+                            backgroundColor: const Color(0xFFEAF2FF),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            minimumSize: const Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            'Add to Todo',
+                            style: OmiTextStyle.create(
+                              color: const Color(0xFF0A84FF),
+                              fontSize: OmiFontSize.t4_13,
+                              fontWeight: OmiFontWeight.medium,
+                              height: 1.1,
+                            ),
+                          ),
+                        ),
                 ],
               ),
             );
