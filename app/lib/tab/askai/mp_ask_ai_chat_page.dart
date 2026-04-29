@@ -6,6 +6,15 @@ import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';
 import '../../utils/omi_textstyle.dart';
 
+enum MPAskAIChatType {
+  insight,
+  memory,
+  expert,
+  template,
+  speaker,
+  normal,
+}
+
 class MPAskAIChatPage extends StatelessWidget {
   const MPAskAIChatPage({
     super.key,
@@ -13,12 +22,16 @@ class MPAskAIChatPage extends StatelessWidget {
     this.conversationId,
     this.suggestedQuestions = const <String>[],
     this.initialMessage,
+    this.type = MPAskAIChatType.normal,
+    this.aiModelId,
   });
 
   final String aboutText;
   final String? conversationId;
   final List<String> suggestedQuestions;
   final String? initialMessage;
+  final MPAskAIChatType type;
+  final String? aiModelId;
 
   @override
   Widget build(BuildContext context) {
