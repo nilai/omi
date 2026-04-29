@@ -364,7 +364,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
     }
 
     // ignore: use_build_context_synchronously
-    Navigator.of(targetContext).pushReplacement(
+    Navigator.of(targetContext).push(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
           aboutText: insightItem.title,
