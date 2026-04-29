@@ -23,7 +23,7 @@ class MPAskAIChatPage extends StatelessWidget {
     this.suggestedQuestions = const <String>[],
     this.initialMessage,
     this.type = MPAskAIChatType.normal,
-    this.aiModelId,
+    this.chatTypeId,
   });
 
   final String aboutText;
@@ -31,7 +31,7 @@ class MPAskAIChatPage extends StatelessWidget {
   final List<String> suggestedQuestions;
   final String? initialMessage;
   final MPAskAIChatType type;
-  final String? aiModelId;
+  final String? chatTypeId;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +40,8 @@ class MPAskAIChatPage extends StatelessWidget {
         aboutText: aboutText,
         conversationId: conversationId,
         suggestedQuestions: suggestedQuestions,
+        type: type,
+        chatTypeId: chatTypeId,
       )..initData(),
       child: _MPAskAIChatView(initialMessage: initialMessage),
     );

@@ -21,12 +21,16 @@ class MPCreateConversationRequest {
   @JsonKey(name: 'speaker_id')
   final String speakerId;
 
+  @JsonKey(name: 'insight_id')
+  final String insightId;
+
   MPCreateConversationRequest({
     this.title,
     required this.expertId,
     required this.memoryId,
     required this.templateId,
     required this.speakerId,
+    required this.insightId,
   });
 
   factory MPCreateConversationRequest.fromJson(Map<String, dynamic> json) =>

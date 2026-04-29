@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
+import 'mp_ask_ai_chat_page.dart';
 
 enum MPAskAIChatPhase { loading, loaded, error }
 
@@ -68,6 +69,8 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     required this.aboutText,
     required this.conversationId,
     required this.suggestedQuestions,
+    required this.type,
+    required this.chatTypeId,
   }) : super(
          MPAskAIChatState(
            phase: MPAskAIChatPhase.loading,
@@ -80,6 +83,8 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
   final String aboutText;
   final String? conversationId;
   final List<String> suggestedQuestions;
+  final MPAskAIChatType type;
+  final String? chatTypeId;
 
   Future<void> initData() async {
     emit(
@@ -132,10 +137,11 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
           await createConversation(
         MPCreateConversationRequest(
           title: null,
-          expertId: '',
-          memoryId: '',
-          templateId: '',
-          speakerId: '',
+          expertId: type == MPAskAIChatType.expert ? chatTypeId ?? '' : '',
+          memoryId: type == MPAskAIChatType.memory ? chatTypeId ?? '' : '',
+          templateId: type == MPAskAIChatType.template ? chatTypeId ?? '' : '',
+          speakerId: type == MPAskAIChatType.speaker ? chatTypeId ?? '' : '',
+          insightId: type == MPAskAIChatType.insight ? chatTypeId ?? '' : '',
         ),
       );
       if (created == null) {

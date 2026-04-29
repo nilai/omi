@@ -370,6 +370,8 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           aboutText: insightItem.title,
           suggestedQuestions: questions,
           conversationId: conversationId,
+          type: MPAskAIChatType.insight,
+          chatTypeId: insightItem.id,
         ),
       ),
     );
