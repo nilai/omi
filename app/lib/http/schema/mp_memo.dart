@@ -24,11 +24,15 @@ class MPCreateMemoWithTextRequest {
   @JsonKey(name: 'content')
   final String content;
 
+  @JsonKey(name: 'memory_id')
+  final String? memoryId;
+
   @JsonKey(name: 'create_at', fromJson: _memoParseCreateAtForCtor)
   final int createAt;
 
   MPCreateMemoWithTextRequest({
     required this.content,
+    this.memoryId,
     required int createAt,
   }) : createAt = _memoNormalizeUnixSeconds(createAt);
 

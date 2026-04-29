@@ -51,6 +51,7 @@ class MPTodoManager {
     required String title,
     String priority = 'normal',
     int? deadline,
+    String? memoryId,
   }) async {
     try {
       final int deadlineUnix =
@@ -59,6 +60,7 @@ class MPTodoManager {
       // 创建请求
       final request = MPCreateTodoRequest(
         title: title,
+        memoryId: memoryId,
         priority: priority,
         deadline: deadlineUnix,
       );

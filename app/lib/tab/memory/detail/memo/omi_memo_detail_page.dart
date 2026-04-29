@@ -242,7 +242,10 @@ class _OmiMemoDetailView extends StatelessWidget {
           if (!context.mounted) return;
           final String line = result.text.trim();
           if (line.isEmpty) return;
-          final bool ok = await MPTodoManager().createTodo(title: line);
+          final bool ok = await MPTodoManager().createTodo(
+            title: line,
+            memoryId: memoryId,
+          );
           if (!context.mounted) return;
           if (!ok) {
             MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
@@ -265,6 +268,7 @@ class _OmiMemoDetailView extends StatelessWidget {
           final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
             MPCreateMemoWithTextRequest(
               content: line,
+              memoryId: memoryId,
               createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
             ),
           );

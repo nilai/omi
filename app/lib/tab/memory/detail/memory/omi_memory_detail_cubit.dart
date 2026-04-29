@@ -12,8 +12,10 @@ import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:path/path.dart' as p;
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
@@ -577,7 +579,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           fileName: fileId,
           createAt: DateTime.now().millisecondsSinceEpoch,
           duration: _parseDurationSeconds(durationLabel),
-          source: 'mp',
+          source: 'mobilePhone',
           fileId: fileId,
         ),
       );
@@ -891,9 +893,16 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   Future<bool> _deleteTodoApi(MPMemoryCreatedTodoLineData item) async {
-    // TODO: 替换为真实删除接口
-    await Future<void>.delayed(const Duration(milliseconds: 400));
-    return true;
+    final String? todoId = item.id?.trim();
+    if (todoId == null || todoId.isEmpty) {
+      // 本地临时项（未落库）无需调接口，直接返回成功以保持 UI 行为一致。
+      return true;
+    }
+
+    final MPDeleteTodoResponse? resp = await MPTodo.deleteTodo(
+      MPDeleteTodoRequest(todoId: todoId),
+    );
+    return resp != null && resp.baseResp.code == 0;
   }
 
   /// 删除「TODOS CREATED」里指定块中的条目（接口成功后更新 UI）。

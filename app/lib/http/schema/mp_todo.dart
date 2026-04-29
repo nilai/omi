@@ -44,6 +44,9 @@ class MPCreateTodoRequest {
   @JsonKey(name: 'title')
   final String title;
 
+  @JsonKey(name: 'memory_id')
+  final String? memoryId;
+
   @JsonKey(name: 'priority')
   final String priority;
 
@@ -52,6 +55,7 @@ class MPCreateTodoRequest {
 
   MPCreateTodoRequest({
     required this.title,
+    this.memoryId,
     required this.priority,
     required this.deadline,
   });

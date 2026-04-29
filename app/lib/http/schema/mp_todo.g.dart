@@ -23,6 +23,7 @@ Map<String, dynamic> _$GetTodoGroupedListRequestToJson(
 MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
     MPCreateTodoRequest(
       title: json['title'] as String,
+      memoryId: json['memory_id'] as String?,
       priority: json['priority'] as String,
       deadline: (json['deadline'] as num?)?.toInt(),
     );
@@ -31,6 +32,7 @@ Map<String, dynamic> _$MPCreateTodoRequestToJson(
   MPCreateTodoRequest instance,
 ) => <String, dynamic>{
   'title': instance.title,
+  'memory_id': instance.memoryId,
   'priority': instance.priority,
   'deadline': instance.deadline,
 };

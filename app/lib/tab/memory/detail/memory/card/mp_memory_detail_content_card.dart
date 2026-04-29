@@ -653,11 +653,14 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
               width: double.infinity,
               height: 50,
               onPressed: () async {
+                final String recordUrl = (widget.data.recordUri ?? '').trim().isNotEmpty
+                    ? (widget.data.recordUri ?? '').trim()
+                    : (widget.data.recordFile ?? '').trim();
                 final MPSummaryRecordRequest? req =
                     await showMPMemoryGenerateSummarySheet(
                   context,
                   memoryId: widget.data.memoryId,
-                  recordUrl: (widget.data.recordUri ?? '').trim(),
+                  recordUrl: recordUrl,
                   isRegen: true,
                   onChangeMode: () {
                     // TODO: 切换 Autopilot / 其它模式
