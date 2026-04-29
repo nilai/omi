@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -350,7 +351,15 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       TextButton(
-                        onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Add to Todo: ${focus.text}'),
+                        onPressed: () async{
+                          final MPAddTodoPopupResult? result = await showMPAddTodoPopup(context, params: MPAddTodoPopupParams(initialTitle: focus.text));
+                          if (result != null) {
+                            MPToastUtils.showMessage('Todo 创建成功');
+                          }
+                          if (result == null) {
+                            MPToastUtils.showMessage('Todo 创建失败');
+                          }
+                        },
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFF4A82E8),
                           backgroundColor: const Color(0xFFEAF0FA),

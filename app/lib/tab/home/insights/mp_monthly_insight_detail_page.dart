@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -984,9 +985,15 @@ class _MPMonthlySuggestedFocusCard extends StatelessWidget {
                       ),
                       minimumSize: const Size(0, 0),
                     ),
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Add to Todo: ${f.text}',
-                    ),
+                    onPressed: () async{
+                      final MPAddTodoPopupResult? result = await showMPAddTodoPopup(context, params: MPAddTodoPopupParams(initialTitle: f.text));
+                      if (result != null) {
+                        MPToastUtils.showMessage('Todo 创建成功');
+                      }
+                      if (result == null) {
+                        MPToastUtils.showMessage('Todo 创建失败');
+                      }
+                    },
                     child: const Text(
                       'Add to Todo',
                       maxLines: 1,

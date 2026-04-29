@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../common/omi_add_todo_popup.dart';
 import '../../../generated/assets.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
@@ -739,9 +740,15 @@ class _MPWeeklyPrioritiesCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   TextButton(
-                    onPressed: () => MPToastUtils.showFeatureComingSoon(
-                      message: 'Add to Todo: ${item.text}',
-                    ),
+                    onPressed: () async{
+                      final MPAddTodoPopupResult? result = await showMPAddTodoPopup(context, params: MPAddTodoPopupParams(initialTitle: item.text));
+                      if (result != null) {
+                        MPToastUtils.showMessage('Todo 创建成功');
+                      }
+                      if (result == null) {
+                        MPToastUtils.showMessage('Todo 创建失败');
+                      }
+                    },
                     style: TextButton.styleFrom(
                       foregroundColor: const Color(0xFF4A82E8),
                       backgroundColor: const Color(0xFFEAF0FA),
