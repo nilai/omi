@@ -479,9 +479,8 @@ class _AskAiButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
         ),
       ),
-      onPressed: () => MPToastUtils.showFeatureComingSoon(
-        message: 'Ask AI about this pattern',
-      ),
+      onPressed: () =>
+          context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[

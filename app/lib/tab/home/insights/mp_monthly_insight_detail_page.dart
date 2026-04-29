@@ -222,9 +222,8 @@ class _MPMonthlyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 18),
               FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(
-                  message: monthly.askAiButtonText,
-                ),
+                onPressed: () =>
+                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: purpleTextColor,
                   foregroundColor: Colors.white,

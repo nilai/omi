@@ -219,9 +219,8 @@ class _MPWeeklyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(
-                  message: weekly.askAiButtonText,
-                ),
+                onPressed: () =>
+                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,

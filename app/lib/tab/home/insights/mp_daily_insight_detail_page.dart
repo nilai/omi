@@ -8,12 +8,6 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../common/omi_add_todo_popup.dart';
-import '../../../http/api/mp_chat.dart';
-import '../../../http/api/mp_insight.dart';
-import '../../../http/schema/mp_chat.dart';
-import '../../../http/schema/mp_insight.dart';
-import '../../../main.dart';
-import '../../askai/mp_ask_ai_chat_page.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -51,7 +45,7 @@ class MPDailyInsightDetailPage extends StatelessWidget {
                 ],
               ),
             ),
-            body: _MPDailyInsightBody(state: state, item: item),
+            body: _MPDailyInsightBody(state: state),
           );
         },
       ),
@@ -60,11 +54,9 @@ class MPDailyInsightDetailPage extends StatelessWidget {
 }
 
 class _MPDailyInsightBody extends StatelessWidget {
-  const _MPDailyInsightBody({required this.state, required this.item});
+  const _MPDailyInsightBody({required this.state});
 
   final MPInsightDetailState state;
-
-  final MPInsightListItem item;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +170,8 @@ class _MPDailyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => _onAskAiButtonPressed(context),
+                onPressed: () =>
+                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,
@@ -191,31 +184,6 @@ class _MPDailyInsightBody extends StatelessWidget {
           ),
         );
     }
-  }
-
-  Future<void> _onAskAiButtonPressed(BuildContext context) async {
-    final List<dynamic> responses = await Future.wait<dynamic>(<Future<dynamic>>[
-      getInsightSuggestion(MPGetInsightSuggestionRequest(insightId: item.id)),
-      getLastConversation(MPGetLastConversationRequest(conversationType: 2, paramId: item.id)),
-    ]);
-    final MPGetInsightSuggestionResponse? resp = responses[0] as MPGetInsightSuggestionResponse?;
-    final MPGetLastConversationResponse? lastConversationResp = responses[1] as MPGetLastConversationResponse?;
-    if (lastConversationResp == null) {
-      // keep for subsequent Ask-AI flow integration
-    }
-    final questions = resp?.suggestion ?? <String>[];
-    final conversationId = lastConversationResp?.conversationId ?? '';
-    final tmpContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
-    if (tmpContext == null) {
-      return;
-    }
-    // ignore: use_build_context_synchronously
-    Navigator.of(tmpContext).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            MPAskAIChatPage(aboutText: item.title, suggestedQuestions: questions, conversationId: conversationId),
-      ),
-    );
   }
 }
 
