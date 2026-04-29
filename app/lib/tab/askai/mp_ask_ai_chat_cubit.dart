@@ -230,7 +230,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       }
       List<MPAskAIChatMessage> messages = [];
       for (final (index, element) in response.contents.indexed) {
-        final bool isUser = index % 2 == 0;
+        final bool isUser = index % 2 == 1;
         messages.add(MPAskAIChatMessage(
           id: 'history_${element.time}_${element.content.hashCode}',
           role: isUser ? MPAskAIMessageRole.user : MPAskAIMessageRole.ai,

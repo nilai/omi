@@ -83,11 +83,12 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
   Future<void> _onSubmitInput(BuildContext context, MPVoiceTextInputResult result) async {
     final String text = result.text.trim();
     if (text.isEmpty) return;
-    context.read<MPAskAICubit>().backToOverview();
     _dismissKeyboard();
     final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: ''));
     final String conversationId = lastConversation?.conversationId ?? '';
     final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
+    // ignore: use_build_context_synchronously
+    context.read<MPAskAICubit>().backToOverview();
     // ignore: use_build_context_synchronously
     await Navigator.of(targetContext!).push(
       MaterialPageRoute<void>(
@@ -110,11 +111,13 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     MPAskAIModule module,
     String question,
   ) async {
-    context.read<MPAskAICubit>().backToOverview();
+    
     _dismissKeyboard();
-    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: ''));
+    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: module.id));
     final String conversationId = lastConversation?.conversationId ?? '';
     final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
+    // ignore: use_build_context_synchronously
+    context.read<MPAskAICubit>().backToOverview();
     // ignore: use_build_context_synchronously
     await Navigator.of(targetContext!).push(
       MaterialPageRoute<void>(
