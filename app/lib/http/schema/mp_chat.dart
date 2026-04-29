@@ -313,8 +313,9 @@ class MPGetChatSuggestionCardsResponse {
 
 @JsonSerializable()
 class MPGetLastConversationRequest {
+  // 1: memory, 2: insight  0: 其它
   @JsonKey(name: 'conversation_type')
-  final int conversationType;
+  final int conversationType; 
 
   @JsonKey(name: 'param_id')
   final String paramId;
