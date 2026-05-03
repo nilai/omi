@@ -391,12 +391,12 @@ Map<String, dynamic> _$MPGetUploadRecordUrlResponseToJson(
 MPGetSummaryStatusRequest _$MPGetSummaryStatusRequestFromJson(
   Map<String, dynamic> json,
 ) => MPGetSummaryStatusRequest(
-  summaryMemoryId: json['summary_memory_id'] as String,
+  memoryId: json['memory_id'] as String,
 );
 
 Map<String, dynamic> _$MPGetSummaryStatusRequestToJson(
   MPGetSummaryStatusRequest instance,
-) => <String, dynamic>{'summary_memory_id': instance.summaryMemoryId};
+) => <String, dynamic>{'memory_id': instance.memoryId};
 
 MPGetSummaryStatusResponse _$MPGetSummaryStatusResponseFromJson(
   Map<String, dynamic> json,

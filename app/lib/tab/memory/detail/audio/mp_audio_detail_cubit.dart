@@ -392,7 +392,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         return false;
       }
       final MPGetSummaryStatusResponse? res = await getSummaryStatus(
-        MPGetSummaryStatusRequest(summaryMemoryId: memoryId),
+        MPGetSummaryStatusRequest(memoryId: memoryId),
       );
       if (isClosed) {
         return false;

@@ -67,7 +67,7 @@ class MPMemoryTransitionCubit extends Cubit<MPMemoryTransitionState> {
   Future<void> _checkStatus() async {
     try {
       final MPGetSummaryStatusResponse? res = await getSummaryStatus(
-        MPGetSummaryStatusRequest(summaryMemoryId: memoryId),
+        MPGetSummaryStatusRequest(memoryId: memoryId),
       );
       if (res == null) {
         return;

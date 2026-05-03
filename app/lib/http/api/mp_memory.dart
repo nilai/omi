@@ -225,7 +225,7 @@ Future<MPGetUploadRecordUrlResponse?> getUploadRecordUrl(MPGetUploadRecordUrlReq
 // GET /api/v1/memory/summary/get_status
 Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/memory/summary/get_status?summary_memory_id=${req.summaryMemoryId}',
+    url: '${Env.apiBaseUrl}api/v1/memory/summary/get_status?memory_id=${req.memoryId}',
     headers: {},
     method: 'GET',
     body: '',

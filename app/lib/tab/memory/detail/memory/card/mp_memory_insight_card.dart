@@ -16,20 +16,20 @@ enum MPInsightCardTone {
   /// 暖橙
   business,
 
-  /// 执行/蓝
-  execution,
+  // /// 执行/蓝
+  // execution,
 
-  /// 创意/紫
-  creative,
+  // /// 创意/紫
+  // creative,
 
-  /// 健康/绿
-  wellness,
+  // /// 健康/绿
+  // wellness,
 
-  /// 战略/红
-  strategic,
+  // /// 战略/红
+  // strategic,
 
-  /// 成长/深绿
-  growth,
+  // /// 成长/深绿
+  // growth,
 }
 
 /// 单条 Insight 卡片数据
@@ -38,14 +38,17 @@ class MPMemoryInsightItemData {
     required this.tone,
     required this.timeLabel,
     required this.bodyText,
+    required this.title,
     this.categoryTitle,
     this.useMarkdown = true,
     this.insightContent,
     this.insightSuggestion,
+
   });
 
   final MPInsightCardTone tone;
 
+ final String title;
   /// 右侧相对时间，如 `2 min later`
   final String timeLabel;
 
@@ -69,20 +72,7 @@ class MPMemoryInsightItemData {
     if (categoryTitle != null && categoryTitle!.isNotEmpty) {
       return categoryTitle!;
     }
-    switch (tone) {
-      case MPInsightCardTone.business:
-        return 'BUSINESS INSIGHT';
-      case MPInsightCardTone.execution:
-        return 'EXECUTION INSIGHT';
-      case MPInsightCardTone.creative:
-        return 'CREATIVE INSIGHT';
-      case MPInsightCardTone.wellness:
-        return 'WELLNESS INSIGHT';
-      case MPInsightCardTone.strategic:
-        return 'STRATEGIC INSIGHT';
-      case MPInsightCardTone.growth:
-        return 'GROWTH INSIGHT';
-    }
+    return 'BUSINESS INSIGHT';
   }
 }
 
@@ -107,58 +97,14 @@ class _MPInsightVisual {
     switch (tone) {
       case MPInsightCardTone.business:
         return _MPInsightVisual(
-          cardBg: orangeTextColor.withAlpha(30),
-          accent: orangeTextColor,
-          iconBg: orangeTextColor,
-          buttonBg: orangeTextColor.withAlpha(80),
-          buttonForeground: orangeTextColor,
+          cardBg: pinkTextColor.withAlpha(30),
+          accent: pinkTextColor,
+          iconBg: pinkTextColor,
+          buttonBg: pinkTextColor.withAlpha(60),
+          buttonForeground: pinkTextColor,
           icon: Assets.omiDetailGift,
         );
-      case MPInsightCardTone.execution:
-        return _MPInsightVisual(
-          cardBg: blueTextColor.withAlpha(30),
-          accent: blueTextColor,
-          iconBg: blueTextColor,
-          buttonBg: blueTextColor.withAlpha(80),
-          buttonForeground: blueTextColor,
-          icon: Assets.omiExecutionInsight,
-        );
-      case MPInsightCardTone.creative:
-        return _MPInsightVisual(
-          cardBg: purpleTextColor.withAlpha(28),
-          accent: purpleTextColor,
-          iconBg: purpleTextColor,
-          buttonBg: purpleTextColor.withAlpha(80),
-          buttonForeground: purpleTextColor,
-          icon: Assets.omiDetailMessage,
-        );
-      case MPInsightCardTone.wellness:
-        return _MPInsightVisual(
-          cardBg: greenTextColor.withAlpha(30),
-          accent: greenTextColor,
-          iconBg: greenTextColor,
-          buttonBg: greenTextColor.withAlpha(80),
-          buttonForeground: greenTextColor,
-          icon: Assets.omiDetailPhone,
-        );
-      case MPInsightCardTone.strategic:
-        return _MPInsightVisual(
-          cardBg: redColor.withAlpha(26),
-          accent: redColor,
-          iconBg: redColor,
-          buttonBg: redColor.withAlpha(80),
-          buttonForeground: redColor,
-          icon: Assets.omiDetailEdit,
-        );
-      case MPInsightCardTone.growth:
-        return _MPInsightVisual(
-          cardBg: greenDeepColor.withAlpha(28),
-          accent: greenDeepColor,
-          iconBg: greenDeepColor,
-          buttonBg: greenDeepColor.withAlpha(80),
-          buttonForeground: greenDeepColor,
-          icon: Assets.omiDetailCheck,
-        );
+      
     }
   }
 }
@@ -419,6 +365,22 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     return '${s.substring(0, maxLen).trimRight()}...';
   }
 
+  /// Insight 纯文本：notes←content，标题←suggestion，Context←接口 title（无则用分类默认标题）
+  MPAddTodoPopupParams _followUpTodoParams() {
+    if (!widget.data.useMarkdown) {
+      return MPAddTodoPopupParams(
+        initialTitle: (widget.data.insightSuggestion ?? '').trim(),
+        initialNotes: (widget.data.insightContent ?? '').trim(),
+        contextMemoryTitle: widget.data.title,
+      );
+    }
+    return MPAddTodoPopupParams(
+      initialTitle: _plainSnippetForTodo(widget.data.bodyText),
+      initialNotes: '',
+      contextMemoryTitle: widget.data.title,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final _MPInsightVisual v = _MPInsightVisual.of(widget.data.tone);
@@ -613,11 +575,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                       final MPAddTodoPopupResult? result =
                           await showMPAddTodoPopup(
                         context,
-                        params: MPAddTodoPopupParams(
-                          initialTitle: _plainSnippetForTodo(
-                            widget.data.bodyText,
-                          ),
-                        ),
+                        params: _followUpTodoParams(),
                       );
                       if (result != null) {
                         widget.onAddFollowUpTodo?.call();

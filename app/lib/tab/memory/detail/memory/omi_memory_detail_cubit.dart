@@ -778,77 +778,77 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
   }
 
-  /// 上拉加载更多 Feed 块，追加到 [MPMemoryDetailCardData.feedBlocks]。
-  Future<void> loadMoreFeeds() async {
-    final OmiMemoryDetailState cur = state;
-    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
-      return;
-    }
-    if (!cur.feedHasMore || cur.isLoadingMore) {
-      return;
-    }
-
-    emit(cur.copyWith(isLoadingMore: true));
-    try {
-      final MPGetMemoryFeedResponse? resp = await getMemoryFeed(
-        MPGetMemoryFeedRequest(
-          memoryId: memoryId,
-          pageSize: _kMemoryFeedPageSize,
-          cursor: _feedCursor,
-        ),
-      );
-      if (resp == null) {
-        emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
-        MPToastUtils.showMessage('加载更多失败');
-        return;
-      }
-      final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
-      if (cards.isEmpty) {
-        emit(
-          state.copyWith(
-            isLoadingMore: false,
-            feedHasMore: resp.hasMore ?? false,
-          ),
-        );
-        return;
-      }
-      final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(cards);
-      final String? lastId = _lastFeedCardId(cards);
-      if (lastId != null && lastId.isNotEmpty) {
-        _feedCursor = lastId;
-      }
-
-      final MPMemoryDetailCardData d = state.data!;
-      final List<MPMemoryFeedBlock> merged =
-          List<MPMemoryFeedBlock>.from(d.feedBlocks)..addAll(built);
-      final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
-        memoryId: d.memoryId,
-        title: d.title,
-        metaLine: d.metaLine,
-        audioTimeStart: d.audioTimeStart,
-        audioTimeEnd: d.audioTimeEnd,
-        recordFile: d.recordFile,
-        recordUri: d.recordUri,
-        waveformHeights: d.waveformHeights,
-        speakerLabels: d.speakerLabels,
-        overviewText: d.overviewText,
-        transcriptItems: d.transcriptItems,
-        actionItems: d.actionItems,
-        initialSegment: d.initialSegment,
-        feedBlocks: merged,
-      );
-      emit(
-        state.copyWith(
-          data: nextData,
-          isLoadingMore: false,
-          feedHasMore: resp.hasMore ?? false,
-        ),
-      );
-    } catch (_) {
-      emit(state.copyWith(isLoadingMore: false));
-      MPToastUtils.showMessage('加载更多失败');
-    }
-  }
+  // /// 上拉加载更多 Feed 块，追加到 [MPMemoryDetailCardData.feedBlocks]。
+  // Future<void> loadMoreFeeds() async {
+  //   final OmiMemoryDetailState cur = state;
+  //   if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+  //     return;
+  //   }
+  //   if (!cur.feedHasMore || cur.isLoadingMore) {
+  //     return;
+  //   }
+  //
+  //   emit(cur.copyWith(isLoadingMore: true));
+  //   try {
+  //     final MPGetMemoryFeedResponse? resp = await getMemoryFeed(
+  //       MPGetMemoryFeedRequest(
+  //         memoryId: memoryId,
+  //         pageSize: _kMemoryFeedPageSize,
+  //         cursor: _feedCursor,
+  //       ),
+  //     );
+  //     if (resp == null) {
+  //       emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
+  //       MPToastUtils.showMessage('加载更多失败');
+  //       return;
+  //     }
+  //     final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
+  //     if (cards.isEmpty) {
+  //       emit(
+  //         state.copyWith(
+  //           isLoadingMore: false,
+  //           feedHasMore: resp.hasMore ?? false,
+  //         ),
+  //       );
+  //       return;
+  //     }
+  //     final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(cards, cur.data?.title);
+  //     final String? lastId = _lastFeedCardId(cards);
+  //     if (lastId != null && lastId.isNotEmpty) {
+  //       _feedCursor = lastId;
+  //     }
+  //
+  //     final MPMemoryDetailCardData d = state.data!;
+  //     final List<MPMemoryFeedBlock> merged =
+  //         List<MPMemoryFeedBlock>.from(d.feedBlocks)..addAll(built);
+  //     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+  //       memoryId: d.memoryId,
+  //       title: d.title,
+  //       metaLine: d.metaLine,
+  //       audioTimeStart: d.audioTimeStart,
+  //       audioTimeEnd: d.audioTimeEnd,
+  //       recordFile: d.recordFile,
+  //       recordUri: d.recordUri,
+  //       waveformHeights: d.waveformHeights,
+  //       speakerLabels: d.speakerLabels,
+  //       overviewText: d.overviewText,
+  //       transcriptItems: d.transcriptItems,
+  //       actionItems: d.actionItems,
+  //       initialSegment: d.initialSegment,
+  //       feedBlocks: merged,
+  //     );
+  //     emit(
+  //       state.copyWith(
+  //         data: nextData,
+  //         isLoadingMore: false,
+  //         feedHasMore: resp.hasMore ?? false,
+  //       ),
+  //     );
+  //   } catch (_) {
+  //     emit(state.copyWith(isLoadingMore: false));
+  //     MPToastUtils.showMessage('加载更多失败');
+  //   }
+  // }
 
   /// 快捷输入新增 Todo：在 [MPMemoryDetailCardData.feedBlocks] 末尾追加一条 TODOS CREATED。
   void addTodoFromQuickInput(String text) {
@@ -1096,6 +1096,7 @@ String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
 
 List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
   List<MPFeedCardStruct> feeds,
+    String? title
 ) {
   final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
   for (final MPFeedCardStruct f in feeds) {
@@ -1197,10 +1198,11 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
       feedBlocks.add(
         MPMemoryFeedInsightBlock(
           MPMemoryInsightItemData(
-            tone: MPInsightCardTone.execution,
+            tone: MPInsightCardTone.business,
             timeLabel: _feedCardTimeLabel(f.createAt),
             bodyText: bodyForTodo,
             categoryTitle: categoryTitle,
+            title: title ?? '',
             useMarkdown: false,
             insightContent: content.isNotEmpty ? content : null,
             insightSuggestion: suggestion.isNotEmpty ? suggestion : null,
@@ -1213,9 +1215,10 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
     feedBlocks.add(
       MPMemoryFeedInsightBlock(
         MPMemoryInsightItemData(
-          tone: MPInsightCardTone.execution,
+          tone: MPInsightCardTone.business,
           timeLabel: _feedCardTimeLabel(f.createAt),
           bodyText: bodyText,
+          title: title ?? '',
           categoryTitle: categoryTitle,
         ),
       ),
@@ -1291,7 +1294,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
               )
               .toList(growable: false);
 
-  final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards);
+  final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title);
 
   final int metaCreateAt = sm?.createAt ?? m.createAt;
   final DateTime dt = _detailServerTime(metaCreateAt);

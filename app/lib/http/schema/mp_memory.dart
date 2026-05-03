@@ -583,11 +583,11 @@ class MPGetUploadRecordUrlResponse {
 // Get Summary Status Request
 @JsonSerializable()
 class MPGetSummaryStatusRequest {
-  @JsonKey(name: 'summary_memory_id')
-  final String summaryMemoryId;
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
 
   MPGetSummaryStatusRequest({
-    required this.summaryMemoryId,
+    required this.memoryId,
   });
 
   factory MPGetSummaryStatusRequest.fromJson(Map<String, dynamic> json) =>

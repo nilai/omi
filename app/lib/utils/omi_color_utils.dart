@@ -39,6 +39,8 @@ const Color omiEmphasisBlue = Color(0xFF007AFF);
  const Color orangeTextColor = Color(0xFFE67E22);
 ///紫色文本颜色
  const Color purpleTextColor = Color(0xFF6D28D9);
+/// 粉色 / 玫红强调（如 Creative Insight）`#d81b60`
+const Color pinkTextColor = Color(0xFFD81B60);
  /// 红色颜色
  const Color redColor = Color(0xFFd4183d);
 ///主标题背景颜色
