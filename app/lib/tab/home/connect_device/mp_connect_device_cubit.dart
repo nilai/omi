@@ -259,16 +259,19 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
     final bool supported = await MPBluetoothConnectionHelper.isBleSupported;
     if (!supported) {
-      MPToastUtils.showMessage('当前设备不支持蓝牙');
+      MPToastUtils.showMessage(
+        'Bluetooth is not supported on this device.',
+        duration: const Duration(seconds: 5),
+      );
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));
       }
       return;
     }
 
-    final bool permitted = await MPBluetoothConnectionHelper.ensureBlePermissions();
+    final bool permitted =
+        await MPBluetoothConnectionHelper.ensureBlePermissions();
     if (!permitted) {
-      MPToastUtils.showMessage('需要蓝牙权限以扫描并连接设备');
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));
       }
@@ -292,9 +295,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     if (!adapterOn) {
       final BluetoothAdapterState s = FlutterBluePlus.adapterStateNow;
       if (s == BluetoothAdapterState.unauthorized) {
-        MPToastUtils.showMessage('请在设置中允许本应用使用蓝牙');
+        MPToastUtils.showMessage(
+          'Bluetooth is off or access was denied. Turn on Bluetooth or allow access in Settings.',
+          duration: const Duration(seconds: 5),
+        );
       } else {
-        MPToastUtils.showMessage('请先打开蓝牙');
+        MPToastUtils.showMessage(
+          'Please turn on Bluetooth.',
+          duration: const Duration(seconds: 5),
+        );
       }
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));

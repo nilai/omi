@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -173,6 +174,10 @@ class MPAudioImportUtils {
         } on PlatformException catch (e) {
           if (e.code == 'photo_access_denied' || e.code == 'photo_access_restricted') {
             debugPrint('MPAudioImportUtils: 照片库权限被拒绝: ${e.message}');
+            MPToastUtils.showMessage(
+              'Photos access is required to import audio. Allow access in Settings if you previously denied it.',
+              duration: const Duration(seconds: 5),
+            );
             return null;
           }
           debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
@@ -249,11 +254,23 @@ class MPAudioImportUtils {
         }
       }
       if (audioStatus.isPermanentlyDenied || storageStatus.isPermanentlyDenied) {
+        MPToastUtils.showMessage(
+          'Storage access is blocked. Open Settings and allow storage or media access to select audio files.',
+          duration: const Duration(seconds: 5),
+        );
         return false;
       }
+      MPToastUtils.showMessage(
+        'Storage permission is required to select audio files. Tap Allow if prompted, or enable it in Settings.',
+        duration: const Duration(seconds: 5),
+      );
       return false;
     } catch (e) {
       debugPrint('MPAudioImportUtils: 存储权限检查失败: $e');
+      MPToastUtils.showMessage(
+        'Could not verify storage permission. Please try again.',
+        duration: const Duration(seconds: 5),
+      );
       return false;
     }
   }
@@ -269,16 +286,28 @@ class MPAudioImportUtils {
           return true;
         }
         if (status.isPermanentlyDenied || status.isRestricted) {
+          MPToastUtils.showMessage(
+            'Photos access is blocked or restricted. Open Settings and allow Photos access to import audio.',
+            duration: const Duration(seconds: 5),
+          );
           return false;
         }
         if (status.isDenied) {
           status = await Permission.photos.request();
           if (status.isPermanentlyDenied) {
+            MPToastUtils.showMessage(
+              'Photos access is blocked. Open Settings and allow Photos access to import audio.',
+              duration: const Duration(seconds: 5),
+            );
             return false;
           }
           if (status.isGranted || status.isLimited) {
             return true;
           }
+          MPToastUtils.showMessage(
+            'Photos permission is required to import audio. Tap Allow if prompted, or enable it in Settings.',
+            duration: const Duration(seconds: 5),
+          );
           return false;
         }
         status = await Permission.photos.request();
@@ -286,13 +315,25 @@ class MPAudioImportUtils {
           return true;
         }
         if (status.isPermanentlyDenied) {
+          MPToastUtils.showMessage(
+            'Photos access is blocked. Open Settings and allow Photos access to import audio.',
+            duration: const Duration(seconds: 5),
+          );
           return false;
         }
+        MPToastUtils.showMessage(
+          'Photos permission is required to import audio. Tap Allow if prompted, or enable it in Settings.',
+          duration: const Duration(seconds: 5),
+        );
         return false;
       }
       return true;
     } catch (e, st) {
       debugPrint('MPAudioImportUtils: 媒体权限检查失败: $e\n$st');
+      MPToastUtils.showMessage(
+        'Could not verify media permission. Please try again.',
+        duration: const Duration(seconds: 5),
+      );
       return false;
     }
   }

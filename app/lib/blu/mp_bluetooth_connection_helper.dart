@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
 import 'mp_ble_preferences.dart';
@@ -199,8 +201,36 @@ class MPBluetoothConnectionHelper {
   static Future<void> tryTurnBluetoothOn() => BluetoothAdapter.turnOn();
 
   /// 申请 BLE 扫描/连接所需权限；全部授予返回 `true`。
-  static Future<bool> ensureBlePermissions() {
-    return OmiPermissionService.requestBlePermissionsForScanAndConnect();
+  ///
+  /// 若未授予会弹出英文说明（含再次拒绝后仍可见的提示）。
+  static Future<bool> ensureBlePermissions() async {
+    final bool granted =
+        await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+    if (!granted) {
+      await _notifyBlePermissionDenied();
+    }
+    return granted;
+  }
+
+  static Future<void> _notifyBlePermissionDenied() async {
+    final PermissionManagerStatus worst =
+        await OmiPermissionService.bleScanConnectPermissionWorstStatus();
+    if (worst == PermissionManagerStatus.permanentlyDenied) {
+      MPToastUtils.showMessage(
+        'Bluetooth permission is required. Open Settings and allow Bluetooth access for this app.',
+        duration: const Duration(seconds: 5),
+      );
+    } else if (worst == PermissionManagerStatus.restricted) {
+      MPToastUtils.showMessage(
+        'Bluetooth access is restricted on this device.',
+        duration: const Duration(seconds: 5),
+      );
+    } else {
+      MPToastUtils.showMessage(
+        'Bluetooth permission is required to scan and connect. Tap Allow if prompted, or enable it in Settings.',
+        duration: const Duration(seconds: 5),
+      );
+    }
   }
 
   /// 开始扫描；[timeout] 到达后由插件自动停止本轮扫描。
@@ -291,8 +321,10 @@ class MPBluetoothConnectionHelper {
   static Future<List<MPBleScanEntry>> discoverMemoPinLikeDevices({
     Duration duration = const Duration(seconds: 5),
   }) async {
-    final bool ok = await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+    final bool ok =
+        await OmiPermissionService.requestBlePermissionsForScanAndConnect();
     if (!ok) {
+      await _notifyBlePermissionDenied();
       return <MPBleScanEntry>[];
     }
     final bool on = await waitForAdapterOn(timeout: const Duration(seconds: 15));
