@@ -190,7 +190,8 @@ class _MPHomePageState extends State<MPHomePage> {
                       subtitle: 'Choose an audio file from your device',
                       onTap: () {
                         Navigator.pop(ctx);
-                        _openImportAudioSheet();
+                        // _openImportAudioSheet();
+                        _importFromFileWithProgress();
                       },
                     ),
                   ],

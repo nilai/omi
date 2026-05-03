@@ -10,7 +10,6 @@ import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 /// 同步到沙盒时的进度（0–1）、已复制字节、总字节。
 typedef _SyncProgressCallback = void Function(
@@ -118,13 +117,10 @@ class MPAudioImportUtils {
 
   static Future<File?> _pickAudioFromFile() async {
     try {
-      if (Platform.isAndroid) {
-        final bool hasPermission = await _checkAndRequestStoragePermission();
-        if (!hasPermission) {
-          debugPrint('MPAudioImportUtils: 存储权限被拒绝，无法从文件选择音频');
-          return null;
-        }
-      }
+      /// Android：`FilePicker` 使用系统文档选择器（SAF），用户授权具体 URI，
+      /// **无需**事先授予 broad storage / READ_MEDIA_* 才能弹出选择器。
+      /// 在 Android 13+ 若先做 `Permission.audio` 且清单缺少 READ_MEDIA_AUDIO，
+      /// 会导致权限步骤失败、选择器永远不会打开（仅底部弹窗关闭）。
 
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -187,11 +183,7 @@ class MPAudioImportUtils {
           return await _pickAudioFromAlbumFallback();
         }
       } else {
-        final bool hasPermission = await _checkAndRequestMediaPermission();
-        if (!hasPermission) {
-          debugPrint('MPAudioImportUtils: 媒体库权限被拒绝');
-          return null;
-        }
+        /// Android：相册导入同样走 `FilePicker`（SAF），不应被存储/音频运行时权限门禁拦截。
         return await _pickAudioFromAlbumFallback();
       }
     } catch (e) {
@@ -226,116 +218,6 @@ class MPAudioImportUtils {
       debugPrint('MPAudioImportUtils: FilePicker 选择失败: $e');
     }
     return null;
-  }
-
-  static Future<bool> _checkAndRequestStoragePermission() async {
-    if (!Platform.isAndroid) {
-      return true;
-    }
-    try {
-      PermissionStatus audioStatus = await Permission.audio.status;
-      if (audioStatus.isGranted) {
-        return true;
-      }
-      PermissionStatus storageStatus = await Permission.storage.status;
-      if (storageStatus.isGranted) {
-        return true;
-      }
-      if (audioStatus.isDenied) {
-        audioStatus = await Permission.audio.request();
-        if (audioStatus.isGranted) {
-          return true;
-        }
-      }
-      if (storageStatus.isDenied) {
-        storageStatus = await Permission.storage.request();
-        if (storageStatus.isGranted) {
-          return true;
-        }
-      }
-      if (audioStatus.isPermanentlyDenied || storageStatus.isPermanentlyDenied) {
-        MPToastUtils.showMessage(
-          'Storage access is blocked. Open Settings and allow storage or media access to select audio files.',
-          duration: const Duration(seconds: 5),
-        );
-        return false;
-      }
-      MPToastUtils.showMessage(
-        'Storage permission is required to select audio files. Tap Allow if prompted, or enable it in Settings.',
-        duration: const Duration(seconds: 5),
-      );
-      return false;
-    } catch (e) {
-      debugPrint('MPAudioImportUtils: 存储权限检查失败: $e');
-      MPToastUtils.showMessage(
-        'Could not verify storage permission. Please try again.',
-        duration: const Duration(seconds: 5),
-      );
-      return false;
-    }
-  }
-
-  static Future<bool> _checkAndRequestMediaPermission() async {
-    try {
-      if (Platform.isAndroid) {
-        return await _checkAndRequestStoragePermission();
-      }
-      if (Platform.isIOS) {
-        PermissionStatus status = await Permission.photos.status;
-        if (status.isGranted || status.isLimited) {
-          return true;
-        }
-        if (status.isPermanentlyDenied || status.isRestricted) {
-          MPToastUtils.showMessage(
-            'Photos access is blocked or restricted. Open Settings and allow Photos access to import audio.',
-            duration: const Duration(seconds: 5),
-          );
-          return false;
-        }
-        if (status.isDenied) {
-          status = await Permission.photos.request();
-          if (status.isPermanentlyDenied) {
-            MPToastUtils.showMessage(
-              'Photos access is blocked. Open Settings and allow Photos access to import audio.',
-              duration: const Duration(seconds: 5),
-            );
-            return false;
-          }
-          if (status.isGranted || status.isLimited) {
-            return true;
-          }
-          MPToastUtils.showMessage(
-            'Photos permission is required to import audio. Tap Allow if prompted, or enable it in Settings.',
-            duration: const Duration(seconds: 5),
-          );
-          return false;
-        }
-        status = await Permission.photos.request();
-        if (status.isGranted || status.isLimited) {
-          return true;
-        }
-        if (status.isPermanentlyDenied) {
-          MPToastUtils.showMessage(
-            'Photos access is blocked. Open Settings and allow Photos access to import audio.',
-            duration: const Duration(seconds: 5),
-          );
-          return false;
-        }
-        MPToastUtils.showMessage(
-          'Photos permission is required to import audio. Tap Allow if prompted, or enable it in Settings.',
-          duration: const Duration(seconds: 5),
-        );
-        return false;
-      }
-      return true;
-    } catch (e, st) {
-      debugPrint('MPAudioImportUtils: 媒体权限检查失败: $e\n$st');
-      MPToastUtils.showMessage(
-        'Could not verify media permission. Please try again.',
-        duration: const Duration(seconds: 5),
-      );
-      return false;
-    }
   }
 
   static bool _isAudioFormatSupported(String filePath) {

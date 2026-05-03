@@ -2,6 +2,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- 相册/媒体读取权限：Android 13+ -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- 音频导入（与 permission_handler Permission.audio / READ_MEDIA_AUDIO 对齐）：Android 13+ -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <!-- 本地文件导入读取权限：Android 12 及以下 -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
