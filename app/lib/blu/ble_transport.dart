@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
@@ -66,9 +65,13 @@ class BleTransport extends DeviceTransport {
       await _bleDevice.connect();
       await _bleDevice.connectionState.where((val) => val == BluetoothConnectionState.connected).first;
 
-      // Request larger MTU for better performance on Android
-      if (Platform.isAndroid && _bleDevice.mtuNow < 512) {
-        await _bleDevice.requestMtu(512);
+      // Note 设备侧常用 517；Android / iOS 均在连接后协商更大 ATT MTU，利于文件导出与长包。
+      if (_bleDevice.mtuNow < 517) {
+        try {
+          await _bleDevice.requestMtu(517);
+        } catch (e) {
+          debugPrint('BleTransport.requestMtu: $e');
+        }
       }
 
       // Discover services
@@ -182,13 +185,42 @@ class BleTransport extends DeviceTransport {
 
   @override
   Future<void> writeCharacteristic(String serviceUuid, String characteristicUuid, List<int> data) async {
+    await writeCharacteristicImpl(
+      serviceUuid,
+      characteristicUuid,
+      data,
+      withoutResponse: false,
+    );
+  }
+
+  /// Note 协议命令特征需 **Write Without Response**（与 `ble/note_ble_transport.dart` 一致）。
+  Future<void> writeCharacteristicWithoutResponse(
+    String serviceUuid,
+    String characteristicUuid,
+    List<int> data,
+  ) {
+    return writeCharacteristicImpl(
+      serviceUuid,
+      characteristicUuid,
+      data,
+      withoutResponse: true,
+    );
+  }
+
+  /// 内部写入实现；[withoutResponse] 为 `true` 时使用无响应写。
+  Future<void> writeCharacteristicImpl(
+    String serviceUuid,
+    String characteristicUuid,
+    List<int> data, {
+    required bool withoutResponse,
+  }) async {
     final characteristic = await _getCharacteristic(serviceUuid, characteristicUuid);
     if (characteristic == null) {
       throw Exception('Characteristic not found: $serviceUuid:$characteristicUuid');
     }
 
     try {
-      await characteristic.write(data);
+      await characteristic.write(data, withoutResponse: withoutResponse);
     } catch (e) {
       debugPrint('BLE Transport: Failed to write characteristic: $e');
       rethrow;

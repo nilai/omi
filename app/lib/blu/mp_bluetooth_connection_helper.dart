@@ -8,6 +8,9 @@ import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
 import 'mp_ble_preferences.dart';
+import 'mp_note_ble_gatt_client.dart';
+import 'mp_note_ble_protocol.dart';
+import 'note_device.dart';
 
 /// 单次扫描聚合结果：用于 UI 列表，无需依赖完整 [BtDevice] 模型。
 class MPBleScanEntry {
@@ -153,6 +156,8 @@ class MPBluetoothConnectionHelper {
     final BleTransport transport = createBleTransport(device);
     try {
       await transport.connect();
+      // 与 Note 传输层一致：GATT 就绪前短暂稳定，减少首包读写失败。
+      await Future<void>.delayed(const Duration(milliseconds: 200));
       parkBackgroundBleTransport(transport);
       return true;
     } catch (_) {
@@ -348,5 +353,85 @@ class MPBluetoothConnectionHelper {
         await BluetoothAdapter.stopScan();
       }
     }
+  }
+
+  /// 解析当前可见的 BLE 广播名（已连接或缓存于系统的设备）。
+  ///
+  /// 优先 [BluetoothDevice.platformName]，为空时返回 `MemoPin ($remoteId)`。
+  static Future<String> resolveMemoPinDisplayName(String remoteId) async {
+    try {
+      final BluetoothDevice d = BluetoothDevice.fromId(remoteId);
+      final String raw = d.platformName.trim();
+      if (raw.isNotEmpty) {
+        return raw;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return 'MemoPin ($remoteId)';
+  }
+
+  /// 构造 Note 协议 GATT 客户端；导出文件期间须持续持有直至传输结束，再调用 [MPNoteBleGattClient.dispose]。
+  static MPNoteBleGattClient createMemoPinGattClient(BleTransport transport) =>
+      MPNoteBleGattClient(transport);
+
+  /// 读取 MemoPin / AI_NOTE 电量：优先走自定义命令 [MPNoteBleCommands.queryBattery]，失败则回退标准 BAS。
+  static Future<int?> readMemoPinBatteryPercent(BleTransport transport) async {
+    try {
+      if (!await transport.isConnected()) {
+        return null;
+      }
+    } catch (_) {
+      return null;
+    }
+
+    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+    try {
+      final MPNoteBatteryReading? r = await client.readBattery();
+      if (r != null && r.percent >= 0 && r.percent <= 100) {
+        return r.percent;
+      }
+    } catch (_) {
+      // ignore
+    } finally {
+      await client.dispose();
+    }
+
+    try {
+      return await transport.readStandardBatteryPercent();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 获取设备端录音文件列表（命令 `0x03`，含多包拼接）。
+  static Future<List<NoteFileInfo>> fetchMemoPinFileList(BleTransport transport) async {
+    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+    try {
+      return await client.getFileList();
+    } finally {
+      await client.dispose();
+    }
+  }
+
+  /// 删除设备端文件（命令 `0x05` + UTF-8 文件名）。
+  static Future<bool> deleteMemoPinFile(BleTransport transport, String fileName) async {
+    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+    try {
+      return await client.deleteFile(fileName);
+    } finally {
+      await client.dispose();
+    }
+  }
+
+  /// 发起文件导出：配置装配器并发送 `0x04`；成功后监听 [MPNoteBleGattClient.recordFilePayloadStream]。
+  ///
+  /// **同一 [client] 实例**在导出过程中必须保持存活，结束后 [MPNoteBleGattClient.dispose]。
+  static Future<bool> startMemoPinFileExport(
+    MPNoteBleGattClient client,
+    String fileName,
+  ) async {
+    client.prepareFileExport(fileName);
+    return client.requestFileExport(fileName);
   }
 }
