@@ -78,7 +78,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                       final MPShareMemoryV2Response? resp = await shareMemoryV2(MPShareMemoryV2Request(memoryId: memoryId, optionIds: optionIds));
                       if (!context.mounted) return;
                       if (resp == null || resp.baseResp.code != 0) {
-                        MPToastUtils.showMessage(resp?.baseResp.message ?? '分享失败，请稍后重试');
+                        MPToastUtils.showMessage(resp?.baseResp.message ?? '');
                         return;
                       }
                       MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
@@ -186,15 +186,15 @@ class _OmiMemoryDetailView extends StatelessWidget {
                 onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification n) {
-                    if (n.metrics.axis != Axis.vertical) {
-                      return false;
-                    }
-                    if (n is! ScrollUpdateNotification) {
-                      return false;
-                    }
-                    if (n.metrics.pixels >= n.metrics.maxScrollExtent - 160) {
-                      context.read<OmiMemoryDetailCubit>().loadMoreFeeds();
-                    }
+                    // if (n.metrics.axis != Axis.vertical) {
+                    //   return false;
+                    // }
+                    // if (n is! ScrollUpdateNotification) {
+                    //   return false;
+                    // }
+                    // if (n.metrics.pixels >= n.metrics.maxScrollExtent - 160) {
+                    //   context.read<OmiMemoryDetailCubit>().loadMoreFeeds();
+                    // }
                     return false;
                   },
                   child: SingleChildScrollView(

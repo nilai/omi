@@ -35,7 +35,7 @@ class MPMemoryDetailPageHelper {
       if (!context.mounted) {
         return;
       }
-      final MPGetSummaryStatusResponse? summaryStatus = await getSummaryStatus(MPGetSummaryStatusRequest(memoryId: id));
+      final MPGetSummaryStatusResponse? summaryStatus = await getSummaryStatus(MPGetSummaryStatusRequest(summaryMemoryId: id));
       final int status = summaryStatus?.status ?? 0;
       if (!context.mounted) {
         return;

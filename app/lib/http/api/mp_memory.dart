@@ -225,7 +225,7 @@ Future<MPGetUploadRecordUrlResponse?> getUploadRecordUrl(MPGetUploadRecordUrlReq
 // GET /api/v1/memory/summary/get_status
 Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest req) async {
   var response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/memory/summary/get_status?memory_id=${req.memoryId}',
+    url: '${Env.apiBaseUrl}api/v1/memory/summary/get_status?summary_memory_id=${req.summaryMemoryId}',
     headers: {},
     method: 'GET',
     body: '',
@@ -234,6 +234,25 @@ Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest r
   debugPrint('getSummaryStatus response: ${response.body}');
   if (response.statusCode == 200) {
     return MPGetSummaryStatusResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
+// GET /api/v2/memory/get_memory_summary_status
+Future<MPGetMemorySummaryStatusResponse?> getMemorySummaryStatus(
+  MPGetMemorySummaryStatusRequest req,
+) async {
+  var response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v2/memory/get_memory_summary_status?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getMemorySummaryStatus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemorySummaryStatusResponse.fromJson(jsonDecode(response.body));
   }
   return null;
 }

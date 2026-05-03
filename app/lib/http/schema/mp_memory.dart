@@ -525,11 +525,15 @@ class MPSummaryRecordRequest {
 // Summary Record Response
 @JsonSerializable()
 class MPSummaryRecordResponse {
+  @JsonKey(name: 'summary_id')
+  final String? summaryId;
+
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
   MPSummaryRecordResponse({
     required this.baseResp,
+    this.summaryId,
   });
 
   factory MPSummaryRecordResponse.fromJson(Map<String, dynamic> json) => _$MPSummaryRecordResponseFromJson(json);
@@ -579,11 +583,11 @@ class MPGetUploadRecordUrlResponse {
 // Get Summary Status Request
 @JsonSerializable()
 class MPGetSummaryStatusRequest {
-  @JsonKey(name: 'memory_id')
-  final String memoryId;
+  @JsonKey(name: 'summary_memory_id')
+  final String summaryMemoryId;
 
   MPGetSummaryStatusRequest({
-    required this.memoryId,
+    required this.summaryMemoryId,
   });
 
   factory MPGetSummaryStatusRequest.fromJson(Map<String, dynamic> json) =>
@@ -610,6 +614,82 @@ class MPGetSummaryStatusResponse {
       _$MPGetSummaryStatusResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPGetSummaryStatusResponseToJson(this);
+}
+
+// Get Memory Summary Status Request（新结构：字段名为 summary_status）
+@JsonSerializable()
+class MPGetMemorySummaryStatusRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPGetMemorySummaryStatusRequest({
+    required this.memoryId,
+  });
+
+  factory MPGetMemorySummaryStatusRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemorySummaryStatusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemorySummaryStatusRequestToJson(this);
+}
+
+// Get Memory Summary Status Response（列表字段：现网为 resummary_memories，兼容 resummary_memories_status）
+@JsonSerializable(createFactory: false)
+class MPGetMemorySummaryStatusResponse {
+
+  /// 多任务并发时，服务端返回各 resummary 任务状态。
+  @JsonKey(name: 'resummary_memories')
+  final List<MPMemorySummaryStatusItem> resummaryMemoriesStatus;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemorySummaryStatusResponse({
+    this.resummaryMemoriesStatus = const <MPMemorySummaryStatusItem>[],
+    required this.baseResp,
+  });
+
+  factory MPGetMemorySummaryStatusResponse.fromJson(Map<String, dynamic> json) {
+    final Object? raw =
+        json['resummary_memories'];
+    final List<MPMemorySummaryStatusItem> list;
+    if (raw is List) {
+      list = raw
+          .map(
+            (dynamic e) => MPMemorySummaryStatusItem.fromJson(
+              e as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } else {
+      list = const <MPMemorySummaryStatusItem>[];
+    }
+    return MPGetMemorySummaryStatusResponse(
+      resummaryMemoriesStatus: list,
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+  }
+
+  Map<String, dynamic> toJson() =>
+      _$MPGetMemorySummaryStatusResponseToJson(this);
+}
+
+@JsonSerializable()
+class MPMemorySummaryStatusItem {
+  @JsonKey(name: 'resummary_memory_id')
+  final String summaryMemoryId;
+
+  @JsonKey(name: 'resummary_status')
+  final int summaryStatus;
+
+  const MPMemorySummaryStatusItem({
+    required this.summaryMemoryId,
+    required this.summaryStatus,
+  });
+
+  factory MPMemorySummaryStatusItem.fromJson(Map<String, dynamic> json) =>
+      _$MPMemorySummaryStatusItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemorySummaryStatusItemToJson(this);
 }
 
 /// 预签名URL响应模型

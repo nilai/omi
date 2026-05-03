@@ -227,6 +227,7 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
       memos: (json['memos'] as List<dynamic>?)
           ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
+      suggestion: json['suggestion'] as String?,
     );
 
 Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
@@ -239,6 +240,7 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'todos': instance.todos,
       'has_added_todo': instance.hasAddedTodo,
       'memos': instance.memos,
+      'suggestion': instance.suggestion,
     };
 
 MPMemoryFeedStruct _$MPMemoryFeedStructFromJson(Map<String, dynamic> json) =>

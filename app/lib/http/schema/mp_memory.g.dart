@@ -354,11 +354,15 @@ MPSummaryRecordResponse _$MPSummaryRecordResponseFromJson(
   Map<String, dynamic> json,
 ) => MPSummaryRecordResponse(
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+  summaryId: json['summary_id'] as String?,
 );
 
 Map<String, dynamic> _$MPSummaryRecordResponseToJson(
   MPSummaryRecordResponse instance,
-) => <String, dynamic>{'base_resp': instance.baseResp};
+) => <String, dynamic>{
+  'summary_id': instance.summaryId,
+  'base_resp': instance.baseResp,
+};
 
 MPGetUploadRecordUrlRequest _$MPGetUploadRecordUrlRequestFromJson(
   Map<String, dynamic> json,
@@ -386,11 +390,13 @@ Map<String, dynamic> _$MPGetUploadRecordUrlResponseToJson(
 
 MPGetSummaryStatusRequest _$MPGetSummaryStatusRequestFromJson(
   Map<String, dynamic> json,
-) => MPGetSummaryStatusRequest(memoryId: json['memory_id'] as String);
+) => MPGetSummaryStatusRequest(
+  summaryMemoryId: json['summary_memory_id'] as String,
+);
 
 Map<String, dynamic> _$MPGetSummaryStatusRequestToJson(
   MPGetSummaryStatusRequest instance,
-) => <String, dynamic>{'memory_id': instance.memoryId};
+) => <String, dynamic>{'summary_memory_id': instance.summaryMemoryId};
 
 MPGetSummaryStatusResponse _$MPGetSummaryStatusResponseFromJson(
   Map<String, dynamic> json,
@@ -404,6 +410,35 @@ Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
 ) => <String, dynamic>{
   'status': instance.status,
   'base_resp': instance.baseResp,
+};
+
+MPGetMemorySummaryStatusRequest _$MPGetMemorySummaryStatusRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemorySummaryStatusRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPGetMemorySummaryStatusRequestToJson(
+  MPGetMemorySummaryStatusRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
+Map<String, dynamic> _$MPGetMemorySummaryStatusResponseToJson(
+  MPGetMemorySummaryStatusResponse instance,
+) => <String, dynamic>{
+  'resummary_memories': instance.resummaryMemoriesStatus,
+  'base_resp': instance.baseResp,
+};
+
+MPMemorySummaryStatusItem _$MPMemorySummaryStatusItemFromJson(
+  Map<String, dynamic> json,
+) => MPMemorySummaryStatusItem(
+  summaryMemoryId: json['resummary_memory_id'] as String,
+  summaryStatus: (json['resummary_status'] as num).toInt(),
+);
+
+Map<String, dynamic> _$MPMemorySummaryStatusItemToJson(
+  MPMemorySummaryStatusItem instance,
+) => <String, dynamic>{
+  'resummary_memory_id': instance.summaryMemoryId,
+  'resummary_status': instance.summaryStatus,
 };
 
 PresignedUrlResponse _$PresignedUrlResponseFromJson(

@@ -450,6 +450,9 @@ class MPFeedCardStruct {
   @JsonKey(name: 'memos')
   final List<MPMemoStruct>? memos;
 
+  /// expert insight
+  @JsonKey(name: 'suggestion')
+  final String? suggestion;
 
   const MPFeedCardStruct({
     this.id,
@@ -460,6 +463,7 @@ class MPFeedCardStruct {
     this.todos,
     this.hasAddedTodo,
     this.memos,
+    this.suggestion,
   });
 
   factory MPFeedCardStruct.fromJson(Map<String, dynamic> json) =>
@@ -472,15 +476,12 @@ class MPFeedCardStruct {
 abstract final class MPFeedCardType {
   MPFeedCardType._();
 
+  static const int insight = 1;
   static const int todosCreated = 2;
   static const int myMemo = 3;
   static const int resummary = 4;
   static const int youAsked = 5;
-  static const int patternInsight = 5;
-  static const int businessInsight = 6;
-  static const int creativeInsight = 7;
-  static const int wellnessInsight = 8;
-  static const int executionInsight = 9;
+  static const int followUpList = 6;
 }
 
 // Memory Feed Struct
