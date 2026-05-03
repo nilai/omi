@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -39,6 +40,56 @@ void _emitUploadProgress(
   );
 }
 
+/// 多文件上传进度：[totalFiles] 为当前队列中待处理条数 + 正在上传的 1 条；[currentFileIndex] 为本次 Worker 会话内从 1 开始的序号；[progress] 为当前文件 0–100。
+typedef MPAudioUploadMultiProgress = void Function({
+  required int totalFiles,
+  required int currentFileIndex,
+  required int progress,
+});
+
+/// 显式批量上传队列中的单条任务（每条可有独立的 [source] / [templateId] / [recordMemoAt]）。
+class MPAudioUploadLocalItem {
+  const MPAudioUploadLocalItem({
+    required this.localFile,
+    required this.durationSec,
+    required this.createAt,
+    required this.source,
+    this.templateId,
+    this.recordMemoAt = 0,
+  });
+
+  final File localFile;
+  final int durationSec;
+
+  /// 与 [MPAudioUploadManager.uploadLocalRecord] 的 [createAt] 一致（多为 Unix 秒或本地记录用的毫秒，上传前会结合索引解析）。
+  final int createAt;
+  final String source;
+  final String? templateId;
+  final int recordMemoAt;
+}
+
+class _MPBatchAwait {
+  _MPBatchAwait({required this.remaining, required this.completer});
+
+  int remaining;
+  final Completer<MPCreateRecordResponse?> completer;
+  MPCreateRecordResponse? lastCreated;
+}
+
+class _MPUploadWorkUnit {
+  _MPUploadWorkUnit({
+    required this.batchId,
+    required this.item,
+    required this.rightNowTranscribe,
+    this.onMultiProgress,
+  });
+
+  final int batchId;
+  final MPAudioUploadLocalItem item;
+  final bool rightNowTranscribe;
+  final MPAudioUploadMultiProgress? onMultiProgress;
+}
+
 /// 本地录音落盘后，先 [MPAudioUploadService.uploadMPAudio] 上传，再用返回的 **远端 URI** 调 [createRecord]。
 ///
 /// 流程：
@@ -50,6 +101,14 @@ class MPAudioUploadManager {
   MPAudioUploadManager._();
 
   static final MPAudioUploadManager instance = MPAudioUploadManager._();
+
+  final List<_MPUploadWorkUnit> _multiUploadQueue = <_MPUploadWorkUnit>[];
+  final Map<int, _MPBatchAwait> _multiBatchAwait = <int, _MPBatchAwait>{};
+  int _multiNextBatchId = 1;
+  bool _multiWorkerRunning = false;
+
+  /// 本轮 Worker 已连续完成的上传条数（用于 [MPAudioUploadMultiProgress.currentFileIndex]）。
+  int _multiSessionUploaded = 0;
 
   /// 与 [MPAudioLocalRecordsUtil.copyTempFileToLocalStorage] 生成规则一致，避免把详情下载缓存误当新录音上传。
   static bool _isPendingRecordingFileName(String name) {
@@ -118,6 +177,306 @@ class MPAudioUploadManager {
     }
     return r.createAt;
   }
+
+  /// [MPAudioUploadLocalItem.createAt] 解析为接口用的 Unix 秒（优先索引记录）。
+  int _createAtSecForExplicitItem(
+    MPAudioUploadLocalItem item,
+    MPAudioLocalRecord? meta,
+  ) {
+    if (meta != null) {
+      return _createAtSecondsFromRecord(meta);
+    }
+    final int raw = item.createAt;
+    if (raw > 2000000000000) {
+      return raw ~/ 1000;
+    }
+    return raw;
+  }
+
+  void _notifyMultiAndHome({
+    MPAudioUploadMultiProgress? onMulti,
+    required int totalFiles,
+    required int currentFileIndex,
+    required int progress,
+  }) {
+    final int p = progress.clamp(0, 100);
+    final int tt = totalFiles < 1 ? 1 : totalFiles;
+    final int ci = currentFileIndex.clamp(1, tt);
+    onMulti?.call(
+      totalFiles: tt,
+      currentFileIndex: ci,
+      progress: p,
+    );
+    _emitUploadProgress(
+      null,
+      batchIndex: ci,
+      batchTotal: tt,
+      progress: p,
+    );
+  }
+
+  /// 仅处理 [MPAudioUploadLocalItem] 标识的一条文件（不经由目录枚举合并）。
+  Future<MPCreateRecordResponse?> _uploadExplicitLocalItem(
+    MPAudioUploadLocalItem item, {
+    required bool rightNowTranscribe,
+    required int Function() resolveBatchTotal,
+    required int currentFileIndex,
+    MPAudioUploadMultiProgress? onMultiProgress,
+  }) async {
+    final File f = item.localFile;
+    if (!await f.exists()) {
+      MPToastUtils.showMessage('本地文件不存在');
+      return null;
+    }
+
+    final MPAudioLocalRecord? meta =
+        await MPAudioLocalRecordsUtil.instance.queryByPath(f.path);
+
+    int durSec = item.durationSec;
+    if (meta != null && meta.duration != null && meta.duration! > 0) {
+      durSec = meta.duration!;
+    }
+    if (durSec <= 0) {
+      MPToastUtils.showMessage('录音时长无效');
+      return null;
+    }
+
+    final int createAtSec = _createAtSecForExplicitItem(item, meta);
+
+    int tt() => resolveBatchTotal().clamp(1, 1 << 30);
+    final int idx = currentFileIndex;
+
+    _notifyMultiAndHome(
+      onMulti: onMultiProgress,
+      totalFiles: tt(),
+      currentFileIndex: idx,
+      progress: 0,
+    );
+
+    final Duration? duration = await AudioPickerUtils.getAudioDuration(f);
+    debugPrint('uploadExplicitLocalItem duration: $duration');
+    final String? uri = await MPAudioUploadService().uploadMPAudio(
+      f,
+      onProgress: (int current, int total) {
+        if (total <= 0) {
+          return;
+        }
+        _notifyMultiAndHome(
+          onMulti: onMultiProgress,
+          totalFiles: tt(),
+          currentFileIndex: idx,
+          progress: (current * 90 ~/ total).clamp(0, 90),
+        );
+      },
+    );
+    if (uri == null || uri.isEmpty) {
+      MPToastUtils.showMessage('音频上传失败');
+      return null;
+    }
+
+    int effectiveDurSec = durSec;
+    if (duration != null && duration.inSeconds > 0) {
+      effectiveDurSec = duration.inSeconds;
+    }
+
+    _notifyMultiAndHome(
+      onMulti: onMultiProgress,
+      totalFiles: tt(),
+      currentFileIndex: idx,
+      progress: 92,
+    );
+
+    final MPCreateRecordResponse? created = await createRecord(
+      MPCreateRecordRequest(
+        recordFile: uri,
+        createAt: createAtSec,
+        duration: effectiveDurSec,
+        source: item.source,
+      ),
+    );
+    if (created == null || created.baseResp.code != 0) {
+      MPToastUtils.showMessage(created?.baseResp.message ?? '创建记录失败');
+      return null;
+    }
+
+    if (rightNowTranscribe) {
+      _notifyMultiAndHome(
+        onMulti: onMultiProgress,
+        totalFiles: tt(),
+        currentFileIndex: idx,
+        progress: 96,
+      );
+      final MPSummaryRecordResponse? summary = await summaryRecord(
+        MPSummaryRecordRequest(
+          memoryId: created.memoryId,
+          recordUrl: created.recordUrl,
+          recordMemoAt: item.recordMemoAt,
+          templateId: item.templateId,
+        ),
+      );
+      if (summary == null || summary.baseResp.code != 0) {
+        MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
+        return null;
+      }
+      MPMemoryNotification.notifyMemoryListRefresh();
+    }
+
+    _notifyMultiAndHome(
+      onMulti: onMultiProgress,
+      totalFiles: tt(),
+      currentFileIndex: idx,
+      progress: 100,
+    );
+
+    try {
+      await f.delete();
+    } catch (e) {
+      debugPrint('delete local record failed: $e');
+    }
+
+    if (meta != null) {
+      try {
+        await MPAudioLocalRecordsUtil.instance.removeHard(meta);
+      } catch (e, st) {
+        debugPrint('MPAudioLocalRecordsUtil.removeHard failed: $e\n$st');
+      }
+    }
+
+    final int notifyTotal = tt();
+    final int cap = notifyTotal > 1 ? notifyTotal : 1;
+    MPHomeNotification.notifyRecordCreated(
+      MPHomeRecordCreatedPayload(
+        memoryId: created.memoryId,
+        batchTotal: cap,
+        batchIndex: idx.clamp(1, cap),
+      ),
+    );
+
+    return created;
+  }
+
+  void _finishMultiBatchUnit(int batchId, MPCreateRecordResponse? created) {
+    final _MPBatchAwait? track = _multiBatchAwait[batchId];
+    if (track == null) {
+      return;
+    }
+    if (created != null) {
+      track.lastCreated = created;
+    }
+    track.remaining--;
+    if (track.remaining <= 0) {
+      if (!track.completer.isCompleted) {
+        track.completer.complete(track.lastCreated);
+      }
+      _multiBatchAwait.remove(batchId);
+    }
+  }
+
+  /// 启动队列消费；若已在跑则由当前 `while` 继续处理，避免并发双 Worker。
+  void _scheduleMultiWorker() {
+    if (_multiWorkerRunning) {
+      return;
+    }
+    _multiWorkerRunning = true;
+    unawaited(_drainMultiUploadQueue());
+  }
+
+  Future<void> _drainMultiUploadQueue() async {
+    try {
+      while (_multiUploadQueue.isNotEmpty) {
+        final _MPUploadWorkUnit unit = _multiUploadQueue.removeAt(0);
+        final int currentIndex = _multiSessionUploaded + 1;
+
+        MPCreateRecordResponse? created;
+        try {
+          created = await _uploadExplicitLocalItem(
+            unit.item,
+            rightNowTranscribe: unit.rightNowTranscribe,
+            resolveBatchTotal: () => _multiUploadQueue.length + 1,
+            currentFileIndex: currentIndex,
+            onMultiProgress: unit.onMultiProgress,
+          );
+        } catch (e, st) {
+          debugPrint('multi upload worker failed: $e\n$st');
+          MPToastUtils.showMessage('上传失败: $e');
+          created = null;
+        } finally {
+          _finishMultiBatchUnit(unit.batchId, created);
+        }
+        _multiSessionUploaded++;
+      }
+      _multiSessionUploaded = 0;
+    } finally {
+      _multiWorkerRunning = false;
+      if (_multiUploadQueue.isNotEmpty) {
+        _scheduleMultiWorker();
+      }
+    }
+  }
+
+  Future<MPCreateRecordResponse?> _enqueueMultiBatch(
+    List<MPAudioUploadLocalItem> items,
+    bool rightNowTranscribe,
+    MPAudioUploadMultiProgress? onMultiProgress,
+  ) async {
+    if (items.isEmpty) {
+      return null;
+    }
+    for (final MPAudioUploadLocalItem item in items) {
+      if (!await item.localFile.exists()) {
+        MPToastUtils.showMessage('本地文件不存在');
+        return null;
+      }
+      if (item.durationSec <= 0) {
+        MPToastUtils.showMessage('录音时长无效');
+        return null;
+      }
+    }
+
+    final int batchId = _multiNextBatchId++;
+    final Completer<MPCreateRecordResponse?> done =
+        Completer<MPCreateRecordResponse?>();
+    _multiBatchAwait[batchId] =
+        _MPBatchAwait(remaining: items.length, completer: done);
+
+    for (final MPAudioUploadLocalItem item in items) {
+      await _addLocalRecordBeforeUpload(
+        localFile: item.localFile,
+        durationSec: item.durationSec,
+        createAt: item.createAt,
+        source: item.source,
+      );
+      _multiUploadQueue.add(
+        _MPUploadWorkUnit(
+          batchId: batchId,
+          item: item,
+          rightNowTranscribe: rightNowTranscribe,
+          onMultiProgress: onMultiProgress,
+        ),
+      );
+    }
+
+    _scheduleMultiWorker();
+    return done.future;
+  }
+
+  /// 上传多条本地录音（显式列表）；若队列非空则本批排在当前队列之后。
+  ///
+  /// 进度 [onMultiProgress]：[totalFiles] 含当前正在上传的一条；[currentFileIndex] 为本轮会话内序号。
+  Future<MPCreateRecordResponse?> uploadMultipleLocalRecords({
+    required List<MPAudioUploadLocalItem> items,
+    required bool rightNowTranscribe,
+    MPAudioUploadMultiProgress? onMultiProgress,
+  }) =>
+      _enqueueMultiBatch(items, rightNowTranscribe, onMultiProgress);
+
+  /// 语义同 [uploadMultipleLocalRecords]：队列为空则新开上传会话，有值则追加到队尾。
+  Future<MPCreateRecordResponse?> appendMultipleLocalRecords({
+    required List<MPAudioUploadLocalItem> items,
+    required bool rightNowTranscribe,
+    MPAudioUploadMultiProgress? onMultiProgress,
+  }) =>
+      _enqueueMultiBatch(items, rightNowTranscribe, onMultiProgress);
 
   /// 将本地录音同步为服务端 record：先 [add] 索引，再对目录内待上传文件逐个 [createRecord]（`record_file` 为上传后的 URI）。
   ///
