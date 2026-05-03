@@ -18,6 +18,13 @@ typedef _SyncProgressCallback = void Function(
   int totalBytes,
 );
 
+/// 将所选文件复制到沙盒时的进度：[fileIndex] / [fileTotal] 为第几个文件；[progressPercent] 为当前文件 0–100。
+typedef MPAudioImportCopyProgress = void Function({
+  required int fileIndex,
+  required int fileTotal,
+  required int progressPercent,
+});
+
 /// 首页 / 业务侧「导入音频」工具：选择文件、复制到沙盒（带进度）、上传。
 ///
 /// 实现自包含，**不依赖** `lib/tab/home/audio/` 下任何源码。
@@ -36,52 +43,36 @@ class MPAudioImportUtils {
     'opus',
   ];
 
-  /// 从系统文件选择并复制到应用沙盒。
+  /// 从系统文件选择（**支持多选**）并复制到应用沙盒。
+  static Future<List<String>?> pickFromFileWithProgress({
+    required MPAudioImportCopyProgress onProgress,
+  }) async {
+    final List<File> picked = await _pickMultipleAudioFromFile();
+    if (picked.isEmpty) {
+      return null;
+    }
+    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+  }
+
+  /// 从相册选择（**支持多选**，iOS 优先 [ImagePicker.pickMultipleMedia]）并复制到应用沙盒。
+  static Future<List<String>?> pickFromAlbumWithProgress({
+    required MPAudioImportCopyProgress onProgress,
+  }) async {
+    final List<File> picked = await _pickMultipleAudioFromAlbum();
+    if (picked.isEmpty) {
+      return null;
+    }
+    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+  }
+
+  /// 将沙盒内一条音频上传并创建远端记录（与录音上传链路一致）。
   ///
-  /// [onProgressPercent] 为 0–100。
-  static Future<String?> pickFromFileWithProgress({
-    required void Function(int progressPercent) onProgressPercent,
+  /// [batchTotal] / [batchIndex] 用于首页多文件导入时的进度条批次展示。
+  static Future<void> uploadImportedSandboxFile(
+    String sandboxPath, {
+    int batchTotal = 1,
+    int batchIndex = 1,
   }) async {
-    onProgressPercent(0);
-    final File? file = await _pickAudioFromFile();
-    if (file == null) {
-      return null;
-    }
-    final String? path = await _syncAudioToSandbox(
-      file,
-      onProgress: (double p, int _, int __) {
-        onProgressPercent((p * 100).round().clamp(0, 100));
-      },
-    );
-    if (path != null) {
-      onProgressPercent(100);
-    }
-    return path;
-  }
-
-  /// 从相册选择并复制到应用沙盒（iOS 常用）。
-  static Future<String?> pickFromAlbumWithProgress({
-    required void Function(int progressPercent) onProgressPercent,
-  }) async {
-    onProgressPercent(0);
-    final File? file = await _pickAudioFromAlbum();
-    if (file == null) {
-      return null;
-    }
-    final String? path = await _syncAudioToSandbox(
-      file,
-      onProgress: (double p, int _, int __) {
-        onProgressPercent((p * 100).round().clamp(0, 100));
-      },
-    );
-    if (path != null) {
-      onProgressPercent(100);
-    }
-    return path;
-  }
-
-  /// 将沙盒内音频上传并创建远端记录（与录音上传链路一致）。
-  static Future<void> uploadImportedSandboxFile(String sandboxPath) async {
     final File file = File(sandboxPath);
     if (!await file.exists()) {
       return;
@@ -94,7 +85,51 @@ class MPAudioImportUtils {
       durationSec: durationSec,
       createAt: createAt,
       source: 'MobilePhone',
+      batchTotal: batchTotal,
+      batchIndex: batchIndex,
     );
+  }
+
+  /// 批量上传已由 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 写入沙盒的路径。
+  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths) async {
+    final int n = sandboxPaths.length;
+    if (n == 0) {
+      return;
+    }
+    for (int i = 0; i < n; i++) {
+      await uploadImportedSandboxFile(
+        sandboxPaths[i],
+        batchTotal: n,
+        batchIndex: i + 1,
+      );
+    }
+  }
+
+  static Future<List<String>> _syncPickedFilesToSandbox(
+    List<File> picked, {
+    required MPAudioImportCopyProgress onProgress,
+  }) async {
+    final int total = picked.length;
+    final List<String> out = <String>[];
+    for (int i = 0; i < total; i++) {
+      final File file = picked[i];
+      onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
+      final String? path = await _syncAudioToSandbox(
+        file,
+        onProgress: (double p, int copiedBytes, int totalBytes) {
+          onProgress(
+            fileIndex: i + 1,
+            fileTotal: total,
+            progressPercent: (p * 100).round().clamp(0, 100),
+          );
+        },
+      );
+      if (path != null) {
+        onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+        out.add(path);
+      }
+    }
+    return out;
   }
 
   // —— 以下为内联实现（对齐 tab/home/audio 侧原先 [AudioPickerUtils] 行为）——
@@ -115,109 +150,113 @@ class MPAudioImportUtils {
     return fileName;
   }
 
-  static Future<File?> _pickAudioFromFile() async {
+  /// Android：`FilePicker` 使用系统文档选择器（SAF），[allowMultiple] 允许多选音频。
+  static Future<List<File>> _pickMultipleAudioFromFile() async {
     try {
-      /// Android：`FilePicker` 使用系统文档选择器（SAF），用户授权具体 URI，
-      /// **无需**事先授予 broad storage / READ_MEDIA_* 才能弹出选择器。
-      /// 在 Android 13+ 若先做 `Permission.audio` 且清单缺少 READ_MEDIA_AUDIO，
-      /// 会导致权限步骤失败、选择器永远不会打开（仅底部弹窗关闭）。
-
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _audioExtensions,
         dialogTitle: '选择音频文件',
         withData: false,
         allowCompression: false,
-        allowMultiple: false,
+        allowMultiple: true,
       );
-
-      if (result != null && result.files.isNotEmpty && result.files.single.path != null) {
-        final String filePath = result.files.single.path!;
-        final File file = File(filePath);
-        if (!await file.exists()) {
-          debugPrint('MPAudioImportUtils: 选择的文件不存在: $filePath');
-          return null;
-        }
-        if (_isAudioFormatSupported(filePath)) {
-          return file;
-        }
-        debugPrint('MPAudioImportUtils: 不支持的音频格式: $filePath');
-        return null;
-      }
+      return _audioFilesFromPickerResult(result);
     } catch (e) {
       debugPrint('MPAudioImportUtils: 从文件选择音频失败: $e');
     }
-    return null;
+    return <File>[];
   }
 
-  static Future<File?> _pickAudioFromAlbum() async {
+  static List<File> _audioFilesFromPickerResult(FilePickerResult? result) {
+    if (result == null || result.files.isEmpty) {
+      return <File>[];
+    }
+    final List<File> out = <File>[];
+    for (final PlatformFile pf in result.files) {
+      final String? path = pf.path;
+      if (path == null) {
+        debugPrint('MPAudioImportUtils: 跳过无路径的文件: ${pf.name}');
+        continue;
+      }
+      final File file = File(path);
+      if (!file.existsSync()) {
+        debugPrint('MPAudioImportUtils: 选择的文件不存在: $path');
+        continue;
+      }
+      if (_isAudioFormatSupported(path)) {
+        out.add(file);
+      } else {
+        debugPrint('MPAudioImportUtils: 不支持的音频格式: $path');
+      }
+    }
+    return out;
+  }
+
+  static Future<List<File>> _pickMultipleAudioFromAlbum() async {
     try {
       if (Platform.isIOS) {
         try {
           final ImagePicker picker = ImagePicker();
-          final XFile? media = await picker.pickMedia(imageQuality: 100);
-          if (media != null) {
+          final List<XFile> mediaList =
+              await picker.pickMultipleMedia(imageQuality: 100);
+          if (mediaList.isEmpty) {
+            return <File>[];
+          }
+          final List<File> out = <File>[];
+          for (final XFile media in mediaList) {
             final File file = File(media.path);
             if (!await file.exists()) {
               debugPrint('MPAudioImportUtils: 选择的文件不存在: ${media.path}');
-              return null;
+              continue;
             }
             if (_isAudioFormatSupported(media.path)) {
-              return file;
+              out.add(file);
             }
-            return await _pickAudioFromAlbumFallback();
           }
+          if (out.isNotEmpty) {
+            return out;
+          }
+          return _pickMultipleAudioFromAlbumFallback();
         } on PlatformException catch (e) {
-          if (e.code == 'photo_access_denied' || e.code == 'photo_access_restricted') {
+          if (e.code == 'photo_access_denied' ||
+              e.code == 'photo_access_restricted') {
             debugPrint('MPAudioImportUtils: 照片库权限被拒绝: ${e.message}');
             MPToastUtils.showMessage(
               'Photos access is required to import audio. Allow access in Settings if you previously denied it.',
               duration: const Duration(seconds: 5),
             );
-            return null;
+            return <File>[];
           }
           debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
-          return await _pickAudioFromAlbumFallback();
+          return _pickMultipleAudioFromAlbumFallback();
         } catch (e) {
           debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
-          return await _pickAudioFromAlbumFallback();
+          return _pickMultipleAudioFromAlbumFallback();
         }
-      } else {
-        /// Android：相册导入同样走 `FilePicker`（SAF），不应被存储/音频运行时权限门禁拦截。
-        return await _pickAudioFromAlbumFallback();
       }
+      return _pickMultipleAudioFromAlbumFallback();
     } catch (e) {
       debugPrint('MPAudioImportUtils: 从相册选择音频失败: $e');
     }
-    return null;
+    return <File>[];
   }
 
-  static Future<File?> _pickAudioFromAlbumFallback() async {
+  static Future<List<File>> _pickMultipleAudioFromAlbumFallback() async {
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _audioExtensions,
         withData: false,
         allowCompression: false,
-        allowMultiple: false,
+        allowMultiple: true,
         dialogTitle: Platform.isIOS ? '选择音频文件' : '从相册选择音频',
       );
-
-      if (result != null && result.files.isNotEmpty && result.files.single.path != null) {
-        final String filePath = result.files.single.path!;
-        final File file = File(filePath);
-        if (!await file.exists()) {
-          return null;
-        }
-        if (_isAudioFormatSupported(filePath)) {
-          return file;
-        }
-        return null;
-      }
+      return _audioFilesFromPickerResult(result);
     } catch (e) {
       debugPrint('MPAudioImportUtils: FilePicker 选择失败: $e');
     }
-    return null;
+    return <File>[];
   }
 
   static bool _isAudioFormatSupported(String filePath) {

@@ -291,11 +291,16 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
-  /// 导入音频
-  void showImportingStatus(int progress) {
+  /// 导入音频（复制到沙盒阶段）；多选时 [currentFile] / [totalFiles] 为当前第几个文件与总个数。
+  void showImportingStatus(int progress, {int? currentFile, int? totalFiles}) {
     emit(
       state.copyWith(
-        audioStatus: MPHomeAudioStatus(type: MPHomeAudioStatusType.importing, progress: progress.clamp(0, 100)),
+        audioStatus: MPHomeAudioStatus(
+          type: MPHomeAudioStatusType.importing,
+          progress: progress.clamp(0, 100),
+          currentFile: currentFile,
+          totalFiles: totalFiles,
+        ),
       ),
     );
   }
