@@ -26,6 +26,9 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
+import '../../../../http/api/mp_chat.dart';
+import '../../../../http/schema/mp_chat.dart';
+import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
 
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
@@ -281,21 +284,19 @@ class _OmiMemoDetailView extends StatelessWidget {
           }
           MPToastUtils.showMessage('Memo 创建成功');
         },
-        onAskAi: () {
-          final OmiMemoryDetailState s =
-              context.read<OmiMemoryDetailCubit>().state;
+        onAskAi: () async{
+          final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
           if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
             return;
           }
-          final String aboutText = s.data!.title.trim().isEmpty
-              ? 'Memo'
-              : s.data!.title;
-          Navigator.of(context).push(
+          final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
+          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
+          final String conversationId = lastConversation?.conversationId ?? '';
+          final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
+          // ignore: use_build_context_synchronously
+          Navigator.of(targetContext!).push(
             MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(
-                aboutText: aboutText,
-                suggestedQuestions: const <String>[],
-              ),
+              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
             ),
           );
         },

@@ -21,12 +21,16 @@ class MPCreateConversationRequest {
   @JsonKey(name: 'speaker_id')
   final String speakerId;
 
+  @JsonKey(name: 'insight_id')
+  final String insightId;
+
   MPCreateConversationRequest({
     this.title,
     required this.expertId,
     required this.memoryId,
     required this.templateId,
     required this.speakerId,
+    required this.insightId,
   });
 
   factory MPCreateConversationRequest.fromJson(Map<String, dynamic> json) =>
@@ -313,8 +317,9 @@ class MPGetChatSuggestionCardsResponse {
 
 @JsonSerializable()
 class MPGetLastConversationRequest {
+  // 1: memory, 2: insight  0: 其它
   @JsonKey(name: 'conversation_type')
-  final int conversationType;
+  final int conversationType; 
 
   @JsonKey(name: 'param_id')
   final String paramId;

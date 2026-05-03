@@ -11,8 +11,10 @@ import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/http/api/mp_chat.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_chat.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -21,6 +23,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
+import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
 import 'card/mp_memory_detail_content_card.dart';
 import 'card/mp_memory_detail_feed_section.dart';
@@ -272,15 +275,19 @@ class _OmiMemoryDetailView extends StatelessWidget {
           }
           context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
         },
-        onAskAi: () {
+        onAskAi: () async{
           final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
           if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
             return;
           }
           final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
-          Navigator.of(context).push(
+          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
+          final String conversationId = lastConversation?.conversationId ?? '';
+          final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
+          // ignore: use_build_context_synchronously
+          Navigator.of(targetContext!).push(
             MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[]),
+              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
             ),
           );
         },

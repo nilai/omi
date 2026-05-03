@@ -7,12 +7,28 @@ class OmiMicrophoneManager {
   /// 确保麦克风可用：必要时发起申请，并用全局 Toast 提示结果。
   ///
   /// - 已授权：直接 `true`。
-  /// - 本次授权成功：`true`，并提示「麦克风权限已授权」。
-  /// - 拒绝 / 永久拒绝 / 异常：`false`，并给出对应提示。
+  /// - 本次授权成功：`true`。
+  /// - 拒绝 / 永久拒绝 / 异常：`false`，并给出对应英文提示（含再次进入时的明确说明）。
   static Future<bool> ensureMicrophonePermission() async {
     try {
-      if (await OmiPermissionService.hasMicrophonePermission()) {
+      final PermissionManagerStatus current =
+          await OmiPermissionService.microphonePermissionStatus();
+      if (current == PermissionManagerStatus.granted) {
         return true;
+      }
+      if (current == PermissionManagerStatus.permanentlyDenied) {
+        MPToastUtils.showMessage(
+          'Microphone access is blocked. Open Settings and allow microphone access for this app.',
+          duration: const Duration(seconds: 5),
+        );
+        return false;
+      }
+      if (current == PermissionManagerStatus.restricted) {
+        MPToastUtils.showMessage(
+          'Microphone access is restricted on this device.',
+          duration: const Duration(seconds: 5),
+        );
+        return false;
       }
 
       final PermissionManagerStatus status =
@@ -23,14 +39,31 @@ class OmiMicrophoneManager {
       }
 
       if (status == PermissionManagerStatus.permanentlyDenied) {
-        MPToastUtils.showMessage('麦克风权限已被永久拒绝，请到系统设置中开启');
+        MPToastUtils.showMessage(
+          'Microphone access is blocked. Open Settings and allow microphone access for this app.',
+          duration: const Duration(seconds: 5),
+        );
         return false;
       }
 
-      MPToastUtils.showMessage('需要麦克风权限，请在弹窗中选择“允许”后重试');
+      if (status == PermissionManagerStatus.restricted) {
+        MPToastUtils.showMessage(
+          'Microphone access is restricted on this device.',
+          duration: const Duration(seconds: 5),
+        );
+        return false;
+      }
+
+      MPToastUtils.showMessage(
+        'Microphone permission is required to record. Tap Allow if prompted, or enable it in Settings.',
+        duration: const Duration(seconds: 5),
+      );
       return false;
     } catch (_) {
-      MPToastUtils.showMessage('权限申请失败，请稍后重试');
+      MPToastUtils.showMessage(
+        'Could not request microphone permission. Please try again.',
+        duration: const Duration(seconds: 5),
+      );
       return false;
     }
   }

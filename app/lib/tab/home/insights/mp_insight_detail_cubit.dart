@@ -7,14 +7,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../common/mp_memory_share_dialog.dart';
 import '../../../common/mp_share_export_sheet.dart';
 import '../../../cache/mp_hive_util.dart';
+import '../../../http/api/mp_chat.dart';
 import '../../../http/api/mp_insight.dart';
-import '../../../http/api/mp_memo.dart';
-import '../../../http/api/mp_memory.dart';
+import '../../../http/schema/mp_chat.dart';
 import '../../../http/schema/mp_insight.dart';
-import '../../../http/schema/mp_memo.dart';
-import '../../../http/schema/mp_memory.dart';
 import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
+import '../../askai/mp_ask_ai_chat_page.dart';
 import 'dialog/mp_insights_more_dialog.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -326,14 +325,72 @@ class MPMonthlyInsightDetailData {
   final String askAiButtonText;
 }
 
+/// Insight 详情 Cubit 基类：沉淀通用交互逻辑。
+abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
+  MPInsightDetailBaseCubit(super.initialState);
+
+  MPInsightListItem get insightItem;
+
+  /// 并发获取建议问题与最近会话，并跳转 AskAI 聊天页。
+  Future<void> onAskAiButtonPressed(BuildContext context) async {
+    final List<dynamic> responses = await Future.wait<dynamic>(<Future<dynamic>>[
+      getInsightSuggestion(
+        MPGetInsightSuggestionRequest(insightId: insightItem.id),
+      ),
+      getLastConversation(
+        MPGetLastConversationRequest(
+          conversationType: 2,
+          paramId: insightItem.id,
+        ),
+      ),
+    ]);
+
+    final MPGetInsightSuggestionResponse? suggestionResp =
+        responses[0] as MPGetInsightSuggestionResponse?;
+    final MPGetLastConversationResponse? lastConversationResp =
+        responses[1] as MPGetLastConversationResponse?;
+
+    if (suggestionResp == null) {
+      MPToastUtils.showMessage('Ask AI failed');
+      return;
+    }
+
+    final List<String> questions = suggestionResp.suggestion;
+    final String conversationId = lastConversationResp?.conversationId ?? '';
+    final BuildContext? targetContext =
+        context.mounted ? context : MyApp.navigatorKey.currentContext;
+    if (targetContext == null || !targetContext.mounted) {
+      return;
+    }
+
+    // ignore: use_build_context_synchronously
+    Navigator.of(targetContext).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MPAskAIChatPage(
+          aboutText: insightItem.title,
+          suggestedQuestions: questions,
+          conversationId: conversationId,
+          type: MPAskAIChatType.insight,
+          chatTypeId: insightItem.id,
+        ),
+      ),
+    );
+  }
+}
+
 /// 详情页 Cubit：根据列表项类型模拟后台拉取详情
-class MPInsightDetailCubit extends Cubit<MPInsightDetailState> {
-  MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
+class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
+  MPInsightDetailCubit({required MPInsightListItem item})
+      : _item = item,
+        super(MPInsightDetailState.loading());
 
   static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
   static final StreamController<void> _insightDeletedController = StreamController<void>.broadcast();
 
   final MPInsightListItem _item;
+
+  @override
+  MPInsightListItem get insightItem => _item;
 
   /// insight 删除成功通知监听（列表页用于触发刷新）。
   static StreamSubscription<void> listenInsightDeleted(void Function() onEvent) {

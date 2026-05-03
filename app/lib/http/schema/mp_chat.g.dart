@@ -14,6 +14,7 @@ MPCreateConversationRequest _$MPCreateConversationRequestFromJson(
   memoryId: json['memory_id'] as String,
   templateId: json['template_id'] as String,
   speakerId: json['speaker_id'] as String,
+  insightId: json['insight_id'] as String,
 );
 
 Map<String, dynamic> _$MPCreateConversationRequestToJson(

@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -169,7 +170,8 @@ class _MPDailyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => MPToastUtils.showFeatureComingSoon(message: daily.askAiButtonText),
+                onPressed: () =>
+                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,
@@ -288,10 +290,17 @@ class _MPDotTextList extends StatelessWidget {
   }
 }
 
-class _MPDailyTomorrowFocusCard extends StatelessWidget {
+class _MPDailyTomorrowFocusCard extends StatefulWidget {
   const _MPDailyTomorrowFocusCard({required this.items});
 
   final List<MPDailyFocusItem> items;
+
+  @override
+  State<_MPDailyTomorrowFocusCard> createState() => _MPDailyTomorrowFocusCardState();
+}
+
+class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
+  final Set<int> _addedIndexes = <int>{};
 
   @override
   Widget build(BuildContext context) {
@@ -321,12 +330,13 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
             decoration: BoxDecoration(color: const Color(0xFFF2F6FF), borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: Column(
-              children: items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
+              children: widget.items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
                 final MPDailyFocusItem focus = entry.value;
+                final bool isAdded = _addedIndexes.contains(entry.key);
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
-                    border: entry.key == items.length - 1
+                    border: entry.key == widget.items.length - 1
                         ? null
                         : const Border(bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1)),
                   ),
@@ -340,6 +350,8 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           focus.text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: OmiTextStyle.create(
                             color: secondTextColor,
                             fontSize: OmiFontSize.t5_14,
@@ -349,18 +361,66 @@ class _MPDailyTomorrowFocusCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      TextButton(
-                        onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Add to Todo: ${focus.text}'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF4A82E8),
-                          backgroundColor: const Color(0xFFEAF0FA),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          minimumSize: const Size(0, 0),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: const Text('Add to Todo', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      ),
+                      isAdded
+                          ? Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F7EE),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: <Widget>[
+                                  const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Added',
+                                    style: OmiTextStyle.create(
+                                      color: const Color(0xFF1BAA52),
+                                      fontSize: OmiFontSize.t4_13,
+                                      fontWeight: OmiFontWeight.medium,
+                                      height: 1.1,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : TextButton(
+                              onPressed: () async {
+                                final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                                  context,
+                                  params: MPAddTodoPopupParams(initialTitle: focus.text),
+                                );
+                                if (!mounted) {
+                                  return;
+                                }
+                                if (result != null) {
+                                  setState(() {
+                                    _addedIndexes.add(entry.key);
+                                  });
+                                  MPToastUtils.showMessage('Todo 创建成功');
+                                } else {
+                                  MPToastUtils.showMessage('Todo 创建失败');
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: const Color(0xFF0A84FF),
+                                backgroundColor: const Color(0xFFEAF2FF),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                minimumSize: const Size(0, 0),
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              ),
+                              child: Text(
+                                'Add to Todo',
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF0A84FF),
+                                  fontSize: OmiFontSize.t4_13,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ),
                     ],
                   ),
                 );

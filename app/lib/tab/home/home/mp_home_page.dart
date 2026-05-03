@@ -46,15 +46,25 @@ class _MPHomePageState extends State<MPHomePage> {
 
   Future<void> _importFromFileWithProgress() async {
     try {
-      _cubit.showImportingStatus(0);
-      final String? path = await MPAudioImportUtils.pickFromFileWithProgress(
-        onProgressPercent: _cubit.showImportingStatus,
+      _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
+      final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
+        onProgress: ({
+          required int fileIndex,
+          required int fileTotal,
+          required int progressPercent,
+        }) {
+          _cubit.showImportingStatus(
+            progressPercent,
+            currentFile: fileTotal > 1 ? fileIndex : null,
+            totalFiles: fileTotal > 1 ? fileTotal : null,
+          );
+        },
       );
       if (!mounted) {
         return;
       }
-      if (path != null) {
-        await MPAudioImportUtils.uploadImportedSandboxFile(path);
+      if (paths != null && paths.isNotEmpty) {
+        await MPAudioImportUtils.uploadImportedSandboxFiles(paths);
       }
     } finally {
       if (mounted) {
@@ -65,15 +75,25 @@ class _MPHomePageState extends State<MPHomePage> {
 
   Future<void> _importFromAlbumWithProgress() async {
     try {
-      _cubit.showImportingStatus(0);
-      final String? path = await MPAudioImportUtils.pickFromAlbumWithProgress(
-        onProgressPercent: _cubit.showImportingStatus,
+      _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
+      final List<String>? paths = await MPAudioImportUtils.pickFromAlbumWithProgress(
+        onProgress: ({
+          required int fileIndex,
+          required int fileTotal,
+          required int progressPercent,
+        }) {
+          _cubit.showImportingStatus(
+            progressPercent,
+            currentFile: fileTotal > 1 ? fileIndex : null,
+            totalFiles: fileTotal > 1 ? fileTotal : null,
+          );
+        },
       );
       if (!mounted) {
         return;
       }
-      if (path != null) {
-        await MPAudioImportUtils.uploadImportedSandboxFile(path);
+      if (paths != null && paths.isNotEmpty) {
+        await MPAudioImportUtils.uploadImportedSandboxFiles(paths);
       }
     } finally {
       if (mounted) {
@@ -190,7 +210,8 @@ class _MPHomePageState extends State<MPHomePage> {
                       subtitle: 'Choose an audio file from your device',
                       onTap: () {
                         Navigator.pop(ctx);
-                        _openImportAudioSheet();
+                        // _openImportAudioSheet();
+                        _importFromFileWithProgress();
                       },
                     ),
                   ],
