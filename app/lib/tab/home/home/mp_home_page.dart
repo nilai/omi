@@ -49,22 +49,14 @@ class _MPHomePageState extends State<MPHomePage> {
       _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
       final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
         onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
-          _cubit.showImportingStatus(
-            progressPercent,
-            currentFile: fileIndex,
-            totalFiles:  fileTotal,
-          );
+          _cubit.showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
         },
       );
       if (!mounted) {
         return;
       }
       if (paths != null && paths.isNotEmpty) {
-        // await MPAudioImportUtils.uploadImportedSandboxFiles(paths, source: 'MobilePhone');
-        await MPAudioUploadManager.instance.uploadAllRecordingFiles(
-          source: 'MobilePhone',
-          rightNowTranscribe: false,
-        );
+        await MPAudioUploadManager.instance.uploadAllRecordingFiles(source: 'MobilePhone', rightNowTranscribe: false);
       }
     } finally {
       if (mounted) {
