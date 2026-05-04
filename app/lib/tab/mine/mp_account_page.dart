@@ -5,6 +5,9 @@ import 'package:memo_pin/tab/mine/mp_account_state.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
+
+import '../../generated/assets.dart';
 
 /// Account & Data：账户资料、订阅、数据管理、帮助与支持
 class MPAccountPage extends StatelessWidget {
@@ -17,10 +20,7 @@ class MPAccountPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<MPAccountCubit>(
-      create: (_) => MPAccountCubit()..loadProfile(),
-      child: const _MPAccountView(),
-    );
+    return BlocProvider<MPAccountCubit>(create: (_) => MPAccountCubit()..loadProfile(), child: const _MPAccountView());
   }
 }
 
@@ -43,11 +43,7 @@ class _MPAccountView extends StatelessWidget {
         ),
         title: Text(
           'Account & Data',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
-            color: mainTextColor,
-          ),
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: mainTextColor),
         ),
       ),
       body: BlocBuilder<MPAccountCubit, MPAccountState>(
@@ -78,10 +74,7 @@ class _MPAccountView extends StatelessWidget {
                 Text(
                   'MemoPin v1.0.0',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: secondTextColor.withValues(alpha: 0.85),
-                  ),
+                  style: TextStyle(fontSize: 12, color: secondTextColor.withValues(alpha: 0.85)),
                 ),
               ],
             ),
@@ -104,11 +97,7 @@ class _MPAccountView extends StatelessWidget {
   }
 
   /// 顶部：头像、用户信息、退出登录
-  Widget _buildProfileCard(
-    BuildContext context, {
-    required MPAccountState state,
-    required VoidCallback onSignOut,
-  }) {
+  Widget _buildProfileCard(BuildContext context, {required MPAccountState state, required VoidCallback onSignOut}) {
     final bool loading = state.profileStatus == MPAccountProfileStatus.loading;
     return _whiteCard(
       radius: 16,
@@ -123,11 +112,16 @@ class _MPAccountView extends StatelessWidget {
                 Container(
                   width: 64,
                   height: 64,
-                  decoration: const BoxDecoration(
-                    color: blueTextColor,
-                    shape: BoxShape.circle,
+                  decoration: const BoxDecoration(color: blueTextColor, shape: BoxShape.circle),
+                  child: Center(
+                    child: OmiImageLoader.localImg(
+                      Assets.mpMineUser,
+                      width: 36,
+                      height: 36,
+                      color: Colors.white,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  child: const Icon(Icons.person_rounded, color: Colors.white, size: 36),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -150,10 +144,7 @@ class _MPAccountView extends StatelessWidget {
                             SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: blueTextColor,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: blueTextColor),
                             ),
                         ],
                       ),
@@ -196,10 +187,7 @@ class _MPAccountView extends StatelessWidget {
                         SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: redColor,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: redColor),
                         )
                       else
                         const Icon(Icons.logout_rounded, color: redColor, size: 22),
@@ -239,11 +227,16 @@ class _MPAccountView extends StatelessWidget {
                 Container(
                   width: 42,
                   height: 42,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFFC940),
-                    shape: BoxShape.circle,
+                  decoration: const BoxDecoration(color: Color(0xFFFFC940), shape: BoxShape.circle),
+                  child: Center(
+                    child: OmiImageLoader.localImg(
+                      Assets.mpMineCrown,
+                      width: 24,
+                      height: 24,
+                      color: Colors.white,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-                  child: const Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 22),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -288,7 +281,7 @@ class _MPAccountView extends StatelessWidget {
           _buildDataRow(
             context,
             circleColor: greenTextColor,
-            icon: Icons.storage_rounded,
+            icon: Assets.mpMineDatabase,
             title: 'Storage',
             subtitle: '2.3 GB used',
             showChevron: false,
@@ -298,7 +291,7 @@ class _MPAccountView extends StatelessWidget {
           _buildDataRow(
             context,
             circleColor: const Color(0xFFFF9500),
-            icon: Icons.delete_outline_rounded,
+            icon: Assets.mpMineTrash,
             title: 'Clear Cache',
             subtitle: 'Free up storage space',
             showChevron: true,
@@ -308,7 +301,7 @@ class _MPAccountView extends StatelessWidget {
           _buildDataRow(
             context,
             circleColor: redColor,
-            icon: Icons.delete_outline_rounded,
+            icon: Assets.mpMineTrash,
             title: 'Delete Account',
             subtitle: 'Permanently remove your data',
             showChevron: true,
@@ -322,7 +315,7 @@ class _MPAccountView extends StatelessWidget {
   Widget _buildDataRow(
     BuildContext context, {
     required Color circleColor,
-    required IconData icon,
+    required String icon,
     required String title,
     required String subtitle,
     required bool showChevron,
@@ -340,7 +333,9 @@ class _MPAccountView extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 21),
+                child: Center(
+                  child: OmiImageLoader.localImg(icon, width: 24, height: 24, color: Colors.white, fit: BoxFit.contain),
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -382,38 +377,33 @@ class _MPAccountView extends StatelessWidget {
       radius: 16,
       child: Column(
         children: [
-          _buildHelpRow(
-            context,
-            circleColor: const Color(0xFFFF9500),
-            icon: Icons.help_outline_rounded,
-            title: 'FAQ',
-          ),
+          _buildHelpRow(context, circleColor: const Color(0xFFFF9500), icon: Icons.help_outline_rounded, title: 'FAQ'),
           Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF8D6EF9),
-            icon: Icons.menu_book_rounded,
+            assetIcon: Assets.mpMineBook,
             title: 'User Guide',
           ),
           Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: blueTextColor,
-            icon: Icons.chat_bubble_outline_rounded,
+            assetIcon: Assets.mpMineMessageCircle,
             title: 'Contact Support',
           ),
           Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF6B7280),
-            icon: Icons.description_outlined,
+            assetIcon: Assets.mpMineFileText,
             title: 'Terms & Privacy',
           ),
           Divider(height: 1, thickness: 1, color: lineColor, indent: 0, endIndent: 0),
           _buildHelpRow(
             context,
             circleColor: const Color(0xFF007AFF),
-            icon: Icons.upload_file_rounded,
+            assetIcon: Assets.mpMineUpload,
             title: 'Submit Diagnostic Logs',
           ),
         ],
@@ -421,12 +411,21 @@ class _MPAccountView extends StatelessWidget {
     );
   }
 
+  /// [assetIcon] 非空且非空字符串时圆形区内优先显示该资源，否则使用 [icon]。
   Widget _buildHelpRow(
     BuildContext context, {
     required Color circleColor,
-    required IconData icon,
+    IconData? icon,
+    String? assetIcon,
     required String title,
   }) {
+    late final Widget circleChild;
+    if (assetIcon != null && assetIcon.isNotEmpty) {
+      circleChild = OmiImageLoader.localImg(assetIcon, width: 24, height: 24, color: Colors.white, fit: BoxFit.contain);
+    } else {
+      circleChild = Icon(icon, color: Colors.white, size: 21);
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -439,17 +438,15 @@ class _MPAccountView extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 21),
+                child: Center(child: circleChild),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
-                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: OmiFontSize.t7_16, fontWeight: OmiFontWeight.medium, color: mainTextColor),
                 ),
               ),
               Icon(Icons.chevron_right_rounded, color: secondTextColor.withValues(alpha: 0.45), size: 26),
@@ -465,13 +462,7 @@ class _MPAccountView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(radius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 14, offset: const Offset(0, 4))],
       ),
       child: child,
     );

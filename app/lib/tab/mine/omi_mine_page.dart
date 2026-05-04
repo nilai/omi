@@ -272,13 +272,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
       height: 32,
       decoration: BoxDecoration(color: blueTextColor, borderRadius: BorderRadius.circular(8)),
       child: Center(
-        child: OmiImageLoader.localImg(
-          Assets.mpMineCalendar,
-          width: 24,
-          height: 24,
-          color: Colors.white,
-          fit: BoxFit.contain,
-        ),
+        child: Text('📅', style: TextStyle(fontSize: 16, color: Colors.white)),
       ),
     );
   }
