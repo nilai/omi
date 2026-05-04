@@ -12,10 +12,7 @@ import 'mp_insights_list_cubit.dart';
 
 /// Pattern Insight 详情页（强调“主题 + 相关记忆”）
 class MPPatternInsightDetailPage extends StatelessWidget {
-  const MPPatternInsightDetailPage({
-    super.key,
-    required this.item,
-  });
+  const MPPatternInsightDetailPage({super.key, required this.item});
 
   final MPInsightListItem item;
 
@@ -67,27 +64,19 @@ class _MPPatternInsightBody extends StatelessWidget {
             title: 'Unable to load Pattern insight',
             description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
-            onButtonPressed: () =>
-                context.read<MPInsightDetailCubit>().initData(),
+            onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
         );
       case MPInsightDetailPhase.loaded:
         final MPInsightListItem item = state.data!.item;
         final int appearedCount = item.patternMemoryTitles.length;
-        final String topDescription =
-            state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
-        final String whyText = state.data!.paragraphs.length > 1
-            ? state.data!.paragraphs[1]
-            : '';
-        final String nextStepText =
-            state.data!.tips.isNotEmpty ? state.data!.tips.first : '';
+        final String topDescription = state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
+        final String whyText = state.data!.paragraphs.length > 1 ? state.data!.paragraphs[1] : '';
+        final String nextStepText = state.data!.tips.isNotEmpty ? state.data!.tips.first : '';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            _EmergingPatternHeader(
-              label: 'Emerging pattern detected',
-              isFloating: true,
-            ),
+            _EmergingPatternHeader(label: 'Emerging pattern detected', isFloating: true),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(0),
@@ -98,9 +87,7 @@ class _MPPatternInsightBody extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        _PatternDetectedTitle(
-                          icon: Icons.handyman,
-                        ),
+                        _PatternDetectedTitle(icon: Icons.handyman),
                         const SizedBox(height: 12),
                         Text(
                           topDescription,
@@ -115,20 +102,14 @@ class _MPPatternInsightBody extends StatelessWidget {
                         _AppearedSection(
                           appearedItems: item.patternMemoryTitles,
                           onItemTap: (String title) {
-                            MPToastUtils.showFeatureComingSoon(
-                              message: 'Open memory: $title',
-                            );
+                            MPToastUtils.showFeatureComingSoon(message: 'Open memory: $title');
                           },
                           appearedCount: appearedCount,
                         ),
                         const SizedBox(height: 16),
-                        _WhyThisMattersSection(
-                          whyText: whyText,
-                        ),
+                        _WhyThisMattersSection(whyText: whyText),
                         const SizedBox(height: 16),
-                        _SuggestedNextStepSection(
-                          nextStepText: nextStepText,
-                        ),
+                        _SuggestedNextStepSection(nextStepText: nextStepText),
                         const SizedBox(height: 18),
                         _AskAiButton(),
                         const SizedBox(height: 24),
@@ -145,10 +126,7 @@ class _MPPatternInsightBody extends StatelessWidget {
 }
 
 class _EmergingPatternHeader extends StatelessWidget {
-  const _EmergingPatternHeader({
-    required this.label,
-    this.isFloating = false,
-  });
+  const _EmergingPatternHeader({required this.label, this.isFloating = false});
 
   final String label;
   final bool isFloating;
@@ -162,16 +140,9 @@ class _EmergingPatternHeader extends StatelessWidget {
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: <Color>[
-            Color(0xFFFFF3D9),
-            Color(0xFFFFFBF0),
-          ],
+          colors: <Color>[Color(0xFFFFF3D9), Color(0xFFFFFBF0)],
         ),
-        borderRadius: isFloating
-            ? BorderRadius.zero
-            : const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
+        borderRadius: isFloating ? BorderRadius.zero : const BorderRadius.vertical(top: Radius.circular(16)),
       ),
       child: Row(
         children: <Widget>[
@@ -199,14 +170,15 @@ class _PatternDetectedTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: <Widget>[
-        Container(
+        SizedBox(
           width: 24,
           height: 24,
-          decoration: BoxDecoration(
-            color: purpleTextColor.withValues(alpha: 16),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: purpleTextColor, size: 16),
+          // decoration: BoxDecoration(
+          //   color: purpleTextColor.withValues(alpha: 16),
+          //   shape: BoxShape.circle,
+          // ),
+          // child: Icon(icon, color: purpleTextColor, size: 16),
+          child: Center(child: Text('🧠', style: TextStyle(fontSize: 16))),
         ),
         const SizedBox(width: 10),
         Text(
@@ -224,11 +196,7 @@ class _PatternDetectedTitle extends StatelessWidget {
 }
 
 class _AppearedSection extends StatelessWidget {
-  const _AppearedSection({
-    required this.appearedItems,
-    required this.onItemTap,
-    required this.appearedCount,
-  });
+  const _AppearedSection({required this.appearedItems, required this.onItemTap, required this.appearedCount});
 
   final List<String> appearedItems;
   final ValueChanged<String> onItemTap;
@@ -241,7 +209,8 @@ class _AppearedSection extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(Icons.place_outlined, color: orangeTextColor, size: 18),
+            // Icon(Icons.place_outlined, color: orangeTextColor, size: 18),
+            Text('📍', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Text(
               'Where This Appeared',
@@ -279,10 +248,7 @@ class _AppearedSection extends StatelessWidget {
                   onTap: () => onItemTap(parts.title),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F7),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFF2F2F7), borderRadius: BorderRadius.circular(14)),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -290,10 +256,7 @@ class _AppearedSection extends StatelessWidget {
                           margin: const EdgeInsets.only(top: 6),
                           width: 6,
                           height: 6,
-                          decoration: BoxDecoration(
-                            color: orangeTextColor,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+                          decoration: BoxDecoration(color: orangeTextColor, borderRadius: BorderRadius.circular(999)),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -343,10 +306,7 @@ _MemoryTileParts _parseMemoryTile(String raw) {
   const String sep = '—';
   final List<String> parts = raw.split(sep);
   if (parts.length >= 2) {
-    return _MemoryTileParts(
-      title: parts[0].trim(),
-      date: parts[1].trim(),
-    );
+    return _MemoryTileParts(title: parts[0].trim(), date: parts[1].trim());
   }
   return _MemoryTileParts(title: raw.trim(), date: '');
 }
@@ -363,8 +323,8 @@ class _WhyThisMattersSection extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(Icons.warning_amber_rounded,
-                color: const Color(0xFFFF9500), size: 18),
+            // Icon(Icons.warning_amber_rounded, color: const Color(0xFFFF9500), size: 18),
+            Text('⚠️', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Text(
               'Why This Matters',
@@ -406,8 +366,8 @@ class _SuggestedNextStepSection extends StatelessWidget {
       children: <Widget>[
         Row(
           children: <Widget>[
-            Icon(Icons.lightbulb_outline,
-                color: purpleTextColor, size: 18),
+            // Icon(Icons.lightbulb_outline, color: purpleTextColor, size: 18),
+            Text('🎯', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Text(
               'Suggested Next Step',
@@ -442,23 +402,12 @@ class _SuggestedNextStepSection extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: blueTextColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 minimumSize: const Size(140, 36),
               ),
-              onPressed: () => MPToastUtils.showFeatureComingSoon(
-                message: 'Add as Todo',
-              ),
-              child: const Text(
-                '+ Add as Todo',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Add as Todo'),
+              child: const Text('+ Add as Todo', maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
@@ -475,24 +424,17 @@ class _AskAiButton extends StatelessWidget {
         backgroundColor: purpleTextColor,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
-      onPressed: () =>
-          context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
+      onPressed: () => context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           const Icon(Icons.auto_awesome, size: 18),
           const SizedBox(width: 10),
-          const Text(
-            'Ask AI About This Pattern',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-          ),
+          const Text('Ask AI About This Pattern', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         ],
       ),
     );
   }
 }
-

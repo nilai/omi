@@ -3,6 +3,13 @@ class Assets {
   Assets._();
 
   static const String mpConnectDevice = 'assets/images/3x/mp_connect_device.png';
+  static const String mpInsightBrain = 'assets/images/3x/mp_insight_brain.png';
+  static const String mpInsightCircleAlert = 'assets/images/3x/mp_insight_circle_alert.png';
+  static const String mpInsightCompass = 'assets/images/3x/mp_insight_compass.png';
+  static const String mpInsightLightbulb = 'assets/images/3x/mp_insight_lightbulb.png';
+  static const String mpInsightRotate = 'assets/images/3x/mp_insight_rotate.png';
+  static const String mpInsightSquareCheck = 'assets/images/3x/mp_insight_square_check.png';
+  static const String mpInsightTarget = 'assets/images/3x/mp_insight_target.png';
   static const String mpMineBook = 'assets/images/3x/mp_mine_book.png';
   static const String mpMineCircleUser = 'assets/images/3x/mp_mine_circle_user.png';
   static const String mpMineCrown = 'assets/images/3x/mp_mine_crown.png';

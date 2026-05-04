@@ -15,6 +15,7 @@ import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
 import '../../askai/mp_ask_ai_chat_page.dart';
 import 'dialog/mp_insights_more_dialog.dart';
+import 'mp_insight_detail_fixtures.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -334,21 +335,12 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
   /// 并发获取建议问题与最近会话，并跳转 AskAI 聊天页。
   Future<void> onAskAiButtonPressed(BuildContext context) async {
     final List<dynamic> responses = await Future.wait<dynamic>(<Future<dynamic>>[
-      getInsightSuggestion(
-        MPGetInsightSuggestionRequest(insightId: insightItem.id),
-      ),
-      getLastConversation(
-        MPGetLastConversationRequest(
-          conversationType: 2,
-          paramId: insightItem.id,
-        ),
-      ),
+      getInsightSuggestion(MPGetInsightSuggestionRequest(insightId: insightItem.id)),
+      getLastConversation(MPGetLastConversationRequest(conversationType: 2, paramId: insightItem.id)),
     ]);
 
-    final MPGetInsightSuggestionResponse? suggestionResp =
-        responses[0] as MPGetInsightSuggestionResponse?;
-    final MPGetLastConversationResponse? lastConversationResp =
-        responses[1] as MPGetLastConversationResponse?;
+    final MPGetInsightSuggestionResponse? suggestionResp = responses[0] as MPGetInsightSuggestionResponse?;
+    final MPGetLastConversationResponse? lastConversationResp = responses[1] as MPGetLastConversationResponse?;
 
     if (suggestionResp == null) {
       MPToastUtils.showMessage('Ask AI failed');
@@ -357,8 +349,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
 
     final List<String> questions = suggestionResp.suggestion;
     final String conversationId = lastConversationResp?.conversationId ?? '';
-    final BuildContext? targetContext =
-        context.mounted ? context : MyApp.navigatorKey.currentContext;
+    final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
     if (targetContext == null || !targetContext.mounted) {
       return;
     }
@@ -380,9 +371,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
 
 /// 详情页 Cubit：根据列表项类型模拟后台拉取详情
 class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
-  MPInsightDetailCubit({required MPInsightListItem item})
-      : _item = item,
-        super(MPInsightDetailState.loading());
+  MPInsightDetailCubit({required MPInsightListItem item}) : _item = item, super(MPInsightDetailState.loading());
 
   static const String _insightDetailCacheKeyPrefix = 'insight_detail_';
   static final StreamController<void> _insightDeletedController = StreamController<void>.broadcast();
@@ -420,14 +409,12 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     if (selected == MPShareExportKind.link) {
       final MPShareInsightResponse? resp = await shareInsight(MPShareInsightRequest(insightId: _item.id));
       if (resp == null || resp.baseResp.code != 0) {
-        MPToastUtils.showMessage(
-          resp?.baseResp.message ?? 'Share failed. Please try again later.',
-        );
+        MPToastUtils.showMessage(resp?.baseResp.message ?? 'Share failed. Please try again later.');
         return;
       }
       if (!context.mounted) return;
       MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
-    }else {
+    } else {
       MPToastUtils.showFeatureComingSoon(message: 'Export: $label');
     }
   }
@@ -449,10 +436,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
               }
             }
           } else {
-            MPToastUtils.showMessage(
-              response?.baseResp.message ??
-                  'Couldn\'t delete. Please try again later.',
-            );
+            MPToastUtils.showMessage(response?.baseResp.message ?? 'Couldn\'t delete. Please try again later.');
           }
         });
       },

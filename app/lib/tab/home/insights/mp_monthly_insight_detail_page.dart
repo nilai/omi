@@ -15,10 +15,7 @@ import '../../../generated/assets.dart';
 
 /// Monthly Insight 详情页（按 design 再排版）
 class MPMonthlyInsightDetailPage extends StatelessWidget {
-  const MPMonthlyInsightDetailPage({
-    super.key,
-    required this.item,
-  });
+  const MPMonthlyInsightDetailPage({super.key, required this.item});
 
   final MPInsightListItem item;
 
@@ -32,10 +29,7 @@ class MPMonthlyInsightDetailPage extends StatelessWidget {
             backgroundColor: pageColor,
             appBar: PreferredSize(
               preferredSize: _MPMonthlyAppBar.preferredSizeOf(context),
-              child: _MPMonthlyAppBar(
-                monthSubtitle: item.periodLabel,
-                onBack: () => Navigator.of(context).maybePop(),
-              ),
+              child: _MPMonthlyAppBar(monthSubtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
             ),
             body: _MPMonthlyInsightBody(state: state),
           );
@@ -46,10 +40,7 @@ class MPMonthlyInsightDetailPage extends StatelessWidget {
 }
 
 class _MPMonthlyAppBar extends StatelessWidget {
-  const _MPMonthlyAppBar({
-    required this.monthSubtitle,
-    required this.onBack,
-  });
+  const _MPMonthlyAppBar({required this.monthSubtitle, required this.onBack});
 
   final String monthSubtitle;
   final VoidCallback onBack;
@@ -76,12 +67,7 @@ class _MPMonthlyAppBar extends StatelessWidget {
               child: IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                icon: OmiImageLoader.localImg(
-                  Assets.omiLeftBack,
-                  color: blueTextColor,
-                  width: 20,
-                  height: 20,
-                ),
+                icon: OmiImageLoader.localImg(Assets.omiLeftBack, color: blueTextColor, width: 20, height: 20),
                 onPressed: onBack,
               ),
             ),
@@ -154,8 +140,7 @@ class _MPMonthlyInsightBody extends StatelessWidget {
             title: 'Unable to load Monthly insight',
             description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
-            onButtonPressed: () =>
-                context.read<MPInsightDetailCubit>().initData(),
+            onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
         );
       case MPInsightDetailPhase.loaded:
@@ -171,9 +156,7 @@ class _MPMonthlyInsightBody extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _MPMonthlyMonthOverviewCard(
-                summary: monthly.monthOverviewSummary,
-              ),
+              _MPMonthlyMonthOverviewCard(summary: monthly.monthOverviewSummary),
               const SizedBox(height: 12),
               if (monthly.attentionDistribution.isNotEmpty)
                 _MPMonthlyAttentionDistributionCard(
@@ -182,17 +165,11 @@ class _MPMonthlyInsightBody extends StatelessWidget {
                 ),
               if (monthly.keyPeopleThisMonth.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlyKeyPeopleCard(
-                  items: monthly.keyPeopleThisMonth,
-                  summary: monthly.keyPeopleThisMonthSummary,
-                ),
+                _MPMonthlyKeyPeopleCard(items: monthly.keyPeopleThisMonth, summary: monthly.keyPeopleThisMonthSummary),
               ],
               if (monthly.topicsSurfacing.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlyTopicsSurfacingCard(
-                  items: monthly.topicsSurfacing,
-                  summary: monthly.topicsSurfacingSummary,
-                ),
+                _MPMonthlyTopicsSurfacingCard(items: monthly.topicsSurfacing, summary: monthly.topicsSurfacingSummary),
               ],
               if (monthly.longRunningOpenThreads.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
@@ -203,9 +180,7 @@ class _MPMonthlyInsightBody extends StatelessWidget {
               ],
               if (monthly.monthToMonthTrend.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlyTrendCard(
-                  paragraphs: monthly.monthToMonthTrend,
-                ),
+                _MPMonthlyTrendCard(paragraphs: monthly.monthToMonthTrend),
               ],
               if (monthly.decisionsThatCannotSlipAgain.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
@@ -216,22 +191,17 @@ class _MPMonthlyInsightBody extends StatelessWidget {
               ],
               if (monthly.suggestedFocusNextMonth.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPMonthlySuggestedFocusCard(
-                  items: monthly.suggestedFocusNextMonth,
-                ),
+                _MPMonthlySuggestedFocusCard(items: monthly.suggestedFocusNextMonth),
               ],
               const SizedBox(height: 18),
               FilledButton(
-                onPressed: () =>
-                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
+                onPressed: () => context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: purpleTextColor,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                 ),
                 child: const Text('Ask AI about this month'),
               ),
@@ -253,10 +223,7 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -264,10 +231,12 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.check_circle_outline,
+              OmiImageLoader.localImg(
+                Assets.mpInsightCompass,
+                width: 20,
+                height: 20,
                 color: orangeTextColor,
-                size: 20,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),
               Text(
@@ -282,10 +251,7 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(
-            color: const Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          Divider(color: const Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           Text(
             summary,
@@ -303,10 +269,7 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
 }
 
 class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
-  const _MPMonthlyAttentionDistributionCard({
-    required this.items,
-    required this.summary,
-  });
+  const _MPMonthlyAttentionDistributionCard({required this.items, required this.summary});
 
   final List<MPMonthlyBarItem> items;
   final String summary;
@@ -317,10 +280,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -328,11 +288,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.bar_chart_outlined,
-                color: blueTextColor,
-                size: 20,
-              ),
+              Icon(Icons.bar_chart_outlined, color: blueTextColor, size: 20),
               const SizedBox(width: 10),
               Text(
                 'Attention Distribution',
@@ -346,10 +302,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(
-            color: const Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          Divider(color: const Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           Column(
             children: items.map((MPMonthlyBarItem i) {
@@ -377,8 +330,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
                           value: v,
                           minHeight: 8,
                           backgroundColor: const Color(0xFFF2F2F7),
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(blueTextColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(blueTextColor),
                         ),
                       ),
                     ),
@@ -404,10 +356,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
 }
 
 class _MPMonthlyKeyPeopleCard extends StatelessWidget {
-  const _MPMonthlyKeyPeopleCard({
-    required this.items,
-    required this.summary,
-  });
+  const _MPMonthlyKeyPeopleCard({required this.items, required this.summary});
 
   final List<MPMonthlyKeyPersonItem> items;
   final String summary;
@@ -418,10 +367,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -429,10 +375,12 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.people_alt_outlined,
+              OmiImageLoader.localImg(
+                Assets.mpMineUsers,
+                width: 20,
+                height: 20,
                 color: blueTextColor,
-                size: 20,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),
               Text(
@@ -447,10 +395,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(
-            color: const Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          Divider(color: const Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           Column(
             children: items.map((MPMonthlyKeyPersonItem p) {
@@ -480,8 +425,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
                           value: v,
                           minHeight: 8,
                           backgroundColor: const Color(0xFFF2F2F7),
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(blueTextColor),
+                          valueColor: AlwaysStoppedAnimation<Color>(blueTextColor),
                         ),
                       ),
                     ),
@@ -516,10 +460,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
 }
 
 class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
-  const _MPMonthlyTopicsSurfacingCard({
-    required this.items,
-    required this.summary,
-  });
+  const _MPMonthlyTopicsSurfacingCard({required this.items, required this.summary});
 
   final List<MPMonthlyTopicItem> items;
   final String summary;
@@ -530,10 +471,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -541,10 +479,12 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.auto_awesome_outlined,
+              OmiImageLoader.localImg(
+                Assets.mpInsightBrain,
+                width: 20,
+                height: 20,
                 color: purpleTextColor,
-                size: 20,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),
               Text(
@@ -559,10 +499,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(
-            color: const Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          Divider(color: const Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           Column(
             children: items.map((MPMonthlyTopicItem t) {
@@ -590,9 +527,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
                           value: v,
                           minHeight: 8,
                           backgroundColor: const Color(0xFFF2F2F7),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            purpleTextColor,
-                          ),
+                          valueColor: AlwaysStoppedAnimation<Color>(purpleTextColor),
                         ),
                       ),
                     ),
@@ -617,10 +552,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
 }
 
 class _MPMonthlyOpenThreadsCard extends StatelessWidget {
-  const _MPMonthlyOpenThreadsCard({
-    required this.items,
-    required this.summary,
-  });
+  const _MPMonthlyOpenThreadsCard({required this.items, required this.summary});
 
   final List<String> items;
   final String summary;
@@ -631,10 +563,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -642,11 +571,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.warning_amber_rounded,
-                color: orangeTextColor,
-                size: 20,
-              ),
+              Icon(Icons.warning_amber_rounded, color: orangeTextColor, size: 20),
               const SizedBox(width: 10),
               Text(
                 'Long-running Open Threads',
@@ -660,10 +585,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(
-            color: Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           ...items.map((String t) {
             return Padding(
@@ -718,10 +640,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -729,11 +648,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.trending_up,
-                color: greenTextColor,
-                size: 20,
-              ),
+              Icon(Icons.trending_up, color: greenTextColor, size: 20),
               const SizedBox(width: 10),
               Text(
                 'Month-to-Month Trend',
@@ -747,10 +662,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(
-            color: Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           ...paragraphs.map((String p) {
             return Padding(
@@ -773,10 +685,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
 }
 
 class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
-  const _MPMonthlyCannotSlipDecisionsCard({
-    required this.items,
-    required this.summary,
-  });
+  const _MPMonthlyCannotSlipDecisionsCard({required this.items, required this.summary});
 
   final List<MPMonthlyDecisionItem> items;
   final String summary;
@@ -789,10 +698,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       child: Column(
@@ -800,11 +706,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.error_outline_rounded,
-                color: _kDecisionRed,
-                size: 20,
-              ),
+              Icon(Icons.error_outline_rounded, color: _kDecisionRed, size: 20),
               const SizedBox(width: 10),
               Text(
                 'Decisions That Cannot Slip Again',
@@ -818,10 +720,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(
-            color: Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
           Text(
             summary,
@@ -842,18 +741,11 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
                   Container(
                     width: 22,
                     height: 22,
-                    decoration: const BoxDecoration(
-                      color: _kDecisionRed,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: _kDecisionRed, shape: BoxShape.circle),
                     alignment: Alignment.center,
                     child: Text(
                       '${d.rank}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -898,10 +790,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFEAEAEA),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFEAEAEA), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
       child: Column(
@@ -909,10 +798,12 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
         children: <Widget>[
           Row(
             children: <Widget>[
-              Icon(
-                Icons.radio_button_checked,
+              OmiImageLoader.localImg(
+                Assets.mpInsightTarget,
+                width: 20,
+                height: 20,
                 color: _kFocusBlue,
-                size: 20,
+                fit: BoxFit.contain,
               ),
               const SizedBox(width: 10),
               Text(
@@ -927,10 +818,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(
-            color: Color(0xFFE6E6E6),
-            height: 1,
-          ),
+          const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 6),
           ...widget.items.asMap().entries.map((MapEntry<int, MPMonthlySuggestedFocusItem> e) {
             final int idx = e.key;
@@ -941,9 +829,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
               decoration: BoxDecoration(
                 border: idx == widget.items.length - 1
                     ? null
-                    : const Border(
-                        bottom: BorderSide(color: Color(0xFFEDEDED), width: 1),
-                      ),
+                    : const Border(bottom: BorderSide(color: Color(0xFFEDEDED), width: 1)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -951,18 +837,11 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                   Container(
                     width: 24,
                     height: 24,
-                    decoration: const BoxDecoration(
-                      color: _kFocusBlue,
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: const BoxDecoration(color: _kFocusBlue, shape: BoxShape.circle),
                     alignment: Alignment.center,
                     child: Text(
                       '${f.rank}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -990,11 +869,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              const Icon(
-                                Icons.check,
-                                size: 13,
-                                color: Color(0xFF34C759),
-                              ),
+                              const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
                               const SizedBox(width: 4),
                               Text(
                                 'Added',
@@ -1013,13 +888,8 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                             backgroundColor: const Color(0xFFEAF2FF),
                             foregroundColor: const Color(0xFF0A84FF),
                             elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 7,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                             minimumSize: const Size(0, 0),
                           ),
                           onPressed: () async {
@@ -1030,7 +900,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                             if (!mounted) {
                               return;
                             }
-                            
+
                             if (result != null) {
                               setState(() {
                                 _addedIndexes.add(idx);
@@ -1061,4 +931,3 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
     );
   }
 }
-
