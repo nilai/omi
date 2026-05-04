@@ -210,7 +210,7 @@ class MPAudioUploadManager {
   }) async {
     final File f = item.localFile;
     if (!await f.exists()) {
-      MPToastUtils.showMessage('本地文件不存在');
+      MPToastUtils.showMessage('Local file not found.');
       return null;
     }
 
@@ -221,7 +221,7 @@ class MPAudioUploadManager {
       durSec = meta.duration!;
     }
     if (durSec <= 0) {
-      MPToastUtils.showMessage('录音时长无效');
+      MPToastUtils.showMessage('Invalid recording duration.');
       return null;
     }
 
@@ -249,7 +249,7 @@ class MPAudioUploadManager {
       },
     );
     if (uri == null || uri.isEmpty) {
-      MPToastUtils.showMessage('音频上传失败');
+      MPToastUtils.showMessage('Failed to upload audio.');
       return null;
     }
 
@@ -264,7 +264,7 @@ class MPAudioUploadManager {
       MPCreateRecordRequest(recordFile: uri, createAt: createAtSec, duration: effectiveDurSec, source: item.source),
     );
     if (created == null || created.baseResp.code != 0) {
-      MPToastUtils.showMessage(created?.baseResp.message ?? '创建记录失败');
+      MPToastUtils.showMessage(created?.baseResp.message ?? 'Failed to create record.');
       return null;
     }
 
@@ -279,7 +279,7 @@ class MPAudioUploadManager {
         ),
       );
       if (summary == null || summary.baseResp.code != 0) {
-        MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
+        MPToastUtils.showMessage(summary?.baseResp.message ?? 'Transcription failed.');
         return null;
       }
       MPMemoryNotification.notifyMemoryListRefresh();
@@ -353,7 +353,7 @@ class MPAudioUploadManager {
           );
         } catch (e, st) {
           debugPrint('multi upload worker failed: $e\n$st');
-          MPToastUtils.showMessage('上传失败: $e');
+          MPToastUtils.showMessage('Upload failed: $e');
           created = null;
         } finally {
           _finishMultiBatchUnit(unit.batchId, created);
@@ -380,11 +380,11 @@ class MPAudioUploadManager {
     }
     for (final MPAudioUploadLocalItem item in items) {
       if (!await item.localFile.exists()) {
-        MPToastUtils.showMessage('本地文件不存在');
+        MPToastUtils.showMessage('Local file not found.');
         return null;
       }
       if (item.durationSec <= 0) {
-        MPToastUtils.showMessage('录音时长无效');
+        MPToastUtils.showMessage('Invalid recording duration.');
         return null;
       }
     }
@@ -470,7 +470,7 @@ class MPAudioUploadManager {
           .toList();
 
       if (audioRecords.isEmpty) {
-        MPToastUtils.showMessage('没有可上传的本地录音');
+        MPToastUtils.showMessage('No local recordings to upload.');
         return null;
       }
       audioRecords.sort(
@@ -528,7 +528,7 @@ class MPAudioUploadManager {
             },
           );
           if (txtUri == null || txtUri.isEmpty) {
-            MPToastUtils.showMessage('文本附件上传失败');
+            MPToastUtils.showMessage('Failed to upload text attachment.');
             _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
             continue;
           }
@@ -536,7 +536,7 @@ class MPAudioUploadManager {
 
         final String? audioUri = await uploadService.uploadMPAudio(f, onProgress: (int current, int total) {});
         if (audioUri == null || audioUri.isEmpty) {
-          MPToastUtils.showMessage('音频上传失败');
+          MPToastUtils.showMessage('Failed to upload audio.');
           _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
@@ -552,7 +552,7 @@ class MPAudioUploadManager {
           MPCreateRecordRequest(recordFile: audioUri, createAt: createAtSec, duration: effectiveDurSec, source: source),
         );
         if (created == null || created.baseResp.code != 0) {
-          MPToastUtils.showMessage(created?.baseResp.message ?? '创建记录失败');
+          MPToastUtils.showMessage(created?.baseResp.message ?? 'Failed to create record.');
           _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
@@ -567,7 +567,7 @@ class MPAudioUploadManager {
             ),
           );
           if (summary == null || summary.baseResp.code != 0) {
-            MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
+            MPToastUtils.showMessage(summary?.baseResp.message ?? 'Transcription failed.');
             continue;
           }
           MPMemoryNotification.notifyMemoryListRefresh();
@@ -598,7 +598,7 @@ class MPAudioUploadManager {
 
       return lastCreated;
     } catch (e) {
-      MPToastUtils.showMessage('上传失败: $e');
+      MPToastUtils.showMessage('Upload failed: $e');
       return null;
     }
   }
@@ -622,11 +622,11 @@ class MPAudioUploadManager {
   }) async {
     try {
       if (!await localFile.exists()) {
-        MPToastUtils.showMessage('本地文件不存在');
+        MPToastUtils.showMessage('Local file not found.');
         return null;
       }
       if (durationSec <= 0) {
-        MPToastUtils.showMessage('录音时长无效');
+        MPToastUtils.showMessage('Invalid recording duration.');
         return null;
       }
 
@@ -645,7 +645,7 @@ class MPAudioUploadManager {
       }
 
       if (files.isEmpty) {
-        MPToastUtils.showMessage('没有可上传的本地录音');
+        MPToastUtils.showMessage('No local recordings to upload.');
         return null;
       }
 
@@ -703,7 +703,7 @@ class MPAudioUploadManager {
           },
         );
         if (uri == null || uri.isEmpty) {
-          MPToastUtils.showMessage('音频上传失败');
+          MPToastUtils.showMessage('Failed to upload audio.');
           return lastCreated;
         }
 
@@ -718,7 +718,7 @@ class MPAudioUploadManager {
           MPCreateRecordRequest(recordFile: uri, createAt: createAtSec, duration: effectiveDurSec, source: source),
         );
         if (created == null || created.baseResp.code != 0) {
-          MPToastUtils.showMessage(created?.baseResp.message ?? '创建记录失败');
+          MPToastUtils.showMessage(created?.baseResp.message ?? 'Failed to create record.');
           return lastCreated;
         }
 
@@ -733,7 +733,7 @@ class MPAudioUploadManager {
             ),
           );
           if (summary == null || summary.baseResp.code != 0) {
-            MPToastUtils.showMessage(summary?.baseResp.message ?? '转写失败');
+            MPToastUtils.showMessage(summary?.baseResp.message ?? 'Transcription failed.');
             return lastCreated;
           }
           MPMemoryNotification.notifyMemoryListRefresh();
@@ -770,7 +770,7 @@ class MPAudioUploadManager {
 
       return lastCreated;
     } catch (e) {
-      MPToastUtils.showMessage('上传失败: $e');
+      MPToastUtils.showMessage('Upload failed: $e');
       return null;
     }
   }

@@ -383,7 +383,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       }
     } catch (e) {
       if (generation == _scanGeneration && !isClosed) {
-        MPToastUtils.showMessage('扫描失败，请重试');
+        MPToastUtils.showMessage('Scan failed. Please try again.');
         emit(
           state.copyWith(
             isScanning: false,
@@ -461,7 +461,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       );
       unawaited(_refreshConnectedDeviceBattery(id));
     } catch (e) {
-      MPToastUtils.showMessage('连接失败，请靠近设备后重试');
+      MPToastUtils.showMessage(
+        'Connection failed. Move closer to the device and try again.',
+      );
       await _disconnectActive();
     } finally {
       if (!isClosed && state.connectingDeviceId != null) {

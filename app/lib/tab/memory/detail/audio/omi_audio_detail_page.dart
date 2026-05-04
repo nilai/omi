@@ -106,7 +106,7 @@ class _OmiAudioDetailView extends StatelessWidget {
                   if (!context.mounted) return;
                   if (resp == null || resp.baseResp.code != 0) {
                     MPToastUtils.showMessage(
-                      resp?.baseResp.message ?? '删除失败，请稍后重试',
+                      resp?.baseResp.message ?? 'Couldn\'t delete. Please try again later.',
                     );
                     return;
                   }
@@ -140,7 +140,7 @@ class _OmiAudioDetailView extends StatelessWidget {
             case MPAudioDetailPhase.error:
               return Center(
                 child: Text(
-                  state.errorMessage ?? '加载失败',
+                  state.errorMessage ?? 'Couldn\'t load.',
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t7_16,
                     fontWeight: OmiFontWeight.medium,

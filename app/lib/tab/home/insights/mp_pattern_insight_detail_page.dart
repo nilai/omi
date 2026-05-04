@@ -65,7 +65,7 @@ class _MPPatternInsightBody extends StatelessWidget {
           type: MPTristateType.error,
           data: MPTristatePageData(
             title: 'Unable to load Pattern insight',
-            description: state.errorMessage ?? '请稍后重试',
+            description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
             onButtonPressed: () =>
                 context.read<MPInsightDetailCubit>().initData(),

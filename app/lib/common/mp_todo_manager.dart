@@ -71,19 +71,19 @@ class MPTodoManager {
       if (response != null) {
         // 检查响应状态
         if (response.baseResp.code == 0) {
-          debugPrint('Todo 创建成功');
+          debugPrint('Todo created successfully');
           MPTodoNotification.notifyTodoCreated();
           return true;
         } else {
-          debugPrint('创建 Todo 失败: ${response.baseResp.message}');
+          debugPrint('Create todo failed: ${response.baseResp.message}');
           return false;
         }
       } else {
-        debugPrint('创建 Todo 失败: 响应为空');
+        debugPrint('Create todo failed: empty response');
         return false;
       }
     } catch (e) {
-      debugPrint('创建 Todo 异常: $e');
+      debugPrint('Create todo error: $e');
       return false;
     }
   }
@@ -166,7 +166,7 @@ class MPTodoManager {
         return false;
       }
     } catch (e) {
-      debugPrint('添加 Todo 异常: $e');
+      debugPrint('Add todo error: $e');
       return false;
     }
   }
@@ -189,18 +189,18 @@ class MPTodoManager {
       if (response != null) {
         // 检查响应状态
         if (response.baseResp.code == 0) {
-          debugPrint('Todo 完成成功');
+          debugPrint('Todo completed successfully');
           return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
           return false;
         }
       } else {
-        MPToastUtils.showMessage('完成 Todo 失败: 响应为空');
+        MPToastUtils.showMessage('Couldn\'t complete to-do: empty response.');
         return false;
       }
     } catch (e) {
-      MPToastUtils.showMessage('完成 Todo 异常: $e');
+      MPToastUtils.showMessage('Error completing to-do: $e');
       return false;
     }
   }
@@ -216,15 +216,15 @@ class MPTodoManager {
   }) async {
     try {
       if (todoId.isEmpty) {
-        MPToastUtils.showMessage('任务ID不能为空');
+        MPToastUtils.showMessage('Task ID cannot be empty.');
         return false;
       }
       if (title.trim().isEmpty) {
-        MPToastUtils.showMessage('任务标题不能为空');
+        MPToastUtils.showMessage('Task title cannot be empty.');
         return false;
       }
       if (priority.isEmpty) {
-        MPToastUtils.showMessage('优先级不能为空');
+        MPToastUtils.showMessage('Priority cannot be empty.');
         return false;
       }
 
@@ -240,18 +240,18 @@ class MPTodoManager {
 
       if (response != null) {
         if (response.baseResp.code == 0) {
-          MPToastUtils.showMessage('Todo 更新成功');
+          MPToastUtils.showMessage('To-do updated.');
           return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
           return false;
         }
       } else {
-        MPToastUtils.showMessage('更新 Todo 失败: 响应为空');
+        MPToastUtils.showMessage('Couldn\'t update to-do: empty response.');
         return false;
       }
     } catch (e) {
-      MPToastUtils.showMessage('更新 Todo 异常: $e');
+      MPToastUtils.showMessage('Error updating to-do: $e');
       return false;
     }
   }
@@ -270,18 +270,18 @@ class MPTodoManager {
       if (response != null) {
         // 检查响应状态
         if (response.baseResp.code == 0) {
-          debugPrint('Todo 删除成功');
+          debugPrint('Todo deleted successfully');
          return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
           return false;
         }
       } else {
-        MPToastUtils.showMessage('删除 Todo 失败: 响应为空');
+        MPToastUtils.showMessage('Couldn\'t delete to-do: empty response.');
         return false;
       }
     } catch (e) {
-      MPToastUtils.showMessage('删除 Todo 异常: $e');
+      MPToastUtils.showMessage('Error deleting to-do: $e');
       return false;
     }
   }

@@ -405,7 +405,9 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       }
       if (res.baseResp.code != 0) {
         MPToastUtils.showMessage(
-          res.baseResp.message.isEmpty ? '查询摘要状态失败' : res.baseResp.message,
+          res.baseResp.message.isEmpty
+            ? 'Failed to check summary status.'
+            : res.baseResp.message,
         );
         return false;
       }
@@ -416,7 +418,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         await Future<void>.delayed(_kSummaryPollInterval);
       }
     }
-    MPToastUtils.showMessage('生成超时，请稍后重试');
+    MPToastUtils.showMessage('Generation timed out. Please try again later.');
     return false;
   }
 
@@ -432,7 +434,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (summary == null || summary.baseResp.code != 0) {
         emit(state.copyWith(isSummaryGenerating: false));
         MPToastUtils.showMessage(
-          summary?.baseResp.message ?? '生成失败，请稍后重试',
+          summary?.baseResp.message ?? 'Generation failed. Please try again later.',
         );
         return;
       }
@@ -446,7 +448,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     } catch (_) {
       if (!isClosed) {
         emit(state.copyWith(isSummaryGenerating: false));
-        MPToastUtils.showMessage('生成失败，请稍后重试');
+        MPToastUtils.showMessage('Generation failed. Please try again later.');
       }
     }
   }
@@ -497,7 +499,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     try {
       final String? localPath = await _ensurePlayableLocalPath();
       if (localPath == null || localPath.isEmpty) {
-        MPToastUtils.showMessage('音频下载失败，请稍后重试');
+        MPToastUtils.showMessage('Failed to download audio. Please try again later.');
         return;
       }
       final bool rebound = _playingLocalPath != localPath;
@@ -521,7 +523,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
           }
           debugPrint('MPAudioDetailCubit.onPlayTap play future: $e\n$st');
           _stopPlaybackUiTimer();
-          MPToastUtils.showMessage('音频播放失败');
+          MPToastUtils.showMessage('Failed to play audio.');
           emit(
             state.copyWith(
               isPlaying: false,
@@ -557,7 +559,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       shouldRunPlaybackUi = true;
     } catch (e, st) {
       debugPrint('MPAudioDetailCubit.onPlayTap: $e\n$st');
-      MPToastUtils.showMessage('音频播放失败');
+      MPToastUtils.showMessage('Failed to play audio.');
     } finally {
       if (!isClosed && !shouldRunPlaybackUi) {
         emit(state.copyWith(playPreparing: false));

@@ -224,7 +224,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         return;
       }
       setState(() => _busy = false);
-      MPToastUtils.showMessage('开始录音失败: $e');
+      MPToastUtils.showMessage('Failed to start recording: $e');
     }
   }
 
@@ -264,7 +264,10 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         _busy = false;
         _state = _MPQuickCaptureState.textReady;
       });
-      MPToastUtils.showMessage(response?.baseResp.message ?? '分析失败，请稍后重试');
+      MPToastUtils.showMessage(
+        response?.baseResp.message ??
+            'Analysis failed. Please try again later.',
+      );
       return;
     }
     final String memoText = response.originalText.trim().isNotEmpty
@@ -302,7 +305,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       if (!mounted) {
         return;
       }
-      MPToastUtils.showMessage('停止录音失败: $e');
+      MPToastUtils.showMessage('Failed to stop recording: $e');
       setState(() {
         _busy = false;
         _state = _MPQuickCaptureState.recording;
@@ -313,7 +316,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       if (!mounted) {
         return;
       }
-      MPToastUtils.showMessage('录音文件无效');
+      MPToastUtils.showMessage('Invalid recording file.');
       setState(() {
         _busy = false;
         _state = _MPQuickCaptureState.idle;
@@ -325,7 +328,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       if (!mounted) {
         return;
       }
-      MPToastUtils.showMessage('录音文件不存在');
+      MPToastUtils.showMessage('Recording file not found.');
       setState(() {
         _busy = false;
         _state = _MPQuickCaptureState.idle;
@@ -340,7 +343,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     );
     if (recordUri == null || recordUri.isEmpty) {
       if (mounted) {
-        MPToastUtils.showMessage('音频上传失败');
+        MPToastUtils.showMessage('Failed to upload audio.');
         setState(() {
           _busy = false;
           _state = _MPQuickCaptureState.idle;
@@ -364,7 +367,10 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         _busy = false;
         _state = _MPQuickCaptureState.idle;
       });
-      MPToastUtils.showMessage(response?.baseResp.message ?? '转写失败，请稍后重试');
+      MPToastUtils.showMessage(
+        response?.baseResp.message ??
+            'Transcription failed. Please try again later.',
+      );
       return;
     }
     final String memoText = response.originalText.trim();

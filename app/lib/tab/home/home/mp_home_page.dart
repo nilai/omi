@@ -230,7 +230,7 @@ class _MPHomePageState extends State<MPHomePage> {
                           ),
                           const Spacer(),
                           IconButton(
-                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: '日历'),
+                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Calendar'),
                             icon: Icon(Icons.calendar_today_outlined, color: blueTextColor),
                           ),
                           const SizedBox(width: 4),
@@ -690,7 +690,7 @@ class _RecentMemoryCard extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: onViewAll ?? () => MPToastUtils.showFeatureComingSoon(message: 'Memory 列表'),
+                onPressed: onViewAll ?? () => MPToastUtils.showFeatureComingSoon(message: 'Memory list'),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 0),

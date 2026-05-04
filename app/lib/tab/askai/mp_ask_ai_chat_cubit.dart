@@ -148,7 +148,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         emit(
           state.copyWith(
             isSending: false,
-            errorMessage: 'AI回复失败，请稍后重试',
+            errorMessage: 'AI reply failed. Please try again later.',
           ),
         );
         return;
@@ -202,7 +202,11 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         emit(state.copyWith(messages: merged, conversationId: activeConversationId));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: 'AI回复失败，请稍后重试'));
+      emit(
+      state.copyWith(
+        errorMessage: 'AI reply failed. Please try again later.',
+      ),
+    );
     } finally {
       emit(state.copyWith(isSending: false));
     }

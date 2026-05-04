@@ -147,7 +147,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                     if (state.phase == MPAskAIChatPhase.error) {
                       return Center(
                         child: Text(
-                          state.errorMessage ?? '加载失败',
+                          state.errorMessage ?? 'Couldn\'t load.',
                           style: OmiTextStyle.create(
                             color: secondTextColor,
                             fontSize: OmiFontSize.t5_14,

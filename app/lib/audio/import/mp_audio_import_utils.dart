@@ -140,7 +140,7 @@ class MPAudioImportUtils {
         source: source,
       );
       if (record == null) {
-        debugPrint('MPAudioImportUtils: 登记本地记录失败，跳过: $path');
+        debugPrint('MPAudioImportUtils: register local record failed, skip: $path');
         continue;
       }
       onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
@@ -179,14 +179,14 @@ class MPAudioImportUtils {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _audioExtensions,
-        dialogTitle: '选择音频文件',
+        dialogTitle: 'Choose audio files',
         withData: false,
         allowCompression: false,
         allowMultiple: true,
       );
       return _audioFilesFromPickerResult(result);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 从文件选择音频失败: $e');
+      debugPrint('MPAudioImportUtils: pick audio from files failed: $e');
     }
     return <File>[];
   }
@@ -197,7 +197,7 @@ class MPAudioImportUtils {
     try {
       final Object? raw = await _androidAudioMultiPickerChannel.invokeMethod<Object?>(
         'pickMultipleAudio',
-        <String, String>{'title': '选择音频文件'},
+        <String, String>{'title': 'Choose audio files'},
       );
       if (raw == null) {
         return <File>[];
@@ -212,21 +212,21 @@ class MPAudioImportUtils {
         }
         final File file = File(item);
         if (!file.existsSync()) {
-          debugPrint('MPAudioImportUtils: 原生通道文件不存在: $item');
+          debugPrint('MPAudioImportUtils: native channel file missing: $item');
           continue;
         }
         if (_isAudioFormatSupported(item)) {
           out.add(file);
         } else {
-          debugPrint('MPAudioImportUtils: 原生通道跳过不支持的格式: $item');
+          debugPrint('MPAudioImportUtils: native channel skip unsupported: $item');
         }
       }
       return out;
     } on PlatformException catch (e) {
-      debugPrint('MPAudioImportUtils: Android 原生多选失败，回退 FilePicker: $e');
+      debugPrint('MPAudioImportUtils: Android native multi-pick failed, fallback FilePicker: $e');
       return null;
     } catch (e) {
-      debugPrint('MPAudioImportUtils: Android 原生多选异常，回退 FilePicker: $e');
+      debugPrint('MPAudioImportUtils: Android native multi-pick error, fallback FilePicker: $e');
       return null;
     }
   }
@@ -239,18 +239,18 @@ class MPAudioImportUtils {
     for (final PlatformFile pf in result.files) {
       final String? path = pf.path;
       if (path == null) {
-        debugPrint('MPAudioImportUtils: 跳过无路径的文件: ${pf.name}');
+        debugPrint('MPAudioImportUtils: skip file without path: ${pf.name}');
         continue;
       }
       final File file = File(path);
       if (!file.existsSync()) {
-        debugPrint('MPAudioImportUtils: 选择的文件不存在: $path');
+        debugPrint('MPAudioImportUtils: picked file missing: $path');
         continue;
       }
       if (_isAudioFormatSupported(path)) {
         out.add(file);
       } else {
-        debugPrint('MPAudioImportUtils: 不支持的音频格式: $path');
+        debugPrint('MPAudioImportUtils: unsupported audio format: $path');
       }
     }
     return out;
@@ -270,7 +270,7 @@ class MPAudioImportUtils {
           for (final XFile media in mediaList) {
             final File file = File(media.path);
             if (!await file.exists()) {
-              debugPrint('MPAudioImportUtils: 选择的文件不存在: ${media.path}');
+              debugPrint('MPAudioImportUtils: picked file missing: ${media.path}');
               continue;
             }
             if (_isAudioFormatSupported(media.path)) {
@@ -284,23 +284,23 @@ class MPAudioImportUtils {
         } on PlatformException catch (e) {
           if (e.code == 'photo_access_denied' ||
               e.code == 'photo_access_restricted') {
-            debugPrint('MPAudioImportUtils: 照片库权限被拒绝: ${e.message}');
+            debugPrint('MPAudioImportUtils: photo library access denied: ${e.message}');
             MPToastUtils.showMessage(
               'Photos access is required to import audio. Allow access in Settings if you previously denied it.',
               duration: const Duration(seconds: 5),
             );
             return <File>[];
           }
-          debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
+          debugPrint('MPAudioImportUtils: ImagePicker failed, fallback FilePicker: $e');
           return _pickMultipleAudioFromAlbumFallback();
         } catch (e) {
-          debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
+          debugPrint('MPAudioImportUtils: ImagePicker failed, fallback FilePicker: $e');
           return _pickMultipleAudioFromAlbumFallback();
         }
       }
       return _pickMultipleAudioFromAlbumFallback();
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 从相册选择音频失败: $e');
+      debugPrint('MPAudioImportUtils: pick audio from album failed: $e');
     }
     return <File>[];
   }
@@ -313,11 +313,12 @@ class MPAudioImportUtils {
         withData: false,
         allowCompression: false,
         allowMultiple: true,
-        dialogTitle: Platform.isIOS ? '选择音频文件' : '从相册选择音频',
+        dialogTitle:
+            Platform.isIOS ? 'Choose audio files' : 'Choose audio from library',
       );
       return _audioFilesFromPickerResult(result);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: FilePicker 选择失败: $e');
+      debugPrint('MPAudioImportUtils: FilePicker failed: $e');
     }
     return <File>[];
   }
@@ -327,7 +328,7 @@ class MPAudioImportUtils {
       final String extension = filePath.split('.').last.toLowerCase();
       return _audioExtensions.contains(extension);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 格式检查失败: $e');
+      debugPrint('MPAudioImportUtils: format check failed: $e');
       return false;
     }
   }
@@ -375,7 +376,7 @@ class MPAudioImportUtils {
       await sink.close();
       return targetFile.path;
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 同步沙盒失败: $e');
+      debugPrint('MPAudioImportUtils: sandbox sync failed: $e');
       return null;
     }
   }
@@ -410,7 +411,7 @@ class MPAudioImportUtils {
         await player.dispose();
       }
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 读取时长失败: $e');
+      debugPrint('MPAudioImportUtils: read duration failed: $e');
       return null;
     }
   }

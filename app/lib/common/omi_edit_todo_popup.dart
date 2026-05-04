@@ -727,7 +727,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                               : () async {
                                   final String tid = widget.params.todoId.trim();
                                   if (tid.isEmpty) {
-                                    MPToastUtils.showMessage('任务ID不能为空');
+                                    MPToastUtils.showMessage('Task ID cannot be empty.');
                                     return;
                                   }
                                   _syncDeadlineFromWhenAndTime();

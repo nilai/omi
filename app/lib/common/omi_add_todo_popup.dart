@@ -581,7 +581,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                             final String titleTrim =
                                 _titleController.text.trim();
                             if (titleTrim.isEmpty) {
-                              MPToastUtils.showMessage('请输入标题');
+                              MPToastUtils.showMessage('Please enter a title.');
                               return;
                             }
                             _unfocusKeyboard();
@@ -612,12 +612,12 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 );
                               } else {
                                 setState(() => _isSaving = false);
-                                MPToastUtils.showMessage('创建失败');
+                                MPToastUtils.showMessage('Creation failed.');
                               }
                             } catch (_) {
                               if (mounted) {
                                 setState(() => _isSaving = false);
-                                MPToastUtils.showMessage('创建失败');
+                                MPToastUtils.showMessage('Creation failed.');
                               }
                             }
                           },

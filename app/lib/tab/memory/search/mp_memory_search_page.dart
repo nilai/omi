@@ -81,7 +81,7 @@ class _MPMemorySearchViewState extends State<_MPMemorySearchView> {
                         );
                       case MPMemorySearchPhase.error:
                         return _ErrorView(
-                          message: state.errorMessage ?? '加载失败',
+                          message: state.errorMessage ?? 'Couldn\'t load.',
                           onRetry: () =>
                               context.read<MPMemorySearchCubit>().retry(),
                         );

@@ -420,7 +420,9 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     if (selected == MPShareExportKind.link) {
       final MPShareInsightResponse? resp = await shareInsight(MPShareInsightRequest(insightId: _item.id));
       if (resp == null || resp.baseResp.code != 0) {
-        MPToastUtils.showMessage(resp?.baseResp.message ?? '分享失败，请稍后重试');
+        MPToastUtils.showMessage(
+          resp?.baseResp.message ?? 'Share failed. Please try again later.',
+        );
         return;
       }
       if (!context.mounted) return;
@@ -447,7 +449,10 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
               }
             }
           } else {
-            MPToastUtils.showMessage(response?.baseResp.message ?? '删除失败，请稍后重试');
+            MPToastUtils.showMessage(
+              response?.baseResp.message ??
+                  'Couldn\'t delete. Please try again later.',
+            );
           }
         });
       },

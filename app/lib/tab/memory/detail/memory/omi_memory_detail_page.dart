@@ -111,7 +111,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                     final OmiMemoryDetailCubit cubit = context.read<OmiMemoryDetailCubit>();
                     final OmiMemoryDetailState s = cubit.state;
                     if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
-                      MPToastUtils.showMessage('请等待加载完成');
+                      MPToastUtils.showMessage('Please wait until loading finishes.');
                       break;
                     }
                     MPMemoryUpdateNameDialog.show(
@@ -150,7 +150,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
                   if (!context.mounted) return;
                   if (resp == null || resp.baseResp.code != 0) {
                     MPToastUtils.showMessage(
-                      resp?.baseResp.message ?? '删除失败，请稍后重试',
+                      resp?.baseResp.message ?? 'Couldn\'t delete. Please try again later.',
                     );
                     return;
                   }
@@ -244,7 +244,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
           );
           if (!context.mounted) return;
           if (!ok) {
-            MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
+            MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
             return;
           }
           context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(line);
@@ -270,7 +270,10 @@ class _OmiMemoryDetailView extends StatelessWidget {
           );
           if (!context.mounted) return;
           if (resp == null || resp.baseResp.code != 0) {
-            MPToastUtils.showMessage(resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试');
+            MPToastUtils.showMessage(
+              resp?.baseResp.message ??
+                  'Couldn\'t create memo. Please try again later.',
+            );
             return;
           }
           context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);

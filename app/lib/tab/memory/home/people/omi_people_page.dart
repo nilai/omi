@@ -72,7 +72,7 @@ class _OmiPeopleView extends StatelessWidget {
               type: MPTristateType.error,
               data: MPTristatePageData(
                 title: 'Unable to load people',
-                description: state.errorMessage ?? '请稍后重试',
+                description: state.errorMessage ?? 'Please try again later.',
                 onButtonPressed: () {
                   context.read<OmiPeopleCubit>().retry();
                 },

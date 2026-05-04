@@ -226,7 +226,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       _startElapsedTicker();
     } catch (e) {
       if (mounted) {
-        MPToastUtils.showMessage('无法开始录音: $e');
+        MPToastUtils.showMessage('Couldn\'t start recording: $e');
       }
       await _releaseRecorder(deleteFile: true);
       if (mounted) {
@@ -260,7 +260,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       }
     } catch (e) {
       if (mounted) {
-        MPToastUtils.showMessage('操作失败: $e');
+        MPToastUtils.showMessage('Action failed: $e');
         setState(() => _busy = false);
       }
     }
@@ -304,7 +304,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       }
     } catch (e) {
       if (mounted) {
-        MPToastUtils.showMessage('保存失败: $e');
+        MPToastUtils.showMessage('Couldn\'t save: $e');
         setState(() => _busy = false);
       }
       await _releaseRecorder(deleteFile: false);
@@ -320,7 +320,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     final File tempFile = File(outPath);
     if (!await tempFile.exists()) {
       if (mounted) {
-        MPToastUtils.showMessage('录音文件不存在');
+        MPToastUtils.showMessage('Recording file not found.');
         setState(() => _busy = false);
       }
       return;
@@ -329,7 +329,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     final String? savedPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
     if (savedPath == null || savedPath.isEmpty) {
       if (mounted) {
-        MPToastUtils.showMessage('保存到本地失败，请重试');
+        MPToastUtils.showMessage('Couldn\'t save locally. Please try again.');
         setState(() => _busy = false);
       }
       return;

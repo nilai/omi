@@ -121,7 +121,7 @@ class _OmiMemoDetailView extends StatelessWidget {
                     final OmiMemoryDetailState s = cubit.state;
                     if (s.phase != OmiMemoryDetailPhase.loaded ||
                         s.data == null) {
-                      MPToastUtils.showMessage('请等待加载完成');
+                      MPToastUtils.showMessage('Please wait until loading finishes.');
                       break;
                     }
                     MPMemoryUpdateNameDialog.show(
@@ -160,7 +160,7 @@ class _OmiMemoDetailView extends StatelessWidget {
                   if (!context.mounted) return;
                   if (resp == null || resp.baseResp.code != 0) {
                     MPToastUtils.showMessage(
-                      resp?.baseResp.message ?? '删除失败，请稍后重试',
+                      resp?.baseResp.message ?? 'Couldn\'t delete. Please try again later.',
                     );
                     return;
                   }
@@ -190,7 +190,7 @@ class _OmiMemoDetailView extends StatelessWidget {
                 type: MPTristateType.error,
                 data: MPTristatePageData(
                   title: 'Unable to load memo detail',
-                  description: state.errorMessage ?? '请稍后重试',
+                  description: state.errorMessage ?? 'Please try again later.',
                   onButtonPressed: () {
                     context.read<OmiMemoryDetailCubit>().retry();
                   },
@@ -251,10 +251,10 @@ class _OmiMemoDetailView extends StatelessWidget {
           );
           if (!context.mounted) return;
           if (!ok) {
-            MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
+            MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
             return;
           }
-          MPToastUtils.showMessage('Todo 创建成功');
+          MPToastUtils.showMessage('To-do created.');
         },
         onAddMemo: () async {
           final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
@@ -278,11 +278,11 @@ class _OmiMemoDetailView extends StatelessWidget {
           if (!context.mounted) return;
           if (resp == null || resp.baseResp.code != 0) {
             MPToastUtils.showMessage(
-              resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试',
+              resp?.baseResp.message ?? 'Couldn\'t create memo. Please try again later.',
             );
             return;
           }
-          MPToastUtils.showMessage('Memo 创建成功');
+          MPToastUtils.showMessage('Memo created.');
         },
         onAskAi: () async{
           final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;

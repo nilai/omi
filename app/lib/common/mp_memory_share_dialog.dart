@@ -27,7 +27,10 @@ class MPShareMemoryDialog {
     try {
       final String shareUrl = url.trim();
       if (shareUrl.isEmpty) {
-        _showErrorSnackBar(targetContext, '分享链接无法生成，请稍后重试。');
+        _showErrorSnackBar(
+          targetContext,
+          'Couldn\'t generate share link. Please try again later.',
+        );
         return;
       }
 
@@ -46,14 +49,17 @@ class MPShareMemoryDialog {
       if (PlatformService.isIOS) {
         await Share.share(
           shareUrl,
-          subject: '分享链接',
+          subject: 'Share link',
           sharePositionOrigin: sharePositionOrigin!,
         );
       } else {
-        await Share.share(shareUrl, subject: '分享链接');
+        await Share.share(shareUrl, subject: 'Share link');
       }
     } catch (_) {
-      _showErrorSnackBar(targetContext, '分享失败，请稍后重试。');
+      _showErrorSnackBar(
+          targetContext,
+          'Share failed. Please try again later.',
+        );
     }
   }
 

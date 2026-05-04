@@ -91,7 +91,7 @@ class _MPChooseSummaryTemplateSheetState
     if (!mounted) return;
     if (resp == null || resp.baseResp.code != 0) {
       MPToastUtils.showMessage(
-        '设置默认模板失败，请稍后重试',
+        'Couldn\'t set default template. Please try again later.',
         context: context,
       );
       return;

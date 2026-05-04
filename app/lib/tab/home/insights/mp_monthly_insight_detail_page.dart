@@ -152,7 +152,7 @@ class _MPMonthlyInsightBody extends StatelessWidget {
           type: MPTristateType.error,
           data: MPTristatePageData(
             title: 'Unable to load Monthly insight',
-            description: state.errorMessage ?? '请稍后重试',
+            description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
             onButtonPressed: () =>
                 context.read<MPInsightDetailCubit>().initData(),
@@ -1035,9 +1035,9 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                               setState(() {
                                 _addedIndexes.add(idx);
                               });
-                              MPToastUtils.showMessage('Todo 创建成功');
+                              MPToastUtils.showMessage('To-do created.');
                             } else {
-                              MPToastUtils.showMessage('Todo 创建失败');
+                              MPToastUtils.showMessage('Couldn\'t create to-do.');
                             }
                           },
                           child: Text(

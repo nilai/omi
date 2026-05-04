@@ -68,7 +68,7 @@ class _MPDailyInsightBody extends StatelessWidget {
           type: MPTristateType.error,
           data: MPTristatePageData(
             title: 'Unable to load Daily insight',
-            description: state.errorMessage ?? '请稍后重试',
+            description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
             onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
@@ -398,9 +398,9 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                                   setState(() {
                                     _addedIndexes.add(entry.key);
                                   });
-                                  MPToastUtils.showMessage('Todo 创建成功');
+                                  MPToastUtils.showMessage('To-do created.');
                                 } else {
-                                  MPToastUtils.showMessage('Todo 创建失败');
+                                  MPToastUtils.showMessage('Couldn\'t create to-do.');
                                 }
                               },
                               style: TextButton.styleFrom(
