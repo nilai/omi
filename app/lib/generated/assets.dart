@@ -2,6 +2,13 @@
 class Assets {
   Assets._();
 
+  static const String mpConnectDevice = 'assets/images/3x/mp_connect_device.png';
+  static const String mpMineCalendar = 'assets/images/3x/mp_mine_calendar.png';
+  static const String mpMineCircleUser = 'assets/images/3x/mp_mine_circle_user.png';
+  static const String mpMineCrown = 'assets/images/3x/mp_mine_crown.png';
+  static const String mpMineMic = 'assets/images/3x/mp_mine_mic.png';
+  static const String mpMineSparkles = 'assets/images/3x/mp_mine_sparkles.png';
+  static const String mpMineUsers = 'assets/images/3x/mp_mine_users.png';
   static const String omiActivity = 'assets/images/3x/omi_activity.png';
   static const String omiAll = 'assets/images/3x/omi_all.png';
   static const String omiArrowDown = 'assets/images/3x/omi_arrow_down.png';

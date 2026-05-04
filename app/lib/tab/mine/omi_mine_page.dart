@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../common/mp_navigation_bar.dart';
+import '../../generated/assets.dart';
 import '../../utils/omi_font_utils.dart';
+import '../../utils/omi_image_loader.dart';
 import 'mp_account_page.dart';
 import '../../utils/mp_toast_utils.dart';
 import '../../utils/omi_color_utils.dart';
@@ -30,9 +32,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
           variant: MPNavigationBarVariant.preferences,
           onPrimaryActionTap: _showComingSoon,
           onSecondaryActionTap: () {
-            Navigator.of(context).push<void>(
-              MaterialPageRoute<void>(builder: (_) => const MPAccountPage()),
-            );
+            Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const MPAccountPage()));
           },
         ),
       ),
@@ -47,28 +47,28 @@ class _OmiMinePageState extends State<OmiMinePage> {
             const SizedBox(height: 16),
             _buildAiConfigCard(
               circleColor: const Color(0xFF8D6EF9),
-              icon: Icons.auto_awesome,
+              icon: Assets.mpMineSparkles,
               title: 'AI Summary Style',
               subtitle: 'Meeting secretary · Autopilot',
             ),
             const SizedBox(height: 10),
             _buildAiConfigCard(
               circleColor: blueTextColor,
-              icon: Icons.groups_outlined,
+              icon: Assets.mpMineUsers,
               title: 'Expert Models',
               subtitle: 'Specialized assistants',
             ),
             const SizedBox(height: 10),
             _buildAiConfigCard(
               circleColor: greenTextColor,
-              icon: Icons.mic_none_rounded,
+              icon: Assets.mpMineMic,
               title: 'Voiceprint Recognition',
               subtitle: 'Speaker identification',
             ),
             const SizedBox(height: 10),
             _buildAiConfigCard(
               circleColor: const Color(0xFFAB7FD7),
-              icon: Icons.account_circle_outlined,
+              icon: Assets.mpMineCircleUser,
               title: 'AI Personalization',
               subtitle: 'Tailored AI experience',
             ),
@@ -104,11 +104,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
     return Text(
       'MemoPin helps you turn memory into meaning, and meaning into action.',
       textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 12,
-        height: 1.45,
-        color: secondTextColor.withValues(alpha: 0.9),
-      ),
+      style: TextStyle(fontSize: 12, height: 1.45, color: secondTextColor.withValues(alpha: 0.9)),
     );
   }
 
@@ -122,15 +118,13 @@ class _OmiMinePageState extends State<OmiMinePage> {
           Container(
             width: 42,
             height: 42,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFCC00),
-              shape: BoxShape.circle,
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFFFCC00), shape: BoxShape.circle),
             child: Center(
-              child: Image.asset(
-                'assets/images/3x/mp_mine_crown.png',
-                width: 20,
-                height: 16,
+              child: OmiImageLoader.localImg(
+                Assets.mpMineCrown,
+                width: 24,
+                height: 24,
+                color: Colors.white,
                 fit: BoxFit.contain,
               ),
             ),
@@ -142,11 +136,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
               children: [
                 Text(
                   'Basic Plan',
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
-                  ),
+                  style: TextStyle(fontSize: OmiFontSize.t7_16, fontWeight: OmiFontWeight.medium, color: mainTextColor),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -169,7 +159,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
   /// AI 配置单行
   Widget _buildAiConfigCard({
     required Color circleColor,
-    required IconData icon,
+    required String icon,
     required String title,
     required String subtitle,
   }) {
@@ -181,7 +171,9 @@ class _OmiMinePageState extends State<OmiMinePage> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(color: circleColor, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 21),
+            child: Center(
+              child: OmiImageLoader.localImg(icon, width: 24, height: 24, color: Colors.white, fit: BoxFit.contain),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -190,11 +182,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
-                  ),
+                  style: TextStyle(fontSize: OmiFontSize.t7_16, fontWeight: OmiFontWeight.medium, color: mainTextColor),
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -226,21 +214,9 @@ class _OmiMinePageState extends State<OmiMinePage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _integrationShortcut(
-                  onTap: _showComingSoon,
-                  child: _calendarGlyph(),
-                  label: 'Calendar',
-                ),
-                _integrationShortcut(
-                  onTap: _showComingSoon,
-                  child: _notionGlyph(),
-                  label: 'Notion',
-                ),
-                _integrationShortcut(
-                  onTap: _showComingSoon,
-                  child: _tasksGlyph(),
-                  label: 'Tasks',
-                ),
+                _integrationShortcut(onTap: _showComingSoon, child: _calendarGlyph(), label: 'Calendar'),
+                _integrationShortcut(onTap: _showComingSoon, child: _notionGlyph(), label: 'Notion'),
+                _integrationShortcut(onTap: _showComingSoon, child: _tasksGlyph(), label: 'Tasks'),
               ],
             ),
           ),
@@ -256,11 +232,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
                   children: [
                     Text(
                       'Manage',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: blueTextColor,
-                      ),
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: blueTextColor),
                     ),
                     Icon(Icons.chevron_right_rounded, size: 18, color: blueTextColor),
                   ],
@@ -273,11 +245,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
     );
   }
 
-  Widget _integrationShortcut({
-    required VoidCallback onTap,
-    required Widget child,
-    required String label,
-  }) {
+  Widget _integrationShortcut({required VoidCallback onTap, required Widget child, required String label}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -302,18 +270,14 @@ class _OmiMinePageState extends State<OmiMinePage> {
     return Container(
       width: 32,
       height: 32,
-      decoration: BoxDecoration(
-        color: blueTextColor,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Center(
-        child: Text(
-          '17',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-          ),
+      decoration: BoxDecoration(color: blueTextColor, borderRadius: BorderRadius.circular(8)),
+      child: Center(
+        child: OmiImageLoader.localImg(
+          Assets.mpMineCalendar,
+          width: 24,
+          height: 24,
+          color: Colors.white,
+          fit: BoxFit.contain,
         ),
       ),
     );
@@ -323,18 +287,11 @@ class _OmiMinePageState extends State<OmiMinePage> {
     return Container(
       width: 32,
       height: 32,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(8)),
       child: const Center(
         child: Text(
           'N',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -344,10 +301,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
     return Container(
       width: 32,
       height: 32,
-      decoration: const BoxDecoration(
-        color: Color(0xFFFF9500),
-        shape: BoxShape.circle,
-      ),
+      decoration: const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle),
       child: const Icon(Icons.check_rounded, color: Colors.white, size: 18),
     );
   }
@@ -363,13 +317,7 @@ class _OmiMinePageState extends State<OmiMinePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 16, offset: const Offset(0, 4))],
       ),
       child: Material(
         color: Colors.transparent,
