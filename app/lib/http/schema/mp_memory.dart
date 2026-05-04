@@ -446,6 +446,9 @@ class MPCreateRecordRequest {
   @JsonKey(name: 'record_file')
   final String recordFile;
 
+  @JsonKey(name: 'txt_file')
+  final String? txtFile;
+
   @JsonKey(name: 'create_at')
   final int createAt;
 
@@ -457,6 +460,7 @@ class MPCreateRecordRequest {
 
   MPCreateRecordRequest({
     required this.recordFile,
+    this.txtFile,
     required this.createAt,
     required this.duration,
     this.source,

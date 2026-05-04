@@ -516,9 +516,9 @@ class MPAudioUploadManager {
         final bool hasTxt = txtCompanion != null && await txtCompanion.exists();
 
         _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 0);
-
+        String? txtUri;
         if (hasTxt) {
-          final String? txtUri = await uploadService.uploadRecordFile(
+          txtUri = await uploadService.uploadRecordFile(
             txtCompanion,
             contentType: 'text/plain; charset=utf-8',
             onProgress: (int current, int total) {
@@ -549,7 +549,13 @@ class MPAudioUploadManager {
         }
 
         final MPCreateRecordResponse? created = await createRecord(
-          MPCreateRecordRequest(recordFile: audioUri, createAt: createAtSec, duration: effectiveDurSec, source: source),
+          MPCreateRecordRequest(
+            recordFile: audioUri,
+            createAt: createAtSec,
+            duration: effectiveDurSec,
+            source: source,
+            txtFile: txtUri,
+          ),
         );
         if (created == null || created.baseResp.code != 0) {
           MPToastUtils.showMessage(created?.baseResp.message ?? 'Failed to create record.');
