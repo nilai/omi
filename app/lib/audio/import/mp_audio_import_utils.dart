@@ -56,7 +56,7 @@ class MPAudioImportUtils {
     if (picked.isEmpty) {
       return null;
     }
-    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+    return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
   /// 从相册选择（**支持多选**，iOS 优先 [ImagePicker.pickMultipleMedia]）并复制到应用沙盒。
@@ -67,52 +67,47 @@ class MPAudioImportUtils {
     if (picked.isEmpty) {
       return null;
     }
-    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+    return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
-  /// 将沙盒内一条音频上传并创建远端记录（与录音上传链路一致）。
+  /// 按路径列表逐个上传：使用 [MPAudioUploadManager.uploadMultipleLocalRecords] + [localRecordsAlreadyAdded]。
   ///
-  /// [batchTotal] / [batchIndex] 用于首页多文件导入时的进度条批次展示。
-  static Future<void> uploadImportedSandboxFile(
-    String sandboxPath, {
-    int batchTotal = 1,
-    int batchIndex = 1,
-  }) async {
-    final File file = File(sandboxPath);
-    if (!await file.exists()) {
+  /// 须与 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 配套（二者已在同步后写入本地索引）。
+  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths, {String source = 'MobilePhone'}) async {
+    final List<MPAudioUploadLocalItem> items = <MPAudioUploadLocalItem>[];
+    for (final String sandboxPath in sandboxPaths) {
+      final File file = File(sandboxPath);
+      if (!await file.exists()) {
+        continue;
+      }
+      final int? dur = await _getAudioDurationSeconds(sandboxPath);
+      final int durationSec = (dur != null && dur > 0) ? dur : 1;
+      final int createAt =
+          (await file.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      items.add(
+        MPAudioUploadLocalItem(
+          localFile: file,
+          durationSec: durationSec,
+          createAt: createAt,
+          source: source,
+        ),
+      );
+    }
+    if (items.isEmpty) {
       return;
     }
-    final int? dur = await _getAudioDurationSeconds(sandboxPath);
-    final int durationSec = (dur != null && dur > 0) ? dur : 1;
-    final int createAt = (await file.lastModified()).millisecondsSinceEpoch ~/ 1000;
-    await MPAudioUploadManager.instance.uploadLocalRecord(
-      localFile: file,
-      durationSec: durationSec,
-      createAt: createAt,
-      source: 'MobilePhone',
-      batchTotal: batchTotal,
-      batchIndex: batchIndex,
+    await MPAudioUploadManager.instance.uploadMultipleLocalRecords(
+      items: items,
+      rightNowTranscribe: false,
+      localRecordsAlreadyAdded: true,
     );
   }
 
-  /// 批量上传已由 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 写入沙盒的路径。
-  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths) async {
-    final int n = sandboxPaths.length;
-    if (n == 0) {
-      return;
-    }
-    for (int i = 0; i < n; i++) {
-      await uploadImportedSandboxFile(
-        sandboxPaths[i],
-        batchTotal: n,
-        batchIndex: i + 1,
-      );
-    }
-  }
-
-  static Future<List<String>> _syncPickedFilesToSandbox(
+  /// 逐个：同步到沙盒 → [MPAudioUploadManager.registerLocalRecordBeforeUpload]。
+  static Future<List<String>> _syncEachPickedFileToSandboxAndRegister(
     List<File> picked, {
     required MPAudioImportCopyProgress onProgress,
+    String source = 'MobilePhone',
   }) async {
     final int total = picked.length;
     final List<String> out = <String>[];
@@ -129,10 +124,27 @@ class MPAudioImportUtils {
           );
         },
       );
-      if (path != null) {
-        onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-        out.add(path);
+      if (path == null) {
+        continue;
       }
+      final File sandboxFile = File(path);
+      final int? dur = await _getAudioDurationSeconds(path);
+      final int durationSec = (dur != null && dur > 0) ? dur : 1;
+      final int createAt =
+          (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      final record =
+          await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
+        localFile: sandboxFile,
+        durationSec: durationSec,
+        createAt: createAt,
+        source: source,
+      );
+      if (record == null) {
+        debugPrint('MPAudioImportUtils: 登记本地记录失败，跳过: $path');
+        continue;
+      }
+      onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+      out.add(path);
     }
     return out;
   }

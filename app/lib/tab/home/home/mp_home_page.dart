@@ -12,6 +12,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
@@ -59,7 +60,11 @@ class _MPHomePageState extends State<MPHomePage> {
         return;
       }
       if (paths != null && paths.isNotEmpty) {
-        await MPAudioImportUtils.uploadImportedSandboxFiles(paths);
+        // await MPAudioImportUtils.uploadImportedSandboxFiles(paths, source: 'MobilePhone');
+        await MPAudioUploadManager.instance.uploadAllRecordingFiles(
+          source: 'MobilePhone',
+          rightNowTranscribe: false,
+        );
       }
     } finally {
       if (mounted) {

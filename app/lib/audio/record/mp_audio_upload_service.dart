@@ -25,13 +25,26 @@ class MPAudioUploadService {
   Future<String?> uploadMPAudio(
     File audioFile, {
     Function(int current, int total)? onProgress,
+  }) =>
+      uploadRecordFile(
+        audioFile,
+        contentType: getAudioMimeType(audioFile.path),
+        onProgress: onProgress,
+      );
+
+  /// 使用指定 [contentType] 走预签名 URL + S3（与 [uploadMPAudio] 相同步骤）。
+  ///
+  /// 例如 companion `.txt` 使用 `text/plain; charset=utf-8`。
+  Future<String?> uploadRecordFile(
+    File file, {
+    required String contentType,
+    Function(int current, int total)? onProgress,
   }) async {
     try {
-      // 获取文件的 MIME 类型
-      final contentType = getAudioMimeType(audioFile.path);
-      debugPrint('MPAudioUploadService: uploading ${audioFile.path} with type $contentType');
+      debugPrint(
+        'MPAudioUploadService: uploading ${file.path} with type $contentType',
+      );
 
-      // 步骤 1: 获取预签名 URL
       onProgress?.call(1, 3);
       final presignedUrl = await _getPresignedUrlWithRetry(contentType);
       if (presignedUrl == null) {
@@ -40,11 +53,10 @@ class MPAudioUploadService {
       }
       debugPrint('MPAudioUploadService: got presigned URL: ${presignedUrl.uri}');
 
-      // 步骤 2: 上传文件到 S3
       onProgress?.call(2, 3);
       final uploadSuccess = await _uploadToS3WithRetry(
         presignedUrl.uploadUrl,
-        audioFile,
+        file,
         contentType,
       );
       if (!uploadSuccess) {
@@ -52,6 +64,7 @@ class MPAudioUploadService {
         return null;
       }
       debugPrint('MPAudioUploadService: uploaded to S3 successfully');
+      onProgress?.call(3, 3);
       return presignedUrl.uri;
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during upload: $e');
