@@ -12,8 +12,8 @@ import java.io.File
 import java.io.FileOutputStream
 
 /**
- * 使用 [Intent.ACTION_GET_CONTENT] + [Intent.EXTRA_ALLOW_MULTIPLE] 打开系统选择器，
- * 避免部分 ROM 上 [Intent.ACTION_OPEN_DOCUMENT]（file_picker 默认）忽略多选的问题。
+ * Opens the system picker with [Intent.ACTION_GET_CONTENT] + [Intent.EXTRA_ALLOW_MULTIPLE],
+ * avoiding multi-select being ignored on some ROMs for [Intent.ACTION_OPEN_DOCUMENT] (file_picker default).
  */
 object MpAndroidAudioMultiPicker {
     private const val CHANNEL = "ai.memopin.app/mp_android_audio_multi_picker"
@@ -32,7 +32,7 @@ object MpAndroidAudioMultiPicker {
                 return@setMethodCallHandler
             }
             pendingResult = result
-            val title = call.argument<String>("title") ?: "选择音频文件"
+            val title = call.argument<String>("title") ?: "Choose audio files"
             launchPicker(activity, title)
         }
     }

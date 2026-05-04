@@ -1,27 +1,27 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <!-- 相册/媒体读取权限：Android 13+ -->
+    <!-- Gallery / media read (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <!-- 音频导入（与 permission_handler Permission.audio / READ_MEDIA_AUDIO 对齐）：Android 13+ -->
+    <!-- Audio import (aligned with permission_handler Permission.audio / READ_MEDIA_AUDIO) (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
-    <!-- 本地文件导入读取权限：Android 12 及以下 -->
+    <!-- Local file import read access (Android 12 and below) -->
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- BLE：flutter_blue_plus 不在插件内合并权限，须在应用清单中声明。
-         说明见 https://pub.dev/packages/flutter_blue_plus#add-permissions-for-android-no-location -->
+    <!-- BLE: flutter_blue_plus does not merge permissions in the plugin; declare them in the app manifest.
+         See https://pub.dev/packages/flutter_blue_plus#add-permissions-for-android-no-location -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
 
-    <!-- Android 12+ 蓝牙扫描/连接（运行时由 PermissionManager / 代码申请） -->
+    <!-- Android 12+ Bluetooth scan/connect (requested at runtime by PermissionManager / app code) -->
     <uses-permission
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
-    <!-- Android 11 及以下旧版蓝牙与扫描所需权限 -->
+    <!-- Legacy Bluetooth and scan permissions for Android 11 and below -->
     <uses-permission
         android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
