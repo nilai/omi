@@ -27,9 +27,9 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
-	<string>MemoPin需要使用蓝牙来扫描并连接您的设备</string>
+	<string>MemoPin uses Bluetooth to scan for and connect to your devices.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>MemoPin要使用您的麦克风权限</string>
+	<string>MemoPin needs microphone access to record audio.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
