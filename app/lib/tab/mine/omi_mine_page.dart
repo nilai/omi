@@ -126,11 +126,12 @@ class _OmiMinePageState extends State<OmiMinePage> {
               color: Color(0xFFFFCC00),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: SizedBox(
+            child: Center(
+              child: Image.asset(
+                'assets/images/3x/mp_mine_crown.png',
                 width: 20,
                 height: 16,
-                child: CustomPaint(painter: _MPPlanCrownPainter()),
+                fit: BoxFit.contain,
               ),
             ),
           ),
@@ -380,55 +381,4 @@ class _OmiMinePageState extends State<OmiMinePage> {
       ),
     );
   }
-}
-
-class _MPPlanCrownPainter extends CustomPainter {
-  const _MPPlanCrownPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const Color crownColor = Colors.white;
-    final Paint stroke = Paint()
-      ..color = crownColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.9
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round
-      ..isAntiAlias = true;
-
-    final Paint dot = Paint()
-      ..color = crownColor
-      ..style = PaintingStyle.fill
-      ..isAntiAlias = true;
-
-    final double w = size.width;
-    final double h = size.height;
-
-    final double left = w * 0.1;
-    final double right = w * 0.9;
-    final double baseTop = h * 0.62;
-    final double baseBottom = h * 0.84;
-
-    final Path crown = Path()
-      ..moveTo(left, baseTop)
-      ..lineTo(w * 0.24, h * 0.42)
-      ..lineTo(w * 0.42, h * 0.58)
-      ..lineTo(w * 0.5, h * 0.3)
-      ..lineTo(w * 0.58, h * 0.58)
-      ..lineTo(w * 0.76, h * 0.42)
-      ..lineTo(right, baseTop)
-      ..lineTo(right - 0.6, baseBottom)
-      ..lineTo(left + 0.6, baseBottom)
-      ..close();
-
-    canvas.drawPath(crown, stroke);
-
-    final double dotRadius = w * 0.055;
-    canvas.drawCircle(Offset(w * 0.24, h * 0.32), dotRadius, dot);
-    canvas.drawCircle(Offset(w * 0.5, h * 0.2), dotRadius, dot);
-    canvas.drawCircle(Offset(w * 0.76, h * 0.32), dotRadius, dot);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
