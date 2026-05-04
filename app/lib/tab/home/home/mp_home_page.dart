@@ -47,15 +47,11 @@ class _MPHomePageState extends State<MPHomePage> {
     try {
       _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
       final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
-        onProgress: ({
-          required int fileIndex,
-          required int fileTotal,
-          required int progressPercent,
-        }) {
+        onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
           _cubit.showImportingStatus(
             progressPercent,
-            currentFile: fileTotal > 1 ? fileIndex : null,
-            totalFiles: fileTotal > 1 ? fileTotal : null,
+            currentFile: fileIndex,
+            totalFiles:  fileTotal,
           );
         },
       );
@@ -281,8 +277,12 @@ class _MPHomePageState extends State<MPHomePage> {
                           _RecentMemoryCard(
                             memories: state.recentMemories,
                             onViewAll: widget.onViewAllMemories,
-                            onMemoryTap: (MPHomeMemoryItem m) =>
-                                MPMemoryDetailPageHelper.navigateToDetailPage(context, m.id, m.type, createAt: m.createAt),
+                            onMemoryTap: (MPHomeMemoryItem m) => MPMemoryDetailPageHelper.navigateToDetailPage(
+                              context,
+                              m.id,
+                              m.type,
+                              createAt: m.createAt,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           _InsightsCard(
@@ -787,8 +787,7 @@ class _InsightsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String titleLine =
-        insightOverview.title.trim().isEmpty ? 'Insights' : insightOverview.title.trim();
+    final String titleLine = insightOverview.title.trim().isEmpty ? 'Insights' : insightOverview.title.trim();
     final String sub = insightOverview.subTitle.trim();
     final String body = insightOverview.content.trim();
     final bool hasBody = body.isNotEmpty;

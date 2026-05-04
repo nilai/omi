@@ -22,13 +22,13 @@ class MPHomeAudioStatus {
 
   final MPHomeAudioStatusType type;
 
-  /// 同步：当前**正在上传的这一条文件**的进度 0–100（非整批累加）；第 N 条完成后，第 N+1 条从 0 再到 100。
-  /// 导入：导入单文件的进度 0–100。
+  /// 导入 / 同步流程中保留字段（例如与旧上报对齐）；首页状态条进度展示为动画条，不再绑定该百分比。
   final int? progress;
 
-  /// 多文件同步时当前条序号（从 1 开始），与 [progress] 表示的「当前条」一致。
+  /// 当前正在处理的文件序号（从 1 开始），与 [totalFiles] 组成状态条右侧 **x/y** 展示。
   final int? currentFile;
 
+  /// 本批次文件总数，与 [currentFile] 组成 **x/y**。
   final int? totalFiles;
 }
 
