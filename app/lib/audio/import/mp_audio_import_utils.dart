@@ -40,8 +40,13 @@ class MPAudioImportUtils {
     'aac',
     'flac',
     'ogg',
+    'oga',
     'opus',
   ];
+
+  static const MethodChannel _androidAudioMultiPickerChannel = MethodChannel(
+    'ai.memopin.app/mp_android_audio_multi_picker',
+  );
 
   /// 从系统文件选择（**支持多选**）并复制到应用沙盒。
   static Future<List<String>?> pickFromFileWithProgress({
@@ -150,8 +155,14 @@ class MPAudioImportUtils {
     return fileName;
   }
 
-  /// Android：`FilePicker` 使用系统文档选择器（SAF），[allowMultiple] 允许多选音频。
+  /// Android：优先走原生 [ACTION_GET_CONTENT] 多选（绕开部分 ROM 上 SAF 忽略多选），失败则回退 [FilePicker]。
   static Future<List<File>> _pickMultipleAudioFromFile() async {
+    if (Platform.isAndroid) {
+      final List<File>? viaNative = await _pickMultipleAudioFromAndroidChannel();
+      if (viaNative != null) {
+        return viaNative;
+      }
+    }
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -166,6 +177,46 @@ class MPAudioImportUtils {
       debugPrint('MPAudioImportUtils: 从文件选择音频失败: $e');
     }
     return <File>[];
+  }
+
+  /// 返回非 null：用户结束原生选择（含取消时的空列表）。
+  /// 返回 null：通道异常，应回退 [FilePicker]。
+  static Future<List<File>?> _pickMultipleAudioFromAndroidChannel() async {
+    try {
+      final Object? raw = await _androidAudioMultiPickerChannel.invokeMethod<Object?>(
+        'pickMultipleAudio',
+        <String, String>{'title': '选择音频文件'},
+      );
+      if (raw == null) {
+        return <File>[];
+      }
+      if (raw is! List<dynamic>) {
+        return <File>[];
+      }
+      final List<File> out = <File>[];
+      for (final Object? item in raw) {
+        if (item is! String) {
+          continue;
+        }
+        final File file = File(item);
+        if (!file.existsSync()) {
+          debugPrint('MPAudioImportUtils: 原生通道文件不存在: $item');
+          continue;
+        }
+        if (_isAudioFormatSupported(item)) {
+          out.add(file);
+        } else {
+          debugPrint('MPAudioImportUtils: 原生通道跳过不支持的格式: $item');
+        }
+      }
+      return out;
+    } on PlatformException catch (e) {
+      debugPrint('MPAudioImportUtils: Android 原生多选失败，回退 FilePicker: $e');
+      return null;
+    } catch (e) {
+      debugPrint('MPAudioImportUtils: Android 原生多选异常，回退 FilePicker: $e');
+      return null;
+    }
   }
 
   static List<File> _audioFilesFromPickerResult(FilePickerResult? result) {
