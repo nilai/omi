@@ -21,19 +21,17 @@ typedef MPBleDeviceImportCopyProgress = void Function({
 
 class _MPBleSyncedSandboxEntry {
   const _MPBleSyncedSandboxEntry({
-    required this.deviceFileName,
     required this.sandboxPath,
     required this.durationSec,
     required this.createAtSec,
   });
 
-  final String deviceFileName;
   final String sandboxPath;
   final int durationSec;
   final int createAtSec;
 }
 
-/// MemoPin 设备录音：拉列表 → BLE 导出至沙盒并登记 → 逐条上传 → 成功后删设备端文件。
+/// MemoPin 设备录音：拉列表 → BLE 导出至沙盒并登记 → 随即删设备端文件 → 逐条上传。
 class MPBleDeviceAudioImportUtils {
   MPBleDeviceAudioImportUtils._();
 
@@ -71,6 +69,7 @@ class MPBleDeviceAudioImportUtils {
       MPToastUtils.showMessage('Starting sync from device...');
       final int total = files.length;
       final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
+      // bool announcedRemovingFromDevice = false;
 
       for (int i = 0; i < total; i++) {
         if (!await transport.isConnected()) {
@@ -128,10 +127,25 @@ class MPBleDeviceAudioImportUtils {
             continue;
           }
 
+          if (await transport.isConnected()) {
+            // if (!announcedRemovingFromDevice) {
+            //   MPToastUtils.showMessage('Removing synced files from device...');
+            //   announcedRemovingFromDevice = true;
+            // }
+            // final bool deleted =
+            //     await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, fi.name);
+            // if (!deleted) {
+            //   MPToastUtils.showMessage('Could not delete on device: ${fi.name}');
+            // }
+          } else {
+            MPToastUtils.showMessage(
+              'Bluetooth disconnected; skipped device delete for ${fi.name}.',
+            );
+          }
+
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
           synced.add(
             _MPBleSyncedSandboxEntry(
-              deviceFileName: fi.name,
               sandboxPath: path,
               durationSec: durationSec,
               createAtSec: createAtSec,
@@ -148,7 +162,6 @@ class MPBleDeviceAudioImportUtils {
       }
 
       MPToastUtils.showMessage('Uploading recordings...');
-      bool announcedDeviceDelete = false;
       for (int u = 0; u < synced.length; u++) {
         if (!await transport.isConnected()) {
           MPToastUtils.showMessage('Bluetooth disconnected during upload.');
@@ -178,19 +191,9 @@ class MPBleDeviceAudioImportUtils {
           localRecordsAlreadyAdded: true,
         );
 
-        if (created != null && created.baseResp.code == 0) {
-          if (!announcedDeviceDelete) {
-            MPToastUtils.showMessage('Removing synced files from device...');
-            announcedDeviceDelete = true;
-          }
-          final bool deleted =
-              await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, e.deviceFileName);
-          if (!deleted) {
-            MPToastUtils.showMessage('Could not delete on device: ${e.deviceFileName}');
-          }
-        } else {
+        if (created == null || created.baseResp.code != 0) {
           MPToastUtils.showMessage(
-            created?.baseResp.message ?? 'Upload failed, device file kept.',
+            created?.baseResp.message ?? 'Upload failed; local copy kept.',
           );
         }
       }
