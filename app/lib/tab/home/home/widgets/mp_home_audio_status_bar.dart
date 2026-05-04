@@ -25,9 +25,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
       child: Container(
         width: double.infinity,
         decoration: const BoxDecoration(
-          border: Border(
-            bottom: BorderSide(color: Color(0xFFE8ECEF)),
-          ),
+          border: Border(bottom: BorderSide(color: Color(0xFFE8ECEF))),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
@@ -35,11 +33,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.only(top: 2),
-              child: Icon(
-                Icons.mic_none_outlined,
-                size: 18,
-                color: isRecording ? redColor : blueTextColor,
-              ),
+              child: Icon(Icons.mic_none_outlined, size: 18, color: isRecording ? redColor : blueTextColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -57,10 +51,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   if (showImportSyncRow)
-                    _ImportSyncProgressRow(
-                      currentFile: status.currentFile,
-                      totalFiles: status.totalFiles,
-                    ),
+                    _ImportSyncProgressRow(currentFile: status.currentFile, totalFiles: status.totalFiles),
                   if (isRecording) const _RecordingPulseBar(),
                 ],
               ),
@@ -76,18 +67,18 @@ class MPHomeAudioStatusBar extends StatelessWidget {
       case MPHomeAudioStatusType.recording:
         return 'MemoPin is recording';
       case MPHomeAudioStatusType.syncing:
-        final int? t = status.totalFiles;
-        final int? c = status.currentFile;
-        if (t != null && t > 1 && c != null) {
-          return 'Syncing recordings ($c of $t)';
-        }
+        // final int? t = status.totalFiles;
+        // final int? c = status.currentFile;
+        // if (t != null && t > 1 && c != null) {
+        //   return 'Syncing recordings ($c of $t)';
+        // }
         return 'Syncing recordings from MemoPin';
       case MPHomeAudioStatusType.importing:
-        final int? t = status.totalFiles;
-        final int? c = status.currentFile;
-        if (t != null && t > 1 && c != null) {
-          return 'Importing audio files ($c of $t)';
-        }
+        // final int? t = status.totalFiles;
+        // final int? c = status.currentFile;
+        // if (t != null && t > 1 && c != null) {
+        //   return 'Importing audio files ($c of $t)';
+        // }
         return 'Importing audio file';
     }
   }
@@ -174,7 +165,7 @@ class _ImportSyncProgressRowState extends State<_ImportSyncProgressRow> with Sin
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 24),
         Text(
           _fileIndexLabel(),
           textAlign: TextAlign.right,
@@ -203,10 +194,7 @@ class _RecordingPulseBarState extends State<_RecordingPulseBar> with SingleTicke
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
   }
 
   @override
