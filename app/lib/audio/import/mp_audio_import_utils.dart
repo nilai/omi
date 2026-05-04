@@ -333,6 +333,32 @@ class MPAudioImportUtils {
     }
   }
 
+  /// 将设备导出字节写入沙盒音频目录（路径规则与 [_syncAudioToSandbox] 一致）。
+  static Future<String?> writeExportBytesToSandbox({
+    required List<int> bytes,
+    required String originalFileName,
+  }) async {
+    try {
+      if (bytes.isEmpty) {
+        return null;
+      }
+      final Directory dir = await _getPersistentAudioDirectory();
+      final String safeFileName = _generateSafeFileName(originalFileName);
+      final String targetPath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final File targetFile = File(targetPath);
+      await targetFile.writeAsBytes(bytes, flush: true);
+      return targetFile.path;
+    } catch (e) {
+      debugPrint('MPAudioImportUtils: writeExportBytesToSandbox failed: $e');
+      return null;
+    }
+  }
+
+  /// 读取本地音频文件时长（秒）；失败返回 `null`。
+  static Future<int?> readAudioDurationSeconds(String filePath) =>
+      _getAudioDurationSeconds(filePath);
+
   static Future<Directory> _getPersistentAudioDirectory() async {
     final Directory appDir = await getApplicationDocumentsDirectory();
     final Directory dir = Directory('${appDir.path}/$_sandboxAudioDirName');

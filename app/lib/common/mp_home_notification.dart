@@ -58,6 +58,8 @@ class MPHomeNotification {
       StreamController<MPHomeTodoDonePayload>.broadcast();
   static final StreamController<MPHomeTodoDeletedPayload> _todoDeletedBus =
       StreamController<MPHomeTodoDeletedPayload>.broadcast();
+  static final StreamController<void> _bleConnectedSuccessBus =
+      StreamController<void>.broadcast();
 
   static Stream<void> get homeRefreshEvents => _homeRefreshBus.stream;
   static Stream<MPHomeUploadProgressPayload> get uploadProgressEvents =>
@@ -68,6 +70,8 @@ class MPHomeNotification {
       _todoDoneBus.stream;
   static Stream<MPHomeTodoDeletedPayload> get todoDeletedEvents =>
       _todoDeletedBus.stream;
+  static Stream<void> get bleConnectedSuccessEvents =>
+      _bleConnectedSuccessBus.stream;
 
   static void _emitHomeRefresh() {
     if (!_homeRefreshBus.isClosed) {
@@ -99,6 +103,12 @@ class MPHomeNotification {
     }
   }
 
+  static void _emitBleConnectedSuccess() {
+    if (!_bleConnectedSuccessBus.isClosed) {
+      _bleConnectedSuccessBus.add(null);
+    }
+  }
+
   /// 任意页面主动调用：通知首页刷新列表数据。
   static void notifyHomeListRefresh() => _emitHomeRefresh();
 
@@ -117,6 +127,9 @@ class MPHomeNotification {
   /// Todo 操作调用：通知首页某条 todo 已删除。
   static void notifyTodoDeleted(MPHomeTodoDeletedPayload payload) =>
       _emitTodoDeleted(payload);
+
+  /// BLE 与其它入口在 **连接成功并可使用 GATT** 后调用：首页订阅以触发设备文件导入等。
+  static void notifyBleConnectedSuccess() => _emitBleConnectedSuccess();
 
   /// 首页监听：收到后执行 `loadData` 刷新。
   static StreamSubscription<void> listenHomeListRefresh(
@@ -151,5 +164,12 @@ class MPHomeNotification {
     void Function(MPHomeTodoDeletedPayload payload) onDeleted,
   ) {
     return todoDeletedEvents.listen(onDeleted);
+  }
+
+  /// 首页监听：MemoPin 类设备 BLE 连接成功（背景会话已就绪）。
+  static StreamSubscription<void> listenBleConnectedSuccess(
+    void Function() onBleConnected,
+  ) {
+    return bleConnectedSuccessEvents.listen((_) => onBleConnected());
   }
 }

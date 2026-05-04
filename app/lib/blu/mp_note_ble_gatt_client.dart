@@ -36,6 +36,23 @@ class MPNoteBleFilePayloadAssembler {
     }
     return out;
   }
+
+  /// 流传输静止后调用：输出 Opus 模式下末尾不足一整帧的字节（不含 txt 透传模式）。
+  List<List<int>> flushTail() {
+    if (_rawTxt) {
+      return <List<int>>[];
+    }
+    if (_buffer.length <= _seqSize) {
+      _buffer.clear();
+      return <List<int>>[];
+    }
+    if (_buffer.length < _chunkSize) {
+      final List<int> tail = List<int>.from(_buffer.sublist(_seqSize));
+      _buffer.clear();
+      return tail.isEmpty ? <List<int>>[] : <List<int>>[tail];
+    }
+    return <List<int>>[];
+  }
 }
 
 enum _AwaitKind { none, generic, fileList }
@@ -155,6 +172,15 @@ class MPNoteBleGattClient {
   void prepareFileExport(String fileName) {
     _fileAssembler = MPNoteBleFilePayloadAssembler(fileName: fileName);
     _fileAssembler!.reset();
+  }
+
+  /// 导出流判定结束后调用，拼接 [MPNoteBleFilePayloadAssembler.flushTail]。
+  List<List<int>> flushFileExportAssemblerTail() {
+    final MPNoteBleFilePayloadAssembler? assembler = _fileAssembler;
+    if (assembler == null) {
+      return <List<int>>[];
+    }
+    return assembler.flushTail();
   }
 
   /// `recordFile` 特征重组后的导出数据块（须先 [prepareFileExport] 并成功 [requestFileExport]）。

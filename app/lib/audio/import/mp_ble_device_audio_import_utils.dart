@@ -1,0 +1,271 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
+import '../../blu/ble_transport.dart';
+import '../../blu/mp_bluetooth_connection_helper.dart';
+import '../../blu/mp_note_ble_gatt_client.dart';
+import '../../blu/note_device.dart';
+import '../../http/schema/mp_memory.dart';
+import '../../utils/mp_toast_utils.dart';
+import '../record/mp_audio_upload_manger.dart';
+import 'mp_audio_import_utils.dart';
+
+/// BLE 设备导出时的复制进度（当前文件序号、总数、0–100）。
+typedef MPBleDeviceImportCopyProgress = void Function({
+  required int fileIndex,
+  required int fileTotal,
+  required int progressPercent,
+});
+
+class _MPBleSyncedSandboxEntry {
+  const _MPBleSyncedSandboxEntry({
+    required this.deviceFileName,
+    required this.sandboxPath,
+    required this.durationSec,
+    required this.createAtSec,
+  });
+
+  final String deviceFileName;
+  final String sandboxPath;
+  final int durationSec;
+  final int createAtSec;
+}
+
+/// MemoPin 设备录音：拉列表 → BLE 导出至沙盒并登记 → 逐条上传 → 成功后删设备端文件。
+class MPBleDeviceAudioImportUtils {
+  MPBleDeviceAudioImportUtils._();
+
+  static const String _kSourceMemoPin = 'MemoPin';
+  static const Duration _kIdleDone = Duration(seconds: 2);
+
+  static Duration _maxExportWaitForFile(NoteFileInfo info) {
+    final int sec = info.durationSeconds;
+    if (sec <= 0) {
+      return const Duration(seconds: 120);
+    }
+    final int capped = (sec * 5).clamp(60, 600);
+    return Duration(seconds: capped);
+  }
+
+  /// 对 [transport] 执行完整导入流水线（内含各阶段 Toast）。
+  static Future<void> syncUploadAndDeleteDeviceFiles({
+    required BleTransport transport,
+    required MPBleDeviceImportCopyProgress onSyncProgress,
+  }) async {
+    try {
+      if (!await transport.isConnected()) {
+        MPToastUtils.showMessage('Bluetooth is not connected.');
+        return;
+      }
+
+      MPToastUtils.showMessage('Fetching file list from device...');
+      final List<NoteFileInfo> files =
+          await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
+      if (files.isEmpty) {
+        MPToastUtils.showMessage('No files on the device.');
+        return;
+      }
+
+      MPToastUtils.showMessage('Starting sync from device...');
+      final int total = files.length;
+      final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
+
+      for (int i = 0; i < total; i++) {
+        if (!await transport.isConnected()) {
+          MPToastUtils.showMessage('Bluetooth disconnected during sync.');
+          break;
+        }
+
+        final NoteFileInfo fi = files[i];
+        MPToastUtils.showMessage('Syncing file ${i + 1}/$total...');
+        onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
+
+        final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+        try {
+          final List<int>? bytes =
+              await _collectExportPayloads(client: client, fileName: fi.name, info: fi);
+          if (bytes == null || bytes.isEmpty) {
+            MPToastUtils.showMessage('Failed to sync: ${fi.name}');
+            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            continue;
+          }
+
+          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 70);
+
+          final String? path = await MPAudioImportUtils.writeExportBytesToSandbox(
+            bytes: bytes,
+            originalFileName: fi.name,
+          );
+          if (path == null) {
+            MPToastUtils.showMessage('Failed to save file: ${fi.name}');
+            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            continue;
+          }
+
+          final File sandboxFile = File(path);
+          final int? durAudio =
+              await MPAudioImportUtils.readAudioDurationSeconds(path);
+          int durationSec =
+              (durAudio != null && durAudio > 0) ? durAudio : fi.durationSeconds;
+          if (durationSec <= 0) {
+            durationSec = 1;
+          }
+          final int createAtSec =
+              (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+
+          final record =
+              await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
+            localFile: sandboxFile,
+            durationSec: durationSec,
+            createAt: createAtSec,
+            source: _kSourceMemoPin,
+          );
+          if (record == null) {
+            MPToastUtils.showMessage('Failed to register record: ${fi.name}');
+            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            continue;
+          }
+
+          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+          synced.add(
+            _MPBleSyncedSandboxEntry(
+              deviceFileName: fi.name,
+              sandboxPath: path,
+              durationSec: durationSec,
+              createAtSec: createAtSec,
+            ),
+          );
+        } finally {
+          await client.dispose();
+        }
+      }
+
+      if (synced.isEmpty) {
+        MPToastUtils.showMessage('No files were synced.');
+        return;
+      }
+
+      MPToastUtils.showMessage('Uploading recordings...');
+      bool announcedDeviceDelete = false;
+      for (int u = 0; u < synced.length; u++) {
+        if (!await transport.isConnected()) {
+          MPToastUtils.showMessage('Bluetooth disconnected during upload.');
+          break;
+        }
+
+        final _MPBleSyncedSandboxEntry e = synced[u];
+        MPToastUtils.showMessage('Uploading file ${u + 1}/${synced.length}...');
+
+        final File f = File(e.sandboxPath);
+        if (!await f.exists()) {
+          MPToastUtils.showMessage('Local file missing, skipped upload.');
+          continue;
+        }
+
+        final MPAudioUploadLocalItem item = MPAudioUploadLocalItem(
+          localFile: f,
+          durationSec: e.durationSec,
+          createAt: e.createAtSec,
+          source: _kSourceMemoPin,
+        );
+
+        final MPCreateRecordResponse? created =
+            await MPAudioUploadManager.instance.uploadMultipleLocalRecords(
+          items: <MPAudioUploadLocalItem>[item],
+          rightNowTranscribe: false,
+          localRecordsAlreadyAdded: true,
+        );
+
+        if (created != null && created.baseResp.code == 0) {
+          if (!announcedDeviceDelete) {
+            MPToastUtils.showMessage('Removing synced files from device...');
+            announcedDeviceDelete = true;
+          }
+          final bool deleted =
+              await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, e.deviceFileName);
+          if (!deleted) {
+            MPToastUtils.showMessage('Could not delete on device: ${e.deviceFileName}');
+          }
+        } else {
+          MPToastUtils.showMessage(
+            created?.baseResp.message ?? 'Upload failed, device file kept.',
+          );
+        }
+      }
+
+      MPToastUtils.showMessage('Device import finished.');
+    } catch (e, st) {
+      debugPrint('MPBleDeviceAudioImportUtils: $e\n$st');
+      MPToastUtils.showMessage('Device import failed: $e');
+    }
+  }
+
+  static Future<List<int>?> _collectExportPayloads({
+    required MPNoteBleGattClient client,
+    required String fileName,
+    required NoteFileInfo info,
+  }) async {
+    client.prepareFileExport(fileName);
+    final List<int> buffer = <int>[];
+    Timer? idleTimer;
+    final Completer<void> idleDone = Completer<void>();
+    bool receivedPayload = false;
+
+    void armIdleTimer() {
+      idleTimer?.cancel();
+      idleTimer = Timer(_kIdleDone, () {
+        if (!idleDone.isCompleted) {
+          idleDone.complete();
+        }
+      });
+    }
+
+    late final StreamSubscription<List<int>> sub;
+    sub = client.recordFilePayloadStream.listen(
+      (List<int> chunk) {
+        if (chunk.isNotEmpty) {
+          receivedPayload = true;
+        }
+        buffer.addAll(chunk);
+        if (receivedPayload) {
+          armIdleTimer();
+        }
+      },
+      onError: (Object e, StackTrace st) {
+        debugPrint('BLE export stream error: $e\n$st');
+      },
+    );
+
+    try {
+      final bool accepted = await client.requestFileExport(fileName);
+      if (!accepted) {
+        idleTimer?.cancel();
+        await sub.cancel();
+        return null;
+      }
+
+      await Future.any<void>(<Future<void>>[
+        idleDone.future,
+        Future<void>.delayed(_maxExportWaitForFile(info)),
+      ]);
+      idleTimer?.cancel();
+
+      for (final List<int> tail in client.flushFileExportAssemblerTail()) {
+        buffer.addAll(tail);
+      }
+      await sub.cancel();
+
+      if (!receivedPayload && buffer.isEmpty) {
+        return null;
+      }
+      return buffer;
+    } catch (e, st) {
+      debugPrint('BLE export collect failed: $e\n$st');
+      idleTimer?.cancel();
+      await sub.cancel();
+      return null;
+    }
+  }
+}
