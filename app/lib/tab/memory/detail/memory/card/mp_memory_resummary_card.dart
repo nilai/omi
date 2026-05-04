@@ -11,6 +11,7 @@ class MPMemoryResummaryCardData {
   const MPMemoryResummaryCardData({
     this.headerTimeLabel = 'Just now',
     this.badgeLabel = 'Autopilot mode',
+    this.summaryMemoryId,
     required this.mainTitle,
     required this.sectionTitle,
     required this.bodyText,
@@ -23,6 +24,9 @@ class MPMemoryResummaryCardData {
 
   /// 标题下胶囊标签，如 `Autopilot mode`
   final String badgeLabel;
+
+  /// 与接口返回的 summary_memory_id 对齐，用于本地定位更新
+  final String? summaryMemoryId;
 
   /// 主标题，如 `Strategic Investment Analysis`
   final String mainTitle;
@@ -38,6 +42,187 @@ class MPMemoryResummaryCardData {
 
   /// 展开后额外正文（如 Bottom Line 段落）
   final String? expandedSectionBody;
+}
+
+/// RESUMMARY 生成中占位卡片数据
+class MPMemoryResummaryLoadingCardData {
+  const MPMemoryResummaryLoadingCardData({
+    this.headerTimeLabel = 'Just now',
+    required this.summaryMemoryId,
+  });
+
+  final String headerTimeLabel;
+
+  /// 与 [summaryRecord] 返回的 summary_memory_id 一致，作为唯一标识
+  final String summaryMemoryId;
+}
+
+/// RESUMMARY 生成中占位卡片（与设计一致：中间 sparkles + 文案 + 三点）
+class MPMemoryResummaryLoadingCard extends StatelessWidget {
+  const MPMemoryResummaryLoadingCard({super.key, required this.data});
+
+  final MPMemoryResummaryLoadingCardData data;
+
+  static const Color _kIconCircleBg = Color(0xFFE8F5E9);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: <BoxShadow>[
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: const BoxDecoration(
+                    color: _kIconCircleBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: OmiImageLoader.localImg(
+                      Assets.omiBookText,
+                      width: 12,
+                      height: 12,
+                      color: greenTextColor,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'RESUMMARY',
+                      style: OmiTextStyle.create(
+                        fontSize: OmiFontSize.t3_12,
+                        fontWeight: OmiFontWeight.bold,
+                        color: secondTextColor,
+                        height: 1.2,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ),
+                Text(
+                  data.headerTimeLabel,
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t2_11,
+                    fontWeight: OmiFontWeight.regular,
+                    color: secondTextColor.withValues(alpha: 0.85),
+                    height: 1.2,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Column(
+              children: <Widget>[
+                OmiImageLoader.localImg(
+                  Assets.omiSparkles,
+                  width: 42,
+                  height: 42,
+                  color: greenTextColor,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'AI is analyzing...',
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.bold,
+                    color: mainTextColor,
+                    height: 1.25,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Generating a fresh perspective based on\nyour recording',
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t4_13,
+                    fontWeight: OmiFontWeight.regular,
+                    color: secondTextColor,
+                    height: 1.35,
+                  ),
+                  textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 14),
+                const _MPResummaryDots(),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MPResummaryDots extends StatefulWidget {
+  const _MPResummaryDots();
+
+  @override
+  State<_MPResummaryDots> createState() => _MPResummaryDotsState();
+}
+
+class _MPResummaryDotsState extends State<_MPResummaryDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, _) {
+        final double t = _controller.value; // 0~1
+        int active = (t * 3).floor().clamp(0, 2);
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List<Widget>.generate(3, (int i) {
+            final bool on = i <= active;
+            return Container(
+              width: 8,
+              height: 8,
+              margin: EdgeInsets.only(right: i == 2 ? 0 : 8),
+              decoration: BoxDecoration(
+                color: on
+                    ? greenTextColor.withValues(alpha: 0.95)
+                    : greenTextColor.withValues(alpha: 0.25),
+                shape: BoxShape.circle,
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
 }
 
 /// RESUMMARY 卡片：文档图标 + 徽章 + 标题层级 + 可展开正文 + Read full analysis / Show less

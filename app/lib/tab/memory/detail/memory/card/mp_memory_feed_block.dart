@@ -36,3 +36,10 @@ final class MPMemoryFeedResummaryBlock extends MPMemoryFeedBlock {
 
   final MPMemoryResummaryCardData data;
 }
+
+/// 本地插入的「RESUMMARY 生成中」占位卡片（用于轮询期间展示）。
+final class MPMemoryFeedResummaryLoadingBlock extends MPMemoryFeedBlock {
+  MPMemoryFeedResummaryLoadingBlock(this.data);
+
+  final MPMemoryResummaryLoadingCardData data;
+}

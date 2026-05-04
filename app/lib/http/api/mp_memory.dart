@@ -237,3 +237,22 @@ Future<MPGetSummaryStatusResponse?> getSummaryStatus(MPGetSummaryStatusRequest r
   }
   return null;
 }
+
+// GET /api/v2/memory/get_memory_summary_status
+Future<MPGetMemorySummaryStatusResponse?> getMemorySummaryStatus(
+  MPGetMemorySummaryStatusRequest req,
+) async {
+  var response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v2/memory/get_memory_summary_status?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getMemorySummaryStatus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemorySummaryStatusResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

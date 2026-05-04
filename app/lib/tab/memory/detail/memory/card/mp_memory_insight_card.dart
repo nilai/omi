@@ -16,20 +16,20 @@ enum MPInsightCardTone {
   /// 暖橙
   business,
 
-  /// 冷蓝
-  execution,
+  // /// 执行/蓝
+  // execution,
 
-  /// 紫色
-  creative,
+  // /// 创意/紫
+  // creative,
 
-  /// 绿色
-  wellness,
+  // /// 健康/绿
+  // wellness,
 
-  /// 红色 / 强调
-  strategic,
+  // /// 战略/红
+  // strategic,
 
-  /// 深绿
-  growth,
+  // /// 成长/深绿
+  // growth,
 }
 
 /// 单条 Insight 卡片数据
@@ -38,39 +38,41 @@ class MPMemoryInsightItemData {
     required this.tone,
     required this.timeLabel,
     required this.bodyText,
+    required this.title,
     this.categoryTitle,
+    this.useMarkdown = true,
+    this.insightContent,
+    this.insightSuggestion,
+
   });
 
   final MPInsightCardTone tone;
 
+ final String title;
   /// 右侧相对时间，如 `2 min later`
   final String timeLabel;
 
-  /// 正文（支持 Markdown）
+  /// 正文：Markdown（[useMarkdown]==true，如 followUp）或纯文本拼接（insight 时与 [insightContent]/[insightSuggestion] 一致）
   final String bodyText;
 
   /// 不传则根据 [tone] 使用默认英文大写标题
   final String? categoryTitle;
+
+  /// 为 false 时按纯文本渲染（insight：[insightContent] + 「Suggestion:」+ [insightSuggestion]）
+  final bool useMarkdown;
+
+  /// insight 接口 [content] 字段
+  final String? insightContent;
+
+  /// insight 接口 [suggestion] 字段
+  final String? insightSuggestion;
 
   /// 展示用分类标题（全大写）
   String get resolvedCategoryTitle {
     if (categoryTitle != null && categoryTitle!.isNotEmpty) {
       return categoryTitle!;
     }
-    switch (tone) {
-      case MPInsightCardTone.business:
-        return 'BUSINESS INSIGHT';
-      case MPInsightCardTone.execution:
-        return 'EXECUTION INSIGHT';
-      case MPInsightCardTone.creative:
-        return 'CREATIVE INSIGHT';
-      case MPInsightCardTone.wellness:
-        return 'WELLNESS INSIGHT';
-      case MPInsightCardTone.strategic:
-        return 'STRATEGIC INSIGHT';
-      case MPInsightCardTone.growth:
-        return 'GROWTH INSIGHT';
-    }
+    return 'BUSINESS INSIGHT';
   }
 }
 
@@ -95,58 +97,14 @@ class _MPInsightVisual {
     switch (tone) {
       case MPInsightCardTone.business:
         return _MPInsightVisual(
-          cardBg: orangeTextColor.withAlpha(30),
-          accent: orangeTextColor,
-          iconBg: orangeTextColor,
-          buttonBg: orangeTextColor.withAlpha(80),
-          buttonForeground: orangeTextColor,
+          cardBg: pinkTextColor.withAlpha(30),
+          accent: pinkTextColor,
+          iconBg: pinkTextColor,
+          buttonBg: pinkTextColor.withAlpha(60),
+          buttonForeground: pinkTextColor,
           icon: Assets.omiDetailGift,
         );
-      case MPInsightCardTone.execution:
-        return _MPInsightVisual(
-          cardBg: blueTextColor.withAlpha(30),
-          accent: blueTextColor,
-          iconBg: blueTextColor,
-          buttonBg: blueTextColor.withAlpha(80),
-          buttonForeground: blueTextColor,
-          icon: Assets.omiExecutionInsight,
-        );
-      case MPInsightCardTone.creative:
-        return _MPInsightVisual(
-          cardBg: purpleTextColor.withAlpha(28),
-          accent: purpleTextColor,
-          iconBg: purpleTextColor,
-          buttonBg: purpleTextColor.withAlpha(80),
-          buttonForeground: purpleTextColor,
-          icon: Assets.omiDetailMessage,
-        );
-      case MPInsightCardTone.wellness:
-        return _MPInsightVisual(
-          cardBg: greenTextColor.withAlpha(30),
-          accent: greenTextColor,
-          iconBg: greenTextColor,
-          buttonBg: greenTextColor.withAlpha(80),
-          buttonForeground: greenTextColor,
-          icon: Assets.omiDetailPhone,
-        );
-      case MPInsightCardTone.strategic:
-        return _MPInsightVisual(
-          cardBg: redColor.withAlpha(26),
-          accent: redColor,
-          iconBg: redColor,
-          buttonBg: redColor.withAlpha(80),
-          buttonForeground: redColor,
-          icon: Assets.omiDetailEdit,
-        );
-      case MPInsightCardTone.growth:
-        return _MPInsightVisual(
-          cardBg: greenDeepColor.withAlpha(28),
-          accent: greenDeepColor,
-          iconBg: greenDeepColor,
-          buttonBg: greenDeepColor.withAlpha(80),
-          buttonForeground: greenDeepColor,
-          icon: Assets.omiDetailCheck,
-        );
+      
     }
   }
 }
@@ -234,6 +192,24 @@ Future<void> _mpInsightTapMarkdownLink(String? href) async {
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
+/// 纯文本折行行数估算（insight 非 Markdown）
+int _mpEstimatePlainBodyLines(String raw, double maxWidth) {
+  final String t = raw.trim();
+  if (t.isEmpty) {
+    return 0;
+  }
+  final TextStyle style = OmiTextStyle.create(
+    fontSize: OmiFontSize.t4_13,
+    height: 1.45,
+    color: mainTextColor,
+  );
+  final TextPainter tp = TextPainter(
+    text: TextSpan(text: t, style: style),
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: maxWidth);
+  return tp.computeLineMetrics().length;
+}
+
 /// 粗略估算正文在 [maxWidth] 下占几行（与真实 Markdown 高度不完全一致，用于是否展示 Show more；避免再叠一层 Markdown 测量导致 overflow）。
 int _mpEstimateInsightBodyLines(String raw, double maxWidth) {
   final String t = raw
@@ -275,7 +251,7 @@ double _mpHeightForParagraphLines(int lineCount, double maxWidth) {
   return tp.height;
 }
 
-/// Memory 详情列表中的 Insight 卡片（图标 + 分类 + 时间 + 正文 Markdown + Show more + Add follow-up todo）
+/// Memory 详情列表中的 Insight 卡片（图标 + 分类 + 时间 + 正文 Markdown 或纯文本 + Show more + Add follow-up todo）
 class MPMemoryInsightCard extends StatefulWidget {
   const MPMemoryInsightCard({
     super.key,
@@ -303,12 +279,77 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
   @override
   void didUpdateWidget(covariant MPMemoryInsightCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.data.bodyText != widget.data.bodyText) {
+    if (oldWidget.data.bodyText != widget.data.bodyText ||
+        oldWidget.data.insightContent != widget.data.insightContent ||
+        oldWidget.data.insightSuggestion != widget.data.insightSuggestion ||
+        oldWidget.data.useMarkdown != widget.data.useMarkdown) {
       _bodyExpanded = false;
     }
   }
 
+  String _measurePlainBodyRaw() {
+    final String c = (widget.data.insightContent ?? '').trim();
+    final String s = (widget.data.insightSuggestion ?? '').trim();
+    if (c.isEmpty && s.isEmpty) {
+      return widget.data.bodyText;
+    }
+    if (s.isEmpty) {
+      return c;
+    }
+    if (c.isEmpty) {
+      return 'Suggestion:\n$s';
+    }
+    return '$c\n\nSuggestion:\n$s';
+  }
+
+  Widget _buildPlainStructuredBody(_MPInsightVisual v) {
+    final String c = (widget.data.insightContent ?? '').trim();
+    final String s = (widget.data.insightSuggestion ?? '').trim();
+    final bool hasC = c.isNotEmpty;
+    final bool hasS = s.isNotEmpty;
+
+    final TextStyle baseStyle = OmiTextStyle.create(
+      fontSize: OmiFontSize.t4_13,
+      height: 1.45,
+      color: mainTextColor,
+    );
+    final TextStyle labelStyle = OmiTextStyle.create(
+      fontSize: OmiFontSize.t4_13,
+      height: 1.45,
+      fontWeight: OmiFontWeight.bold,
+      color: v.accent,
+    );
+
+    final List<InlineSpan> spans = <InlineSpan>[];
+    if (hasC) {
+      spans.add(TextSpan(text: c, style: baseStyle));
+    }
+    if (hasC && hasS) {
+      spans.add(TextSpan(text: '\n\n', style: baseStyle));
+    }
+    if (hasS) {
+      spans.add(TextSpan(text: 'Suggestion:\n', style: labelStyle));
+      spans.add(TextSpan(text: s, style: baseStyle));
+    }
+    if (!hasC && !hasS) {
+      spans.add(TextSpan(text: widget.data.bodyText, style: baseStyle));
+    }
+
+    return SelectableText.rich(TextSpan(children: spans));
+  }
+
   String _plainSnippetForTodo(String md) {
+    if (!widget.data.useMarkdown) {
+      final String s = md.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (s.isEmpty) {
+        return 'Follow up on insight';
+      }
+      const int maxLen = 64;
+      if (s.length <= maxLen) {
+        return s;
+      }
+      return '${s.substring(0, maxLen).trimRight()}...';
+    }
     final String s = md
         .replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'$1')
         .replaceAll(RegExp(r'[#*_`>\[\]]'), '')
@@ -322,6 +363,22 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       return s;
     }
     return '${s.substring(0, maxLen).trimRight()}...';
+  }
+
+  /// Insight 纯文本：notes←content，标题←suggestion，Context←接口 title（无则用分类默认标题）
+  MPAddTodoPopupParams _followUpTodoParams() {
+    if (!widget.data.useMarkdown) {
+      return MPAddTodoPopupParams(
+        initialTitle: (widget.data.insightSuggestion ?? '').trim(),
+        initialNotes: (widget.data.insightContent ?? '').trim(),
+        contextMemoryTitle: widget.data.title,
+      );
+    }
+    return MPAddTodoPopupParams(
+      initialTitle: _plainSnippetForTodo(widget.data.bodyText),
+      initialNotes: '',
+      contextMemoryTitle: widget.data.title,
+    );
   }
 
   @override
@@ -357,24 +414,47 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       );
     }
 
+    Widget buildPlainBody() {
+      return _buildPlainStructuredBody(v);
+    }
+
+    Widget buildClippedPlain(double contentWidth) {
+      final double fiveLineHeight =
+          _mpHeightForParagraphLines(5, contentWidth) + 10;
+      return SizedBox(
+        height: fiveLineHeight,
+        child: ClipRect(
+          clipBehavior: Clip.hardEdge,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: buildPlainBody(),
+          ),
+        ),
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           final double w = constraints.maxWidth;
-          final int estLines = _mpEstimateInsightBodyLines(
-            widget.data.bodyText,
-            w,
-          );
+          final String measureRaw = widget.data.useMarkdown
+              ? widget.data.bodyText
+              : _measurePlainBodyRaw();
+          final int estLines = widget.data.useMarkdown
+              ? _mpEstimateInsightBodyLines(widget.data.bodyText, w)
+              : _mpEstimatePlainBodyLines(measureRaw, w);
           // 标题/列表等会高于纯文本估算，长字符兜底避免该显示时不显示
           final bool needsShowMore =
-              estLines > 5 || widget.data.bodyText.length > 260;
+              estLines > 5 || measureRaw.length > 260;
 
-          Widget buildVisibleMarkdown() {
+          Widget buildVisibleBody() {
             if (needsShowMore && !_bodyExpanded) {
-              return buildClippedMarkdown(w);
+              return widget.data.useMarkdown
+                  ? buildClippedMarkdown(w)
+                  : buildClippedPlain(w);
             }
-            return buildMarkdownBody();
+            return widget.data.useMarkdown ? buildMarkdownBody() : buildPlainBody();
           }
 
           return Container(
@@ -434,7 +514,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                buildVisibleMarkdown(),
+                buildVisibleBody(),
                 if (needsShowMore && !_bodyExpanded) ...<Widget>[
                   const SizedBox(height: 8),
                   Align(
@@ -495,11 +575,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                       final MPAddTodoPopupResult? result =
                           await showMPAddTodoPopup(
                         context,
-                        params: MPAddTodoPopupParams(
-                          initialTitle: _plainSnippetForTodo(
-                            widget.data.bodyText,
-                          ),
-                        ),
+                        params: _followUpTodoParams(),
                       );
                       if (result != null) {
                         widget.onAddFollowUpTodo?.call();

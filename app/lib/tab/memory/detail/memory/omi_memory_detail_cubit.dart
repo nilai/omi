@@ -136,7 +136,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   /// 决定 [getMemoryDetail] 结果如何映射为 [MPMemoryDetailCardData]。
   final OmiMemoryDetailSource detailSource;
 
-  int _unknownInsightIndex = 0;
   String _feedCursor = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
   StreamSubscription<PlayerState>? _playerStateSub;
@@ -148,6 +147,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   StreamSubscription<Duration>? _positionStreamSub;
 
   int _suppressPlaybackCompletedUntilMs = 0;
+
+  Timer? _resummaryPollTimer;
+  final Set<String> _pendingResummaryIds = <String>{};
 
   static const Duration _kPlaybackUiTick = Duration(milliseconds: 200);
   static const int _kEndSlackMs = 160;
@@ -303,7 +305,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   ({
     MPMemoryDetailCardData data,
-    int nextUnknownInsightIndex,
     String feedCursor,
     bool feedHasMore,
     bool isSummaryGenerating,
@@ -323,14 +324,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   Future<void> load() async {
     final ({
       MPMemoryDetailCardData data,
-      int nextUnknownInsightIndex,
       String feedCursor,
       bool feedHasMore,
       bool isSummaryGenerating,
     })? cached = _loadCachedDetailBundleIfAllowed();
     final bool hasCached = cached != null;
     if (hasCached) {
-      _unknownInsightIndex = cached.nextUnknownInsightIndex;
       _feedCursor = cached.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -352,7 +351,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       final ({
         MPMemoryDetailCardData data,
-        int nextUnknownInsightIndex,
         String feedCursor,
         bool feedHasMore,
         bool isSummaryGenerating,
@@ -360,7 +358,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
       }
-      _unknownInsightIndex = bundle.nextUnknownInsightIndex;
       _feedCursor = bundle.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -398,13 +395,118 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         );
         return;
       }
-      MPMemoryNotification.notifyMemoryListRefresh();
-      await refresh();
+      final String sid = (summary.summaryId ?? '').trim();
+      if (sid.isEmpty) {
+        MPToastUtils.showMessage('生成失败，请稍后重试');
+        return;
+      }
+      _pendingResummaryIds.add(sid);
+      _insertResummaryLoadingCard(summaryMemoryId: sid);
+      _ensureResummaryPolling();
     } catch (_) {
       if (!isClosed) {
         MPToastUtils.showMessage('生成失败，请稍后重试');
       }
     }
+  }
+
+  void _insertResummaryLoadingCard({required String summaryMemoryId}) {
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
+    final MPMemoryDetailCardData d = cur.data!;
+    final bool already = d.feedBlocks.any((MPMemoryFeedBlock b) {
+      return b is MPMemoryFeedResummaryLoadingBlock &&
+          b.data.summaryMemoryId == summaryMemoryId;
+    });
+    if (already) return;
+    final List<MPMemoryFeedBlock> blocks = <MPMemoryFeedBlock>[
+      MPMemoryFeedResummaryLoadingBlock(
+        MPMemoryResummaryLoadingCardData(
+          headerTimeLabel: 'Just now',
+          summaryMemoryId: summaryMemoryId,
+        ),
+      ),
+      ...d.feedBlocks,
+    ];
+    emit(cur.copyWith(data: d.copyWith(feedBlocks: blocks)));
+  }
+
+  void _cancelResummaryPolling() {
+    _resummaryPollTimer?.cancel();
+    _resummaryPollTimer = null;
+  }
+
+  void _ensureResummaryPolling() {
+    if (_resummaryPollTimer != null) return;
+    _resummaryPollTimer =
+        Timer.periodic(const Duration(seconds: 3), (Timer _) async {
+      if (isClosed) {
+        _cancelResummaryPolling();
+        return;
+      }
+
+      final MPGetMemorySummaryStatusResponse? resp =
+          await getMemorySummaryStatus(
+        MPGetMemorySummaryStatusRequest(memoryId: memoryId),
+      );
+      if (isClosed) {
+        _cancelResummaryPolling();
+        return;
+      }
+      if (resp == null || resp.baseResp.code != 0) {
+        return;
+      }
+      final bool anyCompleted = await _applyResummaryStatuses(resp);
+      if (anyCompleted && !isClosed) {
+        // 任意任务从「进行中」变为「已完成」：刷新列表 + 整体刷新详情页
+        //（避免只局部替换导致与服务端 feeds 不一致）
+        MPMemoryNotification.notifyMemoryListRefresh();
+        await refresh();
+      }
+      if (_pendingResummaryIds.isEmpty) _cancelResummaryPolling();
+    });
+  }
+
+  Future<bool> _applyResummaryStatuses(MPGetMemorySummaryStatusResponse resp) async {
+    // 只处理本地 [_pendingResummaryIds] 中的任务；以 items 里对应 resummary_memory_id + resummary_status 为准。
+    final List<MPMemorySummaryStatusItem> items = resp.resummaryMemoriesStatus;
+    if (items.isEmpty) {
+      return false;
+    }
+    bool anyCompleted = false;
+    for (final MPMemorySummaryStatusItem it in items) {
+      final String id = it.summaryMemoryId.trim();
+      if (id.isEmpty || !_pendingResummaryIds.contains(id)) {
+        continue;
+      }
+      final bool done = _applyOneResummaryStatus(
+        summaryMemoryId: id,
+        status: it.summaryStatus,
+      );
+      if (done) {
+        anyCompleted = true;
+      }
+    }
+    return anyCompleted;
+  }
+
+  bool _applyOneResummaryStatus({
+    required String summaryMemoryId,
+    required int status,
+  }) {
+    final String id = summaryMemoryId.trim();
+    if (id.isEmpty || !_pendingResummaryIds.contains(id)) {
+      return false;
+    }
+    if (status != 2) {
+      return false;
+    }
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+      return false;
+    }
+    _pendingResummaryIds.remove(id);
+    return true;
   }
 
   Future<void> retry() => load();
@@ -615,7 +717,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   ({
     MPMemoryDetailCardData data,
-    int nextUnknownInsightIndex,
     String feedCursor,
     bool feedHasMore,
     bool isSummaryGenerating,
@@ -644,7 +745,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       final ({
         MPMemoryDetailCardData data,
-        int nextUnknownInsightIndex,
         String feedCursor,
         bool feedHasMore,
         bool isSummaryGenerating,
@@ -652,7 +752,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
       }
-      _unknownInsightIndex = bundle.nextUnknownInsightIndex;
       _feedCursor = bundle.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -679,81 +778,77 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
   }
 
-  /// 上拉加载更多 Feed 块，追加到 [MPMemoryDetailCardData.feedBlocks]。
-  Future<void> loadMoreFeeds() async {
-    final OmiMemoryDetailState cur = state;
-    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
-      return;
-    }
-    if (!cur.feedHasMore || cur.isLoadingMore) {
-      return;
-    }
-
-    emit(cur.copyWith(isLoadingMore: true));
-    try {
-      final MPGetMemoryFeedResponse? resp = await getMemoryFeed(
-        MPGetMemoryFeedRequest(
-          memoryId: memoryId,
-          pageSize: _kMemoryFeedPageSize,
-          cursor: _feedCursor,
-        ),
-      );
-      if (resp == null) {
-        emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
-        MPToastUtils.showMessage('加载更多失败');
-        return;
-      }
-      final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
-      if (cards.isEmpty) {
-        emit(
-          state.copyWith(
-            isLoadingMore: false,
-            feedHasMore: resp.hasMore ?? false,
-          ),
-        );
-        return;
-      }
-      final _FeedBlocksBuildResult built = _buildFeedBlocksFromCards(
-        cards,
-        _unknownInsightIndex,
-      );
-      _unknownInsightIndex = built.nextUnknownInsightIndex;
-      final String? lastId = _lastFeedCardId(cards);
-      if (lastId != null && lastId.isNotEmpty) {
-        _feedCursor = lastId;
-      }
-
-      final MPMemoryDetailCardData d = state.data!;
-      final List<MPMemoryFeedBlock> merged =
-          List<MPMemoryFeedBlock>.from(d.feedBlocks)..addAll(built.blocks);
-      final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
-        memoryId: d.memoryId,
-        title: d.title,
-        metaLine: d.metaLine,
-        audioTimeStart: d.audioTimeStart,
-        audioTimeEnd: d.audioTimeEnd,
-        recordFile: d.recordFile,
-        recordUri: d.recordUri,
-        waveformHeights: d.waveformHeights,
-        speakerLabels: d.speakerLabels,
-        overviewText: d.overviewText,
-        transcriptItems: d.transcriptItems,
-        actionItems: d.actionItems,
-        initialSegment: d.initialSegment,
-        feedBlocks: merged,
-      );
-      emit(
-        state.copyWith(
-          data: nextData,
-          isLoadingMore: false,
-          feedHasMore: resp.hasMore ?? false,
-        ),
-      );
-    } catch (_) {
-      emit(state.copyWith(isLoadingMore: false));
-      MPToastUtils.showMessage('加载更多失败');
-    }
-  }
+  // /// 上拉加载更多 Feed 块，追加到 [MPMemoryDetailCardData.feedBlocks]。
+  // Future<void> loadMoreFeeds() async {
+  //   final OmiMemoryDetailState cur = state;
+  //   if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+  //     return;
+  //   }
+  //   if (!cur.feedHasMore || cur.isLoadingMore) {
+  //     return;
+  //   }
+  //
+  //   emit(cur.copyWith(isLoadingMore: true));
+  //   try {
+  //     final MPGetMemoryFeedResponse? resp = await getMemoryFeed(
+  //       MPGetMemoryFeedRequest(
+  //         memoryId: memoryId,
+  //         pageSize: _kMemoryFeedPageSize,
+  //         cursor: _feedCursor,
+  //       ),
+  //     );
+  //     if (resp == null) {
+  //       emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
+  //       MPToastUtils.showMessage('加载更多失败');
+  //       return;
+  //     }
+  //     final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
+  //     if (cards.isEmpty) {
+  //       emit(
+  //         state.copyWith(
+  //           isLoadingMore: false,
+  //           feedHasMore: resp.hasMore ?? false,
+  //         ),
+  //       );
+  //       return;
+  //     }
+  //     final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(cards, cur.data?.title);
+  //     final String? lastId = _lastFeedCardId(cards);
+  //     if (lastId != null && lastId.isNotEmpty) {
+  //       _feedCursor = lastId;
+  //     }
+  //
+  //     final MPMemoryDetailCardData d = state.data!;
+  //     final List<MPMemoryFeedBlock> merged =
+  //         List<MPMemoryFeedBlock>.from(d.feedBlocks)..addAll(built);
+  //     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
+  //       memoryId: d.memoryId,
+  //       title: d.title,
+  //       metaLine: d.metaLine,
+  //       audioTimeStart: d.audioTimeStart,
+  //       audioTimeEnd: d.audioTimeEnd,
+  //       recordFile: d.recordFile,
+  //       recordUri: d.recordUri,
+  //       waveformHeights: d.waveformHeights,
+  //       speakerLabels: d.speakerLabels,
+  //       overviewText: d.overviewText,
+  //       transcriptItems: d.transcriptItems,
+  //       actionItems: d.actionItems,
+  //       initialSegment: d.initialSegment,
+  //       feedBlocks: merged,
+  //     );
+  //     emit(
+  //       state.copyWith(
+  //         data: nextData,
+  //         isLoadingMore: false,
+  //         feedHasMore: resp.hasMore ?? false,
+  //       ),
+  //     );
+  //   } catch (_) {
+  //     emit(state.copyWith(isLoadingMore: false));
+  //     MPToastUtils.showMessage('加载更多失败');
+  //   }
+  // }
 
   /// 快捷输入新增 Todo：在 [MPMemoryDetailCardData.feedBlocks] 末尾追加一条 TODOS CREATED。
   void addTodoFromQuickInput(String text) {
@@ -963,6 +1058,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   @override
   Future<void> close() {
+    _cancelResummaryPolling();
     _decoderDurationSub?.cancel();
     _decoderDurationSub = null;
     _stopPlaybackUiTimer();
@@ -988,16 +1084,6 @@ String _memoryPlaybackFormatMmSs(Duration d) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-class _FeedBlocksBuildResult {
-  const _FeedBlocksBuildResult({
-    required this.blocks,
-    required this.nextUnknownInsightIndex,
-  });
-
-  final List<MPMemoryFeedBlock> blocks;
-  final int nextUnknownInsightIndex;
-}
-
 String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
   for (int i = feeds.length - 1; i >= 0; i--) {
     final String? id = feeds[i].id;
@@ -1008,14 +1094,16 @@ String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
   return null;
 }
 
-_FeedBlocksBuildResult _buildFeedBlocksFromCards(
+List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
   List<MPFeedCardStruct> feeds,
-  int unknownInsightStart,
+    String? title
 ) {
-  int unknownInsightIndex = unknownInsightStart;
   final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
   for (final MPFeedCardStruct f in feeds) {
     final int kind = _resolveFeedCardKind(f);
+    if (kind == _kFeedUnknownInsight) {
+      continue;
+    }
     if (kind == MPFeedCardType.myMemo) {
       final List<MPMemoStruct> memos = f.memos ?? const <MPMemoStruct>[];
       if (memos.isEmpty) {
@@ -1085,38 +1173,58 @@ _FeedBlocksBuildResult _buildFeedBlocksFromCards(
       continue;
     }
 
-    final MPInsightCardTone tone;
-    if (kind == MPFeedCardType.executionInsight) {
-      tone = MPInsightCardTone.execution;
-    } else if (kind == MPFeedCardType.businessInsight) {
-      tone = MPInsightCardTone.business;
-    } else if (kind == MPFeedCardType.creativeInsight) {
-      tone = MPInsightCardTone.creative;
-    } else if (kind == MPFeedCardType.wellnessInsight) {
-      tone = MPInsightCardTone.wellness;
+    final String categoryTitle;
+    final String bodyText;
+    if (kind == MPFeedCardType.followUpList) {
+      final String titleRaw = (f.title ?? '').trim();
+      bodyText = (f.content ?? '').trim();
+      if (bodyText.isEmpty) {
+        continue;
+      }
+      categoryTitle =
+          titleRaw.isNotEmpty ? titleRaw : 'FOLLOW-UP HIGHLIGHTS';
     } else {
-      tone = _kInsightToneCycle[unknownInsightIndex % _kInsightToneCycle.length];
-      unknownInsightIndex++;
+      // MPFeedCardType.insight：纯文本 content + suggestion（卡片内分段展示，非 Markdown）
+      categoryTitle = (f.title ?? '').trim();
+      final String content = (f.content ?? '').trim();
+      final String suggestion = (f.suggestion ?? '').trim();
+      if (content.isEmpty && suggestion.isEmpty) {
+        continue;
+      }
+      final String bodyForTodo = <String>[
+        if (content.isNotEmpty) content,
+        if (suggestion.isNotEmpty) 'Suggestion: $suggestion',
+      ].join('\n\n');
+      feedBlocks.add(
+        MPMemoryFeedInsightBlock(
+          MPMemoryInsightItemData(
+            tone: MPInsightCardTone.business,
+            timeLabel: _feedCardTimeLabel(f.createAt),
+            bodyText: bodyForTodo,
+            categoryTitle: categoryTitle,
+            title: title ?? '',
+            useMarkdown: false,
+            insightContent: content.isNotEmpty ? content : null,
+            insightSuggestion: suggestion.isNotEmpty ? suggestion : null,
+          ),
+        ),
+      );
+      continue;
     }
-
-    final String insightTitle = (f.title ?? '').trim();
-    final String insightBody = (f.content ?? '').trim();
 
     feedBlocks.add(
       MPMemoryFeedInsightBlock(
         MPMemoryInsightItemData(
-          tone: tone,
+          tone: MPInsightCardTone.business,
           timeLabel: _feedCardTimeLabel(f.createAt),
-          bodyText: insightBody,
-          categoryTitle: insightTitle,
+          bodyText: bodyText,
+          title: title ?? '',
+          categoryTitle: categoryTitle,
         ),
       ),
     );
   }
-  return _FeedBlocksBuildResult(
-    blocks: feedBlocks,
-    nextUnknownInsightIndex: unknownInsightIndex,
-  );
+  return feedBlocks;
 }
 
 /// 依次取第一个非空（trim 后）字符串；用于录音路径：`summary` 与 `only_record` 可能分开展示字段。
@@ -1133,7 +1241,6 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 /// 详情映射结果：主卡片数据 + 分页加载 Feed 所需的游标与 unknown insight 计数。
 ({
   MPMemoryDetailCardData data,
-  int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
   bool isSummaryGenerating,
@@ -1187,7 +1294,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
               )
               .toList(growable: false);
 
-  final _FeedBlocksBuildResult built = _buildFeedBlocksFromCards(feedCards, 0);
+  final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title);
 
   final int metaCreateAt = sm?.createAt ?? m.createAt;
   final DateTime dt = _detailServerTime(metaCreateAt);
@@ -1219,7 +1326,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
     overviewText: overviewText,
     transcriptItems: transcriptItems,
     actionItems: actionItems,
-    feedBlocks: built.blocks,
+    feedBlocks: built,
   );
 
   final String feedCursor = _lastFeedCardId(feedCards) ?? '';
@@ -1227,7 +1334,6 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 
   return (
     data: data,
-    nextUnknownInsightIndex: built.nextUnknownInsightIndex,
     feedCursor: feedCursor,
     feedHasMore: feedHasMore,
     isSummaryGenerating: isSummaryGenerating,
@@ -1237,7 +1343,6 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 /// Memory 会话详情：正文来自 [MPMemoryStruct.memoryFeed] 内 [MPMemoryFeedStruct.summaryMemory]，Feed 列表同 [MPMemoryFeedStruct.feeds]。
 ({
   MPMemoryDetailCardData data,
-  int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
   bool isSummaryGenerating,
@@ -1253,7 +1358,6 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 /// Memo 详情：正文来自根级 [MPMemoryStruct.summaryMemory]；下方活动区仍可使用 [MPMemoryStruct.memoryFeed] 的 [MPMemoryFeedStruct.feeds]（若有）。
 ({
   MPMemoryDetailCardData data,
-  int nextUnknownInsightIndex,
   String feedCursor,
   bool feedHasMore,
   bool isSummaryGenerating,
@@ -1327,32 +1431,21 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
   );
 }
 
-/// 非 1–4 的 [MPFeedCardStruct.type] 视为 insight；未知 type 在多种 [MPInsightCardTone] 间轮换。
+/// 未在 [MPFeedCardType] 中声明的 [MPFeedCardStruct.type] 忽略，不生成 Feed 块。
 const int _kFeedUnknownInsight = -1;
-
-const List<MPInsightCardTone> _kInsightToneCycle = <MPInsightCardTone>[
-  MPInsightCardTone.business,
-  MPInsightCardTone.execution,
-  MPInsightCardTone.creative,
-  MPInsightCardTone.wellness,
-  MPInsightCardTone.strategic,
-  MPInsightCardTone.growth,
-];
 
 int _resolveFeedCardKind(MPFeedCardStruct f) {
   if (f.type != null) {
     final int v = f.type!;
-    if (v == MPFeedCardType.businessInsight ||
-        v == MPFeedCardType.executionInsight ||
-        v == MPFeedCardType.creativeInsight ||
-        v == MPFeedCardType.wellnessInsight ||
+    if (v == MPFeedCardType.insight ||
         v == MPFeedCardType.todosCreated ||
         v == MPFeedCardType.myMemo ||
+        v == MPFeedCardType.resummary ||
         v == MPFeedCardType.youAsked ||
-        v == MPFeedCardType.resummary) {
+        v == MPFeedCardType.followUpList) {
       return v;
     }
     return _kFeedUnknownInsight;
   }
-  return MPFeedCardType.businessInsight;
+  return MPFeedCardType.insight;
 }

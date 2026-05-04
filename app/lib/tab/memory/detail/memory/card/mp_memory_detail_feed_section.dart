@@ -66,6 +66,8 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
           // TODO: 埋点 / 同步展开状态
         },
       ),
+      MPMemoryFeedResummaryLoadingBlock(:final data) =>
+        MPMemoryResummaryLoadingCard(data: data),
     };
   }
 }
