@@ -72,7 +72,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
         // if (t != null && t > 1 && c != null) {
         //   return 'Syncing recordings ($c of $t)';
         // }
-        return 'Syncing recordings from MemoPin';
+        return 'Syncing recordings to server';
       case MPHomeAudioStatusType.importing:
         // final int? t = status.totalFiles;
         // final int? c = status.currentFile;
