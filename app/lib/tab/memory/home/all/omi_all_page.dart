@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_page.dart';
@@ -43,7 +44,7 @@ class _OmiAllView extends StatefulWidget {
   State<_OmiAllView> createState() => _OmiAllViewState();
 }
 
-class _OmiAllViewState extends State<_OmiAllView> {
+class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
   final ScrollController _scrollController = ScrollController();
 
   StreamSubscription<void>? _memoryListRefreshSub;
@@ -53,6 +54,21 @@ class _OmiAllViewState extends State<_OmiAllView> {
       return;
     }
     context.read<OmiAllCubit>().load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      mpRouteObserver.subscribe(this, route);
+    }
+  }
+
+  /// 自列表页 push 的详情等全屏路由 pop 后，列表需重新拉取（底部 Tab / 顶部分段未变时此前不会触发刷新）。
+  @override
+  void didPopNext() {
+    _onExternalRefreshRequest();
   }
 
   @override
@@ -79,6 +95,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
 
   @override
   void dispose() {
+    mpRouteObserver.unsubscribe(this);
     widget.refreshListenable?.removeListener(_onExternalRefreshRequest);
     _memoryListRefreshSub?.cancel();
     _memoryListRefreshSub = null;
