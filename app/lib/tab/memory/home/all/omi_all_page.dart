@@ -20,16 +20,24 @@ import 'omi_all_cubit.dart';
 
 /// Memory「All」列表页（卡片列表 + 游标分页）
 class OmiAllPage extends StatelessWidget {
-  const OmiAllPage({super.key});
+  const OmiAllPage({super.key, this.refreshListenable});
+
+  /// 父级在「列表应从隐藏变为可见」或「底部切回 Memory 且仍为 All」时递增计数；此处监听并 [OmiAllCubit.load]。
+  final ValueNotifier<int>? refreshListenable;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => OmiAllCubit()..initData(), child: const _OmiAllView());
+    return BlocProvider(
+      create: (_) => OmiAllCubit()..initData(),
+      child: _OmiAllView(refreshListenable: refreshListenable),
+    );
   }
 }
 
 class _OmiAllView extends StatefulWidget {
-  const _OmiAllView();
+  const _OmiAllView({this.refreshListenable});
+
+  final ValueNotifier<int>? refreshListenable;
 
   @override
   State<_OmiAllView> createState() => _OmiAllViewState();
@@ -40,9 +48,17 @@ class _OmiAllViewState extends State<_OmiAllView> {
 
   StreamSubscription<void>? _memoryListRefreshSub;
 
+  void _onExternalRefreshRequest() {
+    if (!mounted) {
+      return;
+    }
+    context.read<OmiAllCubit>().load();
+  }
+
   @override
   void initState() {
     super.initState();
+    widget.refreshListenable?.addListener(_onExternalRefreshRequest);
     _scrollController.addListener(_onScroll);
     _memoryListRefreshSub = MPMemoryNotification.listenMemoryListRefresh(() {
       if (!mounted) {
@@ -53,7 +69,17 @@ class _OmiAllViewState extends State<_OmiAllView> {
   }
 
   @override
+  void didUpdateWidget(_OmiAllView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshListenable != widget.refreshListenable) {
+      oldWidget.refreshListenable?.removeListener(_onExternalRefreshRequest);
+      widget.refreshListenable?.addListener(_onExternalRefreshRequest);
+    }
+  }
+
+  @override
   void dispose() {
+    widget.refreshListenable?.removeListener(_onExternalRefreshRequest);
     _memoryListRefreshSub?.cancel();
     _memoryListRefreshSub = null;
     _scrollController.removeListener(_onScroll);

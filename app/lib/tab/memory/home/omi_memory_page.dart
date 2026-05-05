@@ -10,7 +10,10 @@ import 'projects/omi_projects_page.dart';
 
 /// Memory 根页：顶部导航 + All / People / Projects 分段内容
 class OmiMemoryPage extends StatefulWidget {
-  const OmiMemoryPage({super.key});
+  const OmiMemoryPage({super.key, this.isMemoryTabActive = true});
+
+  /// 底部导航是否选中 Memory（与 [MainTabPage] 中 Memory 项下标一致，当前为 `1`）。
+  final bool isMemoryTabActive;
 
   @override
   State<OmiMemoryPage> createState() => _OmiMemoryPageState();
@@ -18,6 +21,36 @@ class OmiMemoryPage extends StatefulWidget {
 
 class _OmiMemoryPageState extends State<OmiMemoryPage> {
   int _tabIndex = 0;
+
+  /// 递增后由 [OmiAllPage] 监听并调用 [OmiAllCubit.load]（避免 GlobalKey 穿透）。
+  late final ValueNotifier<int> _allListRefreshNonce;
+
+  @override
+  void initState() {
+    super.initState();
+    _allListRefreshNonce = ValueNotifier<int>(0);
+  }
+
+  @override
+  void didUpdateWidget(OmiMemoryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 底部从其它 Tab 切回 Memory，且当前仍为 All 列表时刷新。
+    if (widget.isMemoryTabActive &&
+        !oldWidget.isMemoryTabActive &&
+        _tabIndex == 0) {
+      _requestAllListRefresh();
+    }
+  }
+
+  @override
+  void dispose() {
+    _allListRefreshNonce.dispose();
+    super.dispose();
+  }
+
+  void _requestAllListRefresh() {
+    _allListRefreshNonce.value++;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,16 +75,23 @@ class _OmiMemoryPageState extends State<OmiMemoryPage> {
         children: [
           MPMemoryTopTabs(
             index: _tabIndex,
-            onChanged: (int i) => setState(() => _tabIndex = i),
+            onChanged: (int i) {
+              final int prev = _tabIndex;
+              setState(() => _tabIndex = i);
+              // All 列表由隐藏变为可见（从 People / Projects 切回）时刷新。
+              if (i == 0 && prev != 0) {
+                _requestAllListRefresh();
+              }
+            },
           ),
           Expanded(
             child: IndexedStack(
               index: _tabIndex,
               sizing: StackFit.expand,
-              children: const <Widget>[
-                OmiAllPage(),
-                OmiPeoplePage(),
-                OmiProjectsPage(),
+              children: <Widget>[
+                OmiAllPage(refreshListenable: _allListRefreshNonce),
+                const OmiPeoplePage(),
+                const OmiProjectsPage(),
               ],
             ),
           ),

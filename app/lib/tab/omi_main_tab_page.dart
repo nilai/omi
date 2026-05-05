@@ -27,7 +27,7 @@ class _MainTabPageState extends State<MainTabPage> {
             setState(() => _currentIndex = 1);
           },
         ),
-        OmiMemoryPage(),
+        OmiMemoryPage(isMemoryTabActive: _currentIndex == 1),
         OmiAskAIPage(),
         OmiMinePage(),
       ];
