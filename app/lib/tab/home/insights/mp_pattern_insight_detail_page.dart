@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -354,19 +355,28 @@ class _WhyThisMattersSection extends StatelessWidget {
   }
 }
 
-class _SuggestedNextStepSection extends StatelessWidget {
+class _SuggestedNextStepSection extends StatefulWidget {
   const _SuggestedNextStepSection({required this.nextStepText});
 
   final String nextStepText;
 
   @override
+  State<_SuggestedNextStepSection> createState() => _SuggestedNextStepSectionState();
+}
+
+class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
+  bool _added = false;
+
+  @override
   Widget build(BuildContext context) {
+    final String text = widget.nextStepText;
+    final bool canAdd = text.trim().isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         Row(
           children: <Widget>[
-            // Icon(Icons.lightbulb_outline, color: purpleTextColor, size: 18),
             Text('🎯', style: TextStyle(fontSize: 16)),
             const SizedBox(width: 10),
             Text(
@@ -388,7 +398,7 @@ class _SuggestedNextStepSection extends StatelessWidget {
           children: <Widget>[
             Expanded(
               child: Text(
-                nextStepText,
+                text,
                 style: OmiTextStyle.create(
                   color: secondTextColor,
                   fontSize: OmiFontSize.t6_15,
@@ -397,18 +407,67 @@ class _SuggestedNextStepSection extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: blueTextColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                minimumSize: const Size(140, 36),
-              ),
-              onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Add as Todo'),
-              child: const Text('+ Add as Todo', maxLines: 1, overflow: TextOverflow.ellipsis),
-            ),
+            if (canAdd) ...<Widget>[
+              const SizedBox(width: 12),
+              _added
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F7EE),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Added',
+                            style: OmiTextStyle.create(
+                              color: const Color(0xFF1BAA52),
+                              fontSize: OmiFontSize.t4_13,
+                              fontWeight: OmiFontWeight.medium,
+                              height: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : TextButton(
+                      onPressed: () async {
+                        final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                          context,
+                          params: MPAddTodoPopupParams(initialTitle: text.trim()),
+                        );
+                        if (!mounted) {
+                          return;
+                        }
+                        if (result != null) {
+                          setState(() => _added = true);
+                          MPToastUtils.showMessage('To-do created.');
+                        } else {
+                          MPToastUtils.showMessage('Couldn\'t create to-do.');
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: const Color(0xFF0A84FF),
+                        backgroundColor: const Color(0xFFEAF2FF),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        minimumSize: const Size(0, 0),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        'Add As Todo',
+                        style: OmiTextStyle.create(
+                          color: const Color(0xFF0A84FF),
+                          fontSize: OmiFontSize.t4_13,
+                          fontWeight: OmiFontWeight.medium,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+            ],
           ],
         ),
       ],
