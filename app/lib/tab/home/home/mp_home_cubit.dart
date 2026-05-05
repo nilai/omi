@@ -2,8 +2,11 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/audio/import/mp_ble_device_audio_import_utils.dart';
+import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -21,13 +24,13 @@ class MPHomeAudioStatus {
 
   final MPHomeAudioStatusType type;
 
-  /// 同步：当前**正在上传的这一条文件**的进度 0–100（非整批累加）；第 N 条完成后，第 N+1 条从 0 再到 100。
-  /// 导入：导入单文件的进度 0–100。
+  /// 导入 / 同步流程中保留字段（例如与旧上报对齐）；首页状态条进度展示为动画条，不再绑定该百分比。
   final int? progress;
 
-  /// 多文件同步时当前条序号（从 1 开始），与 [progress] 表示的「当前条」一致。
+  /// 当前正在处理的文件序号（从 1 开始），与 [totalFiles] 组成状态条右侧 **x/y** 展示。
   final int? currentFile;
 
+  /// 本批次文件总数，与 [currentFile] 组成 **x/y**。
   final int? totalFiles;
 }
 
@@ -106,6 +109,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _homeListRefreshSub = MPHomeNotification.listenHomeListRefresh(_onHomeListRefresh);
     _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
     _todoDeletedSub = MPHomeNotification.listenTodoDeleted(_onTodoDeleted);
+    _bleConnectedSub = MPHomeNotification.listenBleConnectedSuccess(_onBleConnectedSuccess);
     initData();
   }
 
@@ -115,7 +119,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   StreamSubscription<void>? _homeListRefreshSub;
   StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
   StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
+  StreamSubscription<void>? _bleConnectedSub;
   Timer? _syncCompletedClearTimer;
+  bool _bleDeviceImportRunning = false;
 
   static MPHomeState _initialState() {
     return MPHomeState(
@@ -315,6 +321,51 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
+  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后拉取设备文件 → 沙盒 → 上传 → 删设备端文件。
+  Future<void> _onBleConnectedSuccess() async {
+    if (_bleDeviceImportRunning || isClosed) {
+      return;
+    }
+    final BleTransport? transport = MPBluetoothConnectionHelper.backgroundBleTransport;
+    if (transport == null) {
+      MPToastUtils.showMessage('Bluetooth session unavailable.');
+      return;
+    }
+    _bleDeviceImportRunning = true;
+    try {
+      MPToastUtils.showMessage('Bluetooth connected. Starting device import...');
+      if (!isClosed) {
+        emit(state.copyWith(isBleConnected: true));
+      }
+      await MPBleDeviceAudioImportUtils.syncUploadAndDeleteDeviceFiles(
+        transport: transport,
+        onSyncProgress: ({
+          required int fileIndex,
+          required int fileTotal,
+          required int progressPercent,
+        }) {
+          if (!isClosed) {
+            showImportingStatus(
+              progressPercent,
+              currentFile: fileIndex,
+              totalFiles: fileTotal,
+            );
+          }
+        },
+      );
+    } catch (e) {
+      MPToastUtils.showMessage('Device import error: $e');
+    } finally {
+      _bleDeviceImportRunning = false;
+      if (!isClosed) {
+        await refreshBleConnectionState();
+        if (state.audioStatus?.type == MPHomeAudioStatusType.importing) {
+          emit(state.copyWith(clearAudioStatus: true));
+        }
+      }
+    }
+  }
+
   /// 收到 todo 完成通知后，首页 Up Next 直接移除对应项。
   ///
   /// @param {MPHomeTodoDonePayload} payload
@@ -362,6 +413,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _homeListRefreshSub?.cancel();
     _todoDoneSub?.cancel();
     _todoDeletedSub?.cancel();
+    _bleConnectedSub?.cancel();
     return super.close();
   }
 }

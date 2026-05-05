@@ -391,13 +391,13 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (isClosed) return;
       if (summary == null || summary.baseResp.code != 0) {
         MPToastUtils.showMessage(
-          summary?.baseResp.message ?? '生成失败，请稍后重试',
+          summary?.baseResp.message ?? 'Generation failed. Please try again later.',
         );
         return;
       }
       final String sid = (summary.summaryId ?? '').trim();
       if (sid.isEmpty) {
-        MPToastUtils.showMessage('生成失败，请稍后重试');
+        MPToastUtils.showMessage('Generation failed. Please try again later.');
         return;
       }
       _pendingResummaryIds.add(sid);
@@ -405,7 +405,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       _ensureResummaryPolling();
     } catch (_) {
       if (!isClosed) {
-        MPToastUtils.showMessage('生成失败，请稍后重试');
+        MPToastUtils.showMessage('Generation failed. Please try again later.');
       }
     }
   }
@@ -537,7 +537,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
     final String? localPath = await _ensurePlayableLocalPath(cur.data!);
     if (localPath == null || localPath.isEmpty) {
-      MPToastUtils.showMessage('音频下载失败，请稍后重试');
+      MPToastUtils.showMessage('Failed to download audio. Please try again later.');
       return false;
     }
     bool shouldRunPlaybackUi = false;
@@ -562,7 +562,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           debugPrint('OmiMemoryDetailCubit.onPlayTap play future: $e\n$st');
           _stopPlaybackUiTimer();
           _isAudioPlaying = false;
-          MPToastUtils.showMessage('音频播放失败');
+          MPToastUtils.showMessage('Failed to play audio.');
         }),
       );
       _isAudioPlaying = true;
@@ -570,7 +570,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return true;
     } catch (e, st) {
       debugPrint('OmiMemoryDetailCubit.onPlayTap: $e\n$st');
-      MPToastUtils.showMessage('音频播放失败');
+      MPToastUtils.showMessage('Failed to play audio.');
       return false;
     } finally {
       if (!isClosed && shouldRunPlaybackUi) {
@@ -766,7 +766,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     } catch (e) {
       if (state.phase == OmiMemoryDetailPhase.loaded && state.data != null) {
         emit(state.copyWith(isRefreshing: false));
-        MPToastUtils.showMessage('刷新失败，请稍后重试');
+        MPToastUtils.showMessage('Refresh failed. Please try again later.');
       } else {
         emit(
           OmiMemoryDetailState(
@@ -799,7 +799,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   //     );
   //     if (resp == null) {
   //       emit(state.copyWith(isLoadingMore: false, feedHasMore: false));
-  //       MPToastUtils.showMessage('加载更多失败');
+  //       MPToastUtils.showMessage('Couldn\'t load more.');
   //       return;
   //     }
   //     final List<MPFeedCardStruct> cards = resp.feeds ?? const <MPFeedCardStruct>[];
@@ -846,7 +846,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   //     );
   //   } catch (_) {
   //     emit(state.copyWith(isLoadingMore: false));
-  //     MPToastUtils.showMessage('加载更多失败');
+  //     MPToastUtils.showMessage('Couldn\'t load more.');
   //   }
   // }
 

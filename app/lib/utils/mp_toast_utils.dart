@@ -9,9 +9,11 @@ class MPToastUtils {
   ///
   /// [context] - BuildContext，如果为 null 则使用全局 navigatorKey
   static void showFeatureComingSoon({String? message, BuildContext? context}) {
+    final String m = message ?? '';
+    final String prefix = m.isNotEmpty ? '$m — ' : '';
     _showCenterToast(
       context: context,
-      message: '${message ?? ''}功能待完善，敬请期待',
+      message: '${prefix}Coming soon.',
       duration: const Duration(seconds: 2),
     );
   }

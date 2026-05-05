@@ -222,7 +222,7 @@ class _MPAnalyzeSuggestedTasksSheetState
     final _MPSuggestedItem item = _suggestions[i];
     final String content = item.content.trim();
     if (content.isEmpty) {
-      MPToastUtils.showMessage('内容为空');
+      MPToastUtils.showMessage('Content is empty.');
       return;
     }
 
@@ -232,7 +232,7 @@ class _MPAnalyzeSuggestedTasksSheetState
       if (item.type == MPAnalyzeMemoSuggestionType.todo) {
         ok = await MPTodoManager().createTodo(title: content);
         if (!ok) {
-          MPToastUtils.showMessage('创建 Todo 失败，请稍后重试');
+          MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
         }
       } else {
         final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
@@ -244,13 +244,13 @@ class _MPAnalyzeSuggestedTasksSheetState
         ok = resp != null && resp.baseResp.code == 0;
         if (!ok) {
           MPToastUtils.showMessage(
-            resp?.baseResp.message ?? '创建 Memo 失败，请稍后重试',
+            resp?.baseResp.message ?? 'Couldn\'t create memo. Please try again later.',
           );
         }
       }
     } catch (_) {
       ok = false;
-      MPToastUtils.showMessage('创建失败');
+      MPToastUtils.showMessage('Creation failed.');
     }
 
     if (!mounted) return;

@@ -129,7 +129,7 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
                 type: MPTristateType.error,
                 data: MPTristatePageData(
                   title: 'Unable to load insights',
-                  description: state.errorMessage ?? '请稍后重试',
+                  description: state.errorMessage ?? 'Please try again later.',
                   buttonText: 'Retry',
                   onButtonPressed: () => context.read<MPInsightsListCubit>().load(),
                 ),

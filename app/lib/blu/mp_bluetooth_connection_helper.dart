@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -51,6 +52,9 @@ class MPBluetoothConnectionHelper {
   static void parkBackgroundBleTransport(BleTransport? transport) {
     _backgroundBleTransport = transport;
   }
+
+  /// 当前背景持有的 [BleTransport]（未停放时为 `null`）；与连接页 [_transport] 可能指向同一实例。
+  static BleTransport? get backgroundBleTransport => _backgroundBleTransport;
 
   /// 取出背景会话引用（取出后 helper 不再持有，一般由连接页 Cubit 接管）。
   static BleTransport? takeBackgroundBleTransport() {
@@ -159,6 +163,7 @@ class MPBluetoothConnectionHelper {
       // 与 Note 传输层一致：GATT 就绪前短暂稳定，减少首包读写失败。
       await Future<void>.delayed(const Duration(milliseconds: 200));
       parkBackgroundBleTransport(transport);
+      MPHomeNotification.notifyBleConnectedSuccess();
       return true;
     } catch (_) {
       try {

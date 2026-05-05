@@ -111,12 +111,12 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
   void _onConfirmGenerate() {
     final String url = widget.recordUrl.trim();
     if (url.isEmpty) {
-      MPToastUtils.showMessage('暂无录音地址');
+      MPToastUtils.showMessage('No recording URL available.');
       return;
     }
     final String mid = widget.memoryId.trim();
     if (mid.isEmpty) {
-      MPToastUtils.showMessage('Memory 无效');
+      MPToastUtils.showMessage('Invalid memory.');
       return;
     }
     final String? tplId = _selectedTemplate?.id?.trim();

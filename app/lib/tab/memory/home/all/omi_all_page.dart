@@ -146,7 +146,7 @@ class _OmiAllViewState extends State<_OmiAllView> {
               type: MPTristateType.error,
               data: MPTristatePageData(
                 title: 'Unable to load memories',
-                description: state.errorMessage ?? '请稍后重试',
+                description: state.errorMessage ?? 'Please try again later.',
                 onButtonPressed: () {
                   context.read<OmiAllCubit>().retry();
                 },

@@ -6,6 +6,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_preferences.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 /// 连接页设备模型
@@ -383,7 +384,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       }
     } catch (e) {
       if (generation == _scanGeneration && !isClosed) {
-        MPToastUtils.showMessage('扫描失败，请重试');
+        MPToastUtils.showMessage('Scan failed. Please try again.');
         emit(
           state.copyWith(
             isScanning: false,
@@ -443,6 +444,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       final BluetoothDevice device = MPBluetoothConnectionHelper.bluetoothDeviceFromRemoteId(id);
       _transport = MPBluetoothConnectionHelper.createBleTransport(device);
       await _transport!.connect();
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+      MPBluetoothConnectionHelper.parkBackgroundBleTransport(_transport);
+      MPHomeNotification.notifyBleConnectedSuccess();
       await MPBlePreferences.instance.setLastConnectedBleDevice(
         remoteId: id,
         displayName: target.name,
@@ -461,7 +465,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       );
       unawaited(_refreshConnectedDeviceBattery(id));
     } catch (e) {
-      MPToastUtils.showMessage('连接失败，请靠近设备后重试');
+      MPToastUtils.showMessage(
+        'Connection failed. Move closer to the device and try again.',
+      );
       await _disconnectActive();
     } finally {
       if (!isClosed && state.connectingDeviceId != null) {

@@ -70,7 +70,7 @@ class _MPMemoryUpdateNameDialogState extends State<MPMemoryUpdateNameDialog> {
 
     // 验证输入
     if (newTitle.isEmpty) {
-      MPToastUtils.showMessage('记忆标题不能为空');
+      MPToastUtils.showMessage('Title cannot be empty.');
       return;
     }
 
@@ -98,10 +98,10 @@ class _MPMemoryUpdateNameDialogState extends State<MPMemoryUpdateNameDialog> {
         }
         widget.onSuccess?.call(newTitle);
       } else {
-        MPToastUtils.showMessage(res?.baseResp.message ?? '保存失败');
+        MPToastUtils.showMessage(res?.baseResp.message ?? 'Couldn\'t save.');
       }
     } catch (e) {
-      MPToastUtils.showMessage('保存失败: $e');
+      MPToastUtils.showMessage('Couldn\'t save: $e');
     } finally {
       if (mounted) {
         setState(() {

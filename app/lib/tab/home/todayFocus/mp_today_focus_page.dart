@@ -51,7 +51,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       }
       setState(() => _addingAiFocus = false);
       if (!ok) {
-        MPToastUtils.showMessage('添加失败');
+        MPToastUtils.showMessage('Couldn\'t add.');
       }
     });
   }
@@ -161,8 +161,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                   child: MPTristatePage(
                     type: MPTristateType.error,
                     data: MPTristatePageData(
-                      title: '加载失败',
-                      description: state.errorMessage ?? '请稍后重试',
+                      title: 'Couldn\'t load',
+                      description: state.errorMessage ?? 'Please try again later.',
                       onButtonPressed: () => _cubit.retry(),
                     ),
                   ),

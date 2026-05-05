@@ -30,12 +30,12 @@ class MPDeviceConnectionStubPage extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              '配对、电量与同步设置在完整版本中提供。',
+              'Pairing, battery, and sync settings are available in the full version.',
               style: TextStyle(fontSize: 15, color: secondTextColor, height: 1.5),
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: () => MPToastUtils.showFeatureComingSoon(message: '设备扫描与连接'),
+              onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Device scan & connect'),
               child: const Text('Scan devices'),
             ),
           ],

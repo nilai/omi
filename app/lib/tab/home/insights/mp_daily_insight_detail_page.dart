@@ -8,6 +8,8 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../common/omi_add_todo_popup.dart';
+import '../../../generated/assets.dart';
+import '../../../utils/omi_image_loader.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -68,7 +70,7 @@ class _MPDailyInsightBody extends StatelessWidget {
           type: MPTristateType.error,
           data: MPTristatePageData(
             title: 'Unable to load Daily insight',
-            description: state.errorMessage ?? '请稍后重试',
+            description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
             onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
@@ -99,6 +101,7 @@ class _MPDailyInsightBody extends StatelessWidget {
               _MPDailyCard(
                 title: daily.narrativeTitle,
                 icon: Icons.radar_outlined,
+                iconAsset: Assets.mpInsightCompass,
                 iconColor: const Color(0xFF3C7BEE),
                 iconBgColor: const Color(0xFFEAF0FE),
                 contentBgColor: const Color(0xFFF2F6FF),
@@ -117,6 +120,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 _MPDailyCard(
                   title: 'Decisions made',
                   icon: Icons.check_box_outlined,
+                  iconAsset: Assets.mpInsightSquareCheck,
                   iconColor: const Color(0xFF3FB26E),
                   iconBgColor: const Color(0xFFE8F7EE),
                   contentBgColor: const Color(0xFFF2FAF4),
@@ -128,6 +132,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 _MPDailyCard(
                   title: 'Open questions',
                   icon: Icons.error_outline,
+                  iconAsset: Assets.mpInsightCircleAlert,
                   iconColor: const Color(0xFFDA8A3F),
                   iconBgColor: const Color(0xFFFFF1E3),
                   contentBgColor: const Color(0xFFFFF7EE),
@@ -139,6 +144,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 _MPDailyCard(
                   title: 'Patterns emerging',
                   icon: Icons.auto_awesome_outlined,
+                  iconAsset: Assets.mpInsightRotate,
                   iconColor: const Color(0xFF9C5CE4),
                   iconBgColor: const Color(0xFFF2EAFE),
                   contentBgColor: const Color(0xFFF7F1FF),
@@ -158,6 +164,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 _MPDailyCard(
                   title: 'Ideas captured',
                   icon: Icons.lightbulb_outline,
+                  iconAsset: Assets.mpInsightLightbulb,
                   iconColor: const Color(0xFFD39F3E),
                   iconBgColor: const Color(0xFFFFF5E0),
                   contentBgColor: const Color(0xFFFFF9EB),
@@ -170,8 +177,7 @@ class _MPDailyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () =>
-                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
+                onPressed: () => context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,
@@ -188,21 +194,35 @@ class _MPDailyInsightBody extends StatelessWidget {
 }
 
 class _MPDailyCard extends StatelessWidget {
+  /// [iconAsset] 非空且非空字符串时左侧圆标优先使用该资源；否则使用 [icon]。
   const _MPDailyCard({
     required this.title,
-    required this.icon,
+    this.icon,
     required this.iconColor,
     required this.iconBgColor,
     required this.contentBgColor,
     required this.child,
+    this.iconAsset,
   });
 
   final String title;
-  final IconData icon;
+  final IconData? icon;
   final Color iconColor;
   final Color iconBgColor;
   final Color contentBgColor;
   final Widget child;
+  final String? iconAsset;
+
+  Widget _leadingGlyph() {
+    final String? assetPath = iconAsset;
+    if (assetPath != null && assetPath.isNotEmpty) {
+      return OmiImageLoader.localImg(assetPath, width: 14, height: 14, color: iconColor, fit: BoxFit.contain);
+    }
+    if (icon != null) {
+      return Icon(icon, color: iconColor, size: 14);
+    }
+    return const SizedBox.shrink();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -223,16 +243,20 @@ class _MPDailyCard extends StatelessWidget {
                 height: 20,
                 decoration: BoxDecoration(color: iconBgColor, borderRadius: BorderRadius.circular(999)),
                 alignment: Alignment.center,
-                child: Icon(icon, color: iconColor, size: 14),
+                child: _leadingGlyph(),
               ),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: OmiTextStyle.create(
-                  color: mainTextColor,
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.medium,
-                  height: 1.2,
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OmiTextStyle.create(
+                    color: mainTextColor,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
+                    height: 1.2,
+                  ),
                 ),
               ),
             ],
@@ -398,9 +422,9 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                                   setState(() {
                                     _addedIndexes.add(entry.key);
                                   });
-                                  MPToastUtils.showMessage('Todo 创建成功');
+                                  MPToastUtils.showMessage('To-do created.');
                                 } else {
-                                  MPToastUtils.showMessage('Todo 创建失败');
+                                  MPToastUtils.showMessage('Couldn\'t create to-do.');
                                 }
                               },
                               style: TextButton.styleFrom(

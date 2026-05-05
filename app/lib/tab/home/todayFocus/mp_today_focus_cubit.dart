@@ -214,12 +214,14 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
           bundled[0] as GetTodoGroupedListResponse?;
       final GetTodoListResponse? candidates = bundled[1] as GetTodoListResponse?;
       if (raw == null) {
-        MPToastUtils.showMessage('刷新待办失败，请稍后重试');
+        MPToastUtils.showMessage('Failed to refresh to-dos. Please try again later.');
         return false;
       }
       if (raw.baseResp.code != 0) {
         MPToastUtils.showMessage(
-          raw.baseResp.message.isEmpty ? '刷新待办失败' : raw.baseResp.message,
+          raw.baseResp.message.isEmpty
+          ? 'Failed to refresh to-dos.'
+          : raw.baseResp.message,
         );
         return false;
       }
@@ -248,7 +250,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPHomeNotification.notifyHomeListRefresh();
       return true;
     } catch (_) {
-      MPToastUtils.showMessage('刷新待办失败，请稍后重试');
+      MPToastUtils.showMessage('Failed to refresh to-dos. Please try again later.');
       return false;
     } finally {
       if (!isClosed && state.isGroupedTodosRefreshing) {
@@ -416,7 +418,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       );
       if (response == null || response.baseResp.code != 0) {
         MPToastUtils.showMessage(
-          response?.baseResp.message ?? '分析失败，请稍后重试',
+          response?.baseResp.message ??
+          'Analysis failed. Please try again later.',
         );
         return false;
       }
@@ -425,7 +428,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
 
     final String? url = r.recordUrl?.trim();
     if (url == null || url.isEmpty) {
-      MPToastUtils.showMessage('录音无效');
+      MPToastUtils.showMessage('Invalid recording.');
       return false;
     }
     final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
@@ -433,13 +436,14 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     );
     if (response == null || response.baseResp.code != 0) {
       MPToastUtils.showMessage(
-        response?.baseResp.message ?? '分析失败，请稍后重试',
+        response?.baseResp.message ??
+          'Analysis failed. Please try again later.',
       );
       return false;
     }
     final String title = response.originalText.trim();
     if (title.isEmpty) {
-      MPToastUtils.showMessage('未识别到有效内容');
+      MPToastUtils.showMessage('No usable content recognized.');
       return false;
     }
     return _refreshTodoListsFromServer();
@@ -497,7 +501,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (index < 0 || index >= src.length) return;
     final String todoId = src[index].todoId.trim();
     if (todoId.isEmpty) {
-      MPToastUtils.showMessage('任务ID不能为空');
+      MPToastUtils.showMessage('Task ID cannot be empty.');
       return;
     }
     final bool ok = await MPTodoManager().completeTodo(todoId);
@@ -517,7 +521,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final MPTodayFocusTodoRowData row = state.completedItems[index];
     final String todoId = row.todoId.trim();
     if (todoId.isEmpty) {
-      MPToastUtils.showMessage('任务ID不能为空');
+      MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
     final bool ok = await MPTodoManager().updateTodoWithRequest(
@@ -570,7 +574,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     }
     final String todoId = items[index].todoId.trim();
     if (todoId.isEmpty) {
-      MPToastUtils.showMessage('任务ID不能为空');
+      MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
     final bool ok = await MPTodoManager().deleteTodo(todoId);

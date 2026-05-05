@@ -68,7 +68,7 @@ class NoteStorageInfo {
   int get usedPercentInt => (usedPercentage * 100).round();
 
   /// 格式化的存储信息字符串
-  String get formattedString => '$usedKB KB已用 / $totalMB MB';
+  String get formattedString => '$usedKB KB used / $totalMB MB';
 
   NoteStorageInfo copyWith({
     int? usedKB,

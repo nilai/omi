@@ -40,8 +40,13 @@ class MPAudioImportUtils {
     'aac',
     'flac',
     'ogg',
+    'oga',
     'opus',
   ];
+
+  static const MethodChannel _androidAudioMultiPickerChannel = MethodChannel(
+    'ai.memopin.app/mp_android_audio_multi_picker',
+  );
 
   /// 从系统文件选择（**支持多选**）并复制到应用沙盒。
   static Future<List<String>?> pickFromFileWithProgress({
@@ -51,7 +56,7 @@ class MPAudioImportUtils {
     if (picked.isEmpty) {
       return null;
     }
-    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+    return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
   /// 从相册选择（**支持多选**，iOS 优先 [ImagePicker.pickMultipleMedia]）并复制到应用沙盒。
@@ -62,52 +67,47 @@ class MPAudioImportUtils {
     if (picked.isEmpty) {
       return null;
     }
-    return _syncPickedFilesToSandbox(picked, onProgress: onProgress);
+    return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
-  /// 将沙盒内一条音频上传并创建远端记录（与录音上传链路一致）。
+  /// 按路径列表逐个上传：使用 [MPAudioUploadManager.uploadMultipleLocalRecords] + [localRecordsAlreadyAdded]。
   ///
-  /// [batchTotal] / [batchIndex] 用于首页多文件导入时的进度条批次展示。
-  static Future<void> uploadImportedSandboxFile(
-    String sandboxPath, {
-    int batchTotal = 1,
-    int batchIndex = 1,
-  }) async {
-    final File file = File(sandboxPath);
-    if (!await file.exists()) {
+  /// 须与 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 配套（二者已在同步后写入本地索引）。
+  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths, {String source = 'MobilePhone'}) async {
+    final List<MPAudioUploadLocalItem> items = <MPAudioUploadLocalItem>[];
+    for (final String sandboxPath in sandboxPaths) {
+      final File file = File(sandboxPath);
+      if (!await file.exists()) {
+        continue;
+      }
+      final int? dur = await _getAudioDurationSeconds(sandboxPath);
+      final int durationSec = (dur != null && dur > 0) ? dur : 1;
+      final int createAt =
+          (await file.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      items.add(
+        MPAudioUploadLocalItem(
+          localFile: file,
+          durationSec: durationSec,
+          createAt: createAt,
+          source: source,
+        ),
+      );
+    }
+    if (items.isEmpty) {
       return;
     }
-    final int? dur = await _getAudioDurationSeconds(sandboxPath);
-    final int durationSec = (dur != null && dur > 0) ? dur : 1;
-    final int createAt = (await file.lastModified()).millisecondsSinceEpoch ~/ 1000;
-    await MPAudioUploadManager.instance.uploadLocalRecord(
-      localFile: file,
-      durationSec: durationSec,
-      createAt: createAt,
-      source: 'MobilePhone',
-      batchTotal: batchTotal,
-      batchIndex: batchIndex,
+    await MPAudioUploadManager.instance.uploadMultipleLocalRecords(
+      items: items,
+      rightNowTranscribe: false,
+      localRecordsAlreadyAdded: true,
     );
   }
 
-  /// 批量上传已由 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 写入沙盒的路径。
-  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths) async {
-    final int n = sandboxPaths.length;
-    if (n == 0) {
-      return;
-    }
-    for (int i = 0; i < n; i++) {
-      await uploadImportedSandboxFile(
-        sandboxPaths[i],
-        batchTotal: n,
-        batchIndex: i + 1,
-      );
-    }
-  }
-
-  static Future<List<String>> _syncPickedFilesToSandbox(
+  /// 逐个：同步到沙盒 → [MPAudioUploadManager.registerLocalRecordBeforeUpload]。
+  static Future<List<String>> _syncEachPickedFileToSandboxAndRegister(
     List<File> picked, {
     required MPAudioImportCopyProgress onProgress,
+    String source = 'MobilePhone',
   }) async {
     final int total = picked.length;
     final List<String> out = <String>[];
@@ -124,10 +124,27 @@ class MPAudioImportUtils {
           );
         },
       );
-      if (path != null) {
-        onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-        out.add(path);
+      if (path == null) {
+        continue;
       }
+      final File sandboxFile = File(path);
+      final int? dur = await _getAudioDurationSeconds(path);
+      final int durationSec = (dur != null && dur > 0) ? dur : 1;
+      final int createAt =
+          (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      final record =
+          await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
+        localFile: sandboxFile,
+        durationSec: durationSec,
+        createAt: createAt,
+        source: source,
+      );
+      if (record == null) {
+        debugPrint('MPAudioImportUtils: register local record failed, skip: $path');
+        continue;
+      }
+      onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+      out.add(path);
     }
     return out;
   }
@@ -150,22 +167,68 @@ class MPAudioImportUtils {
     return fileName;
   }
 
-  /// Android：`FilePicker` 使用系统文档选择器（SAF），[allowMultiple] 允许多选音频。
+  /// Android：优先走原生 [ACTION_GET_CONTENT] 多选（绕开部分 ROM 上 SAF 忽略多选），失败则回退 [FilePicker]。
   static Future<List<File>> _pickMultipleAudioFromFile() async {
+    if (Platform.isAndroid) {
+      final List<File>? viaNative = await _pickMultipleAudioFromAndroidChannel();
+      if (viaNative != null) {
+        return viaNative;
+      }
+    }
     try {
       final FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: _audioExtensions,
-        dialogTitle: '选择音频文件',
+        dialogTitle: 'Choose audio files',
         withData: false,
         allowCompression: false,
         allowMultiple: true,
       );
       return _audioFilesFromPickerResult(result);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 从文件选择音频失败: $e');
+      debugPrint('MPAudioImportUtils: pick audio from files failed: $e');
     }
     return <File>[];
+  }
+
+  /// 返回非 null：用户结束原生选择（含取消时的空列表）。
+  /// 返回 null：通道异常，应回退 [FilePicker]。
+  static Future<List<File>?> _pickMultipleAudioFromAndroidChannel() async {
+    try {
+      final Object? raw = await _androidAudioMultiPickerChannel.invokeMethod<Object?>(
+        'pickMultipleAudio',
+        <String, String>{'title': 'Choose audio files'},
+      );
+      if (raw == null) {
+        return <File>[];
+      }
+      if (raw is! List<dynamic>) {
+        return <File>[];
+      }
+      final List<File> out = <File>[];
+      for (final Object? item in raw) {
+        if (item is! String) {
+          continue;
+        }
+        final File file = File(item);
+        if (!file.existsSync()) {
+          debugPrint('MPAudioImportUtils: native channel file missing: $item');
+          continue;
+        }
+        if (_isAudioFormatSupported(item)) {
+          out.add(file);
+        } else {
+          debugPrint('MPAudioImportUtils: native channel skip unsupported: $item');
+        }
+      }
+      return out;
+    } on PlatformException catch (e) {
+      debugPrint('MPAudioImportUtils: Android native multi-pick failed, fallback FilePicker: $e');
+      return null;
+    } catch (e) {
+      debugPrint('MPAudioImportUtils: Android native multi-pick error, fallback FilePicker: $e');
+      return null;
+    }
   }
 
   static List<File> _audioFilesFromPickerResult(FilePickerResult? result) {
@@ -176,18 +239,18 @@ class MPAudioImportUtils {
     for (final PlatformFile pf in result.files) {
       final String? path = pf.path;
       if (path == null) {
-        debugPrint('MPAudioImportUtils: 跳过无路径的文件: ${pf.name}');
+        debugPrint('MPAudioImportUtils: skip file without path: ${pf.name}');
         continue;
       }
       final File file = File(path);
       if (!file.existsSync()) {
-        debugPrint('MPAudioImportUtils: 选择的文件不存在: $path');
+        debugPrint('MPAudioImportUtils: picked file missing: $path');
         continue;
       }
       if (_isAudioFormatSupported(path)) {
         out.add(file);
       } else {
-        debugPrint('MPAudioImportUtils: 不支持的音频格式: $path');
+        debugPrint('MPAudioImportUtils: unsupported audio format: $path');
       }
     }
     return out;
@@ -207,7 +270,7 @@ class MPAudioImportUtils {
           for (final XFile media in mediaList) {
             final File file = File(media.path);
             if (!await file.exists()) {
-              debugPrint('MPAudioImportUtils: 选择的文件不存在: ${media.path}');
+              debugPrint('MPAudioImportUtils: picked file missing: ${media.path}');
               continue;
             }
             if (_isAudioFormatSupported(media.path)) {
@@ -221,23 +284,23 @@ class MPAudioImportUtils {
         } on PlatformException catch (e) {
           if (e.code == 'photo_access_denied' ||
               e.code == 'photo_access_restricted') {
-            debugPrint('MPAudioImportUtils: 照片库权限被拒绝: ${e.message}');
+            debugPrint('MPAudioImportUtils: photo library access denied: ${e.message}');
             MPToastUtils.showMessage(
               'Photos access is required to import audio. Allow access in Settings if you previously denied it.',
               duration: const Duration(seconds: 5),
             );
             return <File>[];
           }
-          debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
+          debugPrint('MPAudioImportUtils: ImagePicker failed, fallback FilePicker: $e');
           return _pickMultipleAudioFromAlbumFallback();
         } catch (e) {
-          debugPrint('MPAudioImportUtils: ImagePicker 失败，回退 FilePicker: $e');
+          debugPrint('MPAudioImportUtils: ImagePicker failed, fallback FilePicker: $e');
           return _pickMultipleAudioFromAlbumFallback();
         }
       }
       return _pickMultipleAudioFromAlbumFallback();
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 从相册选择音频失败: $e');
+      debugPrint('MPAudioImportUtils: pick audio from album failed: $e');
     }
     return <File>[];
   }
@@ -250,11 +313,12 @@ class MPAudioImportUtils {
         withData: false,
         allowCompression: false,
         allowMultiple: true,
-        dialogTitle: Platform.isIOS ? '选择音频文件' : '从相册选择音频',
+        dialogTitle:
+            Platform.isIOS ? 'Choose audio files' : 'Choose audio from library',
       );
       return _audioFilesFromPickerResult(result);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: FilePicker 选择失败: $e');
+      debugPrint('MPAudioImportUtils: FilePicker failed: $e');
     }
     return <File>[];
   }
@@ -264,10 +328,36 @@ class MPAudioImportUtils {
       final String extension = filePath.split('.').last.toLowerCase();
       return _audioExtensions.contains(extension);
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 格式检查失败: $e');
+      debugPrint('MPAudioImportUtils: format check failed: $e');
       return false;
     }
   }
+
+  /// 将设备导出字节写入沙盒音频目录（路径规则与 [_syncAudioToSandbox] 一致）。
+  static Future<String?> writeExportBytesToSandbox({
+    required List<int> bytes,
+    required String originalFileName,
+  }) async {
+    try {
+      if (bytes.isEmpty) {
+        return null;
+      }
+      final Directory dir = await _getPersistentAudioDirectory();
+      final String safeFileName = _generateSafeFileName(originalFileName);
+      final String targetPath =
+          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final File targetFile = File(targetPath);
+      await targetFile.writeAsBytes(bytes, flush: true);
+      return targetFile.path;
+    } catch (e) {
+      debugPrint('MPAudioImportUtils: writeExportBytesToSandbox failed: $e');
+      return null;
+    }
+  }
+
+  /// 读取本地音频文件时长（秒）；失败返回 `null`。
+  static Future<int?> readAudioDurationSeconds(String filePath) =>
+      _getAudioDurationSeconds(filePath);
 
   static Future<Directory> _getPersistentAudioDirectory() async {
     final Directory appDir = await getApplicationDocumentsDirectory();
@@ -312,7 +402,7 @@ class MPAudioImportUtils {
       await sink.close();
       return targetFile.path;
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 同步沙盒失败: $e');
+      debugPrint('MPAudioImportUtils: sandbox sync failed: $e');
       return null;
     }
   }
@@ -347,7 +437,7 @@ class MPAudioImportUtils {
         await player.dispose();
       }
     } catch (e) {
-      debugPrint('MPAudioImportUtils: 读取时长失败: $e');
+      debugPrint('MPAudioImportUtils: read duration failed: $e');
       return null;
     }
   }

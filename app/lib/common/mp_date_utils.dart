@@ -14,7 +14,7 @@ class MPDateUtils {
         : DateTime.fromMillisecondsSinceEpoch(raw * 1000);
   }
 
-  /// 日期部分：当天为 `Today`，否则为 `yyyy年M月d日`；无截止时间为 `No deadline`。
+  /// 日期部分：当天为 `Today`，否则为 `MMM d, y`；无截止时间为 `No deadline`。
   static String formatWhenLabelFromDeadline(int? deadline) {
     final DateTime? dt = dateTimeFromUnixEpoch(deadline);
     if (dt == null) {
@@ -26,7 +26,7 @@ class MPDateUtils {
     if (day == today) {
       return 'Today';
     }
-    return DateFormat('yyyy年M月d日').format(dt);
+    return DateFormat('MMM d, y').format(dt);
   }
 
   /// `HH:mm:ss`；无截止时间时为 `--:--:--`。
@@ -38,7 +38,7 @@ class MPDateUtils {
     return DateFormat('HH:mm:ss').format(dt);
   }
 
-  /// 列表一行：`Today · HH:mm:ss` 或 `yyyy年M月d日 · HH:mm:ss`；无截止为 `No deadline`。
+  /// 列表一行：`Today · HH:mm:ss` 或 `MMM d, y · HH:mm:ss`；无截止为 `No deadline`。
   static String deadlineLineText(int? deadline) {
     final DateTime? dt = dateTimeFromUnixEpoch(deadline);
     if (dt == null) {
@@ -48,7 +48,7 @@ class MPDateUtils {
     final DateTime today = DateTime(now.year, now.month, now.day);
     final DateTime day = DateTime(dt.year, dt.month, dt.day);
     final String when =
-        day == today ? 'Today' : DateFormat('yyyy年M月d日').format(dt);
+        day == today ? 'Today' : DateFormat('MMM d, y').format(dt);
     final String time = DateFormat('HH:mm:ss').format(dt);
     return '$when · $time';
   }

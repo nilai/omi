@@ -120,8 +120,8 @@ class MPTristatePage extends StatelessWidget {
       case MPTristateType.empty:
         return _ResolvedTristate(
           icon: _buildOmiWarningIcon(),
-          title: '暂无内容',
-          description: '当前没有数据',
+          title: 'Nothing here yet',
+          description: 'No data yet.',
           showButton: true,
           buttonText: 'Refresh',
             buttonBgColor: blueTextColor,
@@ -140,8 +140,8 @@ class MPTristatePage extends StatelessWidget {
       case MPTristateType.error:
         return _ResolvedTristate(
           icon: _buildOmiWarningIcon(),
-          title: '出错了',
-          description: '请稍后重试',
+          title: 'Something went wrong',
+          description: 'Please try again later.',
           showButton: true,
           buttonText: 'Retry',
             buttonBgColor: blueTextColor,

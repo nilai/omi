@@ -10,9 +10,9 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 
-import '../../../audio/import/mp_audio_import_dialog.dart';
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
@@ -48,69 +48,21 @@ class _MPHomePageState extends State<MPHomePage> {
     try {
       _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
       final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
-        onProgress: ({
-          required int fileIndex,
-          required int fileTotal,
-          required int progressPercent,
-        }) {
-          _cubit.showImportingStatus(
-            progressPercent,
-            currentFile: fileTotal > 1 ? fileIndex : null,
-            totalFiles: fileTotal > 1 ? fileTotal : null,
-          );
+        onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
+          _cubit.showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
         },
       );
       if (!mounted) {
         return;
       }
       if (paths != null && paths.isNotEmpty) {
-        await MPAudioImportUtils.uploadImportedSandboxFiles(paths);
+        await MPAudioUploadManager.instance.uploadAllRecordingFiles(source: 'MobilePhone', rightNowTranscribe: false);
       }
     } finally {
       if (mounted) {
         _cubit.clearAudioStatus();
       }
     }
-  }
-
-  Future<void> _importFromAlbumWithProgress() async {
-    try {
-      _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
-      final List<String>? paths = await MPAudioImportUtils.pickFromAlbumWithProgress(
-        onProgress: ({
-          required int fileIndex,
-          required int fileTotal,
-          required int progressPercent,
-        }) {
-          _cubit.showImportingStatus(
-            progressPercent,
-            currentFile: fileTotal > 1 ? fileIndex : null,
-            totalFiles: fileTotal > 1 ? fileTotal : null,
-          );
-        },
-      );
-      if (!mounted) {
-        return;
-      }
-      if (paths != null && paths.isNotEmpty) {
-        await MPAudioImportUtils.uploadImportedSandboxFiles(paths);
-      }
-    } finally {
-      if (mounted) {
-        _cubit.clearAudioStatus();
-      }
-    }
-  }
-
-  void _openImportAudioSheet() {
-    MPAudioImportDialog.show<void>(
-      context: context,
-      onImportFromFile: _importFromFileWithProgress,
-      onImportFromAlbum: _importFromAlbumWithProgress,
-      onImportFromOtherApp: () {
-        MPToastUtils.showFeatureComingSoon();
-      },
-    );
   }
 
   Future<void> _onRefresh() async {
@@ -210,7 +162,6 @@ class _MPHomePageState extends State<MPHomePage> {
                       subtitle: 'Choose an audio file from your device',
                       onTap: () {
                         Navigator.pop(ctx);
-                        // _openImportAudioSheet();
                         _importFromFileWithProgress();
                       },
                     ),
@@ -279,7 +230,7 @@ class _MPHomePageState extends State<MPHomePage> {
                           ),
                           const Spacer(),
                           IconButton(
-                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: '日历'),
+                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Calendar'),
                             icon: Icon(Icons.calendar_today_outlined, color: blueTextColor),
                           ),
                           const SizedBox(width: 4),
@@ -323,8 +274,12 @@ class _MPHomePageState extends State<MPHomePage> {
                           _RecentMemoryCard(
                             memories: state.recentMemories,
                             onViewAll: widget.onViewAllMemories,
-                            onMemoryTap: (MPHomeMemoryItem m) =>
-                                MPMemoryDetailPageHelper.navigateToDetailPage(context, m.id, m.type, createAt: m.createAt),
+                            onMemoryTap: (MPHomeMemoryItem m) => MPMemoryDetailPageHelper.navigateToDetailPage(
+                              context,
+                              m.id,
+                              m.type,
+                              createAt: m.createAt,
+                            ),
                           ),
                           const SizedBox(height: 16),
                           _InsightsCard(
@@ -735,7 +690,7 @@ class _RecentMemoryCard extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: onViewAll ?? () => MPToastUtils.showFeatureComingSoon(message: 'Memory 列表'),
+                onPressed: onViewAll ?? () => MPToastUtils.showFeatureComingSoon(message: 'Memory list'),
                 style: TextButton.styleFrom(
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(0, 0),
@@ -829,8 +784,7 @@ class _InsightsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final String titleLine =
-        insightOverview.title.trim().isEmpty ? 'Insights' : insightOverview.title.trim();
+    final String titleLine = insightOverview.title.trim().isEmpty ? 'Insights' : insightOverview.title.trim();
     final String sub = insightOverview.subTitle.trim();
     final String body = insightOverview.content.trim();
     final bool hasBody = body.isNotEmpty;

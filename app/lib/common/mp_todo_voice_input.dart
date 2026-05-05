@@ -216,7 +216,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       await _stopRecorder(deleteFile: true);
       if (mounted) {
         setState(() => _busy = false);
-        MPToastUtils.showMessage('开始录音失败: $e');
+        MPToastUtils.showMessage('Failed to start recording: $e');
       }
     }
   }
@@ -233,7 +233,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   Future<void> _confirmRecording() async {
     if (_busy || _sending) return;
     if (_recordPath == null || _recordPath!.isEmpty) {
-      MPToastUtils.showMessage('录音文件无效');
+      MPToastUtils.showMessage('Invalid recording file.');
       return;
     }
     _waveCtrl.stop();
@@ -257,7 +257,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
           _busy = false;
           _mode = MPTodoVoiceInputMode.text;
         });
-        MPToastUtils.showMessage('停止录音失败: $e');
+        MPToastUtils.showMessage('Failed to stop recording: $e');
       }
       await _stopRecorder(deleteFile: true);
       return;
@@ -285,7 +285,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         });
       }
       await _stopRecorder(deleteFile: true);
-      MPToastUtils.showMessage('录音文件不存在');
+      MPToastUtils.showMessage('Recording file not found.');
       return;
     }
 
@@ -304,7 +304,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         _mode = MPTodoVoiceInputMode.text;
       });
       await _stopRecorder(deleteFile: true);
-      MPToastUtils.showMessage('音频上传失败');
+      MPToastUtils.showMessage('Failed to upload audio.');
       return;
     }
 
@@ -321,7 +321,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     if (transcriptResp == null || transcriptResp.baseResp.code != 0) {
       final String msg = transcriptResp?.baseResp.message.isNotEmpty == true
           ? transcriptResp!.baseResp.message
-          : '语音转文字失败';
+          : 'Voice-to-text failed.';
       setState(() {
         _busy = false;
         _mode = MPTodoVoiceInputMode.text;
@@ -338,7 +338,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         _mode = MPTodoVoiceInputMode.text;
       });
       await _stopRecorder(deleteFile: true);
-      MPToastUtils.showMessage('未识别到文字');
+      MPToastUtils.showMessage('No speech recognized.');
       return;
     }
 

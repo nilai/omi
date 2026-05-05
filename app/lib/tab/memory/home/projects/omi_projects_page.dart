@@ -106,7 +106,7 @@ class _OmiProjectsViewState extends State<_OmiProjectsView> {
               type: MPTristateType.error,
               data: MPTristatePageData(
                 title: 'Unable to load projects',
-                description: state.errorMessage ?? '请稍后重试',
+                description: state.errorMessage ?? 'Please try again later.',
                 onButtonPressed: () {
                   context.read<OmiProjectsCubit>().retry();
                 },

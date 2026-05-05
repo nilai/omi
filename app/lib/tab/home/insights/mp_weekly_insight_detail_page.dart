@@ -148,7 +148,7 @@ class _MPWeeklyInsightBody extends StatelessWidget {
           type: MPTristateType.error,
           data: MPTristatePageData(
             title: 'Unable to load Weekly insight',
-            description: state.errorMessage ?? '请稍后重试',
+            description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
             onButtonPressed: () =>
                 context.read<MPInsightDetailCubit>().initData(),
@@ -789,9 +789,9 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                               setState(() {
                                 _addedIndexes.add(e.key);
                               });
-                              MPToastUtils.showMessage('Todo 创建成功');
+                              MPToastUtils.showMessage('To-do created.');
                             } else {
-                              MPToastUtils.showMessage('Todo 创建失败');
+                              MPToastUtils.showMessage('Couldn\'t create to-do.');
                             }
                           },
                           style: TextButton.styleFrom(

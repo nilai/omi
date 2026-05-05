@@ -87,7 +87,7 @@ Future<void> showMPMemoDetailSheet(
                   onTap: () {
                     final String content = memoKey.trim();
                     if (content.isEmpty) {
-                      MPToastUtils.showMessage('内容为空');
+                      MPToastUtils.showMessage('Content is empty.');
                       return;
                     }
                     showMPAnalyzeSuggestedTasksSheet(
@@ -104,7 +104,7 @@ Future<void> showMPMemoDetailSheet(
                             ),
                           );
                           if (resp == null) {
-                            MPToastUtils.showMessage('分析失败');
+                            MPToastUtils.showMessage('Analysis failed.');
                             return <MPAnalyzeMemoSuggestionStruct>[];
                           }
                           if (resp.baseResp.code != 0) {
@@ -121,7 +121,7 @@ Future<void> showMPMemoDetailSheet(
                               .where((s) => s.content.isNotEmpty)
                               .toList();
                         } catch (_) {
-                          MPToastUtils.showMessage('分析失败');
+                          MPToastUtils.showMessage('Analysis failed.');
                           return <MPAnalyzeMemoSuggestionStruct>[];
                         }
                       },
@@ -219,7 +219,7 @@ Future<void> showMPMemoDetailSheet(
                                       resp.baseResp.code != 0) {
                                     MPToastUtils.showMessage(
                                       resp?.baseResp.message ??
-                                          '删除 Memo 失败，请稍后重试',
+                                          'Couldn\'t delete memo. Please try again later.',
                                     );
                                     return;
                                   }

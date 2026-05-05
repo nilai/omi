@@ -303,6 +303,7 @@ MPCreateRecordRequest _$MPCreateRecordRequestFromJson(
   createAt: (json['create_at'] as num).toInt(),
   duration: (json['duration'] as num).toInt(),
   source: json['source'] as String?,
+  txtFile: json['txt_file'] as String?,
 );
 
 Map<String, dynamic> _$MPCreateRecordRequestToJson(
@@ -312,6 +313,7 @@ Map<String, dynamic> _$MPCreateRecordRequestToJson(
   'create_at': instance.createAt,
   'duration': instance.duration,
   'source': instance.source,
+  'txt_file': instance.txtFile,
 };
 
 MPCreateRecordResponse _$MPCreateRecordResponseFromJson(
