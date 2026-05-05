@@ -161,6 +161,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   StreamSubscription<Duration>? _positionStreamSub;
 
   int _suppressPlaybackCompletedUntilMs = 0;
+  int _lastPlaybackEmitBucket = -1;
 
   Timer? _resummaryPollTimer;
   final Set<String> _pendingResummaryIds = <String>{};
@@ -168,6 +169,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   static const Duration _kPlaybackUiTick = Duration(milliseconds: 200);
   static const int _kEndSlackMs = 160;
   static const int _kSuppressCompletedAfterSourceMs = 900;
+  static const int _kPlaybackEmitBucketMs = 500;
 
   static bool _reachedEndByPosition(
     Duration pos,
@@ -192,6 +194,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     _playbackUiTimer = null;
     _positionStreamSub?.cancel();
     _positionStreamSub = null;
+    _lastPlaybackEmitBucket = -1;
   }
 
   void _startPlaybackUiTimer() {
@@ -291,9 +294,11 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
 
     final String msStr = '${pos.inMilliseconds}';
-    if (msStr == s.data!.audioTimeStart) {
+    final int bucket = pos.inMilliseconds ~/ _kPlaybackEmitBucketMs;
+    if (bucket == _lastPlaybackEmitBucket || msStr == s.data!.audioTimeStart) {
       return;
     }
+    _lastPlaybackEmitBucket = bucket;
     emit(
       s.copyWith(
         data: s.data!.copyWith(audioTimeStart: msStr),
@@ -550,6 +555,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       await _audioPlayer.pause();
       _isAudioPlaying = false;
       _syncAudioPlayingFlag();
+      _lastPlaybackEmitBucket = -1;
       return true;
     }
     final String? localPath = await _ensurePlayableLocalPath(cur.data!);
@@ -585,6 +591,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       );
       _isAudioPlaying = true;
       _syncAudioPlayingFlag();
+      _lastPlaybackEmitBucket = -1;
       shouldRunPlaybackUi = true;
       return true;
     } catch (e, st) {
@@ -631,6 +638,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         target = totalRef;
       }
       await _audioPlayer.seek(target);
+      _lastPlaybackEmitBucket = -1;
 
       if (!_audioPlayer.playing) {
         unawaited(
@@ -648,6 +656,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       _isAudioPlaying = true;
       _syncAudioPlayingFlag();
+      _lastPlaybackEmitBucket = -1;
       shouldRunPlaybackUi = true;
       scheduleMicrotask(_tickMemoryDetailPlaybackUi);
       return true;
