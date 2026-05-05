@@ -58,7 +58,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
-      'owner': instance.owner,
+      'owner': instance.owner?.toJson(),
       'priority': instance.priority,
       'deadline': mpTodoDeadlineToJson(instance.deadline),
       'status': instance.status,
@@ -77,7 +77,7 @@ Map<String, dynamic> _$MPRecordConversationStructToJson(
   MPRecordConversationStruct instance,
 ) => <String, dynamic>{
   'id': instance.id,
-  'speaker': instance.speaker,
+  'speaker': instance.speaker.toJson(),
   'content': instance.content,
   'time': instance.time,
 };
@@ -199,11 +199,11 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
       'content': instance.content,
       'duration': instance.duration,
       'unread_item_cnt': instance.unreadItemCnt,
-      'memo_list': instance.memoList,
+      'memo_list': instance.memoList?.map((e) => e.toJson()).toList(),
       'source': instance.source,
-      'memory_feed': instance.memoryFeed,
-      'summary_content': instance.summaryContent,
-      'only_record_content': instance.onlyRecordContent,
+      'memory_feed': instance.memoryFeed?.toJson(),
+      'summary_content': instance.summaryContent?.toJson(),
+      'only_record_content': instance.onlyRecordContent?.toJson(),
     };
 
 const _$MPMemoryTypeEnumMap = {
@@ -218,7 +218,7 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String?,
       type: (json['type'] as num?)?.toInt(),
       title: json['title'] as String?,
-      createAt: (json['create_at'] as num?)?.toInt(),
+      createAt: mpNullableIntFromJson(json['create_at']),
       content: json['content'] as String?,
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
@@ -237,9 +237,9 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'title': instance.title,
       'create_at': instance.createAt,
       'content': instance.content,
-      'todos': instance.todos,
+      'todos': instance.todos?.map((e) => e.toJson()).toList(),
       'has_added_todo': instance.hasAddedTodo,
-      'memos': instance.memos,
+      'memos': instance.memos?.map((e) => e.toJson()).toList(),
       'suggestion': instance.suggestion,
     };
 
