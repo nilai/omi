@@ -69,7 +69,7 @@ class OmiAllCubit extends Cubit<OmiAllState> {
       load();
     });
     _memoryDeletedSub = MPMemoryNotification.listenMemoryDeleted((String id) {
-      removeLocalMemory(id);
+      unawaited(_handleMemoryDeleted(id));
     });
     _memoryTitleUpdatedSub =
         MPMemoryNotification.listenMemoryTitleUpdated((MPMemoryTitleUpdatedPayload p) {
@@ -359,26 +359,78 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     return super.close();
   }
 
-  void removeLocalMemory(String memoryId) {
+  Future<void> _handleMemoryDeleted(String memoryId) async {
     final String id = memoryId.trim();
     if (id.isEmpty) return;
     final OmiAllState s = state;
-    if (s.items.isEmpty) return;
+    if (s.phase != OmiAllPhase.loaded) {
+      return;
+    }
+
+    final List<MPMemoryEntry> before = List<MPMemoryEntry>.from(s.items);
+    final String cursorBefore = _cursor;
+    final bool hasMoreBefore = s.hasMore;
+    final bool loadingBefore = s.isLoadingMore;
+
+    // 先本地移除
     final List<MPMemoryEntry> next =
-        s.items.where((MPMemoryEntry e) => e.id != id).toList(growable: false);
-    if (next.length == s.items.length) return;
-    if (next.isEmpty) {
+        before.where((MPMemoryEntry e) => e.id != id).toList(growable: false);
+    final bool removed = next.length != before.length;
+
+    if (!removed) {
+      // 本地未命中：为了与服务端对齐，直接拉下一页补齐（若还有更多且当前未在加载）。
+      if (hasMoreBefore && !loadingBefore) {
+        await loadMore();
+      }
+      return;
+    }
+
+    if (next.isNotEmpty) {
+      _cursor = next.last.id;
+      emit(
+        OmiAllState(
+          phase: OmiAllPhase.loaded,
+          items: next,
+          isLoadingMore: false,
+          hasMore: hasMoreBefore,
+        ),
+      );
+      return;
+    }
+
+    // 本地删完后为空：按“下一页数据”补齐（cursor 用删除前的 cursor）。
+    if (!hasMoreBefore || loadingBefore) {
       emit(const OmiAllState(phase: OmiAllPhase.empty, items: <MPMemoryEntry>[]));
       return;
     }
     emit(
-      OmiAllState(
+      const OmiAllState(
         phase: OmiAllPhase.loaded,
-        items: next,
-        isLoadingMore: false,
-        hasMore: s.hasMore,
+        items: <MPMemoryEntry>[],
+        isLoadingMore: true,
+        hasMore: true,
       ),
     );
+    try {
+      final _CursorFetchResult result =
+          await _fetchMemoryList(cursor: cursorBefore);
+      final List<MPMemoryEntry> fetched = result.items;
+      if (fetched.isEmpty) {
+        emit(const OmiAllState(phase: OmiAllPhase.empty, items: <MPMemoryEntry>[], hasMore: false));
+        return;
+      }
+      _cursor = fetched.last.id;
+      emit(
+        OmiAllState(
+          phase: OmiAllPhase.loaded,
+          items: fetched,
+          isLoadingMore: false,
+          hasMore: result.hasMore,
+        ),
+      );
+    } catch (_) {
+      emit(const OmiAllState(phase: OmiAllPhase.empty, items: <MPMemoryEntry>[]));
+    }
   }
 
   void updateLocalTitle(String memoryId, String title) {
