@@ -158,6 +158,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _activeRecordingSegmentStart = null;
   }
 
+  /// 回到前台时触发重建；计时见 [_recordingElapsed]（墙钟），与退后台持续录音一致。
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && mounted) {
@@ -165,7 +166,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
   }
 
-  /// 基于墙钟的录音时长，避免退后台后 Timer 暂停导致计时不准或误以为录音已停。
+  /// 基于墙钟的录音时长；与 [openRecorder] 的 `isBGService: true` 配合，退后台仍持续采集时进度与真实录音一致。
   Duration get _recordingElapsed {
     if (_step != _MPAudioRecordStep.recording || _recordPath == null) {
       return Duration.zero;
