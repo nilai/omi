@@ -22,6 +22,7 @@ class _MainTabPageState extends State<MainTabPage> {
 
   List<Widget> get _pages => <Widget>[
         MPHomePage(
+          isTabActive: _currentIndex == 0,
           onViewAllMemories: () {
             setState(() => _currentIndex = 1);
           },

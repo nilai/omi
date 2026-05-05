@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/http/shared.dart';
 import 'app/mp_app_session_bootstrap.dart';
 import 'login/home/mp_login_page.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
+      navigatorObservers: <NavigatorObserver>[mpRouteObserver],
       title: 'omi',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       home: _buildHomePage(context),
