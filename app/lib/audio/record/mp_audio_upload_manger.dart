@@ -541,6 +541,8 @@ class MPAudioUploadManager {
           continue;
         }
 
+        record.fileId = MPAudioLocalRecordsUtil.getFileIdFromRecordFile(record.path);
+
         final Duration? duration = await AudioPickerUtils.getAudioDuration(f);
         debugPrint('uploadAllRecordingFiles duration: $duration');
         int effectiveDurSec = durSec;

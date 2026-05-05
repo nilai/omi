@@ -96,10 +96,8 @@ class OmiMemoryDetailState {
 const int _kMemoryFeedPageSize = 20;
 
 class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
-  OmiMemoryDetailCubit({
-    required this.memoryId,
-    this.detailSource = OmiMemoryDetailSource.memoryFeedSummary,
-  }) : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading)) {
+  OmiMemoryDetailCubit({required this.memoryId, this.detailSource = OmiMemoryDetailSource.memoryFeedSummary})
+    : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading)) {
     _decoderDurationSub = _audioPlayer.durationStream.listen((Duration? d) {
       if (isClosed) {
         return;
@@ -116,11 +114,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (cur.audioTimeEnd == nextEnd) {
         return;
       }
-      emit(
-        s.copyWith(
-          data: cur.copyWith(audioTimeEnd: nextEnd),
-        ),
-      );
+      emit(s.copyWith(data: cur.copyWith(audioTimeEnd: nextEnd)));
       if (_isAudioPlaying) {
         scheduleMicrotask(_tickMemoryDetailPlaybackUi);
       }
@@ -129,8 +123,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (isClosed) {
         return;
       }
-      if (ps.processingState == ProcessingState.completed &&
-          !_audioPlayer.playing) {
+      if (ps.processingState == ProcessingState.completed && !_audioPlayer.playing) {
         scheduleMicrotask(_tickMemoryDetailPlaybackUi);
       }
     });
@@ -171,11 +164,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   static const int _kSuppressCompletedAfterSourceMs = 900;
   static const int _kPlaybackEmitBucketMs = 500;
 
-  static bool _reachedEndByPosition(
-    Duration pos,
-    Duration total,
-    int marginMs,
-  ) {
+  static bool _reachedEndByPosition(Duration pos, Duration total, int marginMs) {
     final int t = total.inMilliseconds;
     if (t <= marginMs) {
       return false;
@@ -184,9 +173,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   void _armSuppressPlaybackCompleted() {
-    _suppressPlaybackCompletedUntilMs =
-        DateTime.now().millisecondsSinceEpoch +
-        _kSuppressCompletedAfterSourceMs;
+    _suppressPlaybackCompletedUntilMs = DateTime.now().millisecondsSinceEpoch + _kSuppressCompletedAfterSourceMs;
   }
 
   void _stopPlaybackUiTimer() {
@@ -233,36 +220,23 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return;
     }
 
-    final bool suppressCompleted = DateTime.now().millisecondsSinceEpoch <
-        _suppressPlaybackCompletedUntilMs;
+    final bool suppressCompleted = DateTime.now().millisecondsSinceEpoch < _suppressPlaybackCompletedUntilMs;
 
     final Duration pos = _audioPlayer.position;
     final Duration? dur = _audioPlayer.duration;
     final Duration totalFromCard = _cardAudioTotal(s.data!);
-    final Duration totalRef = (dur != null && dur > Duration.zero)
-        ? dur
-        : totalFromCard;
+    final Duration totalRef = (dur != null && dur > Duration.zero) ? dur : totalFromCard;
 
-    if (!suppressCompleted &&
-        _audioPlayer.processingState == ProcessingState.completed &&
-        !_audioPlayer.playing) {
-      final bool nearEnd = _reachedEndByPosition(
-        pos,
-        totalRef,
-        _kEndSlackMs * 4,
-      );
-      final bool nearEndByDecoder = dur != null &&
-          dur > Duration.zero &&
-          _reachedEndByPosition(pos, dur, _kEndSlackMs * 4);
-      final bool completedWithoutTotal =
-          totalRef <= Duration.zero && (dur == null || dur <= Duration.zero);
+    if (!suppressCompleted && _audioPlayer.processingState == ProcessingState.completed && !_audioPlayer.playing) {
+      final bool nearEnd = _reachedEndByPosition(pos, totalRef, _kEndSlackMs * 4);
+      final bool nearEndByDecoder =
+          dur != null && dur > Duration.zero && _reachedEndByPosition(pos, dur, _kEndSlackMs * 4);
+      final bool completedWithoutTotal = totalRef <= Duration.zero && (dur == null || dur <= Duration.zero);
       if (nearEnd || nearEndByDecoder || completedWithoutTotal) {
         _stopPlaybackUiTimer();
         _isAudioPlaying = false;
         _syncAudioPlayingFlag();
-        final Duration end = totalRef > Duration.zero
-            ? totalRef
-            : (dur != null && dur > Duration.zero ? dur : pos);
+        final Duration end = totalRef > Duration.zero ? totalRef : (dur != null && dur > Duration.zero ? dur : pos);
         final String endMs = '${end.inMilliseconds}';
         final MPMemoryDetailCardData d = s.data!;
         final String nextAudioTimeEnd = completedWithoutTotal && end > Duration.zero
@@ -270,10 +244,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
             : d.audioTimeEnd;
         emit(
           s.copyWith(
-            data: d.copyWith(
-              audioTimeStart: endMs,
-              audioTimeEnd: nextAudioTimeEnd,
-            ),
+            data: d.copyWith(audioTimeStart: endMs, audioTimeEnd: nextAudioTimeEnd),
           ),
         );
         return;
@@ -285,11 +256,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       _isAudioPlaying = false;
       _syncAudioPlayingFlag();
       final String endMs = '${totalRef.inMilliseconds}';
-      emit(
-        s.copyWith(
-          data: s.data!.copyWith(audioTimeStart: endMs),
-        ),
-      );
+      emit(s.copyWith(data: s.data!.copyWith(audioTimeStart: endMs)));
       return;
     }
 
@@ -299,11 +266,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return;
     }
     _lastPlaybackEmitBucket = bucket;
-    emit(
-      s.copyWith(
-        data: s.data!.copyWith(audioTimeStart: msStr),
-      ),
-    );
+    emit(s.copyWith(data: s.data!.copyWith(audioTimeStart: msStr)));
   }
 
   Future<void> initData() => load();
@@ -324,18 +287,13 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     return false;
   }
 
-  ({
-    MPMemoryDetailCardData data,
-    String feedCursor,
-    bool feedHasMore,
-    bool isSummaryGenerating,
-  })? _loadCachedDetailBundleIfAllowed() {
+  ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})?
+  _loadCachedDetailBundleIfAllowed() {
     if (!_isInCachedFirstPage()) return null;
     final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
     if (cached is! Map) return null;
     try {
-      final MPMemoryStruct m =
-          MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
+      final MPMemoryStruct m = MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
       return _mapDetailResponse(m);
     } catch (_) {
       return null;
@@ -343,12 +301,8 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   Future<void> load() async {
-    final ({
-      MPMemoryDetailCardData data,
-      String feedCursor,
-      bool feedHasMore,
-      bool isSummaryGenerating,
-    })? cached = _loadCachedDetailBundleIfAllowed();
+    final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})? cached =
+        _loadCachedDetailBundleIfAllowed();
     final bool hasCached = cached != null;
     if (hasCached) {
       _feedCursor = cached.feedCursor;
@@ -364,18 +318,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       emit(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
     }
     try {
-      final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
-        MPGetMemoryV2DetailRequest(memoryId: memoryId),
-      );
+      final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(MPGetMemoryV2DetailRequest(memoryId: memoryId));
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
-      final ({
-        MPMemoryDetailCardData data,
-        String feedCursor,
-        bool feedHasMore,
-        bool isSummaryGenerating,
-      }) bundle = _mapDetailResponse(resp.memoryDetail);
+      final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) bundle =
+          _mapDetailResponse(resp.memoryDetail);
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
       }
@@ -390,12 +338,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       );
     } catch (e) {
       if (!hasCached) {
-        emit(
-          OmiMemoryDetailState(
-            phase: OmiMemoryDetailPhase.error,
-            errorMessage: e.toString(),
-          ),
-        );
+        emit(OmiMemoryDetailState(phase: OmiMemoryDetailPhase.error, errorMessage: e.toString()));
       }
     }
   }
@@ -411,9 +354,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final MPSummaryRecordResponse? summary = await summaryRecord(req);
       if (isClosed) return;
       if (summary == null || summary.baseResp.code != 0) {
-        MPToastUtils.showMessage(
-          summary?.baseResp.message ?? 'Generation failed. Please try again later.',
-        );
+        MPToastUtils.showMessage(summary?.baseResp.message ?? 'Generation failed. Please try again later.');
         return;
       }
       final String sid = (summary.summaryId ?? '').trim();
@@ -436,16 +377,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
     final MPMemoryDetailCardData d = cur.data!;
     final bool already = d.feedBlocks.any((MPMemoryFeedBlock b) {
-      return b is MPMemoryFeedResummaryLoadingBlock &&
-          b.data.summaryMemoryId == summaryMemoryId;
+      return b is MPMemoryFeedResummaryLoadingBlock && b.data.summaryMemoryId == summaryMemoryId;
     });
     if (already) return;
     final List<MPMemoryFeedBlock> blocks = <MPMemoryFeedBlock>[
       MPMemoryFeedResummaryLoadingBlock(
-        MPMemoryResummaryLoadingCardData(
-          headerTimeLabel: 'Just now',
-          summaryMemoryId: summaryMemoryId,
-        ),
+        MPMemoryResummaryLoadingCardData(headerTimeLabel: 'Just now', summaryMemoryId: summaryMemoryId),
       ),
       ...d.feedBlocks,
     ];
@@ -459,15 +396,13 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   void _ensureResummaryPolling() {
     if (_resummaryPollTimer != null) return;
-    _resummaryPollTimer =
-        Timer.periodic(const Duration(seconds: 3), (Timer _) async {
+    _resummaryPollTimer = Timer.periodic(const Duration(seconds: 3), (Timer _) async {
       if (isClosed) {
         _cancelResummaryPolling();
         return;
       }
 
-      final MPGetMemorySummaryStatusResponse? resp =
-          await getMemorySummaryStatus(
+      final MPGetMemorySummaryStatusResponse? resp = await getMemorySummaryStatus(
         MPGetMemorySummaryStatusRequest(memoryId: memoryId),
       );
       if (isClosed) {
@@ -500,10 +435,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (id.isEmpty || !_pendingResummaryIds.contains(id)) {
         continue;
       }
-      final bool done = _applyOneResummaryStatus(
-        summaryMemoryId: id,
-        status: it.summaryStatus,
-      );
+      final bool done = _applyOneResummaryStatus(summaryMemoryId: id, status: it.summaryStatus);
       if (done) {
         anyCompleted = true;
       }
@@ -511,10 +443,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     return anyCompleted;
   }
 
-  bool _applyOneResummaryStatus({
-    required String summaryMemoryId,
-    required int status,
-  }) {
+  bool _applyOneResummaryStatus({required String summaryMemoryId, required int status}) {
     final String id = summaryMemoryId.trim();
     if (id.isEmpty || !_pendingResummaryIds.contains(id)) {
       return false;
@@ -568,10 +497,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final bool rebound = _playingLocalPath != localPath;
       if (rebound) {
         _armSuppressPlaybackCompleted();
-        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
-          _audioPlayer,
-          localPath,
-        );
+        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
         _playingLocalPath = localPath;
       }
       if (_audioPlayer.processingState == ProcessingState.completed) {
@@ -621,15 +547,11 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final bool rebound = _playingLocalPath != localPath;
       if (rebound) {
         _armSuppressPlaybackCompleted();
-        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
-          _audioPlayer,
-          localPath,
-        );
+        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
         _playingLocalPath = localPath;
       }
 
-      final Duration totalRef = _audioPlayer.duration ??
-          _cardAudioTotal(cur.data!);
+      final Duration totalRef = _audioPlayer.duration ?? _cardAudioTotal(cur.data!);
       Duration target = position;
       if (target.isNegative) {
         target = Duration.zero;
@@ -672,79 +594,35 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   Future<String?> _ensurePlayableLocalPath(MPMemoryDetailCardData data) async {
-    final String recordFile = (data.recordFile ?? '').trim();
-    final String? localPath = await MPAudioLocalRecordsUtil.instance.getLocalRecordPath(
-      recordFile,
-    );
-    if (localPath != null && localPath.isNotEmpty) {
+    // 本地是否有对应的文件
+    final String recordUri = (data.recordUri ?? '').trim();
+    final String fileId = MPAudioLocalRecordsUtil.getFileIdFromRecordFile(recordUri);
+    final MPAudioLocalRecord? record = await MPAudioLocalRecordsUtil.instance.queryByFileId(fileId);
+    final String localPath = record?.path ?? '';
+    if (localPath.isNotEmpty) {
       return localPath;
     }
-    final String? downloadUrl = _resolveRecordDownloadUrl(
-      recordFile: recordFile,
-      recordUri: (data.recordUri ?? '').trim(),
-    );
-    if (downloadUrl == null || downloadUrl.isEmpty) {
-      return null;
+    // 本地没有对应的文件，则下载
+    final String downloadUrl = (data.recordFile ?? '').trim();
+    if (downloadUrl.isEmpty) {
+      return '';
     }
-    return _downloadRecordToLocal(
-      downloadUrl: downloadUrl,
-      recordFile: recordFile,
-      durationLabel: data.audioTimeEnd,
-    );
+    return _downloadRecordToLocal(downloadUrl: downloadUrl, fileId: fileId, durationLabel: data.audioTimeEnd);
   }
 
-  String? _resolveRecordDownloadUrl({
-    required String recordFile,
-    required String recordUri,
-  }) {
-    final String rf = recordFile.trim();
-    final String ru = recordUri.trim();
-
-    if (rf.isNotEmpty) {
-      final Uri? recordFileUri = Uri.tryParse(rf);
-      if (recordFileUri != null &&
-          recordFileUri.hasScheme &&
-          recordFileUri.host.isNotEmpty) {
-        return rf;
-      }
-    }
-
-    final Uri? recordUriParsed = Uri.tryParse(ru);
-    if (recordUriParsed != null &&
-        recordUriParsed.hasScheme &&
-        recordUriParsed.host.isNotEmpty) {
-      if (rf.isEmpty) {
-        return ru;
-      }
-      final Uri? ref = Uri.tryParse(rf);
-      if (ref == null) {
-        return ru;
-      }
-      return recordUriParsed.resolveUri(ref).toString();
-    }
-    return null;
-  }
-
+  /// 下载录音到本地
   Future<String?> _downloadRecordToLocal({
     required String downloadUrl,
-    required String recordFile,
+    required String fileId,
     required String durationLabel,
   }) async {
     try {
       final Uri uri = Uri.parse(downloadUrl);
-      final http.Response? response =
-          await MPAudioLocalRecordsUtil.httpGetAudioDownloadUrl(downloadUrl);
-      if (response == null ||
-          response.statusCode < 200 ||
-          response.statusCode >= 300) {
+      final http.Response? response = await MPAudioLocalRecordsUtil.httpGetAudioDownloadUrl(downloadUrl);
+      if (response == null || response.statusCode < 200 || response.statusCode >= 300) {
         return null;
       }
-      final String audioDirPath =
-          await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
-      final String sourceForId =
-          recordFile.isNotEmpty ? recordFile : downloadUrl;
-      String fileId =
-          MPAudioLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
+      final String audioDirPath = await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
       if (fileId.isEmpty) {
         fileId = DateTime.now().millisecondsSinceEpoch.toString();
       }
@@ -754,14 +632,10 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (dot > 0 && dot < path.length - 1) {
         ext = path.substring(dot);
       }
-      final String filePath = p.join(
-        audioDirPath,
-        '${DateTime.now().millisecondsSinceEpoch}_$fileId$ext',
-      );
+      final String filePath = p.join(audioDirPath, '$fileId$ext');
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes, flush: true);
-      final String? playablePath =
-          await MPAudioLocalRecordsUtil.adjustAudioFileIfWrongExtension(filePath);
+      final String? playablePath = await MPAudioLocalRecordsUtil.adjustAudioFileIfWrongExtension(filePath);
       if (playablePath == null) {
         return null;
       }
@@ -770,15 +644,17 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       await MPAudioLocalRecordsUtil.instance.add(
         MPAudioLocalRecord(
           path: playablePath,
-          fileName: fileId,
+          fileName: '$fileId$ext',
           createAt: DateTime.now().millisecondsSinceEpoch,
           duration: _parseDurationSeconds(durationLabel),
           source: 'mobilePhone',
           fileId: fileId,
+          isRemoved: true,
         ),
       );
       return playablePath;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('OmiMemoryDetailCubit._downloadRecordToLocal: $e\n$st');
       return null;
     }
   }
@@ -807,12 +683,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     return null;
   }
 
-  ({
-    MPMemoryDetailCardData data,
-    String feedCursor,
-    bool feedHasMore,
-    bool isSummaryGenerating,
-  }) _mapDetailResponse(MPMemoryStruct m) {
+  ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) _mapDetailResponse(
+    MPMemoryStruct m,
+  ) {
     return switch (detailSource) {
       OmiMemoryDetailSource.memoryFeedSummary => mpMemoryStructToDetailBundle(m),
       OmiMemoryDetailSource.rootSummaryMemory => mpMemoryStructToMemoDetailBundle(m),
@@ -829,18 +702,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       emit(cur.copyWith(isRefreshing: true));
     }
     try {
-      final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(
-        MPGetMemoryV2DetailRequest(memoryId: memoryId),
-      );
+      final MPGetMemoryV2DetailResponse? resp = await getMemoryDetail(MPGetMemoryV2DetailRequest(memoryId: memoryId));
       if (resp == null) {
         throw StateError('getMemoryDetail failed');
       }
-      final ({
-        MPMemoryDetailCardData data,
-        String feedCursor,
-        bool feedHasMore,
-        bool isSummaryGenerating,
-      }) bundle = _mapDetailResponse(resp.memoryDetail);
+      final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) bundle =
+          _mapDetailResponse(resp.memoryDetail);
       if (_isInCachedFirstPage()) {
         OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
       }
@@ -860,12 +727,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         emit(state.copyWith(isRefreshing: false));
         MPToastUtils.showMessage('Refresh failed. Please try again later.');
       } else {
-        emit(
-          OmiMemoryDetailState(
-            phase: OmiMemoryDetailPhase.error,
-            errorMessage: e.toString(),
-          ),
-        );
+        emit(OmiMemoryDetailState(phase: OmiMemoryDetailPhase.error, errorMessage: e.toString()));
       }
     }
   }
@@ -957,8 +819,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       deadlineLabel: null,
     );
 
-    final List<MPMemoryFeedBlock> nextBlocks =
-        List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    final List<MPMemoryFeedBlock> nextBlocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
     int existingIndex = -1;
     for (int i = nextBlocks.length - 1; i >= 0; i--) {
       if (nextBlocks[i] is MPMemoryFeedTodosCreatedBlock) {
@@ -967,26 +828,19 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
     }
     if (existingIndex >= 0) {
-      final MPMemoryFeedTodosCreatedBlock block =
-          nextBlocks[existingIndex] as MPMemoryFeedTodosCreatedBlock;
+      final MPMemoryFeedTodosCreatedBlock block = nextBlocks[existingIndex] as MPMemoryFeedTodosCreatedBlock;
       final MPMemoryTodosCreatedCardData old = block.data;
-      final List<MPMemoryCreatedTodoLineData> items =
-          List<MPMemoryCreatedTodoLineData>.from(old.items)..add(newItem);
+      final List<MPMemoryCreatedTodoLineData> items = List<MPMemoryCreatedTodoLineData>.from(old.items)..add(newItem);
       nextBlocks[existingIndex] = MPMemoryFeedTodosCreatedBlock(
         MPMemoryTodosCreatedCardData(
-          headerTimeLabel: old.headerTimeLabel.isNotEmpty
-              ? old.headerTimeLabel
-              : 'Just now',
+          headerTimeLabel: old.headerTimeLabel.isNotEmpty ? old.headerTimeLabel : 'Just now',
           items: items,
         ),
       );
     } else {
       nextBlocks.add(
         MPMemoryFeedTodosCreatedBlock(
-          MPMemoryTodosCreatedCardData(
-            headerTimeLabel: 'Just now',
-            items: <MPMemoryCreatedTodoLineData>[newItem],
-          ),
+          MPMemoryTodosCreatedCardData(headerTimeLabel: 'Just now', items: <MPMemoryCreatedTodoLineData>[newItem]),
         ),
       );
     }
@@ -1019,13 +873,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
 
     final MPMemoryDetailCardData d = cur.data!;
-    final MPMemoryMyMemoLine newLine = MPMemoryMyMemoLine(
-      text: line,
-      type: MPMemoType.manualMemo,
-    );
+    final MPMemoryMyMemoLine newLine = MPMemoryMyMemoLine(text: line, type: MPMemoType.manualMemo);
 
-    final List<MPMemoryFeedBlock> nextBlocks =
-        List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    final List<MPMemoryFeedBlock> nextBlocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
     int existingIndex = -1;
     for (int i = nextBlocks.length - 1; i >= 0; i--) {
       if (nextBlocks[i] is MPMemoryFeedMyMemoBlock) {
@@ -1034,16 +884,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
     }
     if (existingIndex >= 0) {
-      final MPMemoryFeedMyMemoBlock block =
-          nextBlocks[existingIndex] as MPMemoryFeedMyMemoBlock;
+      final MPMemoryFeedMyMemoBlock block = nextBlocks[existingIndex] as MPMemoryFeedMyMemoBlock;
       final MPMemoryMyMemosCardData old = block.data;
-      final List<MPMemoryMyMemoLine> lines =
-          List<MPMemoryMyMemoLine>.from(old.lines)..add(newLine);
+      final List<MPMemoryMyMemoLine> lines = List<MPMemoryMyMemoLine>.from(old.lines)..add(newLine);
       nextBlocks[existingIndex] = MPMemoryFeedMyMemoBlock(
         MPMemoryMyMemosCardData(
-          headerTimeLabel: old.headerTimeLabel.isNotEmpty
-              ? old.headerTimeLabel
-              : 'Just now',
+          headerTimeLabel: old.headerTimeLabel.isNotEmpty ? old.headerTimeLabel : 'Just now',
           sourceLine: old.sourceLine,
           lines: lines,
         ),
@@ -1051,10 +897,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     } else {
       nextBlocks.add(
         MPMemoryFeedMyMemoBlock(
-          MPMemoryMyMemosCardData(
-            headerTimeLabel: 'Just now',
-            lines: <MPMemoryMyMemoLine>[newLine],
-          ),
+          MPMemoryMyMemosCardData(headerTimeLabel: 'Just now', lines: <MPMemoryMyMemoLine>[newLine]),
         ),
       );
     }
@@ -1086,9 +929,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return true;
     }
 
-    final MPDeleteTodoResponse? resp = await MPTodo.deleteTodo(
-      MPDeleteTodoRequest(todoId: todoId),
-    );
+    final MPDeleteTodoResponse? resp = await MPTodo.deleteTodo(MPDeleteTodoRequest(todoId: todoId));
     return resp != null && resp.baseResp.code == 0;
   }
 
@@ -1111,19 +952,15 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final bool ok = await _deleteTodoApi(target);
     if (!ok) return false;
 
-    final List<MPMemoryCreatedTodoLineData> nextItems =
-        List<MPMemoryCreatedTodoLineData>.from(todos.items)..removeAt(itemIndex);
+    final List<MPMemoryCreatedTodoLineData> nextItems = List<MPMemoryCreatedTodoLineData>.from(todos.items)
+      ..removeAt(itemIndex);
 
-    final List<MPMemoryFeedBlock> nextBlocks =
-        List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    final List<MPMemoryFeedBlock> nextBlocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
     if (nextItems.isEmpty) {
       nextBlocks.removeAt(feedBlockIndex);
     } else {
       nextBlocks[feedBlockIndex] = MPMemoryFeedTodosCreatedBlock(
-        MPMemoryTodosCreatedCardData(
-          headerTimeLabel: todos.headerTimeLabel,
-          items: nextItems,
-        ),
+        MPMemoryTodosCreatedCardData(headerTimeLabel: todos.headerTimeLabel, items: nextItems),
       );
     }
 
@@ -1186,10 +1023,7 @@ String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
   return null;
 }
 
-List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
-  List<MPFeedCardStruct> feeds,
-    String? title
-) {
+List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, String? title) {
   final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
   for (final MPFeedCardStruct f in feeds) {
     final int kind = _resolveFeedCardKind(f);
@@ -1273,8 +1107,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
       // if (bodyText.isEmpty) {
       //   continue;
       // }
-      categoryTitle =
-          titleRaw.isNotEmpty ? titleRaw : 'FOLLOW-UP HIGHLIGHTS';
+      categoryTitle = titleRaw.isNotEmpty ? titleRaw : 'FOLLOW-UP HIGHLIGHTS';
     } else {
       // MPFeedCardType.insight：纯文本 content + suggestion（卡片内分段展示，非 Markdown）
       categoryTitle = (f.title ?? '').trim();
@@ -1333,12 +1166,8 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 }
 
 /// 详情映射结果：主卡片数据 + 分页加载 Feed 所需的游标与 unknown insight 计数。
-({
-  MPMemoryDetailCardData data,
-  String feedCursor,
-  bool feedHasMore,
-  bool isSummaryGenerating,
-}) _mpMemoryStructToDetailBundleFromSources(
+({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})
+_mpMemoryStructToDetailBundleFromSources(
   MPMemoryStruct m, {
   required MPSummaryMemoryStruct? sm,
   required List<MPFeedCardStruct> feedCards,
@@ -1353,40 +1182,34 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
       ? <String>[]
       : (sm.participants ?? []).map((MPSpeakerStruct p) => p.name).toList();
 
-  final List<MPMemoryTranscriptItemData> transcriptItems =
-      sm == null
-          ? const <MPMemoryTranscriptItemData>[]
-          : (sm.transcript ?? [])
-              .map(
-                (MPRecordConversationStruct t) {
-                  final int sec = t.time ?? 0;
-                  return MPMemoryTranscriptItemData(
-                    timestamp: MPDateUtils.formatTranscriptSecondsToMmSs(sec),
-                    timeSeconds: sec,
-                    speakerName: t.speaker.name,
-                    transcriptText: t.content,
-                    id: t.id,
-                  );
-                },
-              )
-              .toList(growable: false);
+  final List<MPMemoryTranscriptItemData> transcriptItems = sm == null
+      ? const <MPMemoryTranscriptItemData>[]
+      : (sm.transcript ?? [])
+            .map((MPRecordConversationStruct t) {
+              final int sec = t.time ?? 0;
+              return MPMemoryTranscriptItemData(
+                timestamp: MPDateUtils.formatTranscriptSecondsToMmSs(sec),
+                timeSeconds: sec,
+                speakerName: t.speaker.name,
+                transcriptText: t.content,
+                id: t.id,
+              );
+            })
+            .toList(growable: false);
 
-  final List<MPMemoryActionItemData> actionItems =
-      sm == null
-          ? const <MPMemoryActionItemData>[]
-          : (sm.todos ?? [])
-              .map(
-                (MPTodoStruct t) => MPMemoryActionItemData(
-                  id: t.id,
-                  title: t.title,
-                  status: t.status == 1
-                      ? MPMemoryActionItemStatus.pending
-                      : MPMemoryActionItemStatus.created,
-                  priority: t.priority,
-                  deadline: t.deadline,
-                ),
-              )
-              .toList(growable: false);
+  final List<MPMemoryActionItemData> actionItems = sm == null
+      ? const <MPMemoryActionItemData>[]
+      : (sm.todos ?? [])
+            .map(
+              (MPTodoStruct t) => MPMemoryActionItemData(
+                id: t.id,
+                title: t.title,
+                status: t.status == 1 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
+                priority: t.priority,
+                deadline: t.deadline,
+              ),
+            )
+            .toList(growable: false);
 
   final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title);
 
@@ -1394,18 +1217,13 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
   final DateTime dt = _detailServerTime(metaCreateAt);
   final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
   final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
-  final String metaLine =
-      '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
+  final String metaLine = '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
 
   final MPOnlyRecordMemoryStruct? only = m.onlyRecordContent;
-  final String? recordFileForPlay = _firstNonEmptyDetailString(<String?>[
-    sm?.recordUrl,
-    only?.recordFile,
-  ]);
-  final String? recordUriForPlay = _firstNonEmptyDetailString(<String?>[
-    sm?.recordUri,
-    only?.recordUri,
-  ]);
+  // audio/xxxx
+  final String? recordFileForPlay = _firstNonEmptyDetailString(<String?>[sm?.recordUrl, only?.recordFile]);
+  // https://xxxx.com/audio/xxxx
+  final String? recordUriForPlay = _firstNonEmptyDetailString(<String?>[sm?.recordUri, only?.recordUri]);
 
   final MPMemoryDetailCardData data = MPMemoryDetailCardData(
     memoryId: m.id ?? '',
@@ -1426,21 +1244,12 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
   final String feedCursor = _lastFeedCardId(feedCards) ?? '';
   final bool feedHasMore = feedCards.isNotEmpty;
 
-  return (
-    data: data,
-    feedCursor: feedCursor,
-    feedHasMore: feedHasMore,
-    isSummaryGenerating: isSummaryGenerating,
-  );
+  return (data: data, feedCursor: feedCursor, feedHasMore: feedHasMore, isSummaryGenerating: isSummaryGenerating);
 }
 
 /// Memory 会话详情：正文来自 [MPMemoryStruct.memoryFeed] 内 [MPMemoryFeedStruct.summaryMemory]，Feed 列表同 [MPMemoryFeedStruct.feeds]。
-({
-  MPMemoryDetailCardData data,
-  String feedCursor,
-  bool feedHasMore,
-  bool isSummaryGenerating,
-}) mpMemoryStructToDetailBundle(MPMemoryStruct m) {
+({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})
+mpMemoryStructToDetailBundle(MPMemoryStruct m) {
   final MPMemoryFeedStruct? mf = m.memoryFeed;
   return _mpMemoryStructToDetailBundleFromSources(
     m,
@@ -1450,12 +1259,8 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 }
 
 /// Memo 详情：正文来自根级 [MPMemoryStruct.summaryMemory]；下方活动区仍可使用 [MPMemoryStruct.memoryFeed] 的 [MPMemoryFeedStruct.feeds]（若有）。
-({
-  MPMemoryDetailCardData data,
-  String feedCursor,
-  bool feedHasMore,
-  bool isSummaryGenerating,
-}) mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
+({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})
+mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
   return _mpMemoryStructToDetailBundleFromSources(
     m,
     sm: m.summaryContent,
@@ -1469,8 +1274,7 @@ String? _firstNonEmptyDetailString(Iterable<String?> candidates) {
 /// 不使用根级 [MPMemoryStruct.summaryMemory]、[MPMemoryStruct.onlyRecordMemory]。
 ///
 /// [MPMemoryFeedStruct.feeds] 顺序映射为 [MPMemoryDetailCardData.feedBlocks]（Insight / Todos / Memos / You asked 等可混合）。
-MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) =>
-    mpMemoryStructToDetailBundle(m).data;
+MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) => mpMemoryStructToDetailBundle(m).data;
 
 DateTime _detailServerTime(int createAt) {
   if (createAt > 10000000000) {

@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 单条 Audio 本地记录（持久化到 SharedPreferences）。
 class MPAudioLocalRecord {
-  const MPAudioLocalRecord({
+   MPAudioLocalRecord({
     required this.path,
     required this.fileName,
     required this.createAt,
@@ -36,7 +36,7 @@ class MPAudioLocalRecord {
   final int? duration;
 
   /// 服务端文件 id，可选
-  final String fileId;
+  String fileId;
 
   /// 来源标识，如 `mp` / `mobile`
   final String source;
@@ -66,14 +66,14 @@ class MPAudioLocalRecord {
   }
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'path': path,
-        'fileName': fileName,
-        'createAt': createAt,
-        'duration': duration,
-        'fileId': fileId,
-        'source': source,
-        'isRemoved': isRemoved,
-      };
+    'path': path,
+    'fileName': fileName,
+    'createAt': createAt,
+    'duration': duration,
+    'fileId': fileId,
+    'source': source,
+    'isRemoved': isRemoved,
+  };
 
   factory MPAudioLocalRecord.fromJson(Map<String, dynamic> json) {
     return MPAudioLocalRecord(
@@ -90,8 +90,7 @@ class MPAudioLocalRecord {
   String toJsonString() => jsonEncode(toJson());
 
   static MPAudioLocalRecord fromJsonString(String raw) {
-    final Map<String, dynamic> map =
-        jsonDecode(raw) as Map<String, dynamic>;
+    final Map<String, dynamic> map = jsonDecode(raw) as Map<String, dynamic>;
     return MPAudioLocalRecord.fromJson(map);
   }
 }
@@ -123,20 +122,14 @@ class MPAudioLocalRecordsUtil {
         return null;
       }
       final String? base = Env.apiBaseUrl;
-      if (base != null &&
-          base.isNotEmpty &&
-          trimmed.startsWith(base)) {
+      if (base != null && base.isNotEmpty && trimmed.startsWith(base)) {
         final http.StreamedResponse streamed = await makeRawApiCall(
           url: trimmed,
           method: 'GET',
           headers: const <String, String>{},
         );
         final List<int> bytes = await streamed.stream.toBytes();
-        return http.Response.bytes(
-          bytes,
-          streamed.statusCode,
-          headers: streamed.headers,
-        );
+        return http.Response.bytes(bytes, streamed.statusCode, headers: streamed.headers);
       }
       return await http.get(Uri.parse(trimmed));
     } catch (e, st) {
@@ -163,17 +156,11 @@ class MPAudioLocalRecordsUtil {
   }
 
   static bool _bytesAreMp4Ftyp(Uint8List head) {
-    return head.length >= 8 &&
-        head[4] == 0x66 &&
-        head[5] == 0x74 &&
-        head[6] == 0x79 &&
-        head[7] == 0x70;
+    return head.length >= 8 && head[4] == 0x66 && head[5] == 0x74 && head[6] == 0x79 && head[7] == 0x70;
   }
 
   static bool _bytesAreAdtsAac(Uint8List head) {
-    return head.length >= 2 &&
-        (head[0] & 0xff) == 0xff &&
-        (head[1] & 0xf0) == 0xf0;
+    return head.length >= 2 && (head[0] & 0xff) == 0xff && (head[1] & 0xf0) == 0xf0;
   }
 
   static bool _bytesAreMp3(Uint8List head) {
@@ -198,10 +185,7 @@ class MPAudioLocalRecordsUtil {
   }
 
   static Future<String> _renameToExt(File f, String ext) async {
-    String newPath = p.join(
-      p.dirname(f.path),
-      '${p.basenameWithoutExtension(f.path)}$ext',
-    );
+    String newPath = p.join(p.dirname(f.path), '${p.basenameWithoutExtension(f.path)}$ext');
     if (File(newPath).existsSync()) {
       newPath = p.join(
         p.dirname(f.path),
@@ -282,10 +266,7 @@ class MPAudioLocalRecordsUtil {
 
   /// 将已落盘的本地文件交给 [just_audio]：先 [AudioPlayer.stop] 再 [setAudioSource]，
   /// 使用 [Uri.file]（iOS 上比裸 [setFilePath] 换源更稳）。
-  static Future<void> bindLocalAudioForPlayback(
-    AudioPlayer player,
-    String localPath,
-  ) async {
+  static Future<void> bindLocalAudioForPlayback(AudioPlayer player, String localPath) async {
     final String normalized = p.normalize(localPath.trim());
     final String? fixed = await adjustAudioFileIfWrongExtension(normalized);
     if (fixed == null) {
@@ -305,27 +286,20 @@ class MPAudioLocalRecordsUtil {
       await player.stop();
     } catch (_) {}
     final Uri uri = Uri.file(f.absolute.path);
-    await player.setAudioSource(
-      AudioSource.uri(uri),
-      preload: true,
-    );
+    await player.setAudioSource(AudioSource.uri(uri), preload: true);
   }
 
   /// 将临时录音复制到 [ensureLocalStorageDirectoryPath] 目录下（与详情下载、索引路径一致）。
   ///
   /// 成功返回新文件绝对路径；失败返回 `null`。[deleteAfterCopy] 为 true 时尝试删除 [tempFile]。
-  static Future<String?> copyTempFileToLocalStorage(
-    File tempFile, {
-    bool deleteAfterCopy = true,
-  }) async {
+  static Future<String?> copyTempFileToLocalStorage(File tempFile, {bool deleteAfterCopy = true}) async {
     try {
       if (!await tempFile.exists()) {
         return null;
       }
       final String dir = await ensureLocalStorageDirectoryPath();
       final String ext = p.extension(tempFile.path);
-      final String name =
-          'omi_record_${DateTime.now().millisecondsSinceEpoch}${ext.isEmpty ? '.aac' : ext}';
+      final String name = 'omi_record_${DateTime.now().millisecondsSinceEpoch}${ext.isEmpty ? '.aac' : ext}';
       final String destPath = p.join(dir, name);
       await tempFile.copy(destPath);
       if (deleteAfterCopy) {
@@ -426,8 +400,7 @@ class MPAudioLocalRecordsUtil {
       if (!await f.exists()) {
         continue;
       }
-      if (fileId.isNotEmpty &&
-          (e.fileId == fileId || e.fileName == fileId)) {
+      if (fileId.isNotEmpty && (e.fileId == fileId || e.fileName == fileId)) {
         return f.path;
       }
     }
@@ -437,8 +410,7 @@ class MPAudioLocalRecordsUtil {
 
   Future<void> _persist() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final List<String> jsonList =
-        _records.map((MPAudioLocalRecord e) => e.toJsonString()).toList();
+    final List<String> jsonList = _records.map((MPAudioLocalRecord e) => e.toJsonString()).toList();
     await prefs.setStringList(_prefsKey, jsonList);
   }
 
@@ -452,9 +424,7 @@ class MPAudioLocalRecordsUtil {
     if (raw == null || raw.isEmpty) {
       _records = <MPAudioLocalRecord>[];
     } else {
-      _records = raw
-          .map((String s) => MPAudioLocalRecord.fromJsonString(s))
-          .toList();
+      _records = raw.map((String s) => MPAudioLocalRecord.fromJsonString(s)).toList();
     }
     return List<MPAudioLocalRecord>.from(_records);
   }
@@ -465,16 +435,12 @@ class MPAudioLocalRecordsUtil {
   }
 
   /// 全部记录（默认不含已逻辑删除项）。
-  Future<List<MPAudioLocalRecord>> queryAll({
-    bool includeRemoved = false,
-  }) async {
+  Future<List<MPAudioLocalRecord>> queryAll({bool includeRemoved = false}) async {
     await load();
     if (includeRemoved) {
       return List<MPAudioLocalRecord>.from(_records);
     }
-    return _records
-        .where((MPAudioLocalRecord e) => !e.isRemoved)
-        .toList(growable: false);
+    return _records.where((MPAudioLocalRecord e) => !e.isRemoved).toList(growable: false);
   }
 
   /// 按本地路径查找（先 [load]）。
@@ -485,6 +451,12 @@ class MPAudioLocalRecordsUtil {
       if (e.path == path) return e;
     }
     return null;
+  }
+
+  /// 从记录文件名中提取 [fileId]。
+  static String getFileIdFromRecordFile(String recordFile) {
+    if (recordFile.isEmpty) return '';
+    return recordFile.split('/').last;
   }
 
   /// 按 [fileId] 查找（非空时）。
@@ -523,10 +495,7 @@ class MPAudioLocalRecordsUtil {
   /// 更新：以 [path] + [createAt] 唯一匹配（与旧逻辑一致）；未找到返回 false。
   Future<bool> update(MPAudioLocalRecord next) async {
     await load();
-    final int index = _records.indexWhere(
-      (MPAudioLocalRecord e) =>
-          e.path == next.path && e.createAt == next.createAt,
-    );
+    final int index = _records.indexWhere((MPAudioLocalRecord e) => e.path == next.path && e.createAt == next.createAt);
     if (index < 0) return false;
     _records[index] = next;
     await _persist();
@@ -539,7 +508,7 @@ class MPAudioLocalRecordsUtil {
     bool changed = false;
     for (int i = 0; i < _records.length; i++) {
       final MPAudioLocalRecord e = _records[i];
-      if (e.path == target.path && e.createAt == target.createAt) {
+      if (e.path == target.path) {
         _records[i] = e.copyWith(isRemoved: true);
         changed = true;
         break;
@@ -553,10 +522,7 @@ class MPAudioLocalRecordsUtil {
   Future<bool> removeHard(MPAudioLocalRecord target) async {
     await load();
     final int before = _records.length;
-    _records.removeWhere(
-      (MPAudioLocalRecord e) =>
-          e.path == target.path && e.createAt == target.createAt,
-    );
+    _records.removeWhere((MPAudioLocalRecord e) => e.path == target.path && e.createAt == target.createAt);
     if (_records.length == before) return false;
     await _persist();
     return true;
