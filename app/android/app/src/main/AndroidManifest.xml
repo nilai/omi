@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 录音进后台 / 锁屏时保持采集（配合 flutter_sound isBGService，Android 10+ 前台服务类型） -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <!-- Gallery / media read (Android 13+) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <!-- Audio import (aligned with permission_handler Permission.audio / READ_MEDIA_AUDIO) (Android 13+) -->
