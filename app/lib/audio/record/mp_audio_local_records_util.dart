@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// 单条 Audio 本地记录（持久化到 SharedPreferences）。
 class MPAudioLocalRecord {
-   MPAudioLocalRecord({
+  MPAudioLocalRecord({
     required this.path,
     required this.fileName,
     required this.createAt,
@@ -42,7 +42,7 @@ class MPAudioLocalRecord {
   final String source;
 
   /// 是否逻辑删除
-  final bool isRemoved;
+  bool isRemoved;
 
   MPAudioLocalRecord copyWith({
     String? path,
@@ -495,7 +495,7 @@ class MPAudioLocalRecordsUtil {
   /// 更新：以 [path] + [createAt] 唯一匹配（与旧逻辑一致）；未找到返回 false。
   Future<bool> update(MPAudioLocalRecord next) async {
     await load();
-    final int index = _records.indexWhere((MPAudioLocalRecord e) => e.path == next.path && e.createAt == next.createAt);
+    final int index = _records.indexWhere((MPAudioLocalRecord e) => e.path == next.path || e.fileId == next.fileId);
     if (index < 0) return false;
     _records[index] = next;
     await _persist();

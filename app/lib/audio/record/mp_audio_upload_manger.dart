@@ -541,7 +541,7 @@ class MPAudioUploadManager {
           continue;
         }
 
-        record.fileId = MPAudioLocalRecordsUtil.getFileIdFromRecordFile(record.path);
+        record.fileId = MPAudioLocalRecordsUtil.getFileIdFromRecordFile(audioUri);
 
         final Duration? duration = await AudioPickerUtils.getAudioDuration(f);
         debugPrint('uploadAllRecordingFiles duration: $duration');
@@ -565,6 +565,8 @@ class MPAudioUploadManager {
           continue;
         }
 
+        record.isRemoved = true;
+
         if (rightNowTranscribe) {
           final MPSummaryRecordResponse? summary = await summaryRecord(
             MPSummaryRecordRequest(
@@ -584,16 +586,16 @@ class MPAudioUploadManager {
         _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
 
         try {
-          await MPAudioLocalRecordsUtil.instance.removeSoft(record);
+          await MPAudioLocalRecordsUtil.instance.update(record);
         } catch (e, st) {
-          debugPrint('MPAudioLocalRecordsUtil.removeHard failed: $e\n$st');
+          debugPrint('MPAudioLocalRecordsUtil.update failed: $e\n$st');
         }
 
         if (txtMeta != null) {
           try {
-            await MPAudioLocalRecordsUtil.instance.removeSoft(txtMeta);
+            await MPAudioLocalRecordsUtil.instance.update(txtMeta);
           } catch (e, st) {
-            debugPrint('MPAudioLocalRecordsUtil.removeHard(txt) failed: $e\n$st');
+            debugPrint('MPAudioLocalRecordsUtil.update(txt) failed: $e\n$st');
           }
         }
 
