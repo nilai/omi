@@ -25,6 +25,7 @@ Map<String, dynamic> _$MPCreateConversationRequestToJson(
   'memory_id': instance.memoryId,
   'template_id': instance.templateId,
   'speaker_id': instance.speakerId,
+  'insight_id': instance.insightId,
 };
 
 MPCreateConversationResponse _$MPCreateConversationResponseFromJson(
