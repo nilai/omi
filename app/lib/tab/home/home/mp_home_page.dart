@@ -46,7 +46,7 @@ class _MPHomePageState extends State<MPHomePage> {
 
   Future<void> _importFromFileWithProgress() async {
     try {
-      _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
+      // _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
       final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
         onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
           _cubit.showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
