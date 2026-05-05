@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
@@ -571,73 +571,37 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     }
   }
 
+  /// 与 [OmiMemoryDetailCubit._ensurePlayableLocalPath] 对齐：`recordUri` → fileId → 本地库命中则直接播放，否则用 `recordFile` 下载。
   Future<String?> _ensurePlayableLocalPath() async {
     final MPAudioDetailData? data = state.data;
     if (data == null) {
       return null;
     }
-    final String recordFile = (data.recordFile ?? '').trim();
     final String recordUri = (data.recordUri ?? '').trim();
-
-    if (recordFile.isNotEmpty) {
-      final String? localPath =
-          await MPAudioLocalRecordsUtil.instance.getLocalRecordPath(recordFile);
-      if (localPath != null && localPath.isNotEmpty) {
-        return localPath;
-      }
+    final String fileId =
+        MPAudioLocalRecordsUtil.getFileIdFromRecordFile(recordUri);
+    final MPAudioLocalRecord? record =
+        await MPAudioLocalRecordsUtil.instance.queryByFileId(fileId);
+    final String localPath = record?.path ?? '';
+    if (localPath.isNotEmpty) {
+      return localPath;
     }
-
-    final String? downloadUrl = _resolveRecordDownloadUrl(
-      recordFile: recordFile,
-      recordUri: recordUri,
-    );
-    if (downloadUrl == null) {
-      return null;
+    final String downloadUrl = (data.recordFile ?? '').trim();
+    if (downloadUrl.isEmpty) {
+      return '';
     }
-
     return _downloadRecordToLocal(
       downloadUrl: downloadUrl,
-      recordFile: recordFile,
-      total: data.total,
+      fileId: fileId,
+      durationLabel: data.rightTime,
     );
   }
 
-  String? _resolveRecordDownloadUrl({
-    required String recordFile,
-    required String recordUri,
-  }) {
-    final String rf = recordFile.trim();
-    final String ru = recordUri.trim();
-
-    if (rf.isNotEmpty) {
-      final Uri? recordFileUri = Uri.tryParse(rf);
-      if (recordFileUri != null &&
-          recordFileUri.hasScheme &&
-          recordFileUri.host.isNotEmpty) {
-        return rf;
-      }
-    }
-
-    final Uri? recordUriParsed = Uri.tryParse(ru);
-    if (recordUriParsed != null &&
-        recordUriParsed.hasScheme &&
-        recordUriParsed.host.isNotEmpty) {
-      if (rf.isEmpty) {
-        return ru;
-      }
-      final Uri? ref = Uri.tryParse(rf);
-      if (ref == null) {
-        return ru;
-      }
-      return recordUriParsed.resolveUri(ref).toString();
-    }
-    return null;
-  }
-
+  /// 下载录音到本地（与 [OmiMemoryDetailCubit._downloadRecordToLocal] 对齐）。
   Future<String?> _downloadRecordToLocal({
     required String downloadUrl,
-    required String recordFile,
-    required Duration total,
+    required String fileId,
+    required String durationLabel,
   }) async {
     try {
       final Uri uri = Uri.parse(downloadUrl);
@@ -650,12 +614,9 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       }
       final String audioDirPath =
           await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
-      final String sourceForId =
-          recordFile.isNotEmpty ? recordFile : downloadUrl;
-      String fileId =
-          MPAudioLocalRecordsUtil.getFileIdFromUrl(sourceForId).trim();
-      if (fileId.isEmpty) {
-        fileId = DateTime.now().millisecondsSinceEpoch.toString();
+      String resolvedFileId = fileId.trim();
+      if (resolvedFileId.isEmpty) {
+        resolvedFileId = DateTime.now().millisecondsSinceEpoch.toString();
       }
       String ext = '.m4a';
       final String path = uri.path;
@@ -663,10 +624,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (dot > 0 && dot < path.length - 1) {
         ext = path.substring(dot);
       }
-      final String filePath = p.join(
-        audioDirPath,
-        '${DateTime.now().millisecondsSinceEpoch}_$fileId$ext',
-      );
+      final String filePath = p.join(audioDirPath, '$resolvedFileId$ext');
       final File file = File(filePath);
       await file.writeAsBytes(response.bodyBytes, flush: true);
       final String? playablePath =
@@ -679,17 +637,44 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       await MPAudioLocalRecordsUtil.instance.add(
         MPAudioLocalRecord(
           path: playablePath,
-          fileName: fileId,
+          fileName: '$resolvedFileId$ext',
           createAt: DateTime.now().millisecondsSinceEpoch,
-          duration: total.inSeconds > 0 ? total.inSeconds : null,
-          source: 'mp',
-          fileId: fileId,
+          duration: _parseDurationSeconds(durationLabel),
+          source: 'mobilePhone',
+          fileId: resolvedFileId,
+          isRemoved: true,
         ),
       );
       return playablePath;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('MPAudioDetailCubit._downloadRecordToLocal: $e\n$st');
       return null;
     }
+  }
+
+  /// 与 [OmiMemoryDetailCubit._parseDurationSeconds] 一致，解析界面时长文案为秒。
+  int? _parseDurationSeconds(String raw) {
+    final String s = raw.trim().toLowerCase();
+    if (s.isEmpty) {
+      return null;
+    }
+    final RegExp mmss = RegExp(r'^(\d+):(\d{2})$');
+    final RegExpMatch? mm = mmss.firstMatch(s);
+    if (mm != null) {
+      final int m = int.tryParse(mm.group(1) ?? '') ?? 0;
+      final int sec = int.tryParse(mm.group(2) ?? '') ?? 0;
+      return m * 60 + sec;
+    }
+    final RegExp hms = RegExp(r'(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?');
+    final RegExpMatch? hm = hms.firstMatch(s);
+    if (hm != null) {
+      final int h = int.tryParse(hm.group(1) ?? '') ?? 0;
+      final int m = int.tryParse(hm.group(2) ?? '') ?? 0;
+      final int sec = int.tryParse(hm.group(3) ?? '') ?? 0;
+      final int total = h * 3600 + m * 60 + sec;
+      return total > 0 ? total : null;
+    }
+    return null;
   }
 
   @override
