@@ -50,12 +50,6 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
       MPMemoryFeedInsightBlock(:final data) => MPMemoryInsightCard(
         data: data,
         memoryId: memoryId,
-        onReadMore: () {
-          // TODO: Insight 全文 / 展开
-        },
-        onAddFollowUpTodo: () {
-          // TODO: 创建 follow-up todo
-        },
       ),
       MPMemoryFeedTodosCreatedBlock(:final data) => MPMemoryTodosCreatedCard(
         data: data,
