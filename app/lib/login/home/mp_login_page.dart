@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:memo_pin/login/forget/mp_forget_page.dart';
 import 'package:memo_pin/login/home/mp_login_cubit.dart';
@@ -10,6 +11,15 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../legal/mp_legal_document_page.dart';
+
+/// Google 品牌「G」矢量（viewBox 0 0 24 24），与品牌资源一致的四色路径。
+const String _kMpGoogleLogoSvg = '''
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+</svg>''';
 
 /// MemoPin 登录 / 注册页（BlocProvider + [MPLoginCubit]）。
 class MPLoginPage extends StatelessWidget {
@@ -75,9 +85,7 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
 
   Future<void> _openForgetPasswordPage() async {
     _dismissKeyboard();
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => const MPForgetPage()),
-    );
+    await Navigator.of(context).push<void>(MaterialPageRoute<void>(builder: (_) => const MPForgetPage()));
     if (!mounted) {
       return;
     }
@@ -111,183 +119,186 @@ class _MPLoginFormBodyState extends State<_MPLoginFormBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                const SizedBox(height: 8),
-                Text(
-                  state.mode == MPLoginMode.login ? 'Welcome to MemoPin' : 'Create Account',
-                  style: TextStyle(fontSize: OmiFontSize.t16_25, fontWeight: OmiFontWeight.bold, color: mainTextColor),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  state.mode == MPLoginMode.login
-                      ? 'Sign in to continue capturing and organizing your memories.'
-                      : 'Start capturing and organizing your memories.',
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t6_15,
-                    color: secondTextColor,
-                    height: 1.35,
-                    fontWeight: OmiFontWeight.regular,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Divider(color: lineColor, height: 1),
-                const SizedBox(height: 24),
-                _SocialButton(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  icon: FaIcon(FontAwesomeIcons.apple, size: 20, color: Colors.white),
-                  label: 'Continue with Apple',
-                  onTap: () => _toast(context, 'Continue with Apple'),
-                ),
-                const SizedBox(height: 12),
-                _SocialButton(
-                  backgroundColor: Colors.white,
-                  foregroundColor: mainTextColor,
-                  borderColor: borderColor,
-                  icon: FaIcon(FontAwesomeIcons.google, size: 18, color: const Color(0xFF4285F4)),
-                  label: 'Continue with Google',
-                  onTap: () => _toast(context, 'Continue with Google'),
-                ),
-                const SizedBox(height: 24),
-                const _OrDivider(),
-                const SizedBox(height: 24),
-                Text(
-                  'Email',
-                  style: TextStyle(color: mainTextColor, fontSize: OmiFontSize.t6_15, fontWeight: OmiFontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                _AuthTextField(
-                  controller: _emailController,
-                  hintText: 'your@email.com',
-                  prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 24),
-                  keyboardType: TextInputType.emailAddress,
-                  autocorrect: false,
-                  onChanged: cubit.setEmail,
-                ),
-                if (emailErr != null) ...<Widget>[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    emailErr,
-                    style: TextStyle(fontSize: OmiFontSize.t4_13, color: redColor, fontWeight: OmiFontWeight.regular),
-                  ),
-                ],
-                const SizedBox(height: 18),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: <Widget>[
-                    Text(
-                      'Password',
-                      style: TextStyle(
-                        color: mainTextColor,
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.bold,
-                      ),
+                    state.mode == MPLoginMode.login ? 'Welcome to MemoPin' : 'Create Account',
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t16_25,
+                      fontWeight: OmiFontWeight.bold,
+                      color: mainTextColor,
                     ),
-                    if (state.mode == MPLoginMode.login) ...<Widget>[
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: _openForgetPasswordPage,
-                        child: Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: blueTextColor,
-                            fontSize: OmiFontSize.t5_14,
-                            fontWeight: OmiFontWeight.medium,
-                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    state.mode == MPLoginMode.login
+                        ? 'Sign in to continue capturing and organizing your memories.'
+                        : 'Start capturing and organizing your memories.',
+                    style: TextStyle(
+                      fontSize: OmiFontSize.t6_15,
+                      color: secondTextColor,
+                      height: 1.35,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Divider(color: lineColor, height: 1),
+                  const SizedBox(height: 24),
+                  _SocialButton(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    icon: FaIcon(FontAwesomeIcons.apple, size: 20, color: Colors.white),
+                    label: 'Continue with Apple',
+                    onTap: () => _toast(context, 'Continue with Apple'),
+                  ),
+                  const SizedBox(height: 12),
+                  _SocialButton(
+                    backgroundColor: Colors.white,
+                    foregroundColor: mainTextColor,
+                    borderColor: borderColor,
+                    icon: SvgPicture.string(_kMpGoogleLogoSvg, width: 18, height: 18),
+                    label: 'Continue with Google',
+                    onTap: () => _toast(context, 'Continue with Google'),
+                  ),
+                  const SizedBox(height: 24),
+                  const _OrDivider(),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Email',
+                    style: TextStyle(color: mainTextColor, fontSize: OmiFontSize.t6_15, fontWeight: OmiFontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _AuthTextField(
+                    controller: _emailController,
+                    hintText: 'your@email.com',
+                    prefixIcon: const Icon(Icons.mail_outline, color: secondTextColor, size: 24),
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    onChanged: cubit.setEmail,
+                  ),
+                  if (emailErr != null) ...<Widget>[
+                    const SizedBox(height: 6),
+                    Text(
+                      emailErr,
+                      style: TextStyle(fontSize: OmiFontSize.t4_13, color: redColor, fontWeight: OmiFontWeight.regular),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Text(
+                        'Password',
+                        style: TextStyle(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.bold,
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _AuthTextField(
-                  controller: _passwordController,
-                  hintText: 'Enter your password',
-                  prefixIcon: const Icon(Icons.lock_outline, color: secondTextColor, size: 24),
-                  obscureText: state.obscurePassword,
-                  suffixIcon: IconButton(
-                    onPressed: cubit.togglePasswordVisible,
-                    icon: Icon(
-                      state.obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                      color: secondTextColor,
-                    ),
-                  ),
-                  onChanged: cubit.setPassword,
-                ),
-                if (passwordErr != null) ...<Widget>[
-                  const SizedBox(height: 6),
-                  Text(
-                    passwordErr,
-                    style: TextStyle(fontSize: OmiFontSize.t4_13, color: redColor, fontWeight: OmiFontWeight.regular),
-                  ),
-                ],
-                const SizedBox(height: 28),
-                SizedBox(
-                  height: 52,
-                  child: FilledButton(
-                    onPressed: state.isPrimaryButtonEnabled ? () => cubit.submit() : null,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFD1D1D6),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFFD1D1D6),
-                      disabledForegroundColor: Colors.white70,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        if (state.isSubmitting) ...<Widget>[
-                          const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                      if (state.mode == MPLoginMode.login) ...<Widget>[
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: _openForgetPasswordPage,
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: blueTextColor,
+                              fontSize: OmiFontSize.t5_14,
+                              fontWeight: OmiFontWeight.medium,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                        ],
-                        Text(
-                          state.mode == MPLoginMode.login ? 'Sign In' : 'Create Account',
-                          style: TextStyle(fontSize: OmiFontSize.t8_17, fontWeight: OmiFontWeight.bold),
                         ),
                       ],
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 20),
-                Center(
-                  child: GestureDetector(
-                    onTap: cubit.toggleAuthMode,
-                    child: Text.rich(
-                      TextSpan(
-                        style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
-                        children: <InlineSpan>[
-                          TextSpan(
-                            text: state.mode == MPLoginMode.login
-                                ? "Don't have an account? "
-                                : 'Already have an account? ',
-                            style: TextStyle(fontWeight: OmiFontWeight.medium,),
-                          ),
-                          TextSpan(
-                            text: state.mode == MPLoginMode.login ? 'Sign Up' : 'Sign In',
-                            style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
+                  const SizedBox(height: 8),
+                  _AuthTextField(
+                    controller: _passwordController,
+                    hintText: 'Enter your password',
+                    prefixIcon: const Icon(Icons.lock_outline, color: secondTextColor, size: 24),
+                    obscureText: state.obscurePassword,
+                    suffixIcon: IconButton(
+                      onPressed: cubit.togglePasswordVisible,
+                      icon: Icon(
+                        state.obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: secondTextColor,
+                      ),
+                    ),
+                    onChanged: cubit.setPassword,
+                  ),
+                  if (passwordErr != null) ...<Widget>[
+                    const SizedBox(height: 6),
+                    Text(
+                      passwordErr,
+                      style: TextStyle(fontSize: OmiFontSize.t4_13, color: redColor, fontWeight: OmiFontWeight.regular),
+                    ),
+                  ],
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    height: 52,
+                    child: FilledButton(
+                      onPressed: state.isPrimaryButtonEnabled ? () => cubit.submit() : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: state.isPrimaryButtonEnabled ? blueTextColor : const Color(0xFFD1D1D6),
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: const Color(0xFFD1D1D6),
+                        disabledForegroundColor: Colors.white70,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          if (state.isSubmitting) ...<Widget>[
+                            const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text(
+                            state.mode == MPLoginMode.login ? 'Sign In' : 'Create Account',
+                            style: TextStyle(fontSize: OmiFontSize.t8_17, fontWeight: OmiFontWeight.bold),
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 32),
-                _LegalFooter(
-                  onTermsTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms)),
-                  ),
-                  onPrivacyTap: () => Navigator.of(context).push<void>(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.privacy),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: GestureDetector(
+                      onTap: cubit.toggleAuthMode,
+                      child: Text.rich(
+                        TextSpan(
+                          style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: state.mode == MPLoginMode.login
+                                  ? "Don't have an account? "
+                                  : 'Already have an account? ',
+                              style: TextStyle(fontWeight: OmiFontWeight.medium),
+                            ),
+                            TextSpan(
+                              text: state.mode == MPLoginMode.login ? 'Sign Up' : 'Sign In',
+                              style: TextStyle(color: blueTextColor, fontWeight: OmiFontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 32),
+                  _LegalFooter(
+                    onTermsTap: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.terms),
+                      ),
+                    ),
+                    onPrivacyTap: () => Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const MPLegalDocumentPage(kind: MPLegalDocumentKind.privacy),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
