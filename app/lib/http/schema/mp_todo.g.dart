@@ -157,3 +157,68 @@ MPUpdateTodoResponse _$MPUpdateTodoResponseFromJson(
 Map<String, dynamic> _$MPUpdateTodoResponseToJson(
   MPUpdateTodoResponse instance,
 ) => <String, dynamic>{'base_resp': instance.baseResp};
+
+MPBatchCreateTodoItem _$MPBatchCreateTodoItemFromJson(
+  Map<String, dynamic> json,
+) => MPBatchCreateTodoItem(
+  title: json['title'] as String,
+  priority: json['priority'] as String,
+  deadline: (json['deadline'] as num).toInt(),
+  memoryId: json['memory_id'] as String?,
+);
+
+Map<String, dynamic> _$MPBatchCreateTodoItemToJson(
+  MPBatchCreateTodoItem instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'priority': instance.priority,
+  'deadline': instance.deadline,
+  'memory_id': instance.memoryId,
+};
+
+MPBatchCreateMemoItem _$MPBatchCreateMemoItemFromJson(
+  Map<String, dynamic> json,
+) => MPBatchCreateMemoItem(
+  content: json['content'] as String,
+  createAt: (json['create_at'] as num).toInt(),
+  memoryId: json['memory_id'] as String?,
+);
+
+Map<String, dynamic> _$MPBatchCreateMemoItemToJson(
+  MPBatchCreateMemoItem instance,
+) => <String, dynamic>{
+  'content': instance.content,
+  'create_at': instance.createAt,
+  'memory_id': instance.memoryId,
+};
+
+MPBatchCreateRequest _$MPBatchCreateRequestFromJson(
+  Map<String, dynamic> json,
+) => MPBatchCreateRequest(
+  todos: (json['todos'] as List<dynamic>?)
+      ?.map((e) => MPBatchCreateTodoItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  memos: (json['memos'] as List<dynamic>?)
+      ?.map((e) => MPBatchCreateMemoItem.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$MPBatchCreateRequestToJson(
+  MPBatchCreateRequest instance,
+) => <String, dynamic>{'todos': instance.todos, 'memos': instance.memos};
+
+MPBatchCreateResponse _$MPBatchCreateResponseFromJson(
+  Map<String, dynamic> json,
+) => MPBatchCreateResponse(
+  todoCount: (json['todo_count'] as num).toInt(),
+  memoCount: (json['memo_count'] as num).toInt(),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPBatchCreateResponseToJson(
+  MPBatchCreateResponse instance,
+) => <String, dynamic>{
+  'todo_count': instance.todoCount,
+  'memo_count': instance.memoCount,
+  'base_resp': instance.baseResp,
+};
