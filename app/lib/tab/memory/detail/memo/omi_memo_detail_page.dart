@@ -30,6 +30,7 @@ import '../../../../http/api/mp_chat.dart';
 import '../../../../http/schema/mp_chat.dart';
 import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
+import '../mp_detail_visibility_refresh.dart';
 
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
 /// 区别：
@@ -58,7 +59,9 @@ class _OmiMemoDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MPDetailVisibilityRefresh(
+      onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
+      child: Scaffold(
       backgroundColor: pageColor,
       appBar: PreferredSize(
         preferredSize: MPCustomNavBar.preferredSizeOf(context),
@@ -304,6 +307,7 @@ class _OmiMemoDetailView extends StatelessWidget {
           );
         },
       ),
+    ),
     );
   }
 }

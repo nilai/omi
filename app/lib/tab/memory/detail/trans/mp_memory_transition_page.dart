@@ -8,6 +8,7 @@ import '../../../../utils/omi_color_utils.dart';
 import '../../../../common/mp_custom_nav_bar.dart';
 import '../memory/omi_memory_detail_page.dart';
 import '../memory/card/mp_memory_summary_generating_panel.dart';
+import '../mp_detail_visibility_refresh.dart';
 import 'mp_memory_transition_cubit.dart';
 
 /// 记忆总结过渡页（Cubit 版）。
@@ -63,7 +64,9 @@ class _MPMemoryTransitionView extends StatefulWidget {
 class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<MPMemoryTransitionCubit, MPMemoryTransitionState>(
+    return MPDetailVisibilityRefresh(
+      onRefresh: () => context.read<MPMemoryTransitionCubit>().retry(),
+      child: BlocConsumer<MPMemoryTransitionCubit, MPMemoryTransitionState>(
       listener: (BuildContext context, MPMemoryTransitionState state) {
         if (state.phase != MPMemoryTransitionPhase.completed) {
           return;
@@ -100,6 +103,7 @@ class _MPMemoryTransitionViewState extends State<_MPMemoryTransitionView> {
           ),
         );
       },
+    ),
     );
   }
 }

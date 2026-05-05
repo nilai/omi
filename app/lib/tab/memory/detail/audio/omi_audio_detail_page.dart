@@ -18,6 +18,7 @@ import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';
 import '../memory/card/mp_memory_summary_generating_panel.dart';
+import '../mp_detail_visibility_refresh.dart';
 import 'mp_audio_detail_cubit.dart';
 
 /// Audio Memory 详情页（UI 对齐设计稿）。
@@ -43,7 +44,9 @@ class _OmiAudioDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MPDetailVisibilityRefresh(
+      onRefresh: () => context.read<MPAudioDetailCubit>().load(),
+      child: Scaffold(
       backgroundColor: pageColor,
       appBar: PreferredSize(
         preferredSize: MPCustomNavBar.preferredSizeOf(context),
@@ -346,6 +349,7 @@ class _OmiAudioDetailView extends StatelessWidget {
           }
         },
       ),
+    ),
     );
   }
 }

@@ -25,6 +25,7 @@ import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
+import '../mp_detail_visibility_refresh.dart';
 import 'card/mp_memory_detail_content_card.dart';
 import 'card/mp_memory_detail_feed_section.dart';
 import 'card/mp_memory_detail_bottom_bar.dart';
@@ -53,7 +54,9 @@ class _OmiMemoryDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MPDetailVisibilityRefresh(
+      onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
+      child: Scaffold(
       backgroundColor: pageColor,
       appBar: PreferredSize(
         preferredSize: MPCustomNavBar.preferredSizeOf(context),
@@ -298,6 +301,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
           );
         },
       ),
+    ),
     );
   }
 }
