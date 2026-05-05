@@ -48,6 +48,7 @@ class OmiMemoryDetailState {
     this.isLoadingMore = false,
     this.feedHasMore = false,
     this.isSummaryGenerating = false,
+    this.isAudioPlaying = false,
   });
 
   final OmiMemoryDetailPhase phase;
@@ -66,6 +67,9 @@ class OmiMemoryDetailState {
   /// Memo 等场景：summary 正在生成时展示过渡 UI。
   final bool isSummaryGenerating;
 
+  /// 播放器是否正在播放（用于同步 UI 的播放/暂停按钮状态）。
+  final bool isAudioPlaying;
+
   OmiMemoryDetailState copyWith({
     OmiMemoryDetailPhase? phase,
     MPMemoryDetailCardData? data,
@@ -74,6 +78,7 @@ class OmiMemoryDetailState {
     bool? isLoadingMore,
     bool? feedHasMore,
     bool? isSummaryGenerating,
+    bool? isAudioPlaying,
   }) {
     return OmiMemoryDetailState(
       phase: phase ?? this.phase,
@@ -83,6 +88,7 @@ class OmiMemoryDetailState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       feedHasMore: feedHasMore ?? this.feedHasMore,
       isSummaryGenerating: isSummaryGenerating ?? this.isSummaryGenerating,
+      isAudioPlaying: isAudioPlaying ?? this.isAudioPlaying,
     );
   }
 }
@@ -142,6 +148,14 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   StreamSubscription<Duration?>? _decoderDurationSub;
   String? _playingLocalPath;
   bool _isAudioPlaying = false;
+
+  void _syncAudioPlayingFlag() {
+    final OmiMemoryDetailState s = state;
+    if (s.isAudioPlaying == _isAudioPlaying) {
+      return;
+    }
+    emit(s.copyWith(isAudioPlaying: _isAudioPlaying));
+  }
 
   Timer? _playbackUiTimer;
   StreamSubscription<Duration>? _positionStreamSub;
@@ -242,6 +256,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       if (nearEnd || nearEndByDecoder || completedWithoutTotal) {
         _stopPlaybackUiTimer();
         _isAudioPlaying = false;
+        _syncAudioPlayingFlag();
         final Duration end = totalRef > Duration.zero
             ? totalRef
             : (dur != null && dur > Duration.zero ? dur : pos);
@@ -265,6 +280,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (_reachedEndByPosition(pos, totalRef, _kEndSlackMs)) {
       _stopPlaybackUiTimer();
       _isAudioPlaying = false;
+      _syncAudioPlayingFlag();
       final String endMs = '${totalRef.inMilliseconds}';
       emit(
         s.copyWith(
@@ -533,6 +549,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       _stopPlaybackUiTimer();
       await _audioPlayer.pause();
       _isAudioPlaying = false;
+      _syncAudioPlayingFlag();
       return true;
     }
     final String? localPath = await _ensurePlayableLocalPath(cur.data!);
@@ -562,14 +579,80 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           debugPrint('OmiMemoryDetailCubit.onPlayTap play future: $e\n$st');
           _stopPlaybackUiTimer();
           _isAudioPlaying = false;
+          _syncAudioPlayingFlag();
           MPToastUtils.showMessage('Failed to play audio.');
         }),
       );
       _isAudioPlaying = true;
+      _syncAudioPlayingFlag();
       shouldRunPlaybackUi = true;
       return true;
     } catch (e, st) {
       debugPrint('OmiMemoryDetailCubit.onPlayTap: $e\n$st');
+      MPToastUtils.showMessage('Failed to play audio.');
+      return false;
+    } finally {
+      if (!isClosed && shouldRunPlaybackUi) {
+        _startPlaybackUiTimer();
+      }
+    }
+  }
+
+  /// 从指定位置开始播放（点击 Transcript 跳转）；若已在播放则仅 seek 并保持播放中。
+  Future<bool> onSeekPlay(Duration position) async {
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
+      return false;
+    }
+    final String? localPath = await _ensurePlayableLocalPath(cur.data!);
+    if (localPath == null || localPath.isEmpty) {
+      MPToastUtils.showMessage('Failed to download audio. Please try again later.');
+      return false;
+    }
+    bool shouldRunPlaybackUi = false;
+    try {
+      final bool rebound = _playingLocalPath != localPath;
+      if (rebound) {
+        _armSuppressPlaybackCompleted();
+        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
+          _audioPlayer,
+          localPath,
+        );
+        _playingLocalPath = localPath;
+      }
+
+      final Duration totalRef = _audioPlayer.duration ??
+          _cardAudioTotal(cur.data!);
+      Duration target = position;
+      if (target.isNegative) {
+        target = Duration.zero;
+      }
+      if (totalRef > Duration.zero && target > totalRef) {
+        target = totalRef;
+      }
+      await _audioPlayer.seek(target);
+
+      if (!_audioPlayer.playing) {
+        unawaited(
+          _audioPlayer.play().catchError((Object e, StackTrace st) {
+            if (isClosed) {
+              return;
+            }
+            debugPrint('OmiMemoryDetailCubit.onSeekPlay play future: $e\n$st');
+            _stopPlaybackUiTimer();
+            _isAudioPlaying = false;
+            _syncAudioPlayingFlag();
+            MPToastUtils.showMessage('Failed to play audio.');
+          }),
+        );
+      }
+      _isAudioPlaying = true;
+      _syncAudioPlayingFlag();
+      shouldRunPlaybackUi = true;
+      scheduleMicrotask(_tickMemoryDetailPlaybackUi);
+      return true;
+    } catch (e, st) {
+      debugPrint('OmiMemoryDetailCubit.onSeekPlay: $e\n$st');
       MPToastUtils.showMessage('Failed to play audio.');
       return false;
     } finally {
@@ -1206,6 +1289,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
             useMarkdown: false,
             insightContent: content.isNotEmpty ? content : null,
             insightSuggestion: suggestion.isNotEmpty ? suggestion : null,
+            hasAddedTodo: f.hasAddedTodo == true,
           ),
         ),
       );
@@ -1220,6 +1304,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
           bodyText: bodyText,
           title: title ?? '',
           categoryTitle: categoryTitle,
+          hasAddedTodo: f.hasAddedTodo == true,
         ),
       ),
     );
