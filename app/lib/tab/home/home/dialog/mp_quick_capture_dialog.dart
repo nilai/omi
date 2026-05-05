@@ -209,7 +209,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureQuickCaptureDirectory();
       final String path = p.join(dir, 'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac');
-      await _recorder.openRecorder(isBGService: true);
+      await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,

@@ -148,7 +148,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
         dir,
         'mp_voice_text_${DateTime.now().millisecondsSinceEpoch}.aac',
       );
-      await _recorder.openRecorder(isBGService: true);
+      await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,

@@ -197,7 +197,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         dir,
         'omi_todo_voice_${DateTime.now().millisecondsSinceEpoch}.aac',
       );
-      await _recorder.openRecorder(isBGService: true);
+      await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,

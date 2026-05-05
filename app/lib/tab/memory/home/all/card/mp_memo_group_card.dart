@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
+import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_font_utils.dart';
@@ -109,10 +112,29 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
       manualMemoText: memo.content,
       linkedMemoryText: memo.title,
       onAnalyze: (String memoText) async {
-        // TODO: 替换真实 analyze 接口
-        await Future<void>.delayed(const Duration(milliseconds: 500));
-        final String first = memoText.trim();
-        return <String>[first];
+        try {
+          final MPAnalyzeMemoTextResponse? resp = await analyzeMemoText(
+            MPAnalyzeMemoTextRequest(
+              content: memoText.trim(),
+              createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            ),
+          );
+          if (resp == null) {
+            MPToastUtils.showMessage('Analysis failed.');
+            return <String>[];
+          }
+          if (resp.baseResp.code != 0) {
+            MPToastUtils.showMessage(resp.baseResp.message);
+            return <String>[];
+          }
+          return resp.structuredSuggestions
+              .map((MPAnalyzeMemoSuggestionStruct s) => s.content.trim())
+              .where((String s) => s.isNotEmpty)
+              .toList(growable: false);
+        } catch (_) {
+          MPToastUtils.showMessage('Analysis failed.');
+          return <String>[];
+        }
       },
     );
   }

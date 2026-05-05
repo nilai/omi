@@ -244,7 +244,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
-      await _recorder.openRecorder(isBGService: true);
+      await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,

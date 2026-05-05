@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 
 /// Task isolate 入口（Android 麦克风前台服务）；须为顶层函数以便引擎注册。
 @pragma('vm:entry-point')
@@ -111,5 +113,15 @@ class MPRecordingBackgroundSupport {
       final AudioSession session = await AudioSession.instance;
       await session.setActive(false);
     } catch (_) {}
+  }
+
+  /// flutter_sound 的 BGService 依赖在部分平台/运行态（尤其 iOS）可能未注册，直接调用会抛 [MissingPluginException]。
+  /// 这里做平台判断 + 自动降级，保证“能录音”优先。
+  static Future<void> openRecorderSafely(FlutterSoundRecorder recorder) async {
+    try {
+      await recorder.openRecorder(isBGService: Platform.isAndroid);
+    } on MissingPluginException {
+      await recorder.openRecorder();
+    }
   }
 }
