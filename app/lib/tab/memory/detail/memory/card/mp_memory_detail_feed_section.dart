@@ -61,7 +61,7 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
       MPMemoryFeedResummaryBlock(:final data) => MPMemoryResummaryCard(
         data: data,
         onExpansionChanged: (bool expanded) {
-          // TODO: 埋点 / 同步展开状态
+
         },
       ),
       MPMemoryFeedResummaryLoadingBlock(:final data) =>
