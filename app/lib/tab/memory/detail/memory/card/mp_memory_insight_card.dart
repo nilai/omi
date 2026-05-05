@@ -270,8 +270,6 @@ class MPMemoryInsightCard extends StatefulWidget {
     super.key,
     required this.data,
     required this.memoryId,
-    this.onReadMore,
-    this.onAddFollowUpTodo,
   });
 
   final MPMemoryInsightItemData data;
@@ -279,11 +277,6 @@ class MPMemoryInsightCard extends StatefulWidget {
   /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
   final String memoryId;
 
-  /// 点击「Show more」打开全文后回调（可选）
-  final VoidCallback? onReadMore;
-
-  /// 点击底部「+ Add follow-up todo」
-  final VoidCallback? onAddFollowUpTodo;
 
   @override
   State<MPMemoryInsightCard> createState() => _MPMemoryInsightCardState();
@@ -350,7 +343,6 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
             setState(() {
               _followUpTodoAdded = true;
             });
-            widget.onAddFollowUpTodo?.call();
           }
         },
         borderRadius: BorderRadius.circular(22),
@@ -619,7 +611,6 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                     alignment: Alignment.centerLeft,
                     child: InkWell(
                       onTap: () {
-                        widget.onReadMore?.call();
                         setState(() {
                           _bodyExpanded = true;
                         });

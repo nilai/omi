@@ -70,6 +70,7 @@ class MPMemoryActionContent extends StatelessWidget {
   const MPMemoryActionContent({
     super.key,
     required this.items,
+    required this.memoryId,
     this.height = 300,
     this.scrollWithParent = false,
     this.useMemoStyle = false,
@@ -80,6 +81,9 @@ class MPMemoryActionContent extends StatelessWidget {
   });
 
   final List<MPMemoryActionItemData> items;
+
+  /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
+  final String memoryId;
 
   /// 列表区域高度（固定）
   final double height;
@@ -160,9 +164,13 @@ class MPMemoryActionContent extends StatelessWidget {
     required int index,
     required MPMemoryActionItemData item,
   }) async {
+    final String mid = memoryId.trim();
     final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
       context,
-      params: MPAddTodoPopupParams(initialTitle: item.title ?? ''),
+      params: MPAddTodoPopupParams(
+        initialTitle: item.title ?? '',
+        memoryId: mid,
+      ),
       onContextTap: onActionContextTap,
     );
     if (!context.mounted || result == null) {

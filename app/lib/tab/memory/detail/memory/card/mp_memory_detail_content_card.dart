@@ -515,26 +515,13 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     });
   }
 
-  /// 创建 Todo 接口（占位：延迟模拟网络；成功后由 [_onCreateTodoFromAction] 将条目置为 [MPMemoryActionItemStatus.created]）
-  Future<bool> _submitActionTodoToBackend({
-    required int index,
-    required MPAddTodoPopupResult r,
-  }) async {
-    // TODO: 替换为真实请求，例如 POST /todos
-    // 可提交：index、r.title、r.notes、r.priority、r.when、r.time、memoryId 等
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    return true;
-  }
-
   /// Actions 里「Save Todo」后：先调接口，成功则更新本地列表为已创建
   Future<void> _onCreateTodoFromAction(
     int index,
     MPAddTodoPopupResult r,
   ) async {
-    final bool ok = await _submitActionTodoToBackend(index: index, r: r);
-    if (!mounted || !ok) {
-      return;
-    }
+    // Todo 创建已在 [showMPAddTodoPopup] 内完成；这里只负责更新本地 UI 状态。
+    if (!mounted) return;
     if (index < 0 || index >= _actionItems.length) {
       return;
     }
@@ -747,6 +734,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       case MPMemoryDetailSegment.actions:
         return MPMemoryActionContent(
           items: _actionItems,
+          memoryId: widget.data.memoryId,
           onCreateTodo: _onCreateTodoFromAction,
           scrollWithParent: widget.segmentBodyScrollWithParent,
           useMemoStyle: _isMemoCard,
