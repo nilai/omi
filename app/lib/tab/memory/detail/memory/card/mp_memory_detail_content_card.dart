@@ -487,6 +487,56 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     });
   }
 
+  Future<void> _onWaveformTapDown(TapDownDetails d, double width) async {
+    if (_playPreparing) {
+      return;
+    }
+    if (width <= 0 || _total <= Duration.zero) {
+      return;
+    }
+    final double x = d.localPosition.dx.clamp(0.0, width);
+    final double frac = (x / width).clamp(0.0, 1.0);
+    final int targetMs = (_total.inMilliseconds * frac).round();
+    final Duration target = Duration(milliseconds: targetMs);
+
+    setState(() {
+      _elapsed = target;
+      if (_elapsed >= _total && _total > Duration.zero) {
+        _elapsed = Duration.zero;
+      }
+      // 点击波形即视为从该位置开始播放
+      _playing = true;
+      _syncPlayingTranscriptIndexByElapsed();
+    });
+    _syncTimerByPlayingState();
+
+    final Future<bool>? fut = widget.onSeekPlay?.call(target);
+    if (fut == null) {
+      return;
+    }
+    setState(() {
+      _playPreparing = true;
+    });
+    try {
+      final bool ok = await fut;
+      if (!mounted) {
+        return;
+      }
+      if (!ok) {
+        setState(() {
+          _playing = false;
+        });
+        _syncTimerByPlayingState();
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _playPreparing = false;
+        });
+      }
+    }
+  }
+
   /// 点击某条 transcript 的编辑图标：弹出「Edit Speaker Name」底部弹窗
   Future<void> _onTranscriptEditTap(int index) async {
     final MPMemoryTranscriptItemData item = _transcriptItems[index];
@@ -601,13 +651,22 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Expanded(
-                child: _WaveformBar(
-                  heights: _heights,
-                  isPlaying: _playing,
-                  useMemoStyle: _isMemoCard,
-                  progress: _total.inMilliseconds <= 0
-                      ? 0
-                      : _elapsed.inMilliseconds / _total.inMilliseconds,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints c) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (TapDownDetails d) =>
+                          _onWaveformTapDown(d, c.maxWidth),
+                      child: _WaveformBar(
+                        heights: _heights,
+                        isPlaying: _playing,
+                        useMemoStyle: _isMemoCard,
+                        progress: _total.inMilliseconds <= 0
+                            ? 0
+                            : _elapsed.inMilliseconds / _total.inMilliseconds,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 10),
