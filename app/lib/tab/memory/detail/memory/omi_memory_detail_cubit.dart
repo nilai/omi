@@ -1178,9 +1178,9 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
     if (kind == MPFeedCardType.followUpList) {
       final String titleRaw = (f.title ?? '').trim();
       bodyText = (f.content ?? '').trim();
-      if (bodyText.isEmpty) {
-        continue;
-      }
+      // if (bodyText.isEmpty) {
+      //   continue;
+      // }
       categoryTitle =
           titleRaw.isNotEmpty ? titleRaw : 'FOLLOW-UP HIGHLIGHTS';
     } else {
@@ -1215,7 +1215,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(
     feedBlocks.add(
       MPMemoryFeedInsightBlock(
         MPMemoryInsightItemData(
-          tone: MPInsightCardTone.business,
+          tone: MPInsightCardTone.followUp,
           timeLabel: _feedCardTimeLabel(f.createAt),
           bodyText: bodyText,
           title: title ?? '',
