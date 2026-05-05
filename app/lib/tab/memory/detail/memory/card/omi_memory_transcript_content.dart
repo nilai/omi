@@ -54,10 +54,12 @@ class _MPMemoryTranscriptContentState extends State<MPMemoryTranscriptContent> {
   @override
   void didUpdateWidget(covariant MPMemoryTranscriptContent oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.selectedIndex != oldWidget.selectedIndex &&
-        widget.selectedIndex != null &&
-        widget.isPlaying) {
-      _scrollToIndex(widget.selectedIndex!);
+    // 播放中进度会高频刷新（selectedIndex 会频繁变化），若每次都 ensureVisible 会导致滚动卡顿。
+    // 这里只在「实际正在播放的段落 index」变化时（即跨段）才跟随滚动。
+    if (widget.isPlaying &&
+        widget.playingIndex != null &&
+        widget.playingIndex != oldWidget.playingIndex) {
+      _scrollToIndex(widget.playingIndex!);
     }
   }
 
