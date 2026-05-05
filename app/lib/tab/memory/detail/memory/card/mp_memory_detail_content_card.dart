@@ -121,6 +121,8 @@ class MPMemoryDetailContentCard extends StatefulWidget {
     required this.data,
     this.onSegmentChanged,
     this.onPlayTap,
+    this.onSeekPlay,
+    this.isAudioPlaying = false,
     this.showBackground = true,
     this.segmentBodyScrollWithParent = false,
     this.cardType = MPMemoryDetailCardType.memory,
@@ -134,6 +136,12 @@ class MPMemoryDetailContentCard extends StatefulWidget {
 
   /// 与 [OmiMemoryDetailCubit.onPlayTap] 对齐：成功为 `true`，失败（如未下载到本地）为 `false`。
   final Future<bool> Function()? onPlayTap;
+
+  /// 点击 Transcript 的某一条，跳转到对应时间并播放（若正在播放则仅 seek，不做 pause）。
+  final Future<bool> Function(Duration position)? onSeekPlay;
+
+  /// 外部播放器是否正在播放（用于同步按钮与波形动画）。
+  final bool isAudioPlaying;
 
   final bool showBackground;
   final bool segmentBodyScrollWithParent;
@@ -171,6 +179,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   void initState() {
     super.initState();
     _segment = widget.data.initialSegment;
+    _playing = widget.isAudioPlaying;
     _syncDurationFromData(widget.data);
     _transcriptItems = List<MPMemoryTranscriptItemData>.from(
       widget.data.transcriptItems,
@@ -181,6 +190,11 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   @override
   void didUpdateWidget(covariant MPMemoryDetailContentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.isAudioPlaying != widget.isAudioPlaying) {
+      _playing = widget.isAudioPlaying;
+      _syncTimerByPlayingState();
+      _syncPlayingTranscriptIndexByElapsed();
+    }
     if (oldWidget.data.initialSegment != widget.data.initialSegment) {
       _segment = widget.data.initialSegment;
     }
@@ -190,6 +204,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             widget.useExternalPlaybackProgress) {
       _syncDurationFromData(widget.data);
       _scheduleStopPlayingIfExternalPlaybackEnded();
+      _syncPlayingTranscriptIndexByElapsed();
     }
     if (oldWidget.data.transcriptItems != widget.data.transcriptItems) {
       _transcriptItems = List<MPMemoryTranscriptItemData>.from(
@@ -343,7 +358,12 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     });
     _syncTimerByPlayingState();
 
-    final Future<bool>? fut = widget.onPlayTap?.call();
+    // 优先走 seek+play：避免 cubit 的 onPlayTap 在「正在播放」时把播放器 pause 掉。
+    final Future<bool>? fut = widget.onSeekPlay != null
+        ? widget.onSeekPlay!.call(
+            Duration(seconds: _transcriptItems[index].timeSeconds),
+          )
+        : widget.onPlayTap?.call();
     if (fut == null) {
       setState(() {
         _playing = true;
@@ -444,6 +464,27 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       }
     }
     return selected;
+  }
+
+  /// 播放中：根据当前 [_elapsed] 自动同步正在播放的 transcript index。
+  /// 这样播放自然推进到下一段时，列表中的播放/暂停图标会跟随更新。
+  void _syncPlayingTranscriptIndexByElapsed() {
+    if (!_playing) {
+      return;
+    }
+    if (_playPreparing) {
+      return;
+    }
+    final int? selected = _selectedTranscriptIndex();
+    if (selected == null) {
+      return;
+    }
+    if (_playingTranscriptIndex == selected) {
+      return;
+    }
+    setState(() {
+      _playingTranscriptIndex = selected;
+    });
   }
 
   /// 点击某条 transcript 的编辑图标：弹出「Edit Speaker Name」底部弹窗

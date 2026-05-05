@@ -45,12 +45,12 @@ class MPMemoryInsightItemData {
     this.useMarkdown = true,
     this.insightContent,
     this.insightSuggestion,
-
+    this.hasAddedTodo = false,
   });
 
   final MPInsightCardTone tone;
 
- final String title;
+  final String title;
   /// 右侧相对时间，如 `2 min later`
   final String timeLabel;
 
@@ -68,6 +68,9 @@ class MPMemoryInsightItemData {
 
   /// insight 接口 [suggestion] 字段
   final String? insightSuggestion;
+
+  /// 接口 [has_added_todo] 或本地创建成功后为 true，底部展示「Follow-up todo added」
+  final bool hasAddedTodo;
 
   /// 展示用分类标题（全大写）
   String get resolvedCategoryTitle {
@@ -266,11 +269,15 @@ class MPMemoryInsightCard extends StatefulWidget {
   const MPMemoryInsightCard({
     super.key,
     required this.data,
+    required this.memoryId,
     this.onReadMore,
     this.onAddFollowUpTodo,
   });
 
   final MPMemoryInsightItemData data;
+
+  /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
+  final String memoryId;
 
   /// 点击「Show more」打开全文后回调（可选）
   final VoidCallback? onReadMore;
@@ -286,15 +293,93 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
   /// 长文时在卡片内展开全文（非弹窗）
   bool _bodyExpanded = false;
 
+  /// 底部是否已添加 follow-up（本地保存成功或与接口 [hasAddedTodo] 同步）
+  late bool _followUpTodoAdded;
+
+  @override
+  void initState() {
+    super.initState();
+    _followUpTodoAdded = widget.data.hasAddedTodo;
+  }
+
   @override
   void didUpdateWidget(covariant MPMemoryInsightCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.data.hasAddedTodo != widget.data.hasAddedTodo) {
+      _followUpTodoAdded = widget.data.hasAddedTodo;
+    }
     if (oldWidget.data.bodyText != widget.data.bodyText ||
         oldWidget.data.insightContent != widget.data.insightContent ||
         oldWidget.data.insightSuggestion != widget.data.insightSuggestion ||
         oldWidget.data.useMarkdown != widget.data.useMarkdown) {
       _bodyExpanded = false;
     }
+  }
+
+  Widget _buildFollowUpFooter(_MPInsightVisual v) {
+    if (_followUpTodoAdded) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: secondTextColor.withAlpha(22),
+          borderRadius: BorderRadius.circular(22),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Follow-up todo added',
+          style: OmiTextStyle.create(
+            fontSize: OmiFontSize.t4_13,
+            fontWeight: OmiFontWeight.medium,
+            color: secondTextColor,
+            height: 1.2,
+          ),
+        ),
+      );
+    }
+    return Material(
+      color: v.buttonBg,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        onTap: () async {
+          final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+            context,
+            params: _followUpTodoParams(),
+          );
+          if (result != null) {
+            setState(() {
+              _followUpTodoAdded = true;
+            });
+            widget.onAddFollowUpTodo?.call();
+          }
+        },
+        borderRadius: BorderRadius.circular(22),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              OmiImageLoader.localImg(
+                Assets.omiPlus,
+                width: 16,
+                height: 16,
+                color: v.buttonForeground,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Add follow-up todo',
+                style: OmiTextStyle.create(
+                  fontSize: OmiFontSize.t4_13,
+                  fontWeight: OmiFontWeight.medium,
+                  color: v.buttonForeground,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   String _measurePlainBodyRaw() {
@@ -377,17 +462,20 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
 
   /// Insight 纯文本：notes←content，标题←suggestion，Context←接口 title（无则用分类默认标题）
   MPAddTodoPopupParams _followUpTodoParams() {
+    final String mid = widget.memoryId.trim();
     if (!widget.data.useMarkdown) {
       return MPAddTodoPopupParams(
         initialTitle: (widget.data.insightSuggestion ?? '').trim(),
         initialNotes: (widget.data.insightContent ?? '').trim(),
         contextMemoryTitle: widget.data.title,
+        memoryId: mid,
       );
     }
     return MPAddTodoPopupParams(
       initialTitle: _plainSnippetForTodo(widget.data.bodyText),
       initialNotes: '',
       contextMemoryTitle: widget.data.title,
+      memoryId: mid,
     );
   }
 
@@ -577,48 +665,9 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                   ),
                 ],
                 const SizedBox(height: 10),
-                widget.data.tone == MPInsightCardTone.followUp ? SizedBox.shrink():
-                Material(
-                  color: v.buttonBg,
-                  borderRadius: BorderRadius.circular(22),
-                  child: InkWell(
-                    onTap: () async {
-                      final MPAddTodoPopupResult? result =
-                          await showMPAddTodoPopup(
-                        context,
-                        params: _followUpTodoParams(),
-                      );
-                      if (result != null) {
-                        widget.onAddFollowUpTodo?.call();
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(22),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: <Widget>[
-                          OmiImageLoader.localImg(
-                            Assets.omiPlus,
-                            width: 16,
-                            height: 16,
-                            color: v.buttonForeground,
-                            fit: BoxFit.contain,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Add follow-up todo',
-                            style: OmiTextStyle.create(
-                              fontSize: OmiFontSize.t4_13,
-                              fontWeight: OmiFontWeight.medium,
-                              color: v.buttonForeground,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                widget.data.tone == MPInsightCardTone.followUp
+                    ? const SizedBox.shrink()
+                    : _buildFollowUpFooter(v),
               ],
             ),
           );

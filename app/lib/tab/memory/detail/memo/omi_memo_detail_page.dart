@@ -228,6 +228,9 @@ class _OmiMemoDetailView extends StatelessWidget {
                         onSegmentChanged: (MPMemoryDetailSegment s) {},
                         onPlayTap: () =>
                             context.read<OmiMemoryDetailCubit>().onPlayTap(),
+                        onSeekPlay: (Duration p) =>
+                            context.read<OmiMemoryDetailCubit>().onSeekPlay(p),
+                        isAudioPlaying: state.isAudioPlaying,
                       ),
                     ),
                   ],

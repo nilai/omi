@@ -24,6 +24,7 @@ class MPMemoryDetailFeedSection extends StatelessWidget {
             child: _MPMemoryFeedBlockWidget(
               block: data.feedBlocks[i],
               feedBlockIndex: i,
+              memoryId: data.memoryId,
             ),
           ),
         ],
@@ -36,16 +37,19 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
   const _MPMemoryFeedBlockWidget({
     required this.block,
     required this.feedBlockIndex,
+    required this.memoryId,
   });
 
   final MPMemoryFeedBlock block;
   final int feedBlockIndex;
+  final String memoryId;
 
   @override
   Widget build(BuildContext context) {
     return switch (block) {
       MPMemoryFeedInsightBlock(:final data) => MPMemoryInsightCard(
         data: data,
+        memoryId: memoryId,
         onReadMore: () {
           // TODO: Insight 全文 / 展开
         },
