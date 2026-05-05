@@ -13,9 +13,11 @@ import '../../../../../utils/omi_image_loader.dart';
 
 /// Insight 卡片配色主题（仅样式差异，与 [MPFeedCardType] 可对应或用于轮换）。
 enum MPInsightCardTone {
-  /// 暖橙
+  /// 粉色
   business,
 
+  /// 橙色
+  followUp,
   // /// 执行/蓝
   // execution,
 
@@ -104,7 +106,15 @@ class _MPInsightVisual {
           buttonForeground: pinkTextColor,
           icon: Assets.omiDetailGift,
         );
-      
+        case MPInsightCardTone.followUp:
+          return _MPInsightVisual(
+            cardBg: orangeTextColor.withAlpha(30),
+            accent: orangeTextColor,
+            iconBg: orangeTextColor,
+            buttonBg: orangeTextColor.withAlpha(60),
+            buttonForeground: orangeTextColor,
+            icon: Assets.omiDetailGift,
+          );
     }
   }
 }
@@ -567,6 +577,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                   ),
                 ],
                 const SizedBox(height: 10),
+                widget.data.tone == MPInsightCardTone.followUp ? SizedBox.shrink():
                 Material(
                   color: v.buttonBg,
                   borderRadius: BorderRadius.circular(22),
