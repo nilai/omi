@@ -85,3 +85,21 @@ Future<MPUpdateTodoResponse?> updateTodo(MPUpdateTodoRequest req) async {
   }
   return null;
 }
+
+// POST /api/v1/batch/create
+Future<MPBatchCreateResponse?> batchCreate(MPBatchCreateRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/batch/create',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('batchCreate response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPBatchCreateResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}

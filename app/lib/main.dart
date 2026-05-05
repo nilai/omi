@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/http/shared.dart';
 import 'app/mp_app_session_bootstrap.dart';
 import 'login/home/mp_login_page.dart';
@@ -11,6 +13,7 @@ import 'utils/platform/platform_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
   await OmiServerCache().initialize();
   Env.init();
   PlatformManager.initializeServices();
@@ -31,6 +34,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
+      navigatorObservers: <NavigatorObserver>[mpRouteObserver],
       title: 'omi',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple)),
       home: _buildHomePage(context),

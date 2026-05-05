@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
 import 'package:memo_pin/tab/home/home/mp_home_cubit.dart';
@@ -14,34 +15,72 @@ import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/omi_edit_todo_popup.dart';
-import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
 /// MemoPin 首页（对齐 react `HomeTab` 主视图区）
 class MPHomePage extends StatefulWidget {
-  const MPHomePage({super.key, this.onViewAllMemories});
+  const MPHomePage({super.key, this.onViewAllMemories, this.isTabActive = true});
 
   /// 点击 Recent Memory「查看全部」时切换到底部 Memory Tab
   final VoidCallback? onViewAllMemories;
+
+  /// 当前是否为底部导航选中的 Home Tab（与 [IndexedStack] 配合；从其它 Tab 切回时为 `true` 触发刷新）。
+  final bool isTabActive;
 
   @override
   State<MPHomePage> createState() => _MPHomePageState();
 }
 
-class _MPHomePageState extends State<MPHomePage> {
+class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, RouteAware {
   late final MPHomeCubit _cubit = MPHomeCubit()..start();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      mpRouteObserver.subscribe(this, route);
+    }
   }
 
   @override
   void dispose() {
+    mpRouteObserver.unsubscribe(this);
+    WidgetsBinding.instance.removeObserver(this);
     _cubit.close();
     super.dispose();
+  }
+
+  /// 自首页 push 的全屏 / 二级路由 pop 后恢复展示时刷新（与 [isTabActive] 无关，故单独判断）。
+  @override
+  void didPopNext() {
+    if (widget.isTabActive) {
+      _cubit.loadData();
+    }
+  }
+
+  @override
+  void didUpdateWidget(MPHomePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isTabActive && !oldWidget.isTabActive) {
+      _cubit.loadData();
+    }
+  }
+
+  /// 应用回到前台且当前展示 Home Tab 时刷新（避免挂在其它 Tab 时无谓请求）。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.isTabActive) {
+      _cubit.loadData();
+    }
   }
 
   Future<void> _importFromFileWithProgress() async {

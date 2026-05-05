@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/audio/import/mp_ble_device_audio_import_utils.dart';
+import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
@@ -14,6 +16,22 @@ import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
+
+/// Hive 中缓存 [MPGetHomeOverviewResponse.toJson] 的 key。
+const String _kHomeOverviewHiveKey = 'mp_home_overview_v1';
+
+String _formatTodoDeadlineTime(int? deadline) {
+  if (deadline == null) {
+    return '';
+  }
+  final DateTime? dt = MPDateUtils.dateTimeFromUnixEpoch(deadline);
+  if (dt == null) {
+    return '';
+  }
+  final String hh = dt.hour.toString().padLeft(2, '0');
+  final String mm = dt.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
+}
 
 /// 首页音频条状态类型（对齐 react `AudioStatusBar`）
 enum MPHomeAudioStatusType { recording, syncing, importing }
@@ -153,55 +171,89 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
+  /// Today's Focus / Recent Memory 是否均为空（用于决定是否先读 Hive 占位）。
+  bool _isHomeMainListsEmpty(MPHomeState s) {
+    return s.upNextTodos.isEmpty && s.recentMemories.isEmpty;
+  }
+
+  /// 将接口响应映射为首页 state 并 [emit]。
+  void _emitFromOverviewResponse(MPGetHomeOverviewResponse response) {
+    final List<MPHomeTodoItem> upNextTodos = <MPHomeTodoItem>[];
+    for (final MPTodoStruct e in response.focusItems) {
+      upNextTodos.add(
+        MPHomeTodoItem(
+          id: e.id ?? '',
+          title: e.title ?? '',
+          time: _formatTodoDeadlineTime(e.deadline),
+          reason: e.priority ?? '',
+        ),
+      );
+    }
+    final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
+    for (final MPMemoryStruct e in response.recentMemories) {
+      String titleOrDate = e.title ?? '';
+      if (titleOrDate.isEmpty) {
+        titleOrDate = e.content ?? '';
+      }
+      if (titleOrDate.isEmpty) {
+        final String date = MPDateUtils.formatDeadlineLineText(e.createAt);
+        titleOrDate = '$date file';
+      }
+      recentMemories.add(
+        MPHomeMemoryItem(
+          id: e.id ?? '',
+          titleOrDate: titleOrDate,
+          timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
+          createAt: e.createAt,
+          type: e.type ?? MPMemoryType.onlyRecord,
+        ),
+      );
+    }
+    final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
+    if (!isClosed) {
+      emit(state.copyWith(upNextTodos: upNextTodos, recentMemories: recentMemories, insightOverview: insightOverview));
+    }
+  }
+
+  /// 成功拉取后台数据后写入 Hive。
+  Future<void> _persistHomeOverviewCache(MPGetHomeOverviewResponse response) async {
+    try {
+      final Map<String, dynamic> json = response.toJson();
+      await MPHiveUtil.instance.putMap(key: _kHomeOverviewHiveKey, value: json);
+    } catch (e, stackTrace) {
+      debugPrint('MPHomeCubit: persist home overview Hive failed — $e\n$stackTrace');
+    }
+  }
+
+  /// 列表为空时尝试用 Hive 缓存先刷新界面。
+  Future<void> _tryEmitCachedOverviewWhenEmpty() async {
+    if (!_isHomeMainListsEmpty(state)) {
+      return;
+    }
+    try {
+      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(_kHomeOverviewHiveKey);
+      if (cached == null || cached.isEmpty) {
+        return;
+      }
+      final MPGetHomeOverviewResponse parsed = MPGetHomeOverviewResponse.fromJson(cached);
+      if (parsed.baseResp.code != 0) {
+        return;
+      }
+      _emitFromOverviewResponse(parsed);
+    } catch (e, stackTrace) {
+      debugPrint('MPHomeCubit: try emit cached overview when empty failed — $e\n$stackTrace');
+    }
+  }
+
+  /// 拉取首页聚合数据：空列表时先展示 Hive 再请求后台；非空则直接请求后台；成功后更新 Hive。
   Future<void> loadData() async {
+    if (_isHomeMainListsEmpty(state)) {
+      await _tryEmitCachedOverviewWhenEmpty();
+    }
     final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
     if (response != null && response.baseResp.code == 0) {
-      final List<MPHomeTodoItem> upNextTodos = <MPHomeTodoItem>[];
-      for (final MPTodoStruct e in response.focusItems) {
-        String formatDeadlineToTime(int? deadline) {
-          if (deadline == null) return '';
-          final DateTime? dt = MPDateUtils.dateTimeFromUnixEpoch(deadline);
-          if (dt == null) return '';
-          final String hh = dt.hour.toString().padLeft(2, '0');
-          final String mm = dt.minute.toString().padLeft(2, '0');
-          return '$hh:$mm';
-        }
-
-        upNextTodos.add(
-          MPHomeTodoItem(
-            id: e.id ?? '',
-            title: e.title ?? '',
-            time: formatDeadlineToTime(e.deadline),
-            reason: e.priority ?? '',
-          ),
-        );
-      }
-      final List<MPHomeMemoryItem> recentMemories = <MPHomeMemoryItem>[];
-      for (final MPMemoryStruct e in response.recentMemories) {
-        String titleOrDate = e.title ?? '';
-        if (titleOrDate.isEmpty) {
-          titleOrDate = e.content ?? '';
-        }
-        if (titleOrDate.isEmpty) {
-          final String date = MPDateUtils.formatDeadlineLineText(e.createAt);
-          titleOrDate = '$date file';
-        }
-        recentMemories.add(
-          MPHomeMemoryItem(
-            id: e.id ?? '',
-            titleOrDate: titleOrDate,
-            timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
-            createAt: e.createAt,
-            type: e.type ?? MPMemoryType.onlyRecord,
-          ),
-        );
-      }
-      final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
-      if (!isClosed) {
-        emit(
-          state.copyWith(upNextTodos: upNextTodos, recentMemories: recentMemories, insightOverview: insightOverview),
-        );
-      }
+      _emitFromOverviewResponse(response);
+      await _persistHomeOverviewCache(response);
     }
   }
 
@@ -212,7 +264,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   Future<void> _tickInsights() async {
     if (!isClosed) {
-      final MPGetHomeInsightOverviewResponse? response = await getHomeInsightOverview(MPGetHomeInsightOverviewRequest());
+      final MPGetHomeInsightOverviewResponse? response = await getHomeInsightOverview(
+        MPGetHomeInsightOverviewRequest(),
+      );
       if (response != null && response.baseResp.code == 0) {
         final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
         bool shouldUpdate = false;
@@ -231,7 +285,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         if (!isClosed && shouldUpdate) {
           emit(state.copyWith(insightOverview: insightOverview));
         }
-
       }
     }
   }
@@ -339,17 +392,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       }
       await MPBleDeviceAudioImportUtils.syncUploadAndDeleteDeviceFiles(
         transport: transport,
-        onSyncProgress: ({
-          required int fileIndex,
-          required int fileTotal,
-          required int progressPercent,
-        }) {
+        onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
           if (!isClosed) {
-            showImportingStatus(
-              progressPercent,
-              currentFile: fileIndex,
-              totalFiles: fileTotal,
-            );
+            showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
           }
         },
       );

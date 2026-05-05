@@ -300,20 +300,20 @@ MPCreateRecordRequest _$MPCreateRecordRequestFromJson(
   Map<String, dynamic> json,
 ) => MPCreateRecordRequest(
   recordFile: json['record_file'] as String,
+  txtFile: json['txt_file'] as String?,
   createAt: (json['create_at'] as num).toInt(),
   duration: (json['duration'] as num).toInt(),
   source: json['source'] as String?,
-  txtFile: json['txt_file'] as String?,
 );
 
 Map<String, dynamic> _$MPCreateRecordRequestToJson(
   MPCreateRecordRequest instance,
 ) => <String, dynamic>{
   'record_file': instance.recordFile,
+  'txt_file': instance.txtFile,
   'create_at': instance.createAt,
   'duration': instance.duration,
   'source': instance.source,
-  'txt_file': instance.txtFile,
 };
 
 MPCreateRecordResponse _$MPCreateRecordResponseFromJson(
@@ -392,9 +392,7 @@ Map<String, dynamic> _$MPGetUploadRecordUrlResponseToJson(
 
 MPGetSummaryStatusRequest _$MPGetSummaryStatusRequestFromJson(
   Map<String, dynamic> json,
-) => MPGetSummaryStatusRequest(
-  memoryId: json['memory_id'] as String,
-);
+) => MPGetSummaryStatusRequest(memoryId: json['memory_id'] as String);
 
 Map<String, dynamic> _$MPGetSummaryStatusRequestToJson(
   MPGetSummaryStatusRequest instance,

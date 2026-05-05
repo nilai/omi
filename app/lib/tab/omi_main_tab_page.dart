@@ -22,11 +22,12 @@ class _MainTabPageState extends State<MainTabPage> {
 
   List<Widget> get _pages => <Widget>[
         MPHomePage(
+          isTabActive: _currentIndex == 0,
           onViewAllMemories: () {
             setState(() => _currentIndex = 1);
           },
         ),
-        OmiMemoryPage(),
+        OmiMemoryPage(isMemoryTabActive: _currentIndex == 1),
         OmiAskAIPage(),
         OmiMinePage(),
       ];

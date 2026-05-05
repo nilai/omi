@@ -251,3 +251,99 @@ class MPUpdateTodoResponse {
 
   Map<String, dynamic> toJson() => _$MPUpdateTodoResponseToJson(this);
 }
+
+/// 批量创建中的单条 Todo（与后端 `BatchCreateTodoItem` 对齐）。
+@JsonSerializable()
+class MPBatchCreateTodoItem {
+  @JsonKey(name: 'title')
+  final String title;
+
+  @JsonKey(name: 'priority')
+  final String priority;
+
+  @JsonKey(name: 'deadline')
+  final int deadline;
+
+  @JsonKey(name: 'memory_id')
+  final String? memoryId;
+
+  MPBatchCreateTodoItem({
+    required this.title,
+    required this.priority,
+    required this.deadline,
+    this.memoryId,
+  });
+
+  factory MPBatchCreateTodoItem.fromJson(Map<String, dynamic> json) =>
+      _$MPBatchCreateTodoItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPBatchCreateTodoItemToJson(this);
+}
+
+/// 批量创建中的单条 Memo（与后端 `BatchCreateMemoItem` 对齐）。
+@JsonSerializable()
+class MPBatchCreateMemoItem {
+  @JsonKey(name: 'content')
+  final String content;
+
+  @JsonKey(name: 'create_at')
+  final int createAt;
+
+  @JsonKey(name: 'memory_id')
+  final String? memoryId;
+
+  MPBatchCreateMemoItem({
+    required this.content,
+    required this.createAt,
+    this.memoryId,
+  });
+
+  factory MPBatchCreateMemoItem.fromJson(Map<String, dynamic> json) =>
+      _$MPBatchCreateMemoItemFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPBatchCreateMemoItemToJson(this);
+}
+
+/// POST `/api/v1/batch/create` 请求体（与后端 `BatchCreateRequest` 对齐）。
+@JsonSerializable()
+class MPBatchCreateRequest {
+  @JsonKey(name: 'todos')
+  final List<MPBatchCreateTodoItem>? todos;
+
+  @JsonKey(name: 'memos')
+  final List<MPBatchCreateMemoItem>? memos;
+
+  MPBatchCreateRequest({
+    this.todos,
+    this.memos,
+  });
+
+  factory MPBatchCreateRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPBatchCreateRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPBatchCreateRequestToJson(this);
+}
+
+/// POST `/api/v1/batch/create` 响应（与后端 `BatchCreateResponse` 对齐）。
+@JsonSerializable()
+class MPBatchCreateResponse {
+  @JsonKey(name: 'todo_count')
+  final int todoCount;
+
+  @JsonKey(name: 'memo_count')
+  final int memoCount;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPBatchCreateResponse({
+    required this.todoCount,
+    required this.memoCount,
+    required this.baseResp,
+  });
+
+  factory MPBatchCreateResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPBatchCreateResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPBatchCreateResponseToJson(this);
+}

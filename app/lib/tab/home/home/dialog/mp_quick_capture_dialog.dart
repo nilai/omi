@@ -4,32 +4,26 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../audio/record/mp_audio_upload_service.dart';
+import '../../../../audio/record/mp_recording_background_support.dart';
 import '../../../../http/api/mp_memo.dart';
 import '../../../../http/schema/mp_memo.dart';
+import '../../../../http/schema/mp_todo.dart';
 import '../../../../permission/omi_microphone_manager.dart';
 import '../../../../utils/mp_toast_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
 import 'mp_qucik_capture_confirm_dialog.dart';
 
-enum _MPQuickCaptureState {
-  idle,
-  textReady,
-  recording,
-  analyzingText,
-  transcribingVoice,
-}
+enum _MPQuickCaptureState { idle, textReady, recording, analyzingText, transcribingVoice }
 
 /// Quick Capture 弹窗（图1~图5五种状态）。
 class MPQuickCaptureDialog extends StatefulWidget {
-  const MPQuickCaptureDialog({
-    super.key,
-    required this.hostContext,
-  });
+  const MPQuickCaptureDialog({super.key, required this.hostContext});
 
   final BuildContext hostContext;
 
@@ -50,8 +44,7 @@ class MPQuickCaptureDialog extends StatefulWidget {
   State<MPQuickCaptureDialog> createState() => _MPQuickCaptureDialogState();
 }
 
-class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
-    with SingleTickerProviderStateMixin {
+class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with SingleTickerProviderStateMixin {
   static const String _kQuickCaptureDirName = 'mp_quick_capture_records';
   static const Color _kPrimaryBlue = Color(0xFF2F7BFF);
 
@@ -72,10 +65,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
   void initState() {
     super.initState();
     _recorder = FlutterSoundRecorder();
-    _waveController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
+    _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
     _textController.addListener(_handleTextChanged);
   }
 
@@ -117,24 +107,45 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
   }) async {
     final String fallbackText = originalText.trim();
+    final List<MPBatchCreateTodoItem> todos = [];
+    final List<MPBatchCreateMemoItem> memos = [];
     final List<String> issues = structuredSuggestions
         .map((MPAnalyzeMemoSuggestionStruct e) {
           final String content = e.content.trim();
           if (content.isEmpty) {
             return '';
           }
-          final String prefix = e.type == MPAnalyzeMemoSuggestionType.todo
-              ? 'Todo: '
-              : 'Memo: ';
+          String prefix = '';
+          if (e.type == MPAnalyzeMemoSuggestionType.todo) {
+            todos.add(MPBatchCreateTodoItem(title: content, priority: '', deadline: 0));
+            prefix = 'Todo: ';
+          } else {
+            memos.add(MPBatchCreateMemoItem(content: content, createAt: 0));
+            prefix = 'Memo: ';
+          }
           return '$prefix$content';
         })
         .where((String e) => e.isNotEmpty)
         .toList(growable: false);
-    await MPQucikCaptureConfirmDialog.show(
+    final MPQuickCaptureConfirmResult? result = await MPQucikCaptureConfirmDialog.show(
       widget.hostContext,
       originalText: fallbackText,
       issues: issues,
     );
+    if (result == null) {
+      return;
+    }
+    if (result.confirmed) {
+      final MPBatchCreateResponse? response = await batchCreate(MPBatchCreateRequest(todos: todos, memos: memos));
+      if (response == null) {
+        return;
+      }
+      if (response.baseResp.code != 0) {
+        MPToastUtils.showMessage(response.baseResp.message);
+        return;
+      }
+      MPToastUtils.showMessage('todos and memos created.');
+    }
   }
 
   Future<String> _ensureQuickCaptureDirectory() async {
@@ -165,6 +176,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       }
     }
     _recordPath = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
   }
 
   Future<void> _closeDialog() async {
@@ -187,20 +199,17 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     _focusNode.unfocus();
     setState(() => _busy = true);
     try {
-      final bool hasPermission =
-          await OmiMicrophoneManager.ensureMicrophonePermission();
+      final bool hasPermission = await OmiMicrophoneManager.ensureMicrophonePermission();
       if (!hasPermission) {
         if (mounted) {
           setState(() => _busy = false);
         }
         return;
       }
+      await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureQuickCaptureDirectory();
-      final String path = p.join(
-        dir,
-        'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac',
-      );
-      await _recorder.openRecorder();
+      final String path = p.join(dir, 'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac');
+      await _recorder.openRecorder(isBGService: true);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,
@@ -251,10 +260,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       _state = _MPQuickCaptureState.analyzingText;
     });
     final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
-      MPAnalyzeMemoTextRequest(
-        content: content,
-        createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      ),
+      MPAnalyzeMemoTextRequest(content: content, createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000),
     );
     if (!mounted || _isClosing) {
       return;
@@ -264,15 +270,10 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         _busy = false;
         _state = _MPQuickCaptureState.textReady;
       });
-      MPToastUtils.showMessage(
-        response?.baseResp.message ??
-            'Analysis failed. Please try again later.',
-      );
+      MPToastUtils.showMessage(response?.baseResp.message ?? 'Analysis failed. Please try again later.');
       return;
     }
-    final String memoText = response.originalText.trim().isNotEmpty
-        ? response.originalText
-        : content;
+    final String memoText = response.originalText.trim().isNotEmpty ? response.originalText : content;
     _isClosing = true;
     if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
       _sheetNavigator.pop();
@@ -280,10 +281,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     if (!widget.hostContext.mounted) {
       return;
     }
-    await _showAnalyzeConfirmDialog(
-      originalText: memoText,
-      structuredSuggestions: response.structuredSuggestions,
-    );
+    await _showAnalyzeConfirmDialog(originalText: memoText, structuredSuggestions: response.structuredSuggestions);
   }
 
   Future<void> _finishRecordingAndTranscribe() async {
@@ -301,6 +299,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
     } catch (e) {
       if (!mounted) {
         return;
@@ -337,10 +336,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     }
     final List<int> bytes = await file.readAsBytes();
     final String contentType = 'audio/aac';
-    final String? recordUri = await MPAudioUploadService().uploadMPAudioBytes(
-      bytes,
-      contentType,
-    );
+    final String? recordUri = await MPAudioUploadService().uploadMPAudioBytes(bytes, contentType);
     if (recordUri == null || recordUri.isEmpty) {
       if (mounted) {
         MPToastUtils.showMessage('Failed to upload audio.');
@@ -353,10 +349,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
       return;
     }
     final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
-      MPAnalyzeMemoRecordRequest(
-        recordUrl: recordUri,
-        createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      ),
+      MPAnalyzeMemoRecordRequest(recordUrl: recordUri, createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000),
     );
     await _stopRecorder(deleteFile: true);
     if (!mounted || _isClosing) {
@@ -367,10 +360,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         _busy = false;
         _state = _MPQuickCaptureState.idle;
       });
-      MPToastUtils.showMessage(
-        response?.baseResp.message ??
-            'Transcription failed. Please try again later.',
-      );
+      MPToastUtils.showMessage(response?.baseResp.message ?? 'Transcription failed. Please try again later.');
       return;
     }
     final String memoText = response.originalText.trim();
@@ -381,10 +371,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     if (!widget.hostContext.mounted) {
       return;
     }
-    await _showAnalyzeConfirmDialog(
-      originalText: memoText,
-      structuredSuggestions: response.structuredSuggestions,
-    );
+    await _showAnalyzeConfirmDialog(originalText: memoText, structuredSuggestions: response.structuredSuggestions);
   }
 
   Widget _buildBottomAction() {
@@ -443,10 +430,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         child: Ink(
           width: 44,
           height: 44,
-          decoration: BoxDecoration(
-            color: background,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
           child: Icon(icon, size: 22, color: iconColor),
         ),
       ),
@@ -454,23 +438,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
   }
 
   Widget _buildRecordingWave() {
-    const List<double> base = <double>[
-      24,
-      20,
-      28,
-      18,
-      22,
-      26,
-      17,
-      23,
-      29,
-      21,
-      25,
-      19,
-      27,
-      20,
-      24,
-    ];
+    const List<double> base = <double>[24, 20, 28, 18, 22, 26, 17, 23, 29, 21, 25, 19, 27, 20, 24];
     return AnimatedBuilder(
       animation: _waveController!,
       builder: (BuildContext context, Widget? child) {
@@ -478,17 +446,13 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List<Widget>.generate(base.length, (int index) {
-            final double dynamicHeight =
-                (base[index] + math.sin(t + index * 0.52) * 3.0).clamp(14, 32);
+            final double dynamicHeight = (base[index] + math.sin(t + index * 0.52) * 3.0).clamp(14, 32);
             return Padding(
               padding: EdgeInsets.only(right: index == base.length - 1 ? 0 : 5),
               child: Container(
                 width: 4,
                 height: dynamicHeight,
-                decoration: BoxDecoration(
-                  color: _kPrimaryBlue,
-                  borderRadius: BorderRadius.circular(999),
-                ),
+                decoration: BoxDecoration(color: _kPrimaryBlue, borderRadius: BorderRadius.circular(999)),
               ),
             );
           }),
@@ -505,11 +469,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
         const SizedBox(width: 10),
         Text(
           text,
-          style: TextStyle(
-            fontSize: OmiFontSize.t7_16,
-            color: secondTextColor,
-            fontWeight: OmiFontWeight.regular,
-          ),
+          style: TextStyle(fontSize: OmiFontSize.t7_16, color: secondTextColor, fontWeight: OmiFontWeight.regular),
         ),
       ],
     );
@@ -528,11 +488,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
               padding: const EdgeInsets.only(top: 20),
               child: Text(
                 _textController.text,
-                style: TextStyle(
-                  fontSize: OmiFontSize.t8_17,
-                  color: mainTextColor,
-                  fontWeight: OmiFontWeight.regular,
-                ),
+                style: TextStyle(fontSize: OmiFontSize.t8_17, color: mainTextColor, fontWeight: OmiFontWeight.regular),
               ),
             ),
             const Spacer(),
@@ -564,11 +520,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
             fontWeight: OmiFontWeight.regular,
           ),
         ),
-        style: TextStyle(
-          fontSize: OmiFontSize.t8_17,
-          color: mainTextColor,
-          fontWeight: OmiFontWeight.regular,
-        ),
+        style: TextStyle(fontSize: OmiFontSize.t8_17, color: mainTextColor, fontWeight: OmiFontWeight.regular),
       ),
     );
   }
@@ -578,8 +530,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
     final MediaQueryData mq = MediaQuery.of(context);
     final double safeBottom = mq.viewPadding.bottom;
     final double keyboardInset = mq.viewInsets.bottom;
-    final bool isInputState = _state == _MPQuickCaptureState.idle ||
-        _state == _MPQuickCaptureState.textReady;
+    final bool isInputState = _state == _MPQuickCaptureState.idle || _state == _MPQuickCaptureState.textReady;
 
     return AnimatedPadding(
       duration: const Duration(milliseconds: 180),
@@ -628,9 +579,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Align(
-                          alignment: isInputState
-                              ? Alignment.topLeft
-                              : Alignment.center,
+                          alignment: isInputState ? Alignment.topLeft : Alignment.center,
                           child: Padding(
                             padding: EdgeInsets.only(top: isInputState ? 12 : 0),
                             child: _buildCenterContent(),
@@ -643,10 +592,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog>
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
                       child: _state == _MPQuickCaptureState.recording
                           ? _buildBottomAction()
-                          : Align(
-                              alignment: Alignment.centerRight,
-                              child: _buildBottomAction(),
-                            ),
+                          : Align(alignment: Alignment.centerRight, child: _buildBottomAction()),
                     ),
                   ],
                 ),
@@ -666,17 +612,13 @@ class _MPQuickCaptureDots extends StatefulWidget {
   State<_MPQuickCaptureDots> createState() => _MPQuickCaptureDotsState();
 }
 
-class _MPQuickCaptureDotsState extends State<_MPQuickCaptureDots>
-    with SingleTickerProviderStateMixin {
+class _MPQuickCaptureDotsState extends State<_MPQuickCaptureDots> with SingleTickerProviderStateMixin {
   AnimationController? _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
   }
 
   @override
@@ -702,9 +644,7 @@ class _MPQuickCaptureDotsState extends State<_MPQuickCaptureDots>
                 width: 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _MPQuickCaptureDialogState._kPrimaryBlue.withValues(
-                    alpha: opacity,
-                  ),
+                  color: _MPQuickCaptureDialogState._kPrimaryBlue.withValues(alpha: opacity),
                   shape: BoxShape.circle,
                 ),
               ),

@@ -1,8 +1,24 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:memo_pin/login/mp_user.dart';
+
+/// 将 Hive 读出的 `Map` / `List` 递归转为 `Map<String, dynamic>` / `List`，避免 `_Map<dynamic,dynamic>` 强转失败。
+Map<String, dynamic> _deepHiveJsonMap(Map<dynamic, dynamic> raw) {
+  return Map<String, dynamic>.fromEntries(
+    raw.entries.map(
+      (MapEntry<dynamic, dynamic> e) => MapEntry(e.key.toString(), _deepHiveJsonValue(e.value)),
+    ),
+  );
+}
+
+dynamic _deepHiveJsonValue(dynamic value) {
+  if (value is Map) {
+    return _deepHiveJsonMap(Map<dynamic, dynamic>.from(value));
+  }
+  if (value is List) {
+    return value.map(_deepHiveJsonValue).toList();
+  }
+  return value;
+}
 
 /// Hive 工具类（按用户邮箱分箱存储）。
 ///
@@ -145,11 +161,13 @@ class MPHiveUtil {
   }
 
   /// 获取 Map。
+  ///
+  /// Hive 读出的嵌套结构常为 [Map<dynamic, dynamic>]，与接口 [fromJson] 里 `Map<String, dynamic>` 强转不兼容，故递归规范化。
   Future<Map<String, dynamic>?> getMap(String key) async {
     final Box<dynamic> box = await _ensureBox();
     final dynamic value = box.get(key);
     if (value is Map) {
-      return Map<String, dynamic>.from(value);
+      return _deepHiveJsonMap(value);
     }
     return null;
   }

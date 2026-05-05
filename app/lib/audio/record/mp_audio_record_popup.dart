@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -71,7 +72,8 @@ class _MPAudioRecordDialog extends StatefulWidget {
   State<_MPAudioRecordDialog> createState() => _MPAudioRecordDialogState();
 }
 
-class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleTickerProviderStateMixin {
+class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   static const Color _kBlue = Color(0xFF007AFF);
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
   static const Color _kCancelSheetBg = Color(0xFFF2F2F7);
@@ -91,9 +93,19 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   bool _recorderOpened = false;
 
   String? _recordPath;
-  Duration _elapsed = Duration.zero;
+
+  /// 已累计的录音时长（不含当前 active 段）。
+  Duration _completedRecordingSegments = Duration.zero;
+
+  /// 当前连续录制段的起点（暂停时为 null）。
+  DateTime? _activeRecordingSegmentStart;
+
   bool _isPaused = false;
   Timer? _tickTimer;
+
+  /// 最小化胶囊条位置（首次最小化时根据安全区初始化）。
+  double? _pillLeft;
+  double? _pillBottom;
 
   bool _busy = false;
 
@@ -105,11 +117,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _waveController.stop();
     _waveController.dispose();
     _tickTimer?.cancel();
@@ -120,18 +134,17 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   Future<void> _releaseRecorder({required bool deleteFile}) async {
     _tickTimer?.cancel();
     _tickTimer = null;
-    if (!_recorderOpened) {
-      return;
+    if (_recorderOpened) {
+      try {
+        if (_recorder.isRecording || _recorder.isPaused) {
+          await _recorder.stopRecorder();
+        }
+      } catch (_) {}
+      try {
+        await _recorder.closeRecorder();
+      } catch (_) {}
+      _recorderOpened = false;
     }
-    try {
-      if (_recorder.isRecording || _recorder.isPaused) {
-        await _recorder.stopRecorder();
-      }
-    } catch (_) {}
-    try {
-      await _recorder.closeRecorder();
-    } catch (_) {}
-    _recorderOpened = false;
     if (deleteFile && _recordPath != null) {
       try {
         final File f = File(_recordPath!);
@@ -141,6 +154,32 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       } catch (_) {}
     }
     _recordPath = null;
+    _completedRecordingSegments = Duration.zero;
+    _activeRecordingSegmentStart = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+  }
+
+  /// 回到前台时触发重建；计时见 [_recordingElapsed]（墙钟），与退后台持续录音一致。
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+    }
+  }
+
+  /// 基于墙钟的录音时长；与 [openRecorder] 的 `isBGService: true` 配合，退后台仍持续采集时进度与真实录音一致。
+  Duration get _recordingElapsed {
+    if (_step != _MPAudioRecordStep.recording || _recordPath == null) {
+      return Duration.zero;
+    }
+    if (_isPaused) {
+      return _completedRecordingSegments;
+    }
+    if (_activeRecordingSegmentStart == null) {
+      return _completedRecordingSegments;
+    }
+    return _completedRecordingSegments +
+        DateTime.now().difference(_activeRecordingSegmentStart!);
   }
 
   void _startElapsedTicker() {
@@ -149,9 +188,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       if (!mounted || _isPaused) {
         return;
       }
-      setState(() {
-        _elapsed += const Duration(seconds: 1);
-      });
+      setState(() {});
     });
   }
 
@@ -172,9 +209,12 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     if (_busy) {
       return;
     }
+    final MediaQueryData mq = MediaQuery.of(context);
     setState(() {
       _showCancelConfirm = false;
       _minimized = true;
+      _pillLeft ??= 16;
+      _pillBottom ??= mq.padding.bottom + kBottomNavigationBarHeight + 8;
     });
   }
 
@@ -201,9 +241,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         }
         return;
       }
+      await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
-      await _recorder.openRecorder();
+      await _recorder.openRecorder(isBGService: true);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,
@@ -219,7 +260,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       setState(() {
         _recordPath = path;
         _step = _MPAudioRecordStep.recording;
-        _elapsed = Duration.zero;
+        _completedRecordingSegments = Duration.zero;
+        _activeRecordingSegmentStart = DateTime.now();
         _isPaused = false;
         _busy = false;
       });
@@ -245,6 +287,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         await _recorder.resumeRecorder();
         if (mounted) {
           setState(() {
+            _activeRecordingSegmentStart = DateTime.now();
             _isPaused = false;
             _busy = false;
           });
@@ -253,6 +296,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         await _recorder.pauseRecorder();
         if (mounted) {
           setState(() {
+            if (_activeRecordingSegmentStart != null) {
+              _completedRecordingSegments +=
+                  DateTime.now().difference(_activeRecordingSegmentStart!);
+              _activeRecordingSegmentStart = null;
+            }
             _isPaused = true;
             _busy = false;
           });
@@ -293,7 +341,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     setState(() => _busy = true);
     _tickTimer?.cancel();
     _tickTimer = null;
-    final Duration total = _elapsed;
+    final Duration total = _recordingElapsed;
     String outPath = _recordPath!;
     try {
       if (_recorderOpened) {
@@ -302,6 +350,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t save: $e');
@@ -411,10 +460,38 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
           if (_showCancelConfirm && !_minimized) Positioned.fill(child: _buildCancelConfirmLayer()),
           if (_step == _MPAudioRecordStep.recording && _minimized)
             Positioned(
-              left: 16,
+              left: _pillLeft ?? 16,
               right: 16,
-              bottom: mq.padding.bottom + kBottomNavigationBarHeight + 8,
-              child: _buildMinimizedRecordingBar(),
+              bottom: _pillBottom ??
+                  mq.padding.bottom + kBottomNavigationBarHeight + 8,
+              child: GestureDetector(
+                onPanUpdate: (DragUpdateDetails d) {
+                  final double screenW = mq.size.width;
+                  final double screenH = mq.size.height;
+                  const double margin = 8;
+                  const double minInnerWidth = 220;
+                  final double maxLeft = math.max(
+                    margin,
+                    screenW - margin - 16 - minInnerWidth,
+                  );
+                  final double defaultBottom =
+                      mq.padding.bottom + kBottomNavigationBarHeight + 8;
+                  setState(() {
+                    final double curLeft = _pillLeft ?? 16;
+                    final double curBottom =
+                        _pillBottom ?? defaultBottom;
+                    double nextLeft = curLeft + d.delta.dx;
+                    double nextBottom = curBottom - d.delta.dy;
+                    nextLeft = nextLeft.clamp(margin, maxLeft);
+                    final double maxBottom = screenH - mq.padding.top - 56;
+                    nextBottom =
+                        nextBottom.clamp(margin, math.max(margin, maxBottom));
+                    _pillLeft = nextLeft;
+                    _pillBottom = nextBottom;
+                  });
+                },
+                child: _buildMinimizedRecordingBar(),
+              ),
             ),
         ],
       ),
@@ -458,7 +535,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
             ),
             const SizedBox(width: 12),
             Text(
-              _formatMinSec(_elapsed),
+              _formatMinSec(_recordingElapsed),
               style: OmiTextStyle.create(
                 color: mainTextColor,
                 fontSize: OmiFontSize.t7_16,
@@ -573,7 +650,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         ),
         const SizedBox(height: 20),
         Text(
-          _formatMmSs(_elapsed),
+          _formatMmSs(_recordingElapsed),
           style: OmiTextStyle.create(
             color: mainTextColor,
             fontSize: OmiFontSize.t33_42,

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_page.dart';
 import 'package:memo_pin/tab/memory/detail/memory/omi_memory_detail_page.dart';
@@ -20,29 +21,60 @@ import 'omi_all_cubit.dart';
 
 /// Memory「All」列表页（卡片列表 + 游标分页）
 class OmiAllPage extends StatelessWidget {
-  const OmiAllPage({super.key});
+  const OmiAllPage({super.key, this.refreshListenable});
+
+  /// 父级在「列表应从隐藏变为可见」或「底部切回 Memory 且仍为 All」时递增计数；此处监听并 [OmiAllCubit.load]。
+  final ValueNotifier<int>? refreshListenable;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => OmiAllCubit()..initData(), child: const _OmiAllView());
+    return BlocProvider(
+      create: (_) => OmiAllCubit()..initData(),
+      child: _OmiAllView(refreshListenable: refreshListenable),
+    );
   }
 }
 
 class _OmiAllView extends StatefulWidget {
-  const _OmiAllView();
+  const _OmiAllView({this.refreshListenable});
+
+  final ValueNotifier<int>? refreshListenable;
 
   @override
   State<_OmiAllView> createState() => _OmiAllViewState();
 }
 
-class _OmiAllViewState extends State<_OmiAllView> {
+class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
   final ScrollController _scrollController = ScrollController();
 
   StreamSubscription<void>? _memoryListRefreshSub;
 
+  void _onExternalRefreshRequest() {
+    if (!mounted) {
+      return;
+    }
+    context.read<OmiAllCubit>().load();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final ModalRoute<dynamic>? route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      mpRouteObserver.subscribe(this, route);
+    }
+  }
+
+  /// 自列表页 push 的详情等全屏路由 pop 后，列表需重新拉取（底部 Tab / 顶部分段未变时此前不会触发刷新）。
+  @override
+  void didPopNext() {
+    _onExternalRefreshRequest();
+  }
+
   @override
   void initState() {
     super.initState();
+    widget.refreshListenable?.addListener(_onExternalRefreshRequest);
     _scrollController.addListener(_onScroll);
     _memoryListRefreshSub = MPMemoryNotification.listenMemoryListRefresh(() {
       if (!mounted) {
@@ -53,7 +85,18 @@ class _OmiAllViewState extends State<_OmiAllView> {
   }
 
   @override
+  void didUpdateWidget(_OmiAllView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.refreshListenable != widget.refreshListenable) {
+      oldWidget.refreshListenable?.removeListener(_onExternalRefreshRequest);
+      widget.refreshListenable?.addListener(_onExternalRefreshRequest);
+    }
+  }
+
+  @override
   void dispose() {
+    mpRouteObserver.unsubscribe(this);
+    widget.refreshListenable?.removeListener(_onExternalRefreshRequest);
     _memoryListRefreshSub?.cancel();
     _memoryListRefreshSub = null;
     _scrollController.removeListener(_onScroll);

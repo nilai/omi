@@ -161,7 +161,7 @@ int? mpNullableIntFromJson(Object? json) {
 }
 
 // Todo Struct
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPTodoStruct {
   @JsonKey(name: 'id')
   final String? id;
@@ -201,7 +201,7 @@ class MPTodoStruct {
 }
 
 // Record Conversation Struct（后端 `RecordConversationStruct`，transcript 条目）
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPRecordConversationStruct {
   @JsonKey(name: 'id')
   final String id;
@@ -352,7 +352,7 @@ class MPAiExpertMemoryStruct {
 }
 
 // Memory Struct
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPMemoryStruct {
   @JsonKey(name: 'id')
   final String? id;
@@ -418,7 +418,7 @@ class MPMemoryStruct {
 }
 
 // Feed Card Struct（后端 `FeedCardStruct`，字段后续按需补全）
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPFeedCardStruct {
   @JsonKey(name: 'id')
   final String? id;
@@ -431,7 +431,6 @@ class MPFeedCardStruct {
   @JsonKey(name: 'title')
   final String? title;
 
-  @JsonKey(name: 'create_at')
   @JsonKey(name: 'create_at', fromJson: mpNullableIntFromJson)
   final int? createAt;
 
@@ -505,7 +504,7 @@ class MPMemoryFeedStruct {
 }
 
 // Memo Struct
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPMemoStruct {
   @JsonKey(name: 'id')
   final String id;
