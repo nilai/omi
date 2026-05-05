@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../audio/record/mp_audio_upload_service.dart';
+import '../../../../audio/record/mp_recording_background_support.dart';
 import '../../../../http/api/mp_memo.dart';
 import '../../../../http/schema/mp_memo.dart';
 import '../../../../http/schema/mp_todo.dart';
@@ -175,6 +176,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       }
     }
     _recordPath = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
   }
 
   Future<void> _closeDialog() async {
@@ -204,9 +206,10 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         }
         return;
       }
+      await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureQuickCaptureDirectory();
       final String path = p.join(dir, 'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac');
-      await _recorder.openRecorder();
+      await _recorder.openRecorder(isBGService: true);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,
@@ -296,6 +299,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
     } catch (e) {
       if (!mounted) {
         return;

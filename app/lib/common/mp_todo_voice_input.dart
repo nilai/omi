@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
+
+import '../audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 
 import '../http/api/mp_chat.dart';
@@ -147,6 +149,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       }
     }
     _recordPath = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
   }
 
   double get _cornerRadius => widget.showOutline ? 12.0 : 16.0;
@@ -188,12 +191,13 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         if (mounted) setState(() => _busy = false);
         return;
       }
+      await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
         dir,
         'omi_todo_voice_${DateTime.now().millisecondsSinceEpoch}.aac',
       );
-      await _recorder.openRecorder();
+      await _recorder.openRecorder(isBGService: true);
       _recorderOpened = true;
       await _recorder.startRecorder(
         toFile: path,
@@ -250,6 +254,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
     } catch (e) {
       _dotsCtrl.stop();
       if (mounted) {

@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -133,18 +134,17 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   Future<void> _releaseRecorder({required bool deleteFile}) async {
     _tickTimer?.cancel();
     _tickTimer = null;
-    if (!_recorderOpened) {
-      return;
+    if (_recorderOpened) {
+      try {
+        if (_recorder.isRecording || _recorder.isPaused) {
+          await _recorder.stopRecorder();
+        }
+      } catch (_) {}
+      try {
+        await _recorder.closeRecorder();
+      } catch (_) {}
+      _recorderOpened = false;
     }
-    try {
-      if (_recorder.isRecording || _recorder.isPaused) {
-        await _recorder.stopRecorder();
-      }
-    } catch (_) {}
-    try {
-      await _recorder.closeRecorder();
-    } catch (_) {}
-    _recorderOpened = false;
     if (deleteFile && _recordPath != null) {
       try {
         final File f = File(_recordPath!);
@@ -156,6 +156,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _recordPath = null;
     _completedRecordingSegments = Duration.zero;
     _activeRecordingSegmentStart = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
   }
 
   /// 回到前台时触发重建；计时见 [_recordingElapsed]（墙钟），与退后台持续录音一致。
@@ -240,6 +241,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
+      await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
       await _recorder.openRecorder(isBGService: true);
@@ -348,6 +350,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t save: $e');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/http/shared.dart';
 import 'app/mp_app_session_bootstrap.dart';
@@ -12,6 +13,7 @@ import 'utils/platform/platform_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterForegroundTask.initCommunicationPort();
   await OmiServerCache().initialize();
   Env.init();
   PlatformManager.initializeServices();
