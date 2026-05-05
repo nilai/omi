@@ -1,9 +1,20 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
+import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+
+import '../http/api/mp_chat.dart';
+import '../http/schema/mp_chat.dart';
 
 enum MPVoiceTextInputMode { text, recording, transcribing }
 
@@ -40,12 +51,18 @@ class MPVoiceTextInput extends StatefulWidget {
 
 class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     with TickerProviderStateMixin {
+  static const String _kRecordDirName = 'mp_voice_text_input_records';
+
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   late final bool _ownsFocusNode;
+  late final FlutterSoundRecorder _recorder;
 
   MPVoiceTextInputMode _mode = MPVoiceTextInputMode.text;
   bool _sending = false;
+  bool _busy = false;
+  bool _recorderOpened = false;
+  String? _recordPath;
 
   late final AnimationController _waveCtrl;
   late final AnimationController _dotsCtrl;
@@ -56,6 +73,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     _controller = TextEditingController(text: widget.initialText);
     _ownsFocusNode = widget.focusNode == null;
     _focusNode = widget.focusNode ?? FocusNode();
+    _recorder = FlutterSoundRecorder();
     _waveCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -68,6 +86,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
 
   @override
   void dispose() {
+    unawaited(_stopRecorder(deleteFile: true));
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
     if (_ownsFocusNode) {
@@ -79,43 +98,218 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
 
   bool get _hasText => _controller.text.trim().isNotEmpty;
 
-  Future<void> _startRecording() async {
-    if (_sending) return;
-    setState(() {
-      _mode = MPVoiceTextInputMode.recording;
-    });
-    _focusNode.unfocus();
-    _waveCtrl.repeat();
+  Future<String> _ensureRecordDirectory() async {
+    final Directory docs = await getApplicationDocumentsDirectory();
+    final String dir = p.join(docs.path, _kRecordDirName);
+    await Directory(dir).create(recursive: true);
+    return dir;
   }
 
-  void _cancelRecording() {
+  Future<void> _stopRecorder({required bool deleteFile}) async {
+    try {
+      if (_recorderOpened && (_recorder.isRecording || _recorder.isPaused)) {
+        await _recorder.stopRecorder();
+      }
+    } catch (_) {}
+    try {
+      if (_recorderOpened) {
+        await _recorder.closeRecorder();
+      }
+    } catch (_) {}
+    _recorderOpened = false;
+    if (deleteFile && _recordPath != null) {
+      final File file = File(_recordPath!);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+    _recordPath = null;
+  }
+
+  Future<void> _startRecording() async {
+    if (_sending || _busy) return;
+    _focusNode.unfocus();
+    setState(() => _busy = true);
+    try {
+      final bool hasPermission =
+          await OmiMicrophoneManager.ensureMicrophonePermission();
+      if (!hasPermission) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+      final String dir = await _ensureRecordDirectory();
+      final String path = p.join(
+        dir,
+        'mp_voice_text_${DateTime.now().millisecondsSinceEpoch}.aac',
+      );
+      await _recorder.openRecorder();
+      _recorderOpened = true;
+      await _recorder.startRecorder(
+        toFile: path,
+        codec: Codec.aacADTS,
+        bitRate: 8000,
+        numChannels: 1,
+        sampleRate: 8000,
+      );
+      if (!mounted) {
+        await _stopRecorder(deleteFile: true);
+        return;
+      }
+      _recordPath = path;
+      setState(() {
+        _busy = false;
+        _mode = MPVoiceTextInputMode.recording;
+      });
+      _waveCtrl.repeat();
+    } catch (e) {
+      await _stopRecorder(deleteFile: true);
+      if (mounted) {
+        setState(() => _busy = false);
+        MPToastUtils.showMessage('Failed to start recording: $e');
+      }
+    }
+  }
+
+  Future<void> _cancelRecording() async {
     _waveCtrl.stop();
+    await _stopRecorder(deleteFile: true);
     if (!mounted) return;
     setState(() {
       _mode = MPVoiceTextInputMode.text;
     });
   }
 
+  /// 停止录音、[MPAudioUploadService.uploadMPAudio] 上传后与 [MPTodoVoiceInput._confirmRecording] 相同链路调用 [transcript]，成功则将文本写入输入框。
   Future<void> _sendRecording() async {
-    if (_sending) return;
+    if (_busy || _sending) return;
+    if (_recordPath == null || _recordPath!.isEmpty) {
+      MPToastUtils.showMessage('Invalid recording file.');
+      return;
+    }
     _waveCtrl.stop();
     setState(() {
       _mode = MPVoiceTextInputMode.transcribing;
+      _busy = true;
       _sending = true;
     });
     _dotsCtrl.repeat();
 
-    // TODO: 替换为真实录音 + 转写接口
-    await Future<void>.delayed(widget.transcribeDelay);
+    String? filePath = _recordPath;
+    try {
+      if (_recorderOpened) {
+        filePath = await _recorder.stopRecorder() ?? filePath;
+        await _recorder.closeRecorder();
+        _recorderOpened = false;
+      }
+    } catch (e) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _sending = false;
+          _mode = MPVoiceTextInputMode.text;
+        });
+        MPToastUtils.showMessage('Failed to stop recording: $e');
+      }
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
 
-    if (!mounted) return;
+    if (filePath == null || filePath.isEmpty) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _sending = false;
+          _mode = MPVoiceTextInputMode.text;
+        });
+      }
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    final File file = File(filePath);
+    if (!await file.exists()) {
+      _dotsCtrl.stop();
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _sending = false;
+          _mode = MPVoiceTextInputMode.text;
+        });
+      }
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('Recording file not found.');
+      return;
+    }
+
+    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
+
+    if (!mounted) {
+      _dotsCtrl.stop();
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    if (recordUri == null || recordUri.isEmpty) {
+      _dotsCtrl.stop();
+      setState(() {
+        _busy = false;
+        _sending = false;
+        _mode = MPVoiceTextInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('Failed to upload audio.');
+      return;
+    }
+
+    final MPTranscriptResponse? transcriptResp = await transcript(
+      MPTranscriptRequest(audioUrl: recordUri),
+    );
     _dotsCtrl.stop();
-    final String transcribed =
-        'What patterns should I pay attention to this week?';
-    _controller.text = transcribed;
-    widget.onChanged?.call(transcribed);
+
+    if (!mounted) {
+      await _stopRecorder(deleteFile: true);
+      return;
+    }
+
+    if (transcriptResp == null || transcriptResp.baseResp.code != 0) {
+      final String msg = transcriptResp?.baseResp.message.isNotEmpty == true
+          ? transcriptResp!.baseResp.message
+          : 'Voice-to-text failed.';
+      setState(() {
+        _busy = false;
+        _sending = false;
+        _mode = MPVoiceTextInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage(msg);
+      return;
+    }
+
+    final String text = transcriptResp.content.trim();
+    if (text.isEmpty) {
+      setState(() {
+        _busy = false;
+        _sending = false;
+        _mode = MPVoiceTextInputMode.text;
+      });
+      await _stopRecorder(deleteFile: true);
+      MPToastUtils.showMessage('No speech recognized.');
+      return;
+    }
+
+    _controller.text = text;
+    _controller.selection = TextSelection.collapsed(offset: text.length);
+    widget.onChanged?.call(text);
+
+    await _stopRecorder(deleteFile: true);
+    if (!mounted) return;
     setState(() {
       _mode = MPVoiceTextInputMode.text;
+      _busy = false;
       _sending = false;
     });
     _focusNode.requestFocus();
