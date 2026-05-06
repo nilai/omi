@@ -287,17 +287,11 @@ class MPAudioUploadManager {
 
     _notifyMultiAndHome(onMulti: onMultiProgress, totalFiles: tt(), currentFileIndex: idx, progress: 100);
 
-    try {
-      await f.delete();
-    } catch (e) {
-      debugPrint('delete local record failed: $e');
-    }
-
     if (meta != null) {
       try {
-        await MPAudioLocalRecordsUtil.instance.removeHard(meta);
+        await MPAudioLocalRecordsUtil.instance.update(meta.copyWith(isRemoved: true));
       } catch (e, st) {
-        debugPrint('MPAudioLocalRecordsUtil.removeHard failed: $e\n$st');
+        debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
       }
     }
 
@@ -751,17 +745,11 @@ class MPAudioUploadManager {
 
         _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
 
-        try {
-          await f.delete();
-        } catch (e) {
-          debugPrint('delete local record failed: $e');
-        }
-
         if (meta != null) {
           try {
-            await MPAudioLocalRecordsUtil.instance.removeHard(meta);
+            await MPAudioLocalRecordsUtil.instance.update(meta.copyWith(isRemoved: true));
           } catch (e, st) {
-            debugPrint('MPAudioLocalRecordsUtil.removeHard failed: $e\n$st');
+            debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
           }
         }
 
