@@ -737,9 +737,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                     todoId: tid,
                                     title: widget.params.title,
                                     priority: MPTodoUtils.mapPriorityToApi(_priority),
-                                    deadline: _deadlineUnixSec != null
-                                        ? '$_deadlineUnixSec'
-                                        : '',
+                                    deadlineUnixSec: _deadlineUnixSec,
                                     isCompleted: true,
                                   );
                                   MPHomeNotification.notifyHomeListRefresh();

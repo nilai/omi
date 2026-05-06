@@ -528,7 +528,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       todoId: todoId,
       title: row.title,
       priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
-      deadline: row.deadlineUnixSec != null ? '${row.deadlineUnixSec}' : '',
+      deadlineUnixSec: row.deadlineUnixSec,
       isCompleted: false,
     );
     if (!ok) {

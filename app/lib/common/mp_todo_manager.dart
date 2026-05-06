@@ -206,12 +206,12 @@ class MPTodoManager {
   }
   // AI-generated END - completeTodo
 
-  /// 更新 Todo（含标记完成）；[deadline] 允许 `''`，与创建接口侧约定一致。
+  /// 更新 Todo（含标记完成）；[deadlineUnixSec] 为 Unix 秒，空值按 0 传（与创建接口侧约定一致）。
   Future<bool> updateTodoWithRequest({
     required String todoId,
     required String title,
     required String priority,
-    required String deadline,
+    required int? deadlineUnixSec,
     required bool isCompleted,
   }) async {
     try {
@@ -232,7 +232,7 @@ class MPTodoManager {
         todoId: todoId,
         title: title.trim(),
         priority: priority,
-        deadline: deadline,
+        deadline: deadlineUnixSec ?? 0,
         isCompleted: isCompleted,
       );
 

@@ -108,7 +108,7 @@ class MPUpdateTodoRequest {
   final String priority;
 
   @JsonKey(name: 'deadline')
-  final String deadline;
+  final int deadline;
 
   @JsonKey(name: 'is_completed')
   final bool isCompleted;

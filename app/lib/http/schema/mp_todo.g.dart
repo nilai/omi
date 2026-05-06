@@ -55,7 +55,7 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
       todoId: json['todo_id'] as String,
       title: json['title'] as String,
       priority: json['priority'] as String,
-      deadline: json['deadline'] as String,
+      deadline: (json['deadline'] as num).toInt(),
       isCompleted: json['is_completed'] as bool,
     );
 
