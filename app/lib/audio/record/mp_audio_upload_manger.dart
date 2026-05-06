@@ -291,10 +291,7 @@ class MPAudioUploadManager {
       try {
         final String fileId = MPAudioLocalRecordsUtil.getFileIdFromUrl(uri);
         await MPAudioLocalRecordsUtil.instance.update(
-          meta.copyWith(
-            isRemoved: true,
-            fileId: fileId.isNotEmpty ? fileId : meta.fileId,
-          ),
+          meta.copyWith(isRemoved: true, fileId: fileId.isNotEmpty ? fileId : meta.fileId),
         );
       } catch (e, st) {
         debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
@@ -497,6 +494,13 @@ class MPAudioUploadManager {
         final MPAudioLocalRecord record = audioRecords[i];
         final File f = File(record.path);
         if (!await f.exists()) {
+          record.isRemoved = true;
+          try {
+            await MPAudioLocalRecordsUtil.instance.update(record);
+          } catch (e, st) {
+            debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
+          }
+          _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
 
@@ -505,6 +509,13 @@ class MPAudioUploadManager {
           durSec = record.duration!;
         }
         if (durSec <= 0) {
+          record.isRemoved = true;
+          try {
+            await MPAudioLocalRecordsUtil.instance.update(record);
+          } catch (e, st) {
+            debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
+          }
+          _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
 
@@ -528,8 +539,6 @@ class MPAudioUploadManager {
             },
           );
           if (txtUri == null || txtUri.isEmpty) {
-            MPToastUtils.showMessage('Failed to upload text attachment.');
-            _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
             continue;
           }
         }
@@ -755,10 +764,7 @@ class MPAudioUploadManager {
           try {
             final String fileId = MPAudioLocalRecordsUtil.getFileIdFromUrl(uri);
             await MPAudioLocalRecordsUtil.instance.update(
-              meta.copyWith(
-                isRemoved: true,
-                fileId: fileId.isNotEmpty ? fileId : meta.fileId,
-              ),
+              meta.copyWith(isRemoved: true, fileId: fileId.isNotEmpty ? fileId : meta.fileId),
             );
           } catch (e, st) {
             debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
