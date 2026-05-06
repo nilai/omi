@@ -205,6 +205,44 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     _tickPlaybackUiFromPlayer();
   }
 
+  Future<bool> _ensureBoundLocalPath() async {
+    final String? localPath = await _ensurePlayableLocalPath();
+    if (localPath == null || localPath.isEmpty) {
+      MPToastUtils.showMessage('Failed to download audio. Please try again later.');
+      return false;
+    }
+    final bool rebound = _playingLocalPath != localPath;
+    if (rebound) {
+      _armSuppressPlaybackCompleted();
+      await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
+        _audioPlayer,
+        localPath,
+      );
+      _playingLocalPath = localPath;
+    }
+    return true;
+  }
+
+  /// 绑定音源后 [AudioPlayer.duration] 可能略晚就绪，短暂轮询以对齐波形 seek。
+  Future<Duration> _resolveTotalRef() async {
+    final MPAudioDetailData? data = state.data;
+    if (data == null) {
+      return Duration.zero;
+    }
+    Duration totalRef = _audioPlayer.duration ?? data.total;
+    if (totalRef > Duration.zero) {
+      return totalRef;
+    }
+    for (int i = 0; i < 8; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 64));
+      totalRef = _audioPlayer.duration ?? data.total;
+      if (totalRef > Duration.zero) {
+        return totalRef;
+      }
+    }
+    return totalRef;
+  }
+
   void _tickPlaybackUiFromPlayer() {
     if (isClosed) {
       return;
@@ -497,19 +535,8 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     emit(state.copyWith(playPreparing: true));
     bool shouldRunPlaybackUi = false;
     try {
-      final String? localPath = await _ensurePlayableLocalPath();
-      if (localPath == null || localPath.isEmpty) {
-        MPToastUtils.showMessage('Failed to download audio. Please try again later.');
+      if (!await _ensureBoundLocalPath()) {
         return;
-      }
-      final bool rebound = _playingLocalPath != localPath;
-      if (rebound) {
-        _armSuppressPlaybackCompleted();
-        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(
-          _audioPlayer,
-          localPath,
-        );
-        _playingLocalPath = localPath;
       }
       if (_audioPlayer.processingState == ProcessingState.completed) {
         await _audioPlayer.seek(Duration.zero);
@@ -535,7 +562,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
 
       if (kDebugMode) {
         debugPrint(
-          'MPAudioDetailCubit.play: rebound=$rebound '
+          'MPAudioDetailCubit.play: '
           'pos=${_audioPlayer.position.inMilliseconds}ms '
           'dur=${_audioPlayer.duration?.inMilliseconds}ms '
           'processing=${_audioPlayer.processingState}',
@@ -566,6 +593,72 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       }
     }
     // 勿依赖此处的 state.isPlaying：emit 后个别时机下读到的 state 可能尚未更新，会导致定时器未启动。
+    if (!isClosed && shouldRunPlaybackUi) {
+      _startPlaybackUiTimer();
+    }
+  }
+
+  /// 点击波形：按宽度比例 0..1 seek 并从该处播放。
+  Future<void> onSeekByWaveFraction(double rawFraction) async {
+    final double fraction = rawFraction.clamp(0.0, 1.0);
+    if (state.phase != MPAudioDetailPhase.loaded || state.data == null) {
+      return;
+    }
+    if (state.playPreparing) {
+      return;
+    }
+
+    emit(state.copyWith(playPreparing: true));
+    bool shouldRunPlaybackUi = false;
+    try {
+      if (!await _ensureBoundLocalPath()) {
+        return;
+      }
+      final Duration totalRef = await _resolveTotalRef();
+      if (totalRef <= Duration.zero) {
+        MPToastUtils.showMessage('Failed to play audio.');
+        return;
+      }
+      final int ms = (totalRef.inMilliseconds * fraction).round();
+      final Duration target = Duration(milliseconds: ms);
+      await _audioPlayer.seek(target);
+
+      unawaited(
+        _audioPlayer.play().catchError((Object e, StackTrace st) {
+          if (isClosed) {
+            return;
+          }
+          debugPrint('MPAudioDetailCubit.onSeekByWaveFraction play: $e\n$st');
+          _stopPlaybackUiTimer();
+          MPToastUtils.showMessage('Failed to play audio.');
+          emit(
+            state.copyWith(
+              isPlaying: false,
+              playPreparing: false,
+            ),
+          );
+        }),
+      );
+
+      final double prog =
+          (target.inMilliseconds / totalRef.inMilliseconds).clamp(0.0, 1.0);
+      emit(
+        state.copyWith(
+          isPlaying: true,
+          playPreparing: false,
+          progress: prog,
+          elapsedLabel: _formatMmSs(target),
+        ),
+      );
+      shouldRunPlaybackUi = true;
+    } catch (e, st) {
+      debugPrint('MPAudioDetailCubit.onSeekByWaveFraction: $e\n$st');
+      MPToastUtils.showMessage('Failed to play audio.');
+    } finally {
+      if (!isClosed && !shouldRunPlaybackUi) {
+        emit(state.copyWith(playPreparing: false));
+      }
+    }
     if (!isClosed && shouldRunPlaybackUi) {
       _startPlaybackUiTimer();
     }

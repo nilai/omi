@@ -252,6 +252,8 @@ class _OmiMemoryDetailView extends StatelessWidget {
                             onPlayTap: () => context.read<OmiMemoryDetailCubit>().onPlayTap(),
                             onSeekPlay: (Duration p) =>
                                 context.read<OmiMemoryDetailCubit>().onSeekPlay(p),
+                            onSeekWaveFraction: (double f) =>
+                                context.read<OmiMemoryDetailCubit>().onSeekByWaveFraction(f),
                             isAudioPlaying: state.isAudioPlaying,
                           ),
                         ),

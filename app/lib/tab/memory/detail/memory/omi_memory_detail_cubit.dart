@@ -98,27 +98,7 @@ const int _kMemoryFeedPageSize = 20;
 class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   OmiMemoryDetailCubit({required this.memoryId, this.detailSource = OmiMemoryDetailSource.memoryFeedSummary})
     : super(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading)) {
-    _decoderDurationSub = _audioPlayer.durationStream.listen((Duration? d) {
-      if (isClosed) {
-        return;
-      }
-      if (d == null || d <= Duration.zero) {
-        return;
-      }
-      final OmiMemoryDetailState s = state;
-      if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
-        return;
-      }
-      final MPMemoryDetailCardData cur = s.data!;
-      final String nextEnd = _memoryPlaybackFormatMmSs(d);
-      if (cur.audioTimeEnd == nextEnd) {
-        return;
-      }
-      emit(s.copyWith(data: cur.copyWith(audioTimeEnd: nextEnd)));
-      if (_isAudioPlaying) {
-        scheduleMicrotask(_tickMemoryDetailPlaybackUi);
-      }
-    });
+    _decoderDurationSub = _audioPlayer.durationStream.listen(_applyDecoderDurationToState);
     _playerStateSub = _audioPlayer.playerStateStream.listen((PlayerState ps) {
       if (isClosed) {
         return;
@@ -163,6 +143,45 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   static const int _kEndSlackMs = 160;
   static const int _kSuppressCompletedAfterSourceMs = 900;
   static const int _kPlaybackEmitBucketMs = 500;
+
+  /// 接口里的 [MPMemoryDetailCardData.audioTimeEnd] 多为 `5m3s`，与解码器 `5:03` 展示不一致；
+  /// [just_audio] 的 [AudioPlayer.duration] 往往在 [setAudioSource] 后稍晚才就绪，
+  /// 若仅依赖 [AudioPlayer.durationStream] 的首次事件，可能早于详情 [loaded] 被丢弃或错过，导致首播后总时长不刷新。
+  void _applyDecoderDurationToState(Duration? d) {
+    if (isClosed) {
+      return;
+    }
+    if (d == null || d <= Duration.zero) {
+      return;
+    }
+    final OmiMemoryDetailState s = state;
+    if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
+      return;
+    }
+    final MPMemoryDetailCardData cur = s.data!;
+    final String nextEnd = _memoryPlaybackFormatMmSs(d);
+    if (cur.audioTimeEnd == nextEnd) {
+      return;
+    }
+    emit(s.copyWith(data: cur.copyWith(audioTimeEnd: nextEnd)));
+    if (_isAudioPlaying) {
+      scheduleMicrotask(_tickMemoryDetailPlaybackUi);
+    }
+  }
+
+  /// 绑定音源后主动拉取时长（补足 [durationStream] 时机问题）。
+  void _schedulePlayerDurationSync() {
+    void tick() {
+      if (isClosed) {
+        return;
+      }
+      _applyDecoderDurationToState(_audioPlayer.duration);
+    }
+
+    tick();
+    scheduleMicrotask(tick);
+    Future<void>.delayed(const Duration(milliseconds: 120), tick);
+  }
 
   static bool _reachedEndByPosition(Duration pos, Duration total, int marginMs) {
     final int t = total.inMilliseconds;
@@ -500,6 +519,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
         _playingLocalPath = localPath;
       }
+      _schedulePlayerDurationSync();
       if (_audioPlayer.processingState == ProcessingState.completed) {
         await _audioPlayer.seek(Duration.zero);
       }
@@ -531,59 +551,125 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
   }
 
+  Future<bool> _prepareBoundPlayerForSeek(MPMemoryDetailCardData data) async {
+    final String? localPath = await _ensurePlayableLocalPath(data);
+    if (localPath == null || localPath.isEmpty) {
+      MPToastUtils.showMessage('Failed to download audio. Please try again later.');
+      return false;
+    }
+    final bool rebound = _playingLocalPath != localPath;
+    if (rebound) {
+      _armSuppressPlaybackCompleted();
+      await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
+      _playingLocalPath = localPath;
+    }
+    _schedulePlayerDurationSync();
+    return true;
+  }
+
+  /// 绑定音源后 [AudioPlayer.duration] 可能略晚于首帧，短暂轮询以对齐 Transcript / 波形 seek。
+  Future<Duration> _resolveTotalRef(MPMemoryDetailCardData data) async {
+    Duration totalRef = _audioPlayer.duration ?? _cardAudioTotal(data);
+    if (totalRef > Duration.zero) {
+      return totalRef;
+    }
+    for (int i = 0; i < 8; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 64));
+      totalRef = _audioPlayer.duration ?? _cardAudioTotal(data);
+      if (totalRef > Duration.zero) {
+        return totalRef;
+      }
+    }
+    return totalRef;
+  }
+
+  Future<bool> _seekToTargetAndStartUi(
+    MPMemoryDetailCardData data,
+    Duration position, {
+    Duration? prefetchedTotalRef,
+  }) async {
+    final Duration totalRef = prefetchedTotalRef ?? await _resolveTotalRef(data);
+    Duration target = position;
+    if (target.isNegative) {
+      target = Duration.zero;
+    }
+    if (totalRef > Duration.zero && target > totalRef) {
+      target = totalRef;
+    }
+    await _audioPlayer.seek(target);
+    _lastPlaybackEmitBucket = -1;
+
+    if (!_audioPlayer.playing) {
+      unawaited(
+        _audioPlayer.play().catchError((Object e, StackTrace st) {
+          if (isClosed) {
+            return;
+          }
+          debugPrint('OmiMemoryDetailCubit seek play future: $e\n$st');
+          _stopPlaybackUiTimer();
+          _isAudioPlaying = false;
+          _syncAudioPlayingFlag();
+          MPToastUtils.showMessage('Failed to play audio.');
+        }),
+      );
+    }
+    _isAudioPlaying = true;
+    _syncAudioPlayingFlag();
+    _lastPlaybackEmitBucket = -1;
+    scheduleMicrotask(_tickMemoryDetailPlaybackUi);
+    return true;
+  }
+
   /// 从指定位置开始播放（点击 Transcript 跳转）；若已在播放则仅 seek 并保持播放中。
   Future<bool> onSeekPlay(Duration position) async {
     final OmiMemoryDetailState cur = state;
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
       return false;
     }
-    final String? localPath = await _ensurePlayableLocalPath(cur.data!);
-    if (localPath == null || localPath.isEmpty) {
-      MPToastUtils.showMessage('Failed to download audio. Please try again later.');
+    bool shouldRunPlaybackUi = false;
+    try {
+      if (!await _prepareBoundPlayerForSeek(cur.data!)) {
+        return false;
+      }
+      shouldRunPlaybackUi = true;
+      return await _seekToTargetAndStartUi(cur.data!, position);
+    } catch (e, st) {
+      debugPrint('OmiMemoryDetailCubit.onSeekPlay: $e\n$st');
+      MPToastUtils.showMessage('Failed to play audio.');
+      return false;
+    } finally {
+      if (!isClosed && shouldRunPlaybackUi) {
+        _startPlaybackUiTimer();
+      }
+    }
+  }
+
+  /// 点击波形：按 0..1 宽度比例 seek（与解码器总时长对齐，不依赖卡片解析出的总时长）。
+  Future<bool> onSeekByWaveFraction(double rawFraction) async {
+    final double fraction = rawFraction.clamp(0.0, 1.0);
+    final OmiMemoryDetailState cur = state;
+    if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
       return false;
     }
     bool shouldRunPlaybackUi = false;
     try {
-      final bool rebound = _playingLocalPath != localPath;
-      if (rebound) {
-        _armSuppressPlaybackCompleted();
-        await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
-        _playingLocalPath = localPath;
+      if (!await _prepareBoundPlayerForSeek(cur.data!)) {
+        return false;
       }
-
-      final Duration totalRef = _audioPlayer.duration ?? _cardAudioTotal(cur.data!);
-      Duration target = position;
-      if (target.isNegative) {
-        target = Duration.zero;
+      final Duration totalRef = await _resolveTotalRef(cur.data!);
+      if (totalRef <= Duration.zero) {
+        MPToastUtils.showMessage('Failed to play audio.');
+        return false;
       }
-      if (totalRef > Duration.zero && target > totalRef) {
-        target = totalRef;
-      }
-      await _audioPlayer.seek(target);
-      _lastPlaybackEmitBucket = -1;
-
-      if (!_audioPlayer.playing) {
-        unawaited(
-          _audioPlayer.play().catchError((Object e, StackTrace st) {
-            if (isClosed) {
-              return;
-            }
-            debugPrint('OmiMemoryDetailCubit.onSeekPlay play future: $e\n$st');
-            _stopPlaybackUiTimer();
-            _isAudioPlaying = false;
-            _syncAudioPlayingFlag();
-            MPToastUtils.showMessage('Failed to play audio.');
-          }),
-        );
-      }
-      _isAudioPlaying = true;
-      _syncAudioPlayingFlag();
-      _lastPlaybackEmitBucket = -1;
+      final int ms = (totalRef.inMilliseconds * fraction).round();
       shouldRunPlaybackUi = true;
-      scheduleMicrotask(_tickMemoryDetailPlaybackUi);
-      return true;
+      return await _seekToTargetAndStartUi(
+        cur.data!,
+        Duration(milliseconds: ms),
+        prefetchedTotalRef: totalRef,
+      );
     } catch (e, st) {
-      debugPrint('OmiMemoryDetailCubit.onSeekPlay: $e\n$st');
+      debugPrint('OmiMemoryDetailCubit.onSeekByWaveFraction: $e\n$st');
       MPToastUtils.showMessage('Failed to play audio.');
       return false;
     } finally {

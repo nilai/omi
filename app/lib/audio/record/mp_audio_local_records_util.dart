@@ -114,6 +114,30 @@ class MPAudioLocalRecordsUtil {
     return dir;
   }
 
+  /// iOS 重装/沙盒变更后，旧的绝对路径（含旧 Application UUID）会失效。
+  /// 若路径中包含 `/Documents/<kLocalStorageDirName>/...`，则尝试将尾部相对部分迁移到当前沙盒目录。
+  static Future<String?> _tryRebuildPathFromOldSandbox(String oldPath) async {
+    final String normalized = p.normalize(oldPath.trim());
+    if (normalized.isEmpty) {
+      return null;
+    }
+    final String marker = '/Documents/$kLocalStorageDirName/';
+    final int i = normalized.indexOf(marker);
+    if (i < 0) {
+      return null;
+    }
+    final String relative = normalized.substring(i + marker.length);
+    if (relative.isEmpty) {
+      return null;
+    }
+    final String dir = await ensureLocalStorageDirectoryPath();
+    final String candidate = p.join(dir, relative);
+    if (await File(candidate).exists()) {
+      return candidate;
+    }
+    return null;
+  }
+
   /// 拉取远端录音字节：落在 [Env.apiBaseUrl] 下的地址走 [makeRawApiCall]（带登录态），否则裸 `GET`。
   static Future<http.Response?> httpGetAudioDownloadUrl(String downloadUrl) async {
     try {
@@ -426,6 +450,29 @@ class MPAudioLocalRecordsUtil {
     } else {
       _records = raw.map((String s) => MPAudioLocalRecord.fromJsonString(s)).toList();
     }
+
+    // 兼容 iOS 沙盒变更：对已持久化的旧绝对路径做一次迁移修复（只在文件确实存在时更新）。
+    bool changed = false;
+    for (int idx = 0; idx < _records.length; idx++) {
+      final MPAudioLocalRecord e = _records[idx];
+      final String path = e.path.trim();
+      if (path.isEmpty) {
+        continue;
+      }
+      if (await File(path).exists()) {
+        continue;
+      }
+      final String? rebuilt = await _tryRebuildPathFromOldSandbox(path);
+      if (rebuilt == null || rebuilt == path) {
+        continue;
+      }
+      _records[idx] = e.copyWith(path: rebuilt);
+      changed = true;
+    }
+    if (changed) {
+      await _persist();
+    }
+
     return List<MPAudioLocalRecord>.from(_records);
   }
 

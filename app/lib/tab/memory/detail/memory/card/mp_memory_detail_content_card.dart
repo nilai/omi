@@ -122,6 +122,7 @@ class MPMemoryDetailContentCard extends StatefulWidget {
     this.onSegmentChanged,
     this.onPlayTap,
     this.onSeekPlay,
+    this.onSeekWaveFraction,
     this.isAudioPlaying = false,
     this.showBackground = true,
     this.segmentBodyScrollWithParent = false,
@@ -139,6 +140,9 @@ class MPMemoryDetailContentCard extends StatefulWidget {
 
   /// 点击 Transcript 的某一条，跳转到对应时间并播放（若正在播放则仅 seek，不做 pause）。
   final Future<bool> Function(Duration position)? onSeekPlay;
+
+  /// 点击波形：按宽度比例 seek（0..1）。用于接口总时长未解析时仍能对准解码器时长。
+  final Future<bool> Function(double fraction)? onSeekWaveFraction;
 
   /// 外部播放器是否正在播放（用于同步按钮与波形动画）。
   final bool isAudioPlaying;
@@ -491,11 +495,57 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     if (_playPreparing) {
       return;
     }
-    if (width <= 0 || _total <= Duration.zero) {
+    if (width <= 0) {
       return;
     }
     final double x = d.localPosition.dx.clamp(0.0, width);
     final double frac = (x / width).clamp(0.0, 1.0);
+
+    if (widget.onSeekWaveFraction != null) {
+      setState(() {
+        if (_total > Duration.zero) {
+          _elapsed = Duration(
+            milliseconds: (_total.inMilliseconds * frac).round(),
+          );
+        } else {
+          _elapsed = Duration.zero;
+        }
+        if (_elapsed >= _total && _total > Duration.zero) {
+          _elapsed = Duration.zero;
+        }
+        _playing = true;
+        _syncPlayingTranscriptIndexByElapsed();
+      });
+      _syncTimerByPlayingState();
+
+      final Future<bool> fut = widget.onSeekWaveFraction!.call(frac);
+      setState(() {
+        _playPreparing = true;
+      });
+      try {
+        final bool ok = await fut;
+        if (!mounted) {
+          return;
+        }
+        if (!ok) {
+          setState(() {
+            _playing = false;
+          });
+          _syncTimerByPlayingState();
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _playPreparing = false;
+          });
+        }
+      }
+      return;
+    }
+
+    if (_total <= Duration.zero) {
+      return;
+    }
     final int targetMs = (_total.inMilliseconds * frac).round();
     final Duration target = Duration(milliseconds: targetMs);
 

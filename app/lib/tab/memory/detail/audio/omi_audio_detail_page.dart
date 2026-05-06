@@ -225,9 +225,27 @@ class _OmiAudioDetailView extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            _AudioWaveform(
-                              isPlaying: state.isPlaying,
-                              progress: state.progress,
+                            LayoutBuilder(
+                              builder: (BuildContext context, BoxConstraints c) {
+                                return GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTapDown: (TapDownDetails d) {
+                                    final double w = c.maxWidth;
+                                    if (w <= 0) {
+                                      return;
+                                    }
+                                    final double frac =
+                                        (d.localPosition.dx / w).clamp(0.0, 1.0);
+                                    context
+                                        .read<MPAudioDetailCubit>()
+                                        .onSeekByWaveFraction(frac);
+                                  },
+                                  child: _AudioWaveform(
+                                    isPlaying: state.isPlaying,
+                                    progress: state.progress,
+                                  ),
+                                );
+                              },
                             ),
                             const SizedBox(height: 22),
                             Center(
