@@ -192,17 +192,15 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     });
   }
 
-  String _formatMmSs(Duration d) {
+  /// < 60 分钟：MM:SS；>= 60 分钟：HH:MM:SS
+  String _formatElapsed(Duration d) {
+    final int h = d.inHours;
     final int m = d.inMinutes.remainder(60);
     final int s = d.inSeconds.remainder(60);
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
-  /// 底部条用 `0:05` 样式
-  String _formatMinSec(Duration d) {
-    final int m = d.inMinutes;
-    final int s = d.inSeconds.remainder(60);
-    return '$m:${s.toString().padLeft(2, '0')}';
+    if (h > 0) {
+      return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
+    return '${d.inMinutes.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   void _minimizeToPillBar() {
@@ -535,7 +533,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
             ),
             const SizedBox(width: 12),
             Text(
-              _formatMinSec(_recordingElapsed),
+              _formatElapsed(_recordingElapsed),
               style: OmiTextStyle.create(
                 color: mainTextColor,
                 fontSize: OmiFontSize.t7_16,
@@ -650,7 +648,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         ),
         const SizedBox(height: 20),
         Text(
-          _formatMmSs(_recordingElapsed),
+          _formatElapsed(_recordingElapsed),
           style: OmiTextStyle.create(
             color: mainTextColor,
             fontSize: OmiFontSize.t33_42,
