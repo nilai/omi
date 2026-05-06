@@ -1321,7 +1321,7 @@ _mpMemoryStructToDetailBundleFromSources(
     recordFile: recordFileForPlay,
     recordUri: recordUriForPlay,
     speakerLabels: speakerLabels,
-    initialSegment: MPMemoryDetailSegment.transcript,
+    initialSegment: MPMemoryDetailSegment.overview,
     overviewText: overviewText,
     transcriptItems: transcriptItems,
     actionItems: actionItems,

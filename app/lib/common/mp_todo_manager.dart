@@ -206,7 +206,7 @@ class MPTodoManager {
   }
   // AI-generated END - completeTodo
 
-  /// 更新 Todo（含标记完成）；[deadlineUnixSec] 为 Unix 秒，空值按 0 传（与创建接口侧约定一致）。
+  /// 更新 Todo（含标记完成）；[deadlineUnixSec] 为 Unix 秒，空值按当前时间戳传。
   Future<bool> updateTodoWithRequest({
     required String todoId,
     required String title,
@@ -228,11 +228,14 @@ class MPTodoManager {
         return false;
       }
 
+      final int resolvedDeadline =
+          deadlineUnixSec ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+
       final request = MPUpdateTodoRequest(
         todoId: todoId,
         title: title.trim(),
         priority: priority,
-        deadline: deadlineUnixSec ?? 0,
+        deadline: resolvedDeadline,
         isCompleted: isCompleted,
       );
 
