@@ -289,7 +289,13 @@ class MPAudioUploadManager {
 
     if (meta != null) {
       try {
-        await MPAudioLocalRecordsUtil.instance.update(meta.copyWith(isRemoved: true));
+        final String fileId = MPAudioLocalRecordsUtil.getFileIdFromUrl(uri);
+        await MPAudioLocalRecordsUtil.instance.update(
+          meta.copyWith(
+            isRemoved: true,
+            fileId: fileId.isNotEmpty ? fileId : meta.fileId,
+          ),
+        );
       } catch (e, st) {
         debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
       }
@@ -747,7 +753,13 @@ class MPAudioUploadManager {
 
         if (meta != null) {
           try {
-            await MPAudioLocalRecordsUtil.instance.update(meta.copyWith(isRemoved: true));
+            final String fileId = MPAudioLocalRecordsUtil.getFileIdFromUrl(uri);
+            await MPAudioLocalRecordsUtil.instance.update(
+              meta.copyWith(
+                isRemoved: true,
+                fileId: fileId.isNotEmpty ? fileId : meta.fileId,
+              ),
+            );
           } catch (e, st) {
             debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
           }

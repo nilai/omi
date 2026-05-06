@@ -400,7 +400,8 @@ class MPAudioLocalRecordsUtil {
     final String fileId = getFileIdFromUrl(raw);
     if (fileId.isNotEmpty) {
       final MPAudioLocalRecord? byId = await queryByFileId(fileId);
-      if (byId != null && !byId.isRemoved) {
+      // 已上传的录音我们会标记 isRemoved=true（用于避免重复上传），但仍希望播放时优先命中本地文件。
+      if (byId != null) {
         final String p = byId.path.trim();
         if (p.isNotEmpty) {
           final File f = File(p);
@@ -413,6 +414,17 @@ class MPAudioLocalRecordsUtil {
 
     await load();
     for (final MPAudioLocalRecord e in _records) {
+      // 优先：若给出了 fileId，则即使记录被标记 isRemoved（已上传），也允许命中以便本地播放。
+      if (fileId.isNotEmpty && e.fileId == fileId) {
+        final String p = e.path.trim();
+        if (p.isNotEmpty) {
+          final File f = File(p);
+          if (await f.exists()) {
+            return f.path;
+          }
+        }
+        // fileId 匹配但文件不存在，则继续兜底扫描。
+      }
       if (e.isRemoved) {
         continue;
       }
