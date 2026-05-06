@@ -1073,8 +1073,9 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
         MPMemoryFeedYouAskedBlock(
           MPMemoryYouAskedCardData(
             headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
-            userMessage: f.title ?? ' ',
-            aiReply: ' ',
+            userMessage: f.askAICard?.ask ?? '',
+            aiReply: f.askAICard?.answer ?? '',
+            count: f.askAICard?.count
           ),
         ),
       );

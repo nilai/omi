@@ -124,8 +124,10 @@ class OmiAllCubit extends Cubit<OmiAllState> {
       }
     }
     if (structs.isEmpty) return const <MPMemoryEntry>[];
-    final List<MPMemoryEntry> entries =
-        structs.map(_mpMemoryStructToEntry).toList(growable: false);
+    final List<MPMemoryEntry> entries = structs
+        .where(_shouldIncludeMemoryStructInAllList)
+        .map(_mpMemoryStructToEntry)
+        .toList(growable: false);
     return entries.where(_isRenderableEntry).toList(growable: false);
   }
 
@@ -342,8 +344,10 @@ class OmiAllCubit extends Cubit<OmiAllState> {
         'has_more': resp.hasMore,
       });
     }
-    final List<MPMemoryEntry> items =
-        resp.memorys.map(_mpMemoryStructToEntry).toList(growable: false);
+    final List<MPMemoryEntry> items = resp.memorys
+        .where(_shouldIncludeMemoryStructInAllList)
+        .map(_mpMemoryStructToEntry)
+        .toList(growable: false);
     return (items: items, hasMore: resp.hasMore);
   }
 
@@ -560,6 +564,14 @@ class OmiAllCubit extends Cubit<OmiAllState> {
       // 静默失败：不影响列表与下拉刷新主流程
     }
   }
+}
+
+/// `MEMO_LIST` 无条目时不展示该行（避免空白分组卡片）。
+bool _shouldIncludeMemoryStructInAllList(MPMemoryStruct m) {
+  if ((m.type ?? MPMemoryType.onlyRecord) == MPMemoryType.memoList) {
+    return (m.memoList ?? []).isNotEmpty;
+  }
+  return true;
 }
 
 /// [MPMemoryStruct.unreadItemCnt] 后端约定主要对 MEMORY_FEED 有意义；为 `null` 或 `<0` 视为 0。

@@ -12,6 +12,7 @@ class MPMemoryYouAskedCardData {
     this.headerTimeLabel = 'Just now',
     required this.userMessage,
     required this.aiReply,
+    this.count,
   });
 
   /// 头部右侧时间，如 `Just now`
@@ -22,6 +23,8 @@ class MPMemoryYouAskedCardData {
 
   /// AI 回复（左侧绿色竖线强调）
   final String aiReply;
+
+  final int? count;
 }
 
 /// 白底圆角卡：YOU ASKED 标题 + 用户气泡 + AI 回复
@@ -29,9 +32,13 @@ class MPMemoryYouAskedCard extends StatelessWidget {
   const MPMemoryYouAskedCard({
     super.key,
     required this.data,
+    this.onTap,
   });
 
   final MPMemoryYouAskedCardData data;
+
+  /// 与详情页底部「Ask AI」一致时传入，整卡可点进会话。
+  final VoidCallback? onTap;
 
 
   /// 用户气泡背景（浅蓝灰）
@@ -39,16 +46,8 @@ class MPMemoryYouAskedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: lineColor.withValues(alpha: 0.65),
-          width: 1,
-        ),
-      ),
-      child: Padding(
+    final BorderRadius radius = BorderRadius.circular(12);
+    final Widget content = Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,6 +128,7 @@ class MPMemoryYouAskedCard extends StatelessWidget {
                 ),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,12 +164,53 @@ class MPMemoryYouAskedCard extends StatelessWidget {
                       color: mainTextColor,
                       height: 1.45,
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
+            if ((data.count ?? 0) > 0) ...<Widget>[
+              const SizedBox(height: 10),
+              Divider(height: 1, color: lineColor),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  '${data.count} ${data.count == 1 ? 'message' : 'messages'} · Tap to continue',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: secondTextColor,
+                    fontSize: OmiFontSize.t4_13,
+                    fontWeight: OmiFontWeight.medium,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
         ),
+      );
+
+    final Widget shell = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: radius,
+        border: Border.all(
+          color: lineColor.withValues(alpha: 0.65),
+          width: 1,
+        ),
+      ),
+      child: content,
+    );
+
+    if (onTap == null) {
+      return shell;
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: shell,
       ),
     );
   }

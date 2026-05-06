@@ -9,9 +9,16 @@ import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_you_asked_card.
 
 /// 主卡片下方：按 [MPMemoryDetailCardData.feedBlocks] 顺序渲染（与接口 feeds 一致，含 RESUMMARY）。
 class MPMemoryDetailFeedSection extends StatelessWidget {
-  const MPMemoryDetailFeedSection({super.key, required this.data});
+  const MPMemoryDetailFeedSection({
+    super.key,
+    required this.data,
+    this.onYouAskedTap,
+  });
 
   final MPMemoryDetailCardData data;
+
+  /// 与详情页底部「Ask AI」相同的跳转（YOU ASKED 卡片整卡点击）。
+  final VoidCallback? onYouAskedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +32,7 @@ class MPMemoryDetailFeedSection extends StatelessWidget {
               block: data.feedBlocks[i],
               feedBlockIndex: i,
               memoryId: data.memoryId,
+              onYouAskedTap: onYouAskedTap,
             ),
           ),
         ],
@@ -38,11 +46,13 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
     required this.block,
     required this.feedBlockIndex,
     required this.memoryId,
+    this.onYouAskedTap,
   });
 
   final MPMemoryFeedBlock block;
   final int feedBlockIndex;
   final String memoryId;
+  final VoidCallback? onYouAskedTap;
 
   @override
   Widget build(BuildContext context) {
@@ -56,8 +66,10 @@ class _MPMemoryFeedBlockWidget extends StatelessWidget {
         feedBlockIndex: feedBlockIndex,
       ),
       MPMemoryFeedMyMemoBlock(:final data) => MPMemoryMyMemosCard(data: data),
-      MPMemoryFeedYouAskedBlock(:final data) =>
-        MPMemoryYouAskedCard(data: data),
+      MPMemoryFeedYouAskedBlock(:final data) => MPMemoryYouAskedCard(
+        data: data,
+        onTap: onYouAskedTap,
+      ),
       MPMemoryFeedResummaryBlock(:final data) => MPMemoryResummaryCard(
         data: data,
         onExpansionChanged: (bool expanded) {

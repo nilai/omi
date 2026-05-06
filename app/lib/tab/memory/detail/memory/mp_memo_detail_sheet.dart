@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/tab/memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
@@ -228,6 +229,7 @@ Future<void> showMPMemoDetailSheet(
                                   final bool ok = await onDelete(memoKey);
                                   if (!sheetContext.mounted || !ok) return;
                                 }
+                                MPMemoryNotification.notifyMemoryListRefresh();
                                 Navigator.of(sheetContext).pop();
                               },
                         borderRadius: BorderRadius.circular(999),

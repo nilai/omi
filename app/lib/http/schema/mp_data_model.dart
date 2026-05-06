@@ -453,6 +453,9 @@ class MPFeedCardStruct {
   @JsonKey(name: 'suggestion')
   final String? suggestion;
 
+  @JsonKey(name: 'ask_ai_card')
+  final MPConversationContentStruct? askAICard;
+
   const MPFeedCardStruct({
     this.id,
     this.type,
@@ -463,6 +466,7 @@ class MPFeedCardStruct {
     this.hasAddedTodo,
     this.memos,
     this.suggestion,
+    this.askAICard,
   });
 
   factory MPFeedCardStruct.fromJson(Map<String, dynamic> json) =>
@@ -479,8 +483,8 @@ abstract final class MPFeedCardType {
   static const int todosCreated = 2;
   static const int myMemo = 3;
   static const int resummary = 4;
-  static const int youAsked = 5;
   static const int followUpList = 6;
+  static const int youAsked = 7;
 }
 
 // Memory Feed Struct
@@ -587,6 +591,26 @@ class MPExpertStruct {
   factory MPExpertStruct.fromJson(Map<String, dynamic> json) => _$MPExpertStructFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPExpertStructToJson(this);
+}
+
+@JsonSerializable()
+class MPConversationContentStruct {
+  @JsonKey(name: 'ask')
+  final String? ask;
+  @JsonKey(name: 'answer')
+  final String? answer;
+  @JsonKey(name: 'count')
+  final int? count;
+
+  MPConversationContentStruct({
+    this.ask,
+    this.answer,
+    this.count,
+  });
+
+  factory MPConversationContentStruct.fromJson(Map<String, dynamic> json) => _$MPConversationContentStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPConversationContentStructToJson(this);
 }
 
 // Template Struct

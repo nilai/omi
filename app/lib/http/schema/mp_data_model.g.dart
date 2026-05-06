@@ -228,6 +228,11 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
           ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
           .toList(),
       suggestion: json['suggestion'] as String?,
+      askAICard: json['ask_ai_card'] == null
+          ? null
+          : MPConversationContentStruct.fromJson(
+              json['ask_ai_card'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
@@ -241,6 +246,7 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'has_added_todo': instance.hasAddedTodo,
       'memos': instance.memos?.map((e) => e.toJson()).toList(),
       'suggestion': instance.suggestion,
+      'ask_ai_card': instance.askAICard?.toJson(),
     };
 
 MPMemoryFeedStruct _$MPMemoryFeedStructFromJson(Map<String, dynamic> json) =>
@@ -316,6 +322,22 @@ Map<String, dynamic> _$MPExpertStructToJson(MPExpertStruct instance) =>
       'feed_prompt': instance.feedPrompt,
       'feedback_cron_at': instance.feedbackCronAt,
     };
+
+MPConversationContentStruct _$MPConversationContentStructFromJson(
+  Map<String, dynamic> json,
+) => MPConversationContentStruct(
+  ask: json['ask'] as String?,
+  answer: json['answer'] as String?,
+  count: (json['count'] as num?)?.toInt(),
+);
+
+Map<String, dynamic> _$MPConversationContentStructToJson(
+  MPConversationContentStruct instance,
+) => <String, dynamic>{
+  'ask': instance.ask,
+  'answer': instance.answer,
+  'count': instance.count,
+};
 
 MPTemplateStruct _$MPTemplateStructFromJson(Map<String, dynamic> json) =>
     MPTemplateStruct(

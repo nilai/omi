@@ -31,6 +31,40 @@ import 'card/mp_memory_detail_feed_section.dart';
 import 'card/mp_memory_detail_bottom_bar.dart';
 import 'omi_memory_detail_cubit.dart';
 
+Future<void> _openMemoryAskAiChatForDetail(
+  BuildContext context,
+  String memoryId,
+) async {
+  final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
+  if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
+    return;
+  }
+  final String aboutText =
+      s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
+  final MPGetLastConversationResponse? lastConversation =
+      await getLastConversation(
+    MPGetLastConversationRequest(conversationType: 1, paramId: memoryId),
+  );
+  final String conversationId = lastConversation?.conversationId ?? '';
+  final BuildContext? targetContext =
+      context.mounted ? context : MyApp.navigatorKey.currentContext;
+  if (targetContext == null) {
+    return;
+  }
+  // ignore: use_build_context_synchronously
+  Navigator.of(targetContext).push(
+    MaterialPageRoute<void>(
+      builder: (_) => MPAskAIChatPage(
+        aboutText: aboutText,
+        suggestedQuestions: const <String>[],
+        conversationId: conversationId,
+        type: MPAskAIChatType.memory,
+        chatTypeId: memoryId,
+      ),
+    ),
+  );
+}
+
 /// Memory 详情页（顶部 [MPCustomNavBar]：返回 + 标题 + 分享 / 更多）
 class OmiMemoryDetailPage extends StatelessWidget {
   const OmiMemoryDetailPage({super.key, required this.memoryId});
@@ -221,7 +255,11 @@ class _OmiMemoryDetailView extends StatelessWidget {
                             isAudioPlaying: state.isAudioPlaying,
                           ),
                         ),
-                        MPMemoryDetailFeedSection(data: data),
+                        MPMemoryDetailFeedSection(
+                          data: data,
+                          onYouAskedTap: () =>
+                              _openMemoryAskAiChatForDetail(context, memoryId),
+                        ),
                         if (state.isLoadingMore)
                           const Padding(
                             padding: EdgeInsets.only(top: 16, bottom: 8),
@@ -284,22 +322,7 @@ class _OmiMemoryDetailView extends StatelessWidget {
           }
           context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
         },
-        onAskAi: () async{
-          final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
-          if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
-            return;
-          }
-          final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
-          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
-          final String conversationId = lastConversation?.conversationId ?? '';
-          final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
-          // ignore: use_build_context_synchronously
-          Navigator.of(targetContext!).push(
-            MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
-            ),
-          );
-        },
+        onAskAi: () => _openMemoryAskAiChatForDetail(context, memoryId),
       ),
     ),
     );
