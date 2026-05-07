@@ -554,6 +554,7 @@ class MPAudioLocalRecordsUtil {
   /// 更新：以 [path] + [createAt] 唯一匹配（与旧逻辑一致）；未找到返回 false。
   Future<bool> update(MPAudioLocalRecord next) async {
     await load();
+    debugPrint('----hjj update: ${next.toJsonString()}');
     final int index = _records.indexWhere((MPAudioLocalRecord e) => e.path == next.path || e.fileId == next.fileId);
     if (index < 0) return false;
     _records[index] = next;

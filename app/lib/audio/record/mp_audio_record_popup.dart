@@ -110,7 +110,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   bool _busy = false;
 
   /// 上传阶段进度（`null` 表示未在上传）；由 [MPAudioUploadManager.uploadLocalRecord] 的 [onPerFileProgress] 更新。
-  int? _uploadProgressPct;
+  // int? _uploadProgressPct;
   int _uploadBatchIndex = 1;
   int _uploadBatchTotal = 1;
 
@@ -178,8 +178,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (_activeRecordingSegmentStart == null) {
       return _completedRecordingSegments;
     }
-    return _completedRecordingSegments +
-        DateTime.now().difference(_activeRecordingSegmentStart!);
+    return _completedRecordingSegments + DateTime.now().difference(_activeRecordingSegmentStart!);
   }
 
   void _startElapsedTicker() {
@@ -295,8 +294,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         if (mounted) {
           setState(() {
             if (_activeRecordingSegmentStart != null) {
-              _completedRecordingSegments +=
-                  DateTime.now().difference(_activeRecordingSegmentStart!);
+              _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
               _activeRecordingSegmentStart = null;
             }
             _isPaused = true;
@@ -372,7 +370,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       }
       return;
     }
-
+    
     final String? savedPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
     if (savedPath == null || savedPath.isEmpty) {
       if (mounted) {
@@ -381,42 +379,38 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       }
       return;
     }
-
-    if (!mounted) {
-      return;
-    }
-
-    final File localFile = File(savedPath);
-    final int durationSec = total.inSeconds <= 0 ? 1 : total.inSeconds;
-    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    setState(() {
-      _uploadProgressPct = 0;
-      _uploadBatchIndex = 1;
-      _uploadBatchTotal = 1;
-    });
-    
-    widget.rootNavigator.pop(MPAudioRecordResult(filePath: savedPath, duration: total));
-
-    final MPCreateRecordResponse? created = await MPAudioUploadManager.instance.uploadLocalRecord(
-      localFile: localFile,
-      durationSec: durationSec,
-      createAt: createAt,
-      source: 'MobilePhone',
+    final createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await MPAudioLocalRecordsUtil.instance.add(
+      MPAudioLocalRecord(
+        path: savedPath,
+        fileName: 'record_$createAt',
+        createAt: createAt,
+        duration: total.inSeconds,
+        source: 'MobilePhone',
+        isRemoved: false,
+      ),
     );
 
     if (!mounted) {
       return;
     }
 
-    if (created == null) {
-      setState(() {
-        _busy = false;
-        _uploadProgressPct = null;
-      });
+    setState(() {
+      // _uploadProgressPct = 0;
+      _uploadBatchIndex = 1;
+      _uploadBatchTotal = 1;
+    });
+
+    widget.rootNavigator.pop(MPAudioRecordResult(filePath: savedPath, duration: total));
+
+    MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+
+    if (!mounted) {
       return;
     }
 
-    setState(() => _uploadProgressPct = null);
+    setState(() => _busy = false);
+    // setState(() => _uploadProgressPct = null);
     _recordPath = null;
   }
 
@@ -460,30 +454,23 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
             Positioned(
               left: _pillLeft ?? 16,
               right: 16,
-              bottom: _pillBottom ??
-                  mq.padding.bottom + kBottomNavigationBarHeight + 8,
+              bottom: _pillBottom ?? mq.padding.bottom + kBottomNavigationBarHeight + 8,
               child: GestureDetector(
                 onPanUpdate: (DragUpdateDetails d) {
                   final double screenW = mq.size.width;
                   final double screenH = mq.size.height;
                   const double margin = 8;
                   const double minInnerWidth = 220;
-                  final double maxLeft = math.max(
-                    margin,
-                    screenW - margin - 16 - minInnerWidth,
-                  );
-                  final double defaultBottom =
-                      mq.padding.bottom + kBottomNavigationBarHeight + 8;
+                  final double maxLeft = math.max(margin, screenW - margin - 16 - minInnerWidth);
+                  final double defaultBottom = mq.padding.bottom + kBottomNavigationBarHeight + 8;
                   setState(() {
                     final double curLeft = _pillLeft ?? 16;
-                    final double curBottom =
-                        _pillBottom ?? defaultBottom;
+                    final double curBottom = _pillBottom ?? defaultBottom;
                     double nextLeft = curLeft + d.delta.dx;
                     double nextBottom = curBottom - d.delta.dy;
                     nextLeft = nextLeft.clamp(margin, maxLeft);
                     final double maxBottom = screenH - mq.padding.top - 56;
-                    nextBottom =
-                        nextBottom.clamp(margin, math.max(margin, maxBottom));
+                    nextBottom = nextBottom.clamp(margin, math.max(margin, maxBottom));
                     _pillLeft = nextLeft;
                     _pillBottom = nextBottom;
                   });
