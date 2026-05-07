@@ -117,12 +117,16 @@ class MPUpdateTodoRequest {
   @JsonKey(name: 'is_completed')
   final bool isCompleted;
 
+  @JsonKey(name: 'pre_create_status')
+  final int? preCreateStatus;
+
   MPUpdateTodoRequest({
     required this.todoId,
     required this.title,
     required this.priority,
     required this.deadline,
     required this.isCompleted,
+    this.preCreateStatus,
   });
 
   factory MPUpdateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoRequestFromJson(json);
