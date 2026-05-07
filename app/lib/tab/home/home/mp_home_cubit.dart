@@ -185,7 +185,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           id: e.id ?? '',
           title: e.title ?? '',
           time: _formatTodoDeadlineTime(e.deadline),
-          reason: e.priority ?? '',
+          reason: e.reason ?? '',
         ),
       );
     }
