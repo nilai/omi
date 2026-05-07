@@ -1298,6 +1298,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       feedBlocks.add(
         MPMemoryFeedInsightBlock(
           MPMemoryInsightItemData(
+            feedCardId: f.id,
             tone: MPInsightCardTone.business,
             timeLabel: _feedCardTimeLabel(f.createAt),
             bodyText: bodyForTodo,
@@ -1316,6 +1317,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
     feedBlocks.add(
       MPMemoryFeedInsightBlock(
         MPMemoryInsightItemData(
+          feedCardId: f.id,
           tone: MPInsightCardTone.followUp,
           timeLabel: _feedCardTimeLabel(f.createAt),
           bodyText: bodyText,

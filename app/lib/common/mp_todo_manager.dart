@@ -52,6 +52,7 @@ class MPTodoManager {
     String priority = 'normal',
     int? deadline,
     String? memoryId,
+    String? feedCardId,
   }) async {
     try {
       final int deadlineUnix =
@@ -63,6 +64,7 @@ class MPTodoManager {
         memoryId: memoryId,
         priority: priority,
         deadline: deadlineUnix,
+        feedCardId: feedCardId,
       );
 
       // 调用 API

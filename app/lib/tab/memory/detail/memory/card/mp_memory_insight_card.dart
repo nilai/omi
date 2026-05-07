@@ -39,6 +39,7 @@ enum MPInsightCardTone {
 /// 单条 Insight 卡片数据
 class MPMemoryInsightItemData {
   const MPMemoryInsightItemData({
+    this.feedCardId,
     required this.tone,
     required this.timeLabel,
     required this.bodyText,
@@ -51,6 +52,9 @@ class MPMemoryInsightItemData {
   });
 
   final MPInsightCardTone tone;
+
+  /// 对应后端 feed card id（用于创建 follow-up todo 关联）。
+  final String? feedCardId;
 
   final String title;
   /// 右侧相对时间，如 `2 min later`
@@ -460,12 +464,14 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
   /// Insight 纯文本：notes←content，标题←suggestion，Context←接口 title（无则用分类默认标题）
   MPAddTodoPopupParams _followUpTodoParams() {
     final String mid = widget.memoryId.trim();
+    final String fid = (widget.data.feedCardId ?? '').trim();
     if (!widget.data.useMarkdown) {
       return MPAddTodoPopupParams(
         initialTitle: (widget.data.insightSuggestion ?? '').trim(),
         initialNotes: (widget.data.insightContent ?? '').trim(),
         contextMemoryTitle: widget.data.title,
         memoryId: mid,
+        feedCardId: fid,
       );
     }
     return MPAddTodoPopupParams(
@@ -473,6 +479,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       initialNotes: '',
       contextMemoryTitle: widget.data.title,
       memoryId: mid,
+      feedCardId: fid,
     );
   }
 

@@ -51,6 +51,7 @@ class MPAddTodoPopupParams {
     this.initialDeadlineTimestamp,
     this.ownerId = '',
     this.memoryId = '',
+    this.feedCardId = '',
   });
 
   final String initialTitle;
@@ -78,6 +79,9 @@ class MPAddTodoPopupParams {
 
   /// 创建 Todo 时请求体 [memory_id]；空串则不带关联 Memory
   final String memoryId;
+
+  /// 创建 Todo 时请求体 [feed_card_id]；空串则不传
+  final String feedCardId;
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。
@@ -594,12 +598,14 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                             try {
                               final MPAddTodoPopupParams p = widget.params;
                               final String mid = p.memoryId.trim();
+                              final String fid = p.feedCardId.trim();
                               final bool ok =
                                   await MPTodoManager().createTodo(
                                 title: titleTrim,
                                 priority: MPTodoUtils.mapPriorityToApi(_priority),
                                 deadline: _deadlineUnixSec,
                                 memoryId: mid.isEmpty ? null : mid,
+                                feedCardId: fid.isEmpty ? null : fid,
                               );
                               if (!context.mounted) {
                                 return;
