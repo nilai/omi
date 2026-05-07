@@ -177,6 +177,7 @@ class MPMemoryActionContent extends StatelessWidget {
         initialTitle: item.title ?? '',
         memoryId: mid,
         todoId: existingTodoId,
+        preCreateStatus: 1,
       ),
       onContextTap: onActionContextTap,
     );

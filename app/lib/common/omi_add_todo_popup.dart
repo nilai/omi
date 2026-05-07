@@ -57,6 +57,7 @@ class MPAddTodoPopupParams {
     this.memoryId = '',
     this.feedCardId = '',
     this.todoId,
+    this.preCreateStatus,
   });
 
   final String initialTitle;
@@ -90,6 +91,9 @@ class MPAddTodoPopupParams {
 
   /// 非空时保存走 [MPTodoManager.createOrUpdateTodo] 的 update 分支。
   final String? todoId;
+
+  /// 更新 Todo 时透传给接口字段 `pre_create_status`；不传则为 `null`。
+  final int? preCreateStatus;
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。
@@ -564,6 +568,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 deadline: _deadlineUnixSec,
                                 memoryId: mid.isEmpty ? null : mid,
                                 feedCardId: fid.isEmpty ? null : fid,
+                                preCreateStatus: p.preCreateStatus,
                               );
                               if (!context.mounted) {
                                 return;
