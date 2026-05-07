@@ -70,39 +70,6 @@ class MPAudioImportUtils {
     return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
-  /// 按路径列表逐个上传：使用 [MPAudioUploadManager.uploadMultipleLocalRecords] + [localRecordsAlreadyAdded]。
-  ///
-  /// 须与 [pickFromFileWithProgress] / [pickFromAlbumWithProgress] 配套（二者已在同步后写入本地索引）。
-  static Future<void> uploadImportedSandboxFiles(List<String> sandboxPaths, {String source = 'MobilePhone'}) async {
-    final List<MPAudioUploadLocalItem> items = <MPAudioUploadLocalItem>[];
-    for (final String sandboxPath in sandboxPaths) {
-      final File file = File(sandboxPath);
-      if (!await file.exists()) {
-        continue;
-      }
-      final int? dur = await _getAudioDurationSeconds(sandboxPath);
-      final int durationSec = (dur != null && dur > 0) ? dur : 1;
-      final int createAt =
-          (await file.lastModified()).millisecondsSinceEpoch ~/ 1000;
-      items.add(
-        MPAudioUploadLocalItem(
-          localFile: file,
-          durationSec: durationSec,
-          createAt: createAt,
-          source: source,
-        ),
-      );
-    }
-    if (items.isEmpty) {
-      return;
-    }
-    await MPAudioUploadManager.instance.uploadMultipleLocalRecords(
-      items: items,
-      rightNowTranscribe: false,
-      localRecordsAlreadyAdded: true,
-    );
-  }
-
   /// 逐个：同步到沙盒 → [MPAudioUploadManager.registerLocalRecordBeforeUpload]。
   static Future<List<String>> _syncEachPickedFileToSandboxAndRegister(
     List<File> picked, {

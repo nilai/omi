@@ -13,18 +13,11 @@ import '../record/mp_audio_upload_manger.dart';
 import 'mp_audio_import_utils.dart';
 
 /// BLE 设备导出时的复制进度（当前文件序号、总数、0–100）。
-typedef MPBleDeviceImportCopyProgress = void Function({
-  required int fileIndex,
-  required int fileTotal,
-  required int progressPercent,
-});
+typedef MPBleDeviceImportCopyProgress =
+    void Function({required int fileIndex, required int fileTotal, required int progressPercent});
 
 class _MPBleSyncedSandboxEntry {
-  const _MPBleSyncedSandboxEntry({
-    required this.sandboxPath,
-    required this.durationSec,
-    required this.createAtSec,
-  });
+  const _MPBleSyncedSandboxEntry({required this.sandboxPath, required this.durationSec, required this.createAtSec});
 
   final String sandboxPath;
   final int durationSec;
@@ -59,8 +52,7 @@ class MPBleDeviceAudioImportUtils {
       }
 
       MPToastUtils.showMessage('Fetching file list from device...');
-      final List<NoteFileInfo> files =
-          await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
+      final List<NoteFileInfo> files = await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
       if (files.isEmpty) {
         MPToastUtils.showMessage('No files on the device.');
         return;
@@ -83,8 +75,7 @@ class MPBleDeviceAudioImportUtils {
 
         final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
         try {
-          final List<int>? bytes =
-              await _collectExportPayloads(client: client, fileName: fi.name, info: fi);
+          final List<int>? bytes = await _collectExportPayloads(client: client, fileName: fi.name, info: fi);
           if (bytes == null || bytes.isEmpty) {
             MPToastUtils.showMessage('Failed to sync: ${fi.name}');
             onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
@@ -104,18 +95,14 @@ class MPBleDeviceAudioImportUtils {
           }
 
           final File sandboxFile = File(path);
-          final int? durAudio =
-              await MPAudioImportUtils.readAudioDurationSeconds(path);
-          int durationSec =
-              (durAudio != null && durAudio > 0) ? durAudio : fi.durationSeconds;
+          final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(path);
+          int durationSec = (durAudio != null && durAudio > 0) ? durAudio : fi.durationSeconds;
           if (durationSec <= 0) {
             durationSec = 1;
           }
-          final int createAtSec =
-              (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+          final int createAtSec = (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
 
-          final record =
-              await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
+          final record = await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
             localFile: sandboxFile,
             durationSec: durationSec,
             createAt: createAtSec,
@@ -138,19 +125,11 @@ class MPBleDeviceAudioImportUtils {
             //   MPToastUtils.showMessage('Could not delete on device: ${fi.name}');
             // }
           } else {
-            MPToastUtils.showMessage(
-              'Bluetooth disconnected; skipped device delete for ${fi.name}.',
-            );
+            MPToastUtils.showMessage('Bluetooth disconnected; skipped device delete for ${fi.name}.');
           }
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          synced.add(
-            _MPBleSyncedSandboxEntry(
-              sandboxPath: path,
-              durationSec: durationSec,
-              createAtSec: createAtSec,
-            ),
-          );
+          synced.add(_MPBleSyncedSandboxEntry(sandboxPath: path, durationSec: durationSec, createAtSec: createAtSec));
         } finally {
           await client.dispose();
         }
@@ -177,28 +156,8 @@ class MPBleDeviceAudioImportUtils {
           continue;
         }
 
-        final MPAudioUploadLocalItem item = MPAudioUploadLocalItem(
-          localFile: f,
-          durationSec: e.durationSec,
-          createAt: e.createAtSec,
-          source: _kSourceMemoPin,
-        );
-
-        final MPCreateRecordResponse? created =
-            await MPAudioUploadManager.instance.uploadMultipleLocalRecords(
-          items: <MPAudioUploadLocalItem>[item],
-          rightNowTranscribe: false,
-          localRecordsAlreadyAdded: true,
-        );
-
-        if (created == null || created.baseResp.code != 0) {
-          MPToastUtils.showMessage(
-            created?.baseResp.message ?? 'Upload failed; local copy kept.',
-          );
-        }
+        await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
       }
-
-      MPToastUtils.showMessage('Device import finished.');
     } catch (e, st) {
       debugPrint('MPBleDeviceAudioImportUtils: $e\n$st');
       MPToastUtils.showMessage('Device import failed: $e');
@@ -249,10 +208,7 @@ class MPBleDeviceAudioImportUtils {
         return null;
       }
 
-      await Future.any<void>(<Future<void>>[
-        idleDone.future,
-        Future<void>.delayed(_maxExportWaitForFile(info)),
-      ]);
+      await Future.any<void>(<Future<void>>[idleDone.future, Future<void>.delayed(_maxExportWaitForFile(info))]);
       idleTimer?.cancel();
 
       for (final List<int> tail in client.flushFileExportAssemblerTail()) {
