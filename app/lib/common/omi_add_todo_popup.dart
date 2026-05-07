@@ -20,6 +20,7 @@ class MPAddTodoPopupResult {
     required this.when,
     required this.time,
     this.deadlineTimestamp,
+    this.todoId,
   });
 
   final String title;
@@ -35,6 +36,9 @@ class MPAddTodoPopupResult {
 
   /// Unix **秒**；有截止时间时与 [when]/[time] 对应；`No deadline` 时为 `null`。
   final int? deadlineTimestamp;
+
+  /// 保存成功且入参带了 [MPAddTodoPopupParams.todoId]（多为 update）时回传；纯 create 无入参 id 时为 `null`。
+  final String? todoId;
 }
 
 /// 打开弹窗时的可配置项（用于 **数据回显**：标题、备注、优先级、截止时间、Context 文案等）
@@ -52,6 +56,7 @@ class MPAddTodoPopupParams {
     this.ownerId = '',
     this.memoryId = '',
     this.feedCardId = '',
+    this.todoId,
   });
 
   final String initialTitle;
@@ -82,6 +87,9 @@ class MPAddTodoPopupParams {
 
   /// 创建 Todo 时请求体 [feed_card_id]；空串则不传
   final String feedCardId;
+
+  /// 非空时保存走 [MPTodoManager.createOrUpdateTodo] 的 update 分支。
+  final String? todoId;
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。
@@ -97,19 +105,13 @@ Future<MPAddTodoPopupResult?> showMPAddTodoPopup(
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext sheetContext) {
-      return _MPAddTodoPopupSheet(
-        params: params,
-        onContextTap: onContextTap,
-      );
+      return _MPAddTodoPopupSheet(params: params, onContextTap: onContextTap);
     },
   );
 }
 
 class _MPAddTodoPopupSheet extends StatefulWidget {
-  const _MPAddTodoPopupSheet({
-    required this.params,
-    this.onContextTap,
-  });
+  const _MPAddTodoPopupSheet({required this.params, this.onContextTap});
 
   final MPAddTodoPopupParams params;
 
@@ -143,9 +145,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     final List<String> out = <String>[];
     for (int h = 0; h < 24; h++) {
       for (final int m in <int>[0, 30]) {
-        out.add(
-          '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}',
-        );
+        out.add('${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}');
       }
     }
     return out;
@@ -164,9 +164,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       _applyInitialDeadlineSeconds(p.initialDeadlineTimestamp!);
     } else {
       _when = p.initialWhen;
-      _time = p.initialWhen == 'No deadline'
-          ? ''
-          : (p.initialTime.isNotEmpty ? p.initialTime : '09:00');
+      _time = p.initialWhen == 'No deadline' ? '' : (p.initialTime.isNotEmpty ? p.initialTime : '09:00');
       _pickedCalendarDate = null;
       _syncDeadlineUnixFromWhenAndTime();
     }
@@ -180,8 +178,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
     _pickedCalendarDate = day;
-    _time =
-        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    _time = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     if (day == today) {
       _when = 'Today';
       _pickedCalendarDate = null;
@@ -228,13 +225,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       return;
     }
 
-    final DateTime combined = DateTime(
-      day.year,
-      day.month,
-      day.day,
-      tod.hour,
-      tod.minute,
-    );
+    final DateTime combined = DateTime(day.year, day.month, day.day, tod.hour, tod.minute);
     _deadlineUnixSec = combined.millisecondsSinceEpoch ~/ 1000;
   }
 
@@ -258,9 +249,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     final String? v = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext ctx) {
         return SafeArea(
           child: Column(
@@ -277,12 +266,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                   ),
                 ),
               ),
-              ...options.map(
-                (String o) => ListTile(
-                  title: Text(o),
-                  onTap: () => Navigator.of(ctx).pop(o),
-                ),
-              ),
+              ...options.map((String o) => ListTile(title: Text(o), onTap: () => Navigator.of(ctx).pop(o))),
               const SizedBox(height: 8),
             ],
           ),
@@ -299,9 +283,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     final String? v = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext ctx) {
         return SafeArea(
           child: Column(
@@ -319,10 +301,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                 ),
               ),
               ...MPTodoUtils.kTodoWhenOptions.map(
-                (String o) => ListTile(
-                  title: Text(o),
-                  onTap: () => Navigator.of(ctx).pop(o),
-                ),
+                (String o) => ListTile(title: Text(o), onTap: () => Navigator.of(ctx).pop(o)),
               ),
               const SizedBox(height: 8),
             ],
@@ -345,9 +324,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
         _deadlineUnixSec = null;
       } else {
         if (_time.isEmpty) {
-          _time = widget.params.initialTime.isNotEmpty
-              ? widget.params.initialTime
-              : '09:00';
+          _time = widget.params.initialTime.isNotEmpty ? widget.params.initialTime : '09:00';
         }
         _syncDeadlineUnixFromWhenAndTime();
       }
@@ -380,9 +357,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       context: context,
       backgroundColor: Colors.white,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext ctx) {
         final double maxListH = MediaQuery.sizeOf(ctx).height * 0.55;
         return SafeArea(
@@ -406,10 +381,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                   itemCount: _timeSlots30m.length,
                   itemBuilder: (BuildContext context, int index) {
                     final String slot = _timeSlots30m[index];
-                    return ListTile(
-                      title: Text(slot),
-                      onTap: () => Navigator.of(ctx).pop(slot),
-                    );
+                    return ListTile(title: Text(slot), onTap: () => Navigator.of(ctx).pop(slot));
                   },
                 ),
               ),
@@ -465,29 +437,22 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                   ),
                 ),
                 _buildHeader(context),
-                Divider(
-                  height: 1,
-                  color: lineColor,
-                ),
-                SizedBox(height: 12,),
+                Divider(height: 1, color: lineColor),
+                SizedBox(height: 12),
                 Expanded(
                   child: GestureDetector(
                     onTap: _unfocusKeyboard,
                     behavior: HitTestBehavior.translucent,
                     child: NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification n) {
-                        if (n is ScrollStartNotification ||
-                            n is OverscrollNotification) {
+                        if (n is ScrollStartNotification || n is OverscrollNotification) {
                           _unfocusKeyboard();
                         }
                         return false;
                       },
                       child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(
-                          parent: AlwaysScrollableScrollPhysics(),
-                        ),
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -553,18 +518,12 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                             const SizedBox(height: 16),
                             _sectionLabel('WHEN'),
                             const SizedBox(height: 8),
-                            _dropdownRow(
-                              value: _when,
-                              onTap: _pickWhen,
-                            ),
+                            _dropdownRow(value: _when, onTap: _pickWhen),
                             if (_showTimeRow) ...<Widget>[
                               const SizedBox(height: 16),
                               _sectionLabel('TIME'),
                               const SizedBox(height: 8),
-                              _dropdownRow(
-                                value: _time.isNotEmpty ? _time : '09:00',
-                                onTap: _pickTimeSlot,
-                              ),
+                              _dropdownRow(value: _time.isNotEmpty ? _time : '09:00', onTap: _pickTimeSlot),
                             ],
                           ],
                         ),
@@ -586,8 +545,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                     onPressed: _isSaving
                         ? null
                         : () async {
-                            final String titleTrim =
-                                _titleController.text.trim();
+                            final String titleTrim = _titleController.text.trim();
                             if (titleTrim.isEmpty) {
                               MPToastUtils.showMessage('Please enter a title.');
                               return;
@@ -599,9 +557,9 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                               final MPAddTodoPopupParams p = widget.params;
                               final String mid = p.memoryId.trim();
                               final String fid = p.feedCardId.trim();
-                              final bool ok =
-                                  await MPTodoManager().createTodo(
+                              final bool savedOk = await MPTodoManager().createOrUpdateTodo(
                                 title: titleTrim,
+                                todoId: p.todoId,
                                 priority: MPTodoUtils.mapPriorityToApi(_priority),
                                 deadline: _deadlineUnixSec,
                                 memoryId: mid.isEmpty ? null : mid,
@@ -610,27 +568,27 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                               if (!context.mounted) {
                                 return;
                               }
-                              if (ok) {
+                              if (savedOk) {
+                                final String paramTodoId = (p.todoId ?? '').trim();
                                 Navigator.of(context).pop(
                                   MPAddTodoPopupResult(
                                     title: titleTrim,
                                     notes: _notesController.text.trim(),
                                     priority: _priority,
                                     when: _when,
-                                    time: _when == 'No deadline'
-                                        ? ''
-                                        : _time,
+                                    time: _when == 'No deadline' ? '' : _time,
                                     deadlineTimestamp: _deadlineUnixSec,
+                                    todoId: paramTodoId.isEmpty ? null : paramTodoId,
                                   ),
                                 );
                               } else {
                                 setState(() => _isSaving = false);
-                                MPToastUtils.showMessage('Creation failed.');
+                                MPToastUtils.showMessage('Save failed.');
                               }
                             } catch (_) {
                               if (mounted) {
                                 setState(() => _isSaving = false);
-                                MPToastUtils.showMessage('Creation failed.');
+                                MPToastUtils.showMessage('Save failed.');
                               }
                             }
                           },
@@ -649,42 +607,39 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
       child: Row(
         children: <Widget>[
-          Expanded(child:
-          Row(
-            children: [
-              GestureDetector(
+          Expanded(
+            child: Row(
+              children: [
+                GestureDetector(
                   onTap: () {
                     _unfocusKeyboard();
                     Navigator.of(context).pop();
                   },
-                  child: OmiImageLoader.localImg(Assets.omiLeftBack, width: 24,
-                      height: 24,
-                      color: blueTextColor)),
-              Flexible(
-                child: Text(
-                  'New Todo',
-                  textAlign: TextAlign.center,
-                  style: OmiTextStyle.create(
-                    fontSize: OmiFontSize.t6_15,
-                    fontWeight: OmiFontWeight.medium,
-                    color: blueTextColor,
+                  child: OmiImageLoader.localImg(Assets.omiLeftBack, width: 24, height: 24, color: blueTextColor),
+                ),
+                Flexible(
+                  child: Text(
+                    'New Todo',
+                    textAlign: TextAlign.center,
+                    style: OmiTextStyle.create(
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.medium,
+                      color: blueTextColor,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          )),
+              ],
+            ),
+          ),
           GestureDetector(
-              onTap: () {
-                _unfocusKeyboard();
-                Navigator.of(context).pop();
-              },
-              child: Padding(padding: EdgeInsets.all(8),
-                  child: OmiImageLoader.localImg(
-                      Assets.omiClose, width: 20,
-                      height: 20,
-                      color: secondTextColor
-                  )
-              )
+            onTap: () {
+              _unfocusKeyboard();
+              Navigator.of(context).pop();
+            },
+            child: Padding(
+              padding: EdgeInsets.all(8),
+              child: OmiImageLoader.localImg(Assets.omiClose, width: 20, height: 20, color: secondTextColor),
+            ),
           ),
         ],
       ),
@@ -760,10 +715,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     );
   }
 
-  Widget _dropdownRow({
-    required String value,
-    required VoidCallback onTap,
-  }) {
+  Widget _dropdownRow({required String value, required VoidCallback onTap}) {
     return Material(
       color: _kFieldBg,
       borderRadius: BorderRadius.circular(12),
@@ -785,7 +737,6 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                 ),
               ),
               OmiImageLoader.localImg(Assets.omiArrowDown, width: 18, height: 18, color: secondTextColor),
-
             ],
           ),
         ),

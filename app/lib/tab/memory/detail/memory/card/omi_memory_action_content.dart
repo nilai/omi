@@ -50,11 +50,15 @@ class MPMemoryActionItemData {
     String? id,
     String? title,
     MPMemoryActionItemStatus? status,
+    int? deadline,
+    String? priority,
   }) {
     return MPMemoryActionItemData(
       id: id ?? this.id,
       title: title ?? this.title,
       status: status ?? this.status,
+      deadline: deadline ?? this.deadline,
+      priority: priority ?? this.priority,
     );
   }
 }
@@ -165,11 +169,14 @@ class MPMemoryActionContent extends StatelessWidget {
     required MPMemoryActionItemData item,
   }) async {
     final String mid = memoryId.trim();
+    final String rawTodoId = (item.id ?? '').trim();
+    final String? existingTodoId = rawTodoId.isEmpty ? null : rawTodoId;
     final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
       context,
       params: MPAddTodoPopupParams(
         initialTitle: item.title ?? '',
         memoryId: mid,
+        todoId: existingTodoId,
       ),
       onContextTap: onActionContextTap,
     );

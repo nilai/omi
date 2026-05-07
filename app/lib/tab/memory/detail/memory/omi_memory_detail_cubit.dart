@@ -665,11 +665,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       final int ms = (totalRef.inMilliseconds * fraction).round();
       shouldRunPlaybackUi = true;
-      return await _seekToTargetAndStartUi(
-        cur.data!,
-        Duration(milliseconds: ms),
-        prefetchedTotalRef: totalRef,
-      );
+      return await _seekToTargetAndStartUi(cur.data!, Duration(milliseconds: ms), prefetchedTotalRef: totalRef);
     } catch (e, st) {
       debugPrint('OmiMemoryDetailCubit.onSeekByWaveFraction: $e\n$st');
       MPToastUtils.showMessage('Failed to play audio.');
@@ -1035,22 +1031,16 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
 
     try {
-      final MPUpdateSpeakerResponse? resp = await updateSpeaker(
-        MPUpdateSpeakerRequest(speakerId: sid, name: nn),
-      );
+      final MPUpdateSpeakerResponse? resp = await updateSpeaker(MPUpdateSpeakerRequest(speakerId: sid, name: nn));
       if (resp == null || resp.baseResp.code != 0) {
         MPToastUtils.showMessage(
-          resp?.baseResp.message.isNotEmpty == true
-              ? resp!.baseResp.message
-              : 'Couldn\'t update speaker.',
+          resp?.baseResp.message.isNotEmpty == true ? resp!.baseResp.message : 'Couldn\'t update speaker.',
         );
         return false;
       }
 
       final List<String> nextSpeakerLabels = applyToAll
-          ? data.speakerLabels
-              .map((String x) => x == oldName ? nn : x)
-              .toList(growable: false)
+          ? data.speakerLabels.map((String x) => x == oldName ? nn : x).toList(growable: false)
           : data.speakerLabels;
 
       final List<MPMemoryTranscriptItemData> nextTranscript = data.transcriptItems
@@ -1064,10 +1054,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
       emit(
         s.copyWith(
-          data: data.copyWith(
-            speakerLabels: nextSpeakerLabels,
-            transcriptItems: nextTranscript,
-          ),
+          data: data.copyWith(speakerLabels: nextSpeakerLabels, transcriptItems: nextTranscript),
         ),
       );
       return true;
@@ -1097,11 +1084,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   /// 参照 memo 的删除方式：用 [todoId] 定位要删的 item，避免依赖下标导致删错/删不掉。
   /// 在 `OmiEditTodoPopup` 的删除流程中，接口删除已在弹窗内完成，
   /// 因此默认 [skipApi]=true，只做本地移除。
-  Future<bool> deleteCreatedTodoById(
-    int feedBlockIndex, {
-    required String todoId,
-    bool skipApi = true,
-  }) async {
+  Future<bool> deleteCreatedTodoById(int feedBlockIndex, {required String todoId, bool skipApi = true}) async {
     final OmiMemoryDetailState cur = state;
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
       return false;
@@ -1115,9 +1098,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryTodosCreatedCardData todos = block.data;
     final String id = todoId.trim();
     if (id.isEmpty) return false;
-    final int itemIndex = todos.items.indexWhere(
-      (MPMemoryCreatedTodoLineData e) => (e.id ?? '').trim() == id,
-    );
+    final int itemIndex = todos.items.indexWhere((MPMemoryCreatedTodoLineData e) => (e.id ?? '').trim() == id);
     if (itemIndex < 0) return false;
 
     final MPMemoryCreatedTodoLineData target = todos.items[itemIndex];
@@ -1249,7 +1230,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
             headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
             userMessage: f.askAICard?.ask ?? '',
             aiReply: f.askAICard?.answer ?? '',
-            count: f.askAICard?.count
+            count: f.askAICard?.count,
           ),
         ),
       );

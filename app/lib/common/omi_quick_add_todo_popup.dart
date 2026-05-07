@@ -21,19 +21,29 @@ import '../utils/mp_toast_utils.dart';
 
 /// 快捷添加 Todo 输入弹窗结果。
 class OmiQuickAddTodoResult {
-  const OmiQuickAddTodoResult({required this.text});
+  const OmiQuickAddTodoResult({
+    required this.text,
+    this.todoId,
+  });
 
   final String text;
+
+  /// 打开弹窗时传入的已有 todo id（更新场景）；纯新建为 `null`。
+  final String? todoId;
 }
 
 class OmiQuickInputPopupParams {
   const OmiQuickInputPopupParams({
     this.headerTitle = 'ADD TODO',
     this.hintText = 'What needs to be done?',
+    this.todoId,
   });
 
   final String headerTitle;
   final String hintText;
+
+  /// 若已有服务端 todo id，提交时走 update；否则走 create。
+  final String? todoId;
 }
 
 /// 打开底部「Add Todo」快捷输入弹窗。
@@ -123,7 +133,9 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     if (!mounted) {
       return;
     }
-    Navigator.of(context).pop(OmiQuickAddTodoResult(text: text));
+    Navigator.of(context).pop(
+      OmiQuickAddTodoResult(text: text, todoId: widget.params.todoId),
+    );
   }
 
   Future<void> _startRecording() async {

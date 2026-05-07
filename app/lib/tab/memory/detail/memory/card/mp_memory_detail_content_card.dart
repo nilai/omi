@@ -623,9 +623,18 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       final List<MPMemoryActionItemData> next =
           List<MPMemoryActionItemData>.from(_actionItems);
       final MPMemoryActionItemData cur = next[index];
+      final String? resolvedId = () {
+        final String fromResult = (r.todoId ?? '').trim();
+        if (fromResult.isNotEmpty) {
+          return fromResult;
+        }
+        final String existing = (cur.id ?? '').trim();
+        return existing.isEmpty ? null : existing;
+      }();
       next[index] = cur.copyWith(
         title: r.title.isNotEmpty ? r.title : cur.title,
         status: MPMemoryActionItemStatus.created,
+        id: resolvedId,
       );
       _actionItems = next;
     });
