@@ -80,48 +80,12 @@ class MPAudioUploadManager {
 
   static bool _isCompanionTxtFilePath(String path) => path.toLowerCase().endsWith('.txt');
 
-  /// 上传前写入本地记录表；[createAt] 为接口使用的 Unix **秒**，本地 [MPAudioLocalRecord.createAt] 用毫秒。
-  Future<MPAudioLocalRecord?> _addLocalRecordBeforeUpload({
-    required File localFile,
-    required int durationSec,
-    required int createAt,
-    required String source,
-  }) async {
-    try {
-      final String path = localFile.absolute.path;
-      final String name = p.basename(path);
-      final int createAtMs = createAt;
-      final MPAudioLocalRecord record = MPAudioLocalRecord(
-        path: path,
-        fileName: name,
-        createAt: createAtMs,
-        duration: durationSec,
-        source: source,
-        fileId: '',
-      );
-      await MPAudioLocalRecordsUtil.instance.load();
-      await MPAudioLocalRecordsUtil.instance.add(record);
-      return record;
-    } catch (e, st) {
-      debugPrint('MPAudioLocalRecordsUtil.add failed: $e\n$st');
-      return null;
-    }
-  }
-
   int _createAtSecondsFromRecord(MPAudioLocalRecord r) {
     if (r.createAt > 2000000000000) {
       return r.createAt ~/ 1000;
     }
     return r.createAt;
   }
-
-  /// 仅写入本地索引（不上传）。导入流程在同步沙盒后调用，再配合 [uploadMultipleLocalRecords]（[localRecordsAlreadyAdded] 为 true）。
-  Future<MPAudioLocalRecord?> registerLocalRecordBeforeUpload({
-    required File localFile,
-    required int durationSec,
-    required int createAt,
-    required String source,
-  }) => _addLocalRecordBeforeUpload(localFile: localFile, durationSec: durationSec, createAt: createAt, source: source);
 
   /// 基于 [MPAudioLocalRecordsUtil.queryAll] 筛出音频与 `.txt`，按 **同名主文件名** 配对；先上传 txt（若有）再上传音频，随后与 [uploadLocalRecord] 一致执行 [createRecord] / [summaryRecord]（后者仅当 [rightNowTranscribe] 为 true）。
   Future<MPCreateRecordResponse?> uploadAllRecordingFiles({

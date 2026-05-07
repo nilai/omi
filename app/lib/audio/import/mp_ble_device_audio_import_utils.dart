@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 
 import '../../blu/ble_transport.dart';
 import '../../blu/mp_bluetooth_connection_helper.dart';
 import '../../blu/mp_note_ble_gatt_client.dart';
 import '../../blu/note_device.dart';
-import '../../http/schema/mp_memory.dart';
 import '../../utils/mp_toast_utils.dart';
 import '../record/mp_audio_upload_manger.dart';
 import 'mp_audio_import_utils.dart';
@@ -102,17 +102,15 @@ class MPBleDeviceAudioImportUtils {
           }
           final int createAtSec = (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
 
-          final record = await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
-            localFile: sandboxFile,
-            durationSec: durationSec,
-            createAt: createAtSec,
-            source: _kSourceMemoPin,
+          await MPAudioLocalRecordsUtil.instance.add(
+            MPAudioLocalRecord(
+              path: path,
+              fileName: fi.name,
+              createAt: createAtSec,
+              duration: durationSec,
+              source: _kSourceMemoPin,
+            ),
           );
-          if (record == null) {
-            MPToastUtils.showMessage('Failed to register record: ${fi.name}');
-            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-            continue;
-          }
 
           if (await transport.isConnected()) {
             // if (!announcedRemovingFromDevice) {

@@ -7,23 +7,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../record/mp_audio_local_records_util.dart';
+
 /// 同步到沙盒时的进度（0–1）、已复制字节、总字节。
-typedef _SyncProgressCallback = void Function(
-  double progress,
-  int copiedBytes,
-  int totalBytes,
-);
+typedef _SyncProgressCallback = void Function(double progress, int copiedBytes, int totalBytes);
 
 /// 将所选文件复制到沙盒时的进度：[fileIndex] / [fileTotal] 为第几个文件；[progressPercent] 为当前文件 0–100。
-typedef MPAudioImportCopyProgress = void Function({
-  required int fileIndex,
-  required int fileTotal,
-  required int progressPercent,
-});
+typedef MPAudioImportCopyProgress =
+    void Function({required int fileIndex, required int fileTotal, required int progressPercent});
 
 /// 首页 / 业务侧「导入音频」工具：选择文件、复制到沙盒（带进度）、上传。
 ///
@@ -33,25 +27,14 @@ class MPAudioImportUtils {
 
   static const String _sandboxAudioDirName = 'mp_audio_storage';
 
-  static const List<String> _audioExtensions = <String>[
-    'mp3',
-    'm4a',
-    'wav',
-    'aac',
-    'flac',
-    'ogg',
-    'oga',
-    'opus',
-  ];
+  static const List<String> _audioExtensions = <String>['mp3', 'm4a', 'wav', 'aac', 'flac', 'ogg', 'oga', 'opus'];
 
   static const MethodChannel _androidAudioMultiPickerChannel = MethodChannel(
     'ai.memopin.app/mp_android_audio_multi_picker',
   );
 
   /// 从系统文件选择（**支持多选**）并复制到应用沙盒。
-  static Future<List<String>?> pickFromFileWithProgress({
-    required MPAudioImportCopyProgress onProgress,
-  }) async {
+  static Future<List<String>?> pickFromFileWithProgress({required MPAudioImportCopyProgress onProgress}) async {
     final List<File> picked = await _pickMultipleAudioFromFile();
     if (picked.isEmpty) {
       return null;
@@ -60,9 +43,7 @@ class MPAudioImportUtils {
   }
 
   /// 从相册选择（**支持多选**，iOS 优先 [ImagePicker.pickMultipleMedia]）并复制到应用沙盒。
-  static Future<List<String>?> pickFromAlbumWithProgress({
-    required MPAudioImportCopyProgress onProgress,
-  }) async {
+  static Future<List<String>?> pickFromAlbumWithProgress({required MPAudioImportCopyProgress onProgress}) async {
     final List<File> picked = await _pickMultipleAudioFromAlbum();
     if (picked.isEmpty) {
       return null;
@@ -70,7 +51,7 @@ class MPAudioImportUtils {
     return _syncEachPickedFileToSandboxAndRegister(picked, onProgress: onProgress, source: 'MobilePhone');
   }
 
-  /// 逐个：同步到沙盒 → [MPAudioUploadManager.registerLocalRecordBeforeUpload]。
+  /// 逐个：同步到沙盒 → 写入本地记录。
   static Future<List<String>> _syncEachPickedFileToSandboxAndRegister(
     List<File> picked, {
     required MPAudioImportCopyProgress onProgress,
@@ -84,11 +65,7 @@ class MPAudioImportUtils {
       final String? path = await _syncAudioToSandbox(
         file,
         onProgress: (double p, int copiedBytes, int totalBytes) {
-          onProgress(
-            fileIndex: i + 1,
-            fileTotal: total,
-            progressPercent: (p * 100).round().clamp(0, 100),
-          );
+          onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: (p * 100).round().clamp(0, 100));
         },
       );
       if (path == null) {
@@ -97,19 +74,16 @@ class MPAudioImportUtils {
       final File sandboxFile = File(path);
       final int? dur = await _getAudioDurationSeconds(path);
       final int durationSec = (dur != null && dur > 0) ? dur : 1;
-      final int createAt =
-          (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
-      final record =
-          await MPAudioUploadManager.instance.registerLocalRecordBeforeUpload(
-        localFile: sandboxFile,
-        durationSec: durationSec,
-        createAt: createAt,
-        source: source,
+      final int createAt = (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      await MPAudioLocalRecordsUtil.instance.add(
+        MPAudioLocalRecord(
+          path: path,
+          fileName: file.path.split('/').last,
+          createAt: createAt,
+          duration: durationSec,
+          source: source,
+        ),
       );
-      if (record == null) {
-        debugPrint('MPAudioImportUtils: register local record failed, skip: $path');
-        continue;
-      }
       onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
       out.add(path);
     }
@@ -123,8 +97,7 @@ class MPAudioImportUtils {
       final bool hasNonAscii = fileName.runes.any((int rune) => rune > 127);
       if (hasNonAscii) {
         final int lastDotIndex = fileName.lastIndexOf('.');
-        final String nameWithoutExt =
-            lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
+        final String nameWithoutExt = lastDotIndex > 0 ? fileName.substring(0, lastDotIndex) : fileName;
         final String extension = lastDotIndex > 0 ? fileName.substring(lastDotIndex) : '';
         final List<int> bytes = utf8.encode(nameWithoutExt);
         final Digest digest = md5.convert(bytes);
@@ -228,8 +201,7 @@ class MPAudioImportUtils {
       if (Platform.isIOS) {
         try {
           final ImagePicker picker = ImagePicker();
-          final List<XFile> mediaList =
-              await picker.pickMultipleMedia(imageQuality: 100);
+          final List<XFile> mediaList = await picker.pickMultipleMedia(imageQuality: 100);
           if (mediaList.isEmpty) {
             return <File>[];
           }
@@ -249,8 +221,7 @@ class MPAudioImportUtils {
           }
           return _pickMultipleAudioFromAlbumFallback();
         } on PlatformException catch (e) {
-          if (e.code == 'photo_access_denied' ||
-              e.code == 'photo_access_restricted') {
+          if (e.code == 'photo_access_denied' || e.code == 'photo_access_restricted') {
             debugPrint('MPAudioImportUtils: photo library access denied: ${e.message}');
             MPToastUtils.showMessage(
               'Photos access is required to import audio. Allow access in Settings if you previously denied it.',
@@ -280,8 +251,7 @@ class MPAudioImportUtils {
         withData: false,
         allowCompression: false,
         allowMultiple: true,
-        dialogTitle:
-            Platform.isIOS ? 'Choose audio files' : 'Choose audio from library',
+        dialogTitle: Platform.isIOS ? 'Choose audio files' : 'Choose audio from library',
       );
       return _audioFilesFromPickerResult(result);
     } catch (e) {
@@ -301,18 +271,14 @@ class MPAudioImportUtils {
   }
 
   /// 将设备导出字节写入沙盒音频目录（路径规则与 [_syncAudioToSandbox] 一致）。
-  static Future<String?> writeExportBytesToSandbox({
-    required List<int> bytes,
-    required String originalFileName,
-  }) async {
+  static Future<String?> writeExportBytesToSandbox({required List<int> bytes, required String originalFileName}) async {
     try {
       if (bytes.isEmpty) {
         return null;
       }
       final Directory dir = await _getPersistentAudioDirectory();
       final String safeFileName = _generateSafeFileName(originalFileName);
-      final String targetPath =
-          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final String targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
       final File targetFile = File(targetPath);
       await targetFile.writeAsBytes(bytes, flush: true);
       return targetFile.path;
@@ -323,8 +289,7 @@ class MPAudioImportUtils {
   }
 
   /// 读取本地音频文件时长（秒）；失败返回 `null`。
-  static Future<int?> readAudioDurationSeconds(String filePath) =>
-      _getAudioDurationSeconds(filePath);
+  static Future<int?> readAudioDurationSeconds(String filePath) => _getAudioDurationSeconds(filePath);
 
   static Future<Directory> _getPersistentAudioDirectory() async {
     final Directory appDir = await getApplicationDocumentsDirectory();
@@ -335,10 +300,7 @@ class MPAudioImportUtils {
     return dir;
   }
 
-  static Future<String?> _syncAudioToSandbox(
-    File sourceFile, {
-    _SyncProgressCallback? onProgress,
-  }) async {
+  static Future<String?> _syncAudioToSandbox(File sourceFile, {_SyncProgressCallback? onProgress}) async {
     try {
       if (!await sourceFile.exists()) {
         return null;
@@ -347,8 +309,7 @@ class MPAudioImportUtils {
       final Directory dir = await _getPersistentAudioDirectory();
       final String originalFileName = sourceFile.path.split('/').last;
       final String safeFileName = _generateSafeFileName(originalFileName);
-      final String targetPath =
-          '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final String targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
       final File targetFile = File(targetPath);
 
       if (await targetFile.exists()) {
@@ -361,8 +322,7 @@ class MPAudioImportUtils {
       await for (final List<int> chunk in sourceFile.openRead()) {
         sink.add(chunk);
         copiedBytes += chunk.length;
-        final double progress =
-            totalBytes == 0 ? 1.0 : (copiedBytes / totalBytes).clamp(0.0, 1.0).toDouble();
+        final double progress = totalBytes == 0 ? 1.0 : (copiedBytes / totalBytes).clamp(0.0, 1.0).toDouble();
         onProgress?.call(progress, copiedBytes, totalBytes);
       }
 
