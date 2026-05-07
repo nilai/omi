@@ -37,6 +37,10 @@ class MPPatternInsightDetailPage extends StatelessWidget {
                     tooltip: 'Share',
                     onPressed: () => context.read<MPInsightDetailCubit>().showShareExportSheet(context),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.more_vert, color: blueTextColor),
+                    onPressed: () => context.read<MPInsightDetailCubit>().showMoreDialog(context),
+                  ),
                 ],
               ),
             ),
