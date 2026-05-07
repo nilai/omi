@@ -4,7 +4,6 @@ import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
-
 /// Todo 任务数据模型
 class TodoTaskItem {
   // AI-generated START - 构造函数
@@ -40,8 +39,7 @@ class TodoTaskItem {
 /// Todo 状态管理Provider
 /// 管理 Todo 任务列表数据
 class MPTodoManager {
-
-// AI-generated START - 创建 Todo 任务
+  // AI-generated START - 创建 Todo 任务
   /// 通过 API 创建 Todo 任务
   /// [title] 任务标题
   /// [priority] 优先级（high, normal, low）
@@ -55,8 +53,7 @@ class MPTodoManager {
     String? feedCardId,
   }) async {
     try {
-      final int deadlineUnix =
-          deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final int deadlineUnix = deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
 
       // 创建请求
       final request = MPCreateTodoRequest(
@@ -91,6 +88,56 @@ class MPTodoManager {
   }
   // AI-generated END - createTodo
 
+  /// Memory 等场景：已有 [todoId] 时走 update，否则走 create。
+  ///
+  /// 返回 `true` 表示成功，`false` 表示失败。
+  Future<bool> createOrUpdateTodo({
+    required String title,
+    String? todoId,
+    String? memoryId,
+    String priority = 'normal',
+    int? deadline,
+    String? feedCardId,
+  }) async {
+    try {
+      final int deadlineUnix = deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final String trimmedId = todoId?.trim() ?? '';
+
+      if (trimmedId.isNotEmpty) {
+        return updateTodoWithRequest(
+          todoId: trimmedId,
+          title: title,
+          priority: priority,
+          deadlineUnixSec: deadlineUnix,
+          isCompleted: false,
+        );
+      }
+
+      final MPCreateTodoRequest request = MPCreateTodoRequest(
+        title: title,
+        memoryId: memoryId,
+        priority: priority,
+        deadline: deadlineUnix,
+        feedCardId: feedCardId,
+      );
+      final MPCreateTodoResponse? response = await MPTodo.createTodo(request);
+      if (response == null) {
+        debugPrint('Create todo failed: empty response');
+        return false;
+      }
+      if (response.baseResp.code != 0) {
+        debugPrint('Create todo failed: ${response.baseResp.message}');
+        return false;
+      }
+      debugPrint('Todo created successfully');
+      MPTodoNotification.notifyTodoCreated();
+      return true;
+    } catch (e) {
+      debugPrint('createOrUpdateTodo error: $e');
+      return false;
+    }
+  }
+
   // AI-generated START - 添加 Todo 任务
   /// 通过 API 创建 Todo 任务并添加到本地列表
   /// [todo] Todo 任务项
@@ -113,31 +160,15 @@ class MPTodoManager {
             final int? m = int.tryParse(p[1]);
             final int? d = int.tryParse(p[2]);
             if (y != null && m != null && d != null) {
-              deadlineUnix =
-                  DateTime(y, m, d).millisecondsSinceEpoch ~/ 1000;
+              deadlineUnix = DateTime(y, m, d).millisecondsSinceEpoch ~/ 1000;
             } else {
-              deadlineUnix =
-                  DateTime.now().millisecondsSinceEpoch ~/ 1000;
+              deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
             }
           } else {
-            deadlineUnix =
-                DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
           }
         } else {
-          final months = [
-            'Jan',
-            'Feb',
-            'Mar',
-            'Apr',
-            'May',
-            'Jun',
-            'Jul',
-            'Aug',
-            'Sep',
-            'Oct',
-            'Nov',
-            'Dec',
-          ];
+          final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
           final parts = todo.date.split(' ');
           if (parts.length == 2) {
             final monthIndex = months.indexOf(parts[0]);
@@ -146,8 +177,7 @@ class MPTodoManager {
             final dt = DateTime(now.year, monthIndex + 1, day);
             deadlineUnix = dt.millisecondsSinceEpoch ~/ 1000;
           } else {
-            deadlineUnix =
-                DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
           }
         }
       } catch (e) {
@@ -155,11 +185,7 @@ class MPTodoManager {
       }
 
       // 调用 API 创建 Todo
-      final success = await createTodo(
-        title: todo.title,
-        priority: priority,
-        deadline: deadlineUnix,
-      );
+      final success = await createTodo(title: todo.title, priority: priority, deadline: deadlineUnix);
 
       if (success) {
         // 创建成功后，刷新列表以获取最新的数据
@@ -173,8 +199,6 @@ class MPTodoManager {
     }
   }
   // AI-generated END - addTodo
-
-
 
   // AI-generated START - 完成 Todo 任务
   /// 通过 API 完成 Todo 任务
@@ -230,8 +254,7 @@ class MPTodoManager {
         return false;
       }
 
-      final int resolvedDeadline =
-          deadlineUnixSec ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final int resolvedDeadline = deadlineUnixSec ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
 
       final request = MPUpdateTodoRequest(
         todoId: todoId,
@@ -260,6 +283,7 @@ class MPTodoManager {
       return false;
     }
   }
+
   // AI-generated START - 删除 Todo 任务
   /// 通过 API 删除 Todo 任务
   /// [id] Todo 的 ID
@@ -276,7 +300,7 @@ class MPTodoManager {
         // 检查响应状态
         if (response.baseResp.code == 0) {
           debugPrint('Todo deleted successfully');
-         return true;
+          return true;
         } else {
           MPToastUtils.showMessage(response.baseResp.message);
           return false;
@@ -290,5 +314,6 @@ class MPTodoManager {
       return false;
     }
   }
+
   // AI-generated END - deleteTodo
 }

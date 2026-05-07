@@ -28,10 +28,7 @@ class GetTodoGroupedListRequest {
   @JsonKey(name: 'page_no')
   final int pageno;
 
-  GetTodoGroupedListRequest({
-    required this.pageSize,
-    required this.pageno,
-  });
+  GetTodoGroupedListRequest({required this.pageSize, required this.pageno});
 
   factory GetTodoGroupedListRequest.fromJson(Map<String, dynamic> json) => _$GetTodoGroupedListRequestFromJson(json);
 
@@ -75,9 +72,7 @@ class MPDoneTodoRequest {
   @JsonKey(name: 'todo_id')
   final String todoId;
 
-  MPDoneTodoRequest({
-    required this.todoId,
-  });
+  MPDoneTodoRequest({required this.todoId});
 
   factory MPDoneTodoRequest.fromJson(Map<String, dynamic> json) => _$MPDoneTodoRequestFromJson(json);
 
@@ -90,9 +85,7 @@ class MPDeleteTodoRequest {
   @JsonKey(name: 'todo_id')
   final String todoId;
 
-  MPDeleteTodoRequest({
-    required this.todoId,
-  });
+  MPDeleteTodoRequest({required this.todoId});
 
   factory MPDeleteTodoRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteTodoRequestFromJson(json);
 
@@ -166,7 +159,6 @@ typedef GetTodoListResponse = GetTodoGroupedListResponse;
 
 @JsonSerializable()
 class TodoListSectionStruct {
-
   @JsonKey(name: 'section_type')
   final TodoListSectionType sectionType;
 
@@ -179,15 +171,9 @@ class TodoListSectionStruct {
   @JsonKey(name: 'total_count')
   final int? totalCount;
 
-  TodoListSectionStruct({
-    required this.sectionType,
-    required this.title,
-    required this.todos,
-    this.totalCount,
-  });
+  TodoListSectionStruct({required this.sectionType, required this.title, required this.todos, this.totalCount});
 
-  factory TodoListSectionStruct.fromJson(Map<String, dynamic> json) =>
-      _$TodoListSectionStructFromJson(json);
+  factory TodoListSectionStruct.fromJson(Map<String, dynamic> json) => _$TodoListSectionStructFromJson(json);
 
   Map<String, dynamic> toJson() => _$TodoListSectionStructToJson(this);
 }
@@ -198,16 +184,12 @@ class MPCreateTodoResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPCreateTodoResponse({
-    required this.baseResp,
-  });
+  MPCreateTodoResponse({required this.baseResp});
 
   factory MPCreateTodoResponse.fromJson(Map<String, dynamic> json) => _$MPCreateTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPCreateTodoResponseToJson(this);
 }
-
-
 
 // Done Todo Response
 @JsonSerializable()
@@ -215,15 +197,12 @@ class MPDoneTodoResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPDoneTodoResponse({
-    required this.baseResp,
-  });
+  MPDoneTodoResponse({required this.baseResp});
 
   factory MPDoneTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDoneTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDoneTodoResponseToJson(this);
 }
-
 
 // Delete Todo Response
 @JsonSerializable()
@@ -231,15 +210,12 @@ class MPDeleteTodoResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPDeleteTodoResponse({
-    required this.baseResp,
-  });
+  MPDeleteTodoResponse({required this.baseResp});
 
   factory MPDeleteTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDeleteTodoResponseToJson(this);
 }
-
 
 // Update Todo Response
 @JsonSerializable()
@@ -247,9 +223,7 @@ class MPUpdateTodoResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPUpdateTodoResponse({
-    required this.baseResp,
-  });
+  MPUpdateTodoResponse({required this.baseResp});
 
   factory MPUpdateTodoResponse.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoResponseFromJson(json);
 
@@ -271,15 +245,9 @@ class MPBatchCreateTodoItem {
   @JsonKey(name: 'memory_id')
   final String? memoryId;
 
-  MPBatchCreateTodoItem({
-    required this.title,
-    required this.priority,
-    required this.deadline,
-    this.memoryId,
-  });
+  MPBatchCreateTodoItem({required this.title, required this.priority, required this.deadline, this.memoryId});
 
-  factory MPBatchCreateTodoItem.fromJson(Map<String, dynamic> json) =>
-      _$MPBatchCreateTodoItemFromJson(json);
+  factory MPBatchCreateTodoItem.fromJson(Map<String, dynamic> json) => _$MPBatchCreateTodoItemFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPBatchCreateTodoItemToJson(this);
 }
@@ -296,14 +264,9 @@ class MPBatchCreateMemoItem {
   @JsonKey(name: 'memory_id')
   final String? memoryId;
 
-  MPBatchCreateMemoItem({
-    required this.content,
-    required this.createAt,
-    this.memoryId,
-  });
+  MPBatchCreateMemoItem({required this.content, required this.createAt, this.memoryId});
 
-  factory MPBatchCreateMemoItem.fromJson(Map<String, dynamic> json) =>
-      _$MPBatchCreateMemoItemFromJson(json);
+  factory MPBatchCreateMemoItem.fromJson(Map<String, dynamic> json) => _$MPBatchCreateMemoItemFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPBatchCreateMemoItemToJson(this);
 }
@@ -317,13 +280,9 @@ class MPBatchCreateRequest {
   @JsonKey(name: 'memos')
   final List<MPBatchCreateMemoItem>? memos;
 
-  MPBatchCreateRequest({
-    this.todos,
-    this.memos,
-  });
+  MPBatchCreateRequest({this.todos, this.memos});
 
-  factory MPBatchCreateRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPBatchCreateRequestFromJson(json);
+  factory MPBatchCreateRequest.fromJson(Map<String, dynamic> json) => _$MPBatchCreateRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPBatchCreateRequestToJson(this);
 }
@@ -340,14 +299,9 @@ class MPBatchCreateResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPBatchCreateResponse({
-    required this.todoCount,
-    required this.memoCount,
-    required this.baseResp,
-  });
+  MPBatchCreateResponse({required this.todoCount, required this.memoCount, required this.baseResp});
 
-  factory MPBatchCreateResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPBatchCreateResponseFromJson(json);
+  factory MPBatchCreateResponse.fromJson(Map<String, dynamic> json) => _$MPBatchCreateResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPBatchCreateResponseToJson(this);
 }
