@@ -4,6 +4,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../../../cache/mp_hive_util.dart';
 import '../../../../../http/api/mp_template.dart';
 import '../../../../../http/schema/mp_data_model.dart';
 import '../../../../../http/schema/mp_memory.dart';
@@ -71,10 +72,68 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
   static const Color _kAutopilotBg = Color(0xFFF7F2E8);
   static const Color _kAutopilotBorder = Color(0xFFE8DCC8);
 
+  static const String _kSummaryTemplateCacheKey =
+      'mp_memory_generate_summary_selected_template';
+
+  static MPTemplateStruct _kAutoPilotTemplate = MPTemplateStruct(
+    id: null,
+    title: 'AutoPilot',
+    subTitle: 'AI decides what matters',
+    icon: null,
+    type: 'autopilot',
+    prompt: null,
+  );
+
   @override
   void initState() {
     super.initState();
+    _selectedTemplate = _kAutoPilotTemplate;
+    _loadCachedSelectedTemplate();
     _loadTemplates();
+  }
+
+  Future<void> _loadCachedSelectedTemplate() async {
+    try {
+      final MPTemplateStruct? cached = await MPHiveUtil.instance.getObject(
+        key: _kSummaryTemplateCacheKey,
+        fromJson: MPTemplateStruct.fromJson,
+      );
+      if (!mounted || cached == null) return;
+      setState(() {
+        _selectedTemplate = cached;
+      });
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<void> _cacheSelectedTemplate(MPTemplateStruct tpl) async {
+    try {
+      await MPHiveUtil.instance.putObject(
+        key: _kSummaryTemplateCacheKey,
+        object: tpl,
+        toJson: (MPTemplateStruct v) => v.toJson(),
+      );
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  MPTemplateStruct? _findTemplateById(MPGetTemplateListResponse resp, String id) {
+    if (id.trim().isEmpty) return null;
+    if (resp.recentTemplate?.id == id) return resp.recentTemplate;
+    for (final MPTemplateStruct t in resp.recommendTemplates) {
+      if (t.id == id) return t;
+    }
+    for (final MPTemplateStruct t in resp.customTemplates) {
+      if (t.id == id) return t;
+    }
+    for (final List<MPTemplateStruct> list in resp.templates.values) {
+      for (final MPTemplateStruct t in list) {
+        if (t.id == id) return t;
+      }
+    }
+    return null;
   }
 
   Future<void> _loadTemplates() async {
@@ -84,15 +143,21 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
       );
       if (!mounted || resp == null) return;
       if (resp.baseResp.code != 0) return;
+      final MPTemplateStruct? serverLatest = resp.recentTemplate;
+      final MPTemplateStruct? cur = _selectedTemplate;
+      final String? curId = cur?.id?.trim();
+      final MPTemplateStruct? refreshedById =
+          (curId != null && curId.isNotEmpty) ? _findTemplateById(resp, curId) : null;
+      final MPTemplateStruct? next = serverLatest ?? refreshedById ?? cur;
+
       setState(() {
         _tplResp = resp;
-        _selectedTemplate ??= resp.recentTemplate ??
-            (resp.recommendTemplates.isNotEmpty
-                ? resp.recommendTemplates.first
-                : (resp.customTemplates.isNotEmpty
-                    ? resp.customTemplates.first
-                    : null));
+        _selectedTemplate = next;
       });
+
+      if (next != null) {
+        await _cacheSelectedTemplate(next);
+      }
     } catch (_) {
       // ignore: avoid_catches_without_on_clauses
     }
@@ -260,7 +325,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                             border: Border.all(color: _kAutopilotBorder),
                           ),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: _modeSubtitle.isNotEmpty ? CrossAxisAlignment.start : CrossAxisAlignment.center,
                             children: <Widget>[
                               OmiImageLoader.localImg(
                                 Assets.omiSparkles,
@@ -283,16 +348,18 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                                         height: 1.25,
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      _modeSubtitle,
-                                      style: OmiTextStyle.create(
-                                        fontSize: OmiFontSize.t3_12,
-                                        fontWeight: OmiFontWeight.regular,
-                                        color: secondTextColor,
-                                        height: 1.3,
+                                    if (_modeSubtitle.isNotEmpty) ...<Widget>[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _modeSubtitle,
+                                        style: OmiTextStyle.create(
+                                          fontSize: OmiFontSize.t3_12,
+                                          fontWeight: OmiFontWeight.regular,
+                                          color: secondTextColor,
+                                          height: 1.3,
+                                        ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -311,6 +378,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                                       setState(() {
                                         _selectedTemplate = tpl;
                                       });
+                                      _cacheSelectedTemplate(tpl);
                                       widget.onChangeMode?.call();
                                     },
                                   );
