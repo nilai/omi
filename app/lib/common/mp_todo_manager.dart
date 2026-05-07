@@ -98,6 +98,7 @@ class MPTodoManager {
     String priority = 'normal',
     int? deadline,
     String? feedCardId,
+    int? preCreateStatus,
   }) async {
     try {
       final int deadlineUnix = deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
@@ -110,6 +111,7 @@ class MPTodoManager {
           priority: priority,
           deadlineUnixSec: deadlineUnix,
           isCompleted: false,
+          preCreateStatus: preCreateStatus,
         );
       }
 
@@ -239,6 +241,7 @@ class MPTodoManager {
     required String priority,
     required int? deadlineUnixSec,
     required bool isCompleted,
+    int? preCreateStatus,
   }) async {
     try {
       if (todoId.isEmpty) {
@@ -262,6 +265,7 @@ class MPTodoManager {
         priority: priority,
         deadline: resolvedDeadline,
         isCompleted: isCompleted,
+        preCreateStatus: preCreateStatus,
       );
 
       final response = await MPTodo.updateTodo(request);
