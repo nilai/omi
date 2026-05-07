@@ -1363,7 +1363,7 @@ _mpMemoryStructToDetailBundleFromSources(
               (MPTodoStruct t) => MPMemoryActionItemData(
                 id: t.id,
                 title: t.title,
-                status: t.status == 1 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
+                status: (t.preCreateStatus ?? 0) == 0 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
                 priority: t.priority,
                 deadline: t.deadline,
               ),
