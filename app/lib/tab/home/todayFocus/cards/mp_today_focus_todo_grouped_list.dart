@@ -57,6 +57,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.clearLabel = 'Clear',
     this.onItemCheckChanged,
     this.onItemTap,
+    this.onItemAddToFocus,
     this.sectionGap = 24,
     this.itemGap = 4,
   });
@@ -82,6 +83,9 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
 
   final void Function(MPTodayFocusTodoSection section, int index)? onItemTap;
 
+  /// 右滑露出「Add to Today's Focus」按钮；目前仅 Today 分组启用。
+  final void Function(MPTodayFocusTodoSection section, int index)? onItemAddToFocus;
+
   final double sectionGap;
   final double itemGap;
 
@@ -96,12 +100,23 @@ class _MPTodayFocusTodoGroupedListState
   late bool _overdueExpanded;
   late bool _completedExpanded;
 
+  /// Today 分组右滑「Add to Focus」行互斥：同一时间仅允许一个处于展开态。
+  /// 值为当前展开行的 id；`null` 表示都收起。
+  late final ValueNotifier<String?> _openTodayAddToFocusRowId =
+      ValueNotifier<String?>(null);
+
   @override
   void initState() {
     super.initState();
     _futureExpanded = widget.initialFutureExpanded;
     _overdueExpanded = widget.initialOverdueExpanded;
     _completedExpanded = widget.initialCompletedExpanded;
+  }
+
+  @override
+  void dispose() {
+    _openTodayAddToFocusRowId.dispose();
+    super.dispose();
   }
 
   @override
@@ -258,21 +273,32 @@ class _MPTodayFocusTodoGroupedListState
         out.add(SizedBox(height: widget.itemGap));
       }
       final MPTodayFocusTodoRowData row = items[i];
-      out.add(
-        MPTodayFocusTodoItem(
-          title: row.title,
-          timeLabel: row.timeLabel,
-          isChecked: row.isChecked,
-          tone: tone,
-          highlighted: row.highlighted,
-          onChanged: widget.onItemCheckChanged == null
-              ? null
-              : (bool v) => widget.onItemCheckChanged!(section, i, v),
-          onTap: widget.onItemTap == null
-              ? null
-              : () => widget.onItemTap!(section, i),
-        ),
+      Widget cell = MPTodayFocusTodoItem(
+        title: row.title,
+        timeLabel: row.timeLabel,
+        isChecked: row.isChecked,
+        tone: tone,
+        highlighted: row.highlighted,
+        onChanged: widget.onItemCheckChanged == null
+            ? null
+            : (bool v) => widget.onItemCheckChanged!(section, i, v),
+        onTap: widget.onItemTap == null ? null : () => widget.onItemTap!(section, i),
       );
+
+      if (section == MPTodayFocusTodoSection.today &&
+          widget.onItemAddToFocus != null) {
+        final String rowId =
+            'today_add_focus_${row.todoId}_${i}_${row.title}_${row.timeLabel}';
+        cell = _MPTodayTodoRevealAddToFocusRow(
+          key: ValueKey<String>('mp_${rowId}'),
+          rowId: rowId,
+          openRowId: _openTodayAddToFocusRowId,
+          onAdd: () => widget.onItemAddToFocus!(section, i),
+          child: cell,
+        );
+      }
+
+      out.add(cell);
     }
     return out;
   }
@@ -356,6 +382,137 @@ class _MPTodayFocusTodoGroupedListState
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: children,
+    );
+  }
+}
+
+/// 右滑露出左侧「Add to Today's Focus」按钮（非滑满即触发）。
+class _MPTodayTodoRevealAddToFocusRow extends StatefulWidget {
+  const _MPTodayTodoRevealAddToFocusRow({
+    super.key,
+    required this.rowId,
+    required this.openRowId,
+    required this.child,
+    required this.onAdd,
+  });
+
+  final String rowId;
+  final ValueNotifier<String?> openRowId;
+  final Widget child;
+  final VoidCallback onAdd;
+
+  @override
+  State<_MPTodayTodoRevealAddToFocusRow> createState() =>
+      _MPTodayTodoRevealAddToFocusRowState();
+}
+
+class _MPTodayTodoRevealAddToFocusRowState
+    extends State<_MPTodayTodoRevealAddToFocusRow> {
+  static const double _kActionWidth = 108;
+
+  /// 非负数，0 为闭合，`_kActionWidth` 为完全露出按钮区。
+  double _offsetX = 0;
+
+  void _onOpenRowIdChanged() {
+    if (!mounted) return;
+    if (widget.openRowId.value != widget.rowId && _offsetX != 0) {
+      setState(() => _offsetX = 0);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.openRowId.addListener(_onOpenRowIdChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.openRowId.removeListener(_onOpenRowIdChanged);
+    super.dispose();
+  }
+
+  void _close() {
+    if (!mounted) return;
+    setState(() => _offsetX = 0);
+  }
+
+  void _setOpen() {
+    widget.openRowId.value = widget.rowId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      clipBehavior: Clip.hardEdge,
+      borderRadius: BorderRadius.circular(10),
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: <Widget>[
+          Positioned(
+            top: 0,
+            left: 0,
+            bottom: 0,
+            width: _kActionWidth,
+            child: Container(
+              alignment: Alignment.center,
+              color: omiEmphasisGreen,
+              child: SizedBox.expand(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    _close();
+                    widget.onAdd();
+                  },
+                  child: Center(
+                    child: Text(
+                      'Add to\nToday\'s Focus',
+                      textAlign: TextAlign.center,
+                      style: OmiTextStyle.create(
+                        fontSize: OmiFontSize.t3_12,
+                        fontWeight: OmiFontWeight.medium,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onHorizontalDragUpdate: (DragUpdateDetails details) {
+              setState(() {
+                _offsetX = (_offsetX + details.delta.dx).clamp(0.0, _kActionWidth);
+              });
+            },
+            onHorizontalDragEnd: (DragEndDetails details) {
+              final double? vx = details.primaryVelocity;
+              setState(() {
+                if (vx != null && vx > 400) {
+                  _offsetX = _kActionWidth;
+                } else if (vx != null && vx < -400) {
+                  _offsetX = 0;
+                } else if (_offsetX > _kActionWidth / 2) {
+                  _offsetX = _kActionWidth;
+                } else {
+                  _offsetX = 0;
+                }
+              });
+              if (_offsetX > 0) {
+                _setOpen();
+              } else if (widget.openRowId.value == widget.rowId) {
+                widget.openRowId.value = null;
+              }
+            },
+            child: Transform.translate(
+              offset: Offset(_offsetX, 0),
+              child: widget.child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

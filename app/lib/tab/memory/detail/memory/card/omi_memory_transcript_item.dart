@@ -12,6 +12,7 @@ class MPMemoryTranscriptItemData {
   const MPMemoryTranscriptItemData({
     required this.timestamp,
     required this.timeSeconds,
+    this.speakerId,
     required this.speakerName,
     required this.transcriptText,
     this.waveformHeights,
@@ -24,6 +25,9 @@ class MPMemoryTranscriptItemData {
   /// 从音频起点算起的偏移秒数，与 [timestamp] 对应。
   final int timeSeconds;
 
+  /// 对应后端 speaker id（用于更新说话人）。
+  final String? speakerId;
+
   final String speakerName;
 
   final String transcriptText;
@@ -35,6 +39,7 @@ class MPMemoryTranscriptItemData {
   MPMemoryTranscriptItemData copyWith({
     String? timestamp,
     int? timeSeconds,
+    String? speakerId,
     String? speakerName,
     String? transcriptText,
     List<double>? waveformHeights,
@@ -43,6 +48,7 @@ class MPMemoryTranscriptItemData {
     return MPMemoryTranscriptItemData(
       timestamp: timestamp ?? this.timestamp,
       timeSeconds: timeSeconds ?? this.timeSeconds,
+      speakerId: speakerId ?? this.speakerId,
       speakerName: speakerName ?? this.speakerName,
       transcriptText: transcriptText ?? this.transcriptText,
       waveformHeights: waveformHeights ?? this.waveformHeights,

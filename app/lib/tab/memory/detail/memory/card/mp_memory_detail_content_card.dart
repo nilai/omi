@@ -596,23 +596,17 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           currentSpeakerName: item.speakerName,
         );
     if (!mounted || result == null) return;
-    setState(() {
-      if (result.applyToAll) {
-        final String oldName = item.speakerName;
-        _transcriptItems = _transcriptItems
-            .map(
-              (MPMemoryTranscriptItemData e) => e.speakerName == oldName
-                  ? e.copyWith(speakerName: result.newName)
-                  : e,
-            )
-            .toList();
-      } else {
-        final List<MPMemoryTranscriptItemData> next =
-            List<MPMemoryTranscriptItemData>.from(_transcriptItems);
-        next[index] = item.copyWith(speakerName: result.newName);
-        _transcriptItems = next;
-      }
-    });
+    final String speakerId = (item.speakerId ?? '').trim();
+    if (speakerId.isEmpty) {
+      return;
+    }
+    await context.read<OmiMemoryDetailCubit>().updateSpeakerName(
+      speakerId: speakerId,
+      oldName: item.speakerName,
+      newName: result.newName,
+      applyToAll: result.applyToAll,
+      transcriptItemId: item.id,
+    );
   }
 
   /// Actions 里「Save Todo」后：先调接口，成功则更新本地列表为已创建
@@ -635,6 +629,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       );
       _actionItems = next;
     });
+
+    if (!mounted) return;
+    // follow-up todo 创建成功后刷新详情，保证 feed 与状态与服务端对齐。
+    unawaited(context.read<OmiMemoryDetailCubit>().refresh());
   }
 
   @override

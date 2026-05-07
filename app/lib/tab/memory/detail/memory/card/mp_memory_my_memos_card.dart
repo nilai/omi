@@ -56,7 +56,7 @@ class MPMemoryMyMemosCard extends StatefulWidget {
 class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
   static const Color _kLeftStripe = blueTextColor;
   static const Color _kIconCircleBg = Color(0xFFE8F4FF);
-  bool _isDeleted = false;
+  final Set<String> _deletedMemoKeys = <String>{};
 
   /// 请求 AI 分析结果（占位实现，后续替换真实接口）。
   Future<List<String>> _analyzeMemoActions(String memoText) async {
@@ -88,9 +88,10 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
       onAnalyze: _analyzeMemoActions,
       onDelete: (String t) async {
         if (!mounted) return false;
-        setState(() {
-          _isDeleted = true;
-        });
+        final String key = (line.memoId != null && line.memoId!.trim().isNotEmpty)
+            ? 'id:${line.memoId!.trim()}'
+            : 'text:${t.trim()}';
+        setState(() => _deletedMemoKeys.add(key));
         return true;
       },
     );
@@ -98,7 +99,16 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isDeleted) {
+    final List<MPMemoryMyMemoLine> visibleLines =
+        widget.data.lines.where((MPMemoryMyMemoLine l) {
+      final String? id = l.memoId?.trim();
+      final String key = (id != null && id.isNotEmpty)
+          ? 'id:$id'
+          : 'text:${l.text.trim()}';
+      return !_deletedMemoKeys.contains(key);
+    }).toList(growable: false);
+
+    if (visibleLines.isEmpty) {
       return const SizedBox.shrink();
     }
     return Material(
@@ -106,8 +116,8 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          if (widget.data.lines.isEmpty) return;
-          _showMemoSheet(context, widget.data.lines.first);
+          if (visibleLines.isEmpty) return;
+          _showMemoSheet(context, visibleLines.first);
         },
         child: Ink(
           decoration: BoxDecoration(
@@ -169,7 +179,7 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
                   ],
                 ),
                 const SizedBox(height: 14),
-                for (int i = 0; i < widget.data.lines.length; i++) ...<Widget>[
+                for (int i = 0; i < visibleLines.length; i++) ...<Widget>[
                   if (i > 0) ...<Widget>[
                     const SizedBox(height: 12),
                     Divider(
@@ -182,9 +192,9 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: () =>
-                        _showMemoSheet(context, widget.data.lines[i]),
+                        _showMemoSheet(context, visibleLines[i]),
                     child: Text(
-                      '“${widget.data.lines[i].text}”',
+                      '“${visibleLines[i].text}”',
                       style: OmiTextStyle.create(
                         fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.medium,

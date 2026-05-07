@@ -563,6 +563,56 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
   }
 
+  /// Today's Focus 满 3 条时：替换其中一条（仅本地态更新；后续可接真实接口）。
+  void replaceFocusItemWithTodo({
+    required int focusIndex,
+    required MPTodayFocusTodoRowData todo,
+  }) {
+    if (!_isInteractive) return;
+    final List<MPTodayFocusCardItem> cur = state.focusCard.items;
+    if (focusIndex < 0 || focusIndex >= cur.length) {
+      return;
+    }
+    final String todoId = todo.todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return;
+    }
+    final String title = todo.title.trim().isEmpty ? '—' : todo.title.trim();
+    final String timeLabel = todo.timeLabel.trim();
+    final String subtext =
+        timeLabel.isEmpty ? 'scheduled for Today' : 'scheduled for $timeLabel';
+
+    final List<MPTodayFocusCardItem> next = List<MPTodayFocusCardItem>.of(cur);
+    next[focusIndex] = MPTodayFocusCardItem(
+      title: title,
+      subtext: subtext,
+      timeLabel: timeLabel,
+      todoId: todoId,
+    );
+    emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
+  }
+
+  /// 右滑「Add to Today's Focus」入口。
+  ///
+  /// 当前工程内暂无“加入 Focus”的对应接口/字段（仅有 candidates 列表），因此先统一提示 Coming soon。
+  void addTodoToFocus(MPTodayFocusTodoSection section, int index) {
+    if (!_isInteractive) return;
+    if (section != MPTodayFocusTodoSection.today) {
+      return;
+    }
+    final List<MPTodayFocusTodoRowData> src = state.todayItems;
+    if (index < 0 || index >= src.length) {
+      return;
+    }
+    final String todoId = src[index].todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return;
+    }
+    MPToastUtils.showFeatureComingSoon(message: 'Add to Today\'s Focus');
+  }
+
   /// 从 Today's Focus 移除一条：先调删除接口，成功后再从列表移除。
   Future<bool> removeFocusItemAt(int index) async {
     if (!_isInteractive) {

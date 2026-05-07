@@ -12,9 +12,11 @@ import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
+import 'package:memo_pin/http/api/mp_speaker.dart';
 import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
+import 'package:memo_pin/http/schema/mp_speaker.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:path/path.dart' as p;
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
@@ -1008,6 +1010,73 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(cur.copyWith(data: nextData));
   }
 
+  /// 调用 UpdateSpeakerRequest 成功后，更新 speakers 与 transcript 展示文本。
+  ///
+  /// - [speakerId]: 后端 speaker id
+  /// - [applyToAll]: 为 true 时更新 transcript 中所有匹配 speaker 的段；否则仅更新当前段
+  Future<bool> updateSpeakerName({
+    required String speakerId,
+    required String oldName,
+    required String newName,
+    required bool applyToAll,
+    required String transcriptItemId,
+  }) async {
+    if (isClosed) return false;
+    final String sid = speakerId.trim();
+    final String nn = newName.trim();
+    if (sid.isEmpty || nn.isEmpty) {
+      MPToastUtils.showMessage('Invalid speaker.');
+      return false;
+    }
+    final OmiMemoryDetailState s = state;
+    final MPMemoryDetailCardData? data = s.data;
+    if (s.phase != OmiMemoryDetailPhase.loaded || data == null) {
+      return false;
+    }
+
+    try {
+      final MPUpdateSpeakerResponse? resp = await updateSpeaker(
+        MPUpdateSpeakerRequest(speakerId: sid, name: nn),
+      );
+      if (resp == null || resp.baseResp.code != 0) {
+        MPToastUtils.showMessage(
+          resp?.baseResp.message.isNotEmpty == true
+              ? resp!.baseResp.message
+              : 'Couldn\'t update speaker.',
+        );
+        return false;
+      }
+
+      final List<String> nextSpeakerLabels = applyToAll
+          ? data.speakerLabels
+              .map((String x) => x == oldName ? nn : x)
+              .toList(growable: false)
+          : data.speakerLabels;
+
+      final List<MPMemoryTranscriptItemData> nextTranscript = data.transcriptItems
+          .map((MPMemoryTranscriptItemData it) {
+            final bool hit = applyToAll
+                ? ((it.speakerId ?? '').trim() == sid || it.speakerName == oldName)
+                : it.id == transcriptItemId;
+            return hit ? it.copyWith(speakerName: nn) : it;
+          })
+          .toList(growable: false);
+
+      emit(
+        s.copyWith(
+          data: data.copyWith(
+            speakerLabels: nextSpeakerLabels,
+            transcriptItems: nextTranscript,
+          ),
+        ),
+      );
+      return true;
+    } catch (e) {
+      MPToastUtils.showMessage('Couldn\'t update speaker: $e');
+      return false;
+    }
+  }
+
   Future<bool> _deleteTodoApi(MPMemoryCreatedTodoLineData item) async {
     final String? todoId = item.id?.trim();
     if (todoId == null || todoId.isEmpty) {
@@ -1020,7 +1089,19 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   /// 删除「TODOS CREATED」里指定块中的条目（接口成功后更新 UI）。
-  Future<bool> deleteCreatedTodoAt(int feedBlockIndex, int itemIndex) async {
+  ///
+  /// 注意：在 `OmiEditTodoPopup` 的删除流程中，接口删除已在弹窗内完成，
+  /// 此处默认不应重复调用接口；可通过 [skipApi] 控制。
+  /// 删除「TODOS CREATED」里指定块中的条目（接口成功后更新 UI）。
+  ///
+  /// 参照 memo 的删除方式：用 [todoId] 定位要删的 item，避免依赖下标导致删错/删不掉。
+  /// 在 `OmiEditTodoPopup` 的删除流程中，接口删除已在弹窗内完成，
+  /// 因此默认 [skipApi]=true，只做本地移除。
+  Future<bool> deleteCreatedTodoById(
+    int feedBlockIndex, {
+    required String todoId,
+    bool skipApi = true,
+  }) async {
     final OmiMemoryDetailState cur = state;
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) {
       return false;
@@ -1032,11 +1113,18 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryFeedBlock block = d.feedBlocks[feedBlockIndex];
     if (block is! MPMemoryFeedTodosCreatedBlock) return false;
     final MPMemoryTodosCreatedCardData todos = block.data;
-    if (itemIndex < 0 || itemIndex >= todos.items.length) return false;
+    final String id = todoId.trim();
+    if (id.isEmpty) return false;
+    final int itemIndex = todos.items.indexWhere(
+      (MPMemoryCreatedTodoLineData e) => (e.id ?? '').trim() == id,
+    );
+    if (itemIndex < 0) return false;
 
     final MPMemoryCreatedTodoLineData target = todos.items[itemIndex];
-    final bool ok = await _deleteTodoApi(target);
-    if (!ok) return false;
+    if (!skipApi) {
+      final bool ok = await _deleteTodoApi(target);
+      if (!ok) return false;
+    }
 
     final List<MPMemoryCreatedTodoLineData> nextItems = List<MPMemoryCreatedTodoLineData>.from(todos.items)
       ..removeAt(itemIndex);
@@ -1277,6 +1365,7 @@ _mpMemoryStructToDetailBundleFromSources(
               return MPMemoryTranscriptItemData(
                 timestamp: MPDateUtils.formatTranscriptSecondsToMmSs(sec),
                 timeSeconds: sec,
+                speakerId: t.speaker.id,
                 speakerName: t.speaker.name,
                 transcriptText: t.content,
                 id: t.id,
@@ -1372,19 +1461,16 @@ DateTime _detailServerTime(int createAt) {
 
 String _formatDetailDuration(int? seconds) {
   if (seconds == null || seconds <= 0) {
-    return '0s';
+    return '0:00';
   }
-  final int m = seconds ~/ 60;
-  final int s = seconds % 60;
-  if (m > 60) {
-    final int h = m ~/ 60;
-    final int mm = m % 60;
-    return '${h}h${mm}m${s}s';
+  final int totalSeconds = seconds;
+  final int h = totalSeconds ~/ 3600;
+  final int m = (totalSeconds % 3600) ~/ 60;
+  final int s = totalSeconds % 60;
+  if (h > 0) {
+    return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
-  if (m > 0) {
-    return '${m}m${s}s';
-  }
-  return '${s}s';
+  return '$m:${s.toString().padLeft(2, '0')}';
 }
 
 String _feedCardTimeLabel(int? createAt) {

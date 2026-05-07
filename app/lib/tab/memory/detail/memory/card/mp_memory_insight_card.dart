@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -10,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
+import '../omi_memory_detail_cubit.dart';
 
 /// Insight 卡片配色主题（仅样式差异，与 [MPFeedCardType] 可对应或用于轮换）。
 enum MPInsightCardTone {
@@ -343,6 +345,9 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
             setState(() {
               _followUpTodoAdded = true;
             });
+            if (!mounted) return;
+            // follow-up todo 创建成功后刷新详情，保证 feed 与状态与服务端对齐。
+            unawaited(context.read<OmiMemoryDetailCubit>().refresh());
           }
         },
         borderRadius: BorderRadius.circular(22),

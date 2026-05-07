@@ -15,6 +15,7 @@ import 'cards/mp_today_focus_add_card.dart';
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
 import 'mp_today_focus_cubit.dart';
+import 'mp_today_focus_full_sheet.dart';
 
 /// Today Focus：Today's Focus + ALL TO DOS 输入 + 分组待办列表（三态 + 下拉刷新）
 class MPTodayFocusPage extends StatefulWidget {
@@ -241,6 +242,21 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         initialFutureExpanded: true,
                         onOverdueClear: _cubit.clearOverdue,
                         onItemCheckChanged: _cubit.setTodoChecked,
+                        onItemAddToFocus:
+                            (MPTodayFocusTodoSection section, int index) {
+                          if (state.focusCard.items.length >= 2) {
+                            showMPTodayFocusFullSheet(
+                              context,
+                              items: state.focusCard.items.take(3).toList(),
+                              onSelect: (int focusIndex, MPTodayFocusCardItem _) {
+                                // 选中后不做本地替换，直接刷新（以接口结果为准）。
+                                _cubit.refreshGroupedTodoLists();
+                              },
+                            );
+                            return;
+                          }
+                          _cubit.addTodoToFocus(section, index);
+                        },
                         onItemTap:
                             (MPTodayFocusTodoSection section, int index) {
                           _onTapTodoItem(state, section, index);

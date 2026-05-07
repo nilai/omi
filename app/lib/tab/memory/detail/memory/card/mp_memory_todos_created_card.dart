@@ -122,9 +122,14 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                       deadlineUnixSec: data.items[i].deadlineLabel,
                     ),
                     onDelete: () {
-                      return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoAt(
+                      final String todoId = (data.items[i].id ?? '').trim();
+                      if (todoId.isEmpty) {
+                        return Future<bool>.value(false);
+                      }
+                      return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoById(
                             feedBlockIndex,
-                            i,
+                            todoId: todoId,
+                            skipApi: true,
                           );
                     },
                   );
