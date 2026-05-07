@@ -53,11 +53,15 @@ class MPCreateTodoRequest {
   @JsonKey(name: 'deadline')
   final int? deadline;
 
+  @JsonKey(name: 'feed_card_id')
+  final String? feedCardId;
+
   MPCreateTodoRequest({
     required this.title,
     this.memoryId,
     required this.priority,
     required this.deadline,
+    this.feedCardId,
   });
 
   factory MPCreateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPCreateTodoRequestFromJson(json);
