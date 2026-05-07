@@ -40,9 +40,10 @@ Map<String, dynamic> _$MPDoneTodoRequestToJson(MPDoneTodoRequest instance) => <S
 MPDeleteTodoRequest _$MPDeleteTodoRequestFromJson(Map<String, dynamic> json) =>
     MPDeleteTodoRequest(todoId: json['todo_id'] as String);
 
-Map<String, dynamic> _$MPDeleteTodoRequestToJson(MPDeleteTodoRequest instance) => <String, dynamic>{
-  'todo_id': instance.todoId,
-};
+
+Map<String, dynamic> _$MPDeleteTodoRequestToJson(
+  MPDeleteTodoRequest instance,
+) => <String, dynamic>{'todo_id': instance.todoId};
 
 MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) => MPUpdateTodoRequest(
   todoId: json['todo_id'] as String,
@@ -50,6 +51,7 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) => 
   priority: json['priority'] as String,
   deadline: (json['deadline'] as num).toInt(),
   isCompleted: json['is_completed'] as bool,
+  preCreateStatus: json['pre_create_status'] as int?,
 );
 
 Map<String, dynamic> _$MPUpdateTodoRequestToJson(MPUpdateTodoRequest instance) => <String, dynamic>{
@@ -58,6 +60,7 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(MPUpdateTodoRequest instance) =
   'priority': instance.priority,
   'deadline': instance.deadline,
   'is_completed': instance.isCompleted,
+  'pre_create_status': instance.preCreateStatus,
 };
 
 GetTodoGroupedListResponse _$GetTodoGroupedListResponseFromJson(Map<String, dynamic> json) =>
