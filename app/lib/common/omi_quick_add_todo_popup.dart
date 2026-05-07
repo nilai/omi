@@ -1,12 +1,23 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
+import '../audio/record/mp_audio_upload_service.dart';
+import '../audio/record/mp_recording_background_support.dart';
 import '../generated/assets.dart';
+import '../http/api/mp_chat.dart';
+import '../http/schema/mp_chat.dart';
+import '../permission/omi_microphone_manager.dart';
+import '../utils/mp_toast_utils.dart';
 
 /// 快捷添加 Todo 输入弹窗结果。
 class OmiQuickAddTodoResult {
@@ -51,15 +62,55 @@ class _OmiQuickAddTodoSheet extends StatefulWidget {
 }
 
 class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
+  static const String _kRecordDirName = 'omi_quick_add_input_records';
+
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   bool _isRecording = false;
   bool _isTranscribing = false;
   bool _isSubmitting = false;
 
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  bool _recorderOpened = false;
+  String? _recordPath;
+
   @override
   void dispose() {
+    unawaited(_stopRecorder(deleteFile: true));
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  Future<String> _ensureRecordDirectory() async {
+    final Directory docs = await getApplicationDocumentsDirectory();
+    final String dir = p.join(docs.path, _kRecordDirName);
+    await Directory(dir).create(recursive: true);
+    return dir;
+  }
+
+  Future<void> _stopRecorder({required bool deleteFile}) async {
+    try {
+      if (_recorderOpened && (_recorder.isRecording || _recorder.isPaused)) {
+        await _recorder.stopRecorder();
+      }
+    } catch (_) {}
+    try {
+      if (_recorderOpened) {
+        await _recorder.closeRecorder();
+      }
+    } catch (_) {}
+    _recorderOpened = false;
+    if (deleteFile && _recordPath != null) {
+      final File file = File(_recordPath!);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+    _recordPath = null;
+    await MPRecordingBackgroundSupport.deactivateAfterRecording();
   }
 
   Future<void> _submit() async {
@@ -75,42 +126,138 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     Navigator.of(context).pop(OmiQuickAddTodoResult(text: text));
   }
 
-  /// 开始语音录制（录音实现后续接入）。
-  void _startRecording() {
+  Future<void> _startRecording() async {
+    if (_isSubmitting || _isTranscribing || _isRecording) {
+      return;
+    }
+    _focusNode.unfocus();
     FocusScope.of(context).unfocus();
-    setState(() => _isRecording = true);
-    // TODO: 接入录音开始逻辑
+    try {
+      final bool hasPermission =
+          await OmiMicrophoneManager.ensureMicrophonePermission();
+      if (!hasPermission) {
+        return;
+      }
+      await MPRecordingBackgroundSupport.activateForRecording();
+      final String dir = await _ensureRecordDirectory();
+      final String path = p.join(
+        dir,
+        'omi_quick_add_${DateTime.now().millisecondsSinceEpoch}.aac',
+      );
+      await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
+      _recorderOpened = true;
+      await _recorder.startRecorder(
+        toFile: path,
+        codec: Codec.aacADTS,
+        bitRate: 8000,
+        numChannels: 1,
+        sampleRate: 8000,
+      );
+      if (!mounted) {
+        await _stopRecorder(deleteFile: true);
+        return;
+      }
+      setState(() {
+        _recordPath = path;
+        _isRecording = true;
+      });
+    } catch (e) {
+      await _stopRecorder(deleteFile: true);
+      if (mounted) {
+        MPToastUtils.showMessage('Failed to start recording: $e');
+      }
+    }
   }
 
-  /// 取消语音录制（录音实现后续接入）。
-  void _cancelRecording() {
+  Future<void> _cancelRecording() async {
+    await _stopRecorder(deleteFile: true);
+    if (!mounted) {
+      return;
+    }
     setState(() => _isRecording = false);
-    // TODO: 接入录音取消逻辑
   }
 
-  /// 发送语音录制结果（录音转文本后续接入）。
   Future<void> _sendRecording() async {
     if (_isTranscribing) return;
     setState(() {
       _isRecording = false;
       _isTranscribing = true;
     });
-    final String transcribed = await _transcribeRecording();
+    final String? transcribed = await _transcribeRecording();
     if (!mounted) return;
-    _controller.text = transcribed;
-    _controller.selection = TextSelection.fromPosition(
-      TextPosition(offset: _controller.text.length),
-    );
-    setState(() {
-      _isTranscribing = false;
-    });
+    if (transcribed != null && transcribed.trim().isNotEmpty) {
+      _controller.text = transcribed.trim();
+      _controller.selection = TextSelection.fromPosition(
+        TextPosition(offset: _controller.text.length),
+      );
+      setState(() {});
+      _focusNode.requestFocus();
+    }
+    if (mounted) {
+      setState(() {
+        _isTranscribing = false;
+      });
+    }
   }
 
-  /// 语音转文本（占位实现，后续替换真实接口）。
-  Future<String> _transcribeRecording() async {
-    // TODO: 接入真实转写接口
-    await Future<void>.delayed(const Duration(milliseconds: 1400));
-    return 'Need to confirm timeline with infra team';
+  /// 语音转文本：录音文件上传后调 `transcript`。
+  Future<String?> _transcribeRecording() async {
+    String? filePath = _recordPath;
+    if (filePath == null || filePath.isEmpty) {
+      MPToastUtils.showMessage('Invalid recording file.');
+      await _stopRecorder(deleteFile: true);
+      return null;
+    }
+    try {
+      if (_recorderOpened) {
+        filePath = await _recorder.stopRecorder() ?? filePath;
+        await _recorder.closeRecorder();
+        _recorderOpened = false;
+      }
+      await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    } catch (e) {
+      MPToastUtils.showMessage('Failed to stop recording: $e');
+      await _stopRecorder(deleteFile: true);
+      return null;
+    }
+
+    if (filePath.isEmpty) {
+      await _stopRecorder(deleteFile: true);
+      return null;
+    }
+    final File file = File(filePath);
+    if (!await file.exists()) {
+      MPToastUtils.showMessage('Recording file not found.');
+      await _stopRecorder(deleteFile: true);
+      return null;
+    }
+
+    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
+    if (recordUri == null || recordUri.isEmpty) {
+      MPToastUtils.showMessage('Failed to upload audio.');
+      await _stopRecorder(deleteFile: true);
+      return null;
+    }
+
+    final MPTranscriptResponse? transcriptResp = await transcript(
+      MPTranscriptRequest(audioUrl: recordUri),
+    );
+    await _stopRecorder(deleteFile: true);
+
+    if (transcriptResp == null || transcriptResp.baseResp.code != 0) {
+      final String msg = transcriptResp?.baseResp.message.isNotEmpty == true
+          ? transcriptResp!.baseResp.message
+          : 'Voice-to-text failed.';
+      MPToastUtils.showMessage(msg);
+      return null;
+    }
+
+    final String text = transcriptResp.content.trim();
+    if (text.isEmpty) {
+      MPToastUtils.showMessage('No speech recognized.');
+      return null;
+    }
+    return text;
   }
 
   @override
@@ -197,7 +344,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                     icon: Assets.omiClose,
                     bgColor: const Color(0xFFF2F2F7),
                     iconColor: mainTextColor,
-                    onTap: _cancelRecording,
+                    onTap: () => _cancelRecording(),
                   ),
                   const SizedBox(width: 8),
                   const Expanded(child: _RecordingWaveform()),
@@ -226,6 +373,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                       ),
                       child: TextField(
                         controller: _controller,
+                        focusNode: _focusNode,
                         autofocus: true,
                         textInputAction: TextInputAction.done,
                         onChanged: (_) => setState(() {}),
