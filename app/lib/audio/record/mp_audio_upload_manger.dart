@@ -114,7 +114,7 @@ class MPAudioUploadManager {
           .where((MPAudioLocalRecord r) => _isCompanionTxtFilePath(r.path))
           .toList();
 
-      final Map<String, File> stemToTxt = <String, File>{};
+      final Map<String, File> stemToTxt= <String, File>{};
       final Map<String, MPAudioLocalRecord> stemToTxtRecord = <String, MPAudioLocalRecord>{};
       for (final MPAudioLocalRecord tr in txtRecords) {
         final String stem = p.basenameWithoutExtension(tr.path);

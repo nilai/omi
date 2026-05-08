@@ -390,13 +390,17 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
   /// 连接或断开指定设备
   Future<void> toggleConnection(String id) async {
+    // 列表中可能出现相同 remoteId 的多行（例如扫描占位与已连接行并存），
+    // 须用「是否存在已连接行」判断断开，否则 firstWhereOrNull 会先命中未连接行并误判为去连接。
+    final bool anyConnectedWithId =
+        state.devices.any((MPConnectDeviceItem d) => d.id == id && d.isConnected);
     final MPConnectDeviceItem? target =
         state.devices.firstWhereOrNull((MPConnectDeviceItem d) => d.id == id);
     if (target == null) {
       return;
     }
 
-    if (target.isConnected) {
+    if (anyConnectedWithId) {
       await _disconnectActive();
       await MPBlePreferences.instance.clearLastConnectedBleDevice();
       emit(
@@ -463,7 +467,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
   }
 
-  /// 从 [_transport] 读取标准 BAS 电量并写回 [MPConnectDeviceItem.batteryPercent]。
+  /// 从 [_transport] 读取 MemoPin 自定义电量或标准 BAS，并写回 [MPConnectDeviceItem.batteryPercent]。
   Future<void> _refreshConnectedDeviceBattery(String remoteId) async {
     if (isClosed) {
       return;
@@ -476,7 +480,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       if (!await t.isConnected()) {
         return;
       }
-      final int? pct = await t.readStandardBatteryPercent();
+      final int? pct = await MPBluetoothConnectionHelper.readMemoPinBatteryPercent(t);
       if (pct == null || isClosed) {
         return;
       }
