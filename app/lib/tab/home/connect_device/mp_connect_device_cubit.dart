@@ -94,11 +94,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   /// 创建 Cubit；初始不扫描，列表为空，由 [initData] / [startScan] 驱动
   MPConnectDeviceCubit() : super(const MPConnectDeviceState(isScanning: false));
 
-  static const Duration _scanDuration = Duration(seconds: 10);
-
-  StreamSubscription<List<ScanResult>>? _scanSubscription;
   BleTransport? _transport;
   int _scanGeneration = 0;
+
+  /// 单轮扫描阶段时长；两阶段（UUID 过滤 + 全量）合计最长约 `2 *` 该值。
+  static const Duration _scanPhaseDuration = Duration(seconds: 5);
 
   /// 进入页面后：若有上次退出时停放的 BLE 会话则先恢复到列表，再首轮扫描。
   void initData() {
@@ -254,8 +254,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   /// 申请权限并开始扫描；结束后展示 MemoPin 类设备
   Future<void> startScan() async {
     final int generation = ++_scanGeneration;
-    _scanSubscription?.cancel();
-    _scanSubscription = null;
     await _stopScanSafe();
 
     final bool supported = await MPBluetoothConnectionHelper.isBleSupported;
@@ -331,23 +329,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       ),
     );
 
-    final List<ScanResult> buffer = <ScanResult>[];
-    _scanSubscription = MPBluetoothConnectionHelper.scanResultsStream.listen(
-      (List<ScanResult> list) {
-        buffer
-          ..clear()
-          ..addAll(list);
-      },
-    );
-
     try {
-      await MPBluetoothConnectionHelper.startScan(timeout: _scanDuration);
-      await Future<void>.delayed(_scanDuration);
+      final List<MPBleScanEntry> entries =
+          await MPBluetoothConnectionHelper.scanMemoPinLikeEntriesPhased(
+        perPhase: _scanPhaseDuration,
+        requirePermissionsAndAdapter: false,
+      );
       if (generation != _scanGeneration || isClosed) {
         return;
       }
-      final List<MPBleScanEntry> entries =
-          MPBluetoothConnectionHelper.entriesFromScanResults(List<ScanResult>.from(buffer));
       final List<MPConnectDeviceItem> next = entries.map((MPBleScanEntry e) {
         return MPConnectDeviceItem(
           id: e.remoteId,
@@ -393,9 +383,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         );
       }
     } finally {
-      await _scanSubscription?.cancel();
-      _scanSubscription = null;
-      // 必须无条件停止扫描：若仅按 generation 判断，在 close 递增代次后此处会跳过 stopScan，导致退出页面仍扫描。
+      // 必须无条件停止扫描：helper 内已 stopScan；此处兜底防止页面关闭时代次交错遗留扫描。
       await _stopScanSafe();
     }
   }
@@ -444,7 +432,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       final BluetoothDevice device = MPBluetoothConnectionHelper.bluetoothDeviceFromRemoteId(id);
       _transport = MPBluetoothConnectionHelper.createBleTransport(device);
       await _transport!.connect();
-      await Future<void>.delayed(const Duration(milliseconds: 200));
       MPBluetoothConnectionHelper.parkBackgroundBleTransport(_transport);
       MPHomeNotification.notifyBleConnectedSuccess();
       await MPBlePreferences.instance.setLastConnectedBleDevice(
@@ -539,8 +526,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   @override
   Future<void> close() async {
     _scanGeneration++;
-    await _scanSubscription?.cancel();
-    _scanSubscription = null;
     await _stopScanSafe();
     // 仍在连接态时退出页面：不断开 BLE，仅将 BleTransport 存为背景会话。
     if (_transport != null) {

@@ -270,15 +270,14 @@ class MPAudioImportUtils {
     }
   }
 
-  /// 将设备导出字节写入沙盒音频目录（路径规则与 [_syncAudioToSandbox] 一致）。
+  /// 将设备导出字节写入沙盒音频目录（路径规则与 [_syncAudioToSandbox] 不一致，不用生成安全文件名，使用设备端文件名）。
   static Future<String?> writeExportBytesToSandbox({required List<int> bytes, required String originalFileName}) async {
     try {
       if (bytes.isEmpty) {
         return null;
       }
       final Directory dir = await _getPersistentAudioDirectory();
-      final String safeFileName = _generateSafeFileName(originalFileName);
-      final String targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final String targetPath = '${dir.path}/$originalFileName';
       final File targetFile = File(targetPath);
       await targetFile.writeAsBytes(bytes, flush: true);
       return targetFile.path;

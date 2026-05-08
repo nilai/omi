@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
@@ -9,6 +10,7 @@ import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
 import 'mp_ble_preferences.dart';
+import 'mp_ble_scan_uuids.dart';
 import 'mp_note_ble_gatt_client.dart';
 import 'mp_note_ble_protocol.dart';
 import 'note_device.dart';
@@ -153,15 +155,13 @@ class MPBluetoothConnectionHelper {
       return false;
     }
 
-    // 短扫 MemoPin 类设备（discoverMemoPinLikeDevices 内会等待适配器上电），再按记录的 remoteId 直接建链。
-    await discoverMemoPinLikeDevices(duration: const Duration(seconds: 100));
+    // 两阶段短扫（带 Service UUID → 全量），再按记录的 remoteId 直接建链。
+    await discoverMemoPinLikeDevices(perPhase: const Duration(seconds: 5));
 
     final BluetoothDevice device = bluetoothDeviceFromRemoteId(r.remoteId);
     final BleTransport transport = createBleTransport(device);
     try {
       await transport.connect();
-      // 与 Note 传输层一致：GATT 就绪前短暂稳定，减少首包读写失败。
-      await Future<void>.delayed(const Duration(milliseconds: 200));
       parkBackgroundBleTransport(transport);
       MPHomeNotification.notifyBleConnectedSuccess();
       return true;
@@ -274,22 +274,61 @@ class MPBluetoothConnectionHelper {
     return (((clamped - minRssi) / (maxRssi - minRssi)) * 100).round();
   }
 
-  /// 是否视为本项目目标硬件（MemoPin / AI_NOTE / AI_PEN 等命名或广播特征）。
+  /// 与 `lib/blu/ble/bt_device.dart` 中 [BtDevice.isAiNoteDevice] 等价（MemoPin 额外接受名称含 MEMOPIN）。
   ///
-  /// 若后续固件固定 Service UUID，可在此集中补充判断。
+  /// 优先级：广播 Service UUID → 名称前缀（AI_PIN / AI_CARD / AI_PEN / AI_NOTE / AI_MIC / NOTE / TX_NOTE …）。
+  /// 若固件仅广播 **新** Service UUID，须在 [MPBleScanFilterUuids.additionalMemoPinAdvertisementServices] 中登记。
   static bool isMemoPinLikeScanResult(ScanResult result) {
-    final String name = result.device.platformName.trim();
+    if (MPBleScanFilterUuids.matchesMemoPinAdvertisedService(
+          result.advertisementData.serviceUuids,
+        )) {
+      return true;
+    }
+    // 与 ble 侧 `uuid.toString().toLowerCase() == aiNoteServiceUuid` 一致。
+    final String aiNote = MPBleScanFilterUuids.aiNoteService.toLowerCase();
+    final bool hasAiNoteUuid = result.advertisementData.serviceUuids.any(
+      (Guid uuid) => uuid.toString().toLowerCase() == aiNote,
+    );
+    if (hasAiNoteUuid) {
+      return true;
+    }
+    return _isAiNoteLikeDeviceName(result.device.platformName);
+  }
+
+  /// 对应 ble `BtDevice.isAiNoteDevice` 的名称分支；含 MemoPin 展示名。
+  static bool _isAiNoteLikeDeviceName(String platformName) {
+    final String name = platformName.trim().toUpperCase();
     if (name.isEmpty) {
       return false;
     }
-    final String upper = name.toUpperCase();
-    if (upper.contains('MEMOPIN')) {
+    if (name.contains('MEMOPIN')) {
       return true;
     }
-    if (upper.startsWith('AI_NOTE') || upper.startsWith('AI_PEN')) {
+    return name.startsWith('AI_PIN') ||
+        name.startsWith('AI_CARD') ||
+        name.startsWith('AI_PEN') ||
+        name.startsWith('AI_NOTE') ||
+        name.startsWith('AI_MIC') ||
+        name.startsWith('NOTE') ||
+        name.startsWith('TX_NOTE');
+  }
+
+  /// 与 `lib/blu/ble/bluetooth_discoverer.dart` 一致：等到适配器 [BluetoothAdapterState.on] 再扫。
+  static Future<bool> _waitAdapterOnForDiscovery({
+    Duration timeout = const Duration(seconds: 30),
+  }) async {
+    if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on) {
       return true;
     }
-    return false;
+    try {
+      await BluetoothAdapter.adapterState
+          .where((BluetoothAdapterState s) => s == BluetoothAdapterState.on)
+          .first
+          .timeout(timeout);
+      return true;
+    } on TimeoutException {
+      return FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on;
+    }
   }
 
   /// 从当前 [results] 去重并筛选 [isMemoPinLikeScanResult]，按 RSSI 降序。
@@ -325,33 +364,96 @@ class MPBluetoothConnectionHelper {
   /// 通过远程 ID 获取 [BluetoothDevice]。
   static BluetoothDevice bluetoothDeviceFromRemoteId(String remoteId) => BluetoothDevice.fromId(remoteId);
 
-  /// 在 [duration] 内扫描并返回 MemoPin 类设备列表（已按信号排序）。
+  /// 在至多 **两段** [perPhase] 扫描内返回 MemoPin / aiNote 类设备（已按信号排序）。
   ///
-  /// 内部会 [ensureBlePermissions]，并等待适配器处于 [BluetoothAdapterState.on]。
+  /// 流程对齐 `lib/blu/ble/bluetooth_discoverer.dart`：适配器 ON → 首轮 `withServices`（仅 [MPBleScanFilterUuids]）→
+  /// 若筛选后列表为空再第二轮 **无** UUID 过滤；第二轮开始前清空缓冲（与 ble 的 `bleResults.clear()` 一致）。
+  /// 内部会 [ensureBlePermissions]（当 [requirePermissionsAndAdapter] 为真）。
+  ///
+  /// 总耗时：首轮有结果约 `perPhase`，否则约 `2 * perPhase`。
   static Future<List<MPBleScanEntry>> discoverMemoPinLikeDevices({
-    Duration duration = const Duration(seconds: 5),
+    Duration perPhase = const Duration(seconds: 5),
   }) async {
-    final bool ok =
-        await OmiPermissionService.requestBlePermissionsForScanAndConnect();
-    if (!ok) {
-      await _notifyBlePermissionDenied();
+    return scanMemoPinLikeEntriesPhased(
+      perPhase: perPhase,
+      requirePermissionsAndAdapter: true,
+    );
+  }
+
+  /// 与 `BluetoothDeviceDiscoverer.discover` 两阶段策略一致；设备筛选规则见 [isMemoPinLikeScanResult]（对齐 [BtDevice.isAiNoteDevice]）。
+  ///
+  /// [requirePermissionsAndAdapter] 为 `false` 时由调用方保证已授权，此处仍 [_waitAdapterOnForDiscovery]。
+  static Future<List<MPBleScanEntry>> scanMemoPinLikeEntriesPhased({
+    Duration perPhase = const Duration(seconds: 5),
+    bool requirePermissionsAndAdapter = true,
+  }) async {
+    if (requirePermissionsAndAdapter) {
+      final bool ok =
+          await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+      if (!ok) {
+        await _notifyBlePermissionDenied();
+        return <MPBleScanEntry>[];
+      }
+    }
+
+    final bool adapterOn = await _waitAdapterOnForDiscovery();
+    if (!adapterOn) {
+      debugPrint('[MPBluetoothConnectionHelper] adapter not on, skip scan');
       return <MPBleScanEntry>[];
     }
-    final bool on = await waitForAdapterOn(timeout: const Duration(seconds: 15));
-    if (!on) {
-      return <MPBleScanEntry>[];
-    }
-    final List<ScanResult> buffer = <ScanResult>[];
+
+    final Map<String, ScanResult> bestById = <String, ScanResult>{};
     late final StreamSubscription<List<ScanResult>> sub;
-    sub = BluetoothAdapter.scanResults.listen((List<ScanResult> list) {
-      buffer
-        ..clear()
-        ..addAll(list);
-    });
+    // 与 ble 订阅方式一致；不按空名称丢弃，避免仅 UUID 广播、无 local name 的设备被漏掉。
+    sub = BluetoothAdapter.scanResults.listen(
+      (List<ScanResult> list) {
+        for (final ScanResult r in list) {
+          final String id = r.device.remoteId.str;
+          final ScanResult? prev = bestById[id];
+          if (prev == null || r.rssi > prev.rssi) {
+            bestById[id] = r;
+          }
+        }
+      },
+      onError: (Object e) {
+        debugPrint('[MPBluetoothConnectionHelper] scanResults error: $e');
+      },
+    );
+
+    List<MPBleScanEntry> finishFromBuffer() {
+      return entriesFromScanResults(bestById.values.toList());
+    }
+
     try {
-      await BluetoothAdapter.startScan(timeout: duration);
-      await Future<void>.delayed(duration);
-      return entriesFromScanResults(List<ScanResult>.from(buffer));
+      debugPrint(
+        '[MPBluetoothConnectionHelper] 第1次扫描: withServices=${MPBleScanFilterUuids.scanFilterGuids.length} UUIDs, '
+        'timeout=${perPhase.inSeconds}s',
+      );
+      await BluetoothAdapter.startScan(
+        timeout: perPhase,
+        withServices: MPBleScanFilterUuids.scanFilterGuids,
+      );
+      await Future<void>.delayed(perPhase);
+
+      List<MPBleScanEntry> entries = finishFromBuffer();
+      debugPrint('[MPBluetoothConnectionHelper] 第1次筛选后: ${entries.length} 个设备');
+
+      // 与 ble：首轮有支持设备则不再开第二轮。
+      if (entries.isNotEmpty) {
+        return entries;
+      }
+
+      bestById.clear();
+      if (BluetoothAdapter.isScanningNow) {
+        await BluetoothAdapter.stopScan();
+      }
+
+      debugPrint('[MPBluetoothConnectionHelper] 第2次扫描: 无 UUID 过滤');
+      await BluetoothAdapter.startScan(timeout: perPhase);
+      await Future<void>.delayed(perPhase);
+      entries = finishFromBuffer();
+      debugPrint('[MPBluetoothConnectionHelper] 第2次筛选后: ${entries.length} 个设备');
+      return entries;
     } finally {
       await sub.cancel();
       if (BluetoothAdapter.isScanningNow) {

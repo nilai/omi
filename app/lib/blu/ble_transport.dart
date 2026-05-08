@@ -77,6 +77,9 @@ class BleTransport extends DeviceTransport {
       // Discover services
       _services = await _bleDevice.discoverServices();
 
+      // 与 `note_ble_transport` 中连接稳定等待一致，减轻首帧 GATT 命令与导入失败。
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+
       _updateState(DeviceTransportState.connected);
     } catch (e) {
       _updateState(DeviceTransportState.disconnected);

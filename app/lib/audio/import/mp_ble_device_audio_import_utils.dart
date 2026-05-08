@@ -60,7 +60,7 @@ class MPBleDeviceAudioImportUtils {
 
       MPToastUtils.showMessage('Starting sync from device...');
       final int total = files.length;
-      final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
+      // final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
       // bool announcedRemovingFromDevice = false;
 
       for (int i = 0; i < total; i++) {
@@ -109,6 +109,7 @@ class MPBleDeviceAudioImportUtils {
               createAt: createAtSec,
               duration: durationSec,
               source: _kSourceMemoPin,
+              isRemoved: false,
             ),
           );
 
@@ -127,35 +128,14 @@ class MPBleDeviceAudioImportUtils {
           }
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          synced.add(_MPBleSyncedSandboxEntry(sandboxPath: path, durationSec: durationSec, createAtSec: createAtSec));
+          // synced.add(_MPBleSyncedSandboxEntry(sandboxPath: path, durationSec: durationSec, createAtSec: createAtSec));
         } finally {
           await client.dispose();
         }
       }
 
-      if (synced.isEmpty) {
-        MPToastUtils.showMessage('No files were synced.');
-        return;
-      }
-
       MPToastUtils.showMessage('Uploading recordings...');
-      for (int u = 0; u < synced.length; u++) {
-        if (!await transport.isConnected()) {
-          MPToastUtils.showMessage('Bluetooth disconnected during upload.');
-          break;
-        }
-
-        final _MPBleSyncedSandboxEntry e = synced[u];
-        MPToastUtils.showMessage('Uploading file ${u + 1}/${synced.length}...');
-
-        final File f = File(e.sandboxPath);
-        if (!await f.exists()) {
-          MPToastUtils.showMessage('Local file missing, skipped upload.');
-          continue;
-        }
-
-        await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
-      }
+      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     } catch (e, st) {
       debugPrint('MPBleDeviceAudioImportUtils: $e\n$st');
       MPToastUtils.showMessage('Device import failed: $e');

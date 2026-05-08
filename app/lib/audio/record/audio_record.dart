@@ -14,10 +14,11 @@ Map<String, String> audioMimeTypes = {
   '.wav': 'audio/wav',
   '.mp3': 'audio/mpeg',
   '.aac': 'audio/aac',
+  '.opus': 'audio/opus',
 };
 
 /// 支持的音频文件扩展名列表
-List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac'];
+List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac', 'opus'];
 
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {

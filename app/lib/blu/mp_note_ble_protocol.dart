@@ -1,12 +1,15 @@
-/// MemoPin / AI_NOTE 设备 BLE 协议常量（与 `ble/note_commands.dart` 对齐，供 `BleTransport` GATT 访问使用）。
 library;
+
+import 'mp_ble_scan_uuids.dart';
+
+/// MemoPin / AI_NOTE 设备 BLE 协议常量（与 `ble/note_commands.dart` 对齐，供 `BleTransport` GATT 访问使用）。
 
 /// Note 服务与特征 UUID（128-bit 字符串，与 `flutter_blue_plus` 的 `str128` 比较一致）。
 abstract class MPNoteBleUUIDs {
   static const String uuidPrefix = 'e2c1a30';
 
-  /// 主服务
-  static const String service = '$uuidPrefix' '0-7f4b-5e9d-bc23-1a2f3e4d5c6b';
+  /// 主服务（与 [MPBleScanFilterUuids.aiNoteService] 同源，便于扫描与 GATT 对齐）。
+  static const String service = MPBleScanFilterUuids.aiNoteService;
 
   /// 音频实时数据（设备→APP）
   static const String audioData = '$uuidPrefix' '1-7f4b-5e9d-bc23-1a2f3e4d5c6b';

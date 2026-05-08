@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
+
 import 'ble_transport.dart';
 import 'mp_note_ble_protocol.dart';
 import 'note_device.dart';
@@ -337,6 +339,7 @@ class MPNoteBleGattClient {
       final List<int> fileNameBytes =
           response.sublist(offset + 4, offset + 4 + nameLength);
       final String name = utf8.decode(fileNameBytes);
+      debugPrint('--->> fileName: $name, duration: $duration');
       if (name.isNotEmpty && name.length >= 15 && name.contains('_')) {
         files.add(
           NoteFileInfo(
