@@ -193,7 +193,7 @@ class _OmiMemoDetailView extends StatelessWidget {
                 type: MPTristateType.error,
                 data: MPTristatePageData(
                   title: 'Unable to load memo detail',
-                  description: state.errorMessage ?? 'Please try again later.',
+                  description: 'Please try again later.',
                   onButtonPressed: () {
                     context.read<OmiMemoryDetailCubit>().retry();
                   },
