@@ -14,11 +14,14 @@ import 'utils/platform/platform_manager.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   FlutterForegroundTask.initCommunicationPort();
+  // 必须先初始化 SharedPreferences，[MPUser.userId] 才能读到正确值；
+  // 否则 [OmiServerCache] 会用空 userId 打开错误的 Hive box，且只 initialize 一次，
+  // 内存里的 _store 永远是错的，[OmiCacheManager.getMemoryFirstPage] 等读缓存会失效。
+  await MPPreferences.init();
   await OmiServerCache().initialize();
   Env.init();
   PlatformManager.initializeServices();
   await MPUuidUtil.instance.uuid;
-  await MPPreferences.init();
   if (ApiTools.hasAccessToken()) {
     await MPAppSessionBootstrap.run(fromLoginSuccess: false);
   }

@@ -310,7 +310,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})?
   _loadCachedDetailBundleIfAllowed() {
-    if (!_isInCachedFirstPage()) return null;
     final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
     if (cached is! Map) return null;
     try {
@@ -345,9 +344,8 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) bundle =
           _mapDetailResponse(resp.memoryDetail);
-      if (_isInCachedFirstPage()) {
-        OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
-      }
+      // 详情数据落盘：用于 App 冷启动（杀进程后）快速回显。
+      OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
       _feedCursor = bundle.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -1363,7 +1361,7 @@ _mpMemoryStructToDetailBundleFromSources(
               (MPTodoStruct t) => MPMemoryActionItemData(
                 id: t.id,
                 title: t.title,
-                status: t.status == 1 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
+                status: (t.preCreateStatus ?? 0) == 0 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
                 priority: t.priority,
                 deadline: t.deadline,
               ),

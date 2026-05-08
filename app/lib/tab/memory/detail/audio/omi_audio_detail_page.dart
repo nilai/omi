@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
+import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -133,22 +134,16 @@ class _OmiAudioDetailView extends StatelessWidget {
         builder: (BuildContext context, MPAudioDetailState state) {
           switch (state.phase) {
             case MPAudioDetailPhase.loading:
-              return const Center(
-                child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              );
+              return const MPTristatePage(type: MPTristateType.loading);
             case MPAudioDetailPhase.error:
-              return Center(
-                child: Text(
-                  state.errorMessage ?? 'Couldn\'t load.',
-                  style: OmiTextStyle.create(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: secondTextColor,
-                  ),
+              return MPTristatePage(
+                type: MPTristateType.error,
+                data: MPTristatePageData(
+                  title: 'Load failed',
+                  description: 'Please try again',
+                  onButtonPressed: () {
+                    context.read<MPAudioDetailCubit>().load();
+                  },
                 ),
               );
             case MPAudioDetailPhase.loaded:
