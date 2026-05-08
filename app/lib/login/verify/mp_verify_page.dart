@@ -169,7 +169,7 @@ class _MPVerifyBodyState extends State<_MPVerifyBody> {
                     letterSpacing: 8,
                   ),
                   decoration: InputDecoration(
-                    hintText: 'Enter 4-digit code',
+                    hintText: 'Enter 6-digit code',
                     hintStyle: TextStyle(
                       color: secondTextColor,
                       fontSize: OmiFontSize.t8_17,
