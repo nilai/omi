@@ -61,7 +61,12 @@ class _OmiMemoDetailView extends StatelessWidget {
   Widget build(BuildContext context) {
     return MPDetailVisibilityRefresh(
       onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
-      child: Scaffold(
+      child: BlocBuilder<OmiMemoryDetailCubit, OmiMemoryDetailState>(
+        builder: (BuildContext context, OmiMemoryDetailState pageState) {
+          final bool hideBottomBar =
+              pageState.phase == OmiMemoryDetailPhase.loaded &&
+                  pageState.isSummaryGenerating;
+          return Scaffold(
       backgroundColor: pageColor,
       appBar: PreferredSize(
         preferredSize: MPCustomNavBar.preferredSizeOf(context),
@@ -183,8 +188,9 @@ class _OmiMemoDetailView extends StatelessWidget {
           ],
         ),
       ),
-      body: BlocBuilder<OmiMemoryDetailCubit, OmiMemoryDetailState>(
-        builder: (BuildContext context, OmiMemoryDetailState state) {
+      body: Builder(
+        builder: (BuildContext context) {
+          final OmiMemoryDetailState state = pageState;
           switch (state.phase) {
             case OmiMemoryDetailPhase.loading:
               return const MPTristatePage(type: MPTristateType.loading);
@@ -244,7 +250,9 @@ class _OmiMemoDetailView extends StatelessWidget {
           }
         },
       ),
-      bottomNavigationBar: MPMemoryDetailBottomBar(
+      bottomNavigationBar: hideBottomBar
+          ? null
+          : MPMemoryDetailBottomBar(
         onAddTodo: () async {
           final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
             context,
@@ -309,7 +317,9 @@ class _OmiMemoDetailView extends StatelessWidget {
           );
         },
       ),
-    ),
+          );
+        },
+      ),
     );
   }
 }

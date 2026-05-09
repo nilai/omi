@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
+import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
@@ -116,6 +117,12 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   /// 决定 [getMemoryDetail] 结果如何映射为 [MPMemoryDetailCardData]。
   final OmiMemoryDetailSource detailSource;
+
+  /// 详情磁盘缓存分区键，与 [OmiCacheKeys.memoryDetail] 一致。
+  String get _memoryDetailCacheKind => switch (detailSource) {
+        OmiMemoryDetailSource.memoryFeedSummary => OmiCacheKeys.memoryDetailKindMemoryFeedSummary,
+        OmiMemoryDetailSource.rootSummaryMemory => OmiCacheKeys.memoryDetailKindRootSummaryMemory,
+      };
 
   String _feedCursor = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -310,7 +317,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})?
   _loadCachedDetailBundleIfAllowed() {
-    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
+    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId, _memoryDetailCacheKind);
     if (cached is! Map) return null;
     try {
       final MPMemoryStruct m = MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
@@ -345,7 +352,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) bundle =
           _mapDetailResponse(resp.memoryDetail);
       // 详情数据落盘：用于 App 冷启动（杀进程后）快速回显。
-      OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
+      OmiCacheManager().putMemoryDetail(memoryId, _memoryDetailCacheKind, resp.memoryDetail.toJson());
       _feedCursor = bundle.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -791,7 +798,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) bundle =
           _mapDetailResponse(resp.memoryDetail);
       if (_isInCachedFirstPage()) {
-        OmiCacheManager().putMemoryDetail(memoryId, resp.memoryDetail.toJson());
+        OmiCacheManager().putMemoryDetail(memoryId, _memoryDetailCacheKind, resp.memoryDetail.toJson());
       }
       _feedCursor = bundle.feedCursor;
       emit(

@@ -16,13 +16,15 @@ class OmiCacheManager {
   /// 读取 Memory 第一页数据
   dynamic getMemoryFirstPage() => OmiServerCache().getDecoded(OmiCacheKeys.memoryFirstPage);
 
-  /// 缓存详情（按 [memoryId]；仅“列表第一页”的详情允许写入）
-  void putMemoryDetail(String memoryId, Object? value) =>
-      OmiServerCache().putJson(OmiCacheKeys.memoryDetail(memoryId), value);
+  /// 缓存详情（按 [memoryId] + [detailKind]；仅“列表第一页”的详情允许写入）
+  ///
+  /// [detailKind] 使用 [OmiCacheKeys.memoryDetailKindMemoryFeedSummary] 等常量。
+  void putMemoryDetail(String memoryId, String detailKind, Object? value) =>
+      OmiServerCache().putJson(OmiCacheKeys.memoryDetail(memoryId, detailKind), value);
 
-  /// 读取详情（按 [memoryId]；仅当该 id 属于“列表第一页”时调用方才应使用）
-  dynamic getMemoryDetail(String memoryId) =>
-      OmiServerCache().getDecoded(OmiCacheKeys.memoryDetail(memoryId));
+  /// 读取详情（按 [memoryId] + [detailKind]；仅当该 id 属于“列表第一页”时调用方才应使用）
+  dynamic getMemoryDetail(String memoryId, String detailKind) =>
+      OmiServerCache().getDecoded(OmiCacheKeys.memoryDetail(memoryId, detailKind));
 
   /// 缓存首页详情（按 [id]）
   void putHomeDetail(String id, Object? value) => OmiServerCache().putJson(OmiCacheKeys.homeDetail(id), value);

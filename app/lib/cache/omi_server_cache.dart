@@ -15,13 +15,23 @@ class OmiCacheKeys {
   /// Memory 列表第一页
   static const String memoryFirstPage = 'mp_srv_memory_first_page';
 
-  /// 详情缓存键前缀（完整 key = 前缀 + memoryId）
+  /// 详情缓存键前缀（完整 key = 前缀 + [detailKind] + '_' + [memoryId]）
   ///
   /// 注意：仅用于“列表第一页”的详情缓存场景；第二页及以后不做详情缓存。
   static const String _memoryDetailPrefix = 'mp_srv_memory_detail_';
 
-  /// 详情缓存键（按 [memoryId]）
-  static String memoryDetail(String memoryId) => '$_memoryDetailPrefix$memoryId';
+  /// [OmiMemoryDetailSource.memoryFeedSummary]：Feed 内 summary 映射的 Memory 详情。
+  static const String memoryDetailKindMemoryFeedSummary = 'memoryFeedSummary';
+
+  /// [OmiMemoryDetailSource.rootSummaryMemory]：根级 summary（Memo 详情等）。
+  static const String memoryDetailKindRootSummaryMemory = 'rootSummaryMemory';
+
+  /// [MPAudioDetailCubit]：仅录音（only_record）详情。
+  static const String memoryDetailKindOnlyRecord = 'onlyRecord';
+
+  /// 详情缓存键（按 [memoryId] + [detailKind]，同 id 不同入口分区存储）
+  static String memoryDetail(String memoryId, String detailKind) =>
+      '$_memoryDetailPrefix${detailKind}_$memoryId';
 
   /// 首页点击进入的详情缓存键前缀（完整 key = 前缀 + id）
   static const String _homeDetailPrefix = 'mp_srv_home_detail';

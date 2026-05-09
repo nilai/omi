@@ -9,6 +9,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
+import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:path/path.dart' as p;
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -16,6 +17,7 @@ import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 
+import '../../../../main.dart';
 import '../memory/card/mp_memory_generate_summary_sheet.dart';
 
 enum MPAudioDetailPhase { loading, error, loaded }
@@ -337,7 +339,10 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
 
   MPAudioDetailData? _loadCachedAudioDetailIfAllowed() {
     if (!_isInCachedFirstPage()) return null;
-    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId);
+    final dynamic cached = OmiCacheManager().getMemoryDetail(
+      memoryId,
+      OmiCacheKeys.memoryDetailKindOnlyRecord,
+    );
     if (cached is! Map) return null;
     try {
       final MPMemoryStruct m =
@@ -385,7 +390,11 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         throw StateError('only_record_content is empty');
       }
       if (_isInCachedFirstPage()) {
-        OmiCacheManager().putMemoryDetail(memoryId, m.toJson());
+        OmiCacheManager().putMemoryDetail(
+          memoryId,
+          OmiCacheKeys.memoryDetailKindOnlyRecord,
+          m.toJson(),
+        );
       }
       final MPAudioDetailData data = _mapOnlyRecordToAudioData(m, only);
       if (isClosed) {
@@ -479,10 +488,14 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       MPMemoryNotification.notifyMemoryListRefresh();
       final bool completed = await _pollSummaryUntilComplete();
       if (isClosed) return;
-      emit(state.copyWith(isSummaryGenerating: false));
       if (completed) {
-        await load();
+        final NavigatorState? nav = MyApp.navigatorKey.currentState;
+        if (nav != null && nav.canPop()) {
+          nav.pop();
+        }
+        return;
       }
+      emit(state.copyWith(isSummaryGenerating: false));
     } catch (_) {
       if (!isClosed) {
         emit(state.copyWith(isSummaryGenerating: false));
