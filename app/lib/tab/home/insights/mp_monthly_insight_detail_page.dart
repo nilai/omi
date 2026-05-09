@@ -895,7 +895,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                           onPressed: () async {
                             final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
                               context,
-                              params: MPAddTodoPopupParams(initialTitle: f.text),
+                              params: MPAddTodoPopupParams(initialTitle: f.text, contextMemoryLabel: 'From Monthly Insight:'),
                             );
                             if (!mounted) {
                               return;
