@@ -40,7 +40,7 @@ class MPBleDeviceAudioImportUtils {
     return Duration(seconds: capped);
   }
 
-  /// 对 [transport] 执行完整导入流水线（内含各阶段 Toast）。
+  /// 对 [transport] 执行完整导入流水线（进度类信息走 [debugPrint]，关键结果仍 Toast）。
   static Future<void> syncUploadAndDeleteDeviceFiles({
     required BleTransport transport,
     required MPBleDeviceImportCopyProgress onSyncProgress,
@@ -51,14 +51,14 @@ class MPBleDeviceAudioImportUtils {
         return;
       }
 
-      MPToastUtils.showMessage('Fetching file list from device...');
+      debugPrint('MPBleDeviceAudioImportUtils: fetching file list from device...');
       final List<NoteFileInfo> files = await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
       if (files.isEmpty) {
         MPToastUtils.showMessage('No files on the device.');
         return;
       }
 
-      MPToastUtils.showMessage('Starting sync from device...');
+      debugPrint('MPBleDeviceAudioImportUtils: starting sync from device...');
       final int total = files.length;
       // final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
       // bool announcedRemovingFromDevice = false;
@@ -70,7 +70,7 @@ class MPBleDeviceAudioImportUtils {
         }
 
         final NoteFileInfo fi = files[i];
-        MPToastUtils.showMessage('Syncing file ${i + 1}/$total...');
+        debugPrint('MPBleDeviceAudioImportUtils: syncing file ${i + 1}/$total...');
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
 
         final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
@@ -124,7 +124,9 @@ class MPBleDeviceAudioImportUtils {
             //   MPToastUtils.showMessage('Could not delete on device: ${fi.name}');
             // }
           } else {
-            MPToastUtils.showMessage('Bluetooth disconnected; skipped device delete for ${fi.name}.');
+            debugPrint(
+              'MPBleDeviceAudioImportUtils: Bluetooth disconnected; skipped device delete for ${fi.name}.',
+            );
           }
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
@@ -134,7 +136,7 @@ class MPBleDeviceAudioImportUtils {
         }
       }
 
-      MPToastUtils.showMessage('Uploading recordings...');
+      debugPrint('MPBleDeviceAudioImportUtils: uploading recordings...');
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     } catch (e, st) {
       debugPrint('MPBleDeviceAudioImportUtils: $e\n$st');
