@@ -10,7 +10,6 @@ import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path/path.dart' as p;
 
 /// 单条文件上传进度（0–100，对应当前第 [batchIndex] 条）；由 **调用方页面** 更新进度条，不在本类内做 UI 模拟。
@@ -103,7 +102,7 @@ class MPAudioUploadManager {
           .toList();
 
       if (audioRecords.isEmpty) {
-        MPToastUtils.showMessage('No local recordings to upload.');
+        debugPrint('MPAudioUploadManager: no local recordings to upload.');
         return null;
       }
       audioRecords.sort(
@@ -181,7 +180,7 @@ class MPAudioUploadManager {
 
         final String? audioUri = await uploadService.uploadMPAudio(f, onProgress: (int current, int total) {});
         if (audioUri == null || audioUri.isEmpty) {
-          MPToastUtils.showMessage('Failed to upload audio.');
+          debugPrint('MPAudioUploadManager: failed to upload audio.');
           _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
@@ -205,7 +204,7 @@ class MPAudioUploadManager {
           ),
         );
         if (created == null || created.baseResp.code != 0) {
-          MPToastUtils.showMessage(created?.baseResp.message ?? 'Failed to create record.');
+          debugPrint('MPAudioUploadManager: failed to create record.');
           _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
           continue;
         }
@@ -222,7 +221,7 @@ class MPAudioUploadManager {
             ),
           );
           if (summary == null || summary.baseResp.code != 0) {
-            MPToastUtils.showMessage(summary?.baseResp.message ?? 'Transcription failed.');
+            debugPrint('MPAudioUploadManager: transcription failed.');
             continue;
           }
           MPMemoryNotification.notifyMemoryListRefresh();
@@ -253,7 +252,7 @@ class MPAudioUploadManager {
 
       return lastCreated;
     } catch (e) {
-      MPToastUtils.showMessage('Upload failed: $e');
+      debugPrint('MPAudioUploadManager: upload failed: $e');
       return null;
     }
   }

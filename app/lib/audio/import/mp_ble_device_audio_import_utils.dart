@@ -8,21 +8,12 @@ import '../../blu/ble_transport.dart';
 import '../../blu/mp_bluetooth_connection_helper.dart';
 import '../../blu/mp_note_ble_gatt_client.dart';
 import '../../blu/note_device.dart';
-import '../../utils/mp_toast_utils.dart';
 import '../record/mp_audio_upload_manger.dart';
 import 'mp_audio_import_utils.dart';
 
 /// BLE 设备导出时的复制进度（当前文件序号、总数、0–100）。
 typedef MPBleDeviceImportCopyProgress =
     void Function({required int fileIndex, required int fileTotal, required int progressPercent});
-
-class _MPBleSyncedSandboxEntry {
-  const _MPBleSyncedSandboxEntry({required this.sandboxPath, required this.durationSec, required this.createAtSec});
-
-  final String sandboxPath;
-  final int durationSec;
-  final int createAtSec;
-}
 
 /// MemoPin 设备录音：拉列表 → BLE 导出至沙盒并登记 → 随即删设备端文件 → 逐条上传。
 class MPBleDeviceAudioImportUtils {
@@ -40,44 +31,42 @@ class MPBleDeviceAudioImportUtils {
     return Duration(seconds: capped);
   }
 
-  /// 对 [transport] 执行完整导入流水线（内含各阶段 Toast）。
+  /// 对 [transport] 执行完整导入流水线（进度类信息走 [debugPrint]）。
   static Future<void> syncUploadAndDeleteDeviceFiles({
     required BleTransport transport,
     required MPBleDeviceImportCopyProgress onSyncProgress,
   }) async {
     try {
       if (!await transport.isConnected()) {
-        MPToastUtils.showMessage('Bluetooth is not connected.');
+        debugPrint('MPBleDeviceAudioImportUtils: Bluetooth is not connected.');
         return;
       }
 
-      MPToastUtils.showMessage('Fetching file list from device...');
+      debugPrint('MPBleDeviceAudioImportUtils: fetching file list from device...');
       final List<NoteFileInfo> files = await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
       if (files.isEmpty) {
-        MPToastUtils.showMessage('No files on the device.');
+        debugPrint('MPBleDeviceAudioImportUtils: no files on the device.');
         return;
       }
 
-      MPToastUtils.showMessage('Starting sync from device...');
+      debugPrint('MPBleDeviceAudioImportUtils: starting sync from device...');
       final int total = files.length;
-      // final List<_MPBleSyncedSandboxEntry> synced = <_MPBleSyncedSandboxEntry>[];
-      // bool announcedRemovingFromDevice = false;
 
       for (int i = 0; i < total; i++) {
         if (!await transport.isConnected()) {
-          MPToastUtils.showMessage('Bluetooth disconnected during sync.');
+          debugPrint('MPBleDeviceAudioImportUtils: Bluetooth disconnected during sync.');
           break;
         }
 
         final NoteFileInfo fi = files[i];
-        MPToastUtils.showMessage('Syncing file ${i + 1}/$total...');
+        debugPrint('MPBleDeviceAudioImportUtils: syncing file ${i + 1}/$total...');
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
 
         final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
         try {
           final List<int>? bytes = await _collectExportPayloads(client: client, fileName: fi.name, info: fi);
           if (bytes == null || bytes.isEmpty) {
-            MPToastUtils.showMessage('Failed to sync: ${fi.name}');
+            debugPrint('MPBleDeviceAudioImportUtils: failed to sync: ${fi.name}');
             onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
             continue;
           }
@@ -89,7 +78,7 @@ class MPBleDeviceAudioImportUtils {
             originalFileName: fi.name,
           );
           if (path == null) {
-            MPToastUtils.showMessage('Failed to save file: ${fi.name}');
+            debugPrint('MPBleDeviceAudioImportUtils: failed to save file: ${fi.name}');
             onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
             continue;
           }
@@ -114,31 +103,29 @@ class MPBleDeviceAudioImportUtils {
           );
 
           if (await transport.isConnected()) {
-            // if (!announcedRemovingFromDevice) {
-            //   MPToastUtils.showMessage('Removing synced files from device...');
-            //   announcedRemovingFromDevice = true;
-            // }
-            // final bool deleted =
-            //     await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, fi.name);
-            // if (!deleted) {
-            //   MPToastUtils.showMessage('Could not delete on device: ${fi.name}');
-            // }
+            final bool deleted =
+                await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, fi.name);
+            if (!deleted) {
+              debugPrint('MPBleDeviceAudioImportUtils: could not delete on device: ${fi.name}');
+            }else {
+              debugPrint('MPBleDeviceAudioImportUtils: deleted on device: ${fi.name}');
+            }
           } else {
-            MPToastUtils.showMessage('Bluetooth disconnected; skipped device delete for ${fi.name}.');
+            debugPrint(
+              'MPBleDeviceAudioImportUtils: Bluetooth disconnected; skipped device delete for ${fi.name}.',
+            );
           }
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          // synced.add(_MPBleSyncedSandboxEntry(sandboxPath: path, durationSec: durationSec, createAtSec: createAtSec));
         } finally {
           await client.dispose();
         }
       }
 
-      MPToastUtils.showMessage('Uploading recordings...');
+      debugPrint('MPBleDeviceAudioImportUtils: uploading recordings...');
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     } catch (e, st) {
-      debugPrint('MPBleDeviceAudioImportUtils: $e\n$st');
-      MPToastUtils.showMessage('Device import failed: $e');
+      debugPrint('MPBleDeviceAudioImportUtils device import failed: $e\n$st');
     }
   }
 

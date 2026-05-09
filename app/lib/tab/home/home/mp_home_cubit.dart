@@ -8,7 +8,6 @@ import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -381,12 +380,12 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
     final BleTransport? transport = MPBluetoothConnectionHelper.backgroundBleTransport;
     if (transport == null) {
-      MPToastUtils.showMessage('Bluetooth session unavailable.');
+      debugPrint('MPHomeCubit: Bluetooth session unavailable.');
       return;
     }
     _bleDeviceImportRunning = true;
     try {
-      MPToastUtils.showMessage('Bluetooth connected. Starting device import...');
+      debugPrint('MPHomeCubit: Bluetooth connected. Starting device import...');
       if (!isClosed) {
         emit(state.copyWith(isBleConnected: true));
       }
@@ -399,7 +398,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         },
       );
     } catch (e) {
-      MPToastUtils.showMessage('Device import error: $e');
+      debugPrint('MPHomeCubit: device import error: $e');
     } finally {
       _bleDeviceImportRunning = false;
       if (!isClosed) {

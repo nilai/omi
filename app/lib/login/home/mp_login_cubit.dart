@@ -102,7 +102,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
   /// 注册
   Future<void> _register(String email, String password) async {
     /// 发送验证码
-    final req = MPSendCodeRequest(email: email);
+    final req = MPSendCodeRequest(email: email, password: password);
     final response = await sendCode(req);
     if (response != null && response.baseResp.code == 0) {
       Navigator.of(_context!).push<void>(

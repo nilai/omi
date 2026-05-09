@@ -5,7 +5,6 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
@@ -226,19 +225,14 @@ class MPBluetoothConnectionHelper {
     final PermissionManagerStatus worst =
         await OmiPermissionService.bleScanConnectPermissionWorstStatus();
     if (worst == PermissionManagerStatus.permanentlyDenied) {
-      MPToastUtils.showMessage(
-        'Bluetooth permission is required. Open Settings and allow Bluetooth access for this app.',
-        duration: const Duration(seconds: 5),
+      debugPrint(
+        'BLE permission: Bluetooth permission is required. Open Settings and allow Bluetooth access for this app.',
       );
     } else if (worst == PermissionManagerStatus.restricted) {
-      MPToastUtils.showMessage(
-        'Bluetooth access is restricted on this device.',
-        duration: const Duration(seconds: 5),
-      );
+      debugPrint('BLE permission: Bluetooth access is restricted on this device.');
     } else {
-      MPToastUtils.showMessage(
-        'Bluetooth permission is required to scan and connect. Tap Allow if prompted, or enable it in Settings.',
-        duration: const Duration(seconds: 5),
+      debugPrint(
+        'BLE permission: Bluetooth permission is required to scan and connect. Tap Allow if prompted, or enable it in Settings.',
       );
     }
   }
