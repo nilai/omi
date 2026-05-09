@@ -467,10 +467,16 @@ class _MPSignalBar extends StatelessWidget {
 
   final int value;
 
+  /// 与设计稿一致：≤10% 红、10%–40% 橘、>40% 绿。
   Color get _barColor {
-    if (value >= 65) return const Color(0xFF52C41A);
-    if (value >= 25) return const Color(0xFFE8A100);
-    return const Color(0xFFE94A45);
+    final int v = value.clamp(0, 100);
+    if (v <= 10) {
+      return const Color(0xFFFF4D4F);
+    }
+    if (v <= 40) {
+      return const Color(0xFFFF9F43);
+    }
+    return const Color(0xFF52C41A);
   }
 
   @override
@@ -491,7 +497,7 @@ class _MPSignalBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: Container(
               height: 7,
-              color: const Color(0xFFF1F2F6),
+              color: const Color(0xFFF2F2F2),
               alignment: Alignment.centerLeft,
               child: FractionallySizedBox(
                 widthFactor: (value.clamp(0, 100)) / 100,
