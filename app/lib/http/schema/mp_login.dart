@@ -1,11 +1,13 @@
 import 'package:memo_pin/http/schema/mp_base.dart';
 class MPSendCodeRequest {
-  MPSendCodeRequest({required this.email});
+  MPSendCodeRequest({required this.email, required this.password});
 
   final String email;
 
+  final String password;
+
   Map<String, dynamic> toJson() {
-    return <String, dynamic>{'email': email};
+    return <String, dynamic>{'email': email, 'password': password};
   }
 }
 
