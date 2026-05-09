@@ -18,21 +18,9 @@ class BleTransport extends DeviceTransport {
   StreamSubscription<BluetoothConnectionState>? _bleConnectionSubscription;
 
   BleTransport(this._bleDevice) : _connectionStateController = StreamController<DeviceTransportState>.broadcast() {
-    _bleConnectionSubscription = _bleDevice.connectionState.listen((state) {
-      switch (state) {
-        case BluetoothConnectionState.disconnected:
-          _updateState(DeviceTransportState.disconnected);
-          break;
-        case BluetoothConnectionState.connecting:
-          _updateState(DeviceTransportState.connecting);
-          break;
-        case BluetoothConnectionState.connected:
-          _updateState(DeviceTransportState.connected);
-          break;
-        case BluetoothConnectionState.disconnecting:
-          _updateState(DeviceTransportState.disconnecting);
-          break;
-      }
+    _bleConnectionSubscription = _bleDevice.connectionState.listen((BluetoothConnectionState state) {
+      // BluetoothConnectionState 与 DeviceTransportState 成员名一致，按 name 映射。
+      _updateState(DeviceTransportState.values.byName(state.name));
     });
   }
 
