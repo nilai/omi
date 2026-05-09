@@ -107,6 +107,8 @@ class MPBleDeviceAudioImportUtils {
                 await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, fi.name);
             if (!deleted) {
               debugPrint('MPBleDeviceAudioImportUtils: could not delete on device: ${fi.name}');
+            }else {
+              debugPrint('MPBleDeviceAudioImportUtils: deleted on device: ${fi.name}');
             }
           } else {
             debugPrint(
