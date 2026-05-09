@@ -353,7 +353,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
               Row(
                 children: <Widget>[
                   _RoundIconButton(
-                    icon: Assets.omiClose,
+                    assetIcon: Assets.omiClose,
                     bgColor: const Color(0xFFF2F2F7),
                     iconColor: mainTextColor,
                     onTap: () => _cancelRecording(),
@@ -362,7 +362,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                   const Expanded(child: _RecordingWaveform()),
                   const SizedBox(width: 8),
                   _RoundIconButton(
-                    icon: Assets.omiDetailMessage,
+                    iconData: Icons.send_rounded,
                     bgColor: blueTextColor,
                     iconColor: Colors.white,
                     onTap: () {
@@ -407,14 +407,14 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                   ),
                   const SizedBox(width: 8),
                   _RoundIconButton(
-                    icon: Assets.omiAudio,
+                    assetIcon: Assets.omiAudio,
                     bgColor: const Color(0xFFF2F2F7),
                     iconColor: secondTextColor,
                     onTap: _startRecording,
                   ),
                   const SizedBox(width: 8),
                   _RoundIconButton(
-                    icon: Assets.omiDetailMessage,
+                    iconData: Icons.send_rounded,
                     bgColor: canSubmit
                         ? blueTextColor
                         : const Color(0xFFDCEAFF),
@@ -582,13 +582,18 @@ class _TranscribingDotsState extends State<_TranscribingDots>
 
 class _RoundIconButton extends StatelessWidget {
   const _RoundIconButton({
-    required this.icon,
+    this.assetIcon,
+    this.iconData,
     required this.bgColor,
     required this.iconColor,
     this.onTap,
-  });
+  }) : assert(
+          (assetIcon != null) != (iconData != null),
+          'Provide exactly one of assetIcon or iconData',
+        );
 
-  final String icon;
+  final String? assetIcon;
+  final IconData? iconData;
   final Color bgColor;
   final Color iconColor;
   final VoidCallback? onTap;
@@ -608,12 +613,18 @@ class _RoundIconButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
           ),
           child: Center(
-            child: OmiImageLoader.localImg(
-              icon,
-              width: 18,
-              height: 18,
-              color: iconColor,
-            ),
+            child: iconData != null
+                ? Icon(
+                    iconData,
+                    size: 18,
+                    color: iconColor,
+                  )
+                : OmiImageLoader.localImg(
+                    assetIcon!,
+                    width: 18,
+                    height: 18,
+                    color: iconColor,
+                  ),
           ),
         ),
       ),
