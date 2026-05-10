@@ -108,12 +108,11 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
 
   Future<void> _onTapQuestion(
     BuildContext context,
-    MPAskAIModule module,
     String question,
   ) async {
     
     _dismissKeyboard();
-    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: module.id));
+    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: ''));
     final String conversationId = lastConversation?.conversationId ?? '';
     final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
     // ignore: use_build_context_synchronously
@@ -127,7 +126,7 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
           conversationId: conversationId,
           initialMessage: question,
           type: MPAskAIChatType.template,
-          chatTypeId: module.id,
+          chatTypeId: '',
         ),
       ),
     );
@@ -256,7 +255,7 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
               child: InkWell(
                 borderRadius: BorderRadius.circular(8),
                 onTap: () {
-                  _onTapQuestion(context, module, question);
+                  _onTapQuestion(context, question);
                 },
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
