@@ -1244,7 +1244,7 @@ List<MPMemoryFeedBlock> _placeResummaryLoadingBlocks(List<MPMemoryFeedBlock> blo
   ];
 }
 
-List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, String? title) {
+List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, String? title, String? metaLine) {
   final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
   for (final MPFeedCardStruct f in feeds) {
     final int kind = _resolveFeedCardKind(f);
@@ -1366,6 +1366,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
             bodyText: bodyForTodo,
             categoryTitle: categoryTitle,
             title: title ?? '',
+            metaLine: metaLine ?? '',
             useMarkdown: false,
             insightContent: content.isNotEmpty ? content : null,
             insightSuggestion: suggestion.isNotEmpty ? suggestion : null,
@@ -1384,6 +1385,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
           timeLabel: _feedCardTimeLabel(f.createAt),
           bodyText: bodyText,
           title: title ?? '',
+          metaLine: metaLine ?? '',
           categoryTitle: categoryTitle,
           hasAddedTodo: f.hasAddedTodo == true,
         ),
@@ -1451,13 +1453,13 @@ _mpMemoryStructToDetailBundleFromSources(
             )
             .toList(growable: false);
 
-  final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title);
-
   final int metaCreateAt = sm?.createAt ?? m.createAt;
   final DateTime dt = _detailServerTime(metaCreateAt);
   final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
   final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
   final String metaLine = '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
+
+  final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title, metaLine);
 
   final MPOnlyRecordMemoryStruct? only = m.onlyRecordContent;
   // audio/xxxx

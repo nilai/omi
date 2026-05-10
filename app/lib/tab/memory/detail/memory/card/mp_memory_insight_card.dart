@@ -49,6 +49,7 @@ class MPMemoryInsightItemData {
     this.insightContent,
     this.insightSuggestion,
     this.hasAddedTodo = false,
+    required this.metaLine,
   });
 
   final MPInsightCardTone tone;
@@ -57,6 +58,9 @@ class MPMemoryInsightItemData {
   final String? feedCardId;
 
   final String title;
+
+  final String metaLine;
+
   /// 右侧相对时间，如 `2 min later`
   final String timeLabel;
 
@@ -115,15 +119,15 @@ class _MPInsightVisual {
           buttonForeground: pinkTextColor,
           icon: Assets.omiDetailGift,
         );
-        case MPInsightCardTone.followUp:
-          return _MPInsightVisual(
-            cardBg: orangeTextColor.withAlpha(30),
-            accent: orangeTextColor,
-            iconBg: orangeTextColor,
-            buttonBg: orangeTextColor.withAlpha(60),
-            buttonForeground: orangeTextColor,
-            icon: Assets.omiDetailGift,
-          );
+      case MPInsightCardTone.followUp:
+        return _MPInsightVisual(
+          cardBg: orangeTextColor.withAlpha(30),
+          accent: orangeTextColor,
+          iconBg: orangeTextColor,
+          buttonBg: orangeTextColor.withAlpha(60),
+          buttonForeground: orangeTextColor,
+          icon: Assets.omiDetailGift,
+        );
     }
   }
 }
@@ -150,56 +154,33 @@ MarkdownStyleSheet _mpInsightMarkdownStyle(Color linkColor) {
   return MarkdownStyleSheet(
     p: base(size: OmiFontSize.t4_13),
     pPadding: EdgeInsets.zero,
-    h1: base(
-      size: OmiFontSize.t8_17,
-      weight: OmiFontWeight.bold,
-      color: mainTextColor,
-    ),
+    h1: base(size: OmiFontSize.t8_17, weight: OmiFontWeight.bold, color: mainTextColor),
     h1Padding: const EdgeInsets.only(top: 4, bottom: 6),
-    h2: base(
-      size: OmiFontSize.t6_15,
-      weight: OmiFontWeight.bold,
-      color: mainTextColor,
-    ),
+    h2: base(size: OmiFontSize.t6_15, weight: OmiFontWeight.bold, color: mainTextColor),
     h2Padding: const EdgeInsets.only(top: 2, bottom: 6),
-    h3: base(
-      size: OmiFontSize.t5_14,
-      weight: OmiFontWeight.medium,
-      color: mainTextColor,
-    ),
+    h3: base(size: OmiFontSize.t5_14, weight: OmiFontWeight.medium, color: mainTextColor),
     h3Padding: const EdgeInsets.only(top: 2, bottom: 4),
     strong: base(size: OmiFontSize.t4_13, weight: OmiFontWeight.bold),
     em: base(size: OmiFontSize.t4_13, fontStyle: FontStyle.italic),
-    a: base(
-      size: OmiFontSize.t4_13,
-      color: linkColor,
-      decoration: TextDecoration.underline,
-    ),
-    code: base(size: OmiFontSize.t3_12, color: mainTextColor).copyWith(
-      backgroundColor: pageColor,
-      fontFamily: 'monospace',
-    ),
+    a: base(size: OmiFontSize.t4_13, color: linkColor, decoration: TextDecoration.underline),
+    code: base(
+      size: OmiFontSize.t3_12,
+      color: mainTextColor,
+    ).copyWith(backgroundColor: pageColor, fontFamily: 'monospace'),
     blockquote: base(size: OmiFontSize.t4_13, color: secondTextColor),
     blockquotePadding: const EdgeInsets.only(left: 10, top: 4, bottom: 4),
     blockquoteDecoration: BoxDecoration(
-      border: Border(
-        left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3),
-      ),
+      border: Border(left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3)),
     ),
     blockSpacing: 8,
     listIndent: 22,
     listBullet: base(size: OmiFontSize.t4_13),
     listBulletPadding: const EdgeInsets.only(right: 6),
     horizontalRuleDecoration: BoxDecoration(
-      border: Border(
-        top: BorderSide(color: lineColor, width: 1),
-      ),
+      border: Border(top: BorderSide(color: lineColor, width: 1)),
     ),
     codeblockPadding: const EdgeInsets.all(10),
-    codeblockDecoration: BoxDecoration(
-      color: pageColor,
-      borderRadius: BorderRadius.circular(8),
-    ),
+    codeblockDecoration: BoxDecoration(color: pageColor, borderRadius: BorderRadius.circular(8)),
   );
 }
 
@@ -217,11 +198,7 @@ int _mpEstimatePlainBodyLines(String raw, double maxWidth) {
   if (t.isEmpty) {
     return 0;
   }
-  final TextStyle style = OmiTextStyle.create(
-    fontSize: OmiFontSize.t4_13,
-    height: 1.45,
-    color: mainTextColor,
-  );
+  final TextStyle style = OmiTextStyle.create(fontSize: OmiFontSize.t4_13, height: 1.45, color: mainTextColor);
   final TextPainter tp = TextPainter(
     text: TextSpan(text: t, style: style),
     textDirection: TextDirection.ltr,
@@ -240,11 +217,7 @@ int _mpEstimateInsightBodyLines(String raw, double maxWidth) {
   if (t.isEmpty) {
     return 0;
   }
-  final TextStyle style = OmiTextStyle.create(
-    fontSize: OmiFontSize.t4_13,
-    height: 1.45,
-    color: mainTextColor,
-  );
+  final TextStyle style = OmiTextStyle.create(fontSize: OmiFontSize.t4_13, height: 1.45, color: mainTextColor);
   final TextPainter tp = TextPainter(
     text: TextSpan(text: t, style: style),
     textDirection: TextDirection.ltr,
@@ -257,11 +230,7 @@ double _mpHeightForParagraphLines(int lineCount, double maxWidth) {
   if (lineCount <= 0 || maxWidth <= 0) {
     return 0;
   }
-  final TextStyle style = OmiTextStyle.create(
-    fontSize: OmiFontSize.t4_13,
-    height: 1.45,
-    color: mainTextColor,
-  );
+  final TextStyle style = OmiTextStyle.create(fontSize: OmiFontSize.t4_13, height: 1.45, color: mainTextColor);
   final String text = List<String>.filled(lineCount, 'x').join('\n');
   final TextPainter tp = TextPainter(
     text: TextSpan(text: text, style: style),
@@ -272,17 +241,12 @@ double _mpHeightForParagraphLines(int lineCount, double maxWidth) {
 
 /// Memory 详情列表中的 Insight 卡片（图标 + 分类 + 时间 + 正文 Markdown 或纯文本 + Show more + Add follow-up todo）
 class MPMemoryInsightCard extends StatefulWidget {
-  const MPMemoryInsightCard({
-    super.key,
-    required this.data,
-    required this.memoryId,
-  });
+  const MPMemoryInsightCard({super.key, required this.data, required this.memoryId});
 
   final MPMemoryInsightItemData data;
 
   /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
   final String memoryId;
-
 
   @override
   State<MPMemoryInsightCard> createState() => _MPMemoryInsightCardState();
@@ -320,10 +284,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: secondTextColor.withAlpha(22),
-          borderRadius: BorderRadius.circular(22),
-        ),
+        decoration: BoxDecoration(color: secondTextColor.withAlpha(22), borderRadius: BorderRadius.circular(22)),
         alignment: Alignment.center,
         child: Text(
           'Follow-up todo added',
@@ -344,6 +305,9 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
           final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
             context,
             params: _followUpTodoParams(),
+            onContextTap: () {
+              Navigator.of(context).pop();
+            },
           );
           if (result != null) {
             setState(() {
@@ -404,11 +368,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     final bool hasC = c.isNotEmpty;
     final bool hasS = s.isNotEmpty;
 
-    final TextStyle baseStyle = OmiTextStyle.create(
-      fontSize: OmiFontSize.t4_13,
-      height: 1.45,
-      color: mainTextColor,
-    );
+    final TextStyle baseStyle = OmiTextStyle.create(fontSize: OmiFontSize.t4_13, height: 1.45, color: mainTextColor);
     final TextStyle labelStyle = OmiTextStyle.create(
       fontSize: OmiFontSize.t4_13,
       height: 1.45,
@@ -471,6 +431,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
         initialNotes: (widget.data.insightContent ?? '').trim(),
         contextMemoryLabel: 'From memory:',
         contextMemoryTitle: widget.data.title,
+        contextMetaLine: widget.data.metaLine,
         memoryId: mid,
         feedCardId: fid,
       );
@@ -480,6 +441,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       initialNotes: '',
       contextMemoryLabel: 'From memory:',
       contextMemoryTitle: widget.data.title,
+      contextMetaLine: widget.data.metaLine,
       memoryId: mid,
       feedCardId: fid,
     );
@@ -504,16 +466,12 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
 
     Widget buildClippedMarkdown(double contentWidth) {
       // 按当前宽度计算 5 行段落真实排版高度 + 余量（列表/引用等略高），减少最后一行被拦腰截断
-      final double fiveLineHeight =
-          _mpHeightForParagraphLines(5, contentWidth) + 10;
+      final double fiveLineHeight = _mpHeightForParagraphLines(5, contentWidth) + 10;
       return SizedBox(
         height: fiveLineHeight,
         child: ClipRect(
           clipBehavior: Clip.hardEdge,
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: buildMarkdownBody(),
-          ),
+          child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: buildMarkdownBody()),
         ),
       );
     }
@@ -523,16 +481,12 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     }
 
     Widget buildClippedPlain(double contentWidth) {
-      final double fiveLineHeight =
-          _mpHeightForParagraphLines(5, contentWidth) + 10;
+      final double fiveLineHeight = _mpHeightForParagraphLines(5, contentWidth) + 10;
       return SizedBox(
         height: fiveLineHeight,
         child: ClipRect(
           clipBehavior: Clip.hardEdge,
-          child: SingleChildScrollView(
-            physics: const NeverScrollableScrollPhysics(),
-            child: buildPlainBody(),
-          ),
+          child: SingleChildScrollView(physics: const NeverScrollableScrollPhysics(), child: buildPlainBody()),
         ),
       );
     }
@@ -542,30 +496,22 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
           final double w = constraints.maxWidth;
-          final String measureRaw = widget.data.useMarkdown
-              ? widget.data.bodyText
-              : _measurePlainBodyRaw();
+          final String measureRaw = widget.data.useMarkdown ? widget.data.bodyText : _measurePlainBodyRaw();
           final int estLines = widget.data.useMarkdown
               ? _mpEstimateInsightBodyLines(widget.data.bodyText, w)
               : _mpEstimatePlainBodyLines(measureRaw, w);
           // 标题/列表等会高于纯文本估算，长字符兜底避免该显示时不显示
-          final bool needsShowMore =
-              estLines > 5 || measureRaw.length > 260;
+          final bool needsShowMore = estLines > 5 || measureRaw.length > 260;
 
           Widget buildVisibleBody() {
             if (needsShowMore && !_bodyExpanded) {
-              return widget.data.useMarkdown
-                  ? buildClippedMarkdown(w)
-                  : buildClippedPlain(w);
+              return widget.data.useMarkdown ? buildClippedMarkdown(w) : buildClippedPlain(w);
             }
             return widget.data.useMarkdown ? buildMarkdownBody() : buildPlainBody();
           }
 
           return Container(
-            decoration: BoxDecoration(
-              color: v.cardBg,
-              borderRadius: BorderRadius.circular(14),
-            ),
+            decoration: BoxDecoration(color: v.cardBg, borderRadius: BorderRadius.circular(14)),
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -576,10 +522,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                     Container(
                       width: 28,
                       height: 28,
-                      decoration: BoxDecoration(
-                        color: v.iconBg.withAlpha(20),
-                        shape: BoxShape.circle,
-                      ),
+                      decoration: BoxDecoration(color: v.iconBg.withAlpha(20), shape: BoxShape.circle),
                       child: Center(
                         child: OmiImageLoader.localImg(
                           v.icon ?? '',
@@ -670,9 +613,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                   ),
                 ],
                 const SizedBox(height: 10),
-                widget.data.tone == MPInsightCardTone.followUp
-                    ? const SizedBox.shrink()
-                    : _buildFollowUpFooter(v),
+                widget.data.tone == MPInsightCardTone.followUp ? const SizedBox.shrink() : _buildFollowUpFooter(v),
               ],
             ),
           );

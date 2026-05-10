@@ -72,7 +72,7 @@ class MPAddTodoPopupParams {
 
   /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后若均为空，则不展示 CONTEXT 区块。
   bool get shouldShowContextSection =>
-      contextMemoryLabel.trim().isNotEmpty && contextMemoryTitle.trim().isNotEmpty && contextMetaLine.trim().isNotEmpty;
+      contextMemoryLabel.trim().isNotEmpty || contextMemoryTitle.trim().isNotEmpty || contextMetaLine.trim().isNotEmpty;
 
   final String initialNotes;
 
