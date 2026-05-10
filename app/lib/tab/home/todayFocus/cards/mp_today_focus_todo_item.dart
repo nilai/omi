@@ -109,68 +109,68 @@ class MPTodayFocusTodoItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool showTime = timeLabel.trim().isNotEmpty;
 
-    final Widget body = Padding(
-      padding: const EdgeInsets.fromLTRB(0, 12, 0, 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          GestureDetector(
-            onTap: onChanged == null
-                ? null
-                : () {
-                    onChanged!.call(!isChecked);
-                  },
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: _MPTodoCheckSquare(
-                checked: isChecked,
-                enabled: onChanged != null,
-                tone: tone,
-              ),
-            ),
+    // 勾选框独立手势区域；标题区用 GestureDetector，避免 InkWell 灰色水波纹。
+    final Widget titleRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(
+          child: Text(
+            title,
+            style: _titleStyle(),
           ),
+        ),
+        if (showTime) ...<Widget>[
           const SizedBox(width: 8),
-          Expanded(
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
             child: Text(
-              title,
-              style: _titleStyle(),
+              timeLabel,
+              style: _timeStyle(),
             ),
           ),
-          if (showTime) ...<Widget>[
-            const SizedBox(width: 8),
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text(
-                timeLabel,
-                style: _timeStyle(),
-              ),
-            ),
-          ],
         ],
-      ),
+      ],
     );
+
+    final Widget titleTapTarget = onTap != null
+        ? GestureDetector(
+            onTap: onTap,
+            behavior: HitTestBehavior.opaque,
+            child: titleRow,
+          )
+        : titleRow;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
-      child: onTap != null
-          ? Material(
-              color: _contentBg,
-              child: InkWell(
-                onTap: onTap,
+      child: Material(
+        color: _contentBg,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(4, 12, 4, 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              GestureDetector(
+                onTap: onChanged == null
+                    ? null
+                    : () {
+                        onChanged!.call(!isChecked);
+                      },
+                behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: body,
+                  padding: const EdgeInsets.only(top: 2),
+                  child: _MPTodoCheckSquare(
+                    checked: isChecked,
+                    enabled: onChanged != null,
+                    tone: tone,
+                  ),
                 ),
               ),
-            )
-          : ColoredBox(
-              color: _contentBg,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: body,
-              ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(child: titleTapTarget),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
