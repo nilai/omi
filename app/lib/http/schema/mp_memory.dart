@@ -173,7 +173,7 @@ class MPGetMemoryV2SimpleInfoRequest {
 }
 
 /// Thrift `GetMemoryV2SimpleInfoResponse`。
-@JsonSerializable()
+@JsonSerializable(explicitToJson: true)
 class MPGetMemoryV2SimpleInfoResponse {
   @JsonKey(name: 'memory_info')
   final MPMemorySimpleInfoStruct? memoryInfo;

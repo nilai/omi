@@ -14,8 +14,10 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
+import '../../../common/mp_date_utils.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../http/schema/mp_memory.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
@@ -112,10 +114,30 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
     if (!mounted) {
       return;
     }
+    final MPGetMemoryV2SimpleInfoResponse? simpleMemory =
+        await _cubit.loadMemorySimpleInfoNetworkOrHive(item.memoryId);
+    if (!mounted) {
+      return;
+    }
+    final MPMemorySimpleInfoStruct? mi =
+        (simpleMemory != null && simpleMemory.baseResp?.code == 0) ? simpleMemory.memoryInfo : null;
+    final String contextMemoryTitle = mi?.title ?? '';
+    final String contextMetaLine = mi != null
+        ? MPDateUtils.buildMemorySimpleContextMetaLine(
+            recordCreateAt: mi.recordCreateAt,
+            duration: mi.duration,
+            label: mi.label,
+          )
+        : '';
+    final String contextMemoryLabel = mi != null ? 'From memory:' : '';
+
     await showOmiEditTodoPopup(
       context,
       params: OmiEditTodoPopupParams(
         title: item.title,
+        contextMemoryLabel: contextMemoryLabel,
+        contextMemoryTitle: contextMemoryTitle,
+        contextMetaLine: contextMetaLine,
         notes: item.reason ?? '',
         whenLabel: 'Today',
         timeLabel: (item.time == null || item.time!.isEmpty) ? '--:--' : item.time!,

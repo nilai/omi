@@ -138,8 +138,8 @@ MPGetMemoryV2SimpleInfoResponse _$MPGetMemoryV2SimpleInfoResponseFromJson(
 Map<String, dynamic> _$MPGetMemoryV2SimpleInfoResponseToJson(
   MPGetMemoryV2SimpleInfoResponse instance,
 ) => <String, dynamic>{
-  'memory_info': instance.memoryInfo,
-  'base_resp': instance.baseResp,
+  'memory_info': instance.memoryInfo?.toJson(),
+  'base_resp': instance.baseResp?.toJson(),
 };
 
 MPGetMemoryFeedRequest _$MPGetMemoryFeedRequestFromJson(
