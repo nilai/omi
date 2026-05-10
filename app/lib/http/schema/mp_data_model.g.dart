@@ -46,6 +46,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
   status: (json['status'] as num?)?.toInt(),
   reason: json['reason'] as String?,
   preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
+  memoryId: (json['memory_id'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) => <String, dynamic>{
@@ -57,6 +58,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) => <String, dyn
   'status': instance.status,
   'reason': instance.reason,
   'pre_create_status': instance.preCreateStatus,
+  'memory_id': instance.memoryId,
 };
 
 MPRecordConversationStruct _$MPRecordConversationStructFromJson(Map<String, dynamic> json) =>

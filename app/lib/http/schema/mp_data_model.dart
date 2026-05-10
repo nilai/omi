@@ -192,6 +192,9 @@ class MPTodoStruct {
   @JsonKey(name: 'pre_create_status')
   final int? preCreateStatus;
 
+  @JsonKey(name: 'memory_id')
+  final int? memoryId;
+
   MPTodoStruct({
     this.id,
     this.title,
@@ -201,6 +204,7 @@ class MPTodoStruct {
     this.status,
     this.reason,
     this.preCreateStatus,
+    this.memoryId,
   });
 
   factory MPTodoStruct.fromJson(Map<String, dynamic> json) => _$MPTodoStructFromJson(json);

@@ -1298,6 +1298,7 @@ class MPInsightDetailStruct {
     this.monthlyDetail,
     this.dailyDetail,
     this.weeklyDetail,
+    this.memoryId,
   });
 
   final MPInsightCardStruct basicInfo;
@@ -1314,6 +1315,8 @@ class MPInsightDetailStruct {
 
   /// `insight_type == WEEKLY` 时返回。
   final MPWeeklyInsightDetailStruct? weeklyDetail;
+
+  final int? memoryId;
 
   /// 从 JSON 解析。
   factory MPInsightDetailStruct.fromJson(Map<String, dynamic> json) {
@@ -1345,6 +1348,7 @@ class MPInsightDetailStruct {
           : MPWeeklyInsightDetailStruct.fromJson(
               _mpAsMap(json['weekly_detail']),
             ),
+      memoryId: _mpAsInt(json['memory_id']),
     );
   }
 
@@ -1356,6 +1360,7 @@ class MPInsightDetailStruct {
         if (monthlyDetail != null) 'monthly_detail': monthlyDetail!.toJson(),
         if (dailyDetail != null) 'daily_detail': dailyDetail!.toJson(),
         if (weeklyDetail != null) 'weekly_detail': weeklyDetail!.toJson(),
+        if (memoryId != null) 'memory_id': memoryId,
       };
 }
 
