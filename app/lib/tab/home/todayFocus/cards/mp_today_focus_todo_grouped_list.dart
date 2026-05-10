@@ -11,6 +11,7 @@ class MPTodayFocusTodoRowData {
     required this.title,
     required this.timeLabel,
     this.todoId = '',
+    this.memoryId,
     this.status = 1,
     this.priorityApi = 'normal',
     this.deadlineUnixSec,
@@ -22,6 +23,9 @@ class MPTodayFocusTodoRowData {
   final String title;
   final String timeLabel;
   final String todoId;
+
+  /// 关联 Memory id；无关联时为 `null`。
+  final int? memoryId;
   final int status;
   final String priorityApi;
   final int? deadlineUnixSec;

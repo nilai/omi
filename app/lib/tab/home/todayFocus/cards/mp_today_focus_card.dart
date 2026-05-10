@@ -10,6 +10,7 @@ class MPTodayFocusCardItem {
     required this.subtext,
     required this.timeLabel,
     this.todoId = '',
+    this.memoryId,
   });
 
   final String title;
@@ -18,6 +19,9 @@ class MPTodayFocusCardItem {
 
   /// 与服务端 todo id 一致；无 id（如纯本地/AI 占位）时为空，删除前需有有效 id。
   final String todoId;
+
+  /// 关联 Memory id（与 [MPTodoStruct.memoryId] 一致）；无关联时为 `null`。
+  final int? memoryId;
 }
 
 /// 「Today's Focus」整卡数据
