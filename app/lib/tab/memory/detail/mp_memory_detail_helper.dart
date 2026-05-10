@@ -61,6 +61,4 @@ class MPMemoryDetailPageHelper {
       isOpening = false;
     }
   }
-
-  
 }

@@ -101,6 +101,7 @@ MPMemorySimpleInfoStruct _$MPMemorySimpleInfoStructFromJson(
 ) => MPMemorySimpleInfoStruct(
   title: json['title'] as String,
   label: json['label'] as String?,
+  type: $enumDecodeNullable(_$MPMemoryTypeEnumMap, json['type']),
   duration: mpIntFromJson(json['duration']),
   recordCreateAt: mpIntFromJson(json['record_create_at']),
 );
@@ -110,8 +111,16 @@ Map<String, dynamic> _$MPMemorySimpleInfoStructToJson(
 ) => <String, dynamic>{
   'title': instance.title,
   'label': instance.label,
+  'type': _$MPMemoryTypeEnumMap[instance.type],
   'duration': instance.duration,
   'record_create_at': instance.recordCreateAt,
+};
+
+const _$MPMemoryTypeEnumMap = {
+  MPMemoryType.summary: 1,
+  MPMemoryType.onlyRecord: 2,
+  MPMemoryType.memoryFeed: 5,
+  MPMemoryType.memoList: 6,
 };
 
 MPGetMemoryV2SimpleInfoRequest _$MPGetMemoryV2SimpleInfoRequestFromJson(
