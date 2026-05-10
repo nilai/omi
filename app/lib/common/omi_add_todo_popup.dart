@@ -45,7 +45,7 @@ class MPAddTodoPopupResult {
 /// 打开弹窗时的可配置项（用于 **数据回显**：标题、备注、优先级、截止时间、Context 文案等）
 class MPAddTodoPopupParams {
   const MPAddTodoPopupParams({
-    this.initialTitle = 'Schedule authentication service testing session',
+    this.initialTitle = '',
     this.contextMemoryLabel = 'From memory:',
     this.contextMemoryTitle = '',
     this.contextMetaLine = '',
