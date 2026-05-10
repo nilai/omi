@@ -142,6 +142,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
         whenLabel: 'Today',
         timeLabel: (item.time == null || item.time!.isEmpty) ? '--:--' : item.time!,
         todoId: item.id,
+        memoryId: item.memoryId ?? 0,
       ),
       onDelete: () async {
         await _cubit.loadData();

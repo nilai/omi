@@ -26,12 +26,14 @@ class OmiEditTodoPopupParams {
     this.timeLabel = '09:00',
     this.todoId = '',
     this.deadlineUnixSec,
+    this.memoryId,
   });
 
   final String title;
   final String contextMemoryLabel;
   final String contextMemoryTitle;
   final String contextMetaLine;
+  final int? memoryId;
 
   /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后均为空时不展示 CONTEXT 区块。
   bool get shouldShowContextSection =>
