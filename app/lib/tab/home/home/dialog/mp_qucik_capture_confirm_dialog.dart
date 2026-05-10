@@ -295,63 +295,71 @@ class _MPQucikCaptureConfirmDialogState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: editing ? null : () => _toggleSelected(index),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child: _buildSelectionLeading(row.selected),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: editing
-                        ? TextField(
-                            controller: _editingController,
-                            focusNode: _editingFocusNode,
-                            minLines: 1,
-                            maxLines: 4,
-                            style: TextStyle(
-                              fontSize: OmiFontSize.t9_18,
-                              fontWeight: OmiFontWeight.medium,
-                              color: mainTextColor,
-                              height: 1.3,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: editing ? null : () => _toggleSelected(index),
+                splashFactory: NoSplash.splashFactory,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: _buildSelectionLeading(row.selected),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: editing
+                          ? TextField(
+                              controller: _editingController,
+                              focusNode: _editingFocusNode,
+                              minLines: 1,
+                              maxLines: 4,
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t9_18,
+                                fontWeight: OmiFontWeight.medium,
+                                color: mainTextColor,
+                                height: 1.3,
+                              ),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                              ),
+                            )
+                          : Text(
+                              _displayLine(row),
+                              maxLines: 8,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t7_16,
+                                fontWeight: OmiFontWeight.medium,
+                                color: mainTextColor,
+                                height: 1.35,
+                              ),
                             ),
-                            decoration: InputDecoration(
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                              ),
-                            ),
-                          )
-                        : Text(
-                            _displayLine(row),
-                            maxLines: 8,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: OmiFontSize.t7_16,
-                              fontWeight: OmiFontWeight.medium,
-                              color: mainTextColor,
-                              height: 1.35,
-                            ),
-                          ),
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
