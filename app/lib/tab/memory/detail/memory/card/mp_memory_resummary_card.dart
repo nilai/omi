@@ -1,10 +1,144 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../../generated/assets.dart';
 import '../../../../../utils/omi_image_loader.dart';
+
+MarkdownStyleSheet _mpResummaryMarkdownStyle() {
+  TextStyle base({
+    required double size,
+    FontWeight? weight,
+    Color? color,
+    double height = 1.45,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+  }) {
+    return OmiTextStyle.create(
+      fontSize: size,
+      fontWeight: weight ?? OmiFontWeight.regular,
+      color: color ?? mainTextColor,
+      height: height,
+      fontStyle: fontStyle,
+      decoration: decoration,
+    );
+  }
+
+  return MarkdownStyleSheet(
+    p: base(size: OmiFontSize.t4_13),
+    pPadding: EdgeInsets.zero,
+    h1: base(
+      size: OmiFontSize.t8_17,
+      weight: OmiFontWeight.bold,
+      color: mainTextColor,
+    ),
+    h1Padding: const EdgeInsets.only(top: 4, bottom: 6),
+    h2: base(
+      size: OmiFontSize.t6_15,
+      weight: OmiFontWeight.bold,
+      color: mainTextColor,
+    ),
+    h2Padding: const EdgeInsets.only(top: 2, bottom: 6),
+    h3: base(
+      size: OmiFontSize.t5_14,
+      weight: OmiFontWeight.medium,
+      color: mainTextColor,
+    ),
+    h3Padding: const EdgeInsets.only(top: 2, bottom: 4),
+    strong: base(size: OmiFontSize.t4_13, weight: OmiFontWeight.bold),
+    em: base(size: OmiFontSize.t4_13, fontStyle: FontStyle.italic),
+    a: base(
+      size: OmiFontSize.t4_13,
+      color: greenTextColor,
+      decoration: TextDecoration.underline,
+    ),
+    code: base(size: OmiFontSize.t3_12, color: mainTextColor).copyWith(
+      backgroundColor: pageColor,
+      fontFamily: 'monospace',
+    ),
+    blockquote: base(size: OmiFontSize.t4_13, color: secondTextColor),
+    blockquotePadding: const EdgeInsets.only(left: 10, top: 4, bottom: 4),
+    blockquoteDecoration: BoxDecoration(
+      border: Border(
+        left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3),
+      ),
+    ),
+    blockSpacing: 8,
+    listIndent: 22,
+    listBullet: base(size: OmiFontSize.t4_13),
+    listBulletPadding: const EdgeInsets.only(right: 6),
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(
+        top: BorderSide(color: lineColor, width: 1),
+      ),
+    ),
+    codeblockPadding: const EdgeInsets.all(10),
+    codeblockDecoration: BoxDecoration(
+      color: pageColor,
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
+}
+
+Future<void> _mpResummaryTapMarkdownLink(String? href) async {
+  if (href == null || href.isEmpty) {
+    return;
+  }
+  final Uri? uri = Uri.tryParse(href);
+  if (uri == null) {
+    return;
+  }
+  if (!await canLaunchUrl(uri)) {
+    return;
+  }
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
+
+/// 粗略估算 Markdown 在 [maxWidth] 下折行数（与 Insight 卡片一致，用于「Read full analysis」是否展示）。
+int _mpEstimateResummaryMarkdownLines(String raw, double maxWidth) {
+  final String t = raw
+      .replaceAll(RegExp(r'\[([^\]]+)\]\([^\)]+\)'), r'$1')
+      .replaceAll(RegExp(r'`+'), '')
+      .replaceAll(RegExp(r'\*{1,2}'), '')
+      .replaceAll(RegExp(r'^#+\s*', multiLine: true), '')
+      .trim();
+  if (t.isEmpty) {
+    return 0;
+  }
+  final TextStyle style = OmiTextStyle.create(
+    fontSize: OmiFontSize.t4_13,
+    height: 1.45,
+    color: mainTextColor,
+  );
+  final TextPainter tp = TextPainter(
+    text: TextSpan(text: t, style: style),
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: maxWidth);
+  return tp.computeLineMetrics().length;
+}
+
+/// 与正文段落样式一致，折叠区固定显示约 [lineCount] 行文本高度。
+double _mpHeightForResummaryParagraphLines(int lineCount, double maxWidth) {
+  if (lineCount <= 0 || maxWidth <= 0) {
+    return 0;
+  }
+  final TextStyle style = OmiTextStyle.create(
+    fontSize: OmiFontSize.t4_13,
+    height: 1.45,
+    color: mainTextColor,
+  );
+  final String text = List<String>.filled(lineCount, 'x').join('\n');
+  final TextPainter tp = TextPainter(
+    text: TextSpan(text: text, style: style),
+    textDirection: TextDirection.ltr,
+  )..layout(maxWidth: maxWidth);
+  return tp.height;
+}
 
 /// 单条 RESUMMARY 活动卡片数据（列表可有多张）
 class MPMemoryResummaryCardData {
@@ -253,35 +387,23 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
 
   MPMemoryResummaryCardData get _d => widget.data;
 
-  /// [bodyText] 在 [maxWidth] 下是否超过 [_kCollapsedBodyLines] 行（与 [Text] 测量一致）
-  static bool _bodyExceedsCollapsedLines({
-    required String text,
-    required double maxWidth,
-    required TextStyle style,
-  }) {
-    if (text.isEmpty || maxWidth <= 0) {
+  /// [bodyText] 作为 Markdown 在 [maxWidth] 下是否超过 [_kCollapsedBodyLines] 行（估算，与 Insight 卡片一致）
+  bool _markdownBodyExceedsCollapsedLines(String text, double maxWidth) {
+    if (text.trim().isEmpty || maxWidth <= 0) {
       return false;
     }
-    final TextPainter tp = TextPainter(
-      text: TextSpan(text: text, style: style),
-      textDirection: TextDirection.ltr,
-      maxLines: _kCollapsedBodyLines,
-    )..layout(maxWidth: maxWidth);
-    return tp.didExceedMaxLines;
+    return _mpEstimateResummaryMarkdownLines(text, maxWidth) >
+        _kCollapsedBodyLines;
   }
 
   /// 是否存在「更多内容」：有展开区块，或正文在折叠行数内显示不下
-  bool _hasMoreContent(double bodyMaxWidth, TextStyle bodyStyle) {
+  bool _hasMoreContent(double bodyMaxWidth) {
     final bool hasExtra = _d.expandedSectionBody != null &&
         _d.expandedSectionBody!.trim().isNotEmpty;
     if (hasExtra) {
       return true;
     }
-    return _bodyExceedsCollapsedLines(
-      text: _d.bodyText,
-      maxWidth: bodyMaxWidth,
-      style: bodyStyle,
-    );
+    return _markdownBodyExceedsCollapsedLines(_d.bodyText, bodyMaxWidth);
   }
 
   @override
@@ -410,28 +532,53 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
             const SizedBox(height: 8),
             LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
-                final TextStyle bodyStyle = OmiTextStyle.create(
-                  fontSize: OmiFontSize.t4_13,
-                  fontWeight: OmiFontWeight.regular,
-                  color: mainTextColor,
-                  height: 1.45,
-                );
+                final MarkdownStyleSheet mdSheet = _mpResummaryMarkdownStyle();
                 final double w = constraints.maxWidth.isFinite &&
                         constraints.maxWidth > 0
                     ? constraints.maxWidth
                     : MediaQuery.sizeOf(context).width - 64;
-                final bool showToggle = _hasMoreContent(w, bodyStyle);
+                final bool showToggle = _hasMoreContent(w);
+                final bool bodyOverflow =
+                    _markdownBodyExceedsCollapsedLines(_d.bodyText, w);
+
+                Widget buildMainBodyMarkdown() {
+                  return MarkdownBody(
+                    data: _d.bodyText,
+                    selectable: true,
+                    shrinkWrap: true,
+                    styleSheet: mdSheet,
+                    onTapLink: (String text, String? href, String title) {
+                      unawaited(_mpResummaryTapMarkdownLink(href));
+                    },
+                  );
+                }
+
+                Widget buildCollapsedMainBody() {
+                  if (!bodyOverflow) {
+                    return buildMainBodyMarkdown();
+                  }
+                  final double clipH =
+                      _mpHeightForResummaryParagraphLines(
+                            _kCollapsedBodyLines,
+                            w,
+                          ) +
+                          10;
+                  return SizedBox(
+                    height: clipH,
+                    child: ClipRect(
+                      clipBehavior: Clip.hardEdge,
+                      child: SingleChildScrollView(
+                        physics: const NeverScrollableScrollPhysics(),
+                        child: buildMainBodyMarkdown(),
+                      ),
+                    ),
+                  );
+                }
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    Text(
-                      _d.bodyText,
-                      maxLines: _expanded ? null : _kCollapsedBodyLines,
-                      overflow: _expanded
-                          ? TextOverflow.visible
-                          : TextOverflow.ellipsis,
-                      style: bodyStyle,
-                    ),
+                    _expanded ? buildMainBodyMarkdown() : buildCollapsedMainBody(),
                     if (_expanded &&
                         _d.expandedSectionBody != null &&
                         _d.expandedSectionBody!.trim().isNotEmpty) ...<Widget>[
@@ -448,14 +595,14 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        _d.expandedSectionBody!,
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t4_13,
-                          fontWeight: OmiFontWeight.regular,
-                          color: mainTextColor,
-                          height: 1.45,
-                        ),
+                      MarkdownBody(
+                        data: _d.expandedSectionBody!,
+                        selectable: true,
+                        shrinkWrap: true,
+                        styleSheet: mdSheet,
+                        onTapLink: (String text, String? href, String title) {
+                          unawaited(_mpResummaryTapMarkdownLink(href));
+                        },
                       ),
                     ],
                     if (showToggle) ...<Widget>[

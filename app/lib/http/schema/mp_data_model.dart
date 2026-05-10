@@ -468,6 +468,10 @@ class MPFeedCardStruct {
   @JsonKey(name: 'ask_ai_card')
   final MPConversationContentStruct? askAICard;
 
+  @JsonKey(name: 'resummary_status')
+  final int? resummaryStatus;
+
+
   const MPFeedCardStruct({
     this.id,
     this.type,
@@ -479,6 +483,7 @@ class MPFeedCardStruct {
     this.memos,
     this.suggestion,
     this.askAICard,
+    this.resummaryStatus,
   });
 
   factory MPFeedCardStruct.fromJson(Map<String, dynamic> json) =>

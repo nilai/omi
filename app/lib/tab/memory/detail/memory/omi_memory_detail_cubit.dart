@@ -315,23 +315,31 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     return false;
   }
 
-  ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})?
-  _loadCachedDetailBundleIfAllowed() {
+  MPMemoryStruct? _tryLoadCachedMemoryStruct() {
     final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId, _memoryDetailCacheKind);
     if (cached is! Map) return null;
     try {
-      final MPMemoryStruct m = MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
-      return _mapDetailResponse(m);
+      return MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
     } catch (_) {
       return null;
     }
   }
 
+  void _mergeFeedGeneratingResummaryIdsFromFeeds(List<MPFeedCardStruct> feeds) {
+    for (final String id in _collectFeedGeneratingResummaryIds(feeds)) {
+      _pendingResummaryIds.add(id);
+    }
+    if (_pendingResummaryIds.isNotEmpty) {
+      _ensureResummaryPolling();
+    }
+  }
+
   Future<void> load() async {
-    final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating})? cached =
-        _loadCachedDetailBundleIfAllowed();
-    final bool hasCached = cached != null;
-    if (hasCached) {
+    final MPMemoryStruct? cachedStruct = _tryLoadCachedMemoryStruct();
+    final bool hasCached = cachedStruct != null;
+    if (cachedStruct != null) {
+      final ({MPMemoryDetailCardData data, String feedCursor, bool feedHasMore, bool isSummaryGenerating}) cached =
+          _mapDetailResponse(cachedStruct);
       _feedCursor = cached.feedCursor;
       emit(
         OmiMemoryDetailState(
@@ -341,6 +349,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: cached.isSummaryGenerating,
         ),
       );
+      _mergeFeedGeneratingResummaryIdsFromFeeds(cachedStruct.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } else {
       emit(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
     }
@@ -362,6 +371,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
+      _mergeFeedGeneratingResummaryIdsFromFeeds(resp.memoryDetail.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } catch (e) {
       if (!hasCached) {
         emit(OmiMemoryDetailState(phase: OmiMemoryDetailPhase.error, errorMessage: e.toString()));
@@ -406,13 +416,19 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return b is MPMemoryFeedResummaryLoadingBlock && b.data.summaryMemoryId == summaryMemoryId;
     });
     if (already) return;
-    final List<MPMemoryFeedBlock> blocks = <MPMemoryFeedBlock>[
-      MPMemoryFeedResummaryLoadingBlock(
-        MPMemoryResummaryLoadingCardData(headerTimeLabel: 'Just now', summaryMemoryId: summaryMemoryId),
-      ),
-      ...d.feedBlocks,
-    ];
-    emit(cur.copyWith(data: d.copyWith(feedBlocks: blocks)));
+    final MPMemoryFeedResummaryLoadingBlock newBlock = MPMemoryFeedResummaryLoadingBlock(
+      MPMemoryResummaryLoadingCardData(headerTimeLabel: 'Just now', summaryMemoryId: summaryMemoryId),
+    );
+    final List<MPMemoryFeedBlock> blocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
+    final int insertAt = blocks.indexWhere(
+      (MPMemoryFeedBlock b) => b is MPMemoryFeedResummaryBlock || b is MPMemoryFeedResummaryLoadingBlock,
+    );
+    if (insertAt < 0) {
+      blocks.add(newBlock);
+    } else {
+      blocks.insert(insertAt, newBlock);
+    }
+    emit(cur.copyWith(data: d.copyWith(feedBlocks: _placeResummaryLoadingBlocks(blocks))));
   }
 
   void _cancelResummaryPolling() {
@@ -811,6 +827,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
+      _mergeFeedGeneratingResummaryIdsFromFeeds(resp.memoryDetail.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } catch (e) {
       if (state.phase == OmiMemoryDetailPhase.loaded && state.data != null) {
         emit(state.copyWith(isRefreshing: false));
@@ -1183,6 +1200,47 @@ String? _lastFeedCardId(List<MPFeedCardStruct> feeds) {
   return null;
 }
 
+/// Feed 中 `resummary_status == 1` 的卡片：与 [summaryRecord] 返回的 summary_memory_id 对应字段为卡片 [MPFeedCardStruct.id]。
+List<String> _collectFeedGeneratingResummaryIds(List<MPFeedCardStruct> feeds) {
+  final List<String> out = <String>[];
+  for (final MPFeedCardStruct f in feeds) {
+    if (_resolveFeedCardKind(f) != MPFeedCardType.resummary) {
+      continue;
+    }
+    if ((f.resummaryStatus ?? 0) != 1) {
+      continue;
+    }
+    final String id = (f.id ?? '').trim();
+    if (id.isNotEmpty) {
+      out.add(id);
+    }
+  }
+    return out;
+}
+
+/// 将所有「Resummary 生成中」卡片移到：**第一个 [MPMemoryFeedResummaryBlock] 之前**；若无正文 Resummary 则在列表**末尾**。
+List<MPMemoryFeedBlock> _placeResummaryLoadingBlocks(List<MPMemoryFeedBlock> blocks) {
+  final List<MPMemoryFeedResummaryLoadingBlock> loadings = <MPMemoryFeedResummaryLoadingBlock>[];
+  final List<MPMemoryFeedBlock> rest = <MPMemoryFeedBlock>[];
+  for (final MPMemoryFeedBlock b in blocks) {
+    if (b is MPMemoryFeedResummaryLoadingBlock) {
+      loadings.add(b);
+    } else {
+      rest.add(b);
+    }
+  }
+  if (loadings.isEmpty) {
+    return blocks;
+  }
+  final int insertAt = rest.indexWhere((MPMemoryFeedBlock b) => b is MPMemoryFeedResummaryBlock);
+  final int at = insertAt < 0 ? rest.length : insertAt;
+  return <MPMemoryFeedBlock>[
+    ...rest.sublist(0, at),
+    ...loadings,
+    ...rest.sublist(at),
+  ];
+}
+
 List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, String? title) {
   final List<MPMemoryFeedBlock> feedBlocks = <MPMemoryFeedBlock>[];
   for (final MPFeedCardStruct f in feeds) {
@@ -1242,6 +1300,21 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       continue;
     }
     if (kind == MPFeedCardType.resummary) {
+      final int rs = f.resummaryStatus ?? 0;
+      if (rs == 1) {
+        final String sid = (f.id ?? '').trim();
+        if (sid.isNotEmpty) {
+          feedBlocks.add(
+            MPMemoryFeedResummaryLoadingBlock(
+              MPMemoryResummaryLoadingCardData(
+                headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+                summaryMemoryId: sid,
+              ),
+            ),
+          );
+        }
+        continue;
+      }
       final String mainTitle = (f.title ?? '').trim();
       final String body = (f.content ?? '').trim();
       if (mainTitle.isEmpty && body.isEmpty) {
@@ -1314,7 +1387,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       ),
     );
   }
-  return feedBlocks;
+  return _placeResummaryLoadingBlocks(feedBlocks);
 }
 
 /// 依次取第一个非空（trim 后）字符串；用于录音路径：`summary` 与 `only_record` 可能分开展示字段。
