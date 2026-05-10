@@ -12,11 +12,13 @@ import '../../../http/api/mp_chat.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_chat.dart';
+import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../../http/schema/mp_memory.dart';
 import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
 import '../../askai/mp_ask_ai_chat_page.dart';
+import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_insights_more_dialog.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -463,6 +465,19 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           memoryId: memoryId,
           memoryType: mi?.type,
         ),
+        onContextTap: () {
+          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) {
+              return;
+            }
+            MPMemoryDetailPageHelper.navigateToDetailPage(
+              context,
+              memoryId,
+              mi?.type ?? MPMemoryType.memoryFeed,
+            );
+          });
+        },
       );
       if (!context.mounted) {
         completer.complete(result);
