@@ -107,36 +107,34 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
   }) async {
     final String fallbackText = originalText.trim();
-    final List<MPBatchCreateTodoItem> todos = [];
-    final List<MPBatchCreateMemoItem> memos = [];
-    final List<String> issues = structuredSuggestions
-        .map((MPAnalyzeMemoSuggestionStruct e) {
-          final String content = e.content.trim();
-          if (content.isEmpty) {
-            return '';
-          }
-          String prefix = '';
-          if (e.type == MPAnalyzeMemoSuggestionType.todo) {
-            todos.add(MPBatchCreateTodoItem(title: content, priority: '', deadline: 0));
-            prefix = 'Todo: ';
-          } else {
-            memos.add(MPBatchCreateMemoItem(content: content, createAt: 0));
-            prefix = 'Memo: ';
-          }
-          return '$prefix$content';
-        })
-        .where((String e) => e.isNotEmpty)
-        .toList(growable: false);
+    final List<MPQuickCaptureConfirmItem> items = <MPQuickCaptureConfirmItem>[];
+    for (final MPAnalyzeMemoSuggestionStruct e in structuredSuggestions) {
+      final String content = e.content.trim();
+      if (content.isEmpty) {
+        continue;
+      }
+      if (e.type == MPAnalyzeMemoSuggestionType.todo) {
+        items.add(MPQuickCaptureConfirmItem.todo(content));
+      } else {
+        items.add(MPQuickCaptureConfirmItem.memo(content));
+      }
+    }
     final MPQuickCaptureConfirmResult? result = await MPQucikCaptureConfirmDialog.show(
       widget.hostContext,
       originalText: fallbackText,
-      issues: issues,
+      items: items,
     );
     if (result == null) {
       return;
     }
     if (result.confirmed) {
-      final MPBatchCreateResponse? response = await batchCreate(MPBatchCreateRequest(todos: todos, memos: memos));
+      if (result.todos.isEmpty && result.memos.isEmpty) {
+        MPToastUtils.showMessage('No suggestions selected.');
+        return;
+      }
+      final MPBatchCreateResponse? response = await batchCreate(
+        MPBatchCreateRequest(todos: result.todos, memos: result.memos),
+      );
       if (response == null) {
         return;
       }
