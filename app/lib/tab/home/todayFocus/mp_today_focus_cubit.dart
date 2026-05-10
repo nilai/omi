@@ -5,13 +5,10 @@ import '../../../cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
-import 'package:memo_pin/common/mp_todo_voice_input.dart';
-import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
-import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
@@ -476,69 +473,6 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 页面在 loading/empty/error 时也常驻展示「ALL TO DOS」输入框，
   /// 因此提交/刷新等交互不应仅限于 [loaded]。
   bool get _isInteractive => true;
-
-  void addTodoFromInput(String text) {
-    if (!_isInteractive) return;
-    final String t = text.trim();
-    if (t.isEmpty) return;
-    _insertTodayTodo(t);
-  }
-
-  /// 文本走 [analyzeMemoText]，语音（已上传 [MPTodoVoiceInputResult.recordUrl]）走 [analyzeMemoRecord]。
-  /// 返回 `true` 表示分析成功且 [getTodoList] 刷新成功；`false` 表示失败或刷新失败（可保留输入框内容）。
-  Future<bool> addTodoFromAnalyzedInput(MPTodoVoiceInputResult r) async {
-    if (!_isInteractive) return false;
-    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-    if (!r.fromVoice) {
-      final String t = r.text.trim();
-      if (t.isEmpty) return false;
-      final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
-        MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
-      );
-      if (response == null || response.baseResp.code != 0) {
-        MPToastUtils.showMessage(
-          response?.baseResp.message ??
-          'Analysis failed. Please try again later.',
-        );
-        return false;
-      }
-      return _refreshTodoListsFromServer();
-    }
-
-    final String? url = r.recordUrl?.trim();
-    if (url == null || url.isEmpty) {
-      MPToastUtils.showMessage('Invalid recording.');
-      return false;
-    }
-    final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
-      MPAnalyzeMemoRecordRequest(recordUrl: url, createAt: createAt),
-    );
-    if (response == null || response.baseResp.code != 0) {
-      MPToastUtils.showMessage(
-        response?.baseResp.message ??
-          'Analysis failed. Please try again later.',
-      );
-      return false;
-    }
-    final String title = response.originalText.trim();
-    if (title.isEmpty) {
-      MPToastUtils.showMessage('No usable content recognized.');
-      return false;
-    }
-    return _refreshTodoListsFromServer();
-  }
-
-  void _insertTodayTodo(String title) {
-    final List<MPTodayFocusTodoRowData> next = List<MPTodayFocusTodoRowData>.of(
-      state.todayItems,
-    );
-    next.insert(
-      0,
-      MPTodayFocusTodoRowData(title: title, timeLabel: '', todoId: ''),
-    );
-    emit(state.copyWith(todayItems: next));
-  }
 
   List<MPTodayFocusTodoRowData> _itemsForSection(
     MPTodayFocusState s,

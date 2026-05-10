@@ -8,7 +8,10 @@ import 'package:memo_pin/common/omi_edit_todo_popup.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 
+import '../../../common/mp_analyze_memo_confirm_flow.dart';
 import '../../../common/mp_date_utils.dart';
+import '../../../http/api/mp_memo.dart';
+import '../../../http/schema/mp_memo.dart';
 import '../../../http/schema/mp_memory.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
@@ -40,6 +43,45 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   }
 
   Future<void> _onRefresh() => _cubit.initData();
+
+  /// ALL TO DOS：文本提交（含语音转写回填后再提交）→ [analyzeMemoText] → Quick Capture 同款确认 → [batchCreate]。
+  Future<bool> _onAllTodosInputSubmitted(MPTodoVoiceInputResult r) async {
+    if (!mounted) {
+      return false;
+    }
+    final String t = r.text.trim();
+    if (t.isEmpty) {
+      return false;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
+      MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
+    );
+    if (!mounted) {
+      return false;
+    }
+    if (response == null || response.baseResp.code != 0) {
+      MPToastUtils.showMessage(
+        response?.baseResp.message ?? 'Analysis failed. Please try again later.',
+      );
+      return false;
+    }
+    final String memoText =
+        response.originalText.trim().isNotEmpty ? response.originalText.trim() : t;
+    final bool created = await MPAnalyzeMemoConfirmFlow.showConfirmAndBatchCreate(
+      context,
+      originalText: memoText,
+      structuredSuggestions: response.structuredSuggestions,
+    );
+    if (!mounted) {
+      return false;
+    }
+    if (created) {
+      await _cubit.refreshGroupedTodoLists();
+    }
+    return created;
+  }
 
   /// 拉取关联 Memory 简要信息后弹出编辑 Todo（CONTEXT / memoryId / type 与首页一致）。
   Future<void> _showOmiEditTodoPopupWithMemoryContext({
@@ -273,9 +315,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                       ],
                       const SizedBox(height: 20),
                       MPAllTodosInputCard(
-                        onSubmitted: (MPTodoVoiceInputResult r) {
-                          return _cubit.addTodoFromAnalyzedInput(r);
-                        },
+                        onSubmitted: _onAllTodosInputSubmitted,
                       ),
                       const SizedBox(height: 24),
                       MPTodayFocusTodoGroupedList(
