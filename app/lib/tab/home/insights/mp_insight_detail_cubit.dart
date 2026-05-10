@@ -168,12 +168,7 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({
-    required this.text,
-    required this.subtitle,
-    this.visible = true,
-    this.deadLine,
-  });
+  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true, this.deadLine});
 
   final String text;
   final String subtitle;
@@ -753,12 +748,8 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .toList();
     final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
         .map(
-          (MPWeeklyInsightPriorityItemStruct e) => MPWeeklyPriorityItem(
-            text: e.title,
-            subtitle: e.subTitle ?? '',
-            visible: true,
-            deadLine: e.deadLine,
-          ),
+          (MPWeeklyInsightPriorityItemStruct e) =>
+              MPWeeklyPriorityItem(text: e.title, subtitle: e.subTitle ?? '', visible: true, deadLine: e.deadLine),
         )
         .toList();
     final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
@@ -831,11 +822,8 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .asMap()
         .entries
         .map(
-          (MapEntry<int, MPInsightTodoTextItemStruct> e) => MPMonthlySuggestedFocusItem(
-            rank: e.key + 1,
-            text: e.value.text,
-            deadLine: e.value.deadLine,
-          ),
+          (MapEntry<int, MPInsightTodoTextItemStruct> e) =>
+              MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value.text, deadLine: e.value.deadLine),
         )
         .toList();
 
@@ -877,9 +865,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
       tips: detail.nextStep
-          .map(
-            (MPInsightTodoTextItemStruct e) => MPInsightTodoLineItem(text: e.text, deadLine: e.deadLine),
-          )
+          .map((MPInsightTodoTextItemStruct e) => MPInsightTodoLineItem(text: e.text, deadLine: e.deadLine))
           .toList(),
       memoryId: memoryId,
     );
