@@ -524,7 +524,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
       tips: [],
       daily: MPDailyInsightDetailData(
         dateLabel: 'Daily Insight · ${item.periodLabel}',
-        narrativeTitle: detail.narrative.content.isNotEmpty ? detail.decisionsMade.title : 'Today\'s narrative',
+        narrativeTitle: 'Today\'s narrative',
         narrativeBody: detail.narrative.content,
         decisionsMade: decisionsMade,
         openQuestions: openQuestions,
