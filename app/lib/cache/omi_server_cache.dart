@@ -41,6 +41,9 @@ class OmiCacheKeys {
 
   /// 是否为首页详情类缓存键（用于批量清理）
   static bool isHomeDetailKey(String key) => key.startsWith(_homeDetailPrefix);
+
+  /// All To-Dos / Today Focus 页：分组列表 + Focus candidates 接口快照（JSON Map）
+  static const String todayFocusBundle = 'mp_srv_today_focus_bundle_v1';
 }
 
 /// 服务端返回数据的缓存：内存 + 磁盘持久化
