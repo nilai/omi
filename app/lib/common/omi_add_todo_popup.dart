@@ -68,6 +68,10 @@ class MPAddTodoPopupParams {
 
   final String contextMetaLine;
 
+  /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后若均为空，则不展示 CONTEXT 区块。
+  bool get shouldShowContextSection =>
+      contextMemoryLabel.trim().isNotEmpty && contextMemoryTitle.trim().isNotEmpty && contextMetaLine.trim().isNotEmpty;
+
   final String initialNotes;
 
   final String initialPriority;
@@ -477,10 +481,12 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                               ),
                             ),
                             const SizedBox(height: 20),
-                            _sectionLabel('CONTEXT'),
-                            const SizedBox(height: 8),
-                            _buildContextCard(p),
-                            const SizedBox(height: 20),
+                            if (p.shouldShowContextSection) ...<Widget>[
+                              _sectionLabel('CONTEXT'),
+                              const SizedBox(height: 8),
+                              _buildContextCard(p),
+                              const SizedBox(height: 20),
+                            ],
                             _sectionLabel('NOTES'),
                             const SizedBox(height: 8),
                             TextField(

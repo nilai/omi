@@ -432,13 +432,16 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
               label: mi.label,
             )
           : '';
+      final String contextMemoryLabel = contextMetaLine.isNotEmpty || contextMemoryTitle.isNotEmpty
+          ? 'From memory:'
+          : '';
       final String memoryId = state.data?.memoryId.toString() ?? '';
 
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
         context,
         params: MPAddTodoPopupParams(
           initialTitle: title.trim(),
-          contextMemoryLabel: '',
+          contextMemoryLabel: contextMemoryLabel,
           contextMemoryTitle: contextMemoryTitle,
           contextMetaLine: contextMetaLine,
           memoryId: memoryId,
