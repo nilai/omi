@@ -35,6 +35,13 @@ class OmiCacheManager {
   /// 删除单条首页详情缓存
   void removeHomeDetail(String id) => OmiServerCache().remove(OmiCacheKeys.homeDetail(id));
 
+  /// Today Focus / All To-Dos：写入分组列表与 candidates 原始 JSON（见 [OmiCacheKeys.todayFocusBundle]）
+  void putTodayFocusBundle(Object? value) =>
+      OmiServerCache().putJson(OmiCacheKeys.todayFocusBundle, value);
+
+  /// 读取 Today Focus 缓存包（decode 后为 `Map`，含 `grouped` / 可选 `candidates`）
+  dynamic getTodayFocusBundle() => OmiServerCache().getDecoded(OmiCacheKeys.todayFocusBundle);
+
   /// 清空所有缓存数据（首页第一页、Memory 第一页、全部首页详情等）
   void clearAll() => OmiServerCache().clear();
 }

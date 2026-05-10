@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import '../../../cache/omi_cache_manager.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
@@ -140,14 +141,83 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     );
   }
 
+  static const String _kTodayFocusCacheGrouped = 'grouped';
+  static const String _kTodayFocusCacheCandidates = 'candidates';
+
+  void _putTodayFocusCache(
+    GetTodoGroupedListResponse raw,
+    GetTodoListResponse? candidates,
+  ) {
+    OmiCacheManager().putTodayFocusBundle(<String, dynamic>{
+      _kTodayFocusCacheGrouped: raw.toJson(),
+      if (candidates != null) _kTodayFocusCacheCandidates: candidates.toJson(),
+    });
+  }
+
+  MPTodayFocusState? _tryStateFromTodayFocusCache() {
+    final dynamic decoded = OmiCacheManager().getTodayFocusBundle();
+    if (decoded is! Map) {
+      return null;
+    }
+    final dynamic groupedRaw = decoded[_kTodayFocusCacheGrouped];
+    if (groupedRaw is! Map) {
+      return null;
+    }
+    try {
+      final GetTodoGroupedListResponse raw = GetTodoGroupedListResponse.fromJson(
+        Map<String, dynamic>.from(groupedRaw),
+      );
+      if (raw.baseResp.code != 0) {
+        return null;
+      }
+      GetTodoListResponse? candidates;
+      final dynamic c = decoded[_kTodayFocusCacheCandidates];
+      if (c is Map) {
+        candidates = GetTodoListResponse.fromJson(Map<String, dynamic>.from(c));
+      }
+      return _buildTodayFocusUiState(raw, candidates);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  MPTodayFocusState _buildTodayFocusUiState(
+    GetTodoGroupedListResponse raw,
+    GetTodoListResponse? candidates,
+  ) {
+    final MPTodayFocusState merged = _stateFromGroupedListResponse(raw).copyWith(
+      aiFocusSuggestions: _aiSuggestionsFromCandidates(candidates),
+      aiFocusSuggestionIndex: 0,
+      isGroupedTodosRefreshing: false,
+    );
+    if (!merged.hasRenderableContent) {
+      return merged.copyWith(
+        phase: MPTodayFocusPhase.empty,
+        clearErrorMessage: true,
+      );
+    }
+    return merged.copyWith(
+      phase: MPTodayFocusPhase.loaded,
+      clearErrorMessage: true,
+    );
+  }
+
   /// 首次进入 / [retry] / 下拉刷新
   Future<void> initData() async {
     /// 仅首屏（loading）与错误重试时全屏占位；已 loaded / empty 时下拉刷新不闪全屏。
     final bool useFullScreenLoading =
         state.phase == MPTodayFocusPhase.loading ||
         state.phase == MPTodayFocusPhase.error;
+
+    bool bootstrappedFromCache = false;
     if (useFullScreenLoading) {
-      emit(_loadingState());
+      final MPTodayFocusState? cached = _tryStateFromTodayFocusCache();
+      if (cached != null) {
+        emit(cached);
+        bootstrappedFromCache = true;
+      } else {
+        emit(_loadingState());
+      }
     }
     try {
       final List<Object?> bundled = await Future.wait<Object?>(<Future<Object?>>[
@@ -163,32 +233,19 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       if (raw.baseResp.code != 0) {
         throw StateError(raw.baseResp.message);
       }
-      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw).copyWith(
-        aiFocusSuggestions: _aiSuggestionsFromCandidates(candidates),
-        aiFocusSuggestionIndex: 0,
-      );
-      if (!loaded.hasRenderableContent) {
+      _putTodayFocusCache(raw, candidates);
+      emit(_buildTodayFocusUiState(raw, candidates));
+    } catch (e) {
+      if (useFullScreenLoading && !bootstrappedFromCache) {
         emit(
-          loaded.copyWith(
-            phase: MPTodayFocusPhase.empty,
-            clearErrorMessage: true,
+          _loadingState().copyWith(
+            phase: MPTodayFocusPhase.error,
+            errorMessage: e.toString(),
           ),
         );
-        return;
+      } else if (!useFullScreenLoading) {
+        MPToastUtils.showMessage('Couldn\'t refresh. Please try again later.');
       }
-      emit(
-        loaded.copyWith(
-          phase: MPTodayFocusPhase.loaded,
-          clearErrorMessage: true,
-        ),
-      );
-    } catch (e) {
-      emit(
-        _loadingState().copyWith(
-          phase: MPTodayFocusPhase.error,
-          errorMessage: e.toString(),
-        ),
-      );
     }
   }
 
@@ -225,28 +282,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         );
         return false;
       }
-      final MPTodayFocusState loaded = _stateFromGroupedListResponse(raw).copyWith(
-        aiFocusSuggestions: _aiSuggestionsFromCandidates(candidates),
-        aiFocusSuggestionIndex: 0,
-        isGroupedTodosRefreshing: false,
-      );
-      if (!loaded.hasRenderableContent) {
-        emit(
-          loaded.copyWith(
-            phase: MPTodayFocusPhase.empty,
-            clearErrorMessage: true,
-            isGroupedTodosRefreshing: false,
-          ),
-        );
-      } else {
-        emit(
-          loaded.copyWith(
-            phase: MPTodayFocusPhase.loaded,
-            clearErrorMessage: true,
-            isGroupedTodosRefreshing: false,
-          ),
-        );
-      }
+      _putTodayFocusCache(raw, candidates);
+      emit(_buildTodayFocusUiState(raw, candidates));
       MPHomeNotification.notifyHomeListRefresh();
       return true;
     } catch (_) {
