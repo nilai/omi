@@ -53,13 +53,14 @@ class MPHomeAudioStatus {
 
 /// Today's Focus 列表项（Up Next）
 class MPHomeTodoItem {
-  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false});
+  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false, this.memoryId});
 
   final String id;
   final String title;
   final String? time;
   final String? reason;
   final bool completed;
+  final int? memoryId;
 }
 
 /// Recent Memory 一行
@@ -185,6 +186,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           title: e.title ?? '',
           time: _formatTodoDeadlineTime(e.deadline),
           reason: e.reason ?? '',
+          memoryId: e.memoryId,
+          completed: e.status == 2,
         ),
       );
     }
