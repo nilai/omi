@@ -295,72 +295,69 @@ class _MPQucikCaptureConfirmDialogState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Expanded(
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: editing ? null : () => _toggleSelected(index),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.only(top: 2),
-                        child: _buildSelectionLeading(row.selected),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: editing
-                            ? TextField(
-                                controller: _editingController,
-                                focusNode: _editingFocusNode,
-                                minLines: 1,
-                                maxLines: 4,
-                                style: TextStyle(
-                                  fontSize: OmiFontSize.t9_18,
-                                  fontWeight: OmiFontWeight.medium,
-                                  color: mainTextColor,
-                                  height: 1.3,
-                                ),
-                                decoration: InputDecoration(
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 8,
-                                  ),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                _displayLine(row),
-                                maxLines: 8,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: OmiFontSize.t7_16,
-                                  fontWeight: OmiFontWeight.medium,
-                                  color: mainTextColor,
-                                  height: 1.35,
-                                ),
-                              ),
-                      ),
-                    ],
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: editing ? null : () => _toggleSelected(index),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: _buildSelectionLeading(row.selected),
                   ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: editing
+                        ? TextField(
+                            controller: _editingController,
+                            focusNode: _editingFocusNode,
+                            minLines: 1,
+                            maxLines: 4,
+                            style: TextStyle(
+                              fontSize: OmiFontSize.t9_18,
+                              fontWeight: OmiFontWeight.medium,
+                              color: mainTextColor,
+                              height: 1.3,
+                            ),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 8,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            _displayLine(row),
+                            maxLines: 8,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: OmiFontSize.t7_16,
+                              fontWeight: OmiFontWeight.medium,
+                              color: mainTextColor,
+                              height: 1.35,
+                            ),
+                          ),
+                  ),
+                ],
               ),
             ),
           ),
           const SizedBox(width: 8),
-          InkWell(
+          GestureDetector(
             onTap: editing ? _saveEdit : () => _startEdit(index),
-            borderRadius: BorderRadius.circular(999),
             child: Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Icon(
