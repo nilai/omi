@@ -60,6 +60,7 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
       deadline: (json['deadline'] as num).toInt(),
       isCompleted: json['is_completed'] as bool,
       preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
+      feedCardId: json['feed_card_id'] as String?,
     );
 
 Map<String, dynamic> _$MPUpdateTodoRequestToJson(
@@ -71,6 +72,7 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(
   'deadline': instance.deadline,
   'is_completed': instance.isCompleted,
   'pre_create_status': instance.preCreateStatus,
+  'feed_card_id': instance.feedCardId,
 };
 
 GetTodoGroupedListResponse _$GetTodoGroupedListResponseFromJson(
