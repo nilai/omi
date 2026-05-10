@@ -445,7 +445,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           contextMemoryTitle: contextMemoryTitle,
           contextMetaLine: contextMetaLine,
           memoryId: memoryId,
-          initialDeadlineTimestamp: 0,
+          memoryType: mi?.type,
         ),
       );
       if (!context.mounted) {

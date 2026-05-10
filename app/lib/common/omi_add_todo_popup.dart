@@ -10,6 +10,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
+import '../http/schema/mp_data_model.dart';
 
 /// [showMPAddTodoPopup] 保存时返回的数据
 class MPAddTodoPopupResult {
@@ -58,6 +59,7 @@ class MPAddTodoPopupParams {
     this.feedCardId = '',
     this.todoId,
     this.preCreateStatus,
+    this.memoryType,
   });
 
   final String initialTitle;
@@ -98,6 +100,9 @@ class MPAddTodoPopupParams {
 
   /// 更新 Todo 时透传给接口字段 `pre_create_status`；不传则为 `null`。
   final int? preCreateStatus;
+
+  /// 关联 Memory 类型（如 [MPMemorySimpleInfoStruct.type]）；为空时跳转详情回退为 [MPMemoryType.memoryFeed]。
+  final MPMemoryType? memoryType;
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。
