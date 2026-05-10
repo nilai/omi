@@ -256,3 +256,24 @@ Future<MPGetMemorySummaryStatusResponse?> getMemorySummaryStatus(
   }
   return null;
 }
+
+// GET /api/v2/memory/get_memory_simple_info
+Future<MPGetMemoryV2SimpleInfoResponse?> getMemoryV2SimpleInfo(
+  MPGetMemoryV2SimpleInfoRequest req,
+) async {
+  var response = await makeApiCall(
+    url:
+        '${Env.apiBaseUrl}api/v2/memory/get_memory_simple_info?memory_id=${req.memoryId}',
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) return null;
+  debugPrint('getMemoryV2SimpleInfo response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetMemoryV2SimpleInfoResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}

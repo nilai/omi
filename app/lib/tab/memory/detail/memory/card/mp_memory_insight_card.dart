@@ -469,6 +469,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
       return MPAddTodoPopupParams(
         initialTitle: (widget.data.insightSuggestion ?? '').trim(),
         initialNotes: (widget.data.insightContent ?? '').trim(),
+        contextMemoryLabel: 'From memory:',
         contextMemoryTitle: widget.data.title,
         memoryId: mid,
         feedCardId: fid,
@@ -477,6 +478,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     return MPAddTodoPopupParams(
       initialTitle: _plainSnippetForTodo(widget.data.bodyText),
       initialNotes: '',
+      contextMemoryLabel: 'From memory:',
       contextMemoryTitle: widget.data.title,
       memoryId: mid,
       feedCardId: fid,

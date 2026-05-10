@@ -413,7 +413,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                               onPressed: () async {
                                 final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
                                   context,
-                                  params: MPAddTodoPopupParams(initialTitle: focus.text),
+                                  params: MPAddTodoPopupParams(initialTitle: focus.text, contextMemoryLabel: 'From Daily Insight:'),
                                 );
                                 if (!mounted) {
                                   return;

@@ -175,6 +175,7 @@ class MPMemoryActionContent extends StatelessWidget {
       context,
       params: MPAddTodoPopupParams(
         initialTitle: item.title ?? '',
+        contextMemoryLabel: 'From memory:',
         memoryId: mid,
         todoId: existingTodoId,
         preCreateStatus: 1,

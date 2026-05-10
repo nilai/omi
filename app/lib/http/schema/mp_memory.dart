@@ -129,6 +129,69 @@ class MPGetMemoryV2DetailResponse {
   Map<String, dynamic> toJson() => _$MPGetMemoryV2DetailResponseToJson(this);
 }
 
+/// Thrift `MemorySimpleInfoStruct`。
+@JsonSerializable()
+class MPMemorySimpleInfoStruct {
+  final String title;
+
+  final String? label;
+
+  /// 时长，单位：秒。
+  @JsonKey(name: 'duration', fromJson: mpIntFromJson)
+  final int duration;
+
+  @JsonKey(name: 'record_create_at', fromJson: mpIntFromJson)
+  final int recordCreateAt;
+
+  MPMemorySimpleInfoStruct({
+    required this.title,
+    this.label,
+    required this.duration,
+    required this.recordCreateAt,
+  });
+
+  factory MPMemorySimpleInfoStruct.fromJson(Map<String, dynamic> json) =>
+      _$MPMemorySimpleInfoStructFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPMemorySimpleInfoStructToJson(this);
+}
+
+/// Thrift `GetMemoryV2SimpleInfoRequest`。
+@JsonSerializable()
+class MPGetMemoryV2SimpleInfoRequest {
+  @JsonKey(name: 'memory_id')
+  final String memoryId;
+
+  MPGetMemoryV2SimpleInfoRequest({
+    required this.memoryId,
+  });
+
+  factory MPGetMemoryV2SimpleInfoRequest.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryV2SimpleInfoRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2SimpleInfoRequestToJson(this);
+}
+
+/// Thrift `GetMemoryV2SimpleInfoResponse`。
+@JsonSerializable()
+class MPGetMemoryV2SimpleInfoResponse {
+  @JsonKey(name: 'memory_info')
+  final MPMemorySimpleInfoStruct memoryInfo;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPGetMemoryV2SimpleInfoResponse({
+    required this.memoryInfo,
+    required this.baseResp,
+  });
+
+  factory MPGetMemoryV2SimpleInfoResponse.fromJson(Map<String, dynamic> json) =>
+      _$MPGetMemoryV2SimpleInfoResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPGetMemoryV2SimpleInfoResponseToJson(this);
+}
+
 
 @JsonSerializable()
 class MPGetMemoryFeedRequest {

@@ -30,7 +30,7 @@ class Logger {
 }
 
 class ApiClient {
-  static const Duration requestTimeoutRead = Duration(seconds: 30);
+  static const Duration requestTimeoutRead = Duration(seconds: 60);
   static const Duration requestTimeoutWrite = Duration(seconds: 300);
 
   static final _client = _createClient();

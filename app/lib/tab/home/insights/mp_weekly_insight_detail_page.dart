@@ -780,7 +780,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                           onPressed: () async {
                             final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
                               context,
-                              params: MPAddTodoPopupParams(initialTitle: item.text),
+                              params: MPAddTodoPopupParams(initialTitle: item.text, contextMemoryLabel: 'From Weekly Insight:'),
                             );
                             if (!mounted) {
                               return;

@@ -441,7 +441,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                       onPressed: () async {
                         final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
                           context,
-                          params: MPAddTodoPopupParams(initialTitle: text.trim()),
+                          params: MPAddTodoPopupParams(initialTitle: text.trim(), contextMemoryLabel: 'From Pattern Insight:'),
                         );
                         if (!mounted) {
                           return;

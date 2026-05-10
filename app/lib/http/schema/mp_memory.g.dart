@@ -96,6 +96,48 @@ Map<String, dynamic> _$MPGetMemoryV2DetailResponseToJson(
   MPGetMemoryV2DetailResponse instance,
 ) => <String, dynamic>{'memory_detail': instance.memoryDetail};
 
+MPMemorySimpleInfoStruct _$MPMemorySimpleInfoStructFromJson(
+  Map<String, dynamic> json,
+) => MPMemorySimpleInfoStruct(
+  title: json['title'] as String,
+  label: json['label'] as String?,
+  duration: mpIntFromJson(json['duration']),
+  recordCreateAt: mpIntFromJson(json['record_create_at']),
+);
+
+Map<String, dynamic> _$MPMemorySimpleInfoStructToJson(
+  MPMemorySimpleInfoStruct instance,
+) => <String, dynamic>{
+  'title': instance.title,
+  'label': instance.label,
+  'duration': instance.duration,
+  'record_create_at': instance.recordCreateAt,
+};
+
+MPGetMemoryV2SimpleInfoRequest _$MPGetMemoryV2SimpleInfoRequestFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2SimpleInfoRequest(memoryId: json['memory_id'] as String);
+
+Map<String, dynamic> _$MPGetMemoryV2SimpleInfoRequestToJson(
+  MPGetMemoryV2SimpleInfoRequest instance,
+) => <String, dynamic>{'memory_id': instance.memoryId};
+
+MPGetMemoryV2SimpleInfoResponse _$MPGetMemoryV2SimpleInfoResponseFromJson(
+  Map<String, dynamic> json,
+) => MPGetMemoryV2SimpleInfoResponse(
+  memoryInfo: MPMemorySimpleInfoStruct.fromJson(
+    json['memory_info'] as Map<String, dynamic>,
+  ),
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPGetMemoryV2SimpleInfoResponseToJson(
+  MPGetMemoryV2SimpleInfoResponse instance,
+) => <String, dynamic>{
+  'memory_info': instance.memoryInfo,
+  'base_resp': instance.baseResp,
+};
+
 MPGetMemoryFeedRequest _$MPGetMemoryFeedRequestFromJson(
   Map<String, dynamic> json,
 ) => MPGetMemoryFeedRequest(
