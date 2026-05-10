@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
@@ -8,10 +9,7 @@ import 'package:memo_pin/common/omi_edit_todo_popup.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 
-import '../../../common/mp_analyze_memo_confirm_flow.dart';
 import '../../../common/mp_date_utils.dart';
-import '../../../http/api/mp_memo.dart';
-import '../../../http/schema/mp_memo.dart';
 import '../../../http/schema/mp_memory.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
@@ -44,43 +42,26 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
 
   Future<void> _onRefresh() => _cubit.initData();
 
-  /// ALL TO DOS：文本提交（含语音转写回填后再提交）→ [analyzeMemoText] → Quick Capture 同款确认 → [batchCreate]。
+  /// ALL TO DOS：文本提交（含语音转写回填后再提交）→ 直接 [MPTodoManager.createTodo]（与 Memory 详情快捷加 Todo 一致，无 analyze）。
   Future<bool> _onAllTodosInputSubmitted(MPTodoVoiceInputResult r) async {
     if (!mounted) {
       return false;
     }
-    final String t = r.text.trim();
-    if (t.isEmpty) {
+    final String line = r.text.trim();
+    if (line.isEmpty) {
       return false;
     }
     FocusManager.instance.primaryFocus?.unfocus();
-    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
-      MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
-    );
+    final bool ok = await MPTodoManager().createTodo(title: line);
     if (!mounted) {
       return false;
     }
-    if (response == null || response.baseResp.code != 0) {
-      MPToastUtils.showMessage(
-        response?.baseResp.message ?? 'Analysis failed. Please try again later.',
-      );
+    if (!ok) {
+      MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
       return false;
     }
-    final String memoText =
-        response.originalText.trim().isNotEmpty ? response.originalText.trim() : t;
-    final bool created = await MPAnalyzeMemoConfirmFlow.showConfirmAndBatchCreate(
-      context,
-      originalText: memoText,
-      structuredSuggestions: response.structuredSuggestions,
-    );
-    if (!mounted) {
-      return false;
-    }
-    if (created) {
-      await _cubit.refreshGroupedTodoLists();
-    }
-    return created;
+    await _cubit.refreshGroupedTodoLists();
+    return true;
   }
 
   /// 拉取关联 Memory 简要信息后弹出编辑 Todo（CONTEXT / memoryId / type 与首页一致）。
