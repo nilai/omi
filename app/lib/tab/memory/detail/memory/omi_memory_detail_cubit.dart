@@ -966,6 +966,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       actionItems: d.actionItems,
       initialSegment: d.initialSegment,
       feedBlocks: nextBlocks,
+      memoryType: d.memoryType,
     );
 
     emit(cur.copyWith(data: nextData));
@@ -1023,6 +1024,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       actionItems: d.actionItems,
       initialSegment: d.initialSegment,
       feedBlocks: nextBlocks,
+      memoryType: d.memoryType,
     );
 
     emit(cur.copyWith(data: nextData));
@@ -1156,6 +1158,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       actionItems: d.actionItems,
       initialSegment: d.initialSegment,
       feedBlocks: nextBlocks,
+      memoryType: d.memoryType,
     );
 
     emit(cur.copyWith(data: nextData));
@@ -1476,6 +1479,7 @@ _mpMemoryStructToDetailBundleFromSources(
     transcriptItems: transcriptItems,
     actionItems: actionItems,
     feedBlocks: built,
+    memoryType: m.type,
   );
 
   final String feedCursor = _lastFeedCardId(feedCards) ?? '';

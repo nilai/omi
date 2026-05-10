@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -63,10 +64,26 @@ class MPMemoryActionItemData {
   }
 }
 
+/// {@template MPMemoryDetailForTodoPopup}
+/// Memory 详情摘要：供 [showMPAddTodoPopup] 的 CONTEXT 区块与 [MPAddTodoPopupParams.memoryType]。
+/// {@endtemplate}
+class MPMemoryDetailForTodoPopup {
+  /// {@macro MPMemoryDetailForTodoPopup}
+  const MPMemoryDetailForTodoPopup({
+    required this.title,
+    required this.metaLine,
+  });
+
+  final String title;
+
+  final String metaLine;
+}
+
 /// Actions 分段：标题 + **固定高度**可滑动列表（每条为圆角描边卡片 + 底部操作钮）
 class MPMemoryActionContent extends StatelessWidget {
   /// {@template MPMemoryActionContent}
   /// - [items]：列表数据（示例为 3 条：1 条已创建 + 2 条待创建）
+  /// - [memoryDetail]：当前 Memory 详情摘要，传入 [showMPAddTodoPopup] 的 CONTEXT 与类型字段
   /// - [height]：列表可视高度，默认 `300`，超出可滑动
   /// - [onCreateTodo]：用户在 [showMPAddTodoPopup] 中点击 **Save** 后回调（带下标与表单结果）
   /// - [onActionContextTap]：弹窗内 CONTEXT 卡片点击（可选）
@@ -75,6 +92,7 @@ class MPMemoryActionContent extends StatelessWidget {
     super.key,
     required this.items,
     required this.memoryId,
+    required this.memoryDetail,
     this.height = 300,
     this.scrollWithParent = false,
     this.useMemoStyle = false,
@@ -88,6 +106,9 @@ class MPMemoryActionContent extends StatelessWidget {
 
   /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
   final String memoryId;
+
+  /// 当前 Memory 详情摘要（标题 / 元信息 / 类型），用于 Todo 弹窗上下文。
+  final MPMemoryDetailForTodoPopup memoryDetail;
 
   /// 列表区域高度（固定）
   final double height;
@@ -119,7 +140,12 @@ class MPMemoryActionContent extends StatelessWidget {
           data: item,
           useMemoStyle: useMemoStyle,
           onCreateTodo: item.status == MPMemoryActionItemStatus.pending
-              ? () => _openCreateTodoPopup(context, index: index, item: item)
+              ? () => _openCreateTodoPopup(
+                  context,
+                  index: index,
+                  item: item,
+                  memoryDetail: memoryDetail,
+                )
               : null,
         ),
       );
@@ -167,6 +193,7 @@ class MPMemoryActionContent extends StatelessWidget {
     BuildContext context, {
     required int index,
     required MPMemoryActionItemData item,
+    required MPMemoryDetailForTodoPopup memoryDetail,
   }) async {
     final String mid = memoryId.trim();
     final String rawTodoId = (item.id ?? '').trim();
@@ -176,9 +203,12 @@ class MPMemoryActionContent extends StatelessWidget {
       params: MPAddTodoPopupParams(
         initialTitle: item.title ?? '',
         contextMemoryLabel: 'From memory:',
+        contextMemoryTitle: memoryDetail.title,
+        contextMetaLine: memoryDetail.metaLine,
         memoryId: mid,
         todoId: existingTodoId,
         preCreateStatus: 1,
+        initialDeadlineTimestamp: item.deadline,
       ),
       onContextTap: onActionContextTap,
     );
