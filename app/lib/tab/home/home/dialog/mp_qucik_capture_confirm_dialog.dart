@@ -1,21 +1,46 @@
 import 'package:flutter/material.dart';
 
+import '../../../../http/schema/mp_todo.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
+
+/// Quick Capture 确认列表一行（由分析结果组装，不含选中状态）。
+class MPQuickCaptureConfirmItem {
+  /// Todo 行。
+  factory MPQuickCaptureConfirmItem.todo(String title) {
+    return MPQuickCaptureConfirmItem._(isTodo: true, text: title);
+  }
+
+  /// Memo 行。
+  factory MPQuickCaptureConfirmItem.memo(String content) {
+    return MPQuickCaptureConfirmItem._(isTodo: false, text: content);
+  }
+
+  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text});
+
+  final bool isTodo;
+
+  /// Todo 标题或 Memo 正文（不含 `Todo:` / `Memo:` 前缀）。
+  final String text;
+}
 
 /// Quick Capture 确认弹窗返回结果。
 class MPQuickCaptureConfirmResult {
   /// 构造函数。
   const MPQuickCaptureConfirmResult({
     required this.confirmed,
-    required this.issues,
+    required this.todos,
+    required this.memos,
   });
 
   /// 是否点击确认。
   final bool confirmed;
 
-  /// 编辑后的问题列表。
-  final List<String> issues;
+  /// 用户勾选且编辑后的 Todo（仅 [confirmed] 为 true 时有意义）。
+  final List<MPBatchCreateTodoItem> todos;
+
+  /// 用户勾选且编辑后的 Memo（仅 [confirmed] 为 true 时有意义）。
+  final List<MPBatchCreateMemoItem> memos;
 }
 
 /// Quick Capture 结构化确认弹窗。
@@ -24,20 +49,20 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
   const MPQucikCaptureConfirmDialog({
     super.key,
     required this.originalText,
-    required this.issues,
+    required this.items,
   });
 
   /// 原始文本（支持多行）。
   final String originalText;
 
-  /// 问题列表（支持多行、多个问题）。
-  final List<String> issues;
+  /// 结构化建议行（顺序与展示一致）。
+  final List<MPQuickCaptureConfirmItem> items;
 
   /// 展示弹窗，最大高度为屏幕的 3/4。
   static Future<MPQuickCaptureConfirmResult?> show(
     BuildContext context, {
     required String originalText,
-    required List<String> issues,
+    required List<MPQuickCaptureConfirmItem> items,
   }) {
     return showModalBottomSheet<MPQuickCaptureConfirmResult>(
       context: context,
@@ -47,7 +72,7 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
       builder: (BuildContext sheetContext) {
         return MPQucikCaptureConfirmDialog(
           originalText: originalText,
-          issues: issues,
+          items: items,
         );
       },
     );
@@ -58,13 +83,28 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
       _MPQucikCaptureConfirmDialogState();
 }
 
+class _ConfirmRow {
+  _ConfirmRow({required this.isTodo, required this.text});
+
+  final bool isTodo;
+  String text;
+
+  /// 默认全选，点击行切换。
+  bool selected = true;
+}
+
 class _MPQucikCaptureConfirmDialogState
     extends State<MPQucikCaptureConfirmDialog> {
   static const Color _kBlue = Color(0xFF2F7BFF);
 
-  late final List<String> _issues = widget.issues
-      .map((String e) => e.trim())
-      .where((String e) => e.isNotEmpty)
+  late final List<_ConfirmRow> _rows = widget.items
+      .map(
+        (MPQuickCaptureConfirmItem e) => _ConfirmRow(
+          isTodo: e.isTodo,
+          text: e.text.trim(),
+        ),
+      )
+      .where((_ConfirmRow r) => r.text.isNotEmpty)
       .toList(growable: true);
 
   int? _editingIndex;
@@ -78,13 +118,43 @@ class _MPQucikCaptureConfirmDialogState
     super.dispose();
   }
 
+  List<MPBatchCreateTodoItem> _selectedTodos() {
+    final List<MPBatchCreateTodoItem> out = <MPBatchCreateTodoItem>[];
+    for (final _ConfirmRow r in _rows) {
+      if (!r.selected || !r.isTodo) {
+        continue;
+      }
+      final String t = r.text.trim();
+      if (t.isEmpty) {
+        continue;
+      }
+      out.add(MPBatchCreateTodoItem(title: t, priority: '', deadline: 0));
+    }
+    return out;
+  }
+
+  List<MPBatchCreateMemoItem> _selectedMemos() {
+    final List<MPBatchCreateMemoItem> out = <MPBatchCreateMemoItem>[];
+    for (final _ConfirmRow r in _rows) {
+      if (!r.selected || r.isTodo) {
+        continue;
+      }
+      final String t = r.text.trim();
+      if (t.isEmpty) {
+        continue;
+      }
+      out.add(MPBatchCreateMemoItem(content: t, createAt: 0));
+    }
+    return out;
+  }
+
   /// 开始编辑指定问题。
   void _startEdit(int index) {
-    if (index < 0 || index >= _issues.length) {
+    if (index < 0 || index >= _rows.length) {
       return;
     }
     _editingController?.dispose();
-    _editingController = TextEditingController(text: _issues[index]);
+    _editingController = TextEditingController(text: _rows[index].text);
     setState(() => _editingIndex = index);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -99,17 +169,29 @@ class _MPQucikCaptureConfirmDialogState
     if (index == null ||
         _editingController == null ||
         index < 0 ||
-        index >= _issues.length) {
+        index >= _rows.length) {
       return;
     }
     final String next = _editingController!.text.trim();
     if (next.isNotEmpty) {
-      _issues[index] = next;
+      _rows[index].text = next;
     }
     _editingController?.dispose();
     _editingController = null;
     _editingFocusNode.unfocus();
     setState(() => _editingIndex = null);
+  }
+
+  void _toggleSelected(int index) {
+    if (index < 0 || index >= _rows.length) {
+      return;
+    }
+    setState(() => _rows[index].selected = !_rows[index].selected);
+  }
+
+  String _displayLine(_ConfirmRow row) {
+    final String prefix = row.isTodo ? 'Todo: ' : 'Memo: ';
+    return '$prefix${row.text}';
   }
 
   Widget _buildHeader() {
@@ -130,7 +212,8 @@ class _MPQucikCaptureConfirmDialogState
             onPressed: () => Navigator.of(context).pop(
               MPQuickCaptureConfirmResult(
                 confirmed: false,
-                issues: List<String>.from(_issues),
+                todos: const <MPBatchCreateTodoItem>[],
+                memos: const <MPBatchCreateMemoItem>[],
               ),
             ),
             icon: const Icon(Icons.close_rounded),
@@ -174,12 +257,33 @@ class _MPQucikCaptureConfirmDialogState
     );
   }
 
+  Widget _buildSelectionLeading(bool selected) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      curve: Curves.easeOut,
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: selected ? _kBlue : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? _kBlue : lineColor.withValues(alpha: 0.95),
+          width: 2,
+        ),
+      ),
+      child: selected
+          ? const Icon(Icons.check, color: Colors.white, size: 14)
+          : null,
+    );
+  }
+
   Widget _buildIssueTile(int index) {
     final bool editing = _editingIndex == index;
+    final _ConfirmRow row = _rows[index];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: index == _issues.length - 1
+        border: index == _rows.length - 1
             ? null
             : Border(
                 bottom: BorderSide(
@@ -190,66 +294,78 @@ class _MPQucikCaptureConfirmDialogState
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: const BoxDecoration(
-                color: _kBlue,
-                shape: BoxShape.circle,
+          Expanded(
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                onTap: editing ? null : () => _toggleSelected(index),
+                splashFactory: NoSplash.splashFactory,
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                focusColor: Colors.transparent,
+                overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: _buildSelectionLeading(row.selected),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: editing
+                          ? TextField(
+                              controller: _editingController,
+                              focusNode: _editingFocusNode,
+                              minLines: 1,
+                              maxLines: 4,
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t9_18,
+                                fontWeight: OmiFontWeight.medium,
+                                color: mainTextColor,
+                                height: 1.3,
+                              ),
+                              decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
+                                ),
+                              ),
+                            )
+                          : Text(
+                              _displayLine(row),
+                              maxLines: 8,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t7_16,
+                                fontWeight: OmiFontWeight.medium,
+                                color: mainTextColor,
+                                height: 1.35,
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
               ),
-              child: const Icon(Icons.check, color: Colors.white, size: 14),
             ),
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: editing
-                ? TextField(
-                    controller: _editingController,
-                    focusNode: _editingFocusNode,
-                    minLines: 1,
-                    maxLines: 4,
-                    style: TextStyle(
-                      fontSize: OmiFontSize.t9_18,
-                      fontWeight: OmiFontWeight.medium,
-                      color: mainTextColor,
-                      height: 1.3,
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                      ),
-                    ),
-                  )
-                : Text(
-                    _issues[index],
-                    style: TextStyle(
-                      fontSize: OmiFontSize.t7_16,
-                      fontWeight: OmiFontWeight.medium,
-                      color: mainTextColor,
-                      height: 1.35,
-                    ),
-                  ),
-          ),
           const SizedBox(width: 8),
-          InkWell(
+          GestureDetector(
             onTap: editing ? _saveEdit : () => _startEdit(index),
-            borderRadius: BorderRadius.circular(999),
             child: Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Icon(
@@ -273,7 +389,7 @@ class _MPQucikCaptureConfirmDialogState
         border: Border.all(color: _kBlue, width: 2),
       ),
       child: Column(
-        children: List<Widget>.generate(_issues.length, _buildIssueTile),
+        children: List<Widget>.generate(_rows.length, _buildIssueTile),
       ),
     );
   }
@@ -290,7 +406,8 @@ class _MPQucikCaptureConfirmDialogState
                 onPressed: () => Navigator.of(context).pop(
                   MPQuickCaptureConfirmResult(
                     confirmed: false,
-                    issues: List<String>.from(_issues),
+                    todos: const <MPBatchCreateTodoItem>[],
+                    memos: const <MPBatchCreateMemoItem>[],
                   ),
                 ),
                 style: TextButton.styleFrom(
@@ -319,7 +436,8 @@ class _MPQucikCaptureConfirmDialogState
                 onPressed: () => Navigator.of(context).pop(
                   MPQuickCaptureConfirmResult(
                     confirmed: true,
-                    issues: List<String>.from(_issues),
+                    todos: _selectedTodos(),
+                    memos: _selectedMemos(),
                   ),
                 ),
                 style: TextButton.styleFrom(
@@ -385,7 +503,7 @@ class _MPQucikCaptureConfirmDialogState
                             _buildSectionTitle('ORIGINAL TEXT'),
                             const SizedBox(height: 10),
                             _buildOriginalTextCard(),
-                            if (_issues.isNotEmpty) ...<Widget>[
+                            if (_rows.isNotEmpty) ...<Widget>[
                               const SizedBox(height: 16),
                               Container(
                                 height: 1,

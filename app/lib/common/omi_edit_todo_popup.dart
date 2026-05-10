@@ -17,9 +17,9 @@ import 'mp_home_notification.dart';
 class OmiEditTodoPopupParams {
   const OmiEditTodoPopupParams({
     required this.title,
-    this.contextMemoryLabel = 'From memory:',
-    this.contextMemoryTitle = 'Team standup discussion on API migration',
-    this.contextMetaLine = 'Today, 10:30 AM · 12m34s · Summary',
+    this.contextMemoryLabel = '',
+    this.contextMemoryTitle = '',
+    this.contextMetaLine = '',
     this.notes = '',
     this.priorityLabel = 'Normal',
     this.whenLabel = 'No deadline',
@@ -32,6 +32,13 @@ class OmiEditTodoPopupParams {
   final String contextMemoryLabel;
   final String contextMemoryTitle;
   final String contextMetaLine;
+
+  /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后均为空时不展示 CONTEXT 区块。
+  bool get shouldShowContextSection =>
+      contextMemoryLabel.trim().isNotEmpty ||
+      contextMemoryTitle.trim().isNotEmpty ||
+      contextMetaLine.trim().isNotEmpty;
+
   final String notes;
   final String priorityLabel;
   final String whenLabel;
@@ -625,10 +632,12 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        const _SectionTitle(text: 'CONTEXT'),
-                        const SizedBox(height: 8),
-                        _ContextCard(params: widget.params),
-                        const SizedBox(height: 14),
+                        if (widget.params.shouldShowContextSection) ...<Widget>[
+                          const _SectionTitle(text: 'CONTEXT'),
+                          const SizedBox(height: 8),
+                          _ContextCard(params: widget.params),
+                          const SizedBox(height: 14),
+                        ],
                         const _SectionTitle(text: 'NOTES'),
                         const SizedBox(height: 8),
                         Container(

@@ -125,17 +125,21 @@ Map<String, dynamic> _$MPGetMemoryV2SimpleInfoRequestToJson(
 MPGetMemoryV2SimpleInfoResponse _$MPGetMemoryV2SimpleInfoResponseFromJson(
   Map<String, dynamic> json,
 ) => MPGetMemoryV2SimpleInfoResponse(
-  memoryInfo: MPMemorySimpleInfoStruct.fromJson(
-    json['memory_info'] as Map<String, dynamic>,
-  ),
-  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+  memoryInfo: json['memory_info'] == null
+      ? null
+      : MPMemorySimpleInfoStruct.fromJson(
+          json['memory_info'] as Map<String, dynamic>,
+        ),
+  baseResp: json['base_resp'] == null
+      ? null
+      : MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$MPGetMemoryV2SimpleInfoResponseToJson(
   MPGetMemoryV2SimpleInfoResponse instance,
 ) => <String, dynamic>{
-  'memory_info': instance.memoryInfo,
-  'base_resp': instance.baseResp,
+  'memory_info': instance.memoryInfo?.toJson(),
+  'base_resp': instance.baseResp?.toJson(),
 };
 
 MPGetMemoryFeedRequest _$MPGetMemoryFeedRequestFromJson(

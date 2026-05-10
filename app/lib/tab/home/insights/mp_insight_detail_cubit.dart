@@ -4,13 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../common/mp_date_utils.dart';
 import '../../../common/mp_memory_share_dialog.dart';
 import '../../../common/mp_share_export_sheet.dart';
+import '../../../common/omi_add_todo_popup.dart';
 import '../../../cache/mp_hive_util.dart';
 import '../../../http/api/mp_chat.dart';
 import '../../../http/api/mp_insight.dart';
+import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_chat.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../http/schema/mp_memory.dart';
 import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
 import '../../askai/mp_ask_ai_chat_page.dart';
@@ -47,6 +51,8 @@ class MPInsightDetailData {
     this.daily,
     this.weekly,
     this.monthly,
+    this.memoryId,
+    this.memoryInfo,
   });
 
   final MPInsightListItem item;
@@ -61,6 +67,35 @@ class MPInsightDetailData {
 
   /// Monthly 详情页专用结构化数据（其它类型为 null）
   final MPMonthlyInsightDetailData? monthly;
+
+  /// 关联 memory id（来自详情接口 [MPInsightDetailStruct.memoryId]）。
+  final int? memoryId;
+
+  /// Memory 简要信息；可能异步填充。
+  final MPGetMemoryV2SimpleInfoResponse? memoryInfo;
+
+  /// 复制并可选覆盖字段。
+  MPInsightDetailData copyWith({
+    MPInsightListItem? item,
+    List<String>? paragraphs,
+    List<String>? tips,
+    MPDailyInsightDetailData? daily,
+    MPWeeklyInsightDetailData? weekly,
+    MPMonthlyInsightDetailData? monthly,
+    int? memoryId,
+    MPGetMemoryV2SimpleInfoResponse? memoryInfo,
+  }) {
+    return MPInsightDetailData(
+      item: item ?? this.item,
+      paragraphs: paragraphs ?? this.paragraphs,
+      tips: tips ?? this.tips,
+      daily: daily ?? this.daily,
+      weekly: weekly ?? this.weekly,
+      monthly: monthly ?? this.monthly,
+      memoryId: memoryId ?? this.memoryId,
+      memoryInfo: memoryInfo ?? this.memoryInfo,
+    );
+  }
 }
 
 /// Daily 详情页中的可执行建议（Tomorrow's focus）
@@ -332,6 +367,101 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
 
   MPInsightListItem get insightItem;
 
+  /// Hive：`memory_id` → [MPGetMemoryV2SimpleInfoResponse] JSON。
+  static String memorySimpleInfoHiveKey(int memoryId) => 'mp_insight_memory_simple_info_v1_$memoryId';
+
+  /// 请求 Memory 简要信息（网络）。
+  Future<MPGetMemoryV2SimpleInfoResponse?> fetchMemoryV2SimpleInfo(String memoryId) async {
+    return await getMemoryV2SimpleInfo(MPGetMemoryV2SimpleInfoRequest(memoryId: memoryId));
+  }
+
+  /// 先请求网络，成功则写入 Hive；失败则尝试读 Hive。
+  Future<MPGetMemoryV2SimpleInfoResponse?> loadMemorySimpleInfoNetworkOrHive(int memoryId) async {
+    final MPGetMemoryV2SimpleInfoResponse? net = await fetchMemoryV2SimpleInfo('$memoryId');
+    if (net != null && net.baseResp?.code == 0) {
+      await MPHiveUtil.instance.putMap(key: memorySimpleInfoHiveKey(memoryId), value: net.toJson());
+      return net;
+    }
+    final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(memorySimpleInfoHiveKey(memoryId));
+    if (cached == null) {
+      return null;
+    }
+    try {
+      final MPGetMemoryV2SimpleInfoResponse restored = MPGetMemoryV2SimpleInfoResponse.fromJson(cached);
+      if (restored.baseResp?.code == 0) {
+        return restored;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// 通过回调拿到 [memoryInfo]：已有则立即回调；否则走网络并在失败时用 Hive。
+  Future<void> resolveMemoryInfo(void Function(MPGetMemoryV2SimpleInfoResponse? info) onResult) async {
+    final MPInsightDetailData? data = state.data;
+    if (data == null) {
+      onResult(null);
+      return;
+    }
+    if (data.memoryInfo != null) {
+      onResult(data.memoryInfo);
+      return;
+    }
+    final int? mid = data.memoryId;
+    if (mid == null) {
+      onResult(null);
+      return;
+    }
+    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(mid);
+    if (!isClosed && state.data != null && state.data!.item.id == data.item.id && info != null) {
+      emit(MPInsightDetailState.loaded(state.data!.copyWith(memoryInfo: info)));
+    }
+    onResult(info);
+  }
+
+  /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
+  Future<MPAddTodoPopupResult?> showAddTodoPopup(String title, BuildContext context) async {
+    Completer<MPAddTodoPopupResult?> completer = Completer<MPAddTodoPopupResult?>();
+    resolveMemoryInfo((MPGetMemoryV2SimpleInfoResponse? info) async {
+      final MPGetMemoryV2SimpleInfoResponse? ok = (info != null && info.baseResp?.code == 0) ? info : null;
+      final MPMemorySimpleInfoStruct? mi = ok?.memoryInfo;
+      final String contextMemoryTitle = mi?.title ?? '';
+      final String contextMetaLine = mi != null
+          ? MPDateUtils.buildMemorySimpleContextMetaLine(
+              recordCreateAt: mi.recordCreateAt,
+              duration: mi.duration,
+              label: mi.label,
+            )
+          : '';
+      final String contextMemoryLabel = contextMetaLine.isNotEmpty || contextMemoryTitle.isNotEmpty
+          ? 'From memory:'
+          : '';
+      final String memoryId = state.data?.memoryId.toString() ?? '';
+
+      final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+        context,
+        params: MPAddTodoPopupParams(
+          initialTitle: title.trim(),
+          contextMemoryLabel: contextMemoryLabel,
+          contextMemoryTitle: contextMemoryTitle,
+          contextMetaLine: contextMetaLine,
+          memoryId: memoryId,
+          initialDeadlineTimestamp: 0,
+        ),
+      );
+      if (!context.mounted) {
+        completer.complete(result);
+        return;
+      }
+      if (result != null) {
+        MPToastUtils.showMessage('To-do created.');
+      } else {
+        MPToastUtils.showMessage('Couldn\'t create to-do.');
+      }
+      completer.complete(result);
+    });
+    return completer.future;
+  }
+
   /// 并发获取建议问题与最近会话，并跳转 AskAI 聊天页。
   Future<void> onAskAiButtonPressed(BuildContext context) async {
     final List<dynamic> responses = await Future.wait<dynamic>(<Future<dynamic>>[
@@ -449,8 +579,27 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     try {
       final MPInsightDetailData loaded = await _buildDetailData(_item);
       emit(MPInsightDetailState.loaded(loaded));
+      final int? mid = loaded.memoryId;
+      if (mid != null) {
+        unawaited(_refreshMemorySimpleInfoAfterInit(loaded, mid));
+      }
     } catch (e) {
       emit(MPInsightDetailState.error(e.toString()));
+    }
+  }
+
+  /// 异步填充 [MPInsightDetailData.memoryInfo]：网络成功写 Hive，失败读 Hive。
+  Future<void> _refreshMemorySimpleInfoAfterInit(MPInsightDetailData seed, int memoryId) async {
+    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(memoryId);
+    if (isClosed) {
+      return;
+    }
+    final MPInsightDetailData? cur = state.data;
+    if (cur == null || cur.item.id != seed.item.id) {
+      return;
+    }
+    if (info != null) {
+      emit(MPInsightDetailState.loaded(cur.copyWith(memoryInfo: info)));
     }
   }
 
@@ -482,22 +631,27 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
       throw Exception('insight detail request failed and cache missing');
     }
 
+    final int? memoryId = response.insightDetail.memoryId;
     switch (item.type) {
       case MPInsightCardType.daily:
-        return _buildDailyDetailData(item, response.insightDetail.dailyDetail);
+        return _buildDailyDetailData(item, response.insightDetail.dailyDetail, memoryId: memoryId);
 
       case MPInsightCardType.weekly:
-        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail);
+        return _buildWeeklyDetailData(item, response.insightDetail.weeklyDetail, memoryId: memoryId);
 
       case MPInsightCardType.monthly:
-        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail);
+        return _buildMonthlyDetailData(item, response.insightDetail.monthlyDetail, memoryId: memoryId);
 
       case MPInsightCardType.pattern:
-        return _buildPatternDetailData(item, response.insightDetail.patternDetail);
+        return _buildPatternDetailData(item, response.insightDetail.patternDetail, memoryId: memoryId);
     }
   }
 
-  MPInsightDetailData _buildDailyDetailData(MPInsightListItem item, MPDailyInsightDetailStruct? detail) {
+  MPInsightDetailData _buildDailyDetailData(
+    MPInsightListItem item,
+    MPDailyInsightDetailStruct? detail, {
+    int? memoryId,
+  }) {
     if (detail == null) {
       throw Exception('daily_detail is null');
     }
@@ -533,10 +687,15 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         tomorrowFocus: tomorrowFocus,
         askAiButtonText: 'Ask AI about today',
       ),
+      memoryId: memoryId,
     );
   }
 
-  MPInsightDetailData _buildWeeklyDetailData(MPInsightListItem item, MPWeeklyInsightDetailStruct? detail) {
+  MPInsightDetailData _buildWeeklyDetailData(
+    MPInsightListItem item,
+    MPWeeklyInsightDetailStruct? detail, {
+    int? memoryId,
+  }) {
     if (detail == null) {
       throw Exception('weekly_detail is null');
     }
@@ -610,10 +769,15 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         expertWeeklyFeedback: expertFeedback,
         askAiButtonText: 'Ask AI about this week',
       ),
+      memoryId: memoryId,
     );
   }
 
-  MPInsightDetailData _buildMonthlyDetailData(MPInsightListItem item, MPMonthlyInsightDetailStruct? detail) {
+  MPInsightDetailData _buildMonthlyDetailData(
+    MPInsightListItem item,
+    MPMonthlyInsightDetailStruct? detail, {
+    int? memoryId,
+  }) {
     if (detail == null) {
       throw Exception('monthly_detail is null');
     }
@@ -665,10 +829,15 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         suggestedFocusNextMonth: suggestedFocusNextMonth,
         askAiButtonText: 'Ask AI about this month',
       ),
+      memoryId: memoryId,
     );
   }
 
-  MPInsightDetailData _buildPatternDetailData(MPInsightListItem item, MPPatternInsightDetailStruct? detail) {
+  MPInsightDetailData _buildPatternDetailData(
+    MPInsightListItem item,
+    MPPatternInsightDetailStruct? detail, {
+    int? memoryId,
+  }) {
     if (detail == null) {
       throw Exception('pattern_detail is null');
     }
@@ -677,6 +846,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
       tips: <String>[...detail.nextStep],
+      memoryId: memoryId,
     );
   }
 }

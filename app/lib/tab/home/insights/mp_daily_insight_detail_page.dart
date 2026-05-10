@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
-import '../../../common/omi_add_todo_popup.dart';
 import '../../../generated/assets.dart';
 import '../../../utils/omi_image_loader.dart';
 import 'mp_insight_detail_cubit.dart';
@@ -411,9 +409,9 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                             )
                           : TextButton(
                               onPressed: () async {
-                                final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                                final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                                  focus.text,
                                   context,
-                                  params: MPAddTodoPopupParams(initialTitle: focus.text, contextMemoryLabel: 'From Daily Insight:'),
                                 );
                                 if (!mounted) {
                                   return;
@@ -422,9 +420,6 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                                   setState(() {
                                     _addedIndexes.add(entry.key);
                                   });
-                                  MPToastUtils.showMessage('To-do created.');
-                                } else {
-                                  MPToastUtils.showMessage('Couldn\'t create to-do.');
                                 }
                               },
                               style: TextButton.styleFrom(

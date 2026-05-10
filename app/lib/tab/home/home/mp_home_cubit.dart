@@ -12,12 +12,17 @@ import 'package:memo_pin/common/mp_home_notification.dart';
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
 import '../../../http/api/mp_insight.dart';
+import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../http/schema/mp_memory.dart';
 
 /// Hive 中缓存 [MPGetHomeOverviewResponse.toJson] 的 key。
 const String _kHomeOverviewHiveKey = 'mp_home_overview_v1';
+
+/// Hive：`memory_id` → [MPGetMemoryV2SimpleInfoResponse.toJson]（与 Insight 详情共用 key，命中同一份缓存）。
+String _memorySimpleInfoHiveKey(int memoryId) => 'mp_insight_memory_simple_info_v1_$memoryId';
 
 String _formatTodoDeadlineTime(int? deadline) {
   if (deadline == null) {
@@ -53,13 +58,14 @@ class MPHomeAudioStatus {
 
 /// Today's Focus 列表项（Up Next）
 class MPHomeTodoItem {
-  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false});
+  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false, this.memoryId});
 
   final String id;
   final String title;
   final String? time;
   final String? reason;
   final bool completed;
+  final int? memoryId;
 }
 
 /// Recent Memory 一行
@@ -185,6 +191,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           title: e.title ?? '',
           time: _formatTodoDeadlineTime(e.deadline),
           reason: e.reason ?? '',
+          memoryId: e.memoryId,
+          completed: e.status == 2,
         ),
       );
     }
@@ -242,6 +250,45 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     } catch (e, stackTrace) {
       debugPrint('MPHomeCubit: try emit cached overview when empty failed — $e\n$stackTrace');
     }
+  }
+
+  /// 拉取 Memory 简要信息（仅网络）。
+  ///
+  /// [memoryId] 服务端 memory id 字符串。解析失败或未返回 200 时为 `null`。
+  Future<MPGetMemoryV2SimpleInfoResponse?> fetchMemoryV2SimpleInfo(String memoryId) async {
+    return getMemoryV2SimpleInfo(MPGetMemoryV2SimpleInfoRequest(memoryId: memoryId));
+  }
+
+  /// 获取 Memory 简要信息：网络成功则写入 Hive 并返回；失败则尝试返回 Hive 缓存。
+  ///
+  /// [memoryId] 为 todo 关联的 memory id；为 `null` 时不请求。
+  Future<MPGetMemoryV2SimpleInfoResponse?> loadMemorySimpleInfoNetworkOrHive(int? memoryId) async {
+    if (memoryId == null) {
+      return null;
+    }
+    final String idStr = '$memoryId';
+    try {
+      final MPGetMemoryV2SimpleInfoResponse? net = await fetchMemoryV2SimpleInfo(idStr);
+      if (net != null && net.baseResp?.code == 0) {
+        await MPHiveUtil.instance.putMap(key: _memorySimpleInfoHiveKey(memoryId), value: net.toJson());
+        return net;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('MPHomeCubit: loadMemorySimpleInfoNetworkOrHive network failed — $e\n$stackTrace');
+    }
+    try {
+      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(_memorySimpleInfoHiveKey(memoryId));
+      if (cached == null || cached.isEmpty) {
+        return null;
+      }
+      final MPGetMemoryV2SimpleInfoResponse restored = MPGetMemoryV2SimpleInfoResponse.fromJson(cached);
+      if (restored.baseResp?.code == 0) {
+        return restored;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('MPHomeCubit: loadMemorySimpleInfoNetworkOrHive hive read failed — $e\n$stackTrace');
+    }
+    return null;
   }
 
   /// 拉取首页聚合数据：空列表时先展示 Hive 再请求后台；非空则直接请求后台；成功后更新 Hive。

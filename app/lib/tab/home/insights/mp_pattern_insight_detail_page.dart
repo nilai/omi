@@ -7,7 +7,6 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
-import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -439,18 +438,15 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                     )
                   : TextButton(
                       onPressed: () async {
-                        final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                        final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                          text.trim(),
                           context,
-                          params: MPAddTodoPopupParams(initialTitle: text.trim(), contextMemoryLabel: 'From Pattern Insight:'),
                         );
                         if (!mounted) {
                           return;
                         }
                         if (result != null) {
                           setState(() => _added = true);
-                          MPToastUtils.showMessage('To-do created.');
-                        } else {
-                          MPToastUtils.showMessage('Couldn\'t create to-do.');
                         }
                       },
                       style: TextButton.styleFrom(

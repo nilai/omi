@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
-import '../../../common/omi_add_todo_popup.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -893,9 +891,9 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                             minimumSize: const Size(0, 0),
                           ),
                           onPressed: () async {
-                            final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                              f.text,
                               context,
-                              params: MPAddTodoPopupParams(initialTitle: f.text, contextMemoryLabel: 'From Monthly Insight:'),
                             );
                             if (!mounted) {
                               return;
@@ -905,9 +903,6 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                               setState(() {
                                 _addedIndexes.add(idx);
                               });
-                              MPToastUtils.showMessage('To-do created.');
-                            } else {
-                              MPToastUtils.showMessage('Couldn\'t create to-do.');
                             }
                           },
                           child: Text(
