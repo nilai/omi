@@ -65,6 +65,44 @@ bool _mpAsBool(dynamic value, {bool defaultValue = false}) {
   return defaultValue;
 }
 
+/// Insight 列表项：展示文案 + 可选截止时间（接口 `dead_line`，Unix 秒）。
+///
+/// 数组元素可为纯字符串，或包含 `text`/`content` 与 `dead_line` 的对象。
+class MPInsightTodoTextItemStruct {
+  MPInsightTodoTextItemStruct({required this.text, this.deadLine});
+
+  final String text;
+
+  final int? deadLine;
+
+  factory MPInsightTodoTextItemStruct.fromDynamic(dynamic raw) {
+    if (raw == null) {
+      return MPInsightTodoTextItemStruct(text: '', deadLine: null);
+    }
+    if (raw is String) {
+      return MPInsightTodoTextItemStruct(text: raw.trim(), deadLine: null);
+    }
+    final Map<String, dynamic> m = _mpAsMap(raw);
+    final String fromText = _mpAsString(m['text']).trim();
+    final String fromContent = _mpAsString(m['content']).trim();
+    final String resolved = fromText.isNotEmpty ? fromText : fromContent;
+    final int? deadLine = (m['dead_line'] as num?)?.toInt();
+    return MPInsightTodoTextItemStruct(text: resolved, deadLine: deadLine);
+  }
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'text': text,
+        if (deadLine != null) 'dead_line': deadLine,
+      };
+}
+
+List<MPInsightTodoTextItemStruct> _mpAsTodoTextItemList(dynamic value) {
+  return _mpAsList(value)
+      .map((dynamic e) => MPInsightTodoTextItemStruct.fromDynamic(e))
+      .where((MPInsightTodoTextItemStruct e) => e.text.isNotEmpty)
+      .toList();
+}
+
 /// 与后端 [InsightType] / `cycle_type` 取值一致。
 abstract final class MPInsightCycleType {
   MPInsightCycleType._();
@@ -525,7 +563,7 @@ class MPPatternInsightDetailStruct {
   final MPPatternInsightDetectedStruct detected;
   final List<MPPatternInsightAppearedItemStruct> appearedItems;
   final String whyThisMatters;
-  final List<String> nextStep;
+  final List<MPInsightTodoTextItemStruct> nextStep;
 
   /// 从 JSON 解析。
   factory MPPatternInsightDetailStruct.fromJson(Map<String, dynamic> json) {
@@ -538,10 +576,7 @@ class MPPatternInsightDetailStruct {
             )
             .toList();
 
-    final List<String> nextStep = _mpAsList(json['next_step'])
-        .map((dynamic e) => _mpAsString(e))
-        .where((String e) => e.isNotEmpty)
-        .toList();
+    final List<MPInsightTodoTextItemStruct> nextStep = _mpAsTodoTextItemList(json['next_step']);
 
     return MPPatternInsightDetailStruct(
       bannerTitle: _mpAsString(json['banner_title']),
@@ -562,7 +597,7 @@ class MPPatternInsightDetailStruct {
             .map((MPPatternInsightAppearedItemStruct e) => e.toJson())
             .toList(),
         'why_this_matters': whyThisMatters,
-        'next_step': nextStep,
+        'next_step': nextStep.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -775,7 +810,7 @@ class MPMonthlyInsightDetailStruct {
   final MPMonthlyInsightOpenThreadsSectionStruct openThreads;
   final List<String> monthToMonthTrend;
   final MPMonthlyInsightDecisionsSectionStruct decisions;
-  final List<String> suggestedFocusNextMonth;
+  final List<MPInsightTodoTextItemStruct> suggestedFocusNextMonth;
 
   /// 从 JSON 解析。
   factory MPMonthlyInsightDetailStruct.fromJson(Map<String, dynamic> json) {
@@ -784,11 +819,8 @@ class MPMonthlyInsightDetailStruct {
         .where((String e) => e.isNotEmpty)
         .toList();
 
-    final List<String> suggestedFocusNextMonth =
-        _mpAsList(json['suggested_focus_next_month'])
-            .map((dynamic e) => _mpAsString(e))
-            .where((String e) => e.isNotEmpty)
-            .toList();
+    final List<MPInsightTodoTextItemStruct> suggestedFocusNextMonth =
+        _mpAsTodoTextItemList(json['suggested_focus_next_month']);
 
     return MPMonthlyInsightDetailStruct(
       overview: MPMonthlyInsightOverviewStruct.fromJson(
@@ -823,7 +855,8 @@ class MPMonthlyInsightDetailStruct {
         'open_threads': openThreads.toJson(),
         'month_to_month_trend': monthToMonthTrend,
         'decisions': decisions.toJson(),
-        'suggested_focus_next_month': suggestedFocusNextMonth,
+        'suggested_focus_next_month':
+            suggestedFocusNextMonth.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -939,14 +972,11 @@ class MPDailyInsightDetailStruct {
   final MPDailyInsightListSectionStruct openQuestions;
   final MPDailyInsightPatternSectionStruct patternsEmerging;
   final MPDailyInsightListSectionStruct ideasCaptured;
-  final List<String> tomorrowFocus;
+  final List<MPInsightTodoTextItemStruct> tomorrowFocus;
 
   /// 从 JSON 解析。
   factory MPDailyInsightDetailStruct.fromJson(Map<String, dynamic> json) {
-    final List<String> tomorrowFocus = _mpAsList(json['tomorrow_focus'])
-        .map((dynamic e) => _mpAsString(e))
-        .where((String e) => e.isNotEmpty)
-        .toList();
+    final List<MPInsightTodoTextItemStruct> tomorrowFocus = _mpAsTodoTextItemList(json['tomorrow_focus']);
 
     return MPDailyInsightDetailStruct(
       narrative: MPDailyInsightNarrativeSectionStruct.fromJson(
@@ -975,7 +1005,7 @@ class MPDailyInsightDetailStruct {
         'open_questions': openQuestions.toJson(),
         'patterns_emerging': patternsEmerging.toJson(),
         'ideas_captured': ideasCaptured.toJson(),
-        'tomorrow_focus': tomorrowFocus,
+        'tomorrow_focus': tomorrowFocus.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -1146,16 +1176,20 @@ class MPWeeklyInsightPriorityItemStruct {
   MPWeeklyInsightPriorityItemStruct({
     required this.title,
     this.subTitle,
+    this.deadLine,
   });
 
   final String title;
   final String? subTitle;
+
+  final int? deadLine;
 
   /// 从 JSON 解析。
   factory MPWeeklyInsightPriorityItemStruct.fromJson(Map<String, dynamic> json) {
     return MPWeeklyInsightPriorityItemStruct(
       title: json['title'] as String? ?? '',
       subTitle: json['sub_title'] as String?,
+      deadLine: (json['dead_line'] as num?)?.toInt(),
     );
   }
 
@@ -1163,6 +1197,7 @@ class MPWeeklyInsightPriorityItemStruct {
   Map<String, dynamic> toJson() => <String, dynamic>{
         'title': title,
         if (subTitle != null) 'sub_title': subTitle,
+        if (deadLine != null) 'dead_line': deadLine,
       };
 }
 

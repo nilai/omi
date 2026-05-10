@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../common/mp_date_utils.dart';
@@ -19,7 +18,6 @@ import '../../../main.dart';
 import '../../../utils/mp_toast_utils.dart';
 import '../../askai/mp_ask_ai_chat_page.dart';
 import 'dialog/mp_insights_more_dialog.dart';
-import 'mp_insight_detail_fixtures.dart';
 import 'mp_insights_list_cubit.dart';
 
 /// Insights 详情页状态
@@ -42,6 +40,15 @@ class MPInsightDetailState {
       MPInsightDetailState(phase: MPInsightDetailPhase.error, errorMessage: message);
 }
 
+/// 「加入 Todo」入口统一载荷：文案与可选截止时间（Unix 秒）。
+class MPInsightTodoLineItem {
+  const MPInsightTodoLineItem({required this.text, this.deadLine});
+
+  final String text;
+
+  final int? deadLine;
+}
+
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
 class MPInsightDetailData {
   const MPInsightDetailData({
@@ -57,7 +64,9 @@ class MPInsightDetailData {
 
   final MPInsightListItem item;
   final List<String> paragraphs;
-  final List<String> tips;
+
+  /// Pattern「Suggested Next Step」等：每项含文案与可选截止时间。
+  final List<MPInsightTodoLineItem> tips;
 
   /// Daily 详情页专用结构化数据（其它类型为 null）
   final MPDailyInsightDetailData? daily;
@@ -78,7 +87,7 @@ class MPInsightDetailData {
   MPInsightDetailData copyWith({
     MPInsightListItem? item,
     List<String>? paragraphs,
-    List<String>? tips,
+    List<MPInsightTodoLineItem>? tips,
     MPDailyInsightDetailData? daily,
     MPWeeklyInsightDetailData? weekly,
     MPMonthlyInsightDetailData? monthly,
@@ -100,9 +109,11 @@ class MPInsightDetailData {
 
 /// Daily 详情页中的可执行建议（Tomorrow's focus）
 class MPDailyFocusItem {
-  const MPDailyFocusItem({required this.text});
+  const MPDailyFocusItem({required this.text, this.deadLine});
 
   final String text;
+
+  final int? deadLine;
 }
 
 /// Daily 详情页结构化数据
@@ -157,11 +168,18 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true});
+  const MPWeeklyPriorityItem({
+    required this.text,
+    required this.subtitle,
+    this.visible = true,
+    this.deadLine,
+  });
 
   final String text;
   final String subtitle;
   final bool visible;
+
+  final int? deadLine;
 }
 
 /// Weekly 详情页中的完成项
@@ -289,10 +307,12 @@ class MPMonthlyDecisionItem {
 
 /// Monthly 详情页卡片中的条目：下月关注建议
 class MPMonthlySuggestedFocusItem {
-  const MPMonthlySuggestedFocusItem({required this.rank, required this.text});
+  const MPMonthlySuggestedFocusItem({required this.rank, required this.text, this.deadLine});
 
   final int rank;
   final String text;
+
+  final int? deadLine;
 }
 
 /// Monthly 详情页结构化数据
@@ -419,7 +439,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
   }
 
   /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
-  Future<MPAddTodoPopupResult?> showAddTodoPopup(String title, BuildContext context) async {
+  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPInsightTodoLineItem line, BuildContext context) async {
     Completer<MPAddTodoPopupResult?> completer = Completer<MPAddTodoPopupResult?>();
     resolveMemoryInfo((MPGetMemoryV2SimpleInfoResponse? info) async {
       final MPGetMemoryV2SimpleInfoResponse? ok = (info != null && info.baseResp?.code == 0) ? info : null;
@@ -440,7 +460,8 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
         context,
         params: MPAddTodoPopupParams(
-          initialTitle: title.trim(),
+          initialTitle: line.text.trim(),
+          initialDeadlineTimestamp: line.deadLine,
           contextMemoryLabel: contextMemoryLabel,
           contextMemoryTitle: contextMemoryTitle,
           contextMetaLine: contextMetaLine,
@@ -669,7 +690,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .where((String e) => e.isNotEmpty)
         .toList();
     final List<MPDailyFocusItem> tomorrowFocus = detail.tomorrowFocus
-        .map((String e) => MPDailyFocusItem(text: e))
+        .map((MPInsightTodoTextItemStruct e) => MPDailyFocusItem(text: e.text, deadLine: e.deadLine))
         .toList();
 
     return MPInsightDetailData(
@@ -732,8 +753,12 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .toList();
     final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
         .map(
-          (MPWeeklyInsightPriorityItemStruct e) =>
-              MPWeeklyPriorityItem(text: e.title, subtitle: e.subTitle ?? '', visible: true),
+          (MPWeeklyInsightPriorityItemStruct e) => MPWeeklyPriorityItem(
+            text: e.title,
+            subtitle: e.subTitle ?? '',
+            visible: true,
+            deadLine: e.deadLine,
+          ),
         )
         .toList();
     final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
@@ -805,7 +830,13 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = detail.suggestedFocusNextMonth
         .asMap()
         .entries
-        .map((MapEntry<int, String> e) => MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value))
+        .map(
+          (MapEntry<int, MPInsightTodoTextItemStruct> e) => MPMonthlySuggestedFocusItem(
+            rank: e.key + 1,
+            text: e.value.text,
+            deadLine: e.value.deadLine,
+          ),
+        )
         .toList();
 
     return MPInsightDetailData(
@@ -845,7 +876,11 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
-      tips: <String>[...detail.nextStep],
+      tips: detail.nextStep
+          .map(
+            (MPInsightTodoTextItemStruct e) => MPInsightTodoLineItem(text: e.text, deadLine: e.deadLine),
+          )
+          .toList(),
       memoryId: memoryId,
     );
   }
