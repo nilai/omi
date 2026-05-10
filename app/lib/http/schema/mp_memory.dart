@@ -176,14 +176,14 @@ class MPGetMemoryV2SimpleInfoRequest {
 @JsonSerializable()
 class MPGetMemoryV2SimpleInfoResponse {
   @JsonKey(name: 'memory_info')
-  final MPMemorySimpleInfoStruct memoryInfo;
+  final MPMemorySimpleInfoStruct? memoryInfo;
 
   @JsonKey(name: 'base_resp')
-  final MPBaseResp baseResp;
+  final MPBaseResp? baseResp;
 
   MPGetMemoryV2SimpleInfoResponse({
-    required this.memoryInfo,
-    required this.baseResp,
+    this.memoryInfo,
+    this.baseResp,
   });
 
   factory MPGetMemoryV2SimpleInfoResponse.fromJson(Map<String, dynamic> json) =>

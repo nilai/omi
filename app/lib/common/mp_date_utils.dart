@@ -104,4 +104,56 @@ class MPDateUtils {
     final int sec = s % 60;
     return '${m.toString().padLeft(2, '0')}:${sec.toString().padLeft(2, '0')}';
   }
+
+  /// Memory 卡片副标题时间：`Today, h:mm a`；非当天为 `MMM d, y, h:mm a`。
+  static String formatMemoryRecordContextTime(int? raw) {
+    if (raw == null || raw <= 0) {
+      return '';
+    }
+    final DateTime? dt = dateTimeFromUnixEpoch(raw);
+    if (dt == null) {
+      return '';
+    }
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final String timePart = DateFormat('h:mm a').format(dt);
+    if (day == today) {
+      return 'Today, $timePart';
+    }
+    return '${DateFormat('MMM d, y').format(dt)}, $timePart';
+  }
+
+  /// 时长（秒）展示为 `12m34s`、`12m`、`34s`。
+  static String formatDurationCompactMinutesSeconds(int totalSeconds) {
+    final int s = totalSeconds.clamp(0, 86400 * 365);
+    final int m = s ~/ 60;
+    final int sec = s % 60;
+    if (m > 0 && sec > 0) {
+      return '${m}m${sec}s';
+    }
+    if (m > 0) {
+      return '${m}m';
+    }
+    return '${sec}s';
+  }
+
+  /// Memory 简要信息 meta：`时间 · 时长 · label`（无时间戳则不展示时间段；[label] 空则省略）。
+  static String buildMemorySimpleContextMetaLine({
+    required int? recordCreateAt,
+    required int duration,
+    String? label,
+  }) {
+    final List<String> parts = <String>[];
+    final String timePart = formatMemoryRecordContextTime(recordCreateAt);
+    if (timePart.isNotEmpty) {
+      parts.add(timePart);
+    }
+    parts.add(formatDurationCompactMinutesSeconds(duration));
+    final String? trimmedLabel = label?.trim();
+    if (trimmedLabel != null && trimmedLabel.isNotEmpty) {
+      parts.add(trimmedLabel);
+    }
+    return parts.join(' · ');
+  }
 }

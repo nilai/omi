@@ -7,7 +7,6 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
-import '../../../common/omi_add_todo_popup.dart';
 import '../../../generated/assets.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
@@ -778,9 +777,9 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                         )
                       : TextButton(
                           onPressed: () async {
-                            final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
+                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                              item.text,
                               context,
-                              params: MPAddTodoPopupParams(initialTitle: item.text, contextMemoryLabel: 'From Weekly Insight:'),
                             );
                             if (!mounted) {
                               return;
@@ -789,9 +788,6 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                               setState(() {
                                 _addedIndexes.add(e.key);
                               });
-                              MPToastUtils.showMessage('To-do created.');
-                            } else {
-                              MPToastUtils.showMessage('Couldn\'t create to-do.');
                             }
                           },
                           style: TextButton.styleFrom(

@@ -46,8 +46,8 @@ class MPAddTodoPopupParams {
   const MPAddTodoPopupParams({
     this.initialTitle = 'Schedule authentication service testing session',
     this.contextMemoryLabel = 'From memory:',
-    this.contextMemoryTitle = 'Team standup discussion on API migration',
-    this.contextMetaLine = 'Today, 10:30 AM · 12m34s · Summary',
+    this.contextMemoryTitle = '',
+    this.contextMetaLine = '',
     this.initialNotes = '',
     this.initialPriority = 'Normal',
     this.initialWhen = 'No deadline',
