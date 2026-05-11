@@ -1370,7 +1370,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
             mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
             sectionTitle: '',
             bodyText: body.isNotEmpty ? body : ' ',
-            badgeLabel: '',
+            badgeLabel: (f.templateName ?? '').isNotEmpty ? f.templateName ?? '' : 'Autopilot mode',
           ),
         ),
       );

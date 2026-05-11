@@ -239,7 +239,8 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
           : MPConversationContentStruct.fromJson(
               json['ask_ai_card'] as Map<String, dynamic>,
             ),
-      resummaryStatus: json['resummary_status'] as int?
+      resummaryStatus: json['resummary_status'] as int?,
+      templateName: json['template_name'] as String?
     );
 
 Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
@@ -254,7 +255,8 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'memos': instance.memos?.map((e) => e.toJson()).toList(),
       'suggestion': instance.suggestion,
       'ask_ai_card': instance.askAICard?.toJson(),
-      'resummary_status': instance.resummaryStatus
+      'resummary_status': instance.resummaryStatus,
+      'template_name': instance.templateName,
     };
 
 MPMemoryFeedStruct _$MPMemoryFeedStructFromJson(Map<String, dynamic> json) =>
