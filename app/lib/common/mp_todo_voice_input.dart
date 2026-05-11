@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 
+import '../audio/record/mp_global_recording_coordinator.dart';
 import '../audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 
@@ -68,6 +69,12 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     with TickerProviderStateMixin {
   static const String _kRecordDirName = 'mp_todo_voice_input_records';
 
+  /// 全局录音仲裁持有者标识。
+  late final Object _recordingOwnerToken;
+
+  /// 被其它入口抢占麦克风后的暂停态。
+  bool _externallyPaused = false;
+
   late final TextEditingController _controller;
   late final FocusNode _focusNode;
   late FlutterSoundRecorder _recorder;
@@ -94,6 +101,11 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   @override
   void initState() {
     super.initState();
+    _recordingOwnerToken = Object();
+    MPGlobalRecordingCoordinator.instance.register(
+      _recordingOwnerToken,
+      _onInterruptedByOtherOwner,
+    );
     _controller = TextEditingController(text: widget.initialText);
     _hasTrimmedText = widget.initialText.trim().isNotEmpty;
     _controller.addListener(_onControllerChanged);
@@ -112,6 +124,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   @override
   void dispose() {
     unawaited(_stopRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
     _focusNode.dispose();
@@ -150,6 +163,58 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    MPGlobalRecordingCoordinator.instance
+        .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 其它场景开始录音时暂停本侧并保持会话。
+  Future<void> _onInterruptedByOtherOwner() async {
+    if (_mode != MPTodoVoiceInputMode.recording || !_recorderOpened) {
+      return;
+    }
+    if (_externallyPaused) {
+      return;
+    }
+    try {
+      if (_recorder.isPaused || !_recorder.isRecording) {
+        return;
+      }
+      _waveCtrl.stop();
+      await _recorder.pauseRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _externallyPaused = true);
+    } catch (_) {}
+  }
+
+  /// 用户手动恢复采集。
+  Future<void> _resumeAfterExternalPause() async {
+    if (!_externallyPaused || _busy || _sending) {
+      return;
+    }
+    if (!_recorderOpened || _recordPath == null) {
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
+      await _recorder.resumeRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+        _externallyPaused = false;
+      });
+      _waveCtrl.repeat();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        MPToastUtils.showMessage('Failed to resume recording: $e');
+      }
+    }
   }
 
   double get _cornerRadius => widget.showOutline ? 12.0 : 16.0;
@@ -191,6 +256,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         if (mounted) setState(() => _busy = false);
         return;
       }
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
@@ -213,6 +280,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       _recordPath = path;
       setState(() {
         _busy = false;
+        _externallyPaused = false;
         _mode = MPTodoVoiceInputMode.recording;
       });
       _waveCtrl.repeat();
@@ -230,12 +298,14 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     await _stopRecorder(deleteFile: true);
     if (!mounted) return;
     setState(() {
+      _externallyPaused = false;
       _mode = MPTodoVoiceInputMode.text;
     });
   }
 
   Future<void> _confirmRecording() async {
     if (_busy || _sending) return;
+    _externallyPaused = false;
     if (_recordPath == null || _recordPath!.isEmpty) {
       MPToastUtils.showMessage('Invalid recording file.');
       return;
@@ -490,7 +560,26 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(child: _MPTodoMiniWaveform(controller: _waveCtrl)),
+          Expanded(
+            child: _externallyPaused
+                ? GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _busy ? null : _resumeAfterExternalPause,
+                    child: Center(
+                      child: Text(
+                        'Paused — tap to resume',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: OmiTextStyle.create(
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.medium,
+                          color: secondTextColor,
+                        ),
+                      ),
+                    ),
+                  )
+                : _MPTodoMiniWaveform(controller: _waveCtrl),
+          ),
           const SizedBox(width: 12),
           _circleButton(
             bg: blueTextColor,

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
@@ -74,6 +75,9 @@ class _MPAudioRecordDialog extends StatefulWidget {
 
 class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  /// 全局录音仲裁持有者标识。
+  late final Object _recordingOwnerToken;
+
   static const Color _kBlue = Color(0xFF007AFF);
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
   static const Color _kCancelSheetBg = Color(0xFFF2F2F7);
@@ -117,6 +121,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   @override
   void initState() {
     super.initState();
+    _recordingOwnerToken = Object();
+    MPGlobalRecordingCoordinator.instance.register(
+      _recordingOwnerToken,
+      _onInterruptedByOtherOwner,
+    );
     WidgetsBinding.instance.addObserver(this);
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
   }
@@ -128,6 +137,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _waveController.dispose();
     _tickTimer?.cancel();
     unawaited(_releaseRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
   }
 
@@ -157,6 +167,38 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _completedRecordingSegments = Duration.zero;
     _activeRecordingSegmentStart = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    MPGlobalRecordingCoordinator.instance
+        .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 其它入口开始录音：暂停当前采集（与手动暂停一致）。
+  Future<void> _onInterruptedByOtherOwner() async {
+    if (_busy || _step != _MPAudioRecordStep.recording || _recordPath == null || !_recorderOpened) {
+      return;
+    }
+    if (_isPaused) {
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _recorder.pauseRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        if (_activeRecordingSegmentStart != null) {
+          _completedRecordingSegments +=
+              DateTime.now().difference(_activeRecordingSegmentStart!);
+          _activeRecordingSegmentStart = null;
+        }
+        _isPaused = true;
+        _busy = false;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 
   /// 回到前台时触发重建；计时见 [_recordingElapsed]（墙钟），与退后台持续录音一致。
@@ -238,6 +280,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
@@ -281,6 +325,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     setState(() => _busy = true);
     try {
       if (_isPaused) {
+        await MPGlobalRecordingCoordinator.instance
+            .beforeLocalRecordingStarts(_recordingOwnerToken);
         await _recorder.resumeRecorder();
         if (mounted) {
           setState(() {

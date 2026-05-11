@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../audio/record/mp_audio_upload_service.dart';
+import '../audio/record/mp_global_recording_coordinator.dart';
 import '../audio/record/mp_recording_background_support.dart';
 import '../generated/assets.dart';
 import '../http/api/mp_chat.dart';
@@ -74,6 +75,12 @@ class _OmiQuickAddTodoSheet extends StatefulWidget {
 class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
   static const String _kRecordDirName = 'omi_quick_add_input_records';
 
+  /// 全局录音仲裁持有者标识。
+  late final Object _recordingOwnerToken;
+
+  /// 被其它入口抢占麦克风后的暂停态。
+  bool _recordingExternallyPaused = false;
+
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _isRecording = false;
@@ -85,8 +92,19 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
   String? _recordPath;
 
   @override
+  void initState() {
+    super.initState();
+    _recordingOwnerToken = Object();
+    MPGlobalRecordingCoordinator.instance.register(
+      _recordingOwnerToken,
+      _onInterruptedByOtherOwner,
+    );
+  }
+
+  @override
   void dispose() {
     unawaited(_stopRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -121,6 +139,47 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    MPGlobalRecordingCoordinator.instance
+        .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 其它场景开始录音时暂停本弹窗采集。
+  Future<void> _onInterruptedByOtherOwner() async {
+    if (!_isRecording || !_recorderOpened) {
+      return;
+    }
+    if (_recordingExternallyPaused) {
+      return;
+    }
+    try {
+      if (_recorder.isPaused || !_recorder.isRecording) {
+        return;
+      }
+      await _recorder.pauseRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _recordingExternallyPaused = true);
+    } catch (_) {}
+  }
+
+  Future<void> _resumeRecordingAfterExternalPause() async {
+    if (!_recordingExternallyPaused || _isTranscribing || _isSubmitting) {
+      return;
+    }
+    try {
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
+      await _recorder.resumeRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _recordingExternallyPaused = false);
+    } catch (e) {
+      if (mounted) {
+        MPToastUtils.showMessage('Failed to resume recording: $e');
+      }
+    }
   }
 
   Future<void> _submit() async {
@@ -150,6 +209,8 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       if (!hasPermission) {
         return;
       }
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
@@ -171,6 +232,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       }
       setState(() {
         _recordPath = path;
+        _recordingExternallyPaused = false;
         _isRecording = true;
       });
     } catch (e) {
@@ -186,11 +248,15 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     if (!mounted) {
       return;
     }
-    setState(() => _isRecording = false);
+    setState(() {
+      _recordingExternallyPaused = false;
+      _isRecording = false;
+    });
   }
 
   Future<void> _sendRecording() async {
     if (_isTranscribing) return;
+    _recordingExternallyPaused = false;
     setState(() {
       _isRecording = false;
       _isTranscribing = true;
@@ -359,7 +425,33 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                     onTap: () => _cancelRecording(),
                   ),
                   const SizedBox(width: 8),
-                  const Expanded(child: _RecordingWaveform()),
+                  Expanded(
+                    child: _recordingExternallyPaused
+                        ? GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _resumeRecordingAfterExternalPause,
+                            child: Container(
+                              height: 46,
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF2F2F7),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Text(
+                                'Paused — tap to resume',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: OmiTextStyle.create(
+                                  fontSize: OmiFontSize.t6_15,
+                                  fontWeight: OmiFontWeight.medium,
+                                  color: secondTextColor,
+                                ),
+                              ),
+                            ),
+                          )
+                        : const _RecordingWaveform(),
+                  ),
                   const SizedBox(width: 8),
                   _RoundIconButton(
                     iconData: Icons.send_rounded,

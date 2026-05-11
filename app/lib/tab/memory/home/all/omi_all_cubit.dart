@@ -131,10 +131,11 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     return entries.where(_isRenderableEntry).toList(growable: false);
   }
 
-  /// 刷新第一页：重置 cursor、hasMore，再拉首屏（对齐 [MemoryProvider.loadMemories]）
+  /// 刷新第一页：重置 cursor、hasMore，再拉首屏（`getMemoryList`）。
   ///
   /// - **当前无列表数据**：先检测网络，离线则 [OmiAllPhase.noNetwork]；在线则全屏 loading 再请求
-  /// - **当前已有列表**（下拉刷新）：不展示三态图，保持列表展示；请求失败则仍显示原数据
+  /// - **当前已有列表**（含 [OmiAllPage] 的 [RefreshIndicator] 手动下拉与程序化 [RefreshIndicatorState.show]）：不展示三态图，保持列表；失败则仍显示原数据
+  /// - [listenMemoryRecordCreated] 等无列表场景仍直接调用本方法
   Future<void> load() async {
     final List<MPMemoryEntry> before = List<MPMemoryEntry>.from(state.items);
     bool hasData = before.isNotEmpty;
