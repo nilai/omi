@@ -1,20 +1,22 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../cache/omi_cache_manager.dart';
+import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
-import 'package:memo_pin/common/mp_todo_voice_input.dart';
-import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
-import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
+
+/// Hive：`memory_id` → [MPGetMemoryV2SimpleInfoResponse.toJson]（与首页 / Insight 共用 key）。
+String _todayFocusMemorySimpleInfoHiveKey(int memoryId) => 'mp_insight_memory_simple_info_v1_$memoryId';
 
 /// AI 推荐加入 Focus 的一条建议（标题 + 展示用时间）
 class MPTodayFocusAISuggestionItem {
@@ -252,6 +254,42 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 与 OmiAll / MemorySearch 等页的 [retry] 一致
   Future<void> retry() => initData();
 
+  /// 拉取 Memory 简要信息（仅网络）。
+  Future<MPGetMemoryV2SimpleInfoResponse?> fetchMemoryV2SimpleInfo(String memoryId) async {
+    return getMemoryV2SimpleInfo(MPGetMemoryV2SimpleInfoRequest(memoryId: memoryId));
+  }
+
+  /// 获取 Memory 简要信息：网络成功则写入 Hive 并返回；失败则尝试 Hive 缓存。
+  Future<MPGetMemoryV2SimpleInfoResponse?> loadMemorySimpleInfoNetworkOrHive(int? memoryId) async {
+    if (memoryId == null) {
+      return null;
+    }
+    final String idStr = '$memoryId';
+    try {
+      final MPGetMemoryV2SimpleInfoResponse? net = await fetchMemoryV2SimpleInfo(idStr);
+      if (net != null && net.baseResp?.code == 0) {
+        await MPHiveUtil.instance.putMap(key: _todayFocusMemorySimpleInfoHiveKey(memoryId), value: net.toJson());
+        return net;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('MPTodayFocusCubit: loadMemorySimpleInfoNetworkOrHive network failed — $e\n$stackTrace');
+    }
+    try {
+      final Map<String, dynamic>? cached =
+          await MPHiveUtil.instance.getMap(_todayFocusMemorySimpleInfoHiveKey(memoryId));
+      if (cached == null || cached.isEmpty) {
+        return null;
+      }
+      final MPGetMemoryV2SimpleInfoResponse restored = MPGetMemoryV2SimpleInfoResponse.fromJson(cached);
+      if (restored.baseResp?.code == 0) {
+        return restored;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('MPTodayFocusCubit: loadMemorySimpleInfoNetworkOrHive hive read failed — $e\n$stackTrace');
+    }
+    return null;
+  }
+
   /// 重新拉取分组待办（供弹层关闭后同步等场景；失败 Toast）。
   Future<bool> refreshGroupedTodoLists() => _refreshTodoListsFromServer();
 
@@ -387,6 +425,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       subtext: 'scheduled for ${_formatDeadlineLabel(t.deadline)}',
       timeLabel: _formatDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
+      memoryId: t.memoryId,
     );
   }
 
@@ -400,6 +439,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       title: title.isEmpty ? '—' : title,
       timeLabel: _formatDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
+      memoryId: t.memoryId,
       status: st,
       priorityApi: (t.priority ?? 'normal').toLowerCase(),
       deadlineUnixSec: t.deadline,
@@ -433,69 +473,6 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 页面在 loading/empty/error 时也常驻展示「ALL TO DOS」输入框，
   /// 因此提交/刷新等交互不应仅限于 [loaded]。
   bool get _isInteractive => true;
-
-  void addTodoFromInput(String text) {
-    if (!_isInteractive) return;
-    final String t = text.trim();
-    if (t.isEmpty) return;
-    _insertTodayTodo(t);
-  }
-
-  /// 文本走 [analyzeMemoText]，语音（已上传 [MPTodoVoiceInputResult.recordUrl]）走 [analyzeMemoRecord]。
-  /// 返回 `true` 表示分析成功且 [getTodoList] 刷新成功；`false` 表示失败或刷新失败（可保留输入框内容）。
-  Future<bool> addTodoFromAnalyzedInput(MPTodoVoiceInputResult r) async {
-    if (!_isInteractive) return false;
-    final int createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-
-    if (!r.fromVoice) {
-      final String t = r.text.trim();
-      if (t.isEmpty) return false;
-      final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
-        MPAnalyzeMemoTextRequest(content: t, createAt: createAt),
-      );
-      if (response == null || response.baseResp.code != 0) {
-        MPToastUtils.showMessage(
-          response?.baseResp.message ??
-          'Analysis failed. Please try again later.',
-        );
-        return false;
-      }
-      return _refreshTodoListsFromServer();
-    }
-
-    final String? url = r.recordUrl?.trim();
-    if (url == null || url.isEmpty) {
-      MPToastUtils.showMessage('Invalid recording.');
-      return false;
-    }
-    final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
-      MPAnalyzeMemoRecordRequest(recordUrl: url, createAt: createAt),
-    );
-    if (response == null || response.baseResp.code != 0) {
-      MPToastUtils.showMessage(
-        response?.baseResp.message ??
-          'Analysis failed. Please try again later.',
-      );
-      return false;
-    }
-    final String title = response.originalText.trim();
-    if (title.isEmpty) {
-      MPToastUtils.showMessage('No usable content recognized.');
-      return false;
-    }
-    return _refreshTodoListsFromServer();
-  }
-
-  void _insertTodayTodo(String title) {
-    final List<MPTodayFocusTodoRowData> next = List<MPTodayFocusTodoRowData>.of(
-      state.todayItems,
-    );
-    next.insert(
-      0,
-      MPTodayFocusTodoRowData(title: title, timeLabel: '', todoId: ''),
-    );
-    emit(state.copyWith(todayItems: next));
-  }
 
   List<MPTodayFocusTodoRowData> _itemsForSection(
     MPTodayFocusState s,
@@ -626,6 +603,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       subtext: subtext,
       timeLabel: timeLabel,
       todoId: todoId,
+      memoryId: todo.memoryId,
     );
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }

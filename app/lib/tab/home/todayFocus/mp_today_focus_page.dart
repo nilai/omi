@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
+import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
@@ -10,6 +9,8 @@ import 'package:memo_pin/common/omi_edit_todo_popup.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 
+import '../../../common/mp_date_utils.dart';
+import '../../../http/schema/mp_memory.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
 import 'cards/mp_today_focus_card.dart';
@@ -41,6 +42,77 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
 
   Future<void> _onRefresh() => _cubit.initData();
 
+  /// ALL TO DOS：文本提交（含语音转写回填后再提交）→ 直接 [MPTodoManager.createTodo]（与 Memory 详情快捷加 Todo 一致，无 analyze）。
+  Future<bool> _onAllTodosInputSubmitted(MPTodoVoiceInputResult r) async {
+    if (!mounted) {
+      return false;
+    }
+    final String line = r.text.trim();
+    if (line.isEmpty) {
+      return false;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    final bool ok = await MPTodoManager().createTodo(title: line);
+    if (!mounted) {
+      return false;
+    }
+    if (!ok) {
+      MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
+      return false;
+    }
+    await _cubit.refreshGroupedTodoLists();
+    return true;
+  }
+
+  /// 拉取关联 Memory 简要信息后弹出编辑 Todo（CONTEXT / memoryId / type 与首页一致）。
+  Future<void> _showOmiEditTodoPopupWithMemoryContext({
+    required int? memoryId,
+    required String title,
+    required String notes,
+    required String whenLabel,
+    required String timeLabel,
+    required String todoId,
+    Future<bool> Function()? onDelete,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+    final MPGetMemoryV2SimpleInfoResponse? simpleMemory =
+        await _cubit.loadMemorySimpleInfoNetworkOrHive(memoryId);
+    if (!mounted) {
+      return;
+    }
+    final MPMemorySimpleInfoStruct? mi =
+        (simpleMemory != null && simpleMemory.baseResp?.code == 0) ? simpleMemory.memoryInfo : null;
+    final String contextMemoryTitle = mi?.title ?? '';
+    final String contextMetaLine = mi != null
+        ? MPDateUtils.buildMemorySimpleContextMetaLine(
+            recordCreateAt: mi.recordCreateAt,
+            duration: mi.duration,
+            label: mi.label,
+          )
+        : '';
+    final String contextMemoryLabel = mi != null ? 'From memory:' : '';
+    final String resolvedTimeLabel = timeLabel.trim().isEmpty ? '--:--' : timeLabel;
+
+    await showOmiEditTodoPopup(
+      context,
+      params: OmiEditTodoPopupParams(
+        title: title,
+        contextMemoryLabel: contextMemoryLabel,
+        contextMemoryTitle: contextMemoryTitle,
+        contextMetaLine: contextMetaLine,
+        notes: notes,
+        whenLabel: whenLabel,
+        timeLabel: resolvedTimeLabel,
+        todoId: todoId,
+        memoryId: memoryId,
+        memoryType: mi?.type,
+      ),
+      onDelete: onDelete,
+    );
+  }
+
   void _onTapAddAiFocus() {
     if (_addingAiFocus) {
       return;
@@ -58,19 +130,17 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   }
 
   Future<void> _onTapFocusItem(int index, MPTodayFocusCardItem item) async {
-    if (!mounted) {
-      return;
-    }
-    await showOmiEditTodoPopup(
-      context,
-      params: OmiEditTodoPopupParams(
-        title: item.title,
-        notes: item.subtext,
-        whenLabel: 'Today',
-        timeLabel: item.timeLabel,
-        todoId: item.todoId,
-      ),
-      onDelete: () => _cubit.removeFocusItemAt(index),
+    await _showOmiEditTodoPopupWithMemoryContext(
+      memoryId: item.memoryId,
+      title: item.title,
+      notes: item.subtext,
+      whenLabel: 'Today',
+      timeLabel: item.timeLabel,
+      todoId: item.todoId,
+      onDelete: () async {
+        final bool ok = await _cubit.removeFocusItemAt(index);
+        return ok;
+      },
     );
   }
 
@@ -116,15 +186,13 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       );
       return;
     }
-    await showOmiEditTodoPopup(
-      context,
-      params: OmiEditTodoPopupParams(
-        title: row.title,
-        notes: '',
-        whenLabel: whenLabel,
-        timeLabel: timeLabel,
-        todoId: row.todoId,
-      ),
+    await _showOmiEditTodoPopupWithMemoryContext(
+      memoryId: row.memoryId,
+      title: row.title,
+      notes: '',
+      whenLabel: whenLabel,
+      timeLabel: timeLabel,
+      todoId: row.todoId,
     );
     if (!mounted) {
       return;
@@ -228,9 +296,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                       ],
                       const SizedBox(height: 20),
                       MPAllTodosInputCard(
-                        onSubmitted: (MPTodoVoiceInputResult r) {
-                          return _cubit.addTodoFromAnalyzedInput(r);
-                        },
+                        onSubmitted: _onAllTodosInputSubmitted,
                       ),
                       const SizedBox(height: 24),
                       MPTodayFocusTodoGroupedList(

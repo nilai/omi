@@ -27,6 +27,7 @@ class MPAskAIChatState {
     required this.phase,
     required this.aboutText,
     this.conversationId,
+    this.conversationTitle,
     this.messages = const <MPAskAIChatMessage>[],
     this.suggestedQuestions = const <String>[],
     this.isSending = false,
@@ -36,6 +37,9 @@ class MPAskAIChatState {
   final MPAskAIChatPhase phase;
   final String aboutText;
   final String? conversationId;
+
+  /// [getConversationTitle] 异步回填；无会话 id 时保持 `null`。
+  final String? conversationTitle;
   final List<MPAskAIChatMessage> messages;
   final List<String> suggestedQuestions;
   final bool isSending;
@@ -47,6 +51,7 @@ class MPAskAIChatState {
     MPAskAIChatPhase? phase,
     String? aboutText,
     String? conversationId,
+    String? conversationTitle,
     List<MPAskAIChatMessage>? messages,
     List<String>? suggestedQuestions,
     bool? isSending,
@@ -56,6 +61,7 @@ class MPAskAIChatState {
       phase: phase ?? this.phase,
       aboutText: aboutText ?? this.aboutText,
       conversationId: conversationId ?? this.conversationId,
+      conversationTitle: conversationTitle ?? this.conversationTitle,
       messages: messages ?? this.messages,
       suggestedQuestions: suggestedQuestions ?? this.suggestedQuestions,
       isSending: isSending ?? this.isSending,
@@ -71,11 +77,12 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     required this.suggestedQuestions,
     required this.type,
     required this.chatTypeId,
-  }) : super(
+  }       ) : super(
          MPAskAIChatState(
            phase: MPAskAIChatPhase.loading,
            aboutText: aboutText,
            conversationId: conversationId,
+           conversationTitle: null,
            suggestedQuestions: suggestedQuestions,
          ),
        );
@@ -96,6 +103,10 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       ),
     );
     try {
+      final String cid = (conversationId ?? '').trim();
+      if (cid.isNotEmpty) {
+        unawaited(_fetchConversationTitleFireAndForget(cid));
+      }
       final List<MPAskAIChatMessage> messages = await _fetchMessagesFromServer();
       emit(
         state.copyWith(
@@ -113,6 +124,24 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         ),
       );
     }
+  }
+
+  /// 与详情加载并行请求标题，不阻塞 [initData]；完成后写入 [MPAskAIChatState.conversationTitle]。
+  Future<void> _fetchConversationTitleFireAndForget(String conversationId) async {
+    final MPGetConversationTitleResponse? resp = await getConversationTitle(
+      MPGetConversationTitleRequest(conversationId: conversationId),
+    );
+    if (isClosed) {
+      return;
+    }
+    if (resp == null || resp.baseResp.code != 0) {
+      return;
+    }
+    final String title = resp.title.trim();
+    if (title.isEmpty) {
+      return;
+    }
+    emit(state.copyWith(conversationTitle: title));
   }
 
   Future<void> sendMessage(String text) async {

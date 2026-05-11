@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -26,14 +27,7 @@ class MPMemoryActionItemData {
   /// [status]：[MPMemoryActionItemStatus.pending] 显示可点的 Create Todo；
   /// [MPMemoryActionItemStatus.created] 显示已完成态且不可点。
   /// {@endtemplate}
-  const MPMemoryActionItemData({
-    this.id,
-    this.title,
-    this.status,
-    this.deadline,
-    this.priority,
-
-  });
+  const MPMemoryActionItemData({this.id, this.title, this.status, this.deadline, this.priority});
 
   /// 与接口 [MPTodoStruct.id] 一致。
   final String? id;
@@ -63,10 +57,23 @@ class MPMemoryActionItemData {
   }
 }
 
+/// {@template MPMemoryDetailForTodoPopup}
+/// Memory 详情摘要：供 [showMPAddTodoPopup] 的 CONTEXT 区块与 [MPAddTodoPopupParams.memoryType]。
+/// {@endtemplate}
+class MPMemoryDetailForTodoPopup {
+  /// {@macro MPMemoryDetailForTodoPopup}
+  const MPMemoryDetailForTodoPopup({required this.title, required this.metaLine});
+
+  final String title;
+
+  final String metaLine;
+}
+
 /// Actions 分段：标题 + **固定高度**可滑动列表（每条为圆角描边卡片 + 底部操作钮）
 class MPMemoryActionContent extends StatelessWidget {
   /// {@template MPMemoryActionContent}
   /// - [items]：列表数据（示例为 3 条：1 条已创建 + 2 条待创建）
+  /// - [memoryDetail]：当前 Memory 详情摘要，传入 [showMPAddTodoPopup] 的 CONTEXT 与类型字段
   /// - [height]：列表可视高度，默认 `300`，超出可滑动
   /// - [onCreateTodo]：用户在 [showMPAddTodoPopup] 中点击 **Save** 后回调（带下标与表单结果）
   /// - [onActionContextTap]：弹窗内 CONTEXT 卡片点击（可选）
@@ -75,19 +82,22 @@ class MPMemoryActionContent extends StatelessWidget {
     super.key,
     required this.items,
     required this.memoryId,
+    required this.memoryDetail,
     this.height = 300,
     this.scrollWithParent = false,
     this.useMemoStyle = false,
     this.headerTitle = 'Possible follow-ups (suggested by AI)',
     this.padding,
     this.onCreateTodo,
-    this.onActionContextTap,
   });
 
   final List<MPMemoryActionItemData> items;
 
   /// 当前 Memory 详情 [MPMemoryStruct.id]，创建 Todo 时传 [memory_id]
   final String memoryId;
+
+  /// 当前 Memory 详情摘要（标题 / 元信息 / 类型），用于 Todo 弹窗上下文。
+  final MPMemoryDetailForTodoPopup memoryDetail;
 
   /// 列表区域高度（固定）
   final double height;
@@ -100,17 +110,11 @@ class MPMemoryActionContent extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   /// 弹窗保存成功后的回调（可 `await` 调接口），`index` 对应 [items]
-  final Future<void> Function(int index, MPAddTodoPopupResult result)?
-  onCreateTodo;
-
-  /// 弹窗内「From memory」区域点击
-  final VoidCallback? onActionContextTap;
+  final Future<void> Function(int index, MPAddTodoPopupResult result)? onCreateTodo;
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> actionCards = List<Widget>.generate(items.length, (
-      int index,
-    ) {
+    final List<Widget> actionCards = List<Widget>.generate(items.length, (int index) {
       final MPMemoryActionItemData item = items[index];
       final bool isLast = index == items.length - 1;
       return Padding(
@@ -119,7 +123,7 @@ class MPMemoryActionContent extends StatelessWidget {
           data: item,
           useMemoStyle: useMemoStyle,
           onCreateTodo: item.status == MPMemoryActionItemStatus.pending
-              ? () => _openCreateTodoPopup(context, index: index, item: item)
+              ? () => _openCreateTodoPopup(context, index: index, item: item, memoryDetail: memoryDetail)
               : null,
         ),
       );
@@ -133,9 +137,7 @@ class MPMemoryActionContent extends StatelessWidget {
           style: OmiTextStyle.create(
             fontSize: OmiFontSize.t4_13,
             fontWeight: OmiFontWeight.medium,
-            color: useMemoStyle
-                ? const Color(0xFF8E8E93)
-                : Colors.white.withValues(alpha: 0.72),
+            color: useMemoStyle ? const Color(0xFF8E8E93) : Colors.white.withValues(alpha: 0.72),
             height: 1.35,
           ),
         ),
@@ -151,9 +153,7 @@ class MPMemoryActionContent extends StatelessWidget {
             child: ClipRect(
               child: ListView(
                 padding: padding ?? EdgeInsets.zero,
-                physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics(),
-                ),
+                physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                 children: actionCards,
               ),
             ),
@@ -167,6 +167,7 @@ class MPMemoryActionContent extends StatelessWidget {
     BuildContext context, {
     required int index,
     required MPMemoryActionItemData item,
+    required MPMemoryDetailForTodoPopup memoryDetail,
   }) async {
     final String mid = memoryId.trim();
     final String rawTodoId = (item.id ?? '').trim();
@@ -176,11 +177,16 @@ class MPMemoryActionContent extends StatelessWidget {
       params: MPAddTodoPopupParams(
         initialTitle: item.title ?? '',
         contextMemoryLabel: 'From memory:',
+        contextMemoryTitle: memoryDetail.title,
+        contextMetaLine: memoryDetail.metaLine,
         memoryId: mid,
         todoId: existingTodoId,
         preCreateStatus: 1,
+        initialDeadlineTimestamp: item.deadline,
       ),
-      onContextTap: onActionContextTap,
+      onContextTap: () {
+        Navigator.of(context).pop();
+      },
     );
     if (!context.mounted || result == null) {
       return;
@@ -193,11 +199,7 @@ class MPMemoryActionContent extends StatelessWidget {
 
 /// 单条 follow-up 卡片（圆角 + 0.5 描边，子组件按圆角裁切）
 class _MPMemoryActionCard extends StatelessWidget {
-  const _MPMemoryActionCard({
-    required this.data,
-    required this.useMemoStyle,
-    this.onCreateTodo,
-  });
+  const _MPMemoryActionCard({required this.data, required this.useMemoStyle, this.onCreateTodo});
 
   final MPMemoryActionItemData data;
   final bool useMemoStyle;
@@ -212,14 +214,10 @@ class _MPMemoryActionCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: useMemoStyle
-            ? omiWhiteText
-            : Colors.white.withValues(alpha: 0.2),
+        color: useMemoStyle ? omiWhiteText : Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: useMemoStyle
-              ? const Color(0xFFE5E5EA)
-              : Colors.white.withValues(alpha: 0.6),
+          color: useMemoStyle ? const Color(0xFFE5E5EA) : Colors.white.withValues(alpha: 0.6),
           width: 0.5,
         ),
       ),
@@ -233,9 +231,7 @@ class _MPMemoryActionCard extends StatelessWidget {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.medium,
-              color: useMemoStyle
-                  ? mainTextColor
-                  : Colors.white.withValues(alpha: 0.92),
+              color: useMemoStyle ? mainTextColor : Colors.white.withValues(alpha: 0.92),
               height: 1.45,
             ),
           ),
@@ -285,9 +281,9 @@ class _MPActionPillButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool enabled = onPressed != null;
+
     /// Memo：未添加黑色，已添加绿色；Memory 绿底卡片仍为白色字。
-    final Color memoPillFg =
-        useMemoStyle ? (enabled ? mainTextColor : _kMemoActionAddedGreen) : Colors.white;
+    final Color memoPillFg = useMemoStyle ? (enabled ? mainTextColor : _kMemoActionAddedGreen) : Colors.white;
     final double memoFgAlpha = useMemoStyle ? 1.0 : 0.95;
     final Widget child = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -298,9 +294,7 @@ class _MPActionPillButton extends StatelessWidget {
                 ? (enabled ? Colors.white : Colors.transparent)
                 : Colors.white.withValues(alpha: enabled ? 0.14 : 0.1)),
         borderRadius: BorderRadius.circular(999),
-        border: useMemoStyle && enabled
-            ? Border.all(color: const Color(0xFFE5E5EA), width: 0.5)
-            : null,
+        border: useMemoStyle && enabled ? Border.all(color: const Color(0xFFE5E5EA), width: 0.5) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -309,9 +303,7 @@ class _MPActionPillButton extends StatelessWidget {
             icon,
             width: 18,
             height: 18,
-            color: useMemoStyle
-                ? memoPillFg
-                : Colors.white.withValues(alpha: memoFgAlpha),
+            color: useMemoStyle ? memoPillFg : Colors.white.withValues(alpha: memoFgAlpha),
             fit: BoxFit.cover,
           ),
           const SizedBox(width: 4),
@@ -320,9 +312,7 @@ class _MPActionPillButton extends StatelessWidget {
             style: OmiTextStyle.create(
               fontSize: OmiFontSize.t3_12,
               fontWeight: OmiFontWeight.medium,
-              color: useMemoStyle
-                  ? memoPillFg
-                  : Colors.white.withValues(alpha: memoFgAlpha),
+              color: useMemoStyle ? memoPillFg : Colors.white.withValues(alpha: memoFgAlpha),
               height: 1.2,
             ),
           ),
@@ -349,4 +339,3 @@ class _MPActionPillButton extends StatelessWidget {
     );
   }
 }
-

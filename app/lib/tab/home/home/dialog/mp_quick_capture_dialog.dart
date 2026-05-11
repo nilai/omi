@@ -4,21 +4,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../audio/record/mp_audio_upload_service.dart';
 import '../../../../audio/record/mp_recording_background_support.dart';
+import '../../../../common/mp_analyze_memo_confirm_flow.dart';
 import '../../../../http/api/mp_memo.dart';
 import '../../../../http/schema/mp_memo.dart';
-import '../../../../http/schema/mp_todo.dart';
 import '../../../../permission/omi_microphone_manager.dart';
 import '../../../../utils/mp_toast_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
-import 'mp_qucik_capture_confirm_dialog.dart';
-
 enum _MPQuickCaptureState { idle, textReady, recording, analyzingText, transcribingVoice }
 
 /// Quick Capture 弹窗（图1~图5五种状态）。
@@ -101,49 +98,16 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     }
   }
 
-  /// 组装分析结果并展示确认弹窗。
+  /// 组装分析结果并展示确认弹窗（与 Today Focus 共用 [MPAnalyzeMemoConfirmFlow]）。
   Future<void> _showAnalyzeConfirmDialog({
     required String originalText,
     required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
   }) async {
-    final String fallbackText = originalText.trim();
-    final List<MPQuickCaptureConfirmItem> items = <MPQuickCaptureConfirmItem>[];
-    for (final MPAnalyzeMemoSuggestionStruct e in structuredSuggestions) {
-      final String content = e.content.trim();
-      if (content.isEmpty) {
-        continue;
-      }
-      if (e.type == MPAnalyzeMemoSuggestionType.todo) {
-        items.add(MPQuickCaptureConfirmItem.todo(content));
-      } else {
-        items.add(MPQuickCaptureConfirmItem.memo(content));
-      }
-    }
-    final MPQuickCaptureConfirmResult? result = await MPQucikCaptureConfirmDialog.show(
+    await MPAnalyzeMemoConfirmFlow.showConfirmAndBatchCreate(
       widget.hostContext,
-      originalText: fallbackText,
-      items: items,
+      originalText: originalText,
+      structuredSuggestions: structuredSuggestions,
     );
-    if (result == null) {
-      return;
-    }
-    if (result.confirmed) {
-      if (result.todos.isEmpty && result.memos.isEmpty) {
-        MPToastUtils.showMessage('No suggestions selected.');
-        return;
-      }
-      final MPBatchCreateResponse? response = await batchCreate(
-        MPBatchCreateRequest(todos: result.todos, memos: result.memos),
-      );
-      if (response == null) {
-        return;
-      }
-      if (response.baseResp.code != 0) {
-        MPToastUtils.showMessage(response.baseResp.message);
-        return;
-      }
-      MPToastUtils.showMessage('todos and memos created.');
-    }
   }
 
   Future<String> _ensureQuickCaptureDirectory() async {

@@ -15,10 +15,7 @@ const Color _kWeeklyPageBgColor = Color(0xFFF2F2F7);
 
 /// Weekly Insight 详情页
 class MPWeeklyInsightDetailPage extends StatelessWidget {
-  const MPWeeklyInsightDetailPage({
-    super.key,
-    required this.item,
-  });
+  const MPWeeklyInsightDetailPage({super.key, required this.item});
 
   final MPInsightListItem item;
 
@@ -32,10 +29,7 @@ class MPWeeklyInsightDetailPage extends StatelessWidget {
             backgroundColor: _kWeeklyPageBgColor,
             appBar: PreferredSize(
               preferredSize: _MPWeeklyAppBar.preferredSizeOf(context),
-              child: _MPWeeklyAppBar(
-                subtitle: item.periodLabel,
-                onBack: () => Navigator.of(context).maybePop(),
-              ),
+              child: _MPWeeklyAppBar(subtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
             ),
             body: _MPWeeklyInsightBody(state: state),
           );
@@ -46,10 +40,7 @@ class MPWeeklyInsightDetailPage extends StatelessWidget {
 }
 
 class _MPWeeklyAppBar extends StatelessWidget {
-  const _MPWeeklyAppBar({
-    required this.subtitle,
-    required this.onBack,
-  });
+  const _MPWeeklyAppBar({required this.subtitle, required this.onBack});
 
   final String subtitle;
   final VoidCallback onBack;
@@ -75,12 +66,7 @@ class _MPWeeklyAppBar extends StatelessWidget {
               child: IconButton(
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-                icon: OmiImageLoader.localImg(
-                  Assets.omiLeftBack,
-                  color: blueTextColor,
-                  width: 20,
-                  height: 20,
-                ),
+                icon: OmiImageLoader.localImg(Assets.omiLeftBack, color: blueTextColor, width: 20, height: 20),
                 onPressed: onBack,
               ),
             ),
@@ -149,8 +135,7 @@ class _MPWeeklyInsightBody extends StatelessWidget {
             title: 'Unable to load Weekly insight',
             description: state.errorMessage ?? 'Please try again later.',
             buttonText: 'Retry',
-            onButtonPressed: () =>
-                context.read<MPInsightDetailCubit>().initData(),
+            onButtonPressed: () => context.read<MPInsightDetailCubit>().initData(),
           ),
         );
       case MPInsightDetailPhase.loaded:
@@ -158,12 +143,10 @@ class _MPWeeklyInsightBody extends StatelessWidget {
         if (weekly == null) {
           return const MPTristatePage(type: MPTristateType.empty);
         }
-        final List<MPWeeklyPendingItem> visiblePendingItems = weekly
-            .pendingItemCards
+        final List<MPWeeklyPendingItem> visiblePendingItems = weekly.pendingItemCards
             .where((MPWeeklyPendingItem e) => e.visible)
             .toList();
-        final List<MPWeeklyPriorityItem> visiblePriorities = weekly
-            .nextWeekPriorities
+        final List<MPWeeklyPriorityItem> visiblePriorities = weekly.nextWeekPriorities
             .where((MPWeeklyPriorityItem e) => e.visible)
             .toList();
         return SingleChildScrollView(
@@ -172,39 +155,26 @@ class _MPWeeklyInsightBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
               // 1. Week Header
-              _MPWeeklyHeaderCard(
-                title: weekly.titleLabel,
-                subLabel: weekly.subLabel,
-                summary: weekly.headerSummary,
-              ),
+              _MPWeeklyHeaderCard(title: weekly.titleLabel, subLabel: weekly.subLabel, summary: weekly.headerSummary),
               // 2. Week Summary
               if (weekly.weekSummaryText.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklySummaryCard(
-                  summary: weekly.weekSummaryText,
-                  metrics: weekly.metrics,
-                ),
+                _MPWeeklySummaryCard(summary: weekly.weekSummaryText, metrics: weekly.metrics),
               ],
               // 3. Accomplishments
               if (weekly.accomplishmentItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyAccomplishmentsCard(
-                  items: weekly.accomplishmentItems,
-                ),
+                _MPWeeklyAccomplishmentsCard(items: weekly.accomplishmentItems),
               ],
               // 4. Challenges & Learnings
               if (weekly.challengeLearningItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyChallengesLearningsCard(
-                  items: weekly.challengeLearningItems,
-                ),
+                _MPWeeklyChallengesLearningsCard(items: weekly.challengeLearningItems),
               ],
               // 5. Pending items
               if (visiblePendingItems.isNotEmpty) ...<Widget>[
                 const SizedBox(height: 12),
-                _MPWeeklyPendingItemsCard(
-                  items: visiblePendingItems,
-                ),
+                _MPWeeklyPendingItemsCard(items: visiblePendingItems),
               ],
               // 6. Next Week Priorities
               if (visiblePriorities.isNotEmpty) ...<Widget>[
@@ -218,15 +188,12 @@ class _MPWeeklyInsightBody extends StatelessWidget {
               ],
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () =>
-                    context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
+                onPressed: () => context.read<MPInsightDetailCubit>().onAskAiButtonPressed(context),
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF7436E7),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text('Ask AI about this week'),
               ),
@@ -238,9 +205,7 @@ class _MPWeeklyInsightBody extends StatelessWidget {
 }
 
 class _MPWeeklyCardShell extends StatelessWidget {
-  const _MPWeeklyCardShell({
-    required this.child,
-  });
+  const _MPWeeklyCardShell({required this.child});
 
   final Widget child;
 
@@ -259,11 +224,7 @@ class _MPWeeklyCardShell extends StatelessWidget {
 }
 
 class _MPWeeklyHeaderCard extends StatelessWidget {
-  const _MPWeeklyHeaderCard({
-    required this.title,
-    required this.subLabel,
-    required this.summary,
-  });
+  const _MPWeeklyHeaderCard({required this.title, required this.subLabel, required this.summary});
 
   final String title;
   final String subLabel;
@@ -275,10 +236,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE4EDF6),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFD2E0EE),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFFD2E0EE), width: 1),
       ),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       child: Column(
@@ -287,13 +245,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
-              const Text(
-                '📊',
-                style: TextStyle(
-                  fontSize: 18,
-                  height: 1,
-                ),
-              ),
+              const Text('📊', style: TextStyle(fontSize: 18, height: 1)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -338,10 +290,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
 }
 
 class _MPWeeklySummaryCard extends StatelessWidget {
-  const _MPWeeklySummaryCard({
-    required this.summary,
-    required this.metrics,
-  });
+  const _MPWeeklySummaryCard({required this.summary, required this.metrics});
 
   final String summary;
   final List<MPWeeklyMetricItem> metrics;
@@ -402,10 +351,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                 return Expanded(
                   child: Container(
                     margin: EdgeInsets.only(right: e.key == metrics.length - 1 ? 0 : 10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF1F5),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFEAF1F5), borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Column(
                       children: <Widget>[
@@ -471,16 +417,9 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 4),
                     width: 18,
                     height: 18,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDDEFF5),
-                      borderRadius: BorderRadius.circular(999),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFDDEFF5), borderRadius: BorderRadius.circular(999)),
                     alignment: Alignment.center,
-                    child: const Icon(
-                      Icons.circle,
-                      size: 7,
-                      color: Color(0xFF339CC1),
-                    ),
+                    child: const Icon(Icons.circle, size: 7, color: Color(0xFF339CC1)),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -546,10 +485,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Color(item.backgroundColorValue),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Color(item.borderColorValue),
-                  width: 1,
-                ),
+                border: Border.all(color: Color(item.borderColorValue), width: 1),
               ),
               padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               child: Column(
@@ -611,25 +547,16 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => MPToastUtils.showFeatureComingSoon(
-                    message: item.text,
-                  ),
+                  onTap: () => MPToastUtils.showFeatureComingSoon(message: item.text),
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF2F2F5),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFFF2F2F5), borderRadius: BorderRadius.circular(14)),
                     padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         const Padding(
                           padding: EdgeInsets.only(top: 2),
-                          child: Icon(
-                            Icons.star_outline_rounded,
-                            size: 16,
-                            color: Color(0xFFDA8A3F),
-                          ),
+                          child: Icon(Icons.star_outline_rounded, size: 16, color: Color(0xFFDA8A3F)),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
@@ -691,19 +618,14 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
               decoration: BoxDecoration(
                 border: e.key == widget.items.length - 1
                     ? null
-                    : const Border(
-                        bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1),
-                      ),
+                    : const Border(bottom: BorderSide(color: Color(0xFFEAEAEA), width: 1)),
               ),
               child: Row(
                 children: <Widget>[
                   Container(
                     width: 18,
                     height: 18,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0A84FF),
-                      shape: BoxShape.circle,
-                    ),
+                    decoration: BoxDecoration(color: const Color(0xFF0A84FF), shape: BoxShape.circle),
                     alignment: Alignment.center,
                     child: Text(
                       '${e.key + 1}',
@@ -757,11 +679,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              const Icon(
-                                Icons.check,
-                                size: 13,
-                                color: Color(0xFF34C759),
-                              ),
+                              const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
                               const SizedBox(width: 4),
                               Text(
                                 'Added',
@@ -778,7 +696,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                       : TextButton(
                           onPressed: () async {
                             final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                              item.text,
+                              MPInsightTodoLineItem(text: item.text, deadLine: item.deadLine),
                               context,
                             );
                             if (!mounted) {
@@ -796,9 +714,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                             minimumSize: const Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           ),
                           child: Text(
                             'Add to Todo',
@@ -854,11 +770,7 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                 children: <Widget>[
                   Row(
                     children: <Widget>[
-                      Icon(
-                        _iconDataOf(item.iconKey),
-                        size: 15,
-                        color: Color(item.iconColorValue),
-                      ),
+                      Icon(_iconDataOf(item.iconKey), size: 15, color: Color(item.iconColorValue)),
                       const SizedBox(width: 8),
                       Text(
                         item.title,
@@ -904,4 +816,3 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
     }
   }
 }
-

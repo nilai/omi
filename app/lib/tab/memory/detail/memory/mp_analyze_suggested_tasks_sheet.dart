@@ -231,9 +231,6 @@ class _MPAnalyzeSuggestedTasksSheetState
     try {
       if (item.type == MPAnalyzeMemoSuggestionType.todo) {
         ok = await MPTodoManager().createTodo(title: content);
-        if (!ok) {
-          MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
-        }
       } else {
         final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
           MPCreateMemoWithTextRequest(

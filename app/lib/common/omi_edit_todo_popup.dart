@@ -12,6 +12,8 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
+import '../http/schema/mp_data_model.dart';
+import '../tab/memory/detail/mp_memory_detail_helper.dart';
 import 'mp_home_notification.dart';
 
 class OmiEditTodoPopupParams {
@@ -26,12 +28,18 @@ class OmiEditTodoPopupParams {
     this.timeLabel = '09:00',
     this.todoId = '',
     this.deadlineUnixSec,
+    this.memoryId,
+    this.memoryType,
   });
 
   final String title;
   final String contextMemoryLabel;
   final String contextMemoryTitle;
   final String contextMetaLine;
+  final int? memoryId;
+
+  /// 关联 Memory 类型（如 [MPMemorySimpleInfoStruct.type]）；为空时跳转详情回退为 [MPMemoryType.memoryFeed]。
+  final MPMemoryType? memoryType;
 
   /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后均为空时不展示 CONTEXT 区块。
   bool get shouldShowContextSection =>
@@ -566,7 +574,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                 context,
                                 details: details,
                               );
-                          if (action == null) return;
+                          if (action == null || !context.mounted) return;
                           switch (action) {
                             case OmiTodoMoreAction.exportToCalendar:
                               // TODO: Export to calendar
@@ -582,7 +590,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                 final bool ok = await showMPConfirmDeleteDialog(
                                   widget.rootContext,
                                 );
-                                if (!ok) return;
+                                if (!ok || !context.mounted) return;
                                 final String todoId =
                                     widget.params.todoId.trim();
                                 if (todoId.isNotEmpty) {
@@ -635,7 +643,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                         if (widget.params.shouldShowContextSection) ...<Widget>[
                           const _SectionTitle(text: 'CONTEXT'),
                           const SizedBox(height: 8),
-                          _ContextCard(params: widget.params),
+                          _ContextCard(params: widget.params, rootContext: widget.rootContext),
                           const SizedBox(height: 14),
                         ],
                         const _SectionTitle(text: 'NOTES'),
@@ -794,61 +802,114 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _ContextCard extends StatelessWidget {
-  const _ContextCard({required this.params});
+  const _ContextCard({required this.params, required this.rootContext});
 
   final OmiEditTodoPopupParams params;
+  final BuildContext rootContext;
+
+  /// 关闭编辑 Todo 弹层后，从 [rootContext] 打开 Memory 详情。
+  void _openMemoryDetail(BuildContext sheetContext) {
+    final int? mid = params.memoryId;
+    if (mid == null || mid <= 0) {
+      return;
+    }
+    Navigator.of(sheetContext).pop();
+    final String memoryIdStr = '$mid';
+    final String trimmedTitle = params.contextMemoryTitle.trim();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!rootContext.mounted) {
+        return;
+      }
+      MPMemoryDetailPageHelper.navigateToDetailPage(
+        rootContext,
+        memoryIdStr,
+        params.memoryType ?? MPMemoryType.memoryFeed,
+        title: trimmedTitle.isEmpty ? null : trimmedTitle,
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFEAEAEE)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            params.contextMemoryLabel,
-            style: OmiTextStyle.create(
-              fontSize: OmiFontSize.t4_13,
-              fontWeight: OmiFontWeight.regular,
-              color: secondTextColor,
-            ),
+    final int? mid = params.memoryId;
+    final bool tappable = mid != null && mid > 0;
+
+    final Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          params.contextMemoryLabel,
+          style: OmiTextStyle.create(
+            fontSize: OmiFontSize.t4_13,
+            fontWeight: OmiFontWeight.regular,
+            color: secondTextColor,
           ),
-          const SizedBox(height: 4),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: Text(
-                  params.contextMemoryTitle,
-                  style: OmiTextStyle.create(
-                    fontSize: OmiFontSize.t5_14,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
-                  ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Text(
+                params.contextMemoryTitle,
+                style: OmiTextStyle.create(
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.medium,
+                  color: mainTextColor,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
+            ),
+            if (tappable)
               OmiImageLoader.localImg(
                 Assets.omiRightArrow,
                 width: 14,
                 height: 14,
                 color: blueTextColor,
               ),
-            ],
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          params.contextMetaLine,
+          style: OmiTextStyle.create(
+            fontSize: OmiFontSize.t4_13,
+            fontWeight: OmiFontWeight.regular,
+            color: secondTextColor,
           ),
-          const SizedBox(height: 4),
-          Text(
-            params.contextMetaLine,
-            style: OmiTextStyle.create(
-              fontSize: OmiFontSize.t4_13,
-              fontWeight: OmiFontWeight.regular,
-              color: secondTextColor,
-            ),
-          ),
-        ],
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+
+    if (!tappable) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFEAEAEE)),
+        ),
+        child: content,
+      );
+    }
+
+    return Material(
+      color: const Color(0xFFF5F5F7),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFEAEAEE)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _openMemoryDetail(context),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: content,
+        ),
       ),
     );
   }

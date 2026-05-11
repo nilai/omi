@@ -63,6 +63,9 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   int _lastMessageCount = 0;
   bool _lastIsSending = false;
 
+  /// 用于检测流式回复：仅 [messages.length] / [isSending] 不变时正文仍在变长。
+  int _lastMessagesContentLength = 0;
+
   @override
   void initState() {
     super.initState();
@@ -92,13 +95,51 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   }
 
   void _maybeAutoScroll(MPAskAIChatState state) {
-    final bool shouldScroll =
-        state.messages.length != _lastMessageCount ||
-        state.isSending != _lastIsSending;
+    final int contentLen = state.messages.fold<int>(
+      0,
+      (int sum, MPAskAIChatMessage m) => sum + m.content.length,
+    );
+    final bool messageCountChanged = state.messages.length != _lastMessageCount;
+    final bool sendingChanged = state.isSending != _lastIsSending;
+    final bool contentGrowing = contentLen != _lastMessagesContentLength;
+
+    final int prevCount = _lastMessageCount;
     _lastMessageCount = state.messages.length;
     _lastIsSending = state.isSending;
-    if (!shouldScroll) return;
-    _scrollToBottom(animated: true);
+    _lastMessagesContentLength = contentLen;
+
+    if (!messageCountChanged && !sendingChanged && !contentGrowing) {
+      return;
+    }
+
+    /// 用户主动上滑阅读上方内容时，不因流式增量把视图拽回底部。
+    final bool newUserBubble =
+        messageCountChanged &&
+        state.messages.length > prevCount &&
+        state.messages.isNotEmpty &&
+        state.messages.last.role == MPAskAIMessageRole.user;
+    final bool streamJustEnded = sendingChanged && !state.isSending;
+    if (!newUserBubble &&
+        !_isScrollNearBottom() &&
+        (contentGrowing || streamJustEnded)) {
+      return;
+    }
+
+    /// 流式输出帧率高，用 [jumpTo] 避免动画积压；结束后再用动画收一次尾。
+    _scrollToBottom(animated: !state.isSending);
+  }
+
+  /// 当前是否在列表底部附近（允许小幅浮动）。
+  bool _isScrollNearBottom() {
+    if (!_scrollController.hasClients) {
+      return true;
+    }
+    final ScrollPosition pos = _scrollController.position;
+    if (!pos.hasPixels) {
+      return true;
+    }
+    const double threshold = 160;
+    return pos.maxScrollExtent - pos.pixels <= threshold;
   }
 
   void _scrollToBottom({required bool animated}) {

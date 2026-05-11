@@ -10,6 +10,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
+import '../http/schema/mp_data_model.dart';
 
 /// [showMPAddTodoPopup] 保存时返回的数据
 class MPAddTodoPopupResult {
@@ -44,7 +45,7 @@ class MPAddTodoPopupResult {
 /// 打开弹窗时的可配置项（用于 **数据回显**：标题、备注、优先级、截止时间、Context 文案等）
 class MPAddTodoPopupParams {
   const MPAddTodoPopupParams({
-    this.initialTitle = 'Schedule authentication service testing session',
+    this.initialTitle = '',
     this.contextMemoryLabel = 'From memory:',
     this.contextMemoryTitle = '',
     this.contextMetaLine = '',
@@ -58,6 +59,7 @@ class MPAddTodoPopupParams {
     this.feedCardId = '',
     this.todoId,
     this.preCreateStatus,
+    this.memoryType,
   });
 
   final String initialTitle;
@@ -70,7 +72,7 @@ class MPAddTodoPopupParams {
 
   /// [contextMemoryLabel]、[contextMemoryTitle]、[contextMetaLine] 去首尾空白后若均为空，则不展示 CONTEXT 区块。
   bool get shouldShowContextSection =>
-      contextMemoryLabel.trim().isNotEmpty && contextMemoryTitle.trim().isNotEmpty && contextMetaLine.trim().isNotEmpty;
+      contextMemoryLabel.trim().isNotEmpty || contextMemoryTitle.trim().isNotEmpty || contextMetaLine.trim().isNotEmpty;
 
   final String initialNotes;
 
@@ -98,6 +100,9 @@ class MPAddTodoPopupParams {
 
   /// 更新 Todo 时透传给接口字段 `pre_create_status`；不传则为 `null`。
   final int? preCreateStatus;
+
+  /// 关联 Memory 类型（如 [MPMemorySimpleInfoStruct.type]）；为空时跳转详情回退为 [MPMemoryType.memoryFeed]。
+  final MPMemoryType? memoryType;
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。

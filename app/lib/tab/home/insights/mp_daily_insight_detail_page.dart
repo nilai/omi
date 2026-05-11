@@ -410,7 +410,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                           : TextButton(
                               onPressed: () async {
                                 final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                                  focus.text,
+                                  MPInsightTodoLineItem(text: focus.text, deadLine: focus.deadLine),
                                   context,
                                 );
                                 if (!mounted) {

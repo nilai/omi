@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/omi_button.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 
 import '../omi_memory_detail_cubit.dart';
@@ -47,12 +48,16 @@ class MPMemoryDetailCardData {
     required this.actionItems,
     this.initialSegment = MPMemoryDetailSegment.transcript,
     this.feedBlocks = const <MPMemoryFeedBlock>[],
+    this.memoryType,
   });
 
   /// 与详情接口 [MPMemoryStruct.id] 一致，用于 resummary 等接口。
   final String memoryId;
 
   final String title;
+
+  /// 与详情接口 [MPMemoryStruct.type] 一致；用于 Todo 弹窗 [MPAddTodoPopupParams.memoryType] 等。
+  final MPMemoryType? memoryType;
 
   /// 一行元信息（含时间与来源等），如 `Yesterday, 4:30 PM • 45m52s • MemoPin`
   final String metaLine;
@@ -90,6 +95,7 @@ class MPMemoryDetailCardData {
     List<MPMemoryActionItemData>? actionItems,
     MPMemoryDetailSegment? initialSegment,
     List<MPMemoryFeedBlock>? feedBlocks,
+    MPMemoryType? memoryType,
   }) {
     return MPMemoryDetailCardData(
       memoryId: memoryId ?? this.memoryId,
@@ -106,6 +112,7 @@ class MPMemoryDetailCardData {
       actionItems: actionItems ?? this.actionItems,
       initialSegment: initialSegment ?? this.initialSegment,
       feedBlocks: feedBlocks ?? this.feedBlocks,
+      memoryType: memoryType ?? this.memoryType,
     );
   }
 }
@@ -851,6 +858,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
         return MPMemoryActionContent(
           items: _actionItems,
           memoryId: widget.data.memoryId,
+          memoryDetail: MPMemoryDetailForTodoPopup(
+            title: widget.data.title,
+            metaLine: widget.data.metaLine,
+          ),
           onCreateTodo: _onCreateTodoFromAction,
           scrollWithParent: widget.segmentBodyScrollWithParent,
           useMemoStyle: _isMemoCard,

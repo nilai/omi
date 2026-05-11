@@ -76,7 +76,8 @@ class _MPPatternInsightBody extends StatelessWidget {
         final int appearedCount = item.patternMemoryTitles.length;
         final String topDescription = state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
         final String whyText = state.data!.paragraphs.length > 1 ? state.data!.paragraphs[1] : '';
-        final String nextStepText = state.data!.tips.isNotEmpty ? state.data!.tips.first : '';
+        final MPInsightTodoLineItem? nextStepLine =
+            state.data!.tips.isNotEmpty ? state.data!.tips.first : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -113,7 +114,7 @@ class _MPPatternInsightBody extends StatelessWidget {
                         const SizedBox(height: 16),
                         _WhyThisMattersSection(whyText: whyText),
                         const SizedBox(height: 16),
-                        _SuggestedNextStepSection(nextStepText: nextStepText),
+                        _SuggestedNextStepSection(nextStep: nextStepLine),
                         const SizedBox(height: 18),
                         _AskAiButton(),
                         const SizedBox(height: 24),
@@ -359,9 +360,9 @@ class _WhyThisMattersSection extends StatelessWidget {
 }
 
 class _SuggestedNextStepSection extends StatefulWidget {
-  const _SuggestedNextStepSection({required this.nextStepText});
+  const _SuggestedNextStepSection({this.nextStep});
 
-  final String nextStepText;
+  final MPInsightTodoLineItem? nextStep;
 
   @override
   State<_SuggestedNextStepSection> createState() => _SuggestedNextStepSectionState();
@@ -372,7 +373,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
 
   @override
   Widget build(BuildContext context) {
-    final String text = widget.nextStepText;
+    final String text = widget.nextStep?.text ?? '';
     final bool canAdd = text.trim().isNotEmpty;
 
     return Column(
@@ -439,7 +440,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                   : TextButton(
                       onPressed: () async {
                         final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                          text.trim(),
+                          MPInsightTodoLineItem(text: text.trim(), deadLine: widget.nextStep?.deadLine),
                           context,
                         );
                         if (!mounted) {

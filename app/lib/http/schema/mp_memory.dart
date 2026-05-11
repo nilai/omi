@@ -136,6 +136,10 @@ class MPMemorySimpleInfoStruct {
 
   final String? label;
 
+  /// 与 [MPMemoryStruct.type] 一致（后端 memory 类型）。
+  @JsonKey(name: 'type')
+  final MPMemoryType? type;
+
   /// 时长，单位：秒。
   @JsonKey(name: 'duration', fromJson: mpIntFromJson)
   final int duration;
@@ -146,6 +150,7 @@ class MPMemorySimpleInfoStruct {
   MPMemorySimpleInfoStruct({
     required this.title,
     this.label,
+    this.type,
     required this.duration,
     required this.recordCreateAt,
   });

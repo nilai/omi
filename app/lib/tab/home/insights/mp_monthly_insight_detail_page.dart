@@ -892,7 +892,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                           ),
                           onPressed: () async {
                             final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                              f.text,
+                              MPInsightTodoLineItem(text: f.text, deadLine: f.deadLine),
                               context,
                             );
                             if (!mounted) {
