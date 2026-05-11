@@ -23,7 +23,7 @@ import 'omi_all_cubit.dart';
 class OmiAllPage extends StatelessWidget {
   const OmiAllPage({super.key, this.refreshListenable});
 
-  /// 父级在「列表应从隐藏变为可见」或「底部切回 Memory 且仍为 All」时递增计数；此处监听并 [OmiAllCubit.load]。
+  /// 父级在「列表应从隐藏变为可见」或「底部切回 Memory 且仍为 All」时递增计数；此处触发与下拉刷新相同的 [RefreshIndicator] 流程。
   final ValueNotifier<int>? refreshListenable;
 
   @override
@@ -47,13 +47,42 @@ class _OmiAllView extends StatefulWidget {
 class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
   final ScrollController _scrollController = ScrollController();
 
+  /// 与 [RefreshIndicator] 绑定，用于在 Tab 切回 / 自详情返回等场景**按「下拉刷新」同一路径**拉数（[OmiAllCubit.load]）。
+  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+      GlobalKey<RefreshIndicatorState>();
+
   StreamSubscription<void>? _memoryListRefreshSub;
 
-  void _onExternalRefreshRequest() {
+  /// 在已展示可下拉列表时走 [RefreshIndicatorState.show]；否则（三态/空列表等）退化为直接 [OmiAllCubit.load]。
+  void _requestRefreshAsPullDown() {
     if (!mounted) {
       return;
     }
-    context.read<OmiAllCubit>().load();
+    final OmiAllCubit cubit = context.read<OmiAllCubit>();
+    final OmiAllState s = cubit.state;
+    if (s.phase == OmiAllPhase.loaded && s.items.isNotEmpty) {
+      final RefreshIndicatorState? ri = _refreshIndicatorKey.currentState;
+      if (ri != null) {
+        unawaited(ri.show());
+        return;
+      }
+    }
+    unawaited(
+      cubit.load().whenComplete(_jumpListToTopSilently),
+    );
+  }
+
+  /// 刷新后列表已更新时在下一帧滚回顶部，避免与本轮 layout 冲突；无 [ScrollPosition]（三态页等）则跳过。
+  void _jumpListToTopSilently() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      if (!_scrollController.hasClients) {
+        return;
+      }
+      _scrollController.jumpTo(0);
+    });
   }
 
   @override
@@ -68,19 +97,19 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
   /// 自列表页 push 的详情等全屏路由 pop 后，列表需重新拉取（底部 Tab / 顶部分段未变时此前不会触发刷新）。
   @override
   void didPopNext() {
-    _onExternalRefreshRequest();
+    _requestRefreshAsPullDown();
   }
 
   @override
   void initState() {
     super.initState();
-    widget.refreshListenable?.addListener(_onExternalRefreshRequest);
+    widget.refreshListenable?.addListener(_requestRefreshAsPullDown);
     _scrollController.addListener(_onScroll);
     _memoryListRefreshSub = MPMemoryNotification.listenMemoryListRefresh(() {
       if (!mounted) {
         return;
       }
-      context.read<OmiAllCubit>().load();
+      _requestRefreshAsPullDown();
     });
   }
 
@@ -88,15 +117,15 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
   void didUpdateWidget(_OmiAllView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.refreshListenable != widget.refreshListenable) {
-      oldWidget.refreshListenable?.removeListener(_onExternalRefreshRequest);
-      widget.refreshListenable?.addListener(_onExternalRefreshRequest);
+      oldWidget.refreshListenable?.removeListener(_requestRefreshAsPullDown);
+      widget.refreshListenable?.addListener(_requestRefreshAsPullDown);
     }
   }
 
   @override
   void dispose() {
     mpRouteObserver.unsubscribe(this);
-    widget.refreshListenable?.removeListener(_onExternalRefreshRequest);
+    widget.refreshListenable?.removeListener(_requestRefreshAsPullDown);
     _memoryListRefreshSub?.cancel();
     _memoryListRefreshSub = null;
     _scrollController.removeListener(_onScroll);
@@ -153,6 +182,7 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
 
   Future<void> _onRefresh() async {
     await context.read<OmiAllCubit>().load();
+    _jumpListToTopSilently();
   }
 
   /// 按 [MPMemoryEntry.kind] 区分跳转或埋点（示例：`[entry.id]` + `kind`）
@@ -263,6 +293,7 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
               );
             }
             return RefreshIndicator(
+              key: _refreshIndicatorKey,
               onRefresh: _onRefresh,
               child: ListView.builder(
                 controller: _scrollController,
