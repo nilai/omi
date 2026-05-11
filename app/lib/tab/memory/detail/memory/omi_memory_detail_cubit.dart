@@ -139,6 +139,26 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(s.copyWith(isAudioPlaying: _isAudioPlaying));
   }
 
+  /// [refresh]/[load] 等会整体 `emit` 新 [OmiMemoryDetailState]，[isAudioPlaying] 默认变为 `false`，
+  /// 但 [just_audio] 在切后台后仍在播放；依据播放器真实状态恢复按钮与进度定时器。
+  void _reconcileAudioPlayingUiWithPlayer() {
+    if (isClosed) {
+      return;
+    }
+    final OmiMemoryDetailState s = state;
+    if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
+      return;
+    }
+    final bool playing = _audioPlayer.playing;
+    if (playing != _isAudioPlaying || s.isAudioPlaying != playing) {
+      _isAudioPlaying = playing;
+      _syncAudioPlayingFlag();
+    }
+    if (playing) {
+      _startPlaybackUiTimer();
+    }
+  }
+
   Timer? _playbackUiTimer;
   StreamSubscription<Duration>? _positionStreamSub;
 
@@ -349,6 +369,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: cached.isSummaryGenerating,
         ),
       );
+      _reconcileAudioPlayingUiWithPlayer();
       _mergeFeedGeneratingResummaryIdsFromFeeds(cachedStruct.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } else {
       emit(const OmiMemoryDetailState(phase: OmiMemoryDetailPhase.loading));
@@ -371,6 +392,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
+      _reconcileAudioPlayingUiWithPlayer();
       _mergeFeedGeneratingResummaryIdsFromFeeds(resp.memoryDetail.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } catch (e) {
       if (!hasCached) {
@@ -827,6 +849,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
           isSummaryGenerating: bundle.isSummaryGenerating,
         ),
       );
+      _reconcileAudioPlayingUiWithPlayer();
       _mergeFeedGeneratingResummaryIdsFromFeeds(resp.memoryDetail.memoryFeed?.feeds ?? const <MPFeedCardStruct>[]);
     } catch (e) {
       if (state.phase == OmiMemoryDetailPhase.loaded && state.data != null) {
