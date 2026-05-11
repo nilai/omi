@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../audio/record/mp_audio_upload_service.dart';
+import '../../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../../audio/record/mp_recording_background_support.dart';
 import '../../../../common/mp_analyze_memo_confirm_flow.dart';
 import '../../../../http/api/mp_memo.dart';
@@ -45,6 +46,12 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   static const String _kQuickCaptureDirName = 'mp_quick_capture_records';
   static const Color _kPrimaryBlue = Color(0xFF2F7BFF);
 
+  /// 全局录音仲裁持有者标识。
+  late final Object _recordingOwnerToken;
+
+  /// 被其它入口抢占麦克风后的暂停态。
+  bool _recordingExternallyPaused = false;
+
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   late FlutterSoundRecorder _recorder;
@@ -61,6 +68,11 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   @override
   void initState() {
     super.initState();
+    _recordingOwnerToken = Object();
+    MPGlobalRecordingCoordinator.instance.register(
+      _recordingOwnerToken,
+      _onInterruptedByOtherOwner,
+    );
     _recorder = FlutterSoundRecorder();
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
     _textController.addListener(_handleTextChanged);
@@ -81,6 +93,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     _waveController?.dispose();
     _waveController = null;
     unawaited(_stopRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
   }
 
@@ -139,6 +152,55 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    MPGlobalRecordingCoordinator.instance
+        .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 其它场景开始录音：暂停 Quick Capture 录制。
+  Future<void> _onInterruptedByOtherOwner() async {
+    if (_state != _MPQuickCaptureState.recording || !_recorderOpened) {
+      return;
+    }
+    if (_recordingExternallyPaused) {
+      return;
+    }
+    try {
+      if (_recorder.isPaused || !_recorder.isRecording) {
+        return;
+      }
+      _waveController?.stop();
+      await _recorder.pauseRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() => _recordingExternallyPaused = true);
+    } catch (_) {}
+  }
+
+  /// 用户点击恢复波形区域后继续录制。
+  Future<void> _resumeRecordingAfterExternalPause() async {
+    if (!_recordingExternallyPaused || _busy) {
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
+      await _recorder.resumeRecorder();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _busy = false;
+        _recordingExternallyPaused = false;
+      });
+      _waveController?.repeat();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _busy = false);
+        MPToastUtils.showMessage('Failed to resume recording: $e');
+      }
+    }
   }
 
   Future<void> _closeDialog() async {
@@ -168,6 +230,8 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         }
         return;
       }
+      await MPGlobalRecordingCoordinator.instance
+          .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureQuickCaptureDirectory();
       final String path = p.join(dir, 'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac');
@@ -187,6 +251,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       setState(() {
         _recordPath = path;
         _busy = false;
+        _recordingExternallyPaused = false;
         _state = _MPQuickCaptureState.recording;
       });
     } catch (e) {
@@ -205,6 +270,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       return;
     }
     setState(() {
+      _recordingExternallyPaused = false;
       _state = _MPQuickCaptureState.idle;
     });
   }
@@ -250,6 +316,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     if (_busy || _recordPath == null) {
       return;
     }
+    _recordingExternallyPaused = false;
     setState(() {
       _busy = true;
       _state = _MPQuickCaptureState.transcribingVoice;
@@ -439,6 +506,25 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
 
   Widget _buildCenterContent() {
     if (_state == _MPQuickCaptureState.recording) {
+      if (_recordingExternallyPaused) {
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _busy ? null : _resumeRecordingAfterExternalPause,
+          child: Center(
+            child: Text(
+              'Paused — tap to resume',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: OmiFontSize.t7_16,
+                color: secondTextColor,
+                fontWeight: OmiFontWeight.medium,
+              ),
+            ),
+          ),
+        );
+      }
       return _buildRecordingWave();
     }
     if (_state == _MPQuickCaptureState.analyzingText) {
