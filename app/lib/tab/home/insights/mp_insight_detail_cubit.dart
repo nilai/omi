@@ -471,11 +471,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
             if (!context.mounted) {
               return;
             }
-            MPMemoryDetailPageHelper.navigateToDetailPage(
-              context,
-              memoryId,
-              mi?.type ?? MPMemoryType.memoryFeed,
-            );
+            MPMemoryDetailPageHelper.navigateToDetailPage(context, memoryId, mi?.type ?? MPMemoryType.memoryFeed);
           });
         },
       );
@@ -485,9 +481,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
       }
       if (result != null) {
         MPToastUtils.showMessage('To-do created.');
-      } else {
-        MPToastUtils.showMessage('Couldn\'t create to-do.');
-      }
+      } 
       completer.complete(result);
     });
     return completer.future;

@@ -1083,7 +1083,6 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       );
       return true;
     } catch (e) {
-      MPToastUtils.showMessage('Couldn\'t update speaker: $e');
       return false;
     }
   }

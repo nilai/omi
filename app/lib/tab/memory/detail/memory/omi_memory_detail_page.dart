@@ -283,7 +283,6 @@ class _OmiMemoryDetailView extends StatelessWidget {
             final bool ok = await MPTodoManager().createTodo(title: line, memoryId: memoryId);
             if (!context.mounted) return;
             if (!ok) {
-              MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
               return;
             }
             context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(line);
