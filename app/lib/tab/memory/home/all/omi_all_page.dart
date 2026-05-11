@@ -118,6 +118,39 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
     cubit.loadMore();
   }
 
+  /// Tab 切回触发 [OmiAllCubit.load] 后首屏往往不足一屏高度，[maxScrollExtent]==0 时 [_onScroll] 永远不会触发 [loadMore]。
+  /// 在新帧检查：仍无可滚动区域且仍有下一页时自动拉取，直到能滚动或没有更多。
+  void _schedulePrefetchUntilScrollable({int depth = 0}) {
+    if (depth > 24) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      final OmiAllCubit cubit = context.read<OmiAllCubit>();
+      final OmiAllState state = cubit.state;
+      if (state.phase != OmiAllPhase.loaded || !state.hasMore || state.isLoadingMore) {
+        return;
+      }
+      if (!_scrollController.hasClients) {
+        _schedulePrefetchUntilScrollable(depth: depth);
+        return;
+      }
+      final ScrollPosition pos = _scrollController.position;
+      if (pos.maxScrollExtent > 0) {
+        return;
+      }
+      unawaited(
+        cubit.loadMore().whenComplete(() {
+          if (mounted) {
+            _schedulePrefetchUntilScrollable(depth: depth + 1);
+          }
+        }),
+      );
+    });
+  }
+
   Future<void> _onRefresh() async {
     await context.read<OmiAllCubit>().load();
   }
@@ -150,7 +183,20 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<OmiAllCubit, OmiAllState>(
+    return BlocListener<OmiAllCubit, OmiAllState>(
+      listenWhen: (OmiAllState previous, OmiAllState current) {
+        if (current.phase != OmiAllPhase.loaded || !current.hasMore || current.isLoadingMore) {
+          return false;
+        }
+        return previous.items != current.items ||
+            previous.phase != current.phase ||
+            previous.hasMore != current.hasMore ||
+            previous.isLoadingMore != current.isLoadingMore;
+      },
+      listener: (BuildContext context, OmiAllState state) {
+        _schedulePrefetchUntilScrollable();
+      },
+      child: BlocBuilder<OmiAllCubit, OmiAllState>(
       builder: (BuildContext context, OmiAllState state) {
         switch (state.phase) {
           case OmiAllPhase.loading:
@@ -260,6 +306,7 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
             );
         }
       },
+    ),
     );
   }
 }
