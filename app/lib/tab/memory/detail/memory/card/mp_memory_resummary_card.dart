@@ -519,16 +519,16 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                 height: 1.25,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              _d.sectionTitle,
-              style: OmiTextStyle.create(
-                fontSize: OmiFontSize.t5_14,
-                fontWeight: OmiFontWeight.bold,
-                color: mainTextColor,
-                height: 1.3,
-              ),
-            ),
+            // const SizedBox(height: 8),
+            // Text(
+            //   _d.sectionTitle,
+            //   style: OmiTextStyle.create(
+            //     fontSize: OmiFontSize.t5_14,
+            //     fontWeight: OmiFontWeight.bold,
+            //     color: mainTextColor,
+            //     height: 1.3,
+            //   ),
+            // ),
             const SizedBox(height: 8),
             LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {

@@ -1325,8 +1325,9 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
           MPMemoryResummaryCardData(
             headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
             mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
-            sectionTitle: 'Summary',
+            sectionTitle: '',
             bodyText: body.isNotEmpty ? body : ' ',
+            badgeLabel: '',
           ),
         ),
       );
