@@ -53,7 +53,7 @@ class MPTodoManager {
     String? feedCardId,
   }) async {
     try {
-      final int deadlineUnix = deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final int deadlineUnix = deadline ?? 0;
 
       // 创建请求
       final request = MPCreateTodoRequest(
@@ -101,7 +101,7 @@ class MPTodoManager {
     int? preCreateStatus,
   }) async {
     try {
-      final int deadlineUnix = deadline ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final int deadlineUnix = deadline ?? 0;
       final String trimmedId = todoId?.trim() ?? '';
 
       if (trimmedId.isNotEmpty) {
@@ -164,10 +164,10 @@ class MPTodoManager {
             if (y != null && m != null && d != null) {
               deadlineUnix = DateTime(y, m, d).millisecondsSinceEpoch ~/ 1000;
             } else {
-              deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+              deadlineUnix = 0;
             }
           } else {
-            deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            deadlineUnix = 0;
           }
         } else {
           final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -179,11 +179,11 @@ class MPTodoManager {
             final dt = DateTime(now.year, monthIndex + 1, day);
             deadlineUnix = dt.millisecondsSinceEpoch ~/ 1000;
           } else {
-            deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+            deadlineUnix = 0;
           }
         }
       } catch (e) {
-        deadlineUnix = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        deadlineUnix = 0;
       }
 
       // 调用 API 创建 Todo
@@ -257,7 +257,7 @@ class MPTodoManager {
         return false;
       }
 
-      final int resolvedDeadline = deadlineUnixSec ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000);
+      final int resolvedDeadline = deadlineUnixSec ?? 0;
 
       final request = MPUpdateTodoRequest(
         todoId: todoId,
