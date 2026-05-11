@@ -537,6 +537,24 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(state.copyWith(data: state.data!.copyWith(title: t)));
   }
 
+  /// 应用进入后台（[AppLifecycleState.paused]）时暂停当前播放，与点击暂停行为一致。
+  void pauseAudioOnAppBackground() {
+    if (isClosed) {
+      return;
+    }
+    if (state.phase != OmiMemoryDetailPhase.loaded || state.data == null) {
+      return;
+    }
+    if (!_isAudioPlaying && !_audioPlayer.playing) {
+      return;
+    }
+    _stopPlaybackUiTimer();
+    unawaited(_audioPlayer.pause());
+    _isAudioPlaying = false;
+    _syncAudioPlayingFlag();
+    _lastPlaybackEmitBucket = -1;
+  }
+
   /// 返回 `true` 表示已暂停或已开始播放；`false` 表示未执行（如下载失败）。
   Future<bool> onPlayTap() async {
     final OmiMemoryDetailState cur = state;

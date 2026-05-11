@@ -75,13 +75,41 @@ class OmiMemoryDetailPage extends StatelessWidget {
   }
 }
 
-class _OmiMemoryDetailView extends StatelessWidget {
+class _OmiMemoryDetailView extends StatefulWidget {
   const _OmiMemoryDetailView({required this.memoryId});
 
   final String memoryId;
 
   @override
+  State<_OmiMemoryDetailView> createState() => _OmiMemoryDetailViewState();
+}
+
+class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (!mounted) {
+        return;
+      }
+      context.read<OmiMemoryDetailCubit>().pauseAudioOnAppBackground();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String memoryId = widget.memoryId;
     return MPDetailVisibilityRefresh(
       onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
       child: Scaffold(

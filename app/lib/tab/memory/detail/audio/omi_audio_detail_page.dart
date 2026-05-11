@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -38,13 +39,41 @@ class OmiAudioDetailPage extends StatelessWidget {
   }
 }
 
-class _OmiAudioDetailView extends StatelessWidget {
+class _OmiAudioDetailView extends StatefulWidget {
   const _OmiAudioDetailView({required this.memoryId});
 
   final String memoryId;
 
   @override
+  State<_OmiAudioDetailView> createState() => _OmiAudioDetailViewState();
+}
+
+class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(context.read<MPAudioDetailCubit>().pauseIfPlaying());
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String memoryId = widget.memoryId;
     return MPDetailVisibilityRefresh(
       onRefresh: () => context.read<MPAudioDetailCubit>().load(),
       child: Scaffold(

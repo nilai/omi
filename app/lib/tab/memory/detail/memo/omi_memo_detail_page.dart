@@ -52,13 +52,41 @@ class OmiMemoDetailPage extends StatelessWidget {
   }
 }
 
-class _OmiMemoDetailView extends StatelessWidget {
+class _OmiMemoDetailView extends StatefulWidget {
   const _OmiMemoDetailView({required this.memoryId});
 
   final String memoryId;
 
   @override
+  State<_OmiMemoDetailView> createState() => _OmiMemoDetailViewState();
+}
+
+class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      if (!mounted) {
+        return;
+      }
+      context.read<OmiMemoryDetailCubit>().pauseAudioOnAppBackground();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final String memoryId = widget.memoryId;
     return MPDetailVisibilityRefresh(
       onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
       child: BlocBuilder<OmiMemoryDetailCubit, OmiMemoryDetailState>(
