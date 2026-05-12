@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -18,15 +20,19 @@ import 'cards/mp_today_focus_todo_grouped_list.dart';
 /// Hive：`memory_id` → [MPGetMemoryV2SimpleInfoResponse.toJson]（与首页 / Insight 共用 key）。
 String _todayFocusMemorySimpleInfoHiveKey(int memoryId) => 'mp_insight_memory_simple_info_v1_$memoryId';
 
-/// AI 推荐加入 Focus 的一条建议（标题 + 展示用时间）
+/// AI 推荐加入 Focus 的一条建议（标题 + 展示用时间 + 对应 todo id，用于 [replaceTodayFocus]）。
 class MPTodayFocusAISuggestionItem {
   const MPTodayFocusAISuggestionItem({
     required this.title,
     required this.scheduledTimeLabel,
+    required this.todoId,
   });
 
   final String title;
   final String scheduledTimeLabel;
+
+  /// 与 [MPTodoStruct.id] 一致，用于 [MPReplaceTodayFocusRequest.todoId]。
+  final String todoId;
 }
 
 /// Today Focus 页阶段（与 [MPTristatePage] 对应，对齐 Memory All 等页）
@@ -51,6 +57,7 @@ class MPTodayFocusState {
     this.aiFocusSuggestions = const <MPTodayFocusAISuggestionItem>[],
     this.aiFocusSuggestionIndex = 0,
     this.isGroupedTodosRefreshing = false,
+    this.isBlockingGlobalLoading = false,
   });
 
   final MPTodayFocusPhase phase;
@@ -70,6 +77,9 @@ class MPTodayFocusState {
 
   /// 正在重新拉取分组待办（如编辑 Todo 关闭后同步）；首屏加载看 [phase]==loading。
   final bool isGroupedTodosRefreshing;
+
+  /// 全页遮罩 loading；为 true 时页面叠半透明层并阻断手势（与 [isGroupedTodosRefreshing] 细条互斥）。
+  final bool isBlockingGlobalLoading;
 
   /// 当前应展示的 AI 推荐；[focusCard] ≥3 或队列为空时为 `null`。
   MPTodayFocusAISuggestionItem? get currentAiFocusSuggestion {
@@ -109,6 +119,7 @@ class MPTodayFocusState {
     List<MPTodayFocusAISuggestionItem>? aiFocusSuggestions,
     int? aiFocusSuggestionIndex,
     bool? isGroupedTodosRefreshing,
+    bool? isBlockingGlobalLoading,
   }) {
     return MPTodayFocusState(
       phase: phase ?? this.phase,
@@ -125,6 +136,8 @@ class MPTodayFocusState {
           aiFocusSuggestionIndex ?? this.aiFocusSuggestionIndex,
       isGroupedTodosRefreshing:
           isGroupedTodosRefreshing ?? this.isGroupedTodosRefreshing,
+      isBlockingGlobalLoading:
+          isBlockingGlobalLoading ?? this.isBlockingGlobalLoading,
     );
   }
 }
@@ -236,7 +249,12 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         throw StateError(raw.baseResp.message);
       }
       _putTodayFocusCache(raw, candidates);
-      emit(_buildTodayFocusUiState(raw, candidates));
+      final MPTodayFocusState built = _buildTodayFocusUiState(raw, candidates);
+      if (!isClosed) {
+        emit(
+          built.copyWith(isBlockingGlobalLoading: state.isBlockingGlobalLoading),
+        );
+      }
     } catch (e) {
       if (useFullScreenLoading && !bootstrappedFromCache) {
         emit(
@@ -290,16 +308,16 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return null;
   }
 
-  /// 重新拉取分组待办（供弹层关闭后同步等场景；失败 Toast）。
+  /// 重新拉取分组待办（显式「刷新」：展示页面顶部 [LinearProgressIndicator]）。
   Future<bool> refreshGroupedTodoLists() => _refreshTodoListsFromServer();
 
-  /// 再次拉取分组待办并替换当前状态（不改变全屏 loading / error 页）。
-  /// 用于添加/完成/删除/更新等成功后与服务端对齐；失败仅 Toast，返回 `false`。
-  Future<bool> _refreshTodoListsFromServer() async {
-    if (isClosed) {
-      return false;
-    }
-    emit(state.copyWith(isGroupedTodosRefreshing: true));
+  /// 创建/编辑等变更后静默对齐列表，并走全页 [isBlockingGlobalLoading]（供页面在提交成功后调用）。
+  Future<bool> refreshListsAfterMutation() {
+    return _runWithBlockingGlobalLoading(() => _silentResyncTodoListsFromServer());
+  }
+
+  /// 拉取分组列表 + candidates，写缓存并 [emit]；**不**修改 [isGroupedTodosRefreshing]。
+  Future<bool> _fetchTodoListsBundleAndEmit() async {
     try {
       final List<Object?> bundled = await Future.wait<Object?>(<Future<Object?>>[
         getTodoList(GetTodoGroupedListRequest(pageSize: 200, pageno: 1)),
@@ -315,23 +333,50 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       if (raw.baseResp.code != 0) {
         MPToastUtils.showMessage(
           raw.baseResp.message.isEmpty
-          ? 'Failed to refresh to-dos.'
-          : raw.baseResp.message,
+              ? 'Failed to refresh to-dos.'
+              : raw.baseResp.message,
         );
         return false;
       }
       _putTodayFocusCache(raw, candidates);
-      emit(_buildTodayFocusUiState(raw, candidates));
+      final MPTodayFocusState built = _buildTodayFocusUiState(raw, candidates);
+      if (!isClosed) {
+        emit(
+          built.copyWith(isBlockingGlobalLoading: state.isBlockingGlobalLoading),
+        );
+      }
       MPHomeNotification.notifyHomeListRefresh();
       return true;
     } catch (_) {
       MPToastUtils.showMessage('Failed to refresh to-dos. Please try again later.');
       return false;
+    }
+  }
+
+  /// 再次拉取分组待办并替换当前状态（不改变全屏 loading / error 页）；**会**打开顶部细进度条直至请求结束。
+  Future<bool> _refreshTodoListsFromServer() async {
+    if (isClosed) {
+      return false;
+    }
+    emit(state.copyWith(isGroupedTodosRefreshing: true));
+    try {
+      if (isClosed) {
+        return false;
+      }
+      return await _fetchTodoListsBundleAndEmit();
     } finally {
       if (!isClosed && state.isGroupedTodosRefreshing) {
         emit(state.copyWith(isGroupedTodosRefreshing: false));
       }
     }
+  }
+
+  /// 与 [_refreshTodoListsFromServer] 相同数据请求，但不展示顶部进度条（如 [removeFocusItemAt] 乐观删卡后对齐）。
+  Future<bool> _silentResyncTodoListsFromServer() async {
+    if (isClosed) {
+      return false;
+    }
+    return _fetchTodoListsBundleAndEmit();
   }
 
   static List<MPTodayFocusAISuggestionItem> _aiSuggestionsFromCandidates(
@@ -344,9 +389,11 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return items
         .map((MPTodoStruct t) {
           final String title = (t.title ?? '').trim();
+          final String id = (t.id ?? '').trim();
           return MPTodayFocusAISuggestionItem(
             title: title.isEmpty ? '—' : title,
             scheduledTimeLabel: _formatDeadlineLabel(t.deadline),
+            todoId: id,
           );
         })
         .toList(growable: false);
@@ -415,6 +462,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         return MPTodayFocusTodoSection.futureBeyondSevenDays;
       case TodoListSectionType.overdue:
         return MPTodayFocusTodoSection.overdue;
+      case TodoListSectionType.completed:
+        return MPTodayFocusTodoSection.completed;
+      case TodoListSectionType.unmapped:
+        return null;
     }
   }
 
@@ -446,6 +497,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       sourceSection: section,
       isChecked: st == 2,
       highlighted: st == 3,
+      slot: t.slot,
     );
   }
 
@@ -474,6 +526,20 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   /// 因此提交/刷新等交互不应仅限于 [loaded]。
   bool get _isInteractive => true;
 
+  /// 全页 loading 期间执行 [action]，结束后关闭 [MPTodayFocusState.isBlockingGlobalLoading]。
+  Future<T> _runWithBlockingGlobalLoading<T>(Future<T> Function() action) async {
+    if (!isClosed) {
+      emit(state.copyWith(isBlockingGlobalLoading: true));
+    }
+    try {
+      return await action();
+    } finally {
+      if (!isClosed) {
+        emit(state.copyWith(isBlockingGlobalLoading: false));
+      }
+    }
+  }
+
   List<MPTodayFocusTodoRowData> _itemsForSection(
     MPTodayFocusState s,
     MPTodayFocusTodoSection section,
@@ -499,12 +565,15 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
   ) {
     if (!_isInteractive) return;
     if (section == MPTodayFocusTodoSection.completed) {
+      if (!isChecked) {
+        unawaited(restoreCompletedAt(index));
+      }
       return;
     }
     if (!isChecked) {
       return;
     }
-    _completeAndMoveToCompleted(section, index);
+    unawaited(_completeAndMoveToCompleted(section, index));
   }
 
   Future<void> _completeAndMoveToCompleted(
@@ -518,11 +587,13 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage('Task ID cannot be empty.');
       return;
     }
-    final bool ok = await MPTodoManager().completeTodo(todoId);
-    if (!ok || !_isInteractive) {
-      return;
-    }
-    await _refreshTodoListsFromServer();
+    await _runWithBlockingGlobalLoading(() async {
+      final bool ok = await MPTodoManager().completeTodo(todoId);
+      if (!ok || !_isInteractive || isClosed) {
+        return;
+      }
+      await _silentResyncTodoListsFromServer();
+    });
   }
 
   Future<bool> restoreCompletedAt(int index) async {
@@ -538,17 +609,19 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
-    final bool ok = await MPTodoManager().updateTodoWithRequest(
-      todoId: todoId,
-      title: row.title,
-      priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
-      deadlineUnixSec: row.deadlineUnixSec,
-      isCompleted: false,
-    );
-    if (!ok) {
-      return false;
-    }
-    return _refreshTodoListsFromServer();
+    return _runWithBlockingGlobalLoading(() async {
+      final bool ok = await MPTodoManager().updateTodoWithRequest(
+        todoId: todoId,
+        title: row.title,
+        priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
+        deadlineUnixSec: row.deadlineUnixSec,
+        isCompleted: false,
+      );
+      if (!ok || isClosed) {
+        return false;
+      }
+      return _silentResyncTodoListsFromServer();
+    });
   }
 
   Future<bool> deleteCompletedAt(int index) async {
@@ -565,11 +638,13 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       emit(state.copyWith(completedItems: next));
       return true;
     }
-    final bool ok = await MPTodoManager().deleteTodo(todoId);
-    if (!ok) {
-      return false;
-    }
-    return _refreshTodoListsFromServer();
+    return _runWithBlockingGlobalLoading(() async {
+      final bool ok = await MPTodoManager().deleteTodo(todoId);
+      if (!ok) {
+        return false;
+      }
+      return _silentResyncTodoListsFromServer();
+    });
   }
 
   void clearOverdue() {
@@ -577,14 +652,18 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
   }
 
-  /// Today's Focus 满 3 条时：替换其中一条（仅本地态更新；后续可接真实接口）。
+  /// Today's Focus 满槽时：用 [todo] 替换对应位（槽位取自 [MPTodayFocusTodoRowData.slot]，与接口 [MPTodoStruct.slot] 一致）。
   void replaceFocusItemWithTodo({
-    required int focusIndex,
     required MPTodayFocusTodoRowData todo,
   }) {
     if (!_isInteractive) return;
+    final int? slot = todo.slot;
+    if (slot == null) {
+      MPToastUtils.showMessage('Missing focus slot for this task.');
+      return;
+    }
     final List<MPTodayFocusCardItem> cur = state.focusCard.items;
-    if (focusIndex < 0 || focusIndex >= cur.length) {
+    if (slot < 0 || slot >= cur.length) {
       return;
     }
     final String todoId = todo.todoId.trim();
@@ -598,7 +677,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         timeLabel.isEmpty ? 'scheduled for Today' : 'scheduled for $timeLabel';
 
     final List<MPTodayFocusCardItem> next = List<MPTodayFocusCardItem>.of(cur);
-    next[focusIndex] = MPTodayFocusCardItem(
+    next[slot] = MPTodayFocusCardItem(
       title: title,
       subtext: subtext,
       timeLabel: timeLabel,
@@ -608,27 +687,66 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }
 
-  /// 右滑「Add to Today's Focus」入口。
-  ///
-  /// 当前工程内暂无“加入 Focus”的对应接口/字段（仅有 candidates 列表），因此先统一提示 Coming soon。
-  void addTodoToFocus(MPTodayFocusTodoSection section, int index) {
-    if (!_isInteractive) return;
+  /// 调用 [replaceTodayFocus]，将 [todoId] 写入 Today's Focus 的 [slot]；成功后刷新分组列表与 candidates。
+  Future<bool> replaceTodayFocusSlot({required int? slot, required String todoId}) async {
+    if (!_isInteractive) {
+      return false;
+    }
+    final String tid = todoId.trim();
+    if (tid.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return false;
+    }
+    return _runWithBlockingGlobalLoading(() async {
+      try {
+        final MPReplaceTodayFocusResponse? resp = await replaceTodayFocus(
+          MPReplaceTodayFocusRequest(slot: slot, todoId: tid),
+        );
+        if (resp == null) {
+          MPToastUtils.showMessage('Couldn\'t update Today\'s Focus. Please try again later.');
+          return false;
+        }
+        if (resp.baseResp.code != 0) {
+          MPToastUtils.showMessage(
+            resp.baseResp.message.isEmpty
+                ? 'Couldn\'t update Today\'s Focus.'
+                : resp.baseResp.message,
+          );
+          return false;
+        }
+        return _silentResyncTodoListsFromServer();
+      } catch (_) {
+        MPToastUtils.showMessage('Couldn\'t update Today\'s Focus. Please try again later.');
+        return false;
+      }
+    });
+  }
+
+  /// 右滑「Add to Today's Focus」：未满两槽时追加；已满时由页面弹层选择槽位后调用 [replaceTodayFocusSlot]。
+  Future<bool> addTodoToFocus(MPTodayFocusTodoSection section, int index) async {
+    if (!_isInteractive) {
+      return false;
+    }
     if (section != MPTodayFocusTodoSection.today) {
-      return;
+      return false;
     }
     final List<MPTodayFocusTodoRowData> src = state.todayItems;
     if (index < 0 || index >= src.length) {
-      return;
+      return false;
     }
     final String todoId = src[index].todoId.trim();
     if (todoId.isEmpty) {
       MPToastUtils.showMessage('Task ID cannot be empty.');
-      return;
+      return false;
     }
-    MPToastUtils.showFeatureComingSoon(message: 'Add to Today\'s Focus');
+    final int focusCount = state.focusCard.items.length;
+    if (focusCount >= 2) {
+      return false;
+    }
+    return replaceTodayFocusSlot(slot: focusCount, todoId: todoId);
   }
 
-  /// 从 Today's Focus 移除一条：先调删除接口，成功后再从列表移除。
+  /// 从 Today's Focus 移除一条：先调删除接口，成功后立即从卡片移除，再静默拉列表对齐（不走 [refreshGroupedTodoLists] 顶部进度条）。
   Future<bool> removeFocusItemAt(int index) async {
     if (!_isInteractive) {
       return false;
@@ -642,16 +760,27 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
-    final bool ok = await MPTodoManager().deleteTodo(todoId);
-    if (!ok || !_isInteractive) {
-      return false;
-    }
-    return _refreshTodoListsFromServer();
+    return _runWithBlockingGlobalLoading(() async {
+      final bool ok = await MPTodoManager().deleteTodo(todoId);
+      if (!ok || !_isInteractive || isClosed) {
+        return false;
+      }
+      final List<MPTodayFocusCardItem> next =
+          List<MPTodayFocusCardItem>.of(state.focusCard.items)..removeAt(index);
+      if (!isClosed) {
+        emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
+      }
+      if (isClosed) {
+        return false;
+      }
+      return _silentResyncTodoListsFromServer();
+    });
   }
 
-  /// 将当前 AI 推荐加入 Today's Focus；**TODO: 替换为真实加 Focus 接口**。
-  /// 成功后 Focus 列表增加一条，并切换到队列中下一条标题（仍不足 3 条时卡片继续展示）。
-  Future<bool> addCurrentAiSuggestionToFocus() async {
+  /// 将当前 AI 推荐加入 Today's Focus（[MPReplaceTodayFocusRequest]）。
+  ///
+  /// [replaceSlot]：Focus 已满（两槽）时由页面弹层传入要替换的槽位下标；未满时传 `null` 表示追加到下一空槽。
+  Future<bool> addCurrentAiSuggestionToFocus({int? replaceSlot}) async {
     if (!_isInteractive) {
       return false;
     }
@@ -659,34 +788,17 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (cur == null) {
       return false;
     }
-    try {
-      await Future<void>.delayed(const Duration(milliseconds: 420));
-
-      final List<MPTodayFocusCardItem> nextItems =
-          List<MPTodayFocusCardItem>.of(state.focusCard.items)
-            ..add(
-              MPTodayFocusCardItem(
-                title: cur.title,
-                subtext: 'Suggested by AI',
-                timeLabel: cur.scheduledTimeLabel,
-                todoId: '',
-              ),
-            );
-
-      final List<MPTodayFocusAISuggestionItem> queue = state.aiFocusSuggestions;
-      final int nextIndex = queue.isEmpty
-          ? 0
-          : (state.aiFocusSuggestionIndex + 1) % queue.length;
-
-      emit(
-        state.copyWith(
-          focusCard: state.focusCard.copyWith(items: nextItems),
-          aiFocusSuggestionIndex: nextIndex,
-        ),
-      );
-      return true;
-    } catch (_) {
+    final String todoId = cur.todoId.trim();
+    if (todoId.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
+    final int focusCount = state.focusCard.items.length;
+    final int? slot = replaceSlot ?? (focusCount < 2 ? focusCount : null);
+    if (slot == null) {
+      MPToastUtils.showMessage('Today\'s Focus is full. Choose one item to replace.');
+      return false;
+    }
+    return replaceTodayFocusSlot(slot: slot, todoId: todoId);
   }
 }

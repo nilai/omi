@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
@@ -60,7 +62,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
       return false;
     }
-    await _cubit.refreshGroupedTodoLists();
+    await _cubit.refreshListsAfterMutation();
     return true;
   }
 
@@ -117,8 +119,14 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     if (_addingAiFocus) {
       return;
     }
-    setState(() => _addingAiFocus = true);
-    _cubit.addCurrentAiSuggestionToFocus().then((bool ok) {
+    final MPTodayFocusState s = _cubit.state;
+    if (s.currentAiFocusSuggestion == null) {
+      return;
+    }
+
+    Future<void> runAdd({int? replaceSlot}) async {
+      setState(() => _addingAiFocus = true);
+      final bool ok = await _cubit.addCurrentAiSuggestionToFocus(replaceSlot: replaceSlot);
       if (!mounted) {
         return;
       }
@@ -126,7 +134,19 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       if (!ok) {
         MPToastUtils.showMessage('Couldn\'t add.');
       }
-    });
+    }
+
+    if (s.focusCard.items.length >= 2) {
+      showMPTodayFocusFullSheet(
+        context,
+        items: s.focusCard.items.take(3).toList(),
+        onSelect: (int focusIndex, MPTodayFocusCardItem _) {
+          unawaited(runAdd(replaceSlot: focusIndex));
+        },
+      );
+      return;
+    }
+    unawaited(runAdd());
   }
 
   Future<void> _onTapFocusItem(int index, MPTodayFocusCardItem item) async {
@@ -197,27 +217,30 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     if (!mounted) {
       return;
     }
-    await _cubit.refreshGroupedTodoLists();
+    await _cubit.refreshListsAfterMutation();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPTodayFocusCubit>.value(
       value: _cubit,
-      child: Scaffold(
-        backgroundColor: Color(0xFFF0F0F0),
-        appBar: PreferredSize(
-          preferredSize: MPCustomNavBar.preferredSizeOf(context),
-          child: MPCustomNavBar(
-            title: 'All To-Dos',
-            backgroundColor: Colors.white,
-            onBack: () {
-              Navigator.of(context, rootNavigator: true).maybePop();
-            },
-          ),
-        ),
-        body: BlocBuilder<MPTodayFocusCubit, MPTodayFocusState>(
-          builder: (BuildContext context, MPTodayFocusState state) {
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Scaffold(
+            backgroundColor: Color(0xFFF0F0F0),
+            appBar: PreferredSize(
+              preferredSize: MPCustomNavBar.preferredSizeOf(context),
+              child: MPCustomNavBar(
+                title: 'All To-Dos',
+                backgroundColor: Colors.white,
+                onBack: () {
+                  Navigator.of(context, rootNavigator: true).maybePop();
+                },
+              ),
+            ),
+            body: BlocBuilder<MPTodayFocusCubit, MPTodayFocusState>(
+              builder: (BuildContext context, MPTodayFocusState state) {
             switch (state.phase) {
               case MPTodayFocusPhase.loading:
                 return const SafeArea(
@@ -243,7 +266,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
 
             final bool showFocusCard = state.phase == MPTodayFocusPhase.loaded;
             final bool canAddAi = state.phase == MPTodayFocusPhase.loaded;
-            final bool showListLoadingBar = state.isGroupedTodosRefreshing;
+            final bool showListLoadingBar =
+                state.isGroupedTodosRefreshing && !state.isBlockingGlobalLoading;
 
             return SafeArea(
               top: false,
@@ -310,18 +334,56 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         onItemCheckChanged: _cubit.setTodoChecked,
                         onItemAddToFocus:
                             (MPTodayFocusTodoSection section, int index) {
+                          if (section != MPTodayFocusTodoSection.today) {
+                            return;
+                          }
+                          if (index < 0 || index >= state.todayItems.length) {
+                            return;
+                          }
+                          final String todoId =
+                              state.todayItems[index].todoId.trim();
+                          final int? slot = state.todayItems[index].slot;
+                          if (todoId.isEmpty) {
+                            MPToastUtils.showMessage('Task ID cannot be empty.');
+                            return;
+                          }
                           if (state.focusCard.items.length >= 2) {
                             showMPTodayFocusFullSheet(
                               context,
                               items: state.focusCard.items.take(3).toList(),
                               onSelect: (int focusIndex, MPTodayFocusCardItem _) {
-                                // 选中后不做本地替换，直接刷新（以接口结果为准）。
-                                _cubit.refreshGroupedTodoLists();
+                                unawaited(() async {
+                                  final bool ok = await _cubit.replaceTodayFocusSlot(
+                                    slot: slot,
+                                    todoId: todoId,
+                                  );
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  if (!ok) {
+                                    MPToastUtils.showMessage(
+                                      'Couldn\'t add to Today\'s Focus.',
+                                    );
+                                  }
+                                }());
                               },
                             );
                             return;
                           }
-                          _cubit.addTodoToFocus(section, index);
+                              unawaited(() async {
+                                  final bool ok = await _cubit.replaceTodayFocusSlot(
+                                    slot: slot,
+                                    todoId: todoId,
+                                  );
+                                  if (!mounted) {
+                                    return;
+                                  }
+                                  if (!ok) {
+                                    MPToastUtils.showMessage(
+                                      'Couldn\'t add to Today\'s Focus.',
+                                    );
+                                  }
+                                }());
                         },
                         onItemTap:
                             (MPTodayFocusTodoSection section, int index) {
@@ -333,8 +395,36 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                 ),
               ),
             );
-          },
-        ),
+              },
+            ),
+          ),
+          BlocSelector<MPTodayFocusCubit, MPTodayFocusState, bool>(
+            selector: (MPTodayFocusState s) => s.isBlockingGlobalLoading,
+            builder: (BuildContext context, bool blocking) {
+              if (!blocking) {
+                return const SizedBox.shrink();
+              }
+              return Positioned.fill(
+                child: AbsorbPointer(
+                  absorbing: true,
+                  child: Material(
+                    color: Colors.black.withValues(alpha: 0.32),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: blueTextColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

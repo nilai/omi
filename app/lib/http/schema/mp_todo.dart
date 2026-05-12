@@ -4,7 +4,9 @@ import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
 
-/// 与后端 `TodoListSectionType` 对齐：1 Today，2 近 7 天，3 更远未来，4 逾期。
+/// 与后端 `TodoListSectionType` 对齐：1 Today，2 近 7 天，3 更远未来，4 逾期，5 已完成，6 预留扩展。
+///
+/// 未在枚举中登记的数字会反序列化为 [unmapped]（见 [TodoListSectionStruct.sectionType] 的 [JsonKey.unknownEnumValue]），避免解析崩溃。
 enum TodoListSectionType {
   @JsonValue(1)
   today,
@@ -17,6 +19,13 @@ enum TodoListSectionType {
 
   @JsonValue(4)
   overdue,
+
+  @JsonValue(5)
+  completed,
+
+  /// 仅 JSON 反序列化兜底：服务端新增 type 且客户端未升级时落到此值，UI 侧应忽略该 section。
+  @JsonValue(-1)
+  unmapped,
 }
 
 // Get Todo List Request
@@ -116,6 +125,9 @@ class MPUpdateTodoRequest {
   @JsonKey(name: 'feed_card_id')
   final String? feedCardId;
 
+  @JsonKey(name: 'source')
+  final String? source;
+
   MPUpdateTodoRequest({
     required this.todoId,
     required this.title,
@@ -124,6 +136,7 @@ class MPUpdateTodoRequest {
     required this.isCompleted,
     this.preCreateStatus,
     this.feedCardId,
+    this.source,
   });
 
   factory MPUpdateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoRequestFromJson(json);
@@ -167,7 +180,7 @@ typedef GetTodoListResponse = GetTodoGroupedListResponse;
 
 @JsonSerializable()
 class TodoListSectionStruct {
-  @JsonKey(name: 'section_type')
+  @JsonKey(name: 'section_type', unknownEnumValue: TodoListSectionType.unmapped)
   final TodoListSectionType sectionType;
 
   @JsonKey(name: 'title')
@@ -312,4 +325,34 @@ class MPBatchCreateResponse {
   factory MPBatchCreateResponse.fromJson(Map<String, dynamic> json) => _$MPBatchCreateResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPBatchCreateResponseToJson(this);
+}
+
+/// POST `/api/v2/todo/focus/replace` 请求体（与后端「替换 / 占用 Today's Focus 槽位」对齐）。
+@JsonSerializable()
+class MPReplaceTodayFocusRequest {
+  @JsonKey(name: 'slot')
+  final int? slot;
+
+  @JsonKey(name: 'todo_id')
+  final String? todoId;
+
+  MPReplaceTodayFocusRequest({this.slot, this.todoId});
+
+  factory MPReplaceTodayFocusRequest.fromJson(Map<String, dynamic> json) => _$MPReplaceTodayFocusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPReplaceTodayFocusRequestToJson(this);
+}
+
+/// POST `/api/v2/todo/focus/replace` 响应。
+@JsonSerializable()
+class MPReplaceTodayFocusResponse {
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPReplaceTodayFocusResponse({required this.baseResp});
+
+  factory MPReplaceTodayFocusResponse.fromJson(Map<String, dynamic> json) => _$MPReplaceTodayFocusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPReplaceTodayFocusResponseToJson(this);
 }

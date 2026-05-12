@@ -61,6 +61,7 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
       isCompleted: json['is_completed'] as bool,
       preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
       feedCardId: json['feed_card_id'] as String?,
+      source: json['source'] as String?,
     );
 
 Map<String, dynamic> _$MPUpdateTodoRequestToJson(
@@ -73,6 +74,7 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(
   'is_completed': instance.isCompleted,
   'pre_create_status': instance.preCreateStatus,
   'feed_card_id': instance.feedCardId,
+  'source': instance.source,
 };
 
 GetTodoGroupedListResponse _$GetTodoGroupedListResponseFromJson(
@@ -102,7 +104,11 @@ Map<String, dynamic> _$GetTodoGroupedListResponseToJson(
 TodoListSectionStruct _$TodoListSectionStructFromJson(
   Map<String, dynamic> json,
 ) => TodoListSectionStruct(
-  sectionType: $enumDecode(_$TodoListSectionTypeEnumMap, json['section_type']),
+  sectionType: $enumDecode(
+    _$TodoListSectionTypeEnumMap,
+    json['section_type'],
+    unknownValue: TodoListSectionType.unmapped,
+  ),
   title: json['title'] as String,
   todos: (json['todos'] as List<dynamic>)
       .map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
@@ -124,6 +130,8 @@ const _$TodoListSectionTypeEnumMap = {
   TodoListSectionType.upcomingSevenDays: 2,
   TodoListSectionType.future: 3,
   TodoListSectionType.overdue: 4,
+  TodoListSectionType.completed: 5,
+  TodoListSectionType.unmapped: -1,
 };
 
 MPCreateTodoResponse _$MPCreateTodoResponseFromJson(
@@ -228,3 +236,24 @@ Map<String, dynamic> _$MPBatchCreateResponseToJson(
   'memo_count': instance.memoCount,
   'base_resp': instance.baseResp,
 };
+
+MPReplaceTodayFocusRequest _$MPReplaceTodayFocusRequestFromJson(
+  Map<String, dynamic> json,
+) => MPReplaceTodayFocusRequest(
+  slot: (json['slot'] as num?)?.toInt(),
+  todoId: json['todo_id'] as String?,
+);
+
+Map<String, dynamic> _$MPReplaceTodayFocusRequestToJson(
+  MPReplaceTodayFocusRequest instance,
+) => <String, dynamic>{'slot': instance.slot, 'todo_id': instance.todoId};
+
+MPReplaceTodayFocusResponse _$MPReplaceTodayFocusResponseFromJson(
+  Map<String, dynamic> json,
+) => MPReplaceTodayFocusResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPReplaceTodayFocusResponseToJson(
+  MPReplaceTodayFocusResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};

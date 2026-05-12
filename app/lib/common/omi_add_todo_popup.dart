@@ -60,6 +60,7 @@ class MPAddTodoPopupParams {
     this.todoId,
     this.preCreateStatus,
     this.memoryType,
+    this.source,
   });
 
   final String initialTitle;
@@ -103,6 +104,9 @@ class MPAddTodoPopupParams {
 
   /// 关联 Memory 类型（如 [MPMemorySimpleInfoStruct.type]）；为空时跳转详情回退为 [MPMemoryType.memoryFeed]。
   final MPMemoryType? memoryType;
+
+  final String? source;
+
 }
 
 /// 自底部弹出「New Todo」：**左右全宽**，**最高高度为屏高 0.8**；[MPAddTodoPopupParams] 做数据回显；点击空白或滑动可收起键盘。
@@ -580,6 +584,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 memoryId: mid.isEmpty ? null : mid,
                                 feedCardId: fid.isEmpty ? null : fid,
                                 preCreateStatus: p.preCreateStatus,
+                                source: p.source,
                               );
                               if (!context.mounted) {
                                 return;

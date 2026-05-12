@@ -11,6 +11,7 @@ import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
+import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/api/mp_speaker.dart';
@@ -342,6 +343,99 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return MPMemoryStruct.fromJson(Map<String, dynamic>.from(cached));
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Actions 里某条 follow-up 已通过弹窗创建 Todo 后，把对应 [MPSummaryMemoryStruct.todos] 条目写回磁盘详情缓存，
+  /// 避免杀进程后冷读缓存仍显示「Create Todo」等旧状态。
+  ///
+  /// 仅在已存在 [getMemoryDetail] 缓存时合并写入（与 [load] 成功后的落盘形态一致）；不依赖 [_isInCachedFirstPage]，
+  /// 以补齐 [refresh] 在非首页列表不写详情缓存时的缺口。
+  void applyActionTodoCreatedToDetailCache({
+    required int actionIndex,
+    required MPAddTodoPopupResult result,
+  }) {
+    final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId, _memoryDetailCacheKind);
+    if (cached is! Map) {
+      return;
+    }
+    try {
+      final Map<String, dynamic> root = Map<String, dynamic>.from(cached);
+
+      final Map<String, dynamic>? smMap = switch (detailSource) {
+        OmiMemoryDetailSource.memoryFeedSummary => () {
+            final dynamic mfRaw = root['memory_feed'];
+            if (mfRaw is! Map) {
+              return null;
+            }
+            final Map<String, dynamic> mfMap = Map<String, dynamic>.from(mfRaw);
+            final dynamic smRaw = mfMap['summary_memory'];
+            if (smRaw is! Map) {
+              return null;
+            }
+            return Map<String, dynamic>.from(smRaw);
+          }(),
+        OmiMemoryDetailSource.rootSummaryMemory => () {
+            final dynamic smRaw = root['summary_content'];
+            if (smRaw is! Map) {
+              return null;
+            }
+            return Map<String, dynamic>.from(smRaw);
+          }(),
+      };
+
+      if (smMap == null) {
+        return;
+      }
+
+      final dynamic todosRaw = smMap['todos'];
+      if (todosRaw is! List) {
+        return;
+      }
+      final List<dynamic> todosList = List<dynamic>.from(todosRaw);
+      if (actionIndex < 0 || actionIndex >= todosList.length) {
+        return;
+      }
+      final dynamic rowRaw = todosList[actionIndex];
+      if (rowRaw is! Map) {
+        return;
+      }
+      final Map<String, dynamic> todoRow = Map<String, dynamic>.from(rowRaw);
+
+      final String tid = (result.todoId ?? '').trim();
+      if (tid.isNotEmpty) {
+        todoRow['id'] = tid;
+      }
+      if (result.title.trim().isNotEmpty) {
+        todoRow['title'] = result.title.trim();
+      }
+      todoRow['priority'] = result.priority.trim();
+      if (result.deadlineTimestamp != null) {
+        todoRow['deadline'] = result.deadlineTimestamp;
+      } else {
+        todoRow['deadline'] = null;
+      }
+      todoRow['pre_create_status'] = 1;
+
+      todosList[actionIndex] = todoRow;
+      smMap['todos'] = todosList;
+
+      switch (detailSource) {
+        case OmiMemoryDetailSource.memoryFeedSummary:
+          final dynamic mfRaw = root['memory_feed'];
+          if (mfRaw is! Map) {
+            return;
+          }
+          final Map<String, dynamic> mfMap = Map<String, dynamic>.from(mfRaw);
+          mfMap['summary_memory'] = smMap;
+          root['memory_feed'] = mfMap;
+        case OmiMemoryDetailSource.rootSummaryMemory:
+          root['summary_content'] = smMap;
+      }
+
+      OmiCacheManager().putMemoryDetail(memoryId, _memoryDetailCacheKind, root);
+    } catch (e, st) {
+      debugPrint('OmiMemoryDetailCubit.applyActionTodoCreatedToDetailCache: $e\n$st');
     }
   }
 

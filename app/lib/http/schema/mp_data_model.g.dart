@@ -55,6 +55,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
   reason: json['reason'] as String?,
   preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
   memoryId: (json['memory_id'] as num?)?.toInt(),
+  slot: (json['slot'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
@@ -68,6 +69,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'reason': instance.reason,
       'pre_create_status': instance.preCreateStatus,
       'memory_id': instance.memoryId,
+      'slot': instance.slot,
     };
 
 MPRecordConversationStruct _$MPRecordConversationStructFromJson(
@@ -239,8 +241,8 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
           : MPConversationContentStruct.fromJson(
               json['ask_ai_card'] as Map<String, dynamic>,
             ),
-      resummaryStatus: json['resummary_status'] as int?,
-      templateName: json['template_name'] as String?
+      resummaryStatus: (json['resummary_status'] as num?)?.toInt(),
+      templateName: json['template_name'] as String?,
     );
 
 Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>

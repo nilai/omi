@@ -103,3 +103,21 @@ Future<MPBatchCreateResponse?> batchCreate(MPBatchCreateRequest req) async {
   }
   return null;
 }
+
+// POST /api/v2/todo/focus/replace
+Future<MPReplaceTodayFocusResponse?> replaceTodayFocus(MPReplaceTodayFocusRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/todo/focus/replace',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('replaceTodayFocus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPReplaceTodayFocusResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+  return null;
+}

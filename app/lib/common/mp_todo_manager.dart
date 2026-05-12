@@ -99,6 +99,7 @@ class MPTodoManager {
     int? deadline,
     String? feedCardId,
     int? preCreateStatus,
+    String? source,
   }) async {
     try {
       final int deadlineUnix = deadline ?? 0;
@@ -112,6 +113,7 @@ class MPTodoManager {
           deadlineUnixSec: deadlineUnix,
           isCompleted: false,
           preCreateStatus: preCreateStatus,
+          source: source,
         );
       }
 
@@ -242,6 +244,7 @@ class MPTodoManager {
     required int? deadlineUnixSec,
     required bool isCompleted,
     int? preCreateStatus,
+    String? source,
   }) async {
     try {
       if (todoId.isEmpty) {
@@ -266,6 +269,7 @@ class MPTodoManager {
         deadline: resolvedDeadline,
         isCompleted: isCompleted,
         preCreateStatus: preCreateStatus,
+        source: source,
       );
 
       final response = await MPTodo.updateTodo(request);

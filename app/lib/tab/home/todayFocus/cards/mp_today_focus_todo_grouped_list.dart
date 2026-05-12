@@ -18,11 +18,13 @@ class MPTodayFocusTodoRowData {
     this.sourceSection,
     this.isChecked = false,
     this.highlighted = false,
+    this.slot,
   });
 
   final String title;
   final String timeLabel;
   final String todoId;
+  final int? slot;
 
   /// 关联 Memory id；无关联时为 `null`。
   final int? memoryId;

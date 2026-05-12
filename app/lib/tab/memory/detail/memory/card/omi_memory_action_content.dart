@@ -183,6 +183,7 @@ class MPMemoryActionContent extends StatelessWidget {
         todoId: existingTodoId,
         preCreateStatus: 1,
         initialDeadlineTimestamp: item.deadline,
+        source: 'ai',
       ),
       onContextTap: () {
         Navigator.of(context).pop();

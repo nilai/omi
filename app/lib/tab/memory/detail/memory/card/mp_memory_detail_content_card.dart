@@ -647,6 +647,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     });
 
     if (!mounted) return;
+    context.read<OmiMemoryDetailCubit>().applyActionTodoCreatedToDetailCache(
+          actionIndex: index,
+          result: r,
+        );
     // follow-up todo 创建成功后刷新详情，保证 feed 与状态与服务端对齐。
     unawaited(context.read<OmiMemoryDetailCubit>().refresh());
   }
