@@ -55,6 +55,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
   reason: json['reason'] as String?,
   preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
   memoryId: (json['memory_id'] as num?)?.toInt(),
+  insightId: (json['insight_id'] as num?)?.toInt(),
   slot: (json['slot'] as num?)?.toInt(),
 );
 
@@ -69,6 +70,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'reason': instance.reason,
       'pre_create_status': instance.preCreateStatus,
       'memory_id': instance.memoryId,
+      'insight_id': instance.insightId,
       'slot': instance.slot,
     };
 

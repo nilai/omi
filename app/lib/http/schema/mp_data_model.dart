@@ -195,6 +195,9 @@ class MPTodoStruct {
   @JsonKey(name: 'memory_id')
   final int? memoryId;
 
+  @JsonKey(name: 'insight_id')
+  final int? insightId;
+
   @JsonKey(name: 'slot')
   final int? slot;
   MPTodoStruct({
@@ -207,6 +210,7 @@ class MPTodoStruct {
     this.reason,
     this.preCreateStatus,
     this.memoryId,
+    this.insightId,
     this.slot,
   });
 
