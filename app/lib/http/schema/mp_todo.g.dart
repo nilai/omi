@@ -24,10 +24,10 @@ MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
     MPCreateTodoRequest(
       title: json['title'] as String,
       memoryId: json['memory_id'] as String?,
+      insightId: json['insight_id'] as String?,
       priority: json['priority'] as String,
       deadline: (json['deadline'] as num?)?.toInt(),
       feedCardId: json['feed_card_id'] as String?,
-      insightId: json['insight_id'] as String?,
     );
 
 Map<String, dynamic> _$MPCreateTodoRequestToJson(
@@ -35,10 +35,10 @@ Map<String, dynamic> _$MPCreateTodoRequestToJson(
 ) => <String, dynamic>{
   'title': instance.title,
   'memory_id': instance.memoryId,
+  'insight_id': instance.insightId,
   'priority': instance.priority,
   'deadline': instance.deadline,
   'feed_card_id': instance.feedCardId,
-  'insight_id': instance.insightId,
 };
 
 MPDoneTodoRequest _$MPDoneTodoRequestFromJson(Map<String, dynamic> json) =>
