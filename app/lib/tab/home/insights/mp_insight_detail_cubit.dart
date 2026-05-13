@@ -80,9 +80,6 @@ class MPInsightDetailData {
   /// 关联 memory id（来自详情接口 [MPInsightDetailStruct.memoryId]）。
   final int? memoryId;
 
-  /// Memory 简要信息；可能异步填充。
-  final MPGetMemoryV2SimpleInfoResponse? memoryInfo;
-
   /// 复制并可选覆盖字段。
   MPInsightDetailData copyWith({
     MPInsightListItem? item,
@@ -92,7 +89,6 @@ class MPInsightDetailData {
     MPWeeklyInsightDetailData? weekly,
     MPMonthlyInsightDetailData? monthly,
     int? memoryId,
-    MPGetMemoryV2SimpleInfoResponse? memoryInfo,
   }) {
     return MPInsightDetailData(
       item: item ?? this.item,
@@ -102,7 +98,6 @@ class MPInsightDetailData {
       weekly: weekly ?? this.weekly,
       monthly: monthly ?? this.monthly,
       memoryId: memoryId ?? this.memoryId,
-      memoryInfo: memoryInfo ?? this.memoryInfo,
     );
   }
 }
@@ -369,26 +364,6 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
     return await getMemoryV2SimpleInfo(MPGetMemoryV2SimpleInfoRequest(memoryId: memoryId));
   }
 
-  /// 先请求网络，成功则写入 Hive；失败则尝试读 Hive。
-  Future<MPGetMemoryV2SimpleInfoResponse?> loadMemorySimpleInfoNetworkOrHive(int memoryId) async {
-    final MPGetMemoryV2SimpleInfoResponse? net = await fetchMemoryV2SimpleInfo('$memoryId');
-    if (net != null && net.baseResp?.code == 0) {
-      await MPHiveUtil.instance.putMap(key: memorySimpleInfoHiveKey(memoryId), value: net.toJson());
-      return net;
-    }
-    final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(memorySimpleInfoHiveKey(memoryId));
-    if (cached == null) {
-      return null;
-    }
-    try {
-      final MPGetMemoryV2SimpleInfoResponse restored = MPGetMemoryV2SimpleInfoResponse.fromJson(cached);
-      if (restored.baseResp?.code == 0) {
-        return restored;
-      }
-    } catch (_) {}
-    return null;
-  }
-
   /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
   Future<MPAddTodoPopupResult?> showAddTodoPopup(MPTodoStruct todo, BuildContext context, MPInsightTodoContentStruct? content) async {
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
@@ -539,16 +514,13 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
 
   /// 异步填充 [MPInsightDetailData.memoryInfo]：网络成功写 Hive，失败读 Hive。
   Future<void> _refreshMemorySimpleInfoAfterInit(MPInsightDetailData seed, int memoryId) async {
-    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(memoryId);
+
     if (isClosed) {
       return;
     }
     final MPInsightDetailData? cur = state.data;
     if (cur == null || cur.item.id != seed.item.id) {
       return;
-    }
-    if (info != null) {
-      emit(MPInsightDetailState.loaded(cur.copyWith(memoryInfo: info)));
     }
   }
 
