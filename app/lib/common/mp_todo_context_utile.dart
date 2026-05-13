@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:memo_pin/tab/home/insights/mp_insights_list_cubit.dart';
 
 import '../cache/mp_hive_util.dart';
 import '../http/api/mp_insight.dart';
@@ -16,6 +17,7 @@ class MPTodoContextStruct {
     required this.title,
     required this.metaLine,
     this.memoryType,
+    this.insightType,
   });
 
   /// 如 `From memory:` / `From insight:`。
@@ -30,12 +32,16 @@ class MPTodoContextStruct {
   /// 关联 Memory 类型（来自 [MPMemorySimpleInfoStruct.type] 或 Insight 简易详情 `type` 映射）；无关联或未识别时为 `null`。
   final MPMemoryType? memoryType;
 
+  /// 关联 Insight 类型（来自 [MPInsightCardStruct.type]）；无关联或未识别时为 `null`。
+  final MPInsightCardType? insightType;
+
   /// 无关联上下文时的占位。
   static const MPTodoContextStruct empty = MPTodoContextStruct(
     label: '',
     title: '',
     metaLine: '',
     memoryType: null,
+    insightType: null,
   );
 
   /// [label]、[title]、[metaLine] 去空白后是否均可视为空。
@@ -120,6 +126,7 @@ abstract final class MPTodoContextUtile {
         label: mi.label,
       ),
       memoryType: mi.type,
+      insightType: null,
     );
   }
 
@@ -162,12 +169,32 @@ abstract final class MPTodoContextUtile {
     if (lab.isNotEmpty) {
       parts.add(lab);
     }
+    final MPInsightCardType? insightCardType = _insightCardTypeFromCycleTypeInt(r.type);
+    final MPMemoryType? memoryType =
+        insightCardType != null ? null : _memoryTypeFromInsightSimpleTypeCode(r.type);
     return MPTodoContextStruct(
       label: 'From insight:',
       title: r.title.trim(),
       metaLine: parts.join(' · '),
-      memoryType: _memoryTypeFromInsightSimpleTypeCode(r.type),
+      memoryType: memoryType,
+      insightType: insightCardType,
     );
+  }
+
+  /// 将 [MPGetInsightSimpleDetailResponse.type] 在 [MPInsightCycleType.daily]～[MPInsightCycleType.pattern] 时映射为 [MPInsightCardType]。
+  static MPInsightCardType? _insightCardTypeFromCycleTypeInt(int type) {
+    switch (type) {
+      case MPInsightCycleType.daily:
+        return MPInsightCardType.daily;
+      case MPInsightCycleType.weekly:
+        return MPInsightCardType.weekly;
+      case MPInsightCycleType.monthly:
+        return MPInsightCardType.monthly;
+      case MPInsightCycleType.pattern:
+        return MPInsightCardType.pattern;
+      default:
+        return null;
+    }
   }
 
   /// 将 [MPGetInsightSimpleDetailResponse.type]（与 [MPMemoryType] 的 Thrift 取值对齐时）映射为枚举。
