@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -76,8 +78,7 @@ class _MPPatternInsightBody extends StatelessWidget {
         final int appearedCount = item.patternMemoryTitles.length;
         final String topDescription = state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
         final String whyText = state.data!.paragraphs.length > 1 ? state.data!.paragraphs[1] : '';
-        final MPInsightTodoLineItem? nextStepLine =
-            state.data!.tips.isNotEmpty ? state.data!.tips.first : null;
+        final MPTodoStruct? nextStepLine = state.data!.tips.isNotEmpty ? state.data!.tips.first : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -362,7 +363,7 @@ class _WhyThisMattersSection extends StatelessWidget {
 class _SuggestedNextStepSection extends StatefulWidget {
   const _SuggestedNextStepSection({this.nextStep});
 
-  final MPInsightTodoLineItem? nextStep;
+  final MPTodoStruct? nextStep;
 
   @override
   State<_SuggestedNextStepSection> createState() => _SuggestedNextStepSectionState();
@@ -373,7 +374,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
 
   @override
   Widget build(BuildContext context) {
-    final String text = widget.nextStep?.text ?? '';
+    final String text = (widget.nextStep?.title ?? '').trim();
     final bool canAdd = text.trim().isNotEmpty;
 
     return Column(
@@ -439,8 +440,12 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                     )
                   : TextButton(
                       onPressed: () async {
-                        final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                          MPInsightTodoLineItem(text: text.trim(), deadLine: widget.nextStep?.deadLine),
+                        if (widget.nextStep == null) {
+                          return;
+                        }
+                        final MPAddTodoPopupResult? result =
+                            await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                          widget.nextStep!,
                           context,
                         );
                         if (!mounted) {

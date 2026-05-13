@@ -65,42 +65,63 @@ bool _mpAsBool(dynamic value, {bool defaultValue = false}) {
   return defaultValue;
 }
 
-/// Insight 列表项：展示文案 + 可选截止时间（接口 `dead_line`，Unix 秒）。
-///
-/// 数组元素可为纯字符串，或包含 `text`/`content` 与 `dead_line` 的对象。
-class MPInsightTodoTextItemStruct {
-  MPInsightTodoTextItemStruct({required this.text, this.deadLine});
-
-  final String text;
-
-  final int? deadLine;
-
-  factory MPInsightTodoTextItemStruct.fromDynamic(dynamic raw) {
-    if (raw == null) {
-      return MPInsightTodoTextItemStruct(text: '', deadLine: null);
-    }
-    if (raw is String) {
-      return MPInsightTodoTextItemStruct(text: raw.trim(), deadLine: null);
-    }
-    final Map<String, dynamic> m = _mpAsMap(raw);
-    final String fromText = _mpAsString(m['text']).trim();
-    final String fromContent = _mpAsString(m['content']).trim();
-    final String resolved = fromText.isNotEmpty ? fromText : fromContent;
-    final int? deadLine = (m['dead_line'] as num?)?.toInt();
-    return MPInsightTodoTextItemStruct(text: resolved, deadLine: deadLine);
+/// 从 Insight 详情 JSON 元素解析 [MPTodoStruct]：支持纯字符串、`text`/`content`/`title`、`dead_line`/`deadline`、
+/// `sub_title`（写入 [MPTodoStruct.reason]），以及完整 Todo JSON。
+String _mpInsightTodoLineTitle(Map<String, dynamic> m) {
+  final String fromText = _mpAsString(m['text']).trim();
+  final String fromContent = _mpAsString(m['content']).trim();
+  final String fromTitle = _mpAsString(m['title']).trim();
+  if (fromText.isNotEmpty) {
+    return fromText;
   }
-
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'text': text,
-        if (deadLine != null) 'dead_line': deadLine,
-      };
+  if (fromContent.isNotEmpty) {
+    return fromContent;
+  }
+  return fromTitle;
 }
 
-List<MPInsightTodoTextItemStruct> _mpAsTodoTextItemList(dynamic value) {
-  return _mpAsList(value)
-      .map((dynamic e) => MPInsightTodoTextItemStruct.fromDynamic(e))
-      .where((MPInsightTodoTextItemStruct e) => e.text.isNotEmpty)
-      .toList();
+MPTodoStruct? _mpInsightTodoFromDynamic(dynamic raw) {
+  if (raw == null) {
+    return null;
+  }
+  if (raw is String) {
+    final String t = raw.trim();
+    return t.isEmpty ? null : MPTodoStruct(title: t);
+  }
+  final Map<String, dynamic> m = _mpAsMap(raw);
+  MPTodoStruct parsed = MPTodoStruct();
+  if (m.isNotEmpty) {
+    try {
+      parsed = MPTodoStruct.fromJson(m);
+    } catch (_) {
+      parsed = MPTodoStruct();
+    }
+  }
+  final String mergedLineTitle = _mpInsightTodoLineTitle(m);
+  final String resolvedTitle =
+      (parsed.title ?? '').trim().isNotEmpty ? parsed.title!.trim() : mergedLineTitle;
+  if (resolvedTitle.isEmpty) {
+    return null;
+  }
+  final int? mergedDeadline =
+      parsed.deadline ?? mpNullableIntFromJson(m['dead_line']) ?? mpNullableIntFromJson(m['deadline']);
+  final String? mergedReason = parsed.reason ?? _mpAsNullableString(m['sub_title']);
+  return MPTodoStruct(
+    id: parsed.id,
+    title: resolvedTitle,
+    owner: parsed.owner,
+    priority: parsed.priority,
+    deadline: mergedDeadline,
+    status: parsed.status,
+    reason: mergedReason,
+    preCreateStatus: parsed.preCreateStatus,
+    memoryId: parsed.memoryId,
+    slot: parsed.slot,
+  );
+}
+
+List<MPTodoStruct> _mpAsInsightTodoList(dynamic value) {
+  return _mpAsList(value).map(_mpInsightTodoFromDynamic).whereType<MPTodoStruct>().toList();
 }
 
 /// 与后端 [InsightType] / `cycle_type` 取值一致。
@@ -563,7 +584,7 @@ class MPPatternInsightDetailStruct {
   final MPPatternInsightDetectedStruct detected;
   final List<MPPatternInsightAppearedItemStruct> appearedItems;
   final String whyThisMatters;
-  final List<MPInsightTodoTextItemStruct> nextStep;
+  final List<MPTodoStruct> nextStep;
 
   /// 从 JSON 解析。
   factory MPPatternInsightDetailStruct.fromJson(Map<String, dynamic> json) {
@@ -576,7 +597,7 @@ class MPPatternInsightDetailStruct {
             )
             .toList();
 
-    final List<MPInsightTodoTextItemStruct> nextStep = _mpAsTodoTextItemList(json['next_step']);
+    final List<MPTodoStruct> nextStep = _mpAsInsightTodoList(json['next_step']);
 
     return MPPatternInsightDetailStruct(
       bannerTitle: _mpAsString(json['banner_title']),
@@ -597,7 +618,7 @@ class MPPatternInsightDetailStruct {
             .map((MPPatternInsightAppearedItemStruct e) => e.toJson())
             .toList(),
         'why_this_matters': whyThisMatters,
-        'next_step': nextStep.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
+        'next_step': nextStep.map((MPTodoStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -810,7 +831,7 @@ class MPMonthlyInsightDetailStruct {
   final MPMonthlyInsightOpenThreadsSectionStruct openThreads;
   final List<String> monthToMonthTrend;
   final MPMonthlyInsightDecisionsSectionStruct decisions;
-  final List<MPInsightTodoTextItemStruct> suggestedFocusNextMonth;
+  final List<MPTodoStruct> suggestedFocusNextMonth;
 
   /// 从 JSON 解析。
   factory MPMonthlyInsightDetailStruct.fromJson(Map<String, dynamic> json) {
@@ -819,8 +840,7 @@ class MPMonthlyInsightDetailStruct {
         .where((String e) => e.isNotEmpty)
         .toList();
 
-    final List<MPInsightTodoTextItemStruct> suggestedFocusNextMonth =
-        _mpAsTodoTextItemList(json['suggested_focus_next_month']);
+    final List<MPTodoStruct> suggestedFocusNextMonth = _mpAsInsightTodoList(json['suggested_focus_next_month']);
 
     return MPMonthlyInsightDetailStruct(
       overview: MPMonthlyInsightOverviewStruct.fromJson(
@@ -855,8 +875,7 @@ class MPMonthlyInsightDetailStruct {
         'open_threads': openThreads.toJson(),
         'month_to_month_trend': monthToMonthTrend,
         'decisions': decisions.toJson(),
-        'suggested_focus_next_month':
-            suggestedFocusNextMonth.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
+        'suggested_focus_next_month': suggestedFocusNextMonth.map((MPTodoStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -972,11 +991,11 @@ class MPDailyInsightDetailStruct {
   final MPDailyInsightListSectionStruct openQuestions;
   final MPDailyInsightPatternSectionStruct patternsEmerging;
   final MPDailyInsightListSectionStruct ideasCaptured;
-  final List<MPInsightTodoTextItemStruct> tomorrowFocus;
+  final List<MPTodoStruct> tomorrowFocus;
 
   /// 从 JSON 解析。
   factory MPDailyInsightDetailStruct.fromJson(Map<String, dynamic> json) {
-    final List<MPInsightTodoTextItemStruct> tomorrowFocus = _mpAsTodoTextItemList(json['tomorrow_focus']);
+    final List<MPTodoStruct> tomorrowFocus = _mpAsInsightTodoList(json['tomorrow_focus']);
 
     return MPDailyInsightDetailStruct(
       narrative: MPDailyInsightNarrativeSectionStruct.fromJson(
@@ -1005,7 +1024,7 @@ class MPDailyInsightDetailStruct {
         'open_questions': openQuestions.toJson(),
         'patterns_emerging': patternsEmerging.toJson(),
         'ideas_captured': ideasCaptured.toJson(),
-        'tomorrow_focus': tomorrowFocus.map((MPInsightTodoTextItemStruct e) => e.toJson()).toList(),
+        'tomorrow_focus': tomorrowFocus.map((MPTodoStruct e) => e.toJson()).toList(),
       };
 }
 
@@ -1171,36 +1190,6 @@ class MPWeeklyInsightPendingItemStruct {
       };
 }
 
-/// Weekly Insight「Next Week Priorities」条目。
-class MPWeeklyInsightPriorityItemStruct {
-  MPWeeklyInsightPriorityItemStruct({
-    required this.title,
-    this.subTitle,
-    this.deadLine,
-  });
-
-  final String title;
-  final String? subTitle;
-
-  final int? deadLine;
-
-  /// 从 JSON 解析。
-  factory MPWeeklyInsightPriorityItemStruct.fromJson(Map<String, dynamic> json) {
-    return MPWeeklyInsightPriorityItemStruct(
-      title: json['title'] as String? ?? '',
-      subTitle: json['sub_title'] as String?,
-      deadLine: (json['dead_line'] as num?)?.toInt(),
-    );
-  }
-
-  /// 序列化为 JSON。
-  Map<String, dynamic> toJson() => <String, dynamic>{
-        'title': title,
-        if (subTitle != null) 'sub_title': subTitle,
-        if (deadLine != null) 'dead_line': deadLine,
-      };
-}
-
 /// Weekly Insight「Expert Weekly Feedback」条目。
 class MPWeeklyInsightExpertFeedbackItemStruct {
   MPWeeklyInsightExpertFeedbackItemStruct({
@@ -1243,7 +1232,7 @@ class MPWeeklyInsightDetailStruct {
   final List<MPWeeklyInsightAccomplishmentItemStruct> accomplishments;
   final List<MPWeeklyInsightChallengeItemStruct> challengesAndLearnings;
   final List<MPWeeklyInsightPendingItemStruct> pendingItems;
-  final List<MPWeeklyInsightPriorityItemStruct> nextWeekPriorities;
+  final List<MPTodoStruct> nextWeekPriorities;
   final List<MPWeeklyInsightExpertFeedbackItemStruct> expertWeeklyFeedback;
 
   /// 从 JSON 解析。
@@ -1274,14 +1263,7 @@ class MPWeeklyInsightDetailStruct {
         )
         .toList();
 
-    final List<MPWeeklyInsightPriorityItemStruct> nextWeekPriorities =
-        _mpAsList(json['next_week_priorities'])
-            .map(
-              (dynamic e) => MPWeeklyInsightPriorityItemStruct.fromJson(
-                _mpAsMap(e),
-              ),
-            )
-            .toList();
+    final List<MPTodoStruct> nextWeekPriorities = _mpAsInsightTodoList(json['next_week_priorities']);
 
     final List<MPWeeklyInsightExpertFeedbackItemStruct> expertWeeklyFeedback =
         _mpAsList(json['expert_weekly_feedback'])
@@ -1316,8 +1298,7 @@ class MPWeeklyInsightDetailStruct {
         'challenges_and_learnings':
             challengesAndLearnings.map((MPWeeklyInsightChallengeItemStruct e) => e.toJson()).toList(),
         'pending_items': pendingItems.map((MPWeeklyInsightPendingItemStruct e) => e.toJson()).toList(),
-        'next_week_priorities':
-            nextWeekPriorities.map((MPWeeklyInsightPriorityItemStruct e) => e.toJson()).toList(),
+        'next_week_priorities': nextWeekPriorities.map((MPTodoStruct e) => e.toJson()).toList(),
         'expert_weekly_feedback': expertWeeklyFeedback
             .map((MPWeeklyInsightExpertFeedbackItemStruct e) => e.toJson())
             .toList(),

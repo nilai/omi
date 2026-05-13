@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart' as http_io;
@@ -317,7 +318,8 @@ Future<http.Response> _performRequest(String url, Map<String, String> headers, S
   debugPrint('URL: $url');
   debugPrint('Status: ${response.statusCode}');
   debugPrint('Duration: ${stopwatch.elapsedMilliseconds}ms');
-  debugPrint('Response Body: ${_truncateResponse(response.body)}');
+  final bodyForLog = _truncateResponse(response.body, maxLength: kDebugMode ? null : 1000);
+  _debugPrintLong('Response Body: ', bodyForLog);
   debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   return response;
@@ -335,9 +337,48 @@ String _sanitizeHeaders(Map<String, String> headers) {
   return sanitized.toString();
 }
 
-/// 截断过长的响应内容
-String _truncateResponse(String body, {int maxLength = 1000}) {
-  if (body.length <= maxLength) {
+/**
+ * 单行系统日志（logcat / NSLog / IDE）有长度上限，超长字符串需分块 [debugPrint] 才能在控制台看全。
+ *
+ * [maxSafeLineLength] 为整行字符数上限的保守值（含前缀），避免单条仍被系统截断。
+ */
+void _debugPrintLong(String prefix, String text, {int maxSafeLineLength = 960}) {
+  if (text.isEmpty) {
+    debugPrint('${prefix}<empty>');
+    return;
+  }
+  final firstRoom = maxSafeLineLength - prefix.length;
+  if (firstRoom <= 8) {
+    debugPrint(prefix);
+    _debugPrintLong('', text, maxSafeLineLength: maxSafeLineLength);
+    return;
+  }
+  if (text.length <= firstRoom) {
+    debugPrint('$prefix$text');
+    return;
+  }
+  final contOverhead = 28;
+  final chunkSize = maxSafeLineLength - contOverhead;
+  if (chunkSize <= 0) {
+    debugPrint('$prefix<text too long, chunk config error>');
+    return;
+  }
+  final total = (text.length + chunkSize - 1) ~/ chunkSize;
+  debugPrint('$prefix... (${text.length} chars, $total log lines)');
+  for (var i = 0; i < text.length; i += chunkSize) {
+    final end = i + chunkSize > text.length ? text.length : i + chunkSize;
+    final part = (i ~/ chunkSize) + 1;
+    debugPrint('[body $part/$total] ${text.substring(i, end)}');
+  }
+}
+
+/**
+ * 截断过长的响应内容以便控制台阅读。
+ *
+ * [maxLength] 为 null 时不截断，输出完整 body。
+ */
+String _truncateResponse(String body, {required int? maxLength}) {
+  if (maxLength == null || body.length <= maxLength) {
     return body;
   }
   return '${body.substring(0, maxLength)}... (truncated ${body.length - maxLength} chars)';
@@ -429,7 +470,8 @@ Stream<String> makeStreamingApiCall({
         }
 
         chunkCount++;
-        debugPrint('📦 Chunk #$chunkCount: ${_truncateResponse(line, maxLength: 200)}');
+        final chunkText = _truncateResponse(line, maxLength: kDebugMode ? null : 200);
+        _debugPrintLong('📦 Chunk #$chunkCount: ', chunkText);
         yield line;
       }
     }
@@ -437,7 +479,8 @@ Stream<String> makeStreamingApiCall({
     // Flush remaining buffers
     if (buffers.isNotEmpty) {
       chunkCount++;
-      debugPrint('📦 Chunk #$chunkCount (final): ${_truncateResponse(buffers.join(), maxLength: 200)}');
+      final finalChunk = _truncateResponse(buffers.join(), maxLength: kDebugMode ? null : 200);
+      _debugPrintLong('📦 Chunk #$chunkCount (final): ', finalChunk);
       yield buffers.join();
     }
 

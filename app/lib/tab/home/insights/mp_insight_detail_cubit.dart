@@ -42,15 +42,6 @@ class MPInsightDetailState {
       MPInsightDetailState(phase: MPInsightDetailPhase.error, errorMessage: message);
 }
 
-/// 「加入 Todo」入口统一载荷：文案与可选截止时间（Unix 秒）。
-class MPInsightTodoLineItem {
-  const MPInsightTodoLineItem({required this.text, this.deadLine});
-
-  final String text;
-
-  final int? deadLine;
-}
-
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
 class MPInsightDetailData {
   const MPInsightDetailData({
@@ -67,8 +58,8 @@ class MPInsightDetailData {
   final MPInsightListItem item;
   final List<String> paragraphs;
 
-  /// Pattern「Suggested Next Step」等：每项含文案与可选截止时间。
-  final List<MPInsightTodoLineItem> tips;
+  /// Pattern「Suggested Next Step」等：每项为 [MPTodoStruct]（展示用 [MPTodoStruct.title]）。
+  final List<MPTodoStruct> tips;
 
   /// Daily 详情页专用结构化数据（其它类型为 null）
   final MPDailyInsightDetailData? daily;
@@ -89,7 +80,7 @@ class MPInsightDetailData {
   MPInsightDetailData copyWith({
     MPInsightListItem? item,
     List<String>? paragraphs,
-    List<MPInsightTodoLineItem>? tips,
+    List<MPTodoStruct>? tips,
     MPDailyInsightDetailData? daily,
     MPWeeklyInsightDetailData? weekly,
     MPMonthlyInsightDetailData? monthly,
@@ -107,15 +98,6 @@ class MPInsightDetailData {
       memoryInfo: memoryInfo ?? this.memoryInfo,
     );
   }
-}
-
-/// Daily 详情页中的可执行建议（Tomorrow's focus）
-class MPDailyFocusItem {
-  const MPDailyFocusItem({required this.text, this.deadLine});
-
-  final String text;
-
-  final int? deadLine;
 }
 
 /// Daily 详情页结构化数据
@@ -154,7 +136,7 @@ class MPDailyInsightDetailData {
   final List<String> ideasCaptured;
 
   /// Tomorrow's focus（支持 Add to Todo）
-  final List<MPDailyFocusItem> tomorrowFocus;
+  final List<MPTodoStruct> tomorrowFocus;
 
   /// 底部按钮文案
   final String askAiButtonText;
@@ -170,13 +152,11 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true, this.deadLine});
+  const MPWeeklyPriorityItem({required this.todo, this.visible = true});
 
-  final String text;
-  final String subtitle;
+  final MPTodoStruct todo;
+
   final bool visible;
-
-  final int? deadLine;
 }
 
 /// Weekly 详情页中的完成项
@@ -302,16 +282,6 @@ class MPMonthlyDecisionItem {
   final String text;
 }
 
-/// Monthly 详情页卡片中的条目：下月关注建议
-class MPMonthlySuggestedFocusItem {
-  const MPMonthlySuggestedFocusItem({required this.rank, required this.text, this.deadLine});
-
-  final int rank;
-  final String text;
-
-  final int? deadLine;
-}
-
 /// Monthly 详情页结构化数据
 class MPMonthlyInsightDetailData {
   const MPMonthlyInsightDetailData({
@@ -372,7 +342,7 @@ class MPMonthlyInsightDetailData {
   final String decisionsThatCannotSlipAgainSummary;
 
   /// Suggested Focus Next Month
-  final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth;
+  final List<MPTodoStruct> suggestedFocusNextMonth;
 
   /// 底部按钮文案
   final String askAiButtonText;
@@ -436,7 +406,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
   }
 
   /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
-  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPInsightTodoLineItem line, BuildContext context) async {
+  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPTodoStruct todo, BuildContext context) async {
     Completer<MPAddTodoPopupResult?> completer = Completer<MPAddTodoPopupResult?>();
     resolveMemoryInfo((MPGetMemoryV2SimpleInfoResponse? info) async {
       final MPGetMemoryV2SimpleInfoResponse? ok = (info != null && info.baseResp?.code == 0) ? info : null;
@@ -457,8 +427,8 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
         context,
         params: MPAddTodoPopupParams(
-          initialTitle: line.text.trim(),
-          initialDeadlineTimestamp: line.deadLine,
+          initialTitle: (todo.title ?? '').trim(),
+          initialDeadlineTimestamp: todo.deadline,
           contextMemoryLabel: contextMemoryLabel,
           contextMemoryTitle: contextMemoryTitle,
           contextMetaLine: contextMetaLine,
@@ -693,9 +663,6 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .map((MPDailyInsightTextItemStruct e) => e.content)
         .where((String e) => e.isNotEmpty)
         .toList();
-    final List<MPDailyFocusItem> tomorrowFocus = detail.tomorrowFocus
-        .map((MPInsightTodoTextItemStruct e) => MPDailyFocusItem(text: e.text, deadLine: e.deadLine))
-        .toList();
 
     return MPInsightDetailData(
       item: item,
@@ -709,7 +676,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         openQuestions: openQuestions,
         patternsEmerging: detail.patternsEmerging.content,
         ideasCaptured: ideasCaptured,
-        tomorrowFocus: tomorrowFocus,
+        tomorrowFocus: detail.tomorrowFocus,
         askAiButtonText: 'Ask AI about today',
       ),
       memoryId: memoryId,
@@ -756,10 +723,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         )
         .toList();
     final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
-        .map(
-          (MPWeeklyInsightPriorityItemStruct e) =>
-              MPWeeklyPriorityItem(text: e.title, subtitle: e.subTitle ?? '', visible: true, deadLine: e.deadLine),
-        )
+        .map((MPTodoStruct e) => MPWeeklyPriorityItem(todo: e, visible: true))
         .toList();
     final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
         .map(
@@ -827,14 +791,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .entries
         .map((MapEntry<int, String> e) => MPMonthlyDecisionItem(rank: e.key + 1, text: e.value))
         .toList();
-    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = detail.suggestedFocusNextMonth
-        .asMap()
-        .entries
-        .map(
-          (MapEntry<int, MPInsightTodoTextItemStruct> e) =>
-              MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value.text, deadLine: e.value.deadLine),
-        )
-        .toList();
+    final List<MPTodoStruct> suggestedFocusNextMonth = List<MPTodoStruct>.from(detail.suggestedFocusNextMonth);
 
     return MPInsightDetailData(
       item: item,
@@ -873,9 +830,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
-      tips: detail.nextStep
-          .map((MPInsightTodoTextItemStruct e) => MPInsightTodoLineItem(text: e.text, deadLine: e.deadLine))
-          .toList(),
+      tips: List<MPTodoStruct>.from(detail.nextStep),
       memoryId: memoryId,
     );
   }

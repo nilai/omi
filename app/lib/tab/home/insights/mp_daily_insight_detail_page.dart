@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -315,7 +316,7 @@ class _MPDotTextList extends StatelessWidget {
 class _MPDailyTomorrowFocusCard extends StatefulWidget {
   const _MPDailyTomorrowFocusCard({required this.items});
 
-  final List<MPDailyFocusItem> items;
+  final List<MPTodoStruct> items;
 
   @override
   State<_MPDailyTomorrowFocusCard> createState() => _MPDailyTomorrowFocusCardState();
@@ -352,8 +353,8 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
             decoration: BoxDecoration(color: const Color(0xFFF2F6FF), borderRadius: BorderRadius.circular(8)),
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: Column(
-              children: widget.items.asMap().entries.map((MapEntry<int, MPDailyFocusItem> entry) {
-                final MPDailyFocusItem focus = entry.value;
+              children: widget.items.asMap().entries.map((MapEntry<int, MPTodoStruct> entry) {
+                final MPTodoStruct focus = entry.value;
                 final bool isAdded = _addedIndexes.contains(entry.key);
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
@@ -371,7 +372,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          focus.text,
+                          (focus.title ?? '').trim(),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: OmiTextStyle.create(
@@ -410,7 +411,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                           : TextButton(
                               onPressed: () async {
                                 final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                                  MPInsightTodoLineItem(text: focus.text, deadLine: focus.deadLine),
+                                  focus,
                                   context,
                                 );
                                 if (!mounted) {
