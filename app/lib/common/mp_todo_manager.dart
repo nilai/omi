@@ -100,6 +100,7 @@ class MPTodoManager {
     String? feedCardId,
     int? preCreateStatus,
     String? source,
+    String? insightId,
   }) async {
     try {
       final int deadlineUnix = deadline ?? 0;
@@ -123,6 +124,7 @@ class MPTodoManager {
         priority: priority,
         deadline: deadlineUnix,
         feedCardId: feedCardId,
+        insightId: insightId,
       );
       final MPCreateTodoResponse? response = await MPTodo.createTodo(request);
       if (response == null) {

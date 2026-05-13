@@ -25,6 +25,13 @@ import 'mp_insights_list_cubit.dart';
 /// Insights 详情页状态
 enum MPInsightDetailPhase { loading, loaded, error }
 
+class MPInsightTodoContentStruct {
+  const MPInsightTodoContentStruct({required this.label, required this.title, required this.metaLine});
+  final String? label;
+  final String? title;
+  final String? metaLine;
+}
+
 /// 详情页状态
 class MPInsightDetailState {
   const MPInsightDetailState({required this.phase, this.data, this.errorMessage});
@@ -382,79 +389,26 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
     return null;
   }
 
-  /// 通过回调拿到 [memoryInfo]：已有则立即回调；否则走网络并在失败时用 Hive。
-  Future<void> resolveMemoryInfo(void Function(MPGetMemoryV2SimpleInfoResponse? info) onResult) async {
-    final MPInsightDetailData? data = state.data;
-    if (data == null) {
-      onResult(null);
-      return;
-    }
-    if (data.memoryInfo != null) {
-      onResult(data.memoryInfo);
-      return;
-    }
-    final int? mid = data.memoryId;
-    if (mid == null) {
-      onResult(null);
-      return;
-    }
-    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(mid);
-    if (!isClosed && state.data != null && state.data!.item.id == data.item.id && info != null) {
-      emit(MPInsightDetailState.loaded(state.data!.copyWith(memoryInfo: info)));
-    }
-    onResult(info);
-  }
-
   /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
-  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPTodoStruct todo, BuildContext context) async {
-    Completer<MPAddTodoPopupResult?> completer = Completer<MPAddTodoPopupResult?>();
-    resolveMemoryInfo((MPGetMemoryV2SimpleInfoResponse? info) async {
-      final MPGetMemoryV2SimpleInfoResponse? ok = (info != null && info.baseResp?.code == 0) ? info : null;
-      final MPMemorySimpleInfoStruct? mi = ok?.memoryInfo;
-      final String contextMemoryTitle = mi?.title ?? '';
-      final String contextMetaLine = mi != null
-          ? MPDateUtils.buildMemorySimpleContextMetaLine(
-              recordCreateAt: mi.recordCreateAt,
-              duration: mi.duration,
-              label: mi.label,
-            )
-          : '';
-      final String contextMemoryLabel = contextMetaLine.isNotEmpty || contextMemoryTitle.isNotEmpty
-          ? 'From memory:'
-          : '';
-      final String memoryId = state.data?.memoryId.toString() ?? '';
-
+  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPTodoStruct todo, BuildContext context, MPInsightTodoContentStruct? content) async {
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
         context,
         params: MPAddTodoPopupParams(
           initialTitle: (todo.title ?? '').trim(),
           initialDeadlineTimestamp: todo.deadline,
-          contextMemoryLabel: contextMemoryLabel,
-          contextMemoryTitle: contextMemoryTitle,
-          contextMetaLine: contextMetaLine,
-          memoryId: memoryId,
-          memoryType: mi?.type,
+          contextMemoryLabel: content?.label ?? '',
+          contextMemoryTitle: content?.title ?? '',
+          contextMetaLine: content?.metaLine ?? '',
+          insightId: insightItem.id,
         ),
         onContextTap: () {
           Navigator.of(context).pop();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) {
-              return;
-            }
-            MPMemoryDetailPageHelper.navigateToDetailPage(context, memoryId, mi?.type ?? MPMemoryType.memoryFeed);
-          });
         },
       );
       if (!context.mounted) {
-        completer.complete(result);
-        return;
+        return null;
       }
-      if (result != null) {
-        MPToastUtils.showMessage('To-do created.');
-      } 
-      completer.complete(result);
-    });
-    return completer.future;
+      return result;
   }
 
   /// 并发获取建议问题与最近会话，并跳转 AskAI 聊天页。

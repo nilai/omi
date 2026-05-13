@@ -695,9 +695,15 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                         )
                       : TextButton(
                           onPressed: () async {
-                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                            final cubit = context.read<MPInsightDetailCubit>();
+                            final MPInsightDetailData? data = cubit.state.data;
+                            final title = data?.item.title ?? '';
+                            final subtitle = data?.item.subtitle ?? '';
+                            final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Weekly Insight:' : '';
+                            final result = await cubit.showAddTodoPopup(
                               item.todo,
                               context,
+                              MPInsightTodoContentStruct(label: label, title: title, metaLine: subtitle),
                             );
                             if (!mounted) {
                               return;

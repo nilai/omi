@@ -61,6 +61,7 @@ class MPAddTodoPopupParams {
     this.preCreateStatus,
     this.memoryType,
     this.source,
+    this.insightId,
   });
 
   final String initialTitle;
@@ -92,6 +93,9 @@ class MPAddTodoPopupParams {
 
   /// 创建 Todo 时请求体 [memory_id]；空串则不带关联 Memory
   final String memoryId;
+
+  /// 创建 Todo 时请求体 [insight_id]；
+  final String? insightId;
 
   /// 创建 Todo 时请求体 [feed_card_id]；空串则不传
   final String feedCardId;
@@ -585,6 +589,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 feedCardId: fid.isEmpty ? null : fid,
                                 preCreateStatus: p.preCreateStatus,
                                 source: p.source,
+                                insightId: p.insightId,
                               );
                               if (!context.mounted) {
                                 return;

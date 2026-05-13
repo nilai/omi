@@ -443,10 +443,20 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                         if (widget.nextStep == null) {
                           return;
                         }
+                        final cubit = context.read<MPInsightDetailCubit>();
+                        final MPInsightDetailData? data = cubit.state.data;
+                        final title = data?.item.title ?? '';
+                        final subtitle = data?.item.subtitle ?? '';
+                        final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Pattern Insight:' : '';
                         final MPAddTodoPopupResult? result =
-                            await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                            await cubit.showAddTodoPopup(
                           widget.nextStep!,
                           context,
+                          MPInsightTodoContentStruct(
+                            label: label,
+                            title: title,
+                            metaLine: subtitle,
+                          ),
                         );
                         if (!mounted) {
                           return;

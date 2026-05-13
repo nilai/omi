@@ -892,9 +892,15 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                             minimumSize: const Size(0, 0),
                           ),
                           onPressed: () async {
-                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
+                            final cubit = context.read<MPInsightDetailCubit>();
+                            final MPMonthlyInsightDetailData? monthly = cubit.state.data?.monthly;
+                            final title = monthly?.monthSubtitle ?? '';
+                            final subtitle = '';
+                            final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Monthly Insight:' : '';
+                            final result = await cubit.showAddTodoPopup(
                               f,
                               context,
+                              MPInsightTodoContentStruct(label: label, title: title, metaLine: subtitle),
                             );
                             if (!mounted) {
                               return;
