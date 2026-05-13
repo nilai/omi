@@ -15,6 +15,7 @@ import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/mp_date_utils.dart';
+import '../../../common/mp_todo_context_utile.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../../http/schema/mp_memory.dart';
@@ -114,36 +115,27 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
     if (!mounted) {
       return;
     }
-    final MPGetMemoryV2SimpleInfoResponse? simpleMemory =
-        await _cubit.loadMemorySimpleInfoNetworkOrHive(item.memoryId);
+    final MPTodoContextStruct todoContext = await MPTodoContextUtile.getTodoContext(
+      memoryId: item.memoryId,
+      insightId: item.insightId,
+    );
+
     if (!mounted) {
       return;
     }
-    final MPMemorySimpleInfoStruct? mi =
-        (simpleMemory != null && simpleMemory.baseResp?.code == 0) ? simpleMemory.memoryInfo : null;
-    final String contextMemoryTitle = mi?.title ?? '';
-    final String contextMetaLine = mi != null
-        ? MPDateUtils.buildMemorySimpleContextMetaLine(
-            recordCreateAt: mi.recordCreateAt,
-            duration: mi.duration,
-            label: mi.label,
-          )
-        : '';
-    final String contextMemoryLabel = mi != null ? 'From memory:' : '';
-
     await showOmiEditTodoPopup(
       context,
       params: OmiEditTodoPopupParams(
         title: item.title,
-        contextMemoryLabel: contextMemoryLabel,
-        contextMemoryTitle: contextMemoryTitle,
-        contextMetaLine: contextMetaLine,
+        contextMemoryLabel: todoContext.label,
+        contextMemoryTitle: todoContext.title,
+        contextMetaLine: todoContext.metaLine,
         notes: item.reason ?? '',
         whenLabel: 'Today',
         timeLabel: (item.time == null || item.time!.isEmpty) ? '--:--' : item.time!,
         todoId: item.id,
         memoryId: item.memoryId,
-        memoryType: mi?.type,
+        memoryType: todoContext.memoryType,
       ),
       onDelete: () async {
         await _cubit.loadData();

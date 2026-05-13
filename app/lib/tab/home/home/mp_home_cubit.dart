@@ -58,7 +58,7 @@ class MPHomeAudioStatus {
 
 /// Today's Focus 列表项（Up Next）
 class MPHomeTodoItem {
-  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false, this.memoryId});
+  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false, this.memoryId, this.insightId});
 
   final String id;
   final String title;
@@ -66,6 +66,7 @@ class MPHomeTodoItem {
   final String? reason;
   final bool completed;
   final int? memoryId;
+  final String? insightId;
 }
 
 /// Recent Memory 一行
