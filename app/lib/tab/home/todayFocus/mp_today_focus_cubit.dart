@@ -691,6 +691,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       todoId: todoId,
       memoryId: todo.memoryId,
       slot: slot,
+      insightId: todo.insightId
     );
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }
