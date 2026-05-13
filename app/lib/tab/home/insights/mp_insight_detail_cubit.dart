@@ -59,7 +59,6 @@ class MPInsightDetailData {
     this.weekly,
     this.monthly,
     this.memoryId,
-    this.memoryInfo,
   });
 
   final MPInsightListItem item;

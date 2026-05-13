@@ -13,6 +13,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../common/mp_home_notification.dart';
+import '../../../common/mp_todo_context_utile.dart';
 import '../../../http/schema/mp_memory.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
@@ -90,42 +91,35 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     required String whenLabel,
     required String timeLabel,
     required String todoId,
+    required String? insightId,
     Future<bool> Function()? onDelete,
   }) async {
     if (!mounted) {
       return false;
     }
-    final MPGetMemoryV2SimpleInfoResponse? simpleMemory =
-        await _cubit.loadMemorySimpleInfoNetworkOrHive(memoryId);
+    final MPTodoContextStruct todoContext = await MPTodoContextUtile.getTodoContext(
+      memoryId: memoryId,
+      insightId: insightId,
+    );
     if (!mounted) {
       return false;
     }
-    final MPMemorySimpleInfoStruct? mi =
-        (simpleMemory != null && simpleMemory.baseResp?.code == 0) ? simpleMemory.memoryInfo : null;
-    final String contextMemoryTitle = mi?.title ?? '';
-    final String contextMetaLine = mi != null
-        ? MPDateUtils.buildMemorySimpleContextMetaLine(
-            recordCreateAt: mi.recordCreateAt,
-            duration: mi.duration,
-            label: mi.label,
-          )
-        : '';
-    final String contextMemoryLabel = mi != null ? 'From memory:' : '';
     final String resolvedTimeLabel = timeLabel.trim().isEmpty ? '--:--' : timeLabel;
 
     return showOmiEditTodoPopup(
       context,
       params: OmiEditTodoPopupParams(
         title: title,
-        contextMemoryLabel: contextMemoryLabel,
-        contextMemoryTitle: contextMemoryTitle,
-        contextMetaLine: contextMetaLine,
+        contextMemoryLabel: todoContext.label,
+        contextMemoryTitle: todoContext.title,
+        contextMetaLine: todoContext.metaLine,
         notes: notes,
         whenLabel: whenLabel,
         timeLabel: resolvedTimeLabel,
         todoId: todoId,
         memoryId: memoryId,
-        memoryType: mi?.type,
+        memoryType: todoContext.memoryType,
+        insightId: insightId,
       ),
       onDelete: onDelete,
     );
@@ -170,6 +164,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       whenLabel: 'Today',
       timeLabel: item.timeLabel,
       todoId: item.todoId,
+      insightId: item.insightId,
       onDelete: () async {
         final bool ok = await _cubit.removeFocusItemAt(index);
         return ok;
@@ -232,6 +227,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       whenLabel: whenLabel,
       timeLabel: timeLabel,
       todoId: row.todoId,
+      insightId: row.insightId,
     );
     if (!mounted) {
       return;

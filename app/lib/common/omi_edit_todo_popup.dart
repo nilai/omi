@@ -31,6 +31,7 @@ class OmiEditTodoPopupParams {
     this.deadlineUnixSec,
     this.memoryId,
     this.memoryType,
+    this.insightId,
   });
 
   final String title;
@@ -53,6 +54,7 @@ class OmiEditTodoPopupParams {
   final String whenLabel;
   final String timeLabel;
   final String todoId;
+  final String? insightId;
 
   /// 截止时间 Unix（秒或毫秒，与 [MPMemoryCreatedTodoLineData.deadlineLabel] 一致）；无截止为 `null`。
   final int? deadlineUnixSec;

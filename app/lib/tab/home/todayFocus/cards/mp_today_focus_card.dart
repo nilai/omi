@@ -11,6 +11,7 @@ class MPTodayFocusCardItem {
     required this.timeLabel,
     this.todoId = '',
     this.memoryId,
+    this.insightId,
     this.slot,
   });
 
@@ -23,6 +24,9 @@ class MPTodayFocusCardItem {
 
   /// 关联 Memory id（与 [MPTodoStruct.memoryId] 一致）；无关联时为 `null`。
   final int? memoryId;
+
+  /// 关联 Insight id（与 [MPInsightListItem.id] 一致）；无关联时为 `null`。
+  final String? insightId;
 
   /// Today's Focus 槽位（与 [MPTodoStruct.slot]、[MPRemoveTodayFocusRequest.slot] 一致）；为空时由列表下标推断。
   final int? slot;
