@@ -74,7 +74,7 @@ abstract final class MPTodoContextUtile {
     return _todoContextFromInsightSimple(insightTrim);
   }
 
-  /// Memory 简要信息：网络成功写 Hive；失败读 Hive（对齐 [MPHomeCubit.loadMemorySimpleInfoNetworkOrHive]）。
+  /// Memory 简要信息：网络成功写 Hive；失败读 Hive（与首页 / Insight 详情共用 Hive key）。
   static Future<MPGetMemoryV2SimpleInfoResponse?> _loadMemorySimpleInfoNetworkOrHive(int memoryId) async {
     final String idStr = '$memoryId';
     try {
