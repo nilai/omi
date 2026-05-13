@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../blu/mp_ble_preferences.dart';
 import '../blu/mp_bluetooth_connection_helper.dart';
+import '../cache/omi_cache_manager.dart';
 import '../cache/mp_hive_util.dart';
 import '../http/api/mp_login.dart';
 import '../main.dart';
@@ -23,6 +24,7 @@ class MPLoginUtil {
       // 网络失败不阻断本地退出。
     }
 
+    await OmiCacheManager().finalizeServerCacheBeforeLogoutKeepDisk();
     await MPUser.instance.clear();
     await MPBlePreferences.instance.clearLastConnectedBleDevice();
     await MPHiveUtil.instance.close();

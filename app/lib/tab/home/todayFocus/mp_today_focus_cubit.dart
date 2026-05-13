@@ -188,7 +188,11 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       GetTodoListResponse? candidates;
       final dynamic c = decoded[_kTodayFocusCacheCandidates];
       if (c is Map) {
-        candidates = GetTodoListResponse.fromJson(Map<String, dynamic>.from(c));
+        try {
+          candidates = GetTodoListResponse.fromJson(Map<String, dynamic>.from(c));
+        } catch (_) {
+          candidates = null;
+        }
       }
       return _buildTodayFocusUiState(raw, candidates);
     } catch (_) {
@@ -385,7 +389,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (resp == null || resp.baseResp.code != 0) {
       return const <MPTodayFocusAISuggestionItem>[];
     }
-    final List<MPTodoStruct> items = resp.focusItems ?? <MPTodoStruct>[];
+    final List<MPTodoStruct> items = resp.todos ?? <MPTodoStruct>[];
     return items
         .map((MPTodoStruct t) {
           final String title = (t.title ?? '').trim();
@@ -477,6 +481,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       timeLabel: _formatDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
+      slot: t.slot,
     );
   }
 
@@ -683,12 +688,13 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       timeLabel: timeLabel,
       todoId: todoId,
       memoryId: todo.memoryId,
+      slot: slot,
     );
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }
 
   /// 调用 [replaceTodayFocus]，将 [todoId] 写入 Today's Focus 的 [slot]；成功后刷新分组列表与 candidates。
-  Future<bool> replaceTodayFocusSlot({required int? slot, required String todoId}) async {
+  Future<bool> replaceTodayFocusSlot({int? slot, required String todoId}) async {
     if (!_isInteractive) {
       return false;
     }
@@ -722,7 +728,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  /// 右滑「Add to Today's Focus」：未满两槽时追加；已满时由页面弹层选择槽位后调用 [replaceTodayFocusSlot]。
+  /// 右滑「Add to Today's Focus」：未满两槽时调用 [addTodayFocusSlot]；已满时由页面弹层选择槽位后调用 [replaceTodayFocusSlot]。
   Future<bool> addTodoToFocus(MPTodayFocusTodoSection section, int index) async {
     if (!_isInteractive) {
       return false;
@@ -743,10 +749,46 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (focusCount >= 2) {
       return false;
     }
-    return replaceTodayFocusSlot(slot: focusCount, todoId: todoId);
+    return addTodayFocusSlot(todoId: todoId);
   }
 
-  /// 从 Today's Focus 移除一条：先调删除接口，成功后立即从卡片移除，再静默拉列表对齐（不走 [refreshGroupedTodoLists] 顶部进度条）。
+  /// 调用 [addTodayFocus] 将 [todoId] 写入 Today's Focus 下一空槽（[slot] 为 `null` 时用 [MPTodayFocusCardData.items.length]，须 &lt; 2）。
+  Future<bool> addTodayFocusSlot({required String todoId}) async {
+    if (!_isInteractive) {
+      return false;
+    }
+    final String tid = todoId.trim();
+    if (tid.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return false;
+    }
+
+    return _runWithBlockingGlobalLoading(() async {
+      try {
+        final AddTodayFocusResponse? resp = await addTodayFocus(
+          AddTodayFocusRequest(todoId: tid),
+        );
+        if (resp == null) {
+          MPToastUtils.showMessage('Couldn\'t update Today\'s Focus. Please try again later.');
+          return false;
+        }
+        if (resp.baseResp.code != 0) {
+          MPToastUtils.showMessage(
+            resp.baseResp.message.isEmpty
+                ? 'Couldn\'t update Today\'s Focus.'
+                : resp.baseResp.message,
+          );
+          return false;
+        }
+        return _silentResyncTodoListsFromServer();
+      } catch (_) {
+        MPToastUtils.showMessage('Couldn\'t update Today\'s Focus. Please try again later.');
+        return false;
+      }
+    });
+  }
+
+  /// 从 Today's Focus 移除一条：调用 [removeTodayFocus] 按槽位移除，成功后更新本地卡片并静默拉列表对齐。
   Future<bool> removeFocusItemAt(int index) async {
     if (!_isInteractive) {
       return false;
@@ -755,14 +797,24 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     if (index < 0 || index >= items.length) {
       return false;
     }
-    final String todoId = items[index].todoId.trim();
-    if (todoId.isEmpty) {
-      MPToastUtils.showMessage('Task ID cannot be empty.');
-      return false;
-    }
+    final MPTodayFocusCardItem item = items[index];
+    final int focusSlot = item.slot ?? index;
     return _runWithBlockingGlobalLoading(() async {
-      final bool ok = await MPTodoManager().deleteTodo(todoId);
-      if (!ok || !_isInteractive || isClosed) {
+      final MPRemoveTodayFocusResponse? resp = await removeTodayFocus(
+        MPRemoveTodayFocusRequest(slot: focusSlot),
+      );
+      if (!_isInteractive || isClosed) {
+        return false;
+      }
+      if (resp == null) {
+        MPToastUtils.showMessage('Couldn\'t remove from Today\'s Focus. Please try again later.');
+        return false;
+      }
+      if (resp.baseResp.code != 0) {
+        final String msg = resp.baseResp.message.trim();
+        MPToastUtils.showMessage(
+          msg.isEmpty ? 'Couldn\'t remove from Today\'s Focus.' : msg,
+        );
         return false;
       }
       final List<MPTodayFocusCardItem> next =
@@ -777,7 +829,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  /// 将当前 AI 推荐加入 Today's Focus（[MPReplaceTodayFocusRequest]）。
+  /// 将当前 AI 推荐加入 Today's Focus：未满两槽时 [addTodayFocusSlot]；已满时 [replaceTodayFocusSlot]。
   ///
   /// [replaceSlot]：Focus 已满（两槽）时由页面弹层传入要替换的槽位下标；未满时传 `null` 表示追加到下一空槽。
   Future<bool> addCurrentAiSuggestionToFocus({int? replaceSlot}) async {
@@ -790,15 +842,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     }
     final String todoId = cur.todoId.trim();
     if (todoId.isEmpty) {
-      MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
-    final int focusCount = state.focusCard.items.length;
-    final int? slot = replaceSlot ?? (focusCount < 2 ? focusCount : null);
-    if (slot == null) {
-      MPToastUtils.showMessage('Today\'s Focus is full. Choose one item to replace.');
-      return false;
-    }
-    return replaceTodayFocusSlot(slot: slot, todoId: todoId);
+    return addTodayFocusSlot(todoId: todoId);
   }
 }

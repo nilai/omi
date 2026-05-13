@@ -169,7 +169,7 @@ Future<GetTodoListResponse?> getTodayFocusCandidates(MPGetTodayFocusCandidatesRe
   if (response == null) return null;
   debugPrint('getTodayFocusCandidates response: ${response.body}');
   if (response.statusCode == 200) {
-    return GetTodoListResponse.fromJson(jsonDecode(response.body));
+    return GetTodoListResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
   return null;
 }

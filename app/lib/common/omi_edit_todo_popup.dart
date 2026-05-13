@@ -57,13 +57,14 @@ class OmiEditTodoPopupParams {
   final int? deadlineUnixSec;
 }
 
-Future<void> showOmiEditTodoPopup(
+/// 关闭编辑弹层后：为 `true` 表示已发生「需同步待办列表」的操作（如 Mark as done 成功）。
+Future<bool> showOmiEditTodoPopup(
   BuildContext context, {
   required OmiEditTodoPopupParams params,
   VoidCallback? onMarkAsDone,
   Future<bool> Function()? onDelete,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -79,7 +80,7 @@ Future<void> showOmiEditTodoPopup(
         onDelete: onDelete,
       );
     },
-  );
+  ).then((bool? value) => value == true);
 }
 
 class _OmiEditTodoPopupSheet extends StatefulWidget {
@@ -544,7 +545,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                   child: Row(
                     children: <Widget>[
                       InkWell(
-                        onTap: () => Navigator.of(context).pop(),
+                        onTap: () => Navigator.of(context).pop(false),
                         borderRadius: BorderRadius.circular(999),
                         child: Padding(
                           padding: const EdgeInsets.all(8),
@@ -583,7 +584,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                               // TODO: Share task
                               break;
                             case OmiTodoMoreAction.delete:
-                              Navigator.of(context).pop();
+                              Navigator.of(context).pop(false);
                               WidgetsBinding.instance.addPostFrameCallback((
                                 _,
                               ) async {
@@ -597,6 +598,11 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                   final bool deleted = await MPTodoManager()
                                       .deleteTodo(todoId);
                                   if (!deleted) return;
+                                  if (widget.onDelete == null) {
+                                    MPHomeNotification.notifyTodoDeleted(
+                                      MPHomeTodoDeletedPayload(todoId: todoId),
+                                    );
+                                  }
                                 }
                                 if (widget.onDelete != null) {
                                   await widget.onDelete!.call();
@@ -763,7 +769,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                   }
                                   if (ok) {
                                     widget.onMarkAsDone?.call();
-                                    Navigator.of(context).pop();
+                                    Navigator.of(context).pop(true);
                                   } else {
                                     setState(() => _isMarkingDone = false);
                                   }
@@ -813,7 +819,7 @@ class _ContextCard extends StatelessWidget {
     if (mid == null || mid <= 0) {
       return;
     }
-    Navigator.of(sheetContext).pop();
+    Navigator.of(sheetContext).pop(false);
     final String memoryIdStr = '$mid';
     final String trimmedTitle = params.contextMemoryTitle.trim();
     WidgetsBinding.instance.addPostFrameCallback((_) {

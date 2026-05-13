@@ -1,4 +1,5 @@
 import '../cache/mp_hive_util.dart';
+import '../cache/omi_cache_manager.dart';
 import '../tab/askai/mp_ask_ai_question_util.dart';
 
 /// 会话初始化入口（登录成功 / 已登录冷启动共用）。
@@ -8,10 +9,11 @@ class MPAppSessionBootstrap {
   /// 执行会话初始化。
   ///
   /// @param fromLoginSuccess `true` 表示登录/注册刚成功；`false` 表示已登录冷启动。
-  /// @returns Future<void>
   static Future<void> run({required bool fromLoginSuccess}) async {
     // 关键步骤：确保当前用户 hive box 可用。
     await MPHiveUtil.instance.initialize();
+    // 与 [OmiServerCache] 内存对齐到当前用户磁盘快照，避免换号后仍读到上一用户内存缓存。
+    await OmiCacheManager().reloadServerCacheFromCurrentUserHive();
 
     // 非关键步骤：后台预热，不阻塞首屏渲染与登录后跳转。
     Future<void>(() async {

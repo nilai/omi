@@ -175,8 +175,32 @@ class GetTodoGroupedListResponse {
   Map<String, dynamic> toJson() => _$GetTodoGroupedListResponseToJson(this);
 }
 
-/// Thrift `GetTodoListResponse`；HTTP 与 [GetTodoGroupedListResponse] 使用同一 JSON 结构。
-typedef GetTodoListResponse = GetTodoGroupedListResponse;
+/// Thrift `GetTodoListResponse`（如 `/api/v2/todo/focus/candidates`）：扁平 `todos` + 分页元数据。
+@JsonSerializable(explicitToJson: true)
+class GetTodoListResponse {
+  @JsonKey(name: 'todos')
+  final List<MPTodoStruct>? todos;
+
+  @JsonKey(name: 'has_more')
+  final bool? hasMore;
+
+  @JsonKey(name: 'total_count')
+  final int? totalCount;
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  GetTodoListResponse({
+    this.todos,
+    this.hasMore,
+    this.totalCount,
+    required this.baseResp,
+  });
+
+  factory GetTodoListResponse.fromJson(Map<String, dynamic> json) => _$GetTodoListResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$GetTodoListResponseToJson(this);
+}
 
 @JsonSerializable()
 class TodoListSectionStruct {
@@ -355,4 +379,55 @@ class MPReplaceTodayFocusResponse {
   factory MPReplaceTodayFocusResponse.fromJson(Map<String, dynamic> json) => _$MPReplaceTodayFocusResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPReplaceTodayFocusResponseToJson(this);
+}
+
+@JsonSerializable()
+class MPRemoveTodayFocusRequest {
+  @JsonKey(name: 'slot')
+  int? slot;
+
+  MPRemoveTodayFocusRequest({this.slot});
+
+  factory MPRemoveTodayFocusRequest.fromJson(Map<String, dynamic> json) => _$MPRemoveTodayFocusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRemoveTodayFocusRequestToJson(this);
+}
+
+/// POST `/api/v2/todo/focus/remove` 响应。
+@JsonSerializable()
+class MPRemoveTodayFocusResponse {
+
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPRemoveTodayFocusResponse({required this.baseResp});
+
+  factory MPRemoveTodayFocusResponse.fromJson(Map<String, dynamic> json) => _$MPRemoveTodayFocusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPRemoveTodayFocusResponseToJson(this);
+}
+
+@JsonSerializable()
+class AddTodayFocusRequest {
+
+  @JsonKey(name: 'todo_id')
+  String? todoId;
+
+  AddTodayFocusRequest({this.todoId});
+
+  factory AddTodayFocusRequest.fromJson(Map<String, dynamic> json) => _$AddTodayFocusRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AddTodayFocusRequestToJson(this);
+}
+
+@JsonSerializable()
+class AddTodayFocusResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  AddTodayFocusResponse({required this.baseResp});
+
+  factory AddTodayFocusResponse.fromJson(Map<String, dynamic> json) => _$AddTodayFocusResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$AddTodayFocusResponseToJson(this);
 }

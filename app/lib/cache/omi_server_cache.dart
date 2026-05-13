@@ -51,6 +51,8 @@ class OmiCacheKeys {
 /// - **内存**：读写与 [totalSizeBytes] 均基于内存中的 Map
 /// - **磁盘**：应用冷启动前请先 `await OmiServerCache().initialize()`，从磁盘恢复到内存；每次
 ///   [putJson] / [remove] / [clear] / [removeWhere] 后会异步写入磁盘（排队串行，避免并发写坏文件）
+/// - **多账号**：Hive 按用户分箱；换号后须 [finalizeBeforeLogoutKeepDiskCaches]（登出前）与
+///   [reloadMemoryFromCurrentUserHive]（已打开新用户 box 后），否则内存仍为上一用户视图。
 ///
 /// - 适用：接口返回的 `Map` / `List` / 基础类型等可被 [jsonEncode] 的数据
 /// - 体积：[totalSizeBytes] 为所有 key + value 字符串的 UTF-8 字节数近似值（与落盘 JSON 体量一致）
@@ -80,6 +82,27 @@ class OmiServerCache {
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
+    await _hydrateFromHive();
+  }
+
+  /// 在已 `await MPHiveUtil.instance.initialize()` 打开**当前登录用户**的 box 之后调用：
+  /// 清空内存表并从该用户 Hive 重新灌入，保证 [getDecoded] 与后续落盘均对应当前用户。
+  ///
+  /// 不删除任何用户磁盘上的缓存条目。
+  Future<void> reloadMemoryFromCurrentUserHive() async {
+    _store.clear();
+    await _hydrateFromHive();
+  }
+
+  /// 退出登录前调用（须在清除本地用户会话、关闭 Hive 之前）：
+  /// 1) 等待排队中的落盘写完（写入**当前**用户 box）；
+  /// 2) 清空内存且不触发落盘，避免用空表覆盖磁盘上已缓存的接口数据。
+  Future<void> finalizeBeforeLogoutKeepDiskCaches() async {
+    await _drainPersistenceQueue();
+    _store.clear();
+  }
+
+  Future<void> _hydrateFromHive() async {
     try {
       final String? text = await MPHiveUtil.instance.getString(_hiveKey);
       if (text == null || text.trim().isEmpty) return;
@@ -93,6 +116,16 @@ class OmiServerCache {
       }
     } catch (_) {
       // 读取失败时仅使用内存缓存
+    }
+  }
+
+  Future<void> _drainPersistenceQueue() async {
+    while (true) {
+      final Future<void> tail = _persistChain;
+      await tail;
+      if (identical(_persistChain, tail)) {
+        return;
+      }
     }
   }
 

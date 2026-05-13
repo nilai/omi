@@ -101,6 +101,25 @@ Map<String, dynamic> _$GetTodoGroupedListResponseToJson(
   'incomplete_count': instance.incompleteCount,
 };
 
+GetTodoListResponse _$GetTodoListResponseFromJson(Map<String, dynamic> json) =>
+    GetTodoListResponse(
+      todos: (json['todos'] as List<dynamic>?)
+          ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      hasMore: json['has_more'] as bool?,
+      totalCount: (json['total_count'] as num?)?.toInt(),
+      baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+    );
+
+Map<String, dynamic> _$GetTodoListResponseToJson(
+  GetTodoListResponse instance,
+) => <String, dynamic>{
+  'todos': instance.todos?.map((e) => e.toJson()).toList(),
+  'has_more': instance.hasMore,
+  'total_count': instance.totalCount,
+  'base_resp': instance.baseResp.toJson(),
+};
+
 TodoListSectionStruct _$TodoListSectionStructFromJson(
   Map<String, dynamic> json,
 ) => TodoListSectionStruct(
@@ -256,4 +275,40 @@ MPReplaceTodayFocusResponse _$MPReplaceTodayFocusResponseFromJson(
 
 Map<String, dynamic> _$MPReplaceTodayFocusResponseToJson(
   MPReplaceTodayFocusResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};
+
+MPRemoveTodayFocusRequest _$MPRemoveTodayFocusRequestFromJson(
+  Map<String, dynamic> json,
+) => MPRemoveTodayFocusRequest(slot: (json['slot'] as num?)?.toInt());
+
+Map<String, dynamic> _$MPRemoveTodayFocusRequestToJson(
+  MPRemoveTodayFocusRequest instance,
+) => <String, dynamic>{'slot': instance.slot};
+
+MPRemoveTodayFocusResponse _$MPRemoveTodayFocusResponseFromJson(
+  Map<String, dynamic> json,
+) => MPRemoveTodayFocusResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPRemoveTodayFocusResponseToJson(
+  MPRemoveTodayFocusResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};
+
+AddTodayFocusRequest _$AddTodayFocusRequestFromJson(
+  Map<String, dynamic> json,
+) => AddTodayFocusRequest(todoId: json['todo_id'] as String?);
+
+Map<String, dynamic> _$AddTodayFocusRequestToJson(
+  AddTodayFocusRequest instance,
+) => <String, dynamic>{'todo_id': instance.todoId};
+
+AddTodayFocusResponse _$AddTodayFocusResponseFromJson(
+  Map<String, dynamic> json,
+) => AddTodayFocusResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$AddTodayFocusResponseToJson(
+  AddTodayFocusResponse instance,
 ) => <String, dynamic>{'base_resp': instance.baseResp};

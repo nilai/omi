@@ -121,3 +121,37 @@ Future<MPReplaceTodayFocusResponse?> replaceTodayFocus(MPReplaceTodayFocusReques
   }
   return null;
 }
+
+Future<MPRemoveTodayFocusResponse?> removeTodayFocus(MPRemoveTodayFocusRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/todo/focus/remove',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('removeTodayFocus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPRemoveTodayFocusResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+  return null;
+}
+
+Future<AddTodayFocusResponse?> addTodayFocus(AddTodayFocusRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v2/todo/focus/add',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('addTodayFocus response: ${response.body}');
+  if (response.statusCode == 200) {
+    return AddTodayFocusResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+  return null;
+}

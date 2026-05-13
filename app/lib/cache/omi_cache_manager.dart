@@ -4,7 +4,15 @@ class OmiCacheManager {
   /// 从磁盘恢复缓存到内存；请在 `runApp` 前 `await` 一次（需先 [WidgetsFlutterBinding.ensureInitialized]）
   Future<void> initialize() => OmiServerCache().initialize();
 
-      /// 缓存首页第一页数据
+  /// 在 `await MPHiveUtil.instance.initialize()` 之后调用：内存切换为当前用户 Hive 中的快照（不删各用户磁盘缓存）。
+  Future<void> reloadServerCacheFromCurrentUserHive() =>
+      OmiServerCache().reloadMemoryFromCurrentUserHive();
+
+  /// 退出登录前调用（须在清会话、关 Hive 之前）：排空落盘后清空内存，不写空表落盘，保留磁盘缓存。
+  Future<void> finalizeServerCacheBeforeLogoutKeepDisk() =>
+      OmiServerCache().finalizeBeforeLogoutKeepDiskCaches();
+
+  /// 缓存首页第一页数据
   void putHomeFirstPage(Object? value) => OmiServerCache().putJson(OmiCacheKeys.homeFirstPage, value);
 
   /// 读取首页第一页数据

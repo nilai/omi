@@ -39,7 +39,6 @@ class MPTodayFocusAddCard extends StatelessWidget {
           color: lineColor,
           height: 1,
         ),
-        const SizedBox(height: 16),
         Container(
           width: double.infinity,
           decoration: BoxDecoration(

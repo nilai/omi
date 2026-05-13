@@ -12,6 +12,7 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
+import '../../../common/mp_home_notification.dart';
 import '../../../http/schema/mp_memory.dart';
 import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
@@ -31,13 +32,27 @@ class MPTodayFocusPage extends StatefulWidget {
 class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   late final MPTodayFocusCubit _cubit = MPTodayFocusCubit()..initData();
 
+  StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
+
   /// 本次进入页面内关闭 AI 推荐卡后不再展示；离开页面再进入会重置。
   bool _aiAddCardDismissedThisSession = false;
 
   bool _addingAiFocus = false;
 
   @override
+  void initState() {
+    super.initState();
+    _todoDeletedSub = MPHomeNotification.listenTodoDeleted((MPHomeTodoDeletedPayload _) {
+      if (!mounted) {
+        return;
+      }
+      unawaited(_cubit.refreshGroupedTodoLists());
+    });
+  }
+
+  @override
   void dispose() {
+    _todoDeletedSub?.cancel();
     _cubit.close();
     super.dispose();
   }
@@ -67,7 +82,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   }
 
   /// 拉取关联 Memory 简要信息后弹出编辑 Todo（CONTEXT / memoryId / type 与首页一致）。
-  Future<void> _showOmiEditTodoPopupWithMemoryContext({
+  /// 返回 `true` 表示弹层内因「Mark as done」等已触发需全量同步列表（与 [showOmiEditTodoPopup] 一致）。
+  Future<bool> _showOmiEditTodoPopupWithMemoryContext({
     required int? memoryId,
     required String title,
     required String notes,
@@ -77,12 +93,12 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     Future<bool> Function()? onDelete,
   }) async {
     if (!mounted) {
-      return;
+      return false;
     }
     final MPGetMemoryV2SimpleInfoResponse? simpleMemory =
         await _cubit.loadMemorySimpleInfoNetworkOrHive(memoryId);
     if (!mounted) {
-      return;
+      return false;
     }
     final MPMemorySimpleInfoStruct? mi =
         (simpleMemory != null && simpleMemory.baseResp?.code == 0) ? simpleMemory.memoryInfo : null;
@@ -97,7 +113,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     final String contextMemoryLabel = mi != null ? 'From memory:' : '';
     final String resolvedTimeLabel = timeLabel.trim().isEmpty ? '--:--' : timeLabel;
 
-    await showOmiEditTodoPopup(
+    return showOmiEditTodoPopup(
       context,
       params: OmiEditTodoPopupParams(
         title: title,
@@ -131,17 +147,14 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         return;
       }
       setState(() => _addingAiFocus = false);
-      if (!ok) {
-        MPToastUtils.showMessage('Couldn\'t add.');
-      }
     }
 
-    if (s.focusCard.items.length >= 2) {
+    if (s.focusCard.items.length >= 3) {
       showMPTodayFocusFullSheet(
         context,
         items: s.focusCard.items.take(3).toList(),
-        onSelect: (int focusIndex, MPTodayFocusCardItem _) {
-          unawaited(runAdd(replaceSlot: focusIndex));
+        onSelect: (int replaceSlot, MPTodayFocusCardItem _) {
+          unawaited(runAdd(replaceSlot: replaceSlot));
         },
       );
       return;
@@ -150,7 +163,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   }
 
   Future<void> _onTapFocusItem(int index, MPTodayFocusCardItem item) async {
-    await _showOmiEditTodoPopupWithMemoryContext(
+    final bool mutated = await _showOmiEditTodoPopupWithMemoryContext(
       memoryId: item.memoryId,
       title: item.title,
       notes: item.subtext,
@@ -162,6 +175,12 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         return ok;
       },
     );
+    if (!mounted) {
+      return;
+    }
+    if (mutated) {
+      await _cubit.refreshListsAfterMutation();
+    }
   }
 
   Future<void> _onTapTodoItem(
@@ -206,7 +225,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       );
       return;
     }
-    await _showOmiEditTodoPopupWithMemoryContext(
+    final bool mutated = await _showOmiEditTodoPopupWithMemoryContext(
       memoryId: row.memoryId,
       title: row.title,
       notes: '',
@@ -217,7 +236,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     if (!mounted) {
       return;
     }
-    await _cubit.refreshListsAfterMutation();
+    if (mutated) {
+      await _cubit.refreshListsAfterMutation();
+    }
   }
 
   @override
@@ -342,16 +363,15 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                           }
                           final String todoId =
                               state.todayItems[index].todoId.trim();
-                          final int? slot = state.todayItems[index].slot;
                           if (todoId.isEmpty) {
                             MPToastUtils.showMessage('Task ID cannot be empty.');
                             return;
                           }
-                          if (state.focusCard.items.length >= 2) {
+                          if (state.focusCard.items.length >= 3) {
                             showMPTodayFocusFullSheet(
                               context,
                               items: state.focusCard.items.take(3).toList(),
-                              onSelect: (int focusIndex, MPTodayFocusCardItem _) {
+                              onSelect: (int slot, MPTodayFocusCardItem _) {
                                 unawaited(() async {
                                   final bool ok = await _cubit.replaceTodayFocusSlot(
                                     slot: slot,
@@ -360,28 +380,17 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                                   if (!mounted) {
                                     return;
                                   }
-                                  if (!ok) {
-                                    MPToastUtils.showMessage(
-                                      'Couldn\'t add to Today\'s Focus.',
-                                    );
-                                  }
                                 }());
                               },
                             );
                             return;
                           }
                               unawaited(() async {
-                                  final bool ok = await _cubit.replaceTodayFocusSlot(
-                                    slot: slot,
+                                  final bool ok = await _cubit.addTodayFocusSlot(
                                     todoId: todoId,
                                   );
                                   if (!mounted) {
                                     return;
-                                  }
-                                  if (!ok) {
-                                    MPToastUtils.showMessage(
-                                      'Couldn\'t add to Today\'s Focus.',
-                                    );
                                   }
                                 }());
                         },
