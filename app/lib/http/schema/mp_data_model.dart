@@ -196,7 +196,7 @@ class MPTodoStruct {
   final int? memoryId;
 
   @JsonKey(name: 'insight_id')
-  final int? insightId;
+  final String? insightId;
 
   @JsonKey(name: 'slot')
   final int? slot;

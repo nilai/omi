@@ -482,6 +482,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       slot: t.slot,
+      
     );
   }
 
