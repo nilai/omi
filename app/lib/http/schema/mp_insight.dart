@@ -325,6 +325,72 @@ class MPGetInsightSuggestionResponse {
       };
 }
 
+/// Insight 简易详情请求（后端 `GetInsightSimpleDetailRequest`）。
+class MPGetInsightSimpleDetailRequest {
+  MPGetInsightSimpleDetailRequest({
+    required this.todoId,
+  });
+
+  final String todoId;
+
+  /// 从 JSON 解析。
+  factory MPGetInsightSimpleDetailRequest.fromJson(Map<String, dynamic> json) {
+    return MPGetInsightSimpleDetailRequest(
+      todoId: _mpAsString(json['todo_id']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'todo_id': todoId,
+      };
+}
+
+/// Insight 简易详情响应（后端 `GetInsightSimpleDetailResponse`）。
+class MPGetInsightSimpleDetailResponse {
+  MPGetInsightSimpleDetailResponse({
+    required this.title,
+    required this.label,
+    required this.recordCreateAt,
+    required this.type,
+    required this.baseResp,
+  });
+
+  final String title;
+
+  final String label;
+
+  /// 与 [MPMemorySimpleInfoStruct.recordCreateAt] 一致：服务端可为秒或毫秒时间戳。
+  final int recordCreateAt;
+
+  /// 与后端 Insight / Memory 类型取值一致（`i32`）。
+  final int type;
+
+  final MPBaseResp baseResp;
+
+  /// 从 JSON 解析。
+  factory MPGetInsightSimpleDetailResponse.fromJson(Map<String, dynamic> json) {
+    return MPGetInsightSimpleDetailResponse(
+      title: _mpAsString(json['title']),
+      label: _mpAsString(json['label']),
+      recordCreateAt: _mpAsInt(json['record_create_at']),
+      type: _mpAsInt(json['type']),
+      baseResp: MPBaseResp.fromJson(
+        _mpAsMap(json['base_resp']),
+      ),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'title': title,
+        'label': label,
+        'record_create_at': recordCreateAt,
+        'type': type,
+        'base_resp': baseResp.toJson(),
+      };
+}
+
 /// 删除 Insight 请求（后端 `DeleteInsightRequest`）。
 class MPDeleteInsightRequest {
   MPDeleteInsightRequest({
