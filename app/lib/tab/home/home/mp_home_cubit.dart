@@ -3,7 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:memo_pin/audio/import/mp_ble_device_audio_import_utils.dart';
+import 'package:memo_pin/blu/mp_ble_file_util.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
@@ -385,7 +385,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
-  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后拉取设备文件 → 沙盒 → 上传 → 删设备端文件。
+  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus。
   Future<void> _onBleConnectedSuccess() async {
     if (_bleDeviceImportRunning || isClosed) {
       return;
@@ -401,7 +401,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       if (!isClosed) {
         emit(state.copyWith(isBleConnected: true));
       }
-      await MPBleDeviceAudioImportUtils.syncUploadAndDeleteDeviceFiles(
+      await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
         onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
           if (!isClosed) {

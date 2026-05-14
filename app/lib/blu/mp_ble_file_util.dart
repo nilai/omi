@@ -47,8 +47,8 @@ class MPBleFileUtil {
   }
 
   /// 拉取列表 → 按 Opus 逐条导出 `.opus` 与同名 `.txt` 至 [ensureMemoPinDeviceAudioDirectoryPath] → 转 MP3 →
-  /// 写入 [MPAudioLocalRecord]（含 [MPAudioLocalRecord.mp3Path] / [MPAudioLocalRecord.txtPath]）→
-  /// [MPHomeNotification.notifyHomeListRefresh] → 上传队列（与 [MPBleDeviceAudioImportUtils.syncUploadAndDeleteDeviceFiles] 类似，但含 txt 与 MP3 字段）。
+  /// 写入 [MPAudioLocalRecord]（含 [MPAudioLocalRecord.mp3Path]、[MPAudioLocalRecord.txtPath]、转码后主路径）→
+  /// [MPHomeNotification.notifyHomeListRefresh] → 上传队列。
   static Future<void> syncDeviceOpusTxtToSandboxRegisterAndUpload({
     required BleTransport transport,
     required MPBleFileUtilCopyProgress onSyncProgress,
@@ -161,6 +161,7 @@ class MPBleFileUtil {
         await MPAudioLocalRecordsUtil.instance.add(
           MPAudioLocalRecord(
             path: audioPathForRecord,
+            mp3Path: mp3Path,
             txtPath: txtPathWritten,
             fileName: opusInfo.name,
             createAt: createAtSec,
@@ -501,6 +502,7 @@ class MPBleLiveRecordingSession {
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: audioPath,
+        mp3Path: mp3Path,
         fileName: p.basename(opusPath),
         createAt: createAtSec,
         duration: durationSec,
