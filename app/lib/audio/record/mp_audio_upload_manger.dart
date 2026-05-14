@@ -157,8 +157,19 @@ class MPAudioUploadManager {
         final int createAtSec = _createAtSecondsFromRecord(record);
 
         final String audioStem = p.basenameWithoutExtension(f.path);
-        final File? txtCompanion = stemToTxt[audioStem];
-        final MPAudioLocalRecord? txtMeta = stemToTxtRecord[audioStem];
+        File? txtCompanion;
+        MPAudioLocalRecord? txtMeta;
+        final String? embeddedTxt = record.txtPath?.trim();
+        if (embeddedTxt != null && embeddedTxt.isNotEmpty) {
+          final File tf = File(embeddedTxt);
+          if (await tf.exists()) {
+            txtCompanion = tf;
+          }
+        }
+        if (txtCompanion == null) {
+          txtCompanion = stemToTxt[audioStem];
+          txtMeta = stemToTxtRecord[audioStem];
+        }
         final bool hasTxt = txtCompanion != null && await txtCompanion.exists();
 
         _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 0);

@@ -111,6 +111,105 @@ class MPNoteBleGattClient {
     return null;
   }
 
+  /// 读取 `e2c1a310` 录音状态（Read；部分固件亦可能推送 notify）。
+  Future<MPBleMemopinRecordStatus310> readRecordStatus310() async {
+    final List<int> raw = await _transport.readCharacteristic(
+      MPNoteBleUUIDs.service,
+      MPNoteBleUUIDs.recordStatus,
+    );
+    return MPBleMemopinRecordStatus310.parse(raw);
+  }
+
+  /// 发送 `[0x01,0,0]` 主动开始录音（仅产生 **memory/normal** 类会话，见协议说明）。
+  Future<MPBleRecordingStartInfo?> sendStartRecording({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final List<int> response = await _sendCommandWithResponse(
+      <int>[MPNoteBleCommands.startRecording, 0x00, 0x00],
+      awaitKind: _AwaitKind.generic,
+      timeout: timeout,
+    );
+    return MPBleRecordingStartInfo.tryParse(response);
+  }
+
+  /// 发送 `[0x02,0x00]` 结束录音。
+  ///
+  /// 返回设备给出的文件名（UTF-8）；失败为 `null`。
+  Future<String?> sendStopRecording({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final List<int> response = await _sendCommandWithResponse(
+      <int>[MPNoteBleCommands.stopRecording, 0x00],
+      awaitKind: _AwaitKind.generic,
+      timeout: timeout,
+    );
+    if (response.length >= 5 &&
+        response[0] == MPNoteBleCommands.stopRecording &&
+        response[2] == 0x01) {
+      try {
+        return utf8.decode(response.sublist(4));
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// 设置 `0x0D` 推流策略（仅录音 / 边录边传）；成功返回 `true`。
+  Future<bool> setRecordingTransportMode(
+    int modeByte, {
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final List<int> response = await _sendCommandWithResponse(
+      <int>[MPNoteBleCommands.setRecordingTransportMode, modeByte & 0xff],
+      awaitKind: _AwaitKind.generic,
+      timeout: timeout,
+    );
+    return response.length >= 3 &&
+        response[0] == MPNoteBleCommands.setRecordingTransportMode &&
+        response[1] == (modeByte & 0xff) &&
+        response[2] == 0x01;
+  }
+
+  /// 发送补传请求 `0x20`（Seq **大端**）；不等待业务完成，补传帧经 `e2c1a303` 等通道到达。
+  Future<void> sendRetransmitAudioRequest(
+    String fileName,
+    int startSeqInclusive,
+    int endSeqInclusive,
+  ) async {
+    final List<int> nb = utf8.encode(fileName);
+    if (nb.isEmpty || nb.length > 32) {
+      return;
+    }
+    int s = startSeqInclusive;
+    int e = endSeqInclusive;
+    if (s < 0) {
+      s = 0;
+    }
+    if (e < s) {
+      return;
+    }
+    final List<int> cmd = <int>[
+      MPNoteBleCommands.retransmitAudio,
+      nb.length,
+      ...nb,
+      (s >> 24) & 0xff,
+      (s >> 16) & 0xff,
+      (s >> 8) & 0xff,
+      s & 0xff,
+      (e >> 24) & 0xff,
+      (e >> 16) & 0xff,
+      (e >> 8) & 0xff,
+      e & 0xff,
+    ];
+    await _ensureResponseSubscription();
+    await _transport.writeCharacteristicWithoutResponse(
+      MPNoteBleUUIDs.service,
+      MPNoteBleUUIDs.command,
+      cmd,
+    );
+  }
+
   /// 获取设备端录音文件列表（命令 `0x03`，支持多包拼接）。
   Future<List<NoteFileInfo>> getFileList({
     Duration timeout = const Duration(seconds: 10),
@@ -238,6 +337,11 @@ class MPNoteBleGattClient {
         _responseCompleter != null &&
         !_responseCompleter!.isCompleted) {
       if (packet[0] == MPNoteBleCommands.getFileList) {
+        return;
+      }
+      if (packet[0] == MPNoteBleCommands.retransmitAudio ||
+          packet[0] == 0x21 ||
+          packet[0] == 0x22) {
         return;
       }
       _responseCompleter!.complete(packet);

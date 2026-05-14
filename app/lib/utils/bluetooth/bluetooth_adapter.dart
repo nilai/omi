@@ -10,7 +10,7 @@ class BluetoothAdapterStateHelper {
 
 /// 对 [FlutterBluePlus] 的薄封装：统一扫描、适配器状态与开关入口。
 ///
-/// 供 [BleTransport]、[BluetoothDeviceDiscoverer] 及 [MPBluetoothConnectionHelper] 复用。
+/// 供 [BleTransport]、[BluetoothDeviceDiscoverer] 及 [MPBleConnectionHelper] 复用。
 class BluetoothAdapter {
   BluetoothAdapter._();
 

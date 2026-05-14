@@ -25,6 +25,13 @@ import 'mp_insights_list_cubit.dart';
 /// Insights 详情页状态
 enum MPInsightDetailPhase { loading, loaded, error }
 
+class MPInsightTodoContentStruct {
+  const MPInsightTodoContentStruct({required this.label, required this.title, required this.metaLine});
+  final String? label;
+  final String? title;
+  final String? metaLine;
+}
+
 /// 详情页状态
 class MPInsightDetailState {
   const MPInsightDetailState({required this.phase, this.data, this.errorMessage});
@@ -42,15 +49,6 @@ class MPInsightDetailState {
       MPInsightDetailState(phase: MPInsightDetailPhase.error, errorMessage: message);
 }
 
-/// 「加入 Todo」入口统一载荷：文案与可选截止时间（Unix 秒）。
-class MPInsightTodoLineItem {
-  const MPInsightTodoLineItem({required this.text, this.deadLine});
-
-  final String text;
-
-  final int? deadLine;
-}
-
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
 class MPInsightDetailData {
   const MPInsightDetailData({
@@ -61,14 +59,13 @@ class MPInsightDetailData {
     this.weekly,
     this.monthly,
     this.memoryId,
-    this.memoryInfo,
   });
 
   final MPInsightListItem item;
   final List<String> paragraphs;
 
-  /// Pattern「Suggested Next Step」等：每项含文案与可选截止时间。
-  final List<MPInsightTodoLineItem> tips;
+  /// Pattern「Suggested Next Step」等：每项为 [MPTodoStruct]（展示用 [MPTodoStruct.title]）。
+  final List<MPTodoStruct> tips;
 
   /// Daily 详情页专用结构化数据（其它类型为 null）
   final MPDailyInsightDetailData? daily;
@@ -82,19 +79,15 @@ class MPInsightDetailData {
   /// 关联 memory id（来自详情接口 [MPInsightDetailStruct.memoryId]）。
   final int? memoryId;
 
-  /// Memory 简要信息；可能异步填充。
-  final MPGetMemoryV2SimpleInfoResponse? memoryInfo;
-
   /// 复制并可选覆盖字段。
   MPInsightDetailData copyWith({
     MPInsightListItem? item,
     List<String>? paragraphs,
-    List<MPInsightTodoLineItem>? tips,
+    List<MPTodoStruct>? tips,
     MPDailyInsightDetailData? daily,
     MPWeeklyInsightDetailData? weekly,
     MPMonthlyInsightDetailData? monthly,
     int? memoryId,
-    MPGetMemoryV2SimpleInfoResponse? memoryInfo,
   }) {
     return MPInsightDetailData(
       item: item ?? this.item,
@@ -104,18 +97,8 @@ class MPInsightDetailData {
       weekly: weekly ?? this.weekly,
       monthly: monthly ?? this.monthly,
       memoryId: memoryId ?? this.memoryId,
-      memoryInfo: memoryInfo ?? this.memoryInfo,
     );
   }
-}
-
-/// Daily 详情页中的可执行建议（Tomorrow's focus）
-class MPDailyFocusItem {
-  const MPDailyFocusItem({required this.text, this.deadLine});
-
-  final String text;
-
-  final int? deadLine;
 }
 
 /// Daily 详情页结构化数据
@@ -154,7 +137,7 @@ class MPDailyInsightDetailData {
   final List<String> ideasCaptured;
 
   /// Tomorrow's focus（支持 Add to Todo）
-  final List<MPDailyFocusItem> tomorrowFocus;
+  final List<MPTodoStruct> tomorrowFocus;
 
   /// 底部按钮文案
   final String askAiButtonText;
@@ -170,13 +153,11 @@ class MPWeeklyMetricItem {
 
 /// Weekly 详情页中的优先事项
 class MPWeeklyPriorityItem {
-  const MPWeeklyPriorityItem({required this.text, required this.subtitle, this.visible = true, this.deadLine});
+  const MPWeeklyPriorityItem({required this.todo, this.visible = true});
 
-  final String text;
-  final String subtitle;
+  final MPTodoStruct todo;
+
   final bool visible;
-
-  final int? deadLine;
 }
 
 /// Weekly 详情页中的完成项
@@ -302,16 +283,6 @@ class MPMonthlyDecisionItem {
   final String text;
 }
 
-/// Monthly 详情页卡片中的条目：下月关注建议
-class MPMonthlySuggestedFocusItem {
-  const MPMonthlySuggestedFocusItem({required this.rank, required this.text, this.deadLine});
-
-  final int rank;
-  final String text;
-
-  final int? deadLine;
-}
-
 /// Monthly 详情页结构化数据
 class MPMonthlyInsightDetailData {
   const MPMonthlyInsightDetailData({
@@ -372,7 +343,7 @@ class MPMonthlyInsightDetailData {
   final String decisionsThatCannotSlipAgainSummary;
 
   /// Suggested Focus Next Month
-  final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth;
+  final List<MPTodoStruct> suggestedFocusNextMonth;
 
   /// 底部按钮文案
   final String askAiButtonText;
@@ -392,99 +363,26 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
     return await getMemoryV2SimpleInfo(MPGetMemoryV2SimpleInfoRequest(memoryId: memoryId));
   }
 
-  /// 先请求网络，成功则写入 Hive；失败则尝试读 Hive。
-  Future<MPGetMemoryV2SimpleInfoResponse?> loadMemorySimpleInfoNetworkOrHive(int memoryId) async {
-    final MPGetMemoryV2SimpleInfoResponse? net = await fetchMemoryV2SimpleInfo('$memoryId');
-    if (net != null && net.baseResp?.code == 0) {
-      await MPHiveUtil.instance.putMap(key: memorySimpleInfoHiveKey(memoryId), value: net.toJson());
-      return net;
-    }
-    final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(memorySimpleInfoHiveKey(memoryId));
-    if (cached == null) {
-      return null;
-    }
-    try {
-      final MPGetMemoryV2SimpleInfoResponse restored = MPGetMemoryV2SimpleInfoResponse.fromJson(cached);
-      if (restored.baseResp?.code == 0) {
-        return restored;
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  /// 通过回调拿到 [memoryInfo]：已有则立即回调；否则走网络并在失败时用 Hive。
-  Future<void> resolveMemoryInfo(void Function(MPGetMemoryV2SimpleInfoResponse? info) onResult) async {
-    final MPInsightDetailData? data = state.data;
-    if (data == null) {
-      onResult(null);
-      return;
-    }
-    if (data.memoryInfo != null) {
-      onResult(data.memoryInfo);
-      return;
-    }
-    final int? mid = data.memoryId;
-    if (mid == null) {
-      onResult(null);
-      return;
-    }
-    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(mid);
-    if (!isClosed && state.data != null && state.data!.item.id == data.item.id && info != null) {
-      emit(MPInsightDetailState.loaded(state.data!.copyWith(memoryInfo: info)));
-    }
-    onResult(info);
-  }
-
   /// 弹出添加 Todo；成功 / 失败会 Toast，返回结果供详情页更新「已添加」等本地 UI。
-  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPInsightTodoLineItem line, BuildContext context) async {
-    Completer<MPAddTodoPopupResult?> completer = Completer<MPAddTodoPopupResult?>();
-    resolveMemoryInfo((MPGetMemoryV2SimpleInfoResponse? info) async {
-      final MPGetMemoryV2SimpleInfoResponse? ok = (info != null && info.baseResp?.code == 0) ? info : null;
-      final MPMemorySimpleInfoStruct? mi = ok?.memoryInfo;
-      final String contextMemoryTitle = mi?.title ?? '';
-      final String contextMetaLine = mi != null
-          ? MPDateUtils.buildMemorySimpleContextMetaLine(
-              recordCreateAt: mi.recordCreateAt,
-              duration: mi.duration,
-              label: mi.label,
-            )
-          : '';
-      final String contextMemoryLabel = contextMetaLine.isNotEmpty || contextMemoryTitle.isNotEmpty
-          ? 'From memory:'
-          : '';
-      final String memoryId = state.data?.memoryId.toString() ?? '';
-
+  Future<MPAddTodoPopupResult?> showAddTodoPopup(MPTodoStruct todo, BuildContext context, MPInsightTodoContentStruct? content) async {
       final MPAddTodoPopupResult? result = await showMPAddTodoPopup(
         context,
         params: MPAddTodoPopupParams(
-          initialTitle: line.text.trim(),
-          initialDeadlineTimestamp: line.deadLine,
-          contextMemoryLabel: contextMemoryLabel,
-          contextMemoryTitle: contextMemoryTitle,
-          contextMetaLine: contextMetaLine,
-          memoryId: memoryId,
-          memoryType: mi?.type,
+          initialTitle: (todo.title ?? '').trim(),
+          initialDeadlineTimestamp: todo.deadline,
+          contextMemoryLabel: content?.label ?? '',
+          contextMemoryTitle: content?.title ?? '',
+          contextMetaLine: content?.metaLine ?? '',
+          insightId: insightItem.id,
         ),
         onContextTap: () {
           Navigator.of(context).pop();
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!context.mounted) {
-              return;
-            }
-            MPMemoryDetailPageHelper.navigateToDetailPage(context, memoryId, mi?.type ?? MPMemoryType.memoryFeed);
-          });
         },
       );
       if (!context.mounted) {
-        completer.complete(result);
-        return;
+        return null;
       }
-      if (result != null) {
-        MPToastUtils.showMessage('To-do created.');
-      } 
-      completer.complete(result);
-    });
-    return completer.future;
+      return result;
   }
 
   /// 并发获取建议问题与最近会话，并跳转 AskAI 聊天页。
@@ -615,16 +513,13 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
 
   /// 异步填充 [MPInsightDetailData.memoryInfo]：网络成功写 Hive，失败读 Hive。
   Future<void> _refreshMemorySimpleInfoAfterInit(MPInsightDetailData seed, int memoryId) async {
-    final MPGetMemoryV2SimpleInfoResponse? info = await loadMemorySimpleInfoNetworkOrHive(memoryId);
+
     if (isClosed) {
       return;
     }
     final MPInsightDetailData? cur = state.data;
     if (cur == null || cur.item.id != seed.item.id) {
       return;
-    }
-    if (info != null) {
-      emit(MPInsightDetailState.loaded(cur.copyWith(memoryInfo: info)));
     }
   }
 
@@ -693,9 +588,6 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .map((MPDailyInsightTextItemStruct e) => e.content)
         .where((String e) => e.isNotEmpty)
         .toList();
-    final List<MPDailyFocusItem> tomorrowFocus = detail.tomorrowFocus
-        .map((MPInsightTodoTextItemStruct e) => MPDailyFocusItem(text: e.text, deadLine: e.deadLine))
-        .toList();
 
     return MPInsightDetailData(
       item: item,
@@ -709,7 +601,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         openQuestions: openQuestions,
         patternsEmerging: detail.patternsEmerging.content,
         ideasCaptured: ideasCaptured,
-        tomorrowFocus: tomorrowFocus,
+        tomorrowFocus: detail.tomorrowFocus,
         askAiButtonText: 'Ask AI about today',
       ),
       memoryId: memoryId,
@@ -756,10 +648,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         )
         .toList();
     final List<MPWeeklyPriorityItem> nextWeekPriorities = detail.nextWeekPriorities
-        .map(
-          (MPWeeklyInsightPriorityItemStruct e) =>
-              MPWeeklyPriorityItem(text: e.title, subtitle: e.subTitle ?? '', visible: true, deadLine: e.deadLine),
-        )
+        .map((MPTodoStruct e) => MPWeeklyPriorityItem(todo: e, visible: true))
         .toList();
     final List<MPWeeklyExpertFeedbackItem> expertFeedback = detail.expertWeeklyFeedback
         .map(
@@ -827,14 +716,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         .entries
         .map((MapEntry<int, String> e) => MPMonthlyDecisionItem(rank: e.key + 1, text: e.value))
         .toList();
-    final List<MPMonthlySuggestedFocusItem> suggestedFocusNextMonth = detail.suggestedFocusNextMonth
-        .asMap()
-        .entries
-        .map(
-          (MapEntry<int, MPInsightTodoTextItemStruct> e) =>
-              MPMonthlySuggestedFocusItem(rank: e.key + 1, text: e.value.text, deadLine: e.value.deadLine),
-        )
-        .toList();
+    final List<MPTodoStruct> suggestedFocusNextMonth = List<MPTodoStruct>.from(detail.suggestedFocusNextMonth);
 
     return MPInsightDetailData(
       item: item,
@@ -873,9 +755,7 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
-      tips: detail.nextStep
-          .map((MPInsightTodoTextItemStruct e) => MPInsightTodoLineItem(text: e.text, deadLine: e.deadLine))
-          .toList(),
+      tips: List<MPTodoStruct>.from(detail.nextStep),
       memoryId: memoryId,
     );
   }

@@ -10,6 +10,10 @@ class MPGlobalRecordingCoordinator {
   final Map<Object, Future<void> Function()> _interruptHandlers =
       <Object, Future<void> Function()>{};
 
+  /// 外接 BLE 设备进入「录音中」时：停止本机录音 UI（与 [registerBleDeviceRecordingStopHandler] 配对）。
+  final Map<Object, Future<void> Function()> _bleDeviceRecordingStopHandlers =
+      <Object, Future<void> Function()>{};
+
   Object? _exclusiveOwner;
 
   /// 注册可被中断的持有者；页面 / 组件 [dispose] 前必须 [unregister]。
@@ -20,6 +24,28 @@ class MPGlobalRecordingCoordinator {
     Future<void> Function() onInterruptedByOtherOwner,
   ) {
     _interruptHandlers[ownerToken] = onInterruptedByOtherOwner;
+  }
+
+  /// 注册：当外接设备开始录音 [notifyBleDeviceRecordingStarted] 时结束本机录音会话（须 [unregisterBleDeviceRecordingStopHandler]）。
+  void registerBleDeviceRecordingStopHandler(
+    Object token,
+    Future<void> Function() onBleDeviceRecordingStarted,
+  ) {
+    _bleDeviceRecordingStopHandlers[token] = onBleDeviceRecordingStarted;
+  }
+
+  /// 解除 [registerBleDeviceRecordingStopHandler]。
+  void unregisterBleDeviceRecordingStopHandler(Object token) {
+    _bleDeviceRecordingStopHandlers.remove(token);
+  }
+
+  /// 外接设备已开始录音：执行已注册的「停止本机录音会话」回调。
+  Future<void> notifyBleDeviceRecordingStarted() async {
+    for (final MapEntry<Object, Future<void> Function()> e
+        in _bleDeviceRecordingStopHandlers.entries) {
+      await _safeInterrupt(e.value);
+    }
+    _exclusiveOwner = null;
   }
 
   /// 解除注册。

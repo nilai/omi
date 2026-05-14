@@ -643,7 +643,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
                         Text(
-                          item.text,
+                          (item.todo.title ?? '').trim(),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: OmiTextStyle.create(
@@ -653,10 +653,10 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                             height: 1.35,
                           ),
                         ),
-                        if (item.subtitle.isNotEmpty) ...<Widget>[
+                        if ((item.todo.reason ?? '').trim().isNotEmpty) ...<Widget>[
                           const SizedBox(height: 2),
                           Text(
-                            item.subtitle,
+                            (item.todo.reason ?? '').trim(),
                             style: OmiTextStyle.create(
                               color: secondTextColor,
                               fontSize: OmiFontSize.t5_14,
@@ -695,9 +695,15 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                         )
                       : TextButton(
                           onPressed: () async {
-                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                              MPInsightTodoLineItem(text: item.text, deadLine: item.deadLine),
+                            final cubit = context.read<MPInsightDetailCubit>();
+                            final MPInsightDetailData? data = cubit.state.data;
+                            final title = data?.item.title ?? '';
+                            final subtitle = data?.item.subtitle ?? '';
+                            final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Weekly Insight:' : '';
+                            final result = await cubit.showAddTodoPopup(
+                              item.todo,
                               context,
+                              MPInsightTodoContentStruct(label: label, title: title, metaLine: subtitle),
                             );
                             if (!mounted) {
                               return;

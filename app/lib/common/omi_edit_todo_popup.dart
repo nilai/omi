@@ -13,8 +13,14 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../generated/assets.dart';
 import '../http/schema/mp_data_model.dart';
+import '../tab/home/insights/mp_daily_insight_detail_page.dart';
+import '../tab/home/insights/mp_monthly_insight_detail_page.dart';
+import '../tab/home/insights/mp_pattern_insight_detail_page.dart';
+import '../tab/home/insights/mp_weekly_insight_detail_page.dart';
+import '../tab/home/insights/mp_insights_list_cubit.dart';
 import '../tab/memory/detail/mp_memory_detail_helper.dart';
 import 'mp_home_notification.dart';
+
 
 class OmiEditTodoPopupParams {
   const OmiEditTodoPopupParams({
@@ -30,6 +36,8 @@ class OmiEditTodoPopupParams {
     this.deadlineUnixSec,
     this.memoryId,
     this.memoryType,
+    this.insightId,
+    this.insightType,
   });
 
   final String title;
@@ -52,6 +60,8 @@ class OmiEditTodoPopupParams {
   final String whenLabel;
   final String timeLabel;
   final String todoId;
+  final String? insightId;
+  final MPInsightCardType? insightType;
 
   /// 截止时间 Unix（秒或毫秒，与 [MPMemoryCreatedTodoLineData.deadlineLabel] 一致）；无截止为 `null`。
   final int? deadlineUnixSec;
@@ -813,32 +823,78 @@ class _ContextCard extends StatelessWidget {
   final OmiEditTodoPopupParams params;
   final BuildContext rootContext;
 
-  /// 关闭编辑 Todo 弹层后，从 [rootContext] 打开 Memory 详情。
-  void _openMemoryDetail(BuildContext sheetContext) {
+  /// 关闭编辑 Todo 弹层后，从 [rootContext] 打开 CONTEXT 对应详情（Memory 或 Insight）。
+  void _openContextDetail(BuildContext sheetContext) {
     final int? mid = params.memoryId;
-    if (mid == null || mid <= 0) {
+    final bool memoryOk = mid != null && mid > 0;
+    final String insightTrim = (params.insightId ?? '').trim();
+    final bool insightOk = insightTrim.isNotEmpty;
+    if (!memoryOk && !insightOk) {
       return;
     }
+
     Navigator.of(sheetContext).pop(false);
-    final String memoryIdStr = '$mid';
-    final String trimmedTitle = params.contextMemoryTitle.trim();
+
+    if (memoryOk) {
+      final String memoryIdStr = '$mid';
+      final String trimmedTitle = params.contextMemoryTitle.trim();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!rootContext.mounted) {
+          return;
+        }
+        MPMemoryDetailPageHelper.navigateToDetailPage(
+          rootContext,
+          memoryIdStr,
+          params.memoryType ?? MPMemoryType.memoryFeed,
+          title: trimmedTitle.isEmpty ? null : trimmedTitle,
+        );
+      });
+      return;
+    }
+
+    final MPInsightListItem item = MPInsightListItem(
+      id: insightTrim,
+      type: params.insightType ?? MPInsightCardType.daily,
+      periodLabel: '',
+      title: params.contextMemoryTitle.trim().isEmpty ? 'Insight' : params.contextMemoryTitle.trim(),
+      subtitle: '',
+      content: params.contextMetaLine.trim(),
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!rootContext.mounted) {
         return;
       }
-      MPMemoryDetailPageHelper.navigateToDetailPage(
-        rootContext,
-        memoryIdStr,
-        params.memoryType ?? MPMemoryType.memoryFeed,
-        title: trimmedTitle.isEmpty ? null : trimmedTitle,
-      );
+      switch (item.type) {
+        case MPInsightCardType.daily:
+          Navigator.of(rootContext).push(
+            MaterialPageRoute<void>(builder: (_) => MPDailyInsightDetailPage(item: item)),
+          );
+          break;
+        case MPInsightCardType.weekly:
+          Navigator.of(rootContext).push(
+            MaterialPageRoute<void>(builder: (_) => MPWeeklyInsightDetailPage(item: item)),
+          );
+          break;
+        case MPInsightCardType.monthly:
+          Navigator.of(rootContext).push(
+            MaterialPageRoute<void>(builder: (_) => MPMonthlyInsightDetailPage(item: item)),
+          );
+          break;
+        case MPInsightCardType.pattern:
+          Navigator.of(rootContext).push(
+            MaterialPageRoute<void>(builder: (_) => MPPatternInsightDetailPage(item: item)),
+          );
+          break;
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final int? mid = params.memoryId;
-    final bool tappable = mid != null && mid > 0;
+    final bool memoryOk = mid != null && mid > 0;
+    final bool insightOk = (params.insightId ?? '').trim().isNotEmpty;
+    final bool tappable = memoryOk || insightOk;
 
     final Widget content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -911,7 +967,7 @@ class _ContextCard extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _openMemoryDetail(context),
+        onTap: () => _openContextDetail(context),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
           child: content,

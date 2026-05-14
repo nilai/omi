@@ -12,6 +12,7 @@ class MPTodayFocusTodoRowData {
     required this.timeLabel,
     this.todoId = '',
     this.memoryId,
+    this.insightId,
     this.status = 1,
     this.priorityApi = 'normal',
     this.deadlineUnixSec,
@@ -28,6 +29,7 @@ class MPTodayFocusTodoRowData {
 
   /// 关联 Memory id；无关联时为 `null`。
   final int? memoryId;
+  final String? insightId;
   final int status;
   final String priorityApi;
   final int? deadlineUnixSec;

@@ -21,10 +21,18 @@ class MPAudioLocalRecord {
     this.fileId = '',
     required this.source,
     this.isRemoved = false,
+    this.mp3Path,
+    this.txtPath,
   });
 
   /// 本地绝对路径
   final String path;
+
+  /// 转码后的 MP3 绝对路径（可选；可与 [path] 相同）。
+  final String? mp3Path;
+
+  /// 设备时间戳等配套 `.txt` 的本地绝对路径（可选）。
+  final String? txtPath;
 
   /// 展示用文件名
   final String fileName;
@@ -52,7 +60,11 @@ class MPAudioLocalRecord {
     String? fileId,
     String? source,
     bool? isRemoved,
+    String? mp3Path,
+    String? txtPath,
     bool clearDuration = false,
+    bool clearMp3Path = false,
+    bool clearTxtPath = false,
   }) {
     return MPAudioLocalRecord(
       path: path ?? this.path,
@@ -62,6 +74,8 @@ class MPAudioLocalRecord {
       fileId: fileId ?? this.fileId,
       source: source ?? this.source,
       isRemoved: isRemoved ?? this.isRemoved,
+      mp3Path: clearMp3Path ? null : (mp3Path ?? this.mp3Path),
+      txtPath: clearTxtPath ? null : (txtPath ?? this.txtPath),
     );
   }
 
@@ -73,6 +87,8 @@ class MPAudioLocalRecord {
     'fileId': fileId,
     'source': source,
     'isRemoved': isRemoved,
+    'mp3Path': mp3Path,
+    'txtPath': txtPath,
   };
 
   factory MPAudioLocalRecord.fromJson(Map<String, dynamic> json) {
@@ -84,6 +100,8 @@ class MPAudioLocalRecord {
       fileId: json['fileId'] as String? ?? '',
       source: json['source'] as String? ?? '',
       isRemoved: json['isRemoved'] as bool? ?? false,
+      mp3Path: json['mp3Path'] as String?,
+      txtPath: json['txtPath'] as String?,
     );
   }
 

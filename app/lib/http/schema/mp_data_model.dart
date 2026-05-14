@@ -160,6 +160,25 @@ int? mpNullableIntFromJson(Object? json) {
   return null;
 }
 
+/// `insight_id`：后端可能为 **字符串** 或 **整型**（统一为可空 [String]）。
+String? mpInsightIdFromJson(Object? json) {
+  if (json == null) {
+    return null;
+  }
+  if (json is String) {
+    final String t = json.trim();
+    return t.isEmpty ? null : t;
+  }
+  if (json is int) {
+    return '$json';
+  }
+  if (json is num) {
+    return json.toInt().toString();
+  }
+  final String s = json.toString().trim();
+  return s.isEmpty ? null : s;
+}
+
 // Todo Struct
 @JsonSerializable(explicitToJson: true)
 class MPTodoStruct {
@@ -195,6 +214,9 @@ class MPTodoStruct {
   @JsonKey(name: 'memory_id')
   final int? memoryId;
 
+  @JsonKey(name: 'insight_id', fromJson: mpInsightIdFromJson)
+  final String? insightId;
+
   @JsonKey(name: 'slot')
   final int? slot;
   MPTodoStruct({
@@ -207,6 +229,7 @@ class MPTodoStruct {
     this.reason,
     this.preCreateStatus,
     this.memoryId,
+    this.insightId,
     this.slot,
   });
 

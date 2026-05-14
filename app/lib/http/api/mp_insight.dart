@@ -59,6 +59,30 @@ Future<MPGetInsightDetailResponse?> getInsightDetail(
   return null;
 }
 
+/// GET /api/v2/insight/get_simple_detail — 按 todo 拉取 Insight 简易信息。
+Future<MPGetInsightSimpleDetailResponse?> getInsightSimpleDetail(
+  MPGetInsightSimpleDetailRequest req,
+) async {
+  final String url =
+      '${Env.apiBaseUrl}api/v2/insight/get_simple_detail?todo_id=${req.todoId}';
+  final response = await makeApiCall(
+    url: url,
+    headers: {},
+    method: 'GET',
+    body: '',
+  );
+  if (response == null) {
+    return null;
+  }
+  debugPrint('getInsightSimpleDetail response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPGetInsightSimpleDetailResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}
+
 /// GET /api/v2/home/get_insight_overview — 首页 Insight 聚合概览。
 Future<MPGetHomeInsightOverviewResponse?> getHomeInsightOverview(
   MPGetHomeInsightOverviewRequest req,

@@ -6,7 +6,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
 import 'package:memo_pin/blu/device_transport.dart';
 import 'package:memo_pin/blu/mp_ble_preferences.dart';
-import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
@@ -24,18 +24,13 @@ class MPConnectDeviceItem {
   /// 远端设备 ID（[BluetoothDevice.remoteId] 字符串）
   final String id;
   final String name;
+
   /// 电量 0–100；未读取时为 0
   final int batteryPercent;
   final int signalPercent;
   final bool isConnected;
 
-  MPConnectDeviceItem copyWith({
-    String? id,
-    String? name,
-    int? batteryPercent,
-    int? signalPercent,
-    bool? isConnected,
-  }) {
+  MPConnectDeviceItem copyWith({String? id, String? name, int? batteryPercent, int? signalPercent, bool? isConnected}) {
     return MPConnectDeviceItem(
       id: id ?? this.id,
       name: name ?? this.name,
@@ -83,9 +78,7 @@ class MPConnectDeviceState {
     return MPConnectDeviceState(
       isScanning: isScanning ?? this.isScanning,
       devices: devices ?? this.devices,
-      connectingDeviceId: clearConnectingDeviceId
-          ? null
-          : (connectingDeviceId ?? this.connectingDeviceId),
+      connectingDeviceId: clearConnectingDeviceId ? null : (connectingDeviceId ?? this.connectingDeviceId),
     );
   }
 }
@@ -105,7 +98,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   /// 进入页面后：若有上次退出时停放的 BLE 会话则先恢复到列表，再首轮扫描。
   void initData() {
     if (_transport == null) {
-      final BleTransport? adopted = MPBluetoothConnectionHelper.takeBackgroundBleTransport();
+      final BleTransport? adopted = MPBleConnectionHelper.takeBackgroundBleTransport();
       if (adopted != null) {
         _transport = adopted;
       }
@@ -123,11 +116,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         } else {
           final MPConnectDeviceItem row = await _connectedDeviceItemForActiveTransport();
           if (!isClosed) {
-            emit(
-              state.copyWith(
-                devices: <MPConnectDeviceItem>[row],
-              ),
-            );
+            emit(state.copyWith(devices: <MPConnectDeviceItem>[row]));
             _attachTransportConnectionListener(_transport!);
             unawaited(_refreshConnectedDeviceBattery(row.id));
           }
@@ -152,18 +141,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       displayName = r.displayName;
     } else {
       displayName = await _displayNameForBleRemoteId(id);
-      await MPBlePreferences.instance.setLastConnectedBleDevice(
-        remoteId: id,
-        displayName: displayName,
-      );
+      await MPBlePreferences.instance.setLastConnectedBleDevice(remoteId: id, displayName: displayName);
     }
-    return MPConnectDeviceItem(
-      id: id,
-      name: displayName,
-      batteryPercent: 0,
-      signalPercent: 0,
-      isConnected: true,
-    );
+    return MPConnectDeviceItem(id: id, name: displayName, batteryPercent: 0, signalPercent: 0, isConnected: true);
   }
 
   /// 解析展示名：优先本地记录，其次广播名，最后退回占位文案。
@@ -185,8 +165,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
   /// 若状态里尚无「已连接」行但 [_transport] 仍在线，则补齐（扫描列表依赖 [preservedConnectedId]）。
   Future<List<MPConnectDeviceItem>> _keepConnectedRowsForScan() async {
-    final List<MPConnectDeviceItem> fromState =
-        state.devices.where((MPConnectDeviceItem d) => d.isConnected).toList();
+    final List<MPConnectDeviceItem> fromState = state.devices.where((MPConnectDeviceItem d) => d.isConnected).toList();
     if (fromState.isNotEmpty) {
       return fromState;
     }
@@ -204,9 +183,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   }
 
   /// 扫描过程中仍展示：已连接设备 + 本地持久化的上次设备（若尚未出现在已连接列表中）。
-  List<MPConnectDeviceItem> _devicesToShowWhileScanning({
-    required List<MPConnectDeviceItem> keepConnected,
-  }) {
+  List<MPConnectDeviceItem> _devicesToShowWhileScanning({required List<MPConnectDeviceItem> keepConnected}) {
     final List<MPConnectDeviceItem> out = List<MPConnectDeviceItem>.from(keepConnected);
     final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
@@ -216,13 +193,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       return out;
     }
     out.add(
-      MPConnectDeviceItem(
-        id: r.remoteId,
-        name: r.displayName,
-        batteryPercent: 0,
-        signalPercent: 0,
-        isConnected: false,
-      ),
+      MPConnectDeviceItem(id: r.remoteId, name: r.displayName, batteryPercent: 0, signalPercent: 0, isConnected: false),
     );
     return out;
   }
@@ -237,13 +208,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       return;
     }
     next.add(
-      MPConnectDeviceItem(
-        id: r.remoteId,
-        name: r.displayName,
-        batteryPercent: 0,
-        signalPercent: 0,
-        isConnected: false,
-      ),
+      MPConnectDeviceItem(id: r.remoteId, name: r.displayName, batteryPercent: 0, signalPercent: 0, isConnected: false),
     );
   }
 
@@ -259,20 +224,16 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     final int generation = ++_scanGeneration;
     await _stopScanSafe();
 
-    final bool supported = await MPBluetoothConnectionHelper.isBleSupported;
+    final bool supported = await MPBleConnectionHelper.isBleSupported;
     if (!supported) {
-      MPToastUtils.showMessage(
-        'Bluetooth is not supported on this device.',
-        duration: const Duration(seconds: 5),
-      );
+      MPToastUtils.showMessage('Bluetooth is not supported on this device.', duration: const Duration(seconds: 5));
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));
       }
       return;
     }
 
-    final bool permitted =
-        await MPBluetoothConnectionHelper.ensureBlePermissions();
+    final bool permitted = await MPBleConnectionHelper.ensureBlePermissions();
     if (!permitted) {
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));
@@ -280,19 +241,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       return;
     }
 
-    bool adapterOn = await MPBluetoothConnectionHelper.waitForAdapterOn(
-      timeout: const Duration(seconds: 8),
-    );
+    bool adapterOn = await MPBleConnectionHelper.waitForAdapterOn(timeout: const Duration(seconds: 8));
     if (!adapterOn) {
       try {
-        await MPBluetoothConnectionHelper.tryTurnBluetoothOn();
+        await MPBleConnectionHelper.tryTurnBluetoothOn();
       } catch (_) {
         // 用户拒绝或平台不支持弹窗
       }
       await Future<void>.delayed(const Duration(milliseconds: 500));
-      adapterOn = await MPBluetoothConnectionHelper.waitForAdapterOn(
-        timeout: const Duration(seconds: 5),
-      );
+      adapterOn = await MPBleConnectionHelper.waitForAdapterOn(timeout: const Duration(seconds: 5));
     }
     if (!adapterOn) {
       final BluetoothAdapterState s = FlutterBluePlus.adapterStateNow;
@@ -302,10 +259,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
           duration: const Duration(seconds: 5),
         );
       } else {
-        MPToastUtils.showMessage(
-          'Please turn on Bluetooth.',
-          duration: const Duration(seconds: 5),
-        );
+        MPToastUtils.showMessage('Please turn on Bluetooth.', duration: const Duration(seconds: 5));
       }
       if (!isClosed) {
         emit(state.copyWith(isScanning: false));
@@ -323,18 +277,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         !isClosed) {
       emit(state.copyWith(devices: keepConnected));
     }
-    final String? preservedConnectedId =
-        keepConnected.isEmpty ? null : keepConnected.first.id;
-    emit(
-      state.copyWith(
-        isScanning: true,
-        devices: _devicesToShowWhileScanning(keepConnected: keepConnected),
-      ),
-    );
+    final String? preservedConnectedId = keepConnected.isEmpty ? null : keepConnected.first.id;
+    emit(state.copyWith(isScanning: true, devices: _devicesToShowWhileScanning(keepConnected: keepConnected)));
 
     try {
-      final List<MPBleScanEntry> entries =
-          await MPBluetoothConnectionHelper.scanMemoPinLikeEntriesPhased(
+      final List<MPBleScanEntry> entries = await MPBleConnectionHelper.scanMemoPinLikeEntriesPhased(
         perPhase: _scanPhaseDuration,
         requirePermissionsAndAdapter: false,
       );
@@ -347,21 +294,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
           name: e.displayName,
           batteryPercent: 0,
           signalPercent: e.signalPercent,
-          isConnected:
-              preservedConnectedId != null && preservedConnectedId == e.remoteId,
+          isConnected: preservedConnectedId != null && preservedConnectedId == e.remoteId,
         );
       }).toList();
 
-      if (preservedConnectedId != null &&
-          !next.any((MPConnectDeviceItem i) => i.id == preservedConnectedId)) {
+      if (preservedConnectedId != null && !next.any((MPConnectDeviceItem i) => i.id == preservedConnectedId)) {
         // 扫描期间可能已通过 GATT 更新电量，优先使用当前 state 中的已连接行。
-        final MPConnectDeviceItem? prev = state.devices.firstWhereOrNull(
-              (MPConnectDeviceItem d) =>
-                  d.id == preservedConnectedId && d.isConnected,
-            ) ??
-            keepConnected.firstWhereOrNull(
-              (MPConnectDeviceItem d) => d.id == preservedConnectedId,
-            );
+        final MPConnectDeviceItem? prev =
+            state.devices.firstWhereOrNull((MPConnectDeviceItem d) => d.id == preservedConnectedId && d.isConnected) ??
+            keepConnected.firstWhereOrNull((MPConnectDeviceItem d) => d.id == preservedConnectedId);
         if (prev != null) {
           next.insert(0, prev);
         }
@@ -378,12 +319,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     } catch (e) {
       if (generation == _scanGeneration && !isClosed) {
         MPToastUtils.showMessage('Scan failed. Please try again.');
-        emit(
-          state.copyWith(
-            isScanning: false,
-            devices: _mergeLastIntoList(keepConnected),
-          ),
-        );
+        emit(state.copyWith(isScanning: false, devices: _mergeLastIntoList(keepConnected)));
       }
     } finally {
       // 必须无条件停止扫描：helper 内已 stopScan；此处兜底防止页面关闭时代次交错遗留扫描。
@@ -395,10 +331,8 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   Future<void> toggleConnection(String id) async {
     // 列表中可能出现相同 remoteId 的多行（例如扫描占位与已连接行并存），
     // 须用「是否存在已连接行」判断断开，否则 firstWhereOrNull 会先命中未连接行并误判为去连接。
-    final bool anyConnectedWithId =
-        state.devices.any((MPConnectDeviceItem d) => d.id == id && d.isConnected);
-    final MPConnectDeviceItem? target =
-        state.devices.firstWhereOrNull((MPConnectDeviceItem d) => d.id == id);
+    final bool anyConnectedWithId = state.devices.any((MPConnectDeviceItem d) => d.id == id && d.isConnected);
+    final MPConnectDeviceItem? target = state.devices.firstWhereOrNull((MPConnectDeviceItem d) => d.id == id);
     if (target == null) {
       return;
     }
@@ -407,13 +341,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       await _disconnectActive();
       await MPBlePreferences.instance.clearLastConnectedBleDevice();
       emit(
-        state.copyWith(
-          devices: state.devices
-              .map(
-                (MPConnectDeviceItem d) => d.copyWith(isConnected: false),
-              )
-              .toList(),
-        ),
+        state.copyWith(devices: state.devices.map((MPConnectDeviceItem d) => d.copyWith(isConnected: false)).toList()),
       );
       return;
     }
@@ -426,33 +354,22 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     await _disconnectActive();
 
     emit(
-      state.copyWith(
-        devices: state.devices
-            .map(
-              (MPConnectDeviceItem d) => d.copyWith(isConnected: false),
-            )
-            .toList(),
-      ),
+      state.copyWith(devices: state.devices.map((MPConnectDeviceItem d) => d.copyWith(isConnected: false)).toList()),
     );
 
     try {
-      final BluetoothDevice device = MPBluetoothConnectionHelper.bluetoothDeviceFromRemoteId(id);
-      _transport = MPBluetoothConnectionHelper.createBleTransport(device);
+      final BluetoothDevice device = MPBleConnectionHelper.bluetoothDeviceFromRemoteId(id);
+      _transport = MPBleConnectionHelper.createBleTransport(device);
       await _transport!.connect();
-      MPBluetoothConnectionHelper.parkBackgroundBleTransport(_transport);
+      MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
       MPHomeNotification.notifyBleConnectedSuccess();
-      await MPBlePreferences.instance.setLastConnectedBleDevice(
-        remoteId: id,
-        displayName: target.name,
-      );
+      await MPBlePreferences.instance.setLastConnectedBleDevice(remoteId: id, displayName: target.name);
       emit(
         state.copyWith(
           clearConnectingDeviceId: true,
           devices: state.devices
               .map(
-                (MPConnectDeviceItem d) => d.id == id
-                    ? d.copyWith(isConnected: true)
-                    : d.copyWith(isConnected: false),
+                (MPConnectDeviceItem d) => d.id == id ? d.copyWith(isConnected: true) : d.copyWith(isConnected: false),
               )
               .toList(),
         ),
@@ -460,9 +377,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       _attachTransportConnectionListener(_transport!);
       unawaited(_refreshConnectedDeviceBattery(id));
     } catch (e) {
-      MPToastUtils.showMessage(
-        'Connection failed. Move closer to the device and try again.',
-      );
+      MPToastUtils.showMessage('Connection failed. Move closer to the device and try again.');
       await _disconnectActive();
     } finally {
       if (!isClosed && state.connectingDeviceId != null) {
@@ -484,17 +399,14 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       if (!await t.isConnected()) {
         return;
       }
-      final int? pct = await MPBluetoothConnectionHelper.readMemoPinBatteryPercent(t);
+      final int? pct = await MPBleConnectionHelper.readMemoPinBatteryPercent(t);
       if (pct == null || isClosed || _transport != t) {
         return;
       }
       emit(
         state.copyWith(
           devices: state.devices
-              .map(
-                (MPConnectDeviceItem d) =>
-                    d.id == remoteId ? d.copyWith(batteryPercent: pct) : d,
-              )
+              .map((MPConnectDeviceItem d) => d.id == remoteId ? d.copyWith(batteryPercent: pct) : d)
               .toList(),
         ),
       );
@@ -529,9 +441,9 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     final BleTransport? released = _transport;
     _transport = null;
 
-    final BleTransport? parked = MPBluetoothConnectionHelper.backgroundBleTransport;
+    final BleTransport? parked = MPBleConnectionHelper.backgroundBleTransport;
     final bool releasedIsParked = released != null && identical(released, parked);
-    await MPBluetoothConnectionHelper.disposeBackgroundBleTransportIfAny();
+    await MPBleConnectionHelper.disposeBackgroundBleTransportIfAny();
     if (released != null && !releasedIsParked) {
       try {
         await released.disconnect();
@@ -549,10 +461,8 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         clearConnectingDeviceId: true,
         devices: state.devices
             .map(
-              (MPConnectDeviceItem d) => d.copyWith(
-                isConnected: false,
-                batteryPercent: d.isConnected ? 0 : d.batteryPercent,
-              ),
+              (MPConnectDeviceItem d) =>
+                  d.copyWith(isConnected: false, batteryPercent: d.isConnected ? 0 : d.batteryPercent),
             )
             .toList(),
       ),
@@ -563,7 +473,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     _detachTransportConnectionListener();
     BleTransport? t = _transport;
     _transport = null;
-    t ??= MPBluetoothConnectionHelper.takeBackgroundBleTransport();
+    t ??= MPBleConnectionHelper.takeBackgroundBleTransport();
     if (t != null) {
       try {
         await t.disconnect();
@@ -576,13 +486,13 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         // ignore
       }
     }
-    await MPBluetoothConnectionHelper.disposeBackgroundBleTransportIfAny();
+    await MPBleConnectionHelper.disposeBackgroundBleTransportIfAny();
   }
 
   /// 停止 BLE 扫描；始终调用插件 [stopScan]（内部已对未在扫的情况做处理），避免仅依赖 [isScanningNow] 漏停。
   Future<void> _stopScanSafe() async {
     try {
-      await MPBluetoothConnectionHelper.stopScan();
+      await MPBleConnectionHelper.stopScan();
     } catch (_) {
       // ignore
     }
@@ -597,7 +507,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     if (_transport != null) {
       try {
         if (await _transport!.isConnected()) {
-          MPBluetoothConnectionHelper.parkBackgroundBleTransport(_transport);
+          MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
           _transport = null;
         } else {
           await _disconnectActive();

@@ -9,9 +9,10 @@ import 'package:path/path.dart' as p;
 
 import '../audio/record/mp_audio_local_records_util.dart';
 
-/// Opus（Ogg 封装）转 MP3：依赖 [opus_dart]/[opus_flutter] 解码，[flutter_lame] 编码。
+/// Opus 转 MP3：依赖 [opus_dart]/[opus_flutter] 解码，[flutter_lame] 编码。
 ///
-/// 仅支持 **Ogg Opus**（常见 `.opus`/`.ogg`）；裸 Opus 包文件不支持。
+/// - **Ogg Opus**：走 [convertOpusFileToMp3]。
+/// - **MemoPin BLE 导出**：连续 480B 裸包走 [convertMemoPinBleOpusExportToMp3]。
 class MPOpusToMp3Util {
   MPOpusToMp3Util._();
 
@@ -142,6 +143,120 @@ class MPOpusToMp3Util {
       return verified ?? mp3Path;
     } catch (e, st) {
       debugPrint('MPOpusToMp3Util.convertOpusFileToMp3: $e\n$st');
+      try {
+        final File out = File(mp3Path);
+        if (await out.exists()) {
+          await out.delete();
+        }
+      } catch (_) {}
+      return null;
+    }
+  }
+
+  /// MemoPin / Note BLE 导出的 `.opus`：先尝试 [convertOpusFileToMp3]（Ogg 封装）；
+  /// 否则按 **480B/帧** 裸 Opus 包解码（对齐 [MPNoteBleFilePayloadAssembler]，16kHz 单声道）。
+  ///
+  /// [opusPath] 为沙盒内 `.opus` 绝对路径；成功时返回 `.mp3` 绝对路径。
+  static Future<String?> convertMemoPinBleOpusExportToMp3(String opusPath) async {
+    final String? oggMp3 = await convertOpusFileToMp3(opusPath);
+    if (oggMp3 != null) {
+      return oggMp3;
+    }
+    return _convertRawOpus480FramesFileToMp3(opusPath);
+  }
+
+  /// 裸 Opus 帧（480 字节）拼接文件 → MP3。
+  static Future<String?> _convertRawOpus480FramesFileToMp3(String opusPath) async {
+    if (kIsWeb) {
+      return null;
+    }
+    final String normalized = p.normalize(opusPath.trim());
+    if (normalized.isEmpty) {
+      return null;
+    }
+    final File input = File(normalized);
+    if (!await input.exists()) {
+      debugPrint('MPOpusToMp3Util: raw opus file not found: $normalized');
+      return null;
+    }
+
+    final String dir = p.dirname(normalized);
+    final String base = p.basenameWithoutExtension(normalized);
+    final String mp3Path = p.join(dir, '$base.mp3');
+
+    try {
+      await _ensureOpusLoaded();
+      final Uint8List raw = await input.readAsBytes();
+      if (raw.isEmpty) {
+        return null;
+      }
+
+      const int frameBytes = 480;
+      const int sampleRate = 16000;
+      const int channels = 1;
+
+      final SimpleOpusDecoder decoder = SimpleOpusDecoder(
+        sampleRate: sampleRate,
+        channels: channels,
+      );
+      final LameMp3Encoder encoder = LameMp3Encoder(
+        sampleRate: sampleRate,
+        numChannels: channels,
+        bitRate: 128,
+      );
+
+      final IOSink sink = File(mp3Path).openWrite();
+      final List<double> leftAcc = <double>[];
+      const int chunkSamples = 48000;
+
+      try {
+        for (int offset = 0; offset < raw.length; offset += frameBytes) {
+          final int end = offset + frameBytes <= raw.length ? offset + frameBytes : raw.length;
+          final Uint8List pkt = Uint8List.sublistView(raw, offset, end);
+          if (pkt.isEmpty) {
+            continue;
+          }
+          try {
+            final Float32List pcm = decoder.decodeFloat(input: pkt);
+            for (int j = 0; j < pcm.length; j++) {
+              leftAcc.add(pcm[j]);
+            }
+          } catch (e) {
+            debugPrint('MPOpusToMp3Util: skip opus frame @ $offset: $e');
+          }
+          await _encodePcmChunksFromBuffers(
+            encoder: encoder,
+            sink: sink,
+            leftAcc: leftAcc,
+            rightAcc: <double>[],
+            channels: channels,
+            chunkSamples: chunkSamples,
+            encodePartialOnly: false,
+          );
+        }
+
+        await _encodePcmChunksFromBuffers(
+          encoder: encoder,
+          sink: sink,
+          leftAcc: leftAcc,
+          rightAcc: <double>[],
+          channels: channels,
+          chunkSamples: chunkSamples,
+          encodePartialOnly: true,
+        );
+
+        sink.add(await encoder.flush());
+      } finally {
+        decoder.destroy();
+        await encoder.close();
+        await sink.close();
+      }
+
+      final String? verified =
+          await MPAudioLocalRecordsUtil.adjustAudioFileIfWrongExtension(mp3Path);
+      return verified ?? mp3Path;
+    } catch (e, st) {
+      debugPrint('MPOpusToMp3Util._convertRawOpus480FramesFileToMp3: $e\n$st');
       try {
         final File out = File(mp3Path);
         if (await out.exists()) {

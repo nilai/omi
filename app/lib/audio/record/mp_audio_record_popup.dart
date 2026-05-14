@@ -77,6 +77,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
+  final Object _bleDeviceRecordingStopToken = Object();
 
   static const Color _kBlue = Color(0xFF007AFF);
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
@@ -126,6 +127,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       _recordingOwnerToken,
       _onInterruptedByOtherOwner,
     );
+    MPGlobalRecordingCoordinator.instance.registerBleDeviceRecordingStopHandler(
+      _bleDeviceRecordingStopToken,
+      _onBleDeviceRecordingStartedStopLocal,
+    );
     WidgetsBinding.instance.addObserver(this);
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
   }
@@ -137,6 +142,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _waveController.dispose();
     _tickTimer?.cancel();
     unawaited(_releaseRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregisterBleDeviceRecordingStopHandler(_bleDeviceRecordingStopToken);
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
   }
@@ -169,6 +175,35 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 外接 MemoPin 等设备开始录音：丢弃本机会话并关闭弹窗。
+  Future<void> _onBleDeviceRecordingStartedStopLocal() async {
+    if (!mounted) {
+      return;
+    }
+    if (_step == _MPAudioRecordStep.intro) {
+      widget.rootNavigator.pop();
+      return;
+    }
+    if (_busy) {
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _showCancelConfirm = false;
+    });
+    _tickTimer?.cancel();
+    _tickTimer = null;
+    await _releaseRecorder(deleteFile: true);
+    if (!mounted) {
+      return;
+    }
+    MPToastUtils.showMessage(
+      'Recording stopped: the external device is now recording.',
+      context: context,
+    );
+    widget.rootNavigator.pop();
   }
 
   /// 其它入口开始录音：暂停当前采集（与手动暂停一致）。

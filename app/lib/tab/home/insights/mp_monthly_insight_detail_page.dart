@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
+import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
@@ -771,7 +772,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
 class _MPMonthlySuggestedFocusCard extends StatefulWidget {
   const _MPMonthlySuggestedFocusCard({required this.items});
 
-  final List<MPMonthlySuggestedFocusItem> items;
+  final List<MPTodoStruct> items;
 
   @override
   State<_MPMonthlySuggestedFocusCard> createState() => _MPMonthlySuggestedFocusCardState();
@@ -818,9 +819,9 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
           const SizedBox(height: 12),
           const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 6),
-          ...widget.items.asMap().entries.map((MapEntry<int, MPMonthlySuggestedFocusItem> e) {
+          ...widget.items.asMap().entries.map((MapEntry<int, MPTodoStruct> e) {
             final int idx = e.key;
-            final MPMonthlySuggestedFocusItem f = e.value;
+            final MPTodoStruct f = e.value;
             final bool isAdded = _addedIndexes.contains(idx);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -838,14 +839,14 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                     decoration: const BoxDecoration(color: _kFocusBlue, shape: BoxShape.circle),
                     alignment: Alignment.center,
                     child: Text(
-                      '${f.rank}',
+                      '${idx + 1}',
                       style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      f.text,
+                      (f.title ?? '').trim(),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: OmiTextStyle.create(
@@ -891,9 +892,15 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                             minimumSize: const Size(0, 0),
                           ),
                           onPressed: () async {
-                            final result = await context.read<MPInsightDetailCubit>().showAddTodoPopup(
-                              MPInsightTodoLineItem(text: f.text, deadLine: f.deadLine),
+                            final cubit = context.read<MPInsightDetailCubit>();
+                            final MPMonthlyInsightDetailData? monthly = cubit.state.data?.monthly;
+                            final title = monthly?.monthSubtitle ?? '';
+                            final subtitle = '';
+                            final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Monthly Insight:' : '';
+                            final result = await cubit.showAddTodoPopup(
+                              f,
                               context,
+                              MPInsightTodoContentStruct(label: label, title: title, metaLine: subtitle),
                             );
                             if (!mounted) {
                               return;
