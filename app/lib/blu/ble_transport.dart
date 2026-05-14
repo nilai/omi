@@ -161,17 +161,39 @@ class BleTransport extends DeviceTransport {
 
   @override
   Future<List<int>> readCharacteristic(String serviceUuid, String characteristicUuid) async {
-    final characteristic = await _getCharacteristic(serviceUuid, characteristicUuid);
-    if (characteristic == null) {
-      return [];
+    // 与 [connect] 同一 FBP 会话读 GATT；勿与 reactive_ble 混读（Android 易 service_discovery_failure）。
+    debugPrint('------>>>memopin readCharacteristic: $serviceUuid $characteristicUuid deviceId=$deviceId');
+    Future<List<int>?> tryRead() async {
+      final BluetoothCharacteristic? characteristic =
+          await _getCharacteristic(serviceUuid, characteristicUuid);
+      if (characteristic == null) {
+        return null;
+      }
+      try {
+        return await characteristic.read();
+      } catch (e) {
+        debugPrint('------>>>memopin readCharacteristic: FBP read failed $e');
+        return null;
+      }
     }
 
-    try {
-      return await characteristic.read();
-    } catch (e) {
-      debugPrint('BLE Transport: Failed to read characteristic: $e');
-      return [];
+    List<int>? data = await tryRead();
+    if (data != null) {
+      return data;
     }
+    if (!_bleDevice.isConnected) {
+      debugPrint('------>>>memopin readCharacteristic: not connected → []');
+      return <int>[];
+    }
+    try {
+      debugPrint('------>>>memopin readCharacteristic: rediscoverServices then retry');
+      _services = await _bleDevice.discoverServices();
+      await Future<void>.delayed(const Duration(milliseconds: 120));
+      data = await tryRead();
+    } catch (e) {
+      debugPrint('------>>>memopin readCharacteristic: rediscover failed $e');
+    }
+    return data ?? <int>[];
   }
 
   @override
