@@ -13,6 +13,7 @@ class MPTodayFocusCardItem {
     this.memoryId,
     this.insightId,
     this.slot,
+    this.deadlineUnixSec,
   });
 
   final String title;
@@ -30,6 +31,9 @@ class MPTodayFocusCardItem {
 
   /// Today's Focus 槽位（与 [MPTodoStruct.slot]、[MPRemoveTodayFocusRequest.slot] 一致）；为空时由列表下标推断。
   final int? slot;
+
+  /// 与 [MPTodoStruct.deadline] 一致（Unix 秒）；无截止为 `null`。
+  final int? deadlineUnixSec;
 }
 
 /// 「Today's Focus」整卡数据
