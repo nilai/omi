@@ -82,4 +82,17 @@ class MPGlobalRecordingCoordinator {
       _exclusiveOwner = null;
     }
   }
+
+  /// 系统音频焦点被抢占（来电、其它 App 播放等）时调用：仅暂停当前独占持有者的采集，
+  /// 行为与各入口注册的「被其它录音入口中断」一致，用户可在本场景手动恢复。
+  Future<void> notifySystemAudioFocusShouldPauseCurrentRecording() async {
+    if (_exclusiveOwner == null) {
+      return;
+    }
+    final Future<void> Function()? fn = _interruptHandlers[_exclusiveOwner];
+    if (fn == null) {
+      return;
+    }
+    await _safeInterrupt(fn);
+  }
 }

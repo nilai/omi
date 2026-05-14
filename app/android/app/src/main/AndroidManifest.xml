@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- 长时间后台录音时避免 CPU 休眠导致采集异常（与前台服务配合） -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- 录音进后台 / 锁屏时保持采集（flutter_sound isBGService + flutter_foreground_task 麦克风前台服务） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
