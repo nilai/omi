@@ -116,20 +116,6 @@ class MPNoteBleGattClient {
     return null;
   }
 
-  /// 读取 `e2c1a310` 录音状态（Read；部分固件亦可能推送 notify）。
-  Future<MPBleMemopinRecordStatus310> readRecordStatus310() async {
-    debugPrint('------>>>memopin MPNoteBleGattClient.readRecordStatus310');
-    final List<int> raw = await _transport.readCharacteristic(
-      MPNoteBleUUIDs.service.toString(),
-      MPNoteBleUUIDs.recordStatus.toString(),
-    );
-    final MPBleMemopinRecordStatus310 st = MPBleMemopinRecordStatus310.parse(raw);
-    debugPrint(
-      '------>>>memopin MPNoteBleGattClient.readRecordStatus310 → len=${raw.length} recording=${st.isRecording}',
-    );
-    return st;
-  }
-
   /// 发送 `[0x01,0,0]` 主动开始录音（仅产生 **memory/normal** 类会话，见协议说明）。
   Future<MPBleRecordingStartInfo?> sendStartRecording({
     Duration timeout = const Duration(seconds: 10),
