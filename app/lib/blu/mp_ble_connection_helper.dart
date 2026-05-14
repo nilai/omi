@@ -8,6 +8,7 @@ import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
+import 'mp_ble_memopin_recording_state_watcher.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_scan_uuids.dart';
 import 'mp_note_ble_gatt_client.dart';
@@ -43,6 +44,29 @@ class MPBleScanEntry {
 class MPBleConnectionHelper {
   MPBleConnectionHelper._();
 
+  static final MPBleMemopinRecordingStateWatcher _memopinRecordingWatcher =
+      MPBleMemopinRecordingStateWatcher();
+
+  /// 主动读取 `e2c1a310` 录音状态（未连接时返回「未录音」解析结果）。
+  static Future<MPBleMemopinRecordStatus310> readMemoPinRecordingStatus(BleTransport transport) async {
+    try {
+      if (!await transport.isConnected()) {
+        return const MPBleMemopinRecordStatus310(isRecording: false);
+      }
+    } catch (_) {
+      return const MPBleMemopinRecordStatus310(isRecording: false);
+    }
+    return MPBleMemopinRecordingStateWatcher.readStatus310(transport);
+  }
+
+  /// 最近一次对外通知的录音状态快照（默认未录音，见 [MPBleMemopinRecordingStateWatcher.lastEmitted]）。
+  static MPBleMemopinRecordingStateChangedPayload get memoPinRecordingStateSnapshot =>
+      _memopinRecordingWatcher.lastEmitted;
+
+  /// 与 [MPHomeNotification.bleMemopinRecordingStateEvents] 相同，便于仅从 Helper 引用。
+  static Stream<MPBleMemopinRecordingStateChangedPayload> get memoPinRecordingStateChangedStream =>
+      MPHomeNotification.bleMemopinRecordingStateEvents;
+
   /// 连接页关闭后仍要保持的 GATT 会话（不断开 physical link）。
   ///
   /// 由 [MPConnectDeviceCubit] 在 `close` 时 [parkBackgroundBleTransport]，重新进入时
@@ -52,6 +76,7 @@ class MPBleConnectionHelper {
   /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
   static void parkBackgroundBleTransport(BleTransport? transport) {
     _backgroundBleTransport = transport;
+    unawaited(_memopinRecordingWatcher.attach(transport));
   }
 
   /// 当前背景持有的 [BleTransport]（未停放时为 `null`）；与连接页 [_transport] 可能指向同一实例。
@@ -61,11 +86,13 @@ class MPBleConnectionHelper {
   static BleTransport? takeBackgroundBleTransport() {
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
+    unawaited(_memopinRecordingWatcher.attach(null));
     return t;
   }
 
   /// 释放背景会话并断开 BLE（用户主动断开或连接新设备前清理）。
   static Future<void> disposeBackgroundBleTransportIfAny() async {
+    await _memopinRecordingWatcher.detach();
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
     if (t != null) {

@@ -56,7 +56,6 @@ class MPAudioLocalRecord {
     String? fileId,
     String? source,
     bool? isRemoved,
-    String? mp3Path,
     String? txtPath,
     bool clearDuration = false,
     bool clearMp3Path = false,

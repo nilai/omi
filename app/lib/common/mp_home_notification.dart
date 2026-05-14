@@ -44,6 +44,25 @@ class MPHomeTodoDeletedPayload {
   final String todoId;
 }
 
+/// MemoPin 设备录音状态变化（供 UI / 业务订阅）。
+class MPBleMemopinRecordingStateChangedPayload {
+  /// 创建载荷。
+  const MPBleMemopinRecordingStateChangedPayload({
+    required this.isRecording,
+    this.activeFileName,
+    this.sessionModeByte,
+  });
+
+  /// `true` 表示正在录音。
+  final bool isRecording;
+
+  /// 当前录音文件名（未录音时多为 `null`）。
+  final String? activeFileName;
+
+  /// 最近一次 `0x01` 成功通知中的 mode：`0x00` memory / `0x01` memo；未知为 `null`。
+  final int? sessionModeByte;
+}
+
 /// 首页事件通知：用于跨页面触发首页数据刷新。
 class MPHomeNotification {
   MPHomeNotification._();
@@ -60,6 +79,8 @@ class MPHomeNotification {
       StreamController<MPHomeTodoDeletedPayload>.broadcast();
   static final StreamController<void> _bleConnectedSuccessBus =
       StreamController<void>.broadcast();
+  static final StreamController<MPBleMemopinRecordingStateChangedPayload> _bleMemopinRecordingBus =
+      StreamController<MPBleMemopinRecordingStateChangedPayload>.broadcast();
 
   static Stream<void> get homeRefreshEvents => _homeRefreshBus.stream;
   static Stream<MPHomeUploadProgressPayload> get uploadProgressEvents =>
@@ -72,6 +93,8 @@ class MPHomeNotification {
       _todoDeletedBus.stream;
   static Stream<void> get bleConnectedSuccessEvents =>
       _bleConnectedSuccessBus.stream;
+  static Stream<MPBleMemopinRecordingStateChangedPayload> get bleMemopinRecordingStateEvents =>
+      _bleMemopinRecordingBus.stream;
 
   static void _emitHomeRefresh() {
     if (!_homeRefreshBus.isClosed) {
@@ -109,6 +132,12 @@ class MPHomeNotification {
     }
   }
 
+  static void _emitBleMemopinRecordingState(MPBleMemopinRecordingStateChangedPayload payload) {
+    if (!_bleMemopinRecordingBus.isClosed) {
+      _bleMemopinRecordingBus.add(payload);
+    }
+  }
+
   /// 任意页面主动调用：通知首页刷新列表数据。
   static void notifyHomeListRefresh() => _emitHomeRefresh();
 
@@ -127,6 +156,10 @@ class MPHomeNotification {
   /// Todo 操作调用：通知首页某条 todo 已删除。
   static void notifyTodoDeleted(MPHomeTodoDeletedPayload payload) =>
       _emitTodoDeleted(payload);
+
+  /// MemoPin 录音状态监听：在 [MPBleConnectionHelper] 检测到与上次不同后发出。
+  static void notifyBleMemopinRecordingStateChanged(MPBleMemopinRecordingStateChangedPayload payload) =>
+      _emitBleMemopinRecordingState(payload);
 
   /// BLE 与其它入口在 **连接成功并可使用 GATT** 后调用：首页订阅以触发设备文件导入等。
   static void notifyBleConnectedSuccess() => _emitBleConnectedSuccess();
@@ -171,5 +204,12 @@ class MPHomeNotification {
     void Function() onBleConnected,
   ) {
     return bleConnectedSuccessEvents.listen((_) => onBleConnected());
+  }
+
+  /// 监听 MemoPin 录音中 / 空闲状态变化。
+  static StreamSubscription<MPBleMemopinRecordingStateChangedPayload> listenBleMemopinRecordingState(
+    void Function(MPBleMemopinRecordingStateChangedPayload payload) onState,
+  ) {
+    return bleMemopinRecordingStateEvents.listen(onState);
   }
 }
