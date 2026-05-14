@@ -47,6 +47,33 @@ class MPBleConnectionHelper {
   static final MPBleMemopinRecordingStateWatcher _memopinRecordingWatcher =
       MPBleMemopinRecordingStateWatcher();
 
+  /// 外接 MemoPin 是否正在录音：用于禁止本机开录 / 恢复采集。
+  ///
+  /// 先读 [memoPinRecordingStateSnapshot]（通知可能早于 GATT 读）；再在有已连接
+  /// [backgroundBleTransport] 时用 [readMemoPinRecordingStatus] 兜底，降低漏判。
+  static Future<bool> isMemoPinDeviceRecordingForLocalRecordingGuard() async {
+    if (memoPinRecordingStateSnapshot.isRecording) {
+      return true;
+    }
+    final BleTransport? t = backgroundBleTransport;
+    if (t == null) {
+      return false;
+    }
+    try {
+      if (!await t.isConnected()) {
+        return false;
+      }
+    } catch (_) {
+      return false;
+    }
+    try {
+      final MPBleMemopinRecordStatus310 st = await readMemoPinRecordingStatus(t);
+      return st.isRecording;
+    } catch (_) {
+      return memoPinRecordingStateSnapshot.isRecording;
+    }
+  }
+
   /// 主动读取 `e2c1a310` 录音状态（未连接时返回「未录音」解析结果）。
   static Future<MPBleMemopinRecordStatus310> readMemoPinRecordingStatus(BleTransport transport) async {
     try {

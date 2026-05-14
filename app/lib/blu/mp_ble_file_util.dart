@@ -398,11 +398,11 @@ class MPBleLiveRecordingSession {
     _activeFileNameForRetransmit = p.basename(opusPath);
 
     _audioSub = _transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.audioData)
+        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.audioData.toString())
         .listen(_onAudio301, onError: (Object e) => debugPrint('MPBleLiveRecordingSession audio301: $e'));
 
     _retransmitSub = _transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.response)
+        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
         .listen(_onResponse303Retransmit, onError: (_) {});
 
     _started = true;

@@ -26,8 +26,8 @@ class MPBleMemopinRecordingStateWatcher {
   /// 主动读取 `e2c1a310`。
   static Future<MPBleMemopinRecordStatus310> readStatus310(BleTransport transport) async {
     final List<int> raw = await transport.readCharacteristic(
-      MPNoteBleUUIDs.service,
-      MPNoteBleUUIDs.recordStatus,
+      MPNoteBleUUIDs.service.toString(),
+      MPNoteBleUUIDs.recordStatus.toString(),
     );
     return MPBleMemopinRecordStatus310.parse(raw);
   }
@@ -65,12 +65,12 @@ class MPBleMemopinRecordingStateWatcher {
     await _apply310Snapshot(await readStatus310(transport), forceEmit: true);
 
     _responseSub = transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.response)
+        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
         .listen(_onResponsePacket, onError: (Object e) => debugPrint('MPBleMemopinRecordingStateWatcher response: $e'));
 
     try {
       _statusSub = transport
-          .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.recordStatus)
+          .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordStatus.toString())
           .listen(_onRecordStatusNotify, onError: (_) {});
     } catch (e) {
       debugPrint('MPBleMemopinRecordingStateWatcher: recordStatus notify unavailable: $e');

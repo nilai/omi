@@ -17,9 +17,6 @@ import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
-import '../../../blu/ble_transport.dart';
-import '../../../blu/mp_ble_connection_helper.dart';
-import '../../../blu/mp_note_ble_protocol.dart';
 import '../../../common/mp_home_notification.dart';
 import '../../../common/mp_todo_context_utile.dart';
 import '../../../common/omi_edit_todo_popup.dart';
@@ -128,35 +125,6 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
     }
   }
 
-  /// 外接 BLE 正在录音时不可在本机开录；否则打开本机录音弹窗。
-  Future<void> _openLocalRecordingIfBleAllows(BuildContext anchorContext) async {
-    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
-    if (transport != null) {
-      try {
-        if (await transport.isConnected()) {
-          final MPBleMemopinRecordStatus310 st =
-              await MPBleConnectionHelper.readMemoPinRecordingStatus(transport);
-          if (!mounted || !anchorContext.mounted) {
-            return;
-          }
-          if (st.isRecording) {
-            MPToastUtils.showMessage(
-              'The external device is recording. Recording on this phone isn\'t available.',
-              context: anchorContext,
-            );
-            return;
-          }
-        }
-      } catch (_) {
-        // ignore: 读状态失败时不阻断本机录音
-      }
-    }
-    if (!mounted || !anchorContext.mounted) {
-      return;
-    }
-    await showMPAudioRecordPopup(anchorContext);
-  }
-
   Future<void> _onRefresh() async {
     _cubit.loadData();
   }
@@ -226,7 +194,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                           subtitle: 'Record a new audio memory',
                           onTap: () async {
                             Navigator.pop(ctx);
-                            await _openLocalRecordingIfBleAllows(context);
+                            await showMPAudioRecordPopup(context);
                           },
                         ),
                         Positioned(

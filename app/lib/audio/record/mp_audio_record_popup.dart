@@ -8,7 +8,7 @@ import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
-import 'package:memo_pin/http/schema/mp_memory.dart';
+import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -43,7 +43,17 @@ class MPPassThroughBarrierDialogRoute extends RawDialogRoute<MPAudioRecordResult
 /// 展示「Record Audio」流程弹窗：引导 → 计时录音 →（取消时）确认；录音中可最小化为底部胶囊条继续录。
 ///
 /// 返回 [MPAudioRecordResult] 表示用户点击 Save；取消或关闭为 `null`。
-Future<MPAudioRecordResult?> showMPAudioRecordPopup(BuildContext context) {
+Future<MPAudioRecordResult?> showMPAudioRecordPopup(BuildContext context) async {
+  final bool isRecording = await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard();
+  if (isRecording) {
+    if (context.mounted) {
+      MPToastUtils.showMessage('The external device is recording. Recording on this phone isn\'t available.', context: context);
+    }
+    return null;
+  }
+  if (!context.mounted) {
+    return null;
+  }
   final NavigatorState rootNavigator = Navigator.of(context, rootNavigator: true);
   final String barrierLabel = MaterialLocalizations.of(context).modalBarrierDismissLabel;
   return rootNavigator.push<MPAudioRecordResult?>(
@@ -129,7 +139,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     );
     MPGlobalRecordingCoordinator.instance.registerBleDeviceRecordingStopHandler(
       _bleDeviceRecordingStopToken,
-      _onBleDeviceRecordingStartedStopLocal,
+      _onBleDeviceRecordingStartedPauseLocal,
     );
     WidgetsBinding.instance.addObserver(this);
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
@@ -177,63 +187,64 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
-  /// 外接 MemoPin 等设备开始录音：丢弃本机会话并关闭弹窗。
-  Future<void> _onBleDeviceRecordingStartedStopLocal() async {
+  /// 外接 MemoPin 开始录音：引导态仅提示；录音态则暂停本机采集（不关闭弹窗、不删文件）。
+  Future<void> _onBleDeviceRecordingStartedPauseLocal() async {
     if (!mounted) {
       return;
     }
     if (_step == _MPAudioRecordStep.intro) {
-      widget.rootNavigator.pop();
+      MPToastUtils.showMessage(
+        'The external device is recording. Recording on this phone isn\'t available.',
+        context: context,
+      );
       return;
     }
-    if (_busy) {
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _showCancelConfirm = false;
-    });
-    _tickTimer?.cancel();
-    _tickTimer = null;
-    await _releaseRecorder(deleteFile: true);
+    final bool didPause = await _pauseRecordingDueToExternalInterruption();
     if (!mounted) {
       return;
     }
-    MPToastUtils.showMessage(
-      'Recording stopped: the external device is now recording.',
-      context: context,
-    );
-    widget.rootNavigator.pop();
+    if (didPause) {
+      MPToastUtils.showMessage(
+        'Recording paused: the external device is now recording.',
+        context: context,
+      );
+    }
   }
 
-  /// 其它入口开始录音：暂停当前采集（与手动暂停一致）。
-  Future<void> _onInterruptedByOtherOwner() async {
+  /// 与 [_onInterruptedByOtherOwner] 共用：暂停当前连续采集段并刷新 UI。
+  Future<bool> _pauseRecordingDueToExternalInterruption() async {
     if (_busy || _step != _MPAudioRecordStep.recording || _recordPath == null || !_recorderOpened) {
-      return;
+      return false;
     }
     if (_isPaused) {
-      return;
+      return false;
     }
     setState(() => _busy = true);
     try {
       await _recorder.pauseRecorder();
       if (!mounted) {
-        return;
+        return false;
       }
       setState(() {
         if (_activeRecordingSegmentStart != null) {
-          _completedRecordingSegments +=
-              DateTime.now().difference(_activeRecordingSegmentStart!);
+          _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
           _activeRecordingSegmentStart = null;
         }
         _isPaused = true;
         _busy = false;
       });
+      return true;
     } catch (_) {
       if (mounted) {
         setState(() => _busy = false);
       }
+      return false;
     }
+  }
+
+  /// 其它入口开始录音：暂停当前采集（与手动暂停一致）。
+  Future<void> _onInterruptedByOtherOwner() async {
+    await _pauseRecordingDueToExternalInterruption();
   }
 
   /// 回到前台时触发重建；计时见 [_recordingElapsed]（墙钟），与退后台持续录音一致。
@@ -315,6 +326,16 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
+      if (await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard()) {
+        if (mounted) {
+          MPToastUtils.showMessage(
+            'The external device is recording. Recording on this phone isn\'t available.',
+            context: context,
+          );
+          setState(() => _busy = false);
+        }
+        return;
+      }
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
@@ -360,6 +381,16 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     setState(() => _busy = true);
     try {
       if (_isPaused) {
+        if (await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard()) {
+          if (mounted) {
+            MPToastUtils.showMessage(
+              'The external device is recording. Recording on this phone isn\'t available.',
+              context: context,
+            );
+            setState(() => _busy = false);
+          }
+          return;
+        }
         await MPGlobalRecordingCoordinator.instance
             .beforeLocalRecordingStarts(_recordingOwnerToken);
         await _recorder.resumeRecorder();

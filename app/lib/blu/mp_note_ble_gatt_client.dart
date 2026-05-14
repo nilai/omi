@@ -114,8 +114,8 @@ class MPNoteBleGattClient {
   /// 读取 `e2c1a310` 录音状态（Read；部分固件亦可能推送 notify）。
   Future<MPBleMemopinRecordStatus310> readRecordStatus310() async {
     final List<int> raw = await _transport.readCharacteristic(
-      MPNoteBleUUIDs.service,
-      MPNoteBleUUIDs.recordStatus,
+      MPNoteBleUUIDs.service.toString(),
+      MPNoteBleUUIDs.recordStatus.toString(),
     );
     return MPBleMemopinRecordStatus310.parse(raw);
   }
@@ -204,8 +204,8 @@ class MPNoteBleGattClient {
     ];
     await _ensureResponseSubscription();
     await _transport.writeCharacteristicWithoutResponse(
-      MPNoteBleUUIDs.service,
-      MPNoteBleUUIDs.command,
+      MPNoteBleUUIDs.service.toString(),
+      MPNoteBleUUIDs.command.toString(),
       cmd,
     );
   }
@@ -293,20 +293,20 @@ class MPNoteBleGattClient {
       return const Stream<List<int>>.empty();
     }
     return _transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.recordFile)
+        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordFile.toString())
         .expand((List<int> packet) => assembler.push(packet));
   }
 
   /// 底层原始 `recordFile` 通知（未按 Opus 帧切分）。
   Stream<List<int>> get recordFileRawStream =>
-      _transport.getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.recordFile);
+      _transport.getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordFile.toString());
 
   Future<void> _ensureResponseSubscription() async {
     if (_responseSub != null) {
       return;
     }
     _responseSub = _transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service, MPNoteBleUUIDs.response)
+        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
         .listen(
           _handleIncomingPacket,
           onError: (_) {},
@@ -401,8 +401,8 @@ class MPNoteBleGattClient {
     _responseCompleter = Completer<List<int>>();
 
     await _transport.writeCharacteristicWithoutResponse(
-      MPNoteBleUUIDs.service,
-      MPNoteBleUUIDs.command,
+      MPNoteBleUUIDs.service.toString(),
+      MPNoteBleUUIDs.command.toString(),
       command,
     );
 
