@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'package:memo_pin/blu/ble_transport.dart';
-import 'package:memo_pin/blu/device_transport.dart';
+import 'package:memo_pin/blu/mp_ble_transport.dart';
+import 'package:memo_pin/blu/mp_device_transport.dart';
 import 'package:memo_pin/blu/mp_ble_preferences.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
@@ -89,7 +89,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
   MPConnectDeviceCubit() : super(const MPConnectDeviceState(isScanning: false));
 
   BleTransport? _transport;
-  StreamSubscription<DeviceTransportState>? _transportConnectionSub;
+  StreamSubscription<MPDeviceTransportState>? _transportConnectionSub;
   int _scanGeneration = 0;
 
   /// 单轮扫描阶段时长；两阶段（UUID 过滤 + 全量）合计最长约 `2 *` 该值。
@@ -415,11 +415,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
   }
 
-  /// 订阅当前 [_transport] 的链路状态；外围关机、断距等会进入 [DeviceTransportState.disconnected]，用于刷新卡片 UI。
+  /// 订阅当前 [_transport] 的链路状态；外围关机、断距等会进入 [MPDeviceTransportState.disconnected]，用于刷新卡片 UI。
   void _attachTransportConnectionListener(BleTransport transport) {
     _detachTransportConnectionListener();
-    _transportConnectionSub = transport.connectionStateStream.listen((DeviceTransportState s) {
-      if (isClosed || s != DeviceTransportState.disconnected) {
+    _transportConnectionSub = transport.connectionStateStream.listen((MPDeviceTransportState s) {
+      if (isClosed || s != MPDeviceTransportState.disconnected) {
         return;
       }
       unawaited(_onPassiveBleDisconnected());

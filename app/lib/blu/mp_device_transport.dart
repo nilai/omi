@@ -2,7 +2,7 @@ import 'dart:async';
 
 /// Abstract transport layer for device communication
 /// Provides a unified interface for different communication protocols (BLE, WatchConnectivity, etc.)
-abstract class DeviceTransport {
+abstract class MPDeviceTransport {
   String get deviceId;
 
   Future<void> connect();
@@ -15,14 +15,9 @@ abstract class DeviceTransport {
   Future<List<int>> readCharacteristic(String serviceUuid, String characteristicUuid);
   Future<void> writeCharacteristic(String serviceUuid, String characteristicUuid, List<int> data);
 
-  Stream<DeviceTransportState> get connectionStateStream;
+  Stream<MPDeviceTransportState> get connectionStateStream;
 
   Future<void> dispose();
 }
 
-enum DeviceTransportState {
-  disconnected,
-  connecting,
-  connected,
-  disconnecting,
-}
+enum MPDeviceTransportState { disconnected, connecting, connected, disconnecting }

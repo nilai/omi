@@ -61,11 +61,7 @@ class AudioPacketReassembler {
   /// Seq 间隙检测回调
   final void Function(int expectedSeq, int receivedSeq) onSeqGap;
 
-  AudioPacketReassembler({
-    this.tag = 'RT',
-    required this.onFrameComplete,
-    required this.onSeqGap,
-  });
+  AudioPacketReassembler({this.tag = 'RT', required this.onFrameComplete, required this.onSeqGap});
 
   /// 获取最后完成的 Seq
   int get lastCompletedSeq => _lastCompletedSeq;
@@ -85,8 +81,10 @@ class AudioPacketReassembler {
     // 前10个包打印原始信息，便于确认实际包格式
     if (_completedFrameCount + _discardedFrameCount < 10) {
       final hexHead = rawPacket.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
-      print('[$tag] 原始包#${_completedFrameCount + _discardedFrameCount}: '
-          'len=${rawPacket.length}, head=[$hexHead${rawPacket.length > 8 ? " ..." : ""}]');
+      print(
+        '[$tag] 原始包#${_completedFrameCount + _discardedFrameCount}: '
+        'len=${rawPacket.length}, head=[$hexHead${rawPacket.length > 8 ? " ..." : ""}]',
+      );
     }
 
     if (rawPacket.length < AudioPacketConstants.headerSizeSeqOnly + 1) {
@@ -97,15 +95,18 @@ class AudioPacketReassembler {
     final seq = AudioPacketConstants.parseSeq(rawPacket);
 
     // 自动检测格式: 4+480=484 表示无 Flag (Seq + 完整帧)
-    final isNoFlagFormat = (rawPacket.length == AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
+    final isNoFlagFormat =
+        (rawPacket.length == AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
 
     if (isNoFlagFormat) {
       // 无 Flag 格式: [Seq 4B] [Data 480B]
       final data = rawPacket.sublist(AudioPacketConstants.headerSizeSeqOnly);
 
       if (_completedFrameCount < 10 || _shouldLogByTime()) {
-        print('[$tag] 完整帧 seq=$seq, dataSize=${data.length}, '
-            '已完成帧=$_completedFrameCount (无Flag格式)');
+        print(
+          '[$tag] 完整帧 seq=$seq, dataSize=${data.length}, '
+          '已完成帧=$_completedFrameCount (无Flag格式)',
+        );
       }
 
       _onFrameReady(seq, data);
@@ -125,11 +126,15 @@ class AudioPacketReassembler {
 
     if (_completedFrameCount < 10 || _shouldLogByTime()) {
       if (totalParts == 0) {
-        print('[$tag] 单包 seq=$seq, flag=0x${flag.toRadixString(16)}, '
-            'dataSize=${data.length}, 已完成帧=$_completedFrameCount');
+        print(
+          '[$tag] 单包 seq=$seq, flag=0x${flag.toRadixString(16)}, '
+          'dataSize=${data.length}, 已完成帧=$_completedFrameCount',
+        );
       } else {
-        print('[$tag] 分包 seq=$seq, flag=0x${flag.toRadixString(16)}, '
-            'part=${partIndex + 1}/$totalParts, dataSize=${data.length}');
+        print(
+          '[$tag] 分包 seq=$seq, flag=0x${flag.toRadixString(16)}, '
+          'part=${partIndex + 1}/$totalParts, dataSize=${data.length}',
+        );
       }
     }
 
@@ -184,8 +189,10 @@ class AudioPacketReassembler {
     if (_lastCompletedSeq >= 0 && seq > _lastCompletedSeq + 1) {
       final gapStart = _lastCompletedSeq + 1;
       final gapCount = seq - gapStart;
-      print('[$tag] ⚠️ Seq 间隙! 期望=$gapStart, 收到=$seq, '
-          '缺失${gapCount}帧, 文件=$_currentFileName');
+      print(
+        '[$tag] ⚠️ Seq 间隙! 期望=$gapStart, 收到=$seq, '
+        '缺失${gapCount}帧, 文件=$_currentFileName',
+      );
       onSeqGap(gapStart, seq);
     }
 
@@ -197,17 +204,14 @@ class AudioPacketReassembler {
   /// 确保有超时定时器运行 (避免高频创建/销毁)
   void _ensureTimeout() {
     if (_timeoutTimer?.isActive == true) return;
-    _timeoutTimer = Timer(
-      Duration(milliseconds: AudioPacketConstants.reassemblyTimeoutMs),
-      () {
-        if (_pending.isNotEmpty) {
-          final seqs = _pending.keys.toList();
-          print('[$tag] ⚠️ 分包超时! 丢弃 ${_pending.length} 个不完整帧: seqs=$seqs');
-          _discardedFrameCount += _pending.length;
-          _pending.clear();
-        }
-      },
-    );
+    _timeoutTimer = Timer(Duration(milliseconds: AudioPacketConstants.reassemblyTimeoutMs), () {
+      if (_pending.isNotEmpty) {
+        final seqs = _pending.keys.toList();
+        print('[$tag] ⚠️ 分包超时! 丢弃 ${_pending.length} 个不完整帧: seqs=$seqs');
+        _discardedFrameCount += _pending.length;
+        _pending.clear();
+      }
+    });
   }
 
   /// 重置状态 (新文件开始或重连时调用)
@@ -226,8 +230,10 @@ class AudioPacketReassembler {
       _lastDetailLogTime = null;
       print('[$tag] 重置: 文件切换 $oldFile → $fileName, Seq 归零');
     } else {
-      print('[$tag] 重置: 清除缓存 (lastSeq=$_lastCompletedSeq, '
-          '已完成=$_completedFrameCount, 已丢弃=$_discardedFrameCount)');
+      print(
+        '[$tag] 重置: 清除缓存 (lastSeq=$_lastCompletedSeq, '
+        '已完成=$_completedFrameCount, 已丢弃=$_discardedFrameCount)',
+      );
     }
   }
 
@@ -257,7 +263,7 @@ class AudioPacketReassembler {
 /// - 命令发送和响应接收
 /// - OTA 文件传输
 /// - 音频包协议解析 (V1.0: Seq+Flag+Data)
-class NoteBleTransport implements DeviceTransport {
+class NoteBleTransport implements MPDeviceTransport {
   final FlutterReactiveBle _ble = FlutterReactiveBle();
   final BtDevice device;
 
@@ -271,7 +277,7 @@ class NoteBleTransport implements DeviceTransport {
   StreamSubscription<List<int>>? _logSubscription;
 
   // 数据流控制器
-  final _connectionStateController = StreamController<DeviceTransportState>.broadcast();
+  final _connectionStateController = StreamController<MPDeviceTransportState>.broadcast();
   final _audioDataController = StreamController<List<int>>.broadcast();
   final _seqAudioController = StreamController<({int seq, List<int> frame})>.broadcast();
   final _responseDataController = StreamController<List<int>>.broadcast();
@@ -279,7 +285,7 @@ class NoteBleTransport implements DeviceTransport {
   final _logDataController = StreamController<List<int>>.broadcast();
 
   // 当前连接状态
-  DeviceTransportState _currentState = DeviceTransportState.disconnected;
+  MPDeviceTransportState _currentState = MPDeviceTransportState.disconnected;
 
   // 当前协商的 MTU 值
   int _negotiatedMtu = 23; // 默认 BLE MTU
@@ -320,11 +326,7 @@ class NoteBleTransport implements DeviceTransport {
         _seqAudioController.add((seq: seq, frame: frame));
       },
       onSeqGap: (expectedSeq, receivedSeq) {
-        _seqGaps.add(SeqGapRecord(
-          startSeq: expectedSeq,
-          endSeq: receivedSeq - 1,
-          detectedAt: DateTime.now(),
-        ));
+        _seqGaps.add(SeqGapRecord(startSeq: expectedSeq, endSeq: receivedSeq - 1, detectedAt: DateTime.now()));
         // 保留最近 100 条间隙记录，防止内存泄漏
         if (_seqGaps.length > 100) {
           _seqGaps.removeRange(0, _seqGaps.length - 100);
@@ -367,9 +369,11 @@ class NoteBleTransport implements DeviceTransport {
     _filePacketCount = 0;
     _fileChunkBuffer.clear();
     _isRawFileTransfer = fileName != null && fileName.toLowerCase().endsWith('.txt');
-    print('[NoteBleTransport] 文件传输模式: '
-        '${_isRawFileTransfer ? "纯字节流 (txt)" : "[Seq][480B] 分帧 (opus)"} '
-        'file=$fileName');
+    print(
+      '[NoteBleTransport] 文件传输模式: '
+      '${_isRawFileTransfer ? "纯字节流 (txt)" : "[Seq][480B] 分帧 (opus)"} '
+      'file=$fileName',
+    );
   }
 
   /// 恢复 lastCompletedSeq（从持久化状态恢复，供重连后间隙检测）
@@ -391,7 +395,7 @@ class NoteBleTransport implements DeviceTransport {
   String get deviceId => device.id;
 
   @override
-  Stream<DeviceTransportState> get connectionStateStream => _connectionStateController.stream;
+  Stream<MPDeviceTransportState> get connectionStateStream => _connectionStateController.stream;
 
   /// 音频数据流 (设备→APP, 已解析的纯 Opus 帧)
   Stream<List<int>> get audioStream => _audioDataController.stream;
@@ -420,61 +424,63 @@ class NoteBleTransport implements DeviceTransport {
     StreamSubscription<DiscoveredDevice>? scanSubscription;
 
     try {
-      scanSubscription = _ble.scanForDevices(
-        withServices: [], // 扫描所有设备
-        scanMode: ScanMode.lowLatency,
-      ).listen(
-        (discoveredDevice) {
-          // 检查是否是目标设备
-          if (discoveredDevice.id.toLowerCase() == device.id.toLowerCase()) {
-            print('[NoteBleTransport] -------- 发现目标设备 --------');
-            print('[NoteBleTransport]   名称: ${discoveredDevice.name}');
-            print('[NoteBleTransport]   MAC: ${discoveredDevice.id}');
-            print('[NoteBleTransport]   RSSI: ${discoveredDevice.rssi} dBm');
-            print('[NoteBleTransport]   可连接: ${discoveredDevice.connectable}');
+      scanSubscription = _ble
+          .scanForDevices(
+            withServices: [], // 扫描所有设备
+            scanMode: ScanMode.lowLatency,
+          )
+          .listen(
+            (discoveredDevice) {
+              // 检查是否是目标设备
+              if (discoveredDevice.id.toLowerCase() == device.id.toLowerCase()) {
+                print('[NoteBleTransport] -------- 发现目标设备 --------');
+                print('[NoteBleTransport]   名称: ${discoveredDevice.name}');
+                print('[NoteBleTransport]   MAC: ${discoveredDevice.id}');
+                print('[NoteBleTransport]   RSSI: ${discoveredDevice.rssi} dBm');
+                print('[NoteBleTransport]   可连接: ${discoveredDevice.connectable}');
 
-            // 打印广播的服务 UUID
-            if (discoveredDevice.serviceUuids.isNotEmpty) {
-              print('[NoteBleTransport]   广播服务UUID:');
-              for (final uuid in discoveredDevice.serviceUuids) {
-                final isNoteService = uuid.toString().toLowerCase() == NoteUUIDs.service.toString().toLowerCase();
-                print('[NoteBleTransport]     - $uuid ${isNoteService ? "✓ Note服务" : ""}');
+                // 打印广播的服务 UUID
+                if (discoveredDevice.serviceUuids.isNotEmpty) {
+                  print('[NoteBleTransport]   广播服务UUID:');
+                  for (final uuid in discoveredDevice.serviceUuids) {
+                    final isNoteService = uuid.toString().toLowerCase() == NoteUUIDs.service.toString().toLowerCase();
+                    print('[NoteBleTransport]     - $uuid ${isNoteService ? "✓ Note服务" : ""}');
+                  }
+                } else {
+                  print('[NoteBleTransport]   广播服务UUID: (无)');
+                }
+
+                // 打印制造商数据 (原始字节)
+                if (discoveredDevice.manufacturerData.isNotEmpty) {
+                  final hexData = discoveredDevice.manufacturerData
+                      .map((e) => e.toRadixString(16).padLeft(2, '0'))
+                      .join(' ');
+                  print('[NoteBleTransport]   制造商数据: $hexData');
+                }
+
+                // 打印服务数据
+                if (discoveredDevice.serviceData.isNotEmpty) {
+                  print('[NoteBleTransport]   服务数据:');
+                  discoveredDevice.serviceData.forEach((uuid, value) {
+                    final hexData = value.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ');
+                    print('[NoteBleTransport]     $uuid: $hexData');
+                  });
+                }
+
+                print('[NoteBleTransport] --------------------------------');
+
+                if (!completer.isCompleted) {
+                  completer.complete(true);
+                }
               }
-            } else {
-              print('[NoteBleTransport]   广播服务UUID: (无)');
-            }
-
-            // 打印制造商数据 (原始字节)
-            if (discoveredDevice.manufacturerData.isNotEmpty) {
-              final hexData = discoveredDevice.manufacturerData
-                  .map((e) => e.toRadixString(16).padLeft(2, '0'))
-                  .join(' ');
-              print('[NoteBleTransport]   制造商数据: $hexData');
-            }
-
-            // 打印服务数据
-            if (discoveredDevice.serviceData.isNotEmpty) {
-              print('[NoteBleTransport]   服务数据:');
-              discoveredDevice.serviceData.forEach((uuid, value) {
-                final hexData = value.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ');
-                print('[NoteBleTransport]     $uuid: $hexData');
-              });
-            }
-
-            print('[NoteBleTransport] --------------------------------');
-
-            if (!completer.isCompleted) {
-              completer.complete(true);
-            }
-          }
-        },
-        onError: (error) {
-          print('[NoteBleTransport] 扫描错误: $error');
-          if (!completer.isCompleted) {
-            completer.complete(false);
-          }
-        },
-      );
+            },
+            onError: (error) {
+              print('[NoteBleTransport] 扫描错误: $error');
+              if (!completer.isCompleted) {
+                completer.complete(false);
+              }
+            },
+          );
 
       // 等待超时或找到设备
       final found = await completer.future.timeout(
@@ -501,7 +507,7 @@ class NoteBleTransport implements DeviceTransport {
 
   @override
   Future<void> connect() async {
-    if (_currentState == DeviceTransportState.connected) {
+    if (_currentState == MPDeviceTransportState.connected) {
       print('[NoteBleTransport] 设备已连接,跳过连接');
       return;
     }
@@ -513,7 +519,7 @@ class NoteBleTransport implements DeviceTransport {
     }
 
     await _connectionSubscription?.cancel();
-    _updateState(DeviceTransportState.connecting);
+    _updateState(MPDeviceTransportState.connecting);
 
     // 重置重组器状态 (重连时清除旧缓存)
     _reassembler.reset();
@@ -533,11 +539,13 @@ class NoteBleTransport implements DeviceTransport {
     // 先验证设备是否正在广播
     final isAdvertising = await _verifyDeviceAdvertisement();
     if (!isAdvertising) {
-      _updateState(DeviceTransportState.disconnected);
-      throw Exception('设备未在广播状态，无法连接。请确认:\n'
-          '1. 设备已开机\n'
-          '2. 设备未被其他手机连接\n'
-          '3. 设备在蓝牙范围内');
+      _updateState(MPDeviceTransportState.disconnected);
+      throw Exception(
+        '设备未在广播状态，无法连接。请确认:\n'
+        '1. 设备已开机\n'
+        '2. 设备未被其他手机连接\n'
+        '3. 设备在蓝牙范围内',
+      );
     }
 
     print('[NoteBleTransport] ✓ 广播验证通过，开始GATT连接...');
@@ -546,81 +554,78 @@ class NoteBleTransport implements DeviceTransport {
     _connectionCompleter = Completer<void>();
 
     _connectionSubscription = _ble
-        .connectToDevice(
-      id: device.id,
-      connectionTimeout: const Duration(seconds: 10),
-    )
+        .connectToDevice(id: device.id, connectionTimeout: const Duration(seconds: 10))
         .listen(
-      (state) async {
-        print('[NoteBleTransport] -------- 状态变化 --------');
-        print('[NoteBleTransport]   状态: ${state.connectionState}');
-        print('[NoteBleTransport]   设备ID: ${state.deviceId}');
-        if (state.failure != null) {
-          print('[NoteBleTransport]   失败码: ${state.failure!.code}');
-          print('[NoteBleTransport]   失败信息: ${state.failure!.message}');
-        }
-        print('[NoteBleTransport] --------------------------');
-
-        if (state.connectionState == DeviceConnectionState.connected) {
-          try {
-            print('[NoteBleTransport] 设备连接成功');
-
-            // #5: 连接稳定等待
-            await Future.delayed(const Duration(milliseconds: _kConnectionStabilizeDelayMs));
-            print('[NoteBleTransport] 连接稳定等待完成');
-
-            // #1: MTU 交换
-            await _exchangeMtu();
-
-            // #3 & #8: 服务发现和验证
-            await _discoverAndValidateServices();
-
-            // 订阅特征
-            await _subscribeCharacteristics();
-
-            _updateState(DeviceTransportState.connected);
-            print('[NoteBleTransport] 连接流程完成');
-
-            // 通知连接完成
-            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-              _connectionCompleter!.complete();
-            }
-          } catch (e) {
-            print('[NoteBleTransport] 连接初始化失败: $e');
-            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-              _connectionCompleter!.completeError(e);
-            }
-          }
-        } else if (state.connectionState == DeviceConnectionState.disconnected) {
-          _updateState(DeviceTransportState.disconnected);
-          if (state.failure != null) {
-            print('[NoteBleTransport] ════════ 连接失败详情 ════════');
-            print('[NoteBleTransport]   错误类型: ${state.failure.runtimeType}');
-            print('[NoteBleTransport]   错误码: ${state.failure!.code}');
-            print('[NoteBleTransport]   错误信息: ${state.failure!.message}');
+          (state) async {
+            print('[NoteBleTransport] -------- 状态变化 --------');
+            print('[NoteBleTransport]   状态: ${state.connectionState}');
             print('[NoteBleTransport]   设备ID: ${state.deviceId}');
-            print('[NoteBleTransport]   时间: ${DateTime.now()}');
-            print('[NoteBleTransport] ════════════════════════════════');
-            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-              _connectionCompleter!.completeError(state.failure!);
+            if (state.failure != null) {
+              print('[NoteBleTransport]   失败码: ${state.failure!.code}');
+              print('[NoteBleTransport]   失败信息: ${state.failure!.message}');
             }
-          } else {
-            print('[NoteBleTransport] 设备断开连接 (无错误信息)');
-          }
-        }
-      },
-      onError: (error) {
-        print('[NoteBleTransport] ════════ 连接流错误 ════════');
-        print('[NoteBleTransport]   错误类型: ${error.runtimeType}');
-        print('[NoteBleTransport]   错误内容: $error');
-        print('[NoteBleTransport]   时间: ${DateTime.now()}');
-        print('[NoteBleTransport] ══════════════════════════════');
-        _handleBleError(error);
-        if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
-          _connectionCompleter!.completeError(error);
-        }
-      },
-    );
+            print('[NoteBleTransport] --------------------------');
+
+            if (state.connectionState == DeviceConnectionState.connected) {
+              try {
+                print('[NoteBleTransport] 设备连接成功');
+
+                // #5: 连接稳定等待
+                await Future.delayed(const Duration(milliseconds: _kConnectionStabilizeDelayMs));
+                print('[NoteBleTransport] 连接稳定等待完成');
+
+                // #1: MTU 交换
+                await _exchangeMtu();
+
+                // #3 & #8: 服务发现和验证
+                await _discoverAndValidateServices();
+
+                // 订阅特征
+                await _subscribeCharacteristics();
+
+                _updateState(MPDeviceTransportState.connected);
+                print('[NoteBleTransport] 连接流程完成');
+
+                // 通知连接完成
+                if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+                  _connectionCompleter!.complete();
+                }
+              } catch (e) {
+                print('[NoteBleTransport] 连接初始化失败: $e');
+                if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+                  _connectionCompleter!.completeError(e);
+                }
+              }
+            } else if (state.connectionState == DeviceConnectionState.disconnected) {
+              _updateState(MPDeviceTransportState.disconnected);
+              if (state.failure != null) {
+                print('[NoteBleTransport] ════════ 连接失败详情 ════════');
+                print('[NoteBleTransport]   错误类型: ${state.failure.runtimeType}');
+                print('[NoteBleTransport]   错误码: ${state.failure!.code}');
+                print('[NoteBleTransport]   错误信息: ${state.failure!.message}');
+                print('[NoteBleTransport]   设备ID: ${state.deviceId}');
+                print('[NoteBleTransport]   时间: ${DateTime.now()}');
+                print('[NoteBleTransport] ════════════════════════════════');
+                if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+                  _connectionCompleter!.completeError(state.failure!);
+                }
+              } else {
+                print('[NoteBleTransport] 设备断开连接 (无错误信息)');
+              }
+            }
+          },
+          onError: (error) {
+            print('[NoteBleTransport] ════════ 连接流错误 ════════');
+            print('[NoteBleTransport]   错误类型: ${error.runtimeType}');
+            print('[NoteBleTransport]   错误内容: $error');
+            print('[NoteBleTransport]   时间: ${DateTime.now()}');
+            print('[NoteBleTransport] ══════════════════════════════');
+            _handleBleError(error);
+            if (_connectionCompleter != null && !_connectionCompleter!.isCompleted) {
+              _connectionCompleter!.completeError(error);
+            }
+          },
+        );
 
     // 等待连接完成（带超时）
     await _connectionCompleter!.future.timeout(
@@ -645,10 +650,13 @@ class NoteBleTransport implements DeviceTransport {
       // 计算音频包分包预期
       final payloadPerPacket = _negotiatedMtu - 3 - AudioPacketConstants.headerSizeWithFlag; // ATT header + 音频包头(含Flag)
       final expectedParts = (AudioPacketConstants.frameSize / payloadPerPacket).ceil();
-      final noFlagFits = (_negotiatedMtu - 3) >= (AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
-      print('[NoteBleTransport] 音频分包预期: MTU=$_negotiatedMtu, '
-          '每包载荷=${payloadPerPacket}B, 预计分${expectedParts}包/帧'
-          '${noFlagFits ? " (无Flag单包可行)" : ""}');
+      final noFlagFits =
+          (_negotiatedMtu - 3) >= (AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
+      print(
+        '[NoteBleTransport] 音频分包预期: MTU=$_negotiatedMtu, '
+        '每包载荷=${payloadPerPacket}B, 预计分${expectedParts}包/帧'
+        '${noFlagFits ? " (无Flag单包可行)" : ""}',
+      );
     } catch (e) {
       print('[NoteBleTransport] MTU 协商失败: $e, 使用默认值');
       // MTU 协商失败不中断连接，使用默认值
@@ -717,7 +725,9 @@ class NoteBleTransport implements DeviceTransport {
       );
       int rawPacketCount = 0;
       print('[BLE Audio] 开始订阅 UUID301 音频特征 (V1.0 协议)...');
-      _audioSubscription = _ble.subscribeToCharacteristic(audioChar).listen(
+      _audioSubscription = _ble
+          .subscribeToCharacteristic(audioChar)
+          .listen(
             (data) {
               rawPacketCount++;
 
@@ -726,14 +736,16 @@ class NoteBleTransport implements DeviceTransport {
                 String headerInfo = '';
                 if (data.length >= AudioPacketConstants.headerSizeSeqOnly) {
                   final seq = AudioPacketConstants.parseSeq(data);
-                  final isNoFlag = (data.length == AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
+                  final isNoFlag =
+                      (data.length == AudioPacketConstants.headerSizeSeqOnly + AudioPacketConstants.frameSize);
                   if (isNoFlag) {
                     headerInfo = 'seq=$seq (无Flag格式, ${data.length}B)';
                   } else if (data.length >= AudioPacketConstants.headerSizeWithFlag) {
                     final flag = data[4];
                     final total = AudioPacketConstants.getFlagTotal(flag);
                     final index = AudioPacketConstants.getFlagIndex(flag);
-                    headerInfo = 'seq=$seq, flag=0x${flag.toRadixString(16)}'
+                    headerInfo =
+                        'seq=$seq, flag=0x${flag.toRadixString(16)}'
                         '${total > 0 ? " (part ${index + 1}/$total)" : " (单包)"}';
                   }
                 } else {
@@ -746,13 +758,17 @@ class NoteBleTransport implements DeviceTransport {
             },
             onError: (error) {
               print('[BLE Audio] ❌ 订阅错误: $error');
-              print('[BLE Audio] ❌ 已收到 $rawPacketCount 原始包, '
-                  '已完成 ${_reassembler.completedFrameCount} 帧后出错');
+              print(
+                '[BLE Audio] ❌ 已收到 $rawPacketCount 原始包, '
+                '已完成 ${_reassembler.completedFrameCount} 帧后出错',
+              );
               _handleSubscriptionError('音频', error);
             },
             onDone: () {
-              print('[BLE Audio] ⚠️ 音频流结束! 共收到 $rawPacketCount 原始包, '
-                  '已完成 ${_reassembler.completedFrameCount} 帧');
+              print(
+                '[BLE Audio] ⚠️ 音频流结束! 共收到 $rawPacketCount 原始包, '
+                '已完成 ${_reassembler.completedFrameCount} 帧',
+              );
             },
             cancelOnError: false,
           );
@@ -764,7 +780,9 @@ class NoteBleTransport implements DeviceTransport {
         characteristicId: NoteUUIDs.response,
         deviceId: device.id,
       );
-      _responseSubscription = _ble.subscribeToCharacteristic(responseChar).listen(
+      _responseSubscription = _ble
+          .subscribeToCharacteristic(responseChar)
+          .listen(
             (data) => _responseDataController.add(data),
             onError: (error) => _handleSubscriptionError('响应', error),
           );
@@ -775,32 +793,31 @@ class NoteBleTransport implements DeviceTransport {
         characteristicId: NoteUUIDs.recordFile,
         deviceId: device.id,
       );
-      _fileSubscription = _ble.subscribeToCharacteristic(fileChar).listen(
-            (data) {
-              if (_filePacketCount < 3) {
-                final headHex = data.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
-                print('[FILE-BLE] 通知#$_filePacketCount: len=${data.length}, head=[$headHex]'
-                    '${_isRawFileTransfer ? " (raw)" : ""}');
-              }
-              _filePacketCount++;
-
-              // 纯字节流模式 (txt): 直接输出 BLE notification 内容
-              if (_isRawFileTransfer) {
-                _fileDataController.add(List<int>.from(data));
-                return;
-              }
-
-              // 音频分帧模式 (opus): 格式 [Seq 4B][Audio 480B] = 484B/chunk
-              // chunk 边界与 BLE 通知不对齐，需要流式分帧
-              _fileChunkBuffer.addAll(data);
-              while (_fileChunkBuffer.length >= _fileChunkSize) {
-                final audioData = _fileChunkBuffer.sublist(_fileSeqSize, _fileChunkSize);
-                _fileDataController.add(audioData);
-                _fileChunkBuffer = _fileChunkBuffer.sublist(_fileChunkSize);
-              }
-            },
-            onError: (error) => _handleSubscriptionError('文件', error),
+      _fileSubscription = _ble.subscribeToCharacteristic(fileChar).listen((data) {
+        if (_filePacketCount < 3) {
+          final headHex = data.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+          print(
+            '[FILE-BLE] 通知#$_filePacketCount: len=${data.length}, head=[$headHex]'
+            '${_isRawFileTransfer ? " (raw)" : ""}',
           );
+        }
+        _filePacketCount++;
+
+        // 纯字节流模式 (txt): 直接输出 BLE notification 内容
+        if (_isRawFileTransfer) {
+          _fileDataController.add(List<int>.from(data));
+          return;
+        }
+
+        // 音频分帧模式 (opus): 格式 [Seq 4B][Audio 480B] = 484B/chunk
+        // chunk 边界与 BLE 通知不对齐，需要流式分帧
+        _fileChunkBuffer.addAll(data);
+        while (_fileChunkBuffer.length >= _fileChunkSize) {
+          final audioData = _fileChunkBuffer.sublist(_fileSeqSize, _fileChunkSize);
+          _fileDataController.add(audioData);
+          _fileChunkBuffer = _fileChunkBuffer.sublist(_fileChunkSize);
+        }
+      }, onError: (error) => _handleSubscriptionError('文件', error));
 
       // 订阅日志数据特征
       final logChar = QualifiedCharacteristic(
@@ -808,10 +825,9 @@ class NoteBleTransport implements DeviceTransport {
         characteristicId: NoteUUIDs.logFile,
         deviceId: device.id,
       );
-      _logSubscription = _ble.subscribeToCharacteristic(logChar).listen(
-            (data) => _logDataController.add(data),
-            onError: (error) => _handleSubscriptionError('日志', error),
-          );
+      _logSubscription = _ble
+          .subscribeToCharacteristic(logChar)
+          .listen((data) => _logDataController.add(data), onError: (error) => _handleSubscriptionError('日志', error));
 
       print('[NoteBleTransport] 所有特征订阅完成');
     } catch (e) {
@@ -832,22 +848,24 @@ class NoteBleTransport implements DeviceTransport {
     // 检查是否为断开连接异常
     if (error.toString().contains('Disconnected') || error.toString().contains('disconnected')) {
       print('[NoteBleTransport] 检测到设备断开连接');
-      _updateState(DeviceTransportState.disconnected);
+      _updateState(MPDeviceTransportState.disconnected);
       _cancelAllSubscriptions();
     } else {
-      _updateState(DeviceTransportState.disconnected);
+      _updateState(MPDeviceTransportState.disconnected);
     }
   }
 
   @override
   Future<void> disconnect() async {
-    if (_currentState == DeviceTransportState.disconnected) {
+    if (_currentState == MPDeviceTransportState.disconnected) {
       return;
     }
 
-    _updateState(DeviceTransportState.disconnecting);
-    print('[NoteBleTransport] 断开连接 (重组器状态: 已完成=${completedFrameCount}帧, '
-        'lastSeq=$lastCompletedSeq)');
+    _updateState(MPDeviceTransportState.disconnecting);
+    print(
+      '[NoteBleTransport] 断开连接 (重组器状态: 已完成=${completedFrameCount}帧, '
+      'lastSeq=$lastCompletedSeq)',
+    );
 
     _reassembler.reset();
     _fileReassembler.reset();
@@ -862,7 +880,7 @@ class NoteBleTransport implements DeviceTransport {
       print('[NoteBleTransport] 清理 GATT 缓存失败: $e');
     }
 
-    _updateState(DeviceTransportState.disconnected);
+    _updateState(MPDeviceTransportState.disconnected);
   }
 
   /// 取消所有订阅
@@ -882,7 +900,7 @@ class NoteBleTransport implements DeviceTransport {
 
   @override
   Future<bool> isConnected() async {
-    return _currentState == DeviceTransportState.connected;
+    return _currentState == MPDeviceTransportState.connected;
   }
 
   @override
@@ -957,10 +975,7 @@ class NoteBleTransport implements DeviceTransport {
       deviceId: device.id,
     );
 
-    await _ble.writeCharacteristicWithoutResponse(
-      commandChar,
-      value: command,
-    );
+    await _ble.writeCharacteristicWithoutResponse(commandChar, value: command);
 
     final hexString = command.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' ');
     print('[NoteBleTransport] 命令已发送: $hexString');
@@ -974,14 +989,11 @@ class NoteBleTransport implements DeviceTransport {
       deviceId: device.id,
     );
 
-    await _ble.writeCharacteristicWithResponse(
-      otaChar,
-      value: data,
-    );
+    await _ble.writeCharacteristicWithResponse(otaChar, value: data);
   }
 
   /// 更新连接状态
-  void _updateState(DeviceTransportState newState) {
+  void _updateState(MPDeviceTransportState newState) {
     if (_currentState != newState) {
       _currentState = newState;
       _connectionStateController.add(newState);
@@ -1015,11 +1027,7 @@ class SeqGapRecord {
   /// 检测时间
   final DateTime detectedAt;
 
-  SeqGapRecord({
-    required this.startSeq,
-    required this.endSeq,
-    required this.detectedAt,
-  });
+  SeqGapRecord({required this.startSeq, required this.endSeq, required this.detectedAt});
 
   /// 缺失帧数
   int get missingCount => endSeq - startSeq + 1;

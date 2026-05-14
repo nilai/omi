@@ -11,7 +11,7 @@ import '../audio/record/mp_audio_upload_manger.dart';
 import '../common/mp_home_notification.dart';
 import '../utils/mp_opus_to_mp3_util.dart';
 
-import 'ble_transport.dart';
+import 'mp_ble_transport.dart';
 import 'mp_ble_connection_helper.dart';
 import 'mp_note_ble_gatt_client.dart';
 import 'mp_note_ble_protocol.dart';

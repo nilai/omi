@@ -38,7 +38,7 @@ class NoteBleDebugProvider extends BaseProvider {
   List<String> _pendingDownloadFiles = [];
 
   /// 实际 BLE 连接状态
-  DeviceTransportState _bleConnectionState = DeviceTransportState.disconnected;
+  MPDeviceTransportState _bleConnectionState = MPDeviceTransportState.disconnected;
 
   /// Log entries list (newest first) (日志条目列表（最新的在前）)
   final List<BleLogEntry> _logEntries = [];
@@ -118,10 +118,10 @@ class NoteBleDebugProvider extends BaseProvider {
   bool get isExecuting => _isExecuting;
 
   /// Whether connected to a device (是否已连接到设备)
-  bool get isConnected => _bleConnectionState == DeviceTransportState.connected;
+  bool get isConnected => _bleConnectionState == MPDeviceTransportState.connected;
 
   /// 实际 BLE 连接状态
-  DeviceTransportState get bleConnectionState => _bleConnectionState;
+  MPDeviceTransportState get bleConnectionState => _bleConnectionState;
 
   /// Battery level (0-100, -1 = unknown) (电池电量（0-100，-1 = 未知）)
   int get batteryLevel => _batteryLevel;
@@ -186,7 +186,7 @@ class NoteBleDebugProvider extends BaseProvider {
     _setupConnectionStateListener();
     _setupPendingDownloadListener();
     if (_connection != null) {
-      _bleConnectionState = DeviceTransportState.connected;
+      _bleConnectionState = MPDeviceTransportState.connected;
     }
     notifyListeners();
   }
@@ -205,21 +205,19 @@ class NoteBleDebugProvider extends BaseProvider {
   void _setupRecordingStopListener() {
     _recordingStopSubscription?.cancel();
     if (_connection != null) {
-      _recordingStopSubscription = _connection!.onRecordingStopped.listen(
-        (result) {
-          print('[NoteBleDebugProvider] 收到设备主动停止录音: $result');
-          if (result['success'] == true) {
-            _isRecording = false;
-            _lastRecordingFileName = result['fileName'] as String?;
-            notifyListeners();
+      _recordingStopSubscription = _connection!.onRecordingStopped.listen((result) {
+        print('[NoteBleDebugProvider] 收到设备主动停止录音: $result');
+        if (result['success'] == true) {
+          _isRecording = false;
+          _lastRecordingFileName = result['fileName'] as String?;
+          notifyListeners();
 
-            // 自动触发下载转码
-            if (_lastRecordingFileName != null && _lastRecordingFileName!.isNotEmpty) {
-              _startDownloadAndConvert(_lastRecordingFileName!);
-            }
+          // 自动触发下载转码
+          if (_lastRecordingFileName != null && _lastRecordingFileName!.isNotEmpty) {
+            _startDownloadAndConvert(_lastRecordingFileName!);
           }
-        },
-      );
+        }
+      });
     }
   }
 
@@ -227,18 +225,15 @@ class NoteBleDebugProvider extends BaseProvider {
   void _setupConnectionStateListener() {
     _connectionStateSubscription?.cancel();
     if (_connection != null) {
-      _connectionStateSubscription = _connection!.bleTransport.connectionStateStream.listen(
-        (state) {
-          final oldState = _bleConnectionState;
-          _bleConnectionState = state;
-          if (oldState != state) {
-            print('[NoteBleDebugProvider] BLE 状态变化: $oldState → $state');
-            _addLogEntry(BleLogDirection.received, [],
-              name: 'BLE: ${state.name}');
-            notifyListeners();
-          }
-        },
-      );
+      _connectionStateSubscription = _connection!.bleTransport.connectionStateStream.listen((state) {
+        final oldState = _bleConnectionState;
+        _bleConnectionState = state;
+        if (oldState != state) {
+          print('[NoteBleDebugProvider] BLE 状态变化: $oldState → $state');
+          _addLogEntry(BleLogDirection.received, [], name: 'BLE: ${state.name}');
+          notifyListeners();
+        }
+      });
     }
   }
 
@@ -246,21 +241,18 @@ class NoteBleDebugProvider extends BaseProvider {
   void _setupPendingDownloadListener() {
     _pendingDownloadSubscription?.cancel();
     if (_connection != null) {
-      _pendingDownloadSubscription = _connection!.onPendingDownloads.listen(
-        (files) {
-          _pendingDownloadFiles = List.from(files);
-          print('[NoteBleDebugProvider] 重连后待下载文件: $files');
-          _addLogEntry(BleLogDirection.received, [],
-            name: '重连: ${files.length} 个文件待下载');
+      _pendingDownloadSubscription = _connection!.onPendingDownloads.listen((files) {
+        _pendingDownloadFiles = List.from(files);
+        print('[NoteBleDebugProvider] 重连后待下载文件: $files');
+        _addLogEntry(BleLogDirection.received, [], name: '重连: ${files.length} 个文件待下载');
 
-          // 自动下载转码待下载文件
-          for (final fileName in files) {
-            _startDownloadAndConvert(fileName);
-          }
-          _connection?.clearPendingDownloads();
-          notifyListeners();
-        },
-      );
+        // 自动下载转码待下载文件
+        for (final fileName in files) {
+          _startDownloadAndConvert(fileName);
+        }
+        _connection?.clearPendingDownloads();
+        notifyListeners();
+      });
     }
   }
 
@@ -270,12 +262,7 @@ class NoteBleDebugProvider extends BaseProvider {
   void _addLogEntry(BleLogDirection direction, List<int> data, {String? name}) {
     _logEntries.insert(
       0,
-      BleLogEntry(
-        timestamp: DateTime.now(),
-        direction: direction,
-        data: List<int>.from(data),
-        commandName: name,
-      ),
+      BleLogEntry(timestamp: DateTime.now(), direction: direction, data: List<int>.from(data), commandName: name),
     );
 
     // Keep max entries (保持最大条目数)
@@ -441,7 +428,10 @@ class NoteBleDebugProvider extends BaseProvider {
     notifyListeners();
 
     try {
-      _addLogEntry(BleLogDirection.sent, [NoteCommands.setRecordingMode, mode.value], name: 'Set Mode: ${mode.description}');
+      _addLogEntry(BleLogDirection.sent, [
+        NoteCommands.setRecordingMode,
+        mode.value,
+      ], name: 'Set Mode: ${mode.description}');
       final success = await _connection!.setRecordingMode(mode);
       if (success) {
         print('[NoteBleDebugProvider] Recording mode set: ${mode.description}');
@@ -543,16 +533,13 @@ class NoteBleDebugProvider extends BaseProvider {
   /// Send sync RTC command (0xE5 + timestamp) (发送同步 RTC 命令（0xE5 + 时间戳）)
   Future<void> sendSyncRTC() async {
     final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-    await executeCommand(
-      [
-        NoteCommands.syncRTC,
-        (timestamp >> 24) & 0xFF,
-        (timestamp >> 16) & 0xFF,
-        (timestamp >> 8) & 0xFF,
-        timestamp & 0xFF,
-      ],
-      'Sync RTC',
-    );
+    await executeCommand([
+      NoteCommands.syncRTC,
+      (timestamp >> 24) & 0xFF,
+      (timestamp >> 16) & 0xFF,
+      (timestamp >> 8) & 0xFF,
+      timestamp & 0xFF,
+    ], 'Sync RTC');
   }
 
   /// Send bind device command (0x0B 0x01) (发送绑定设备命令（0x0B 0x01）)
@@ -567,10 +554,7 @@ class NoteBleDebugProvider extends BaseProvider {
 
   /// Send USB mode command (0xE4 + enabled) (发送 USB 模式命令（0xE4 + 启用状态）)
   Future<void> sendSetUsbMode(bool enabled) async {
-    await executeCommand(
-      [NoteCommands.usbMode, enabled ? 0x01 : 0x00],
-      'USB Mode: ${enabled ? "ON" : "OFF"}',
-    );
+    await executeCommand([NoteCommands.usbMode, enabled ? 0x01 : 0x00], 'USB Mode: ${enabled ? "ON" : "OFF"}');
   }
 
   /// Send reboot command (0x09) (发送重启命令（0x09）)
@@ -580,20 +564,17 @@ class NoteBleDebugProvider extends BaseProvider {
 
   /// Send factory reset command (0xE9 + param) (发送恢复出厂设置命令（0xE9 + 参数）)
   Future<void> sendFactoryReset(bool keepRecordings) async {
-    await executeCommand(
-      [NoteCommands.factoryReset, keepRecordings ? 0x00 : 0xFF],
-      'Factory Reset (keep=$keepRecordings)',
-    );
+    await executeCommand([
+      NoteCommands.factoryReset,
+      keepRecordings ? 0x00 : 0xFF,
+    ], 'Factory Reset (keep=$keepRecordings)');
   }
 
   // ============ OTA Commands ============
 
   /// Send enter OTA command (0xE6 + module) (发送进入 OTA 命令（0xE6 + 模块）)
   Future<void> sendOtaEnter(NoteOtaModule module) async {
-    await executeCommand(
-      [NoteCommands.otaEnter, module.value],
-      'Enter OTA: ${module.moduleName}',
-    );
+    await executeCommand([NoteCommands.otaEnter, module.value], 'Enter OTA: ${module.moduleName}');
   }
 
   // ============ Custom Command ============
@@ -664,9 +645,8 @@ class NoteBleDebugProvider extends BaseProvider {
 
           // 前10个包每个都打印，之后每10秒打印一次
           final now = DateTime.now();
-          final shouldLog = _audioPacketsReceived <= 10 ||
-              _lastLogTime == null ||
-              now.difference(_lastLogTime!).inSeconds >= 10;
+          final shouldLog =
+              _audioPacketsReceived <= 10 || _lastLogTime == null || now.difference(_lastLogTime!).inSeconds >= 10;
           if (shouldLog) {
             print('[AudioDebug] 保存包#$_audioPacketsReceived: ${data.length}bytes, 总计=$_audioBytesSaved bytes');
             _lastLogTime = now;
@@ -770,9 +750,11 @@ class NoteBleDebugProvider extends BaseProvider {
         final wavSize = wavFile.lengthSync();
         final pcmSize = wavSize - 44; // 减去 WAV 头
         final wavDuration = pcmSize / (16000 * 2); // 16kHz, 16bit mono
-        print('[AudioDebug] ✓ WAV 时长: ${wavDuration.toStringAsFixed(1)}s '
-            '(预期: ${expectedDuration.toStringAsFixed(1)}s, '
-            '误差: ${(wavDuration - expectedDuration).abs().toStringAsFixed(1)}s)');
+        print(
+          '[AudioDebug] ✓ WAV 时长: ${wavDuration.toStringAsFixed(1)}s '
+          '(预期: ${expectedDuration.toStringAsFixed(1)}s, '
+          '误差: ${(wavDuration - expectedDuration).abs().toStringAsFixed(1)}s)',
+        );
       }
     } catch (e) {
       print('[AudioDebug] ❌ 转换失败: $e');
@@ -839,20 +821,16 @@ class NoteBleDebugProvider extends BaseProvider {
     final completer = Completer<void>();
     int downloadedBytes = 0;
 
-    final fileSubscription = _connection!.bleTransport.fileStream.listen(
-      (data) {
-        sink.add(data is Uint8List ? data : Uint8List.fromList(data));
-        downloadedBytes += data.length;
-      },
-    );
+    final fileSubscription = _connection!.bleTransport.fileStream.listen((data) {
+      sink.add(data is Uint8List ? data : Uint8List.fromList(data));
+      downloadedBytes += data.length;
+    });
 
-    final responseSubscription = _connection!.bleTransport.responseStream.listen(
-      (data) {
-        if (data.length >= 2 && data[0] == 0x04 && data[1] == 0x02) {
-          if (!completer.isCompleted) completer.complete();
-        }
-      },
-    );
+    final responseSubscription = _connection!.bleTransport.responseStream.listen((data) {
+      if (data.length >= 2 && data[0] == 0x04 && data[1] == 0x02) {
+        if (!completer.isCompleted) completer.complete();
+      }
+    });
 
     try {
       final success = await _connection!.uploadFile(fileName);

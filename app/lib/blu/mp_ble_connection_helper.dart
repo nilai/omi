@@ -7,7 +7,7 @@ import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:permission_manager/permission_manager.dart';
 
-import 'ble_transport.dart';
+import 'mp_ble_transport.dart';
 import 'mp_ble_recording_watcher.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_scan_uuids.dart';

@@ -25,7 +25,7 @@ abstract class MPAudioPacketConstants {
 
 /// 与 `ble/note_ble_transport.dart` 中 `AudioPacketReassembler` 行为对齐：301 原始 notify → 480B Opus 帧。
 ///
-/// 用于 [BleTransport] 路径下模拟 `NoteBleTransport.audioStream` 的重组层。
+/// 用于 [MPBleTransport] 路径下与 `NoteBleTransport.audioStream` 对齐的重组层。
 class MPAudioPacketReassembler {
   MPAudioPacketReassembler({
     this.tag = 'RT',
@@ -44,6 +44,12 @@ class MPAudioPacketReassembler {
   final String tag;
   final void Function(int seq, List<int> frame) onFrameComplete;
   final void Function(int expectedSeq, int receivedSeq) onSeqGap;
+
+  /// 与 `AudioPacketReassembler.lastCompletedSeq` 一致。
+  int get lastCompletedSeq => _lastCompletedSeq;
+
+  /// 与 `AudioPacketReassembler.completedFrameCount` 一致。
+  int get completedFrameCount => _completedFrameCount;
 
   void _log(String msg) => debugPrint('[$tag] $msg');
 
@@ -165,6 +171,12 @@ class MPAudioPacketReassembler {
         }
       },
     );
+  }
+
+  /// 从持久化状态恢复 lastCompletedSeq（与 `AudioPacketReassembler.restoreLastCompletedSeq` 对齐）。
+  void restoreLastCompletedSeq(int seq) {
+    _lastCompletedSeq = seq;
+    _log('恢复 lastCompletedSeq=$seq');
   }
 
   /// 新录音文件开始时重置 Seq（与 `AudioPacketReassembler.reset` 对齐）。

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'ble_transport.dart';
+import 'mp_ble_transport.dart';
 import 'mp_note_ble_protocol.dart';
 import 'note_device.dart';
 
@@ -70,7 +70,7 @@ class MPNoteBleGattClient {
   /// 创建客户端（尚未订阅响应流，首次发送命令前会建立订阅）。
   MPNoteBleGattClient(this._transport);
 
-  final BleTransport _transport;
+  final MPBleTransport _transport;
 
   static const int _kFileListTimeoutMs = 500;
 

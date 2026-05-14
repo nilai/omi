@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/blu/mp_ble_file_util.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
-import 'package:memo_pin/blu/ble_transport.dart';
+import 'package:memo_pin/blu/mp_ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 

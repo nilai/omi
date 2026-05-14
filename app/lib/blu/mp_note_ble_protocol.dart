@@ -110,3 +110,28 @@ class MPNoteBatteryReading {
   /// 充电状态（若固件返回）：1=充电中，2=未充电，3=已充满。
   final int? chargingState;
 }
+
+/// Seq 间隙记录（与 `ble/note_ble_transport.dart` 中 [SeqGapRecord] 语义一致，供补传与诊断）。
+class MPSeqGapRecord {
+  /// 创建 Seq 间隙记录。
+  const MPSeqGapRecord({
+    required this.startSeq,
+    required this.endSeq,
+    required this.detectedAt,
+  });
+
+  /// 缺失的起始 Seq（含）。
+  final int startSeq;
+
+  /// 缺失的结束 Seq（含）。
+  final int endSeq;
+
+  /// 检测时间。
+  final DateTime detectedAt;
+
+  /// 缺失帧数。
+  int get missingCount => endSeq - startSeq + 1;
+
+  @override
+  String toString() => 'MPSeqGap($startSeq~$endSeq, $missingCount帧, $detectedAt)';
+}
