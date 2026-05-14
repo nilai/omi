@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+
+import 'mp_global_recording_coordinator.dart';
 
 /// Task isolate 入口（Android 麦克风前台服务）；须为顶层函数以便引擎注册。
 @pragma('vm:entry-point')
@@ -23,12 +26,15 @@ class _MPRecordingForegroundTaskHandler extends TaskHandler {
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
 }
 
-/// 首页等「应用内录音」退后台时：配置系统音频会话（iOS/Android）并在 Android 上启动麦克风前台服务。
+/// 首页等「应用内录音」退后台时：配置系统音频会话（iOS/Android）、在 Android 上启动麦克风前台服务，
+/// 并订阅 [AudioSession.interruptionEventStream]：其它 App / 来电抢占音频焦点时通过
+/// [MPGlobalRecordingCoordinator.notifySystemAudioFocusShouldPauseCurrentRecording] 暂停当前采集（用户可手动恢复）。
 class MPRecordingBackgroundSupport {
   MPRecordingBackgroundSupport._();
 
   static bool _foregroundTaskInitialized = false;
   static bool _recordingInfrastructureActive = false;
+  static StreamSubscription<AudioInterruptionEvent>? _interruptionSub;
 
   static Future<void> _ensureForegroundTaskInitialized() async {
     if (_foregroundTaskInitialized) {
@@ -36,10 +42,11 @@ class MPRecordingBackgroundSupport {
     }
     FlutterForegroundTask.init(
       androidNotificationOptions: AndroidNotificationOptions(
-        channelId: 'memo_pin_recording',
+        // 新 channelId：已安装设备上旧 channel 的 LOW 无法升级，换 id 以应用更高重要性。
+        channelId: 'memo_pin_recording_v2',
         channelName: 'Recording',
         channelDescription: 'Keeps microphone recording active while the app is in the background.',
-        channelImportance: NotificationChannelImportance.LOW,
+        channelImportance: NotificationChannelImportance.DEFAULT,
       ),
       iosNotificationOptions: const IOSNotificationOptions(
         showNotification: false,
@@ -75,6 +82,18 @@ class MPRecordingBackgroundSupport {
       ),
     );
     await session.setActive(true);
+    await _interruptionSub?.cancel();
+    _interruptionSub = session.interruptionEventStream.listen(
+      (AudioInterruptionEvent event) {
+        if (!event.begin) {
+          return;
+        }
+        unawaited(
+          MPGlobalRecordingCoordinator.instance
+              .notifySystemAudioFocusShouldPauseCurrentRecording(),
+        );
+      },
+    );
     _recordingInfrastructureActive = true;
 
     if (Platform.isAndroid) {
@@ -104,6 +123,8 @@ class MPRecordingBackgroundSupport {
       return;
     }
     _recordingInfrastructureActive = false;
+    await _interruptionSub?.cancel();
+    _interruptionSub = null;
     try {
       if (Platform.isAndroid && await FlutterForegroundTask.isRunningService) {
         await FlutterForegroundTask.stopService();
