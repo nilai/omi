@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../common/mp_home_notification.dart';
 import 'ble_transport.dart';
+import 'mp_ble_scan_uuids.dart';
 import 'mp_note_ble_protocol.dart';
 
 /// 订阅 `e2c1a303` / 轮询 `e2c1a310`，在录音中/空闲变化时 [MPHomeNotification.notifyBleMemopinRecordingStateChanged]。
@@ -23,13 +24,54 @@ class MPBleMemopinRecordingStateWatcher {
   /// 最近一次已对外通知的快照（默认未录音）。
   MPBleMemopinRecordingStateChangedPayload get lastEmitted => _lastEmitted;
 
-  /// 主动读取 `e2c1a310`。
+  /// 主动读取 `e2c1a310`（与 `ble/note_ble_transport.dart` 中 `queryRecordStatus` / `readCharacteristic` 语义对齐）。
+  ///
+  /// 使用与扫描层一致的 `aiNoteService` 字符串，避免 `Uuid.toString()` 与 `flutter_blue_plus` 的 `str128`
+  /// 在边界情况下不一致导致 [BleTransport.readCharacteristic] 找不到特征、返回空包。
+  /// 载荷格式：`[Status 1B][FileNameLen 1B][FileName 变长]`；不足 2 字节视为未就绪，按未录音处理。
   static Future<MPBleMemopinRecordStatus310> readStatus310(BleTransport transport) async {
-    final List<int> raw = await transport.readCharacteristic(
-      MPNoteBleUUIDs.service.toString(),
-      MPNoteBleUUIDs.recordStatus.toString(),
-    );
-    return MPBleMemopinRecordStatus310.parse(raw);
+    const String serviceUuid = MPBleScanFilterUuids.aiNoteService;
+    final String characteristicUuid = MPNoteBleUUIDs.recordStatus.toString();
+    List<int> data = const <int>[];
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        data = await transport.readCharacteristic(serviceUuid, characteristicUuid);
+      } catch (e, st) {
+        debugPrint('MPBleMemopinRecordingStateWatcher.readStatus310 read failed: $e\n$st');
+        data = const <int>[];
+      }
+      if (data.isNotEmpty) {
+        break;
+      }
+      if (attempt < 2) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+      }
+    }
+    return _parseRecordStatus310ReadPayload(data);
+  }
+
+  /// 解析 `e2c1a310` 读回载荷（与参考实现 [queryRecordStatus] 一致：`>=2` 才取状态字节）。
+  static MPBleMemopinRecordStatus310 _parseRecordStatus310ReadPayload(List<int> data) {
+    if (data.length < 2) {
+      return const MPBleMemopinRecordStatus310(isRecording: false);
+    }
+    final int status = data[0] & 0xff;
+    final int nameLen = data[1] & 0xff;
+    final bool recording = status == 0x01;
+    if (nameLen <= 0 || data.length < 2 + nameLen) {
+      return MPBleMemopinRecordStatus310(isRecording: recording);
+    }
+    final List<int> nameBytes = data.sublist(2, 2 + nameLen);
+    String? fileName;
+    try {
+      fileName = utf8.decode(nameBytes);
+    } catch (_) {
+      fileName = String.fromCharCodes(nameBytes);
+    }
+    if (fileName.isEmpty) {
+      fileName = null;
+    }
+    return MPBleMemopinRecordStatus310(isRecording: recording, activeFileName: fileName);
   }
 
   /// 绑定传输层并开始监听；`transport == null` 等价于 [detach]。
