@@ -40,8 +40,8 @@ class MPBleScanEntry {
 /// 应用层 BLE 扫描、设备筛选与 [BleTransport] 创建入口。
 ///
 /// 封装 [BluetoothAdapter] 与权限申请，供连接页等模块调用。
-class MPBluetoothConnectionHelper {
-  MPBluetoothConnectionHelper._();
+class MPBleConnectionHelper {
+  MPBleConnectionHelper._();
 
   /// 连接页关闭后仍要保持的 GATT 会话（不断开 physical link）。
   ///
@@ -189,9 +189,7 @@ class MPBluetoothConnectionHelper {
   ///
   /// 初次进入页面时 [FlutterBluePlus.adapterStateNow] 常仍为 [BluetoothAdapterState.unknown]
   ///（原生尚未回调），若仅用同步 getter 会误判为未开蓝牙，必须监听 [FlutterBluePlus.adapterState]。
-  static Future<bool> waitForAdapterOn({
-    Duration timeout = const Duration(seconds: 10),
-  }) async {
+  static Future<bool> waitForAdapterOn({Duration timeout = const Duration(seconds: 10)}) async {
     if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on) {
       return true;
     }
@@ -213,8 +211,7 @@ class MPBluetoothConnectionHelper {
   ///
   /// 若未授予会弹出英文说明（含再次拒绝后仍可见的提示）。
   static Future<bool> ensureBlePermissions() async {
-    final bool granted =
-        await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+    final bool granted = await OmiPermissionService.requestBlePermissionsForScanAndConnect();
     if (!granted) {
       await _notifyBlePermissionDenied();
     }
@@ -222,8 +219,7 @@ class MPBluetoothConnectionHelper {
   }
 
   static Future<void> _notifyBlePermissionDenied() async {
-    final PermissionManagerStatus worst =
-        await OmiPermissionService.bleScanConnectPermissionWorstStatus();
+    final PermissionManagerStatus worst = await OmiPermissionService.bleScanConnectPermissionWorstStatus();
     if (worst == PermissionManagerStatus.permanentlyDenied) {
       debugPrint(
         'BLE permission: Bluetooth permission is required. Open Settings and allow Bluetooth access for this app.',
@@ -273,9 +269,7 @@ class MPBluetoothConnectionHelper {
   /// 优先级：广播 Service UUID → 名称前缀（AI_PIN / AI_CARD / AI_PEN / AI_NOTE / AI_MIC / NOTE / TX_NOTE …）。
   /// 若固件仅广播 **新** Service UUID，须在 [MPBleScanFilterUuids.additionalMemoPinAdvertisementServices] 中登记。
   static bool isMemoPinLikeScanResult(ScanResult result) {
-    if (MPBleScanFilterUuids.matchesMemoPinAdvertisedService(
-          result.advertisementData.serviceUuids,
-        )) {
+    if (MPBleScanFilterUuids.matchesMemoPinAdvertisedService(result.advertisementData.serviceUuids)) {
       return true;
     }
     // 与 ble 侧 `uuid.toString().toLowerCase() == aiNoteServiceUuid` 一致。
@@ -308,9 +302,7 @@ class MPBluetoothConnectionHelper {
   }
 
   /// 与 `lib/blu/ble/bluetooth_discoverer.dart` 一致：等到适配器 [BluetoothAdapterState.on] 再扫。
-  static Future<bool> _waitAdapterOnForDiscovery({
-    Duration timeout = const Duration(seconds: 30),
-  }) async {
+  static Future<bool> _waitAdapterOnForDiscovery({Duration timeout = const Duration(seconds: 30)}) async {
     if (FlutterBluePlus.adapterStateNow == BluetoothAdapterState.on) {
       return true;
     }
@@ -368,10 +360,7 @@ class MPBluetoothConnectionHelper {
   static Future<List<MPBleScanEntry>> discoverMemoPinLikeDevices({
     Duration perPhase = const Duration(seconds: 5),
   }) async {
-    return scanMemoPinLikeEntriesPhased(
-      perPhase: perPhase,
-      requirePermissionsAndAdapter: true,
-    );
+    return scanMemoPinLikeEntriesPhased(perPhase: perPhase, requirePermissionsAndAdapter: true);
   }
 
   /// 与 `BluetoothDeviceDiscoverer.discover` 两阶段策略一致；设备筛选规则见 [isMemoPinLikeScanResult]（对齐 [BtDevice.isAiNoteDevice]）。
@@ -382,8 +371,7 @@ class MPBluetoothConnectionHelper {
     bool requirePermissionsAndAdapter = true,
   }) async {
     if (requirePermissionsAndAdapter) {
-      final bool ok =
-          await OmiPermissionService.requestBlePermissionsForScanAndConnect();
+      final bool ok = await OmiPermissionService.requestBlePermissionsForScanAndConnect();
       if (!ok) {
         await _notifyBlePermissionDenied();
         return <MPBleScanEntry>[];
@@ -392,7 +380,7 @@ class MPBluetoothConnectionHelper {
 
     final bool adapterOn = await _waitAdapterOnForDiscovery();
     if (!adapterOn) {
-      debugPrint('[MPBluetoothConnectionHelper] adapter not on, skip scan');
+      debugPrint('[MPBleConnectionHelper] adapter not on, skip scan');
       return <MPBleScanEntry>[];
     }
 
@@ -410,7 +398,7 @@ class MPBluetoothConnectionHelper {
         }
       },
       onError: (Object e) {
-        debugPrint('[MPBluetoothConnectionHelper] scanResults error: $e');
+        debugPrint('[MPBleConnectionHelper] scanResults error: $e');
       },
     );
 
@@ -420,17 +408,14 @@ class MPBluetoothConnectionHelper {
 
     try {
       debugPrint(
-        '[MPBluetoothConnectionHelper] 第1次扫描: withServices=${MPBleScanFilterUuids.scanFilterGuids.length} UUIDs, '
+        '[MPBleConnectionHelper] 第1次扫描: withServices=${MPBleScanFilterUuids.scanFilterGuids.length} UUIDs, '
         'timeout=${perPhase.inSeconds}s',
       );
-      await BluetoothAdapter.startScan(
-        timeout: perPhase,
-        withServices: MPBleScanFilterUuids.scanFilterGuids,
-      );
+      await BluetoothAdapter.startScan(timeout: perPhase, withServices: MPBleScanFilterUuids.scanFilterGuids);
       await Future<void>.delayed(perPhase);
 
       List<MPBleScanEntry> entries = finishFromBuffer();
-      debugPrint('[MPBluetoothConnectionHelper] 第1次筛选后: ${entries.length} 个设备');
+      debugPrint('[MPBleConnectionHelper] 第1次筛选后: ${entries.length} 个设备');
 
       // 与 ble：首轮有支持设备则不再开第二轮。
       if (entries.isNotEmpty) {
@@ -442,11 +427,11 @@ class MPBluetoothConnectionHelper {
         await BluetoothAdapter.stopScan();
       }
 
-      debugPrint('[MPBluetoothConnectionHelper] 第2次扫描: 无 UUID 过滤');
+      debugPrint('[MPBleConnectionHelper] 第2次扫描: 无 UUID 过滤');
       await BluetoothAdapter.startScan(timeout: perPhase);
       await Future<void>.delayed(perPhase);
       entries = finishFromBuffer();
-      debugPrint('[MPBluetoothConnectionHelper] 第2次筛选后: ${entries.length} 个设备');
+      debugPrint('[MPBleConnectionHelper] 第2次筛选后: ${entries.length} 个设备');
       return entries;
     } finally {
       await sub.cancel();
@@ -473,8 +458,7 @@ class MPBluetoothConnectionHelper {
   }
 
   /// 构造 Note 协议 GATT 客户端；导出文件期间须持续持有直至传输结束，再调用 [MPNoteBleGattClient.dispose]。
-  static MPNoteBleGattClient createMemoPinGattClient(BleTransport transport) =>
-      MPNoteBleGattClient(transport);
+  static MPNoteBleGattClient createMemoPinGattClient(BleTransport transport) => MPNoteBleGattClient(transport);
 
   /// 读取 MemoPin / AI_NOTE 电量：优先走自定义命令 [MPNoteBleCommands.queryBattery]，失败则回退标准 BAS。
   static Future<int?> readMemoPinBatteryPercent(BleTransport transport) async {
@@ -528,10 +512,7 @@ class MPBluetoothConnectionHelper {
   /// 发起文件导出：配置装配器并发送 `0x04`；成功后监听 [MPNoteBleGattClient.recordFilePayloadStream]。
   ///
   /// **同一 [client] 实例**在导出过程中必须保持存活，结束后 [MPNoteBleGattClient.dispose]。
-  static Future<bool> startMemoPinFileExport(
-    MPNoteBleGattClient client,
-    String fileName,
-  ) async {
+  static Future<bool> startMemoPinFileExport(MPNoteBleGattClient client, String fileName) async {
     client.prepareFileExport(fileName);
     return client.requestFileExport(fileName);
   }

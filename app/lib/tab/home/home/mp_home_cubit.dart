@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/audio/import/mp_ble_device_audio_import_utils.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/ble_transport.dart';
-import 'package:memo_pin/blu/mp_bluetooth_connection_helper.dart';
+import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 
 import '../../../common/mp_date_utils.dart';
@@ -53,7 +53,15 @@ class MPHomeAudioStatus {
 
 /// Today's Focus 列表项（Up Next）
 class MPHomeTodoItem {
-  const MPHomeTodoItem({required this.id, required this.title, this.time, this.reason, this.completed = false, this.memoryId, this.insightId});
+  const MPHomeTodoItem({
+    required this.id,
+    required this.title,
+    this.time,
+    this.reason,
+    this.completed = false,
+    this.memoryId,
+    this.insightId,
+  });
 
   final String id;
   final String title;
@@ -156,9 +164,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
-  /// 若本地存在上次连接的 BLE 记录，则短扫并建链后 [MPBluetoothConnectionHelper.parkBackgroundBleTransport]；无记录则立即返回。
+  /// 若本地存在上次连接的 BLE 记录，则短扫并建链后 [MPBleConnectionHelper.parkBackgroundBleTransport]；无记录则立即返回。
   Future<void> connectBluetoothToLastRecordedDevice() async {
-    final bool connected = await MPBluetoothConnectionHelper.tryConnectLastRecordedBleDevice();
+    final bool connected = await MPBleConnectionHelper.tryConnectLastRecordedBleDevice();
     if (!isClosed && state.isBleConnected != connected) {
       emit(state.copyWith(isBleConnected: connected));
     }
@@ -166,7 +174,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 刷新 BLE 连接状态到 state。
   Future<void> refreshBleConnectionState() async {
-    final bool connected = await MPBluetoothConnectionHelper.hasConnectedBleDevice();
+    final bool connected = await MPBleConnectionHelper.hasConnectedBleDevice();
     if (!isClosed && state.isBleConnected != connected) {
       emit(state.copyWith(isBleConnected: connected));
     }
@@ -382,7 +390,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     if (_bleDeviceImportRunning || isClosed) {
       return;
     }
-    final BleTransport? transport = MPBluetoothConnectionHelper.backgroundBleTransport;
+    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
     if (transport == null) {
       debugPrint('MPHomeCubit: Bluetooth session unavailable.');
       return;

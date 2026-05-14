@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 
 import '../../blu/ble_transport.dart';
-import '../../blu/mp_bluetooth_connection_helper.dart';
+import '../../blu/mp_ble_connection_helper.dart';
 import '../../blu/mp_note_ble_gatt_client.dart';
 import '../../blu/note_device.dart';
 import '../record/mp_audio_upload_manger.dart';
@@ -43,7 +43,7 @@ class MPBleDeviceAudioImportUtils {
       }
 
       debugPrint('MPBleDeviceAudioImportUtils: fetching file list from device...');
-      final List<NoteFileInfo> files = await MPBluetoothConnectionHelper.fetchMemoPinFileList(transport);
+      final List<NoteFileInfo> files = await MPBleConnectionHelper.fetchMemoPinFileList(transport);
       if (files.isEmpty) {
         debugPrint('MPBleDeviceAudioImportUtils: no files on the device.');
         return;
@@ -103,17 +103,14 @@ class MPBleDeviceAudioImportUtils {
           );
 
           if (await transport.isConnected()) {
-            final bool deleted =
-                await MPBluetoothConnectionHelper.deleteMemoPinFile(transport, fi.name);
+            final bool deleted = await MPBleConnectionHelper.deleteMemoPinFile(transport, fi.name);
             if (!deleted) {
               debugPrint('MPBleDeviceAudioImportUtils: could not delete on device: ${fi.name}');
-            }else {
+            } else {
               debugPrint('MPBleDeviceAudioImportUtils: deleted on device: ${fi.name}');
             }
           } else {
-            debugPrint(
-              'MPBleDeviceAudioImportUtils: Bluetooth disconnected; skipped device delete for ${fi.name}.',
-            );
+            debugPrint('MPBleDeviceAudioImportUtils: Bluetooth disconnected; skipped device delete for ${fi.name}.');
           }
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
