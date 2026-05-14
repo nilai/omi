@@ -119,13 +119,6 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   DateTime? _pickedCalendarDate;
   bool _isMarkingDone = false;
 
-  static int? _normalizeDeadlineSec(int? raw) {
-    if (raw == null) {
-      return null;
-    }
-    return raw > 10000000000 ? raw ~/ 1000 : raw;
-  }
-
   static DateTime _dateOnly(DateTime d) =>
       DateTime(d.year, d.month, d.day);
 
@@ -192,6 +185,28 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
       tod.minute,
     );
     _deadlineUnixSec = combined.millisecondsSinceEpoch ~/ 1000;
+  }
+
+  void _applyInitialDeadlineSeconds(int raw) {
+    final int sec = raw > 10000000000 ? raw ~/ 1000 : raw;
+    final DateTime local = DateTime.fromMillisecondsSinceEpoch(sec * 1000);
+    final DateTime day = DateTime(local.year, local.month, local.day);
+    final DateTime today = _dateOnly(DateTime.now());
+    final DateTime tomorrow = today.add(const Duration(days: 1));
+
+    _pickedCalendarDate = day;
+    _time =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    if (day == today) {
+      _when = 'Today';
+      _pickedCalendarDate = null;
+    } else if (day == tomorrow) {
+      _when = 'Tomorrow';
+      _pickedCalendarDate = null;
+    } else {
+      _when = DateFormat('MMM d, y').format(day);
+    }
+    _deadlineUnixSec = sec;
   }
 
   void _syncInitialWhenFromParams() {
@@ -277,15 +292,19 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     super.initState();
     _priority =
         MPTodoUtils.normalizePriorityPickerLabel(widget.params.priorityLabel);
-    _when = widget.params.whenLabel;
-    _time = widget.params.timeLabel;
-    if (_time.startsWith('--')) {
-      _time = '';
-    }
-    _deadlineUnixSec = _normalizeDeadlineSec(widget.params.deadlineUnixSec);
     _notesController = TextEditingController(text: widget.params.notes);
-    _syncInitialWhenFromParams();
-    _syncDeadlineFromWhenAndTime();
+    if (widget.params.deadlineUnixSec != null) {
+      _applyInitialDeadlineSeconds(widget.params.deadlineUnixSec!);
+    } else {
+      _when = widget.params.whenLabel;
+      _time = widget.params.timeLabel;
+      if (_time.startsWith('--')) {
+        _time = '';
+      }
+      _deadlineUnixSec = null;
+      _syncInitialWhenFromParams();
+      _syncDeadlineFromWhenAndTime();
+    }
   }
 
   @override

@@ -92,6 +92,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     required String timeLabel,
     required String todoId,
     required String? insightId,
+    int? deadlineUnixSec,
     Future<bool> Function()? onDelete,
   }) async {
     if (!mounted) {
@@ -121,6 +122,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         memoryType: todoContext.memoryType,
         insightId: insightId,
         insightType: todoContext.insightType,
+        deadlineUnixSec: deadlineUnixSec,
       ),
       onDelete: onDelete,
     );
@@ -166,6 +168,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       timeLabel: item.timeLabel,
       todoId: item.todoId,
       insightId: item.insightId,
+      deadlineUnixSec: item.deadlineUnixSec,
       onDelete: () async {
         final bool ok = await _cubit.removeFocusItemAt(index);
         return ok;
@@ -229,6 +232,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       timeLabel: timeLabel,
       todoId: row.todoId,
       insightId: row.insightId,
+      deadlineUnixSec: row.deadlineUnixSec,
     );
     if (!mounted) {
       return;
