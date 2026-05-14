@@ -639,7 +639,7 @@ class BleTransport extends DeviceTransport {
     _gattListenerEpoch++;
     _characteristicNotifySetupFutures.clear();
 
-    await _tearDownNoteAudioResponsePipelines();
+    // await _tearDownNoteAudioResponsePipelines();
 
     for (final StreamSubscription<dynamic> subscription in _characteristicSubscriptions.values) {
       await subscription.cancel();
