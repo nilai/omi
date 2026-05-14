@@ -1,7 +1,5 @@
 library;
 
-import 'dart:convert';
-
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// MemoPin / AI_NOTE 设备 BLE 协议常量（与 `ble/note_commands.dart` 对齐，供 `BleTransport` GATT 访问使用）。
@@ -30,16 +28,38 @@ abstract class MPNoteBleUUIDs {
 
   /// 日志文件/数据流特征 (设备→APP)
   static final logFile = Uuid.parse("${uuidPre}6-7f4b-5e9d-bc23-1a2f3e4d5c6b");
+}
 
-  /// 录音状态查询特征 (只读)
-  /// 格式: [Status 1B] [FileNameLen 1B] [FileName 变长]
-  static final recordStatus = Uuid.parse("e2c1a310-7f4b-5e9d-bc23-1a2f3e4d5c6b");
+/// 录音控制报文布局（`ble/doc/ble-api-documentation.md`「录音控制协议详解」）。
+///
+/// **Cmd / Op 分离**：APP 下发 `[0x01,0,0]` 表示在 **command** 上发起开始录音；303 成功帧形如
+/// `[Cmd=0x01][Op=0x01][RecordState][Mode][FileName…]` — 前两字节**数值均为** `0x01`，但分别是 **Cmd**
+/// 与 **Op**（「开始录音」操作回显），**第二字节不是「再发一次开始录音指令」**，也不是泛化的「成功码」；
+/// 偏移 2 为 **RecordState**，偏移 3 为 **Mode**。
+abstract class MPNoteBleRecordingWire {
+  /// 开始录音链路的 **Cmd**（APP 写 command 的首字节 / 303 成功响应偏移 0）。
+  static const int cmdRecordingStart = 0x01;
+
+  /// 停止录音链路的 **Cmd**（APP 写 command 的首字节 / 303 停止响应偏移 0）。
+  static const int cmdRecordingStop = 0x02;
+
+  /// 303 开始录音成功响应偏移 1：**Op**，`0x01` = 开始录音分支回显。
+  static const int opStartRecordingAck = 0x01;
+
+  /// APP 停止命令第二字节与 303 停止成功响应偏移 1：**Op**，`0x00` = 结束录音。
+  static const int opEndRecording = 0x00;
+
+  /// 303 停止响应偏移 2：**Result**，`0x01` = 成功。
+  static const int resultSuccess = 0x01;
 }
 
 /// 命令字节（与设备固件协议一致）。
 abstract class MPNoteBleCommands {
-  static const int startRecording = 0x01;
-  static const int stopRecording = 0x02;
+  /// 与 [MPNoteBleRecordingWire.cmdRecordingStart] 同值：**仅用于**拼 **command** 写帧（开始录音）。
+  static const int startRecording = MPNoteBleRecordingWire.cmdRecordingStart;
+
+  /// 与 [MPNoteBleRecordingWire.cmdRecordingStop] 同值：**仅用于**拼 **command** 写帧（停止录音）。
+  static const int stopRecording = MPNoteBleRecordingWire.cmdRecordingStop;
   static const int getFileList = 0x03;
   static const int uploadFile = 0x04;
   static const int deleteFile = 0x05;
@@ -58,75 +78,13 @@ abstract class MPNoteBleRecordingTransportModes {
   static const int recordAndStream = 0x10;
 }
 
-/// 设备 `0x01` 响应中的业务类型字节（与 `NoteRecordingType` 一致）。
+/// 303 **开始录音成功**帧中偏移 3 的 **Mode**（与 `NoteRecordingType` 一致；勿与 Cmd/Op 混淆）。
 abstract class MPNoteBleRecordingSessionModes {
   /// 普通 / memory 长录音（文档称 Normal）。
   static const int memory = 0x00;
 
   /// 备忘录短录音（Memo）。
   static const int memo = 0x01;
-}
-
-/// `e2c1a310` 主动读或通知解析结果（`0x00` 未录音 / `0x01` 录音中）。
-class MPBleMemopinRecordStatus310 {
-  /// 创建解析结果。
-  const MPBleMemopinRecordStatus310({required this.isRecording, this.activeFileName});
-
-  /// 是否正在录音。
-  final bool isRecording;
-
-  /// 当前录音文件名（未录音时多为空）。
-  final String? activeFileName;
-
-  /// 从特征原始字节解析；非法或空载荷视为未录音。
-  static MPBleMemopinRecordStatus310 parse(List<int> raw) {
-    if (raw.isEmpty) {
-      return const MPBleMemopinRecordStatus310(isRecording: false);
-    }
-    final int status = raw[0];
-    final bool rec = status == 0x01;
-    if (raw.length < 2) {
-      return MPBleMemopinRecordStatus310(isRecording: rec);
-    }
-    final int nameLen = raw[1] & 0xff;
-    if (nameLen <= 0 || raw.length < 2 + nameLen) {
-      return MPBleMemopinRecordStatus310(isRecording: rec);
-    }
-    try {
-      final String name = utf8.decode(raw.sublist(2, 2 + nameLen));
-      return MPBleMemopinRecordStatus310(isRecording: rec, activeFileName: name);
-    } catch (_) {
-      return MPBleMemopinRecordStatus310(isRecording: rec);
-    }
-  }
-}
-
-/// 主动 `0x01` 开始录音成功后的解析结果（含业务 mode 与文件名）。
-class MPBleRecordingStartInfo {
-  /// 创建开始录音解析结果。
-  const MPBleRecordingStartInfo({required this.modeByte, required this.fileName});
-
-  /// `0x00` memory / normal，`0x01` memo。
-  final int modeByte;
-
-  /// 设备分配的文件名（通常 `.opus`）。
-  final String fileName;
-
-  /// 从响应字节解析；`null` 表示失败或已在录音等。
-  static MPBleRecordingStartInfo? tryParse(List<int> r) {
-    if (r.length >= 5 && r[0] == MPNoteBleCommands.startRecording && r[1] == 0x01) {
-      try {
-        final String name = utf8.decode(r.sublist(4));
-        if (name.isEmpty) {
-          return null;
-        }
-        return MPBleRecordingStartInfo(modeByte: r[3] & 0xff, fileName: name);
-      } catch (_) {
-        return null;
-      }
-    }
-    return null;
-  }
 }
 
 /// 通过 `0xE1` 读取电量时的解析结果。

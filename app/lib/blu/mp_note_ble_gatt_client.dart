@@ -116,49 +116,6 @@ class MPNoteBleGattClient {
     return null;
   }
 
-  /// 发送 `[0x01,0,0]` 主动开始录音（仅产生 **memory/normal** 类会话，见协议说明）。
-  Future<MPBleRecordingStartInfo?> sendStartRecording({
-    Duration timeout = const Duration(seconds: 10),
-  }) async {
-    debugPrint('------>>>memopin MPNoteBleGattClient.sendStartRecording');
-    final List<int> response = await _sendCommandWithResponse(
-      <int>[MPNoteBleCommands.startRecording, 0x00, 0x00],
-      awaitKind: _AwaitKind.generic,
-      timeout: timeout,
-    );
-    final MPBleRecordingStartInfo? info = MPBleRecordingStartInfo.tryParse(response);
-    debugPrint('------>>>memopin MPNoteBleGattClient.sendStartRecording → ${info != null ? info.fileName : "null"}');
-    return info;
-  }
-
-  /// 发送 `[0x02,0x00]` 结束录音。
-  ///
-  /// 返回设备给出的文件名（UTF-8）；失败为 `null`。
-  Future<String?> sendStopRecording({
-    Duration timeout = const Duration(seconds: 10),
-  }) async {
-    debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording');
-    final List<int> response = await _sendCommandWithResponse(
-      <int>[MPNoteBleCommands.stopRecording, 0x00],
-      awaitKind: _AwaitKind.generic,
-      timeout: timeout,
-    );
-    if (response.length >= 5 &&
-        response[0] == MPNoteBleCommands.stopRecording &&
-        response[2] == 0x01) {
-      try {
-        final String name = utf8.decode(response.sublist(4));
-        debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → $name');
-        return name;
-      } catch (_) {
-        debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → decode fail');
-        return null;
-      }
-    }
-    debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → null');
-    return null;
-  }
-
   /// 设置 `0x0D` 推流策略（仅录音 / 边录边传）；成功返回 `true`。
   Future<bool> setRecordingTransportMode(
     int modeByte, {

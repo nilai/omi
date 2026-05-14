@@ -11,7 +11,11 @@ class BleTransport extends DeviceTransport {
   final BluetoothDevice _bleDevice;
   final StreamController<DeviceTransportState> _connectionStateController;
   final Map<String, StreamController<List<int>>> _streamControllers = {};
-  final Map<String, StreamSubscription> _characteristicSubscriptions = {};
+  final Map<String, StreamSubscription<dynamic>> _characteristicSubscriptions = {};
+  final Map<String, Future<void>> _characteristicNotifySetupFutures = {};
+
+  /// 在 [disconnect] / [dispose] 时递增，用于丢弃尚未完成的 [_setupCharacteristicListener] 结果。
+  int _gattListenerEpoch = 0;
 
   List<BluetoothService> _services = [];
   DeviceTransportState _state = DeviceTransportState.disconnected;
@@ -84,12 +88,15 @@ class BleTransport extends DeviceTransport {
     _updateState(DeviceTransportState.disconnecting);
 
     try {
-      for (final subscription in _characteristicSubscriptions.values) {
+      _gattListenerEpoch++;
+      _characteristicNotifySetupFutures.clear();
+
+      for (final StreamSubscription<dynamic> subscription in _characteristicSubscriptions.values) {
         await subscription.cancel();
       }
       _characteristicSubscriptions.clear();
 
-      for (final controller in _streamControllers.values) {
+      for (final StreamController<List<int>> controller in _streamControllers.values) {
         await controller.close();
       }
       _streamControllers.clear();
@@ -121,36 +128,78 @@ class BleTransport extends DeviceTransport {
 
   @override
   Stream<List<int>> getCharacteristicStream(String serviceUuid, String characteristicUuid) {
-    final key = '$serviceUuid:$characteristicUuid';
+    final String key = '$serviceUuid:$characteristicUuid';
 
     if (!_streamControllers.containsKey(key)) {
       _streamControllers[key] = StreamController<List<int>>.broadcast();
-      _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
+      _characteristicNotifySetupFutures[key] = _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
     }
 
     return _streamControllers[key]!.stream;
   }
 
+  /// 先完成 `setNotifyValue(true)` 与 `lastValueStream` 订阅，再返回与 [getCharacteristicStream] 相同的广播流。
+  ///
+  /// 与 `lib/blu/ble/note_ble_transport.dart` 中 `_subscribeCharacteristics` 及
+  /// `note-debug-realtime-audio-reception.md` 描述一致：避免 notify 尚未建立时即 `listen` 造成首包丢失。
+  Future<Stream<List<int>>> getCharacteristicStreamWhenReady(
+    String serviceUuid,
+    String characteristicUuid,
+  ) async {
+    final String key = '$serviceUuid:$characteristicUuid';
+    if (!_streamControllers.containsKey(key)) {
+      _streamControllers[key] = StreamController<List<int>>.broadcast();
+      _characteristicNotifySetupFutures[key] = _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
+    }
+    final Future<void>? pending = _characteristicNotifySetupFutures[key];
+    if (pending != null) {
+      await pending;
+    }
+    return _streamControllers[key]!.stream;
+  }
+
   Future<void> _setupCharacteristicListener(String serviceUuid, String characteristicUuid, String key) async {
+    final int setupEpoch = _gattListenerEpoch;
     try {
-      final characteristic = await _getCharacteristic(serviceUuid, characteristicUuid);
+      final BluetoothCharacteristic? characteristic = await _getCharacteristic(serviceUuid, characteristicUuid);
+      if (setupEpoch != _gattListenerEpoch) {
+        return;
+      }
       if (characteristic == null) {
         debugPrint('BLE Transport: Characteristic not found: $serviceUuid:$characteristicUuid');
         return;
       }
 
       await characteristic.setNotifyValue(true);
+      if (setupEpoch != _gattListenerEpoch) {
+        try {
+          await characteristic.setNotifyValue(false);
+        } catch (_) {
+          // ignore
+        }
+        return;
+      }
 
-      final subscription = characteristic.lastValueStream.listen(
-        (value) {
-          if (_streamControllers[key] != null && !_streamControllers[key]!.isClosed) {
-            _streamControllers[key]!.add(value);
+      final StreamSubscription<List<int>> subscription = characteristic.lastValueStream.listen(
+        (List<int> value) {
+          final StreamController<List<int>>? c = _streamControllers[key];
+          if (c != null && !c.isClosed) {
+            c.add(value);
           }
         },
-        onError: (error) {
-          debugPrint('BLE Transport characteristic stream error: $error');
+        onError: (Object error, StackTrace stackTrace) {
+          debugPrint('BLE Transport characteristic stream error ($key): $error\n$stackTrace');
         },
+        onDone: () {
+          debugPrint('BLE Transport characteristic notify stream done: $key');
+        },
+        cancelOnError: false,
       );
+
+      if (setupEpoch != _gattListenerEpoch) {
+        await subscription.cancel();
+        return;
+      }
 
       _characteristicSubscriptions[key] = subscription;
       _bleDevice.cancelWhenDisconnected(subscription);
@@ -277,12 +326,15 @@ class BleTransport extends DeviceTransport {
   Future<void> dispose() async {
     await _bleConnectionSubscription?.cancel();
 
-    for (final subscription in _characteristicSubscriptions.values) {
+    _gattListenerEpoch++;
+    _characteristicNotifySetupFutures.clear();
+
+    for (final StreamSubscription<dynamic> subscription in _characteristicSubscriptions.values) {
       await subscription.cancel();
     }
     _characteristicSubscriptions.clear();
 
-    for (final controller in _streamControllers.values) {
+    for (final StreamController<List<int>> controller in _streamControllers.values) {
       await controller.close();
     }
     _streamControllers.clear();

@@ -7,10 +7,16 @@ import '../common/mp_home_notification.dart';
 import 'ble_transport.dart';
 import 'mp_note_ble_protocol.dart';
 
-/// 订阅 `e2c1a303` 与 `e2c1a310` 通知，在录音中/空闲变化时 [MPHomeNotification.notifyBleMemopinRecordingStateChanged]。
-class MPBleMemopinRecordingStateWatcher {
+/// 订阅 **response `e2c1a303`** notify，按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
+/// 在「开始录音成功」「结束录音成功」时更新 [lastEmitted] 并 [MPHomeNotification.notifyBleMemopinRecordingStateChanged]。
+///
+/// **与 APP 下发指令的区别**：`0x01` / `0x02` 作为 **command** 写帧首字节表示「发起开始/停止」；
+/// 303 上同数值出现在 **Cmd** 列；第二字节为 **Op**（如开始成功时 `Op=0x01` 表示「开始录音」回显，**不是**把指令再回调一遍）。
+///
+/// 订阅顺序与 `lib/blu/note-debug-realtime-audio-reception.md` / [BleTransport.getCharacteristicStreamWhenReady]
+/// 一致：先 await GATT notify 就绪再 `listen`，并统一 `cancelOnError: false` 与 `onDone` 日志。
+class MPBleRecordingWatcher {
   StreamSubscription<List<int>>? _responseSub;
-  StreamSubscription<List<int>>? _statusSub;
 
   MPBleMemopinRecordingStateChangedPayload _lastEmitted = const MPBleMemopinRecordingStateChangedPayload(
     isRecording: false,
@@ -36,10 +42,13 @@ class MPBleMemopinRecordingStateWatcher {
   /// 取消订阅。
   Future<void> detach() async {
     debugPrint('------>>>memopin recording watcher detach');
-    await _responseSub?.cancel();
+    await _cancelSubscriptions();
+  }
+
+  Future<void> _cancelSubscriptions() async {
+    final StreamSubscription<List<int>>? r = _responseSub;
     _responseSub = null;
-    await _statusSub?.cancel();
-    _statusSub = null;
+    await r?.cancel();
   }
 
   Future<void> _start(BleTransport transport) async {
@@ -54,35 +63,38 @@ class MPBleMemopinRecordingStateWatcher {
       return;
     }
 
-    debugPrint('------>>>memopin recording watcher _start: subs starting (no initial 310 read)');
-
-    _responseSub = transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
-        .listen(_onResponsePacket, onError: (Object e) => debugPrint('------>>>memopin recording watcher response stream: $e'));
+    debugPrint('------>>>memopin recording watcher _start: subs (notify-ready then listen)');
 
     try {
-      _statusSub = transport
-          .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordStatus.toString())
-          .listen(_onRecordStatusNotify, onError: (_) {});
-    } catch (e) {
-      debugPrint('------>>>memopin recording watcher _start: recordStatus notify setup failed: $e');
+      final Stream<List<int>> responseStream = await transport.getCharacteristicStreamWhenReady(
+        MPNoteBleUUIDs.service.toString(),
+        MPNoteBleUUIDs.response.toString(),
+      );
+      _responseSub = responseStream.listen(
+        _onResponsePacket,
+        onError: (Object e, StackTrace st) =>
+            debugPrint('------>>>memopin recording watcher 303 response stream: $e\n$st'),
+        onDone: () => debugPrint('------>>>memopin recording watcher 303 response stream: onDone'),
+        cancelOnError: false,
+      );
+    } catch (e, st) {
+      debugPrint('------>>>memopin recording watcher _start: subscribe failed: $e\n$st');
+      await _cancelSubscriptions();
     }
   }
 
-  void _onRecordStatusNotify(List<int> raw) {
-    final MPBleMemopinRecordStatus310 st = MPBleMemopinRecordStatus310.parse(raw);
-    debugPrint(
-      '------>>>memopin recording watcher notify310 len=${raw.length} parsed recording=${st.isRecording}',
-    );
-    unawaited(_apply310Snapshot(st));
-  }
-
+  /// 处理 303 notify：识别 **开始录音成功** `[Cmd][Op][RecordState][Mode][File…]` 与 **结束录音成功**
+  /// `[Cmd][Op][Result][FileId][File…]`（均见协议文档）。
   void _onResponsePacket(List<int> p) {
     if (p.isEmpty) {
       return;
     }
-    if (p.length >= 5 && p[0] == MPNoteBleCommands.startRecording && p[1] == 0x01) {
-      debugPrint('------>>>memopin recording watcher 303: startRecording ok mode=${p[3] & 0xff}');
+    if (p.length >= 5 &&
+        p[0] == MPNoteBleRecordingWire.cmdRecordingStart &&
+        p[1] == MPNoteBleRecordingWire.opStartRecordingAck) {
+      debugPrint(
+        '------>>>memopin recording watcher 303: start-ok Cmd/Op/State=${p[0]} ${p[1]} ${p[2]} mode=${p[3] & 0xff}',
+      );
       _lastSessionModeByte = p[3] & 0xff;
       try {
         final String name = utf8.decode(p.sublist(4));
@@ -95,16 +107,16 @@ class MPBleMemopinRecordingStateWatcher {
         );
       } catch (_) {
         _emitIfChanged(
-          MPBleMemopinRecordingStateChangedPayload(
-            isRecording: true,
-            sessionModeByte: _lastSessionModeByte,
-          ),
+          MPBleMemopinRecordingStateChangedPayload(isRecording: true, sessionModeByte: _lastSessionModeByte),
         );
       }
       return;
     }
-    if (p.length >= 5 && p[0] == MPNoteBleCommands.stopRecording && p[2] == 0x01) {
-      debugPrint('------>>>memopin recording watcher 303: stopRecording ok');
+    if (p.length >= 5 &&
+        p[0] == MPNoteBleRecordingWire.cmdRecordingStop &&
+        p[1] == MPNoteBleRecordingWire.opEndRecording &&
+        p[2] == MPNoteBleRecordingWire.resultSuccess) {
+      debugPrint('------>>>memopin recording watcher 303: stop-ok Cmd/Op/Result=${p[0]} ${p[1]} ${p[2]}');
       try {
         final String name = utf8.decode(p.sublist(4));
         _emitIfChanged(
@@ -116,24 +128,10 @@ class MPBleMemopinRecordingStateWatcher {
         );
       } catch (_) {
         _emitIfChanged(
-          MPBleMemopinRecordingStateChangedPayload(
-            isRecording: false,
-            sessionModeByte: _lastSessionModeByte,
-          ),
+          MPBleMemopinRecordingStateChangedPayload(isRecording: false, sessionModeByte: _lastSessionModeByte),
         );
       }
     }
-  }
-
-  Future<void> _apply310Snapshot(MPBleMemopinRecordStatus310 st, {bool forceEmit = false}) async {
-    _emitIfChanged(
-      MPBleMemopinRecordingStateChangedPayload(
-        isRecording: st.isRecording,
-        activeFileName: st.activeFileName,
-        sessionModeByte: _lastSessionModeByte,
-      ),
-      forceEmit: forceEmit,
-    );
   }
 
   void _emitIfChanged(MPBleMemopinRecordingStateChangedPayload next, {bool forceEmit = false}) {

@@ -8,7 +8,7 @@ import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:permission_manager/permission_manager.dart';
 
 import 'ble_transport.dart';
-import 'mp_ble_memopin_recording_state_watcher.dart';
+import 'mp_ble_recording_watcher.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_scan_uuids.dart';
 import 'mp_note_ble_gatt_client.dart';
@@ -44,12 +44,11 @@ class MPBleScanEntry {
 class MPBleConnectionHelper {
   MPBleConnectionHelper._();
 
-  static final MPBleMemopinRecordingStateWatcher _memopinRecordingWatcher =
-      MPBleMemopinRecordingStateWatcher();
+  static final MPBleRecordingWatcher _memopinRecordingWatcher = MPBleRecordingWatcher();
 
   /// 外接 MemoPin 是否正在录音：用于禁止本机开录 / 恢复采集。
   ///
-  /// 仅依据 [memoPinRecordingStateSnapshot]（由 [MPBleMemopinRecordingStateWatcher] 通知流维护）。
+  /// 仅依据 [memoPinRecordingStateSnapshot]（由 [MPBleRecordingWatcher] 通知流维护）。
   static Future<bool> isMemoPinDeviceRecordingForLocalRecordingGuard() async {
     if (memoPinRecordingStateSnapshot.isRecording) {
       debugPrint('------>>>memopin recordingGuard: block (snapshot recording=true)');
@@ -58,8 +57,7 @@ class MPBleConnectionHelper {
     return false;
   }
 
-
-  /// 最近一次对外通知的录音状态快照（默认未录音，见 [MPBleMemopinRecordingStateWatcher.lastEmitted]）。
+  /// 最近一次对外通知的录音状态快照（默认未录音，见 [MPBleRecordingWatcher.lastEmitted]）。
   static MPBleMemopinRecordingStateChangedPayload get memoPinRecordingStateSnapshot =>
       _memopinRecordingWatcher.lastEmitted;
 
