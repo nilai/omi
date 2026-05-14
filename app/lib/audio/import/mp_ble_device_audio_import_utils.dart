@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 
 import '../../blu/ble_transport.dart';
+import '../../blu/mp_ble_file_util.dart';
 import '../../blu/mp_ble_connection_helper.dart';
 import '../../blu/mp_note_ble_gatt_client.dart';
 import '../../blu/note_device.dart';
@@ -103,7 +104,7 @@ class MPBleDeviceAudioImportUtils {
           );
 
           if (await transport.isConnected()) {
-            final bool deleted = await MPBleConnectionHelper.deleteMemoPinFile(transport, fi.name);
+            final bool deleted = await MPBleFileUtil.deleteDeviceRecordingFile(transport, fi.name);
             if (!deleted) {
               debugPrint('MPBleDeviceAudioImportUtils: could not delete on device: ${fi.name}');
             } else {

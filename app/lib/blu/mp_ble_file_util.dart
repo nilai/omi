@@ -173,7 +173,7 @@ class MPBleFileUtil {
         MPHomeNotification.notifyHomeListRefresh();
 
         if (await transport.isConnected()) {
-          final bool deleted = await MPBleConnectionHelper.deleteMemoPinFile(transport, opusInfo.name);
+          final bool deleted = await deleteDeviceRecordingFile(transport, opusInfo.name);
           if (!deleted) {
             debugPrint('MPBleFileUtil: could not delete opus on device: ${opusInfo.name}');
           }
@@ -287,26 +287,13 @@ class MPBleFileUtil {
 
   // —— 设备端文件删除 / 本地沙盒删除 ——
 
-  /// 删除设备端指定文件名（`0x05`）。
-  static Future<bool> deleteDeviceRecordingFile(BleTransport transport, String fileName) {
-    return MPBleConnectionHelper.deleteMemoPinFile(transport, fileName);
-  }
-
-  /// 删除沙盒内文件及可选 `.seq` 续传侧车文件。
-  static Future<bool> deleteLocalSandboxAudioFile(String absolutePath) async {
+  /// 删除设备端指定文件名（命令 `0x05` + UTF-8 文件名）。
+  static Future<bool> deleteDeviceRecordingFile(BleTransport transport, String fileName) async {
+    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
     try {
-      final File f = File(absolutePath);
-      if (await f.exists()) {
-        await f.delete();
-      }
-      final File seq = File('$absolutePath.seq');
-      if (await seq.exists()) {
-        await seq.delete();
-      }
-      return true;
-    } catch (e) {
-      debugPrint('MPBleFileUtil.deleteLocalSandboxAudioFile: $e');
-      return false;
+      return await client.deleteFile(fileName);
+    } finally {
+      await client.dispose();
     }
   }
 

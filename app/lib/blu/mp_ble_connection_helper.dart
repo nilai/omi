@@ -526,16 +526,6 @@ class MPBleConnectionHelper {
     }
   }
 
-  /// 删除设备端文件（命令 `0x05` + UTF-8 文件名）。
-  static Future<bool> deleteMemoPinFile(BleTransport transport, String fileName) async {
-    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
-    try {
-      return await client.deleteFile(fileName);
-    } finally {
-      await client.dispose();
-    }
-  }
-
   /// 发起文件导出：配置装配器并发送 `0x04`；成功后监听 [MPNoteBleGattClient.recordFilePayloadStream]。
   ///
   /// **同一 [client] 实例**在导出过程中必须保持存活，结束后 [MPNoteBleGattClient.dispose]。
