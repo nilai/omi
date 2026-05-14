@@ -14,9 +14,6 @@ class MPNoteBleFilePayloadAssembler {
   MPNoteBleFilePayloadAssembler({required String fileName})
       : _rawTxt = fileName.toLowerCase().endsWith('.txt');
 
-  static const int _chunkSize = 484;
-  static const int _seqSize = 4;
-
   final bool _rawTxt;
   List<int> _buffer = <int>[];
 
@@ -27,15 +24,21 @@ class MPNoteBleFilePayloadAssembler {
   void reset() => _buffer.clear();
 
   /// 喂入一帧 BLE 通知，输出 0 或多个载荷块（Opus 帧或文本片段）。
+  ///
+  /// 与 [NoteBleTransport.fileStream] 对齐：上游可为 **原始 notify 分包**，也可为已剥离 Seq 的
+  /// [MPNoteBleFileTransferConstants.opusFrameBytes] 整帧。
   List<List<int>> push(List<int> data) {
     if (_rawTxt) {
       return <List<int>>[List<int>.from(data)];
     }
+    if (data.length == MPNoteBleFileTransferConstants.opusFrameBytes) {
+      return <List<int>>[List<int>.from(data)];
+    }
     _buffer.addAll(data);
     final List<List<int>> out = <List<int>>[];
-    while (_buffer.length >= _chunkSize) {
-      out.add(_buffer.sublist(_seqSize, _chunkSize));
-      _buffer = List<int>.from(_buffer.sublist(_chunkSize));
+    while (_buffer.length >= MPNoteBleFileTransferConstants.notifyChunkBytes) {
+      out.add(_buffer.sublist(MPNoteBleFileTransferConstants.seqPrefixBytes, MPNoteBleFileTransferConstants.notifyChunkBytes));
+      _buffer = List<int>.from(_buffer.sublist(MPNoteBleFileTransferConstants.notifyChunkBytes));
     }
     return out;
   }
@@ -45,12 +48,12 @@ class MPNoteBleFilePayloadAssembler {
     if (_rawTxt) {
       return <List<int>>[];
     }
-    if (_buffer.length <= _seqSize) {
+    if (_buffer.length <= MPNoteBleFileTransferConstants.seqPrefixBytes) {
       _buffer.clear();
       return <List<int>>[];
     }
-    if (_buffer.length < _chunkSize) {
-      final List<int> tail = List<int>.from(_buffer.sublist(_seqSize));
+    if (_buffer.length < MPNoteBleFileTransferConstants.notifyChunkBytes) {
+      final List<int> tail = List<int>.from(_buffer.sublist(MPNoteBleFileTransferConstants.seqPrefixBytes));
       _buffer.clear();
       return tail.isEmpty ? <List<int>>[] : <List<int>>[tail];
     }
@@ -246,8 +249,15 @@ class MPNoteBleGattClient {
   /// 在开始导出前调用：重置装配器状态（按扩展名选择 txt 透传或 Opus 分帧）。
   void prepareFileExport(String fileName) {
     debugPrint('------>>>memopin MPNoteBleGattClient.prepareFileExport $fileName');
+    _transport.resetFileReassembler(fileName: fileName);
     _fileAssembler = MPNoteBleFilePayloadAssembler(fileName: fileName);
     _fileAssembler!.reset();
+    unawaited(
+      _transport.getCharacteristicStreamWhenReady(
+        MPNoteBleUUIDs.service.toString(),
+        MPNoteBleUUIDs.recordFile.toString(),
+      ),
+    );
   }
 
   /// 导出流判定结束后调用，拼接 [MPNoteBleFilePayloadAssembler.flushTail]。

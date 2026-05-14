@@ -30,6 +30,18 @@ abstract class MPNoteBleUUIDs {
   static final logFile = Uuid.parse("${uuidPre}6-7f4b-5e9d-bc23-1a2f3e4d5c6b");
 }
 
+/// `e2c1a305` 文件流分帧常量（与 `ble/note_ble_transport.dart` 及 [MPNoteBleFilePayloadAssembler] 一致）。
+abstract class MPNoteBleFileTransferConstants {
+  /// 单块 `[Seq 4B][Opus 480B]` 总长。
+  static const int notifyChunkBytes = 484;
+
+  /// Seq 前缀长度。
+  static const int seqPrefixBytes = 4;
+
+  /// 剥离 Seq 后的 Opus 帧长。
+  static const int opusFrameBytes = 480;
+}
+
 /// 录音控制报文布局（`ble/doc/ble-api-documentation.md`「录音控制协议详解」）。
 ///
 /// **Cmd / Op 分离**：APP 下发 `[0x01,0,0]` 表示在 **command** 上发起开始录音；303 成功帧形如

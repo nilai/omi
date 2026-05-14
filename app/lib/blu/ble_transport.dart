@@ -6,6 +6,8 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 
 import 'device_transport.dart';
+import 'mp_note_audio_packet_reassembler.dart';
+import 'mp_note_ble_protocol.dart';
 
 class BleTransport extends DeviceTransport {
   final BluetoothDevice _bleDevice;
@@ -16,6 +18,28 @@ class BleTransport extends DeviceTransport {
 
   /// 在 [disconnect] / [dispose] 时递增，用于丢弃尚未完成的 [_setupCharacteristicListener] 结果。
   int _gattListenerEpoch = 0;
+
+  /// 与 `ble/note_ble_transport.dart` 一致：`301` 重组后的 **480B Opus 帧**；`303` 原始 notify；
+  /// `305` / `306` 为文件流与日志流（与 [NoteBleTransport] 分帧/txt 模式一致）。
+  final StreamController<List<int>> _audioDataController = StreamController<List<int>>.broadcast();
+  final StreamController<List<int>> _responseDataController = StreamController<List<int>>.broadcast();
+  final StreamController<List<int>> _fileDataController = StreamController<List<int>>.broadcast();
+  final StreamController<List<int>> _logDataController = StreamController<List<int>>.broadcast();
+
+  MPAudioPacketReassembler? _audioReassembler;
+
+  /// `true` 表示已完成 `301`–`306` notify 订阅（与 [NoteBleTransport] 连接后一次性订阅语义一致）。
+  bool _noteBleNotifyBound = false;
+
+  /// 避免并发多次 [_runNoteEnsureSetup]；与 `NoteBleTransport` 单路订阅语义一致。
+  Future<void>? _noteEnsuring;
+
+  final List<StreamSubscription<dynamic>> _notePipelineSubscriptions = <StreamSubscription<dynamic>>[];
+
+  /// 与 [NoteBleTransport] `_fileChunkBuffer` / `_isRawFileTransfer` 一致。
+  List<int> _fileChunkBuffer = <int>[];
+  bool _isRawFileTransfer = false;
+  int _filePacketCount = 0;
 
   List<BluetoothService> _services = [];
   DeviceTransportState _state = DeviceTransportState.disconnected;
@@ -33,6 +57,18 @@ class BleTransport extends DeviceTransport {
 
   @override
   Stream<DeviceTransportState> get connectionStateStream => _connectionStateController.stream;
+
+  /// 与 [NoteBleTransport.audioStream] 一致：实时 **重组后** Opus 帧（非 301 原始 notify）。
+  Stream<List<int>> get audioStream => _audioDataController.stream;
+
+  /// 与 [NoteBleTransport.responseStream] 一致：`e2c1a303` 原始字节。
+  Stream<List<int>> get responseStream => _responseDataController.stream;
+
+  /// 与 [NoteBleTransport.fileStream] 一致：`e2c1a305` — txt 为 notify 原文，opus 为剥离 Seq 后的 480B 帧。
+  Stream<List<int>> get fileStream => _fileDataController.stream;
+
+  /// 与 [NoteBleTransport.logStream] 一致：`e2c1a306` 原始 notify。
+  Stream<List<int>> get logStream => _logDataController.stream;
 
   void _updateState(DeviceTransportState newState) {
     if (_state != newState) {
@@ -101,6 +137,8 @@ class BleTransport extends DeviceTransport {
       }
       _streamControllers.clear();
 
+      await _tearDownNoteBleNotifyPipelines();
+
       await _bleDevice.disconnect();
 
       _updateState(DeviceTransportState.disconnected);
@@ -128,14 +166,24 @@ class BleTransport extends DeviceTransport {
 
   @override
   Stream<List<int>> getCharacteristicStream(String serviceUuid, String characteristicUuid) {
-    final String key = '$serviceUuid:$characteristicUuid';
-
-    if (!_streamControllers.containsKey(key)) {
-      _streamControllers[key] = StreamController<List<int>>.broadcast();
-      _characteristicNotifySetupFutures[key] = _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
+    final String cu = characteristicUuid.toLowerCase();
+    if (cu == MPNoteBleUUIDs.audioData.toString().toLowerCase()) {
+      unawaited(_ensureNoteBleNotifyPipelines());
+      return _audioDataController.stream;
     }
-
-    return _streamControllers[key]!.stream;
+    if (cu == MPNoteBleUUIDs.response.toString().toLowerCase()) {
+      unawaited(_ensureNoteBleNotifyPipelines());
+      return _responseDataController.stream;
+    }
+    if (cu == MPNoteBleUUIDs.recordFile.toString().toLowerCase()) {
+      unawaited(_ensureNoteBleNotifyPipelines());
+      return _fileDataController.stream;
+    }
+    if (cu == MPNoteBleUUIDs.logFile.toString().toLowerCase()) {
+      unawaited(_ensureNoteBleNotifyPipelines());
+      return _logDataController.stream;
+    }
+    return const Stream<List<int>>.empty();
   }
 
   /// 先完成 `setNotifyValue(true)` 与 `lastValueStream` 订阅，再返回与 [getCharacteristicStream] 相同的广播流。
@@ -146,7 +194,69 @@ class BleTransport extends DeviceTransport {
     String serviceUuid,
     String characteristicUuid,
   ) async {
-    final String key = '$serviceUuid:$characteristicUuid';
+    final String cu = characteristicUuid.toLowerCase();
+    if (cu == MPNoteBleUUIDs.audioData.toString().toLowerCase() ||
+        cu == MPNoteBleUUIDs.response.toString().toLowerCase() ||
+        cu == MPNoteBleUUIDs.recordFile.toString().toLowerCase() ||
+        cu == MPNoteBleUUIDs.logFile.toString().toLowerCase()) {
+      await _ensureNoteBleNotifyPipelines();
+      return getCharacteristicStream(serviceUuid, characteristicUuid);
+    }
+    return const Stream<List<int>>.empty();
+  }
+
+  /// 重置实时音频重组器（新一段录音开始时由上层调用，与 `AudioPacketReassembler.reset` 语义一致）。
+  void resetRealtimeAudioReassembly({String? fileName}) {
+    _audioReassembler?.reset(fileName: fileName);
+  }
+
+  /// 与 [NoteBleTransport.resetFileReassembler] 一致：按扩展名切换 `305` txt 透传 / opus `[Seq][480B]` 分帧。
+  void resetFileReassembler({String? fileName}) {
+    _filePacketCount = 0;
+    _fileChunkBuffer.clear();
+    _isRawFileTransfer = fileName != null && fileName.toLowerCase().endsWith('.txt');
+    debugPrint(
+      'BleTransport 文件传输模式: ${_isRawFileTransfer ? "纯字节流 (txt)" : "[Seq][480B] 分帧 (opus)"} file=$fileName',
+    );
+  }
+
+  Future<void> _ensureNoteBleNotifyPipelines() async {
+    if (_noteBleNotifyBound) {
+      return;
+    }
+    final Future<void> run = _noteEnsuring ??= _runNoteEnsureSetup();
+    await run;
+  }
+
+  Future<void> _runNoteEnsureSetup() async {
+    try {
+      for (int attempt = 0; attempt < 2 && !_noteBleNotifyBound; attempt++) {
+        await _setupNoteBleNotifyPipelines();
+      }
+    } finally {
+      _noteEnsuring = null;
+    }
+  }
+
+  /// 301 等特征的 **原始 notify**（不经 [MPAudioPacketReassembler]）。
+  ///
+  /// 与 [getCharacteristicStream] 分流：同 UUID 下 [MPNoteBleUUIDs.audioData] 在后者中返回重组帧，
+  /// 本方法供 [MPBleLiveRecordingSession] 等需 Seq/分包自行解析的路径使用。
+  Stream<List<int>> getRawCharacteristicNotifyStream(String serviceUuid, String characteristicUuid) {
+    final String key = _rawNotifyStreamKey(serviceUuid, characteristicUuid);
+    if (!_streamControllers.containsKey(key)) {
+      _streamControllers[key] = StreamController<List<int>>.broadcast();
+      _characteristicNotifySetupFutures[key] = _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
+    }
+    return _streamControllers[key]!.stream;
+  }
+
+  /// 先完成 `setNotifyValue(true)` 再返回 [getRawCharacteristicNotifyStream] 的流。
+  Future<Stream<List<int>>> getRawCharacteristicNotifyStreamWhenReady(
+    String serviceUuid,
+    String characteristicUuid,
+  ) async {
+    final String key = _rawNotifyStreamKey(serviceUuid, characteristicUuid);
     if (!_streamControllers.containsKey(key)) {
       _streamControllers[key] = StreamController<List<int>>.broadcast();
       _characteristicNotifySetupFutures[key] = _setupCharacteristicListener(serviceUuid, characteristicUuid, key);
@@ -156,6 +266,206 @@ class BleTransport extends DeviceTransport {
       await pending;
     }
     return _streamControllers[key]!.stream;
+  }
+
+  static String _rawNotifyStreamKey(String serviceUuid, String characteristicUuid) =>
+      'raw:${serviceUuid.toLowerCase()}:${characteristicUuid.toLowerCase()}';
+
+  Future<void> _setupNoteBleNotifyPipelines() async {
+    if (_noteBleNotifyBound) {
+      return;
+    }
+    final int setupEpoch = _gattListenerEpoch;
+    StreamSubscription<List<int>>? audioSub;
+    StreamSubscription<List<int>>? responseSub;
+    StreamSubscription<List<int>>? fileSub;
+    StreamSubscription<List<int>>? logSub;
+    try {
+      _audioReassembler ??= MPAudioPacketReassembler(
+        tag: 'BleTransport',
+        onFrameComplete: (_, List<int> frame) {
+          if (!_audioDataController.isClosed) {
+            _audioDataController.add(frame);
+          }
+        },
+        onSeqGap: (int expectedSeq, int receivedSeq) {
+          debugPrint(
+            'BleTransport audio seq gap: expected=$expectedSeq received=$receivedSeq deviceId=$deviceId',
+          );
+        },
+      );
+
+      final BluetoothCharacteristic? audioChar =
+          await _getCharacteristic(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.audioData.toString());
+      final BluetoothCharacteristic? responseChar =
+          await _getCharacteristic(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString());
+      if (setupEpoch != _gattListenerEpoch) {
+        return;
+      }
+      if (audioChar == null || responseChar == null) {
+        debugPrint('BleTransport: Note audio/response characteristic missing');
+        return;
+      }
+
+      await audioChar.setNotifyValue(true);
+      if (setupEpoch != _gattListenerEpoch) {
+        try {
+          await audioChar.setNotifyValue(false);
+        } catch (_) {}
+        return;
+      }
+      await responseChar.setNotifyValue(true);
+      if (setupEpoch != _gattListenerEpoch) {
+        try {
+          await audioChar.setNotifyValue(false);
+          await responseChar.setNotifyValue(false);
+        } catch (_) {}
+        return;
+      }
+
+      audioSub = audioChar.lastValueStream.listen(
+        _audioReassembler!.process,
+        onError: (Object e, StackTrace st) =>
+            debugPrint('BleTransport 301 audio notify: $e\n$st'),
+        onDone: () => debugPrint('BleTransport 301 audio notify: onDone'),
+        cancelOnError: false,
+      );
+      responseSub = responseChar.lastValueStream.listen(
+        (List<int> value) {
+          if (!_responseDataController.isClosed) {
+            _responseDataController.add(value);
+          }
+        },
+        onError: (Object e, StackTrace st) =>
+            debugPrint('BleTransport 303 response notify: $e\n$st'),
+        onDone: () => debugPrint('BleTransport 303 response notify: onDone'),
+        cancelOnError: false,
+      );
+
+      if (setupEpoch != _gattListenerEpoch) {
+        await audioSub.cancel();
+        await responseSub.cancel();
+        return;
+      }
+
+      final BluetoothCharacteristic? fileChar =
+          await _getCharacteristic(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordFile.toString());
+      final BluetoothCharacteristic? logChar =
+          await _getCharacteristic(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.logFile.toString());
+      if (setupEpoch != _gattListenerEpoch) {
+        await audioSub.cancel();
+        await responseSub.cancel();
+        return;
+      }
+
+      if (fileChar != null) {
+        await fileChar.setNotifyValue(true);
+        if (setupEpoch != _gattListenerEpoch) {
+          try {
+            await fileChar.setNotifyValue(false);
+          } catch (_) {}
+          await audioSub.cancel();
+          await responseSub.cancel();
+          return;
+        }
+        fileSub = fileChar.lastValueStream.listen(
+          (List<int> data) {
+            if (_filePacketCount < 3 && kDebugMode) {
+              final String headHex =
+                  data.take(8).map((int b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+              debugPrint(
+                'BLE FILE notify#$_filePacketCount: len=${data.length}, head=[$headHex'
+                '${_isRawFileTransfer ? " (raw)" : ""}]',
+              );
+            }
+            _filePacketCount++;
+            if (_isRawFileTransfer) {
+              if (!_fileDataController.isClosed) {
+                _fileDataController.add(List<int>.from(data));
+              }
+              return;
+            }
+            _fileChunkBuffer.addAll(data);
+            while (_fileChunkBuffer.length >= MPNoteBleFileTransferConstants.notifyChunkBytes) {
+              final List<int> opusFrame = _fileChunkBuffer.sublist(
+                MPNoteBleFileTransferConstants.seqPrefixBytes,
+                MPNoteBleFileTransferConstants.notifyChunkBytes,
+              );
+              if (!_fileDataController.isClosed) {
+                _fileDataController.add(opusFrame);
+              }
+              _fileChunkBuffer = _fileChunkBuffer.sublist(MPNoteBleFileTransferConstants.notifyChunkBytes);
+            }
+          },
+          onError: (Object e, StackTrace st) => debugPrint('BleTransport 305 file notify: $e\n$st'),
+          onDone: () => debugPrint('BleTransport 305 file notify: onDone'),
+          cancelOnError: false,
+        );
+      }
+
+      if (logChar != null) {
+        await logChar.setNotifyValue(true);
+        if (setupEpoch != _gattListenerEpoch) {
+          try {
+            await logChar.setNotifyValue(false);
+          } catch (_) {}
+          await audioSub.cancel();
+          await responseSub.cancel();
+          await fileSub?.cancel();
+          return;
+        }
+        logSub = logChar.lastValueStream.listen(
+          (List<int> data) {
+            if (!_logDataController.isClosed) {
+              _logDataController.add(data);
+            }
+          },
+          onError: (Object e, StackTrace st) => debugPrint('BleTransport 306 log notify: $e\n$st'),
+          onDone: () => debugPrint('BleTransport 306 log notify: onDone'),
+          cancelOnError: false,
+        );
+      }
+
+      if (setupEpoch != _gattListenerEpoch) {
+        await audioSub.cancel();
+        await responseSub.cancel();
+        await fileSub?.cancel();
+        await logSub?.cancel();
+        return;
+      }
+
+      _notePipelineSubscriptions.add(audioSub);
+      _notePipelineSubscriptions.add(responseSub);
+      _bleDevice.cancelWhenDisconnected(audioSub);
+      _bleDevice.cancelWhenDisconnected(responseSub);
+      if (fileSub != null) {
+        _notePipelineSubscriptions.add(fileSub);
+        _bleDevice.cancelWhenDisconnected(fileSub);
+      }
+      if (logSub != null) {
+        _notePipelineSubscriptions.add(logSub);
+        _bleDevice.cancelWhenDisconnected(logSub);
+      }
+      _noteBleNotifyBound = true;
+    } catch (e) {
+      debugPrint('BleTransport: _setupNoteBleNotifyPipelines failed: $e');
+      await audioSub?.cancel();
+      await responseSub?.cancel();
+      await fileSub?.cancel();
+      await logSub?.cancel();
+    }
+  }
+
+  Future<void> _tearDownNoteBleNotifyPipelines() async {
+    for (final StreamSubscription<dynamic> s in _notePipelineSubscriptions) {
+      await s.cancel();
+    }
+    _notePipelineSubscriptions.clear();
+    _noteBleNotifyBound = false;
+    _fileChunkBuffer.clear();
+    _filePacketCount = 0;
+    _audioReassembler?.dispose();
+    _audioReassembler = null;
   }
 
   Future<void> _setupCharacteristicListener(String serviceUuid, String characteristicUuid, String key) async {
@@ -329,6 +639,8 @@ class BleTransport extends DeviceTransport {
     _gattListenerEpoch++;
     _characteristicNotifySetupFutures.clear();
 
+    await _tearDownNoteAudioResponsePipelines();
+
     for (final StreamSubscription<dynamic> subscription in _characteristicSubscriptions.values) {
       await subscription.cancel();
     }
@@ -338,6 +650,13 @@ class BleTransport extends DeviceTransport {
       await controller.close();
     }
     _streamControllers.clear();
+
+    if (!_audioDataController.isClosed) {
+      await _audioDataController.close();
+    }
+    if (!_responseDataController.isClosed) {
+      await _responseDataController.close();
+    }
 
     await _connectionStateController.close();
   }

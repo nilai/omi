@@ -430,8 +430,10 @@ class MPBleLiveRecordingSession {
 
     _activeFileNameForRetransmit = p.basename(opusPath);
 
-    _audioSub = _transport
-        .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.audioData.toString())
+    _audioSub = (await _transport.getRawCharacteristicNotifyStreamWhenReady(
+          MPNoteBleUUIDs.service.toString(),
+          MPNoteBleUUIDs.audioData.toString(),
+        ))
         .listen(_onAudio301, onError: (Object e) => debugPrint('MPBleLiveRecordingSession audio301: $e'));
 
     _retransmitSub = _transport

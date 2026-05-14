@@ -10,15 +10,15 @@ import 'package:path/path.dart' as p;
 import '../common/mp_home_notification.dart';
 import 'ble_transport.dart';
 import 'mp_ble_file_util.dart';
-import 'mp_note_audio_packet_reassembler.dart';
 import 'mp_note_ble_protocol.dart';
 
-/// 订阅 **response `e2c1a303`** 与 **audioData `e2c1a301`**，按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
+/// 订阅 **response `e2c1a303`** 与 **audioData `e2c1a301`**（经 [BleTransport] 与 [NoteBleTransport] 对齐的管线），
+/// 按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
 /// 在「开始录音成功」「结束录音成功」时更新 [lastEmitted] 并 [MPHomeNotification.notifyBleMemopinRecordingStateChanged]。
 ///
-/// **实时音频落盘**（与 `note-debug-realtime-audio-reception.md` / `NoteBleTransport.audioStream` →
+/// **实时音频落盘**（与 `note-debug-realtime-audio-reception.md` / [NoteBleTransport.audioStream] →
 /// `note_ble_debug_provider.dart` [NoteBleDebugProvider.startSavingAudio] 等价）：
-/// - 301 原始 notify 经 [MPAudioPacketReassembler] 重组为 **480B Opus 帧**（等同 `audioStream` 推送的 `data`）；
+/// - [BleTransport.getCharacteristicStreamWhenReady] 对 `e2c1a301` 返回 **已重组** 的 480B Opus 帧（等同 `audioStream`）；
 /// - 在 303 **开始录音成功** 后打开 [MPBleFileUtil.ensureMemoPinDeviceAudioDirectoryPath] 下 `.opus` 写句柄，
 ///   对重组帧执行与 `startSavingAudio` 中 `listen` 回调相同的计数、`IOSink.add`、前 10 包 + 每 10 秒 `print`、`cancelOnError: false`；
 /// - **停止录音成功** 后 `flush`/`close`；`onError`/`onDone` 文案风格与 Debug Provider 一致。
@@ -28,7 +28,8 @@ class MPBleRecordingWatcher {
   StreamSubscription<List<int>>? _responseSub;
   StreamSubscription<List<int>>? _audioSub;
 
-  MPAudioPacketReassembler? _audioReassembler;
+  /// 当前 [_start] 绑定的传输，供 303 回调中调用 [BleTransport.resetRealtimeAudioReassembly]。
+  BleTransport? _boundTransport;
 
   IOSink? _audioFileSink;
   String? _savedAudioPath;
@@ -62,8 +63,7 @@ class MPBleRecordingWatcher {
     debugPrint('------>>>memopin recording watcher detach');
     await _cancelSubscriptions();
     await _closeAudioSavingSink();
-    _audioReassembler?.dispose();
-    _audioReassembler = null;
+    _boundTransport = null;
   }
 
   Future<void> _cancelSubscriptions() async {
@@ -104,26 +104,14 @@ class MPBleRecordingWatcher {
         cancelOnError: false,
       );
 
-      _audioReassembler = MPAudioPacketReassembler(
-        tag: 'MemopinWatcher',
-        onFrameComplete: (_, List<int> frame) {
-          _onMemopinAudioStreamDataLikeStartSavingAudio(frame);
-        },
-        onSeqGap: (int expectedSeq, int receivedSeq) {
-          debugPrint(
-            '------>>>memopin recording watcher audio seq gap: expected=$expectedSeq received=$receivedSeq',
-          );
-        },
-      );
-
-      final Stream<List<int>> raw301 = await transport.getCharacteristicStreamWhenReady(
+      final Stream<List<int>> audioStream = await transport.getCharacteristicStreamWhenReady(
         MPNoteBleUUIDs.service.toString(),
         MPNoteBleUUIDs.audioData.toString(),
       );
 
-      print('[MemopinAudioWatcher] 开始订阅 301 → 重组帧流（等同 bleTransport.audioStream）...');
-      _audioSub = raw301.listen(
-        _audioReassembler!.process,
+      print('[MemopinAudioWatcher] 开始订阅 301 → 重组帧流（等同 BleTransport.audioStream）...');
+      _audioSub = audioStream.listen(
+        _onMemopinAudioStreamDataLikeStartSavingAudio,
         onError: (Object error, StackTrace stackTrace) {
           print('[MemopinAudioWatcher] ❌ 音频流错误: $error');
           print('[MemopinAudioWatcher] ❌ 堆栈: $stackTrace');
@@ -138,10 +126,10 @@ class MPBleRecordingWatcher {
         cancelOnError: false,
       );
       print('[MemopinAudioWatcher] ✓ 音频流订阅已建立（重组后与 audioStream 对齐）');
+      _boundTransport = transport;
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher _start: subscribe failed: $e\n$st');
-      _audioReassembler?.dispose();
-      _audioReassembler = null;
+      _boundTransport = null;
       await _cancelSubscriptions();
     }
   }
@@ -220,7 +208,7 @@ class MPBleRecordingWatcher {
         );
       }
       final String fn = (fileLabel != null && fileLabel.isNotEmpty) ? fileLabel : 'session.opus';
-      _audioReassembler?.reset(fileName: fn);
+      _boundTransport?.resetRealtimeAudioReassembly(fileName: fn);
       unawaited(_ensureAudioSavingSinkOpen());
       return;
     }
