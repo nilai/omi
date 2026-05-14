@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'ble_transport.dart';
@@ -82,6 +83,7 @@ class MPNoteBleGattClient {
 
   /// 释放订阅；导出进行中请先取消对 payload 流的监听。
   Future<void> dispose() async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.dispose');
     _cancelPacketTimeout();
     await _responseSub?.cancel();
     _responseSub = null;
@@ -97,6 +99,7 @@ class MPNoteBleGattClient {
   Future<MPNoteBatteryReading?> readBattery({
     Duration timeout = const Duration(seconds: 5),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.readBattery');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.queryBattery],
       awaitKind: _AwaitKind.generic,
@@ -106,30 +109,40 @@ class MPNoteBleGattClient {
       final int pct = response[1].clamp(0, 100);
       final int? charging =
           response.length >= 3 ? response[2] : null;
+      debugPrint('------>>>memopin MPNoteBleGattClient.readBattery → $pct% charging=$charging');
       return MPNoteBatteryReading(percent: pct, chargingState: charging);
     }
+    debugPrint('------>>>memopin MPNoteBleGattClient.readBattery → null (bad response len=${response.length})');
     return null;
   }
 
   /// 读取 `e2c1a310` 录音状态（Read；部分固件亦可能推送 notify）。
   Future<MPBleMemopinRecordStatus310> readRecordStatus310() async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.readRecordStatus310');
     final List<int> raw = await _transport.readCharacteristic(
       MPNoteBleUUIDs.service.toString(),
       MPNoteBleUUIDs.recordStatus.toString(),
     );
-    return MPBleMemopinRecordStatus310.parse(raw);
+    final MPBleMemopinRecordStatus310 st = MPBleMemopinRecordStatus310.parse(raw);
+    debugPrint(
+      '------>>>memopin MPNoteBleGattClient.readRecordStatus310 → len=${raw.length} recording=${st.isRecording}',
+    );
+    return st;
   }
 
   /// 发送 `[0x01,0,0]` 主动开始录音（仅产生 **memory/normal** 类会话，见协议说明）。
   Future<MPBleRecordingStartInfo?> sendStartRecording({
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendStartRecording');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.startRecording, 0x00, 0x00],
       awaitKind: _AwaitKind.generic,
       timeout: timeout,
     );
-    return MPBleRecordingStartInfo.tryParse(response);
+    final MPBleRecordingStartInfo? info = MPBleRecordingStartInfo.tryParse(response);
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendStartRecording → ${info != null ? info.fileName : "null"}');
+    return info;
   }
 
   /// 发送 `[0x02,0x00]` 结束录音。
@@ -138,6 +151,7 @@ class MPNoteBleGattClient {
   Future<String?> sendStopRecording({
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.stopRecording, 0x00],
       awaitKind: _AwaitKind.generic,
@@ -147,11 +161,15 @@ class MPNoteBleGattClient {
         response[0] == MPNoteBleCommands.stopRecording &&
         response[2] == 0x01) {
       try {
-        return utf8.decode(response.sublist(4));
+        final String name = utf8.decode(response.sublist(4));
+        debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → $name');
+        return name;
       } catch (_) {
+        debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → decode fail');
         return null;
       }
     }
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendStopRecording → null');
     return null;
   }
 
@@ -160,15 +178,18 @@ class MPNoteBleGattClient {
     int modeByte, {
     Duration timeout = const Duration(seconds: 5),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.setRecordingTransportMode mode=0x${(modeByte & 0xff).toRadixString(16)}');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.setRecordingTransportMode, modeByte & 0xff],
       awaitKind: _AwaitKind.generic,
       timeout: timeout,
     );
-    return response.length >= 3 &&
+    final bool ok = response.length >= 3 &&
         response[0] == MPNoteBleCommands.setRecordingTransportMode &&
         response[1] == (modeByte & 0xff) &&
         response[2] == 0x01;
+    debugPrint('------>>>memopin MPNoteBleGattClient.setRecordingTransportMode → $ok');
+    return ok;
   }
 
   /// 发送补传请求 `0x20`（Seq **大端**）；不等待业务完成，补传帧经 `e2c1a303` 等通道到达。
@@ -179,6 +200,7 @@ class MPNoteBleGattClient {
   ) async {
     final List<int> nb = utf8.encode(fileName);
     if (nb.isEmpty || nb.length > 32) {
+      debugPrint('------>>>memopin MPNoteBleGattClient.sendRetransmitAudioRequest: skip (bad name len=${nb.length})');
       return;
     }
     int s = startSeqInclusive;
@@ -187,8 +209,10 @@ class MPNoteBleGattClient {
       s = 0;
     }
     if (e < s) {
+      debugPrint('------>>>memopin MPNoteBleGattClient.sendRetransmitAudioRequest: skip (bad seq $s..$e)');
       return;
     }
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendRetransmitAudioRequest $fileName seq $s..$e');
     final List<int> cmd = <int>[
       MPNoteBleCommands.retransmitAudio,
       nb.length,
@@ -208,18 +232,22 @@ class MPNoteBleGattClient {
       MPNoteBleUUIDs.command.toString(),
       cmd,
     );
+    debugPrint('------>>>memopin MPNoteBleGattClient.sendRetransmitAudioRequest: write sent (${cmd.length} bytes)');
   }
 
   /// 获取设备端录音文件列表（命令 `0x03`，支持多包拼接）。
   Future<List<NoteFileInfo>> getFileList({
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.getFileList');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.getFileList],
       awaitKind: _AwaitKind.fileList,
       timeout: timeout,
     );
-    return _parseFileList(response);
+    final List<NoteFileInfo> files = _parseFileList(response);
+    debugPrint('------>>>memopin MPNoteBleGattClient.getFileList → ${files.length} files');
+    return files;
   }
 
   /// 请求导出文件（命令 `0x04`）；成功后设备通过 [recordFile] 特征推送数据。
@@ -229,6 +257,7 @@ class MPNoteBleGattClient {
     String fileName, {
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.requestFileExport $fileName');
     final List<int> nameBytes = utf8.encode(fileName);
     final List<int> command = <int>[
       MPNoteBleCommands.uploadFile,
@@ -240,12 +269,11 @@ class MPNoteBleGattClient {
       awaitKind: _AwaitKind.generic,
       timeout: timeout,
     );
-    if (response.length >= 2 &&
+    final bool ok = response.length >= 2 &&
         response[0] == MPNoteBleCommands.uploadFile &&
-        response[1] == 0x01) {
-      return true;
-    }
-    return false;
+        response[1] == 0x01;
+    debugPrint('------>>>memopin MPNoteBleGattClient.requestFileExport $fileName → $ok');
+    return ok;
   }
 
   /// 删除文件（命令 `0x05` + UTF-8 文件名）。
@@ -253,6 +281,7 @@ class MPNoteBleGattClient {
     String fileName, {
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.deleteFile $fileName');
     final List<int> fileNameBytes = utf8.encode(fileName);
     final List<int> command = <int>[
       MPNoteBleCommands.deleteFile,
@@ -264,13 +293,16 @@ class MPNoteBleGattClient {
       awaitKind: _AwaitKind.generic,
       timeout: timeout,
     );
-    return response.length >= 2 &&
+    final bool ok = response.length >= 2 &&
         response[0] == MPNoteBleCommands.deleteFile &&
         response[1] == 0x01;
+    debugPrint('------>>>memopin MPNoteBleGattClient.deleteFile $fileName → $ok');
+    return ok;
   }
 
   /// 在开始导出前调用：重置装配器状态（按扩展名选择 txt 透传或 Opus 分帧）。
   void prepareFileExport(String fileName) {
+    debugPrint('------>>>memopin MPNoteBleGattClient.prepareFileExport $fileName');
     _fileAssembler = MPNoteBleFilePayloadAssembler(fileName: fileName);
     _fileAssembler!.reset();
   }
@@ -305,6 +337,7 @@ class MPNoteBleGattClient {
     if (_responseSub != null) {
       return;
     }
+    debugPrint('------>>>memopin MPNoteBleGattClient._ensureResponseSubscription: subscribe 303');
     _responseSub = _transport
         .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
         .listen(
@@ -393,6 +426,10 @@ class MPNoteBleGattClient {
     required _AwaitKind awaitKind,
     Duration timeout = const Duration(seconds: 10),
   }) async {
+    debugPrint(
+      '------>>>memopin MPNoteBleGattClient._sendCommandWithResponse kind=$awaitKind '
+      'cmd0=0x${command.isEmpty ? "?" : (command[0] & 0xff).toRadixString(16)} len=${command.length}',
+    );
     await _ensureResponseSubscription();
 
     _cancelPacketTimeout();
@@ -409,8 +446,12 @@ class MPNoteBleGattClient {
     try {
       final List<int> result = await _responseCompleter!.future.timeout(
         timeout,
-        onTimeout: () => <int>[],
+        onTimeout: () {
+          debugPrint('------>>>memopin MPNoteBleGattClient._sendCommandWithResponse TIMEOUT → empty');
+          return <int>[];
+        },
       );
+      debugPrint('------>>>memopin MPNoteBleGattClient._sendCommandWithResponse response len=${result.length}');
       return result;
     } finally {
       _awaitKind = _AwaitKind.none;
@@ -421,13 +462,16 @@ class MPNoteBleGattClient {
 
   List<NoteFileInfo> _parseFileList(List<int> response) {
     if (response.isEmpty || response[0] != MPNoteBleCommands.getFileList) {
+      debugPrint('------>>>memopin _parseFileList: empty or bad header len=${response.length}');
       return <NoteFileInfo>[];
     }
     final int fileCount = response[1];
     if (fileCount == 0 || fileCount == 255) {
+      debugPrint('------>>>memopin _parseFileList: fileCount=$fileCount → empty');
       return <NoteFileInfo>[];
     }
 
+    debugPrint('------>>>memopin _parseFileList: declared fileCount=$fileCount');
     final List<NoteFileInfo> files = <NoteFileInfo>[];
     int offset = 2;
     for (int i = 0; i < fileCount; i++) {
@@ -443,7 +487,7 @@ class MPNoteBleGattClient {
       final List<int> fileNameBytes =
           response.sublist(offset + 4, offset + 4 + nameLength);
       final String name = utf8.decode(fileNameBytes);
-      debugPrint('--->> fileName: $name, duration: $duration');
+      debugPrint('------>>>memopin _parseFileList entry: $name duration=$duration');
       if (name.isNotEmpty && name.length >= 15 && name.contains('_')) {
         files.add(
           NoteFileInfo(
@@ -455,6 +499,7 @@ class MPNoteBleGattClient {
       }
       offset += 4 + nameLength;
     }
+    debugPrint('------>>>memopin _parseFileList: parsed accepted=${files.length}');
     return files;
   }
 }

@@ -37,7 +37,7 @@ class MPBleMemopinRecordingStateWatcher {
       try {
         data = await transport.readCharacteristic(serviceUuid, characteristicUuid);
       } catch (e, st) {
-        debugPrint('MPBleMemopinRecordingStateWatcher.readStatus310 read failed: $e\n$st');
+        debugPrint('------>>>memopin readStatus310: read failed attempt=${attempt + 1} $e\n$st');
         data = const <int>[];
       }
       if (data.isNotEmpty) {
@@ -47,12 +47,21 @@ class MPBleMemopinRecordingStateWatcher {
         await Future<void>.delayed(const Duration(milliseconds: 80));
       }
     }
-    return _parseRecordStatus310ReadPayload(data);
+    if (data.isEmpty) {
+      debugPrint('------>>>memopin readStatus310: empty after retries deviceId=${transport.deviceId}');
+    }
+    final MPBleMemopinRecordStatus310 out = _parseRecordStatus310ReadPayload(data);
+    debugPrint(
+      '------>>>memopin readStatus310: result deviceId=${transport.deviceId} isRecording=${out.isRecording} '
+      'file=${out.activeFileName} rawLen=${data.length}',
+    );
+    return out;
   }
 
   /// 解析 `e2c1a310` 读回载荷（与参考实现 [queryRecordStatus] 一致：`>=2` 才取状态字节）。
   static MPBleMemopinRecordStatus310 _parseRecordStatus310ReadPayload(List<int> data) {
     if (data.length < 2) {
+      debugPrint('------>>>memopin _parseRecordStatus310ReadPayload: short payload len=${data.length} → idle');
       return const MPBleMemopinRecordStatus310(isRecording: false);
     }
     final int status = data[0] & 0xff;
@@ -76,6 +85,9 @@ class MPBleMemopinRecordingStateWatcher {
 
   /// 绑定传输层并开始监听；`transport == null` 等价于 [detach]。
   Future<void> attach(BleTransport? transport) async {
+    debugPrint(
+      '------>>>memopin recording watcher attach: ${transport == null ? "detach" : "deviceId=${transport.deviceId}"}',
+    );
     await detach();
     _transport = transport;
     if (transport == null) {
@@ -86,6 +98,7 @@ class MPBleMemopinRecordingStateWatcher {
 
   /// 取消订阅与轮询。
   Future<void> detach() async {
+    debugPrint('------>>>memopin recording watcher detach');
     await _responseSub?.cancel();
     _responseSub = null;
     await _statusSub?.cancel();
@@ -96,26 +109,30 @@ class MPBleMemopinRecordingStateWatcher {
   }
 
   Future<void> _start(BleTransport transport) async {
+    debugPrint('------>>>memopin recording watcher _start: deviceId=${transport.deviceId}');
     try {
       if (!await transport.isConnected()) {
+        debugPrint('------>>>memopin recording watcher _start: not connected, abort');
         return;
       }
     } catch (_) {
+      debugPrint('------>>>memopin recording watcher _start: isConnected check failed, abort');
       return;
     }
 
     await _apply310Snapshot(await readStatus310(transport), forceEmit: true);
+    debugPrint('------>>>memopin recording watcher _start: initial 310 snapshot applied, subs starting');
 
     _responseSub = transport
         .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.response.toString())
-        .listen(_onResponsePacket, onError: (Object e) => debugPrint('MPBleMemopinRecordingStateWatcher response: $e'));
+        .listen(_onResponsePacket, onError: (Object e) => debugPrint('------>>>memopin recording watcher response stream: $e'));
 
     try {
       _statusSub = transport
           .getCharacteristicStream(MPNoteBleUUIDs.service.toString(), MPNoteBleUUIDs.recordStatus.toString())
           .listen(_onRecordStatusNotify, onError: (_) {});
     } catch (e) {
-      debugPrint('MPBleMemopinRecordingStateWatcher: recordStatus notify unavailable: $e');
+      debugPrint('------>>>memopin recording watcher _start: recordStatus notify setup failed: $e');
     }
 
     _pollTimer?.cancel();
@@ -126,6 +143,9 @@ class MPBleMemopinRecordingStateWatcher {
 
   void _onRecordStatusNotify(List<int> raw) {
     final MPBleMemopinRecordStatus310 st = MPBleMemopinRecordStatus310.parse(raw);
+    debugPrint(
+      '------>>>memopin recording watcher notify310 len=${raw.length} parsed recording=${st.isRecording}',
+    );
     unawaited(_apply310Snapshot(st));
   }
 
@@ -134,6 +154,7 @@ class MPBleMemopinRecordingStateWatcher {
       return;
     }
     if (p.length >= 5 && p[0] == MPNoteBleCommands.startRecording && p[1] == 0x01) {
+      debugPrint('------>>>memopin recording watcher 303: startRecording ok mode=${p[3] & 0xff}');
       _lastSessionModeByte = p[3] & 0xff;
       try {
         final String name = utf8.decode(p.sublist(4));
@@ -155,6 +176,7 @@ class MPBleMemopinRecordingStateWatcher {
       return;
     }
     if (p.length >= 5 && p[0] == MPNoteBleCommands.stopRecording && p[2] == 0x01) {
+      debugPrint('------>>>memopin recording watcher 303: stopRecording ok');
       try {
         final String name = utf8.decode(p.sublist(4));
         _emitIfChanged(
@@ -190,7 +212,7 @@ class MPBleMemopinRecordingStateWatcher {
     try {
       await _apply310Snapshot(await readStatus310(t));
     } catch (e) {
-      debugPrint('MPBleMemopinRecordingStateWatcher._poll310: $e');
+      debugPrint('------>>>memopin recording watcher _poll310 error: $e');
     }
   }
 
@@ -212,6 +234,10 @@ class MPBleMemopinRecordingStateWatcher {
         next.sessionModeByte == _lastEmitted.sessionModeByte) {
       return;
     }
+    debugPrint(
+      '------>>>memopin recording state emit: recording=${next.isRecording} file=${next.activeFileName} '
+      'mode=${next.sessionModeByte} force=$forceEmit',
+    );
     _lastEmitted = next;
     MPHomeNotification.notifyBleMemopinRecordingStateChanged(next);
   }

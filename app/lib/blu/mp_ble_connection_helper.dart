@@ -53,6 +53,7 @@ class MPBleConnectionHelper {
   /// [backgroundBleTransport] 时用 [readMemoPinRecordingStatus] 兜底，降低漏判。
   static Future<bool> isMemoPinDeviceRecordingForLocalRecordingGuard() async {
     if (memoPinRecordingStateSnapshot.isRecording) {
+      debugPrint('------>>>memopin recordingGuard: block (snapshot recording=true)');
       return true;
     }
     final BleTransport? t = backgroundBleTransport;
@@ -68,6 +69,9 @@ class MPBleConnectionHelper {
     }
     try {
       final MPBleMemopinRecordStatus310 st = await readMemoPinRecordingStatus(t);
+      if (st.isRecording) {
+        debugPrint('------>>>memopin recordingGuard: block (GATT recording=true)');
+      }
       return st.isRecording;
     } catch (_) {
       return memoPinRecordingStateSnapshot.isRecording;
@@ -78,6 +82,7 @@ class MPBleConnectionHelper {
   static Future<MPBleMemopinRecordStatus310> readMemoPinRecordingStatus(BleTransport transport) async {
     try {
       if (!await transport.isConnected()) {
+        debugPrint('------>>>memopin readMemoPinRecordingStatus: not connected → idle deviceId=${transport.deviceId}');
         return const MPBleMemopinRecordStatus310(isRecording: false);
       }
     } catch (_) {
@@ -102,6 +107,9 @@ class MPBleConnectionHelper {
 
   /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
   static void parkBackgroundBleTransport(BleTransport? transport) {
+    debugPrint(
+      '------>>>memopin parkBackgroundBleTransport: ${transport == null ? "null" : "deviceId=${transport.deviceId}"}',
+    );
     _backgroundBleTransport = transport;
     unawaited(_memopinRecordingWatcher.attach(transport));
   }
@@ -111,6 +119,7 @@ class MPBleConnectionHelper {
 
   /// 取出背景会话引用（取出后 helper 不再持有，一般由连接页 Cubit 接管）。
   static BleTransport? takeBackgroundBleTransport() {
+    debugPrint('------>>>memopin takeBackgroundBleTransport');
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
     unawaited(_memopinRecordingWatcher.attach(null));
@@ -119,6 +128,7 @@ class MPBleConnectionHelper {
 
   /// 释放背景会话并断开 BLE（用户主动断开或连接新设备前清理）。
   static Future<void> disposeBackgroundBleTransportIfAny() async {
+    debugPrint('------>>>memopin disposeBackgroundBleTransportIfAny');
     await _memopinRecordingWatcher.detach();
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
@@ -141,6 +151,7 @@ class MPBleConnectionHelper {
   /// 先 [disposeBackgroundBleTransportIfAny]，再对 [FlutterBluePlus.connectedDevices] 执行 [BluetoothDevice.disconnect]，
   /// 以覆盖仅通过系统栈连接、未托管在 [BleTransport] 中的情况。
   static Future<void> disconnectAppBleForLogout() async {
+    debugPrint('------>>>memopin disconnectAppBleForLogout');
     await disposeBackgroundBleTransportIfAny();
     try {
       final List<BluetoothDevice> connected = FlutterBluePlus.connectedDevices;
@@ -181,8 +192,10 @@ class MPBleConnectionHelper {
   /// - `true`：已连接（复用已有连接或本次连接成功）
   /// - `false`：无记录、无权限、蓝牙未开、连接失败
   static Future<bool> tryConnectLastRecordedBleDevice() async {
+    debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: begin');
     final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r == null) {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: no saved device');
       return false;
     }
 
@@ -190,35 +203,43 @@ class MPBleConnectionHelper {
     if (bg != null) {
       try {
         if (bg.deviceId == r.remoteId && await bg.isConnected()) {
+          debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: reuse bg remoteId=${r.remoteId}');
           return true;
         }
       } catch (_) {
         // ignore
       }
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: dispose stale bg');
       await disposeBackgroundBleTransportIfAny();
     }
 
     final bool supported = await isBleSupported;
     if (!supported) {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: BLE not supported');
       return false;
     }
 
     final bool permitted = await ensureBlePermissions();
     if (!permitted) {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: permission denied');
       return false;
     }
 
     // 两阶段短扫（带 Service UUID → 全量），再按记录的 remoteId 直接建链。
+    debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: discoverMemoPinLikeDevices');
     await discoverMemoPinLikeDevices(perPhase: const Duration(seconds: 5));
 
     final BluetoothDevice device = bluetoothDeviceFromRemoteId(r.remoteId);
     final BleTransport transport = createBleTransport(device);
     try {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connecting remoteId=${r.remoteId}');
       await transport.connect();
       parkBackgroundBleTransport(transport);
       MPHomeNotification.notifyBleConnectedSuccess();
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connected OK');
       return true;
-    } catch (_) {
+    } catch (e) {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connect failed $e');
       try {
         await transport.dispose();
       } catch (_) {
@@ -386,7 +407,7 @@ class MPBleConnectionHelper {
     }
     final List<ScanResult> sorted = bestById.values.toList()
       ..sort((ScanResult a, ScanResult b) => b.rssi.compareTo(a.rssi));
-    return sorted.map((ScanResult r) {
+    final List<MPBleScanEntry> entries = sorted.map((ScanResult r) {
       final String rawName = r.device.platformName.trim();
       final String display = rawName.isEmpty ? 'MemoPin (${r.device.remoteId.str})' : rawName;
       return MPBleScanEntry(
@@ -396,6 +417,8 @@ class MPBleConnectionHelper {
         signalPercent: rssiToSignalPercent(r.rssi),
       );
     }).toList();
+    debugPrint('------>>>memopin entriesFromScanResults: raw=${results.length} → entries=${entries.length}');
+    return entries;
   }
 
   /// 创建 GATT 传输实例（连接成功后可用于读写特征）。
@@ -434,10 +457,11 @@ class MPBleConnectionHelper {
 
     final bool adapterOn = await _waitAdapterOnForDiscovery();
     if (!adapterOn) {
-      debugPrint('[MPBleConnectionHelper] adapter not on, skip scan');
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: adapter not on → empty');
       return <MPBleScanEntry>[];
     }
 
+    debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: adapter on, subscribing scanResults');
     final Map<String, ScanResult> bestById = <String, ScanResult>{};
     late final StreamSubscription<List<ScanResult>> sub;
     // 与 ble 订阅方式一致；不按空名称丢弃，避免仅 UUID 广播、无 local name 的设备被漏掉。
@@ -452,7 +476,7 @@ class MPBleConnectionHelper {
         }
       },
       onError: (Object e) {
-        debugPrint('[MPBleConnectionHelper] scanResults error: $e');
+        debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: scanResults error: $e');
       },
     );
 
@@ -462,17 +486,16 @@ class MPBleConnectionHelper {
 
     try {
       debugPrint(
-        '[MPBleConnectionHelper] 第1次扫描: withServices=${MPBleScanFilterUuids.scanFilterGuids.length} UUIDs, '
-        'timeout=${perPhase.inSeconds}s',
+        '------>>>memopin scanMemoPinLikeEntriesPhased: phase1 withServices count=${MPBleScanFilterUuids.scanFilterGuids.length} timeout=${perPhase.inSeconds}s',
       );
       await BluetoothAdapter.startScan(timeout: perPhase, withServices: MPBleScanFilterUuids.scanFilterGuids);
       await Future<void>.delayed(perPhase);
 
       List<MPBleScanEntry> entries = finishFromBuffer();
-      debugPrint('[MPBleConnectionHelper] 第1次筛选后: ${entries.length} 个设备');
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 filtered count=${entries.length}');
 
-      // 与 ble：首轮有支持设备则不再开第二轮。
       if (entries.isNotEmpty) {
+        debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 has results → return');
         return entries;
       }
 
@@ -481,11 +504,11 @@ class MPBleConnectionHelper {
         await BluetoothAdapter.stopScan();
       }
 
-      debugPrint('[MPBleConnectionHelper] 第2次扫描: 无 UUID 过滤');
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 no service filter');
       await BluetoothAdapter.startScan(timeout: perPhase);
       await Future<void>.delayed(perPhase);
       entries = finishFromBuffer();
-      debugPrint('[MPBleConnectionHelper] 第2次筛选后: ${entries.length} 个设备');
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 filtered count=${entries.length}');
       return entries;
     } finally {
       await sub.cancel();
@@ -516,6 +539,7 @@ class MPBleConnectionHelper {
 
   /// 读取 MemoPin / AI_NOTE 电量：优先走自定义命令 [MPNoteBleCommands.queryBattery]，失败则回退标准 BAS。
   static Future<int?> readMemoPinBatteryPercent(BleTransport transport) async {
+    debugPrint('------>>>memopin readMemoPinBatteryPercent: deviceId=${transport.deviceId}');
     try {
       if (!await transport.isConnected()) {
         return null;
@@ -528,6 +552,7 @@ class MPBleConnectionHelper {
     try {
       final MPNoteBatteryReading? r = await client.readBattery();
       if (r != null && r.percent >= 0 && r.percent <= 100) {
+        debugPrint('------>>>memopin readMemoPinBatteryPercent: custom cmd → ${r.percent}%');
         return r.percent;
       }
     } catch (_) {
@@ -537,7 +562,9 @@ class MPBleConnectionHelper {
     }
 
     try {
-      return await transport.readStandardBatteryPercent();
+      final int? bas = await transport.readStandardBatteryPercent();
+      debugPrint('------>>>memopin readMemoPinBatteryPercent: BAS fallback → $bas');
+      return bas;
     } catch (_) {
       return null;
     }
@@ -545,9 +572,12 @@ class MPBleConnectionHelper {
 
   /// 获取设备端录音文件列表（命令 `0x03`，含多包拼接）。
   static Future<List<NoteFileInfo>> fetchMemoPinFileList(BleTransport transport) async {
+    debugPrint('------>>>memopin fetchMemoPinFileList: deviceId=${transport.deviceId}');
     final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
     try {
-      return await client.getFileList();
+      final List<NoteFileInfo> list = await client.getFileList();
+      debugPrint('------>>>memopin fetchMemoPinFileList: count=${list.length}');
+      return list;
     } finally {
       await client.dispose();
     }
@@ -557,7 +587,10 @@ class MPBleConnectionHelper {
   ///
   /// **同一 [client] 实例**在导出过程中必须保持存活，结束后 [MPNoteBleGattClient.dispose]。
   static Future<bool> startMemoPinFileExport(MPNoteBleGattClient client, String fileName) async {
+    debugPrint('------>>>memopin startMemoPinFileExport: $fileName');
     client.prepareFileExport(fileName);
-    return client.requestFileExport(fileName);
+    final bool ok = await client.requestFileExport(fileName);
+    debugPrint('------>>>memopin startMemoPinFileExport: accepted=$ok');
+    return ok;
   }
 }

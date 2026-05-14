@@ -3,6 +3,7 @@
 /// **勿修改** `lib/blu/ble/` 下的参考实现；本文件为 MemoPin 运行时使用的副本。
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
 /// 首轮扫描 [withServices]：仅 aiNote 主服务（及可选附加），不再包含 Omi / Friend Pendant 等其它业务 UUID。
@@ -32,12 +33,15 @@ abstract class MPBleScanFilterUuids {
         memoPinRecognizedServiceUuidStrings.map(normalizeUuid128).toSet();
     for (final Guid g in advertised) {
       if (targets.contains(normalizeUuid128(g.str128))) {
+        debugPrint('------>>>memopin matchesMemoPinAdvertisedService: true (str128)');
         return true;
       }
       if (targets.contains(normalizeUuid128(g.toString()))) {
+        debugPrint('------>>>memopin matchesMemoPinAdvertisedService: true (toString)');
         return true;
       }
     }
+    debugPrint('------>>>memopin matchesMemoPinAdvertisedService: false');
     return false;
   }
 
@@ -53,6 +57,7 @@ abstract class MPBleScanFilterUuids {
         out.add(Guid(s));
       }
     }
+    debugPrint('------>>>memopin scanFilterGuids: count=${out.length}');
     return out;
   }
 }

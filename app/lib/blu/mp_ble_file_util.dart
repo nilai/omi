@@ -31,6 +31,7 @@ class MPBleFileUtil {
 
   /// 应用 Documents 下 MemoPin 设备音频目录（导出 `.opus` / `.txt` / `.mp3`）。
   static Future<String> ensureMemoPinDeviceAudioDirectoryPath() async {
+    debugPrint('------>>>memopin ensureMemoPinDeviceAudioDirectoryPath');
     final Directory docs = await getApplicationDocumentsDirectory();
     final String dir = p.join(docs.path, _kSandboxDirName);
     await Directory(dir).create(recursive: true);
@@ -53,14 +54,17 @@ class MPBleFileUtil {
     required BleTransport transport,
     required MPBleFileUtilCopyProgress onSyncProgress,
   }) async {
+    debugPrint('------>>>memopin syncDeviceOpusTxt: begin deviceId=${transport.deviceId}');
     try {
       if (!await transport.isConnected()) {
+        debugPrint('------>>>memopin syncDeviceOpusTxt: not connected, abort');
         debugPrint('MPBleFileUtil: Bluetooth is not connected.');
         return;
       }
 
       debugPrint('MPBleFileUtil: fetching file list from device...');
       final List<NoteFileInfo> allFiles = await MPBleConnectionHelper.fetchMemoPinFileList(transport);
+      debugPrint('------>>>memopin syncDeviceOpusTxt: file list total=${allFiles.length}');
       if (allFiles.isEmpty) {
         debugPrint('MPBleFileUtil: no files on the device.');
         return;
@@ -74,21 +78,24 @@ class MPBleFileUtil {
           .toList(growable: false);
 
       if (opusList.isEmpty) {
+        debugPrint('------>>>memopin syncDeviceOpusTxt: no opus files');
         debugPrint('MPBleFileUtil: no opus files on the device.');
         return;
       }
 
       final String deviceDir = await ensureMemoPinDeviceAudioDirectoryPath();
-      debugPrint('MPBleFileUtil: device audio dir: $deviceDir');
+      debugPrint('------>>>memopin syncDeviceOpusTxt: opus=${opusList.length} txt=${txtList.length} dir=$deviceDir');
 
       final int total = opusList.length;
       for (int i = 0; i < total; i++) {
         if (!await transport.isConnected()) {
+          debugPrint('------>>>memopin syncDeviceOpusTxt: disconnected mid-sync at index=${i + 1}/$total');
           debugPrint('MPBleFileUtil: Bluetooth disconnected during sync.');
           break;
         }
 
         final NoteFileInfo opusInfo = opusList[i];
+        debugPrint('------>>>memopin syncDeviceOpusTxt: processing [$i+1/$total] ${opusInfo.name}');
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
 
         final MPNoteBleGattClient opusClient = MPNoteBleGattClient(transport);
@@ -97,6 +104,7 @@ class MPBleFileUtil {
           final List<int>? opusBytes =
               await _collectExportPayloads(client: opusClient, fileName: opusInfo.name, info: opusInfo);
           if (opusBytes == null || opusBytes.isEmpty) {
+            debugPrint('------>>>memopin syncDeviceOpusTxt: export opus empty ${opusInfo.name}');
             debugPrint('MPBleFileUtil: failed to export opus: ${opusInfo.name}');
             onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
             continue;
@@ -114,6 +122,7 @@ class MPBleFileUtil {
         }
 
         if (opusPath == null) {
+          debugPrint('------>>>memopin syncDeviceOpusTxt: write opus failed ${opusInfo.name}');
           debugPrint('MPBleFileUtil: failed to write opus: ${opusInfo.name}');
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
           continue;
@@ -143,6 +152,7 @@ class MPBleFileUtil {
         final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
         final File primaryFile = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
         if (!await primaryFile.exists()) {
+          debugPrint('------>>>memopin syncDeviceOpusTxt: primary missing after convert ${opusInfo.name}');
           debugPrint('MPBleFileUtil: primary audio missing after convert: ${opusInfo.name}');
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
           continue;
@@ -175,6 +185,7 @@ class MPBleFileUtil {
 
         if (await transport.isConnected()) {
           final bool deleted = await deleteDeviceRecordingFile(transport, opusInfo.name);
+          debugPrint('------>>>memopin syncDeviceOpusTxt: device delete ${opusInfo.name} → $deleted');
           if (!deleted) {
             debugPrint('MPBleFileUtil: could not delete opus on device: ${opusInfo.name}');
           }
@@ -185,9 +196,12 @@ class MPBleFileUtil {
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
       }
 
+      debugPrint('------>>>memopin syncDeviceOpusTxt: starting upload queue');
       debugPrint('MPBleFileUtil: uploading recordings...');
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+      debugPrint('------>>>memopin syncDeviceOpusTxt: done');
     } catch (e, st) {
+      debugPrint('------>>>memopin syncDeviceOpusTxt: FAILED $e\n$st');
       debugPrint('MPBleFileUtil device import failed: $e\n$st');
     }
   }
@@ -254,6 +268,7 @@ class MPBleFileUtil {
         }
       },
       onError: (Object e, StackTrace st) {
+        debugPrint('------>>>memopin _collectExportPayloads stream error: $e\n$st');
         debugPrint('MPBleFileUtil BLE export stream error: $e\n$st');
       },
     );
@@ -261,6 +276,7 @@ class MPBleFileUtil {
     try {
       final bool accepted = await client.requestFileExport(fileName);
       if (!accepted) {
+        debugPrint('------>>>memopin _collectExportPayloads: requestFileExport rejected $fileName');
         idleTimer?.cancel();
         await sub.cancel();
         return null;
@@ -275,10 +291,13 @@ class MPBleFileUtil {
       await sub.cancel();
 
       if (!receivedPayload && buffer.isEmpty) {
+        debugPrint('------>>>memopin _collectExportPayloads: no payload $fileName');
         return null;
       }
+      debugPrint('------>>>memopin _collectExportPayloads: ok $fileName bytes=${buffer.length}');
       return buffer;
     } catch (e, st) {
+      debugPrint('------>>>memopin _collectExportPayloads: exception $fileName $e\n$st');
       debugPrint('MPBleFileUtil BLE export collect failed: $e\n$st');
       idleTimer?.cancel();
       await sub.cancel();
@@ -290,9 +309,12 @@ class MPBleFileUtil {
 
   /// 删除设备端指定文件名（命令 `0x05` + UTF-8 文件名）。
   static Future<bool> deleteDeviceRecordingFile(BleTransport transport, String fileName) async {
+    debugPrint('------>>>memopin deleteDeviceRecordingFile: $fileName');
     final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
     try {
-      return await client.deleteFile(fileName);
+      final bool ok = await client.deleteFile(fileName);
+      debugPrint('------>>>memopin deleteDeviceRecordingFile: result=$ok $fileName');
+      return ok;
     } finally {
       await client.dispose();
     }
@@ -307,14 +329,20 @@ class MPBleFileUtil {
     required bool appendResume,
     required String opusFileName,
   }) async {
+    debugPrint(
+      '------>>>memopin startLiveOpusRecording: kind=$kind append=$appendResume name=$opusFileName device=${transport.deviceId}',
+    );
     try {
       if (!await transport.isConnected()) {
+        debugPrint('------>>>memopin startLiveOpusRecording: transport not connected');
         return null;
       }
     } catch (_) {
+      debugPrint('------>>>memopin startLiveOpusRecording: not connected');
       return null;
     }
     if (!opusFileName.toLowerCase().endsWith('.opus')) {
+      debugPrint('------>>>memopin startLiveOpusRecording: invalid file name (need .opus)');
       debugPrint('MPBleFileUtil.startLiveOpusRecording: opusFileName must end with .opus');
       return null;
     }
@@ -328,9 +356,11 @@ class MPBleFileUtil {
     );
     final bool ok = await session._start();
     if (!ok) {
+      debugPrint('------>>>memopin startLiveOpusRecording: session._start failed');
       await session.dispose();
       return null;
     }
+    debugPrint('------>>>memopin startLiveOpusRecording: session started path=${session.opusPath}');
     return session;
   }
 }
@@ -371,6 +401,7 @@ class MPBleLiveRecordingSession {
   BleTransport get transport => _transport;
 
   Future<bool> _start() async {
+    debugPrint('------>>>memopin MPBleLiveRecordingSession._start: mode=$kind append=$appendResume');
     final MPNoteBleGattClient cmd = MPNoteBleGattClient(_transport);
     try {
       final int modeByte = kind == MPBleLiveRecordingKind.memo
@@ -378,9 +409,11 @@ class MPBleLiveRecordingSession {
           : MPNoteBleRecordingTransportModes.recordAndStream;
       final bool modeOk = await cmd.setRecordingTransportMode(modeByte);
       if (!modeOk) {
+        debugPrint('------>>>memopin MPBleLiveRecordingSession._start: setRecordingTransportMode failed mode=$modeByte');
         debugPrint('MPBleLiveRecordingSession: setRecordingTransportMode failed');
         return false;
       }
+      debugPrint('------>>>memopin MPBleLiveRecordingSession._start: transport mode OK modeByte=$modeByte');
     } finally {
       await cmd.dispose();
     }
@@ -406,6 +439,7 @@ class MPBleLiveRecordingSession {
         .listen(_onResponse303Retransmit, onError: (_) {});
 
     _started = true;
+    debugPrint('------>>>memopin MPBleLiveRecordingSession._start: subscriptions ready opusPath=$opusPath');
     return true;
   }
 
@@ -451,6 +485,7 @@ class MPBleLiveRecordingSession {
 
   /// 取消订阅并删除未完成的 sink（不写 MP3、不登记 record）。
   Future<void> dispose() async {
+    debugPrint('------>>>memopin MPBleLiveRecordingSession.dispose');
     await _audioSub?.cancel();
     _audioSub = null;
     await _retransmitSub?.cancel();
@@ -467,7 +502,9 @@ class MPBleLiveRecordingSession {
   Future<bool> finalizeToMp3AndRecord({
     bool runUploadQueue = true,
   }) async {
+    debugPrint('------>>>memopin MPBleLiveRecordingSession.finalizeToMp3AndRecord runUpload=$runUploadQueue');
     if (!_started) {
+      debugPrint('------>>>memopin MPBleLiveRecordingSession.finalize: not started');
       return false;
     }
     await _audioSub?.cancel();
@@ -490,6 +527,7 @@ class MPBleLiveRecordingSession {
     final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
     final File primary = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
     if (!await primary.exists()) {
+      debugPrint('------>>>memopin MPBleLiveRecordingSession.finalize: output missing');
       debugPrint('MPBleLiveRecordingSession: output file missing');
       return false;
     }
@@ -514,6 +552,7 @@ class MPBleLiveRecordingSession {
     if (runUploadQueue) {
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     }
+    debugPrint('------>>>memopin MPBleLiveRecordingSession.finalize: success path=${primary.path}');
     return true;
   }
 }
