@@ -220,6 +220,9 @@ class MPTodoStruct {
   @JsonKey(name: 'slot')
   final int? slot;
 
+  @JsonKey(name: 'description')
+  final String? description;
+
   MPTodoStruct({
     this.id,
     this.title,
@@ -232,6 +235,7 @@ class MPTodoStruct {
     this.memoryId,
     this.insightId,
     this.slot,
+    this.description,
   });
 
   factory MPTodoStruct.fromJson(Map<String, dynamic> json) => _$MPTodoStructFromJson(json);
