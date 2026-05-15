@@ -122,7 +122,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         memoryType: todoContext.memoryType,
         insightId: insightId,
         insightType: todoContext.insightType,
-        deadlineUnixSec: deadlineUnixSec,
+        deadlineUnixSec: deadlineUnixSec == 0 ? null : deadlineUnixSec,
       ),
       onDelete: onDelete,
     );

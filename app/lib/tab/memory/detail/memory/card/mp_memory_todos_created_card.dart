@@ -103,6 +103,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
               _MPCreatedTodoRow(
                 item: data.items[i],
                 onTap: () {
+                  final deadlineUnixSec = data.items[i].deadlineLabel;
                   showOmiEditTodoPopup(
                     context,
                     params: OmiEditTodoPopupParams(
@@ -119,7 +120,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                         data.items[i].deadlineLabel,
                       ),
                       todoId: data.items[i].id ?? '',
-                      deadlineUnixSec: data.items[i].deadlineLabel,
+                      deadlineUnixSec: deadlineUnixSec == 0 ? null : deadlineUnixSec,
                     ),
                     onDelete: () {
                       final String todoId = (data.items[i].id ?? '').trim();

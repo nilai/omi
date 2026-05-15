@@ -156,7 +156,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
         memoryType: todoContext.memoryType,
         insightId: item.insightId,
         insightType: todoContext.insightType,
-        deadlineUnixSec: item.deadlineUnixSec,
+        deadlineUnixSec: item.deadlineUnixSec == 0 ? null : item.deadlineUnixSec,
       ),
       onDelete: () async {
         await _cubit.loadData();
