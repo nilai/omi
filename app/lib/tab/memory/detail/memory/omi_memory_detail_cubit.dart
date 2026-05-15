@@ -121,9 +121,9 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
   /// 详情磁盘缓存分区键，与 [OmiCacheKeys.memoryDetail] 一致。
   String get _memoryDetailCacheKind => switch (detailSource) {
-        OmiMemoryDetailSource.memoryFeedSummary => OmiCacheKeys.memoryDetailKindMemoryFeedSummary,
-        OmiMemoryDetailSource.rootSummaryMemory => OmiCacheKeys.memoryDetailKindRootSummaryMemory,
-      };
+    OmiMemoryDetailSource.memoryFeedSummary => OmiCacheKeys.memoryDetailKindMemoryFeedSummary,
+    OmiMemoryDetailSource.rootSummaryMemory => OmiCacheKeys.memoryDetailKindRootSummaryMemory,
+  };
 
   String _feedCursor = '';
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -351,10 +351,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   ///
   /// 仅在已存在 [getMemoryDetail] 缓存时合并写入（与 [load] 成功后的落盘形态一致）；不依赖 [_isInCachedFirstPage]，
   /// 以补齐 [refresh] 在非首页列表不写详情缓存时的缺口。
-  void applyActionTodoCreatedToDetailCache({
-    required int actionIndex,
-    required MPAddTodoPopupResult result,
-  }) {
+  void applyActionTodoCreatedToDetailCache({required int actionIndex, required MPAddTodoPopupResult result}) {
     final dynamic cached = OmiCacheManager().getMemoryDetail(memoryId, _memoryDetailCacheKind);
     if (cached is! Map) {
       return;
@@ -364,24 +361,24 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
 
       final Map<String, dynamic>? smMap = switch (detailSource) {
         OmiMemoryDetailSource.memoryFeedSummary => () {
-            final dynamic mfRaw = root['memory_feed'];
-            if (mfRaw is! Map) {
-              return null;
-            }
-            final Map<String, dynamic> mfMap = Map<String, dynamic>.from(mfRaw);
-            final dynamic smRaw = mfMap['summary_memory'];
-            if (smRaw is! Map) {
-              return null;
-            }
-            return Map<String, dynamic>.from(smRaw);
-          }(),
+          final dynamic mfRaw = root['memory_feed'];
+          if (mfRaw is! Map) {
+            return null;
+          }
+          final Map<String, dynamic> mfMap = Map<String, dynamic>.from(mfRaw);
+          final dynamic smRaw = mfMap['summary_memory'];
+          if (smRaw is! Map) {
+            return null;
+          }
+          return Map<String, dynamic>.from(smRaw);
+        }(),
         OmiMemoryDetailSource.rootSummaryMemory => () {
-            final dynamic smRaw = root['summary_content'];
-            if (smRaw is! Map) {
-              return null;
-            }
-            return Map<String, dynamic>.from(smRaw);
-          }(),
+          final dynamic smRaw = root['summary_content'];
+          if (smRaw is! Map) {
+            return null;
+          }
+          return Map<String, dynamic>.from(smRaw);
+        }(),
       };
 
       if (smMap == null) {
@@ -1058,6 +1055,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       title: title,
       priority: MPMemoryTodoPriorityKind.medium,
       deadlineLabel: null,
+      description: null,
     );
 
     final List<MPMemoryFeedBlock> nextBlocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
@@ -1352,7 +1350,7 @@ List<String> _collectFeedGeneratingResummaryIds(List<MPFeedCardStruct> feeds) {
       out.add(id);
     }
   }
-    return out;
+  return out;
 }
 
 /// 将所有「Resummary 生成中」卡片移到：**第一个 [MPMemoryFeedResummaryBlock] 之前**；若无正文 Resummary 则在列表**末尾**。
@@ -1371,11 +1369,7 @@ List<MPMemoryFeedBlock> _placeResummaryLoadingBlocks(List<MPMemoryFeedBlock> blo
   }
   final int insertAt = rest.indexWhere((MPMemoryFeedBlock b) => b is MPMemoryFeedResummaryBlock);
   final int at = insertAt < 0 ? rest.length : insertAt;
-  return <MPMemoryFeedBlock>[
-    ...rest.sublist(0, at),
-    ...loadings,
-    ...rest.sublist(at),
-  ];
+  return <MPMemoryFeedBlock>[...rest.sublist(0, at), ...loadings, ...rest.sublist(at)];
 }
 
 List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, String? title, String? metaLine) {
@@ -1581,7 +1575,9 @@ _mpMemoryStructToDetailBundleFromSources(
               (MPTodoStruct t) => MPMemoryActionItemData(
                 id: t.id,
                 title: t.title,
-                status: (t.preCreateStatus ?? 0) == 0 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
+                status: (t.preCreateStatus ?? 0) == 0
+                    ? MPMemoryActionItemStatus.pending
+                    : MPMemoryActionItemStatus.created,
                 priority: t.priority,
                 deadline: t.deadline,
                 description: t.description,
@@ -1702,6 +1698,7 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
     title: t.title,
     priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'normal'),
     deadlineLabel: t.deadline,
+    description: t.description,
   );
 }
 

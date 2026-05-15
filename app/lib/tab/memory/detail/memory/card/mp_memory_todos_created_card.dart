@@ -16,11 +16,7 @@ export 'mp_memory_todos_created_models.dart';
 
 /// 左侧深绿竖条 + 白底圆角，展示已生成的 Todo 列表
 class MPMemoryTodosCreatedCard extends StatelessWidget {
-  const MPMemoryTodosCreatedCard({
-    super.key,
-    required this.data,
-    this.feedBlockIndex = 0,
-  });
+  const MPMemoryTodosCreatedCard({super.key, required this.data, this.feedBlockIndex = 0});
 
   final MPMemoryTodosCreatedCardData data;
 
@@ -48,10 +44,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                 Container(
                   width: 24,
                   height: 24,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE8F5E9),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFFE8F5E9), shape: BoxShape.circle),
                   child: Center(
                     child: OmiImageLoader.localImg(
                       Assets.omiDetailCheck,
@@ -93,11 +86,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
             for (int i = 0; i < data.items.length; i++) ...<Widget>[
               if (i > 0) ...<Widget>[
                 const SizedBox(height: 12),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: lineColor.withValues(alpha: 0.6),
-                ),
+                Divider(height: 1, thickness: 1, color: lineColor.withValues(alpha: 0.6)),
                 const SizedBox(height: 12),
               ],
               _MPCreatedTodoRow(
@@ -109,16 +98,13 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                     params: OmiEditTodoPopupParams(
                       title: data.items[i].title ?? '',
                       notes:
+                          data.items[i].description ??
                           'Need to confirm their availability for next sprint, focus on timeline alignment.',
                       priorityLabel: MPTodoPriorityUtils.labelForKind(
                         data.items[i].priority ?? MPMemoryTodoPriorityKind.normal,
                       ),
-                      whenLabel: MPDateUtils.formatWhenLabelFromDeadline(
-                        data.items[i].deadlineLabel,
-                      ),
-                      timeLabel: MPDateUtils.formatTimeLabelFromDeadline(
-                        data.items[i].deadlineLabel,
-                      ),
+                      whenLabel: MPDateUtils.formatWhenLabelFromDeadline(data.items[i].deadlineLabel),
+                      timeLabel: MPDateUtils.formatTimeLabelFromDeadline(data.items[i].deadlineLabel),
                       todoId: data.items[i].id ?? '',
                       deadlineUnixSec: deadlineUnixSec == 0 ? null : deadlineUnixSec,
                     ),
@@ -128,10 +114,10 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                         return Future<bool>.value(false);
                       }
                       return context.read<OmiMemoryDetailCubit>().deleteCreatedTodoById(
-                            feedBlockIndex,
-                            todoId: todoId,
-                            skipApi: true,
-                          );
+                        feedBlockIndex,
+                        todoId: todoId,
+                        skipApi: true,
+                      );
                     },
                   );
                 },
