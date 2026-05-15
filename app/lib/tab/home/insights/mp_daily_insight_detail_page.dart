@@ -444,9 +444,9 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                   ),
                   child: Row(
                     children: <Widget>[
-                      const Padding(
-                        padding: EdgeInsets.only(top: 2),
-                        child: Icon(Icons.circle, size: 5, color: Color(0xFF8FA76D)),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 2),
+                        child: Icon(Icons.circle, size: 5, color: omiSecondaryBodyText),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -455,7 +455,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: OmiTextStyle.create(
-                            color: secondTextColor,
+                            color: omiSecondaryBodyText,
                             fontSize: OmiFontSize.t5_14,
                             fontWeight: OmiFontWeight.regular,
                             height: 1.4,
