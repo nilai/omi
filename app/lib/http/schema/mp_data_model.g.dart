@@ -57,7 +57,6 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
   memoryId: (json['memory_id'] as num?)?.toInt(),
   insightId: mpInsightIdFromJson(json['insight_id']),
   slot: (json['slot'] as num?)?.toInt(),
-  description: json['description'] as String?,
 );
 
 Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
@@ -73,7 +72,6 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'memory_id': instance.memoryId,
       'insight_id': instance.insightId,
       'slot': instance.slot,
-      'description': instance.description,
     };
 
 MPRecordConversationStruct _$MPRecordConversationStructFromJson(
