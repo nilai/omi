@@ -484,6 +484,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       slot: t.slot,
       insightId: t.insightId,
       deadlineUnixSec: t.deadline,
+      description: t.description,
     );
   }
 
@@ -505,7 +506,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       isChecked: st == 2,
       highlighted: st == 3,
       slot: t.slot,
-      insightId: t.insightId
+      insightId: t.insightId,
+      description: t.description,
     );
   }
 

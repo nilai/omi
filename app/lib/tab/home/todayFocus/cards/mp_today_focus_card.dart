@@ -14,6 +14,7 @@ class MPTodayFocusCardItem {
     this.insightId,
     this.slot,
     this.deadlineUnixSec,
+    this.description,
   });
 
   final String title;
@@ -34,6 +35,8 @@ class MPTodayFocusCardItem {
 
   /// 与 [MPTodoStruct.deadline] 一致（Unix 秒）；无截止为 `null`。
   final int? deadlineUnixSec;
+
+  final String? description;
 }
 
 /// 「Today's Focus」整卡数据

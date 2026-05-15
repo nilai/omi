@@ -374,6 +374,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           contextMemoryTitle: content?.title ?? '',
           contextMetaLine: content?.metaLine ?? '',
           insightId: insightItem.id,
+          initialNotes: todo.description ?? '',
         ),
         onContextTap: () {
           Navigator.of(context).pop();

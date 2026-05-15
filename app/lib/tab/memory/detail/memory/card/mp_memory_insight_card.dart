@@ -50,6 +50,7 @@ class MPMemoryInsightItemData {
     this.insightSuggestion,
     this.hasAddedTodo = false,
     required this.metaLine,
+    this.description,
   });
 
   final MPInsightCardTone tone;
@@ -81,6 +82,8 @@ class MPMemoryInsightItemData {
 
   /// 接口 [has_added_todo] 或本地创建成功后为 true，底部展示「Follow-up todo added」
   final bool hasAddedTodo;
+
+  final String? description;
 
   /// 展示用分类标题（全大写）
   String get resolvedCategoryTitle {
@@ -428,7 +431,7 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     if (!widget.data.useMarkdown) {
       return MPAddTodoPopupParams(
         initialTitle: (widget.data.insightSuggestion ?? '').trim(),
-        initialNotes: (widget.data.insightContent ?? '').trim(),
+        initialNotes: widget.data.description ?? '',
         contextMemoryLabel: 'From memory:',
         contextMemoryTitle: widget.data.title,
         contextMetaLine: widget.data.metaLine,
@@ -438,12 +441,13 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     }
     return MPAddTodoPopupParams(
       initialTitle: _plainSnippetForTodo(widget.data.bodyText),
-      initialNotes: '',
+      initialNotes: widget.data.description ?? '',
       contextMemoryLabel: 'From memory:',
       contextMemoryTitle: widget.data.title,
       contextMetaLine: widget.data.metaLine,
       memoryId: mid,
       feedCardId: fid,
+
     );
   }
 

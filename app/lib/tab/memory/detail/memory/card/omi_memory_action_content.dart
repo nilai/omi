@@ -27,7 +27,7 @@ class MPMemoryActionItemData {
   /// [status]：[MPMemoryActionItemStatus.pending] 显示可点的 Create Todo；
   /// [MPMemoryActionItemStatus.created] 显示已完成态且不可点。
   /// {@endtemplate}
-  const MPMemoryActionItemData({this.id, this.title, this.status, this.deadline, this.priority});
+  const MPMemoryActionItemData({this.id, this.title, this.status, this.deadline, this.priority, this.description});
 
   /// 与接口 [MPTodoStruct.id] 一致。
   final String? id;
@@ -40,12 +40,15 @@ class MPMemoryActionItemData {
 
   final String? priority;
 
+  final String? description;
+
   MPMemoryActionItemData copyWith({
     String? id,
     String? title,
     MPMemoryActionItemStatus? status,
     int? deadline,
     String? priority,
+    String? description,
   }) {
     return MPMemoryActionItemData(
       id: id ?? this.id,
@@ -53,6 +56,7 @@ class MPMemoryActionItemData {
       status: status ?? this.status,
       deadline: deadline ?? this.deadline,
       priority: priority ?? this.priority,
+      description: description ?? this.description,
     );
   }
 }
@@ -176,6 +180,7 @@ class MPMemoryActionContent extends StatelessWidget {
       context,
       params: MPAddTodoPopupParams(
         initialTitle: item.title ?? '',
+        initialNotes: item.description ?? '',
         contextMemoryLabel: 'From memory:',
         contextMemoryTitle: memoryDetail.title,
         contextMetaLine: memoryDetail.metaLine,

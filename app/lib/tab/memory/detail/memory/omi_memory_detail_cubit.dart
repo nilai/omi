@@ -1584,6 +1584,7 @@ _mpMemoryStructToDetailBundleFromSources(
                 status: (t.preCreateStatus ?? 0) == 0 ? MPMemoryActionItemStatus.pending : MPMemoryActionItemStatus.created,
                 priority: t.priority,
                 deadline: t.deadline,
+                description: t.description,
               ),
             )
             .toList(growable: false);

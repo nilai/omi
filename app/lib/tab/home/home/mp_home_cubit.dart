@@ -62,6 +62,7 @@ class MPHomeTodoItem {
     this.memoryId,
     this.insightId,
     this.deadlineUnixSec,
+    this.description,
   });
 
   final String id;
@@ -71,6 +72,7 @@ class MPHomeTodoItem {
   final bool completed;
   final int? memoryId;
   final String? insightId;
+  final String? description;
 
   /// 与 [MPTodoStruct.deadline] 一致（Unix 秒）；无截止为 `null`。
   final int? deadlineUnixSec;
@@ -203,6 +205,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           insightId: e.insightId,
           deadlineUnixSec: e.deadline,
           completed: e.status == 2,
+          description: e.description,
         ),
       );
     }
