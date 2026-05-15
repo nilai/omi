@@ -70,7 +70,7 @@ abstract final class MPTodoContextUtile {
   }) async {
     final String insightTrim = (insightId ?? '').trim();
     final bool memInvalid = memoryId == null || memoryId == 0;
-    final bool insightInvalid = insightTrim.isEmpty;
+    final bool insightInvalid = insightTrim.isEmpty || insightTrim == '0';
     if (memInvalid && insightInvalid) {
       return MPTodoContextStruct.empty;
     }
