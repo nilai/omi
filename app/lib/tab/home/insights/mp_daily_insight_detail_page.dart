@@ -337,14 +337,24 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Tomorrow\'s focus',
-            style: OmiTextStyle.create(
-              color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
-              height: 1.2,
-            ),
+          Row(
+            children: <Widget>[
+              OmiImageLoader.localImg(Assets.mpFocusTomorrow, width: 20, height: 20, fit: BoxFit.contain),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Tomorrow\'s focus',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OmiTextStyle.create(
+                    color: mainTextColor,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
+                    height: 1.2,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           const Divider(height: 1, color: Color(0xFFE7E7E7)),

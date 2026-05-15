@@ -3,6 +3,7 @@ class Assets {
   Assets._();
 
   static const String mpConnectDevice = 'assets/images/3x/mp_connect_device.png';
+  static const String mpFocusTomorrow = 'assets/images/3x/mp_focus_tomorrow.png';
   static const String mpInsightBrain = 'assets/images/3x/mp_insight_brain.png';
   static const String mpInsightCircleAlert = 'assets/images/3x/mp_insight_circle_alert.png';
   static const String mpInsightCompass = 'assets/images/3x/mp_insight_compass.png';
