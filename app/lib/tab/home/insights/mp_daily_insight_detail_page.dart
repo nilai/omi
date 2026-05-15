@@ -14,6 +14,85 @@ import 'mp_insights_list_cubit.dart';
 
 const Color _kDailyPageBgColor = Color(0xFFF2F2F7);
 
+/// Daily Insight 各模块**正文内容区**背景（与卡片外层无关）。
+class DailyInsightCardStyles {
+  DailyInsightCardStyles._();
+
+  static const BorderRadius _kContentRadius = BorderRadius.all(Radius.circular(8));
+
+  /// 1. Today's narrative（蓝色渐变）
+  static final BoxDecoration narrativeContent = BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        Color(0x80EFF6FF),
+        Color(0xFFFFFFFF),
+      ],
+    ),
+    borderRadius: _kContentRadius,
+  );
+
+  /// 2. Decisions made（绿色渐变）
+  static final BoxDecoration decisionsContent = BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        Color(0x80F0FDF4),
+        Color(0xFFFFFFFF),
+      ],
+    ),
+    borderRadius: _kContentRadius,
+  );
+
+  /// 3. Open questions（橙色渐变）
+  static final BoxDecoration openQuestionsContent = BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        Color(0x80FFF7ED),
+        Color(0xFFFFFFFF),
+      ],
+    ),
+    borderRadius: _kContentRadius,
+  );
+
+  /// 4. Patterns emerging（紫色渐变）
+  static final BoxDecoration patternsContent = BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        Color(0x80FAF5FF),
+        Color(0xFFFFFFFF),
+      ],
+    ),
+    borderRadius: _kContentRadius,
+  );
+
+  /// 5. Ideas captured（琥珀色渐变）
+  static final BoxDecoration ideasContent = BoxDecoration(
+    gradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: <Color>[
+        Color(0x80FFFBEB),
+        Color(0xFFFFFFFF),
+      ],
+    ),
+    borderRadius: _kContentRadius,
+  );
+
+  /// 6. Tomorrow's focus（白色，无渐变）
+  static final BoxDecoration tomorrowContent = BoxDecoration(
+    color: const Color(0xFFFFFFFF),
+    borderRadius: _kContentRadius,
+    border: Border.all(color: const Color(0x0F000000), width: 1),
+  );
+}
+
 /// Daily Insight 详情页
 class MPDailyInsightDetailPage extends StatelessWidget {
   const MPDailyInsightDetailPage({super.key, required this.item});
@@ -103,7 +182,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 iconAsset: Assets.mpInsightCompass,
                 iconColor: const Color(0xFF3C7BEE),
                 iconBgColor: const Color(0xFFEAF0FE),
-                contentBgColor: const Color(0xFFF2F6FF),
+                contentDecoration: DailyInsightCardStyles.narrativeContent,
                 child: Text(
                   daily.narrativeBody,
                   style: OmiTextStyle.create(
@@ -122,7 +201,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconAsset: Assets.mpInsightSquareCheck,
                   iconColor: const Color(0xFF3FB26E),
                   iconBgColor: const Color(0xFFE8F7EE),
-                  contentBgColor: const Color(0xFFF2FAF4),
+                  contentDecoration: DailyInsightCardStyles.decisionsContent,
                   child: _MPDotTextList(items: daily.decisionsMade, dotColor: const Color(0xFF8FA76D)),
                 ),
               ],
@@ -134,7 +213,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconAsset: Assets.mpInsightCircleAlert,
                   iconColor: const Color(0xFFDA8A3F),
                   iconBgColor: const Color(0xFFFFF1E3),
-                  contentBgColor: const Color(0xFFFFF7EE),
+                  contentDecoration: DailyInsightCardStyles.openQuestionsContent,
                   child: _MPDotTextList(items: daily.openQuestions, dotColor: const Color(0xFFDA8A3F)),
                 ),
               ],
@@ -146,7 +225,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconAsset: Assets.mpInsightRotate,
                   iconColor: const Color(0xFF9C5CE4),
                   iconBgColor: const Color(0xFFF2EAFE),
-                  contentBgColor: const Color(0xFFF7F1FF),
+                  contentDecoration: DailyInsightCardStyles.patternsContent,
                   child: Text(
                     daily.patternsEmerging,
                     style: OmiTextStyle.create(
@@ -166,7 +245,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                   iconAsset: Assets.mpInsightLightbulb,
                   iconColor: const Color(0xFFD39F3E),
                   iconBgColor: const Color(0xFFFFF5E0),
-                  contentBgColor: const Color(0xFFFFF9EB),
+                  contentDecoration: DailyInsightCardStyles.ideasContent,
                   child: _MPDotTextList(items: daily.ideasCaptured, dotColor: const Color(0xFFD39F3E)),
                 ),
               ],
@@ -199,7 +278,7 @@ class _MPDailyCard extends StatelessWidget {
     this.icon,
     required this.iconColor,
     required this.iconBgColor,
-    required this.contentBgColor,
+    required this.contentDecoration,
     required this.child,
     this.iconAsset,
   });
@@ -208,7 +287,7 @@ class _MPDailyCard extends StatelessWidget {
   final IconData? icon;
   final Color iconColor;
   final Color iconBgColor;
-  final Color contentBgColor;
+  final BoxDecoration contentDecoration;
   final Widget child;
   final String? iconAsset;
 
@@ -264,7 +343,7 @@ class _MPDailyCard extends StatelessWidget {
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 10),
           Container(
-            decoration: BoxDecoration(color: contentBgColor, borderRadius: BorderRadius.circular(8)),
+            decoration: contentDecoration,
             padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
             child: child,
           ),
@@ -360,7 +439,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
           const Divider(height: 1, color: Color(0xFFE7E7E7)),
           const SizedBox(height: 8),
           Container(
-            decoration: BoxDecoration(color: const Color(0xFFF2F6FF), borderRadius: BorderRadius.circular(8)),
+            decoration: DailyInsightCardStyles.tomorrowContent,
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 2),
             child: Column(
               children: widget.items.asMap().entries.map((MapEntry<int, MPTodoStruct> entry) {
