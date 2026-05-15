@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 
+import '../audio/record/mp_flutter_sound_recorder_safe.dart';
 import '../audio/record/mp_global_recording_coordinator.dart';
 import '../audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -146,25 +147,26 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
-  /// 其它场景开始录音时，暂停本组件录音并保持会话，供用户稍后手动恢复。
+  /// 其它场景独占录音：释放 native（不能仅 pause），否则后续入口无法 [openRecorder]。
   Future<void> _onInterruptedByOtherOwner() async {
     if (_mode != MPVoiceTextInputMode.recording || !_recorderOpened) {
       return;
     }
-    if (_externallyPaused) {
+    _waveCtrl.stop();
+    try {
+      await _stopRecorder(deleteFile: true);
+    } catch (_) {}
+    if (!mounted) {
       return;
     }
-    try {
-      if (_recorder.isPaused || !_recorder.isRecording) {
-        return;
-      }
-      _waveCtrl.stop();
-      await _recorder.pauseRecorder();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _externallyPaused = true);
-    } catch (_) {}
+    setState(() {
+      _externallyPaused = false;
+      _busy = false;
+      _mode = MPVoiceTextInputMode.text;
+    });
+    MPToastUtils.showMessage(
+      'Voice recording stopped to allow another recording.',
+    );
   }
 
   /// 抢回麦克风后继续录制。
@@ -179,8 +181,18 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     try {
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await _recorder.resumeRecorder();
+      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(_recorder);
       if (!mounted) {
+        return;
+      }
+      if (!resumed) {
+        setState(() {
+          _busy = false;
+          _externallyPaused = false;
+        });
+        MPToastUtils.showMessage(
+          'Couldn\'t resume recording. Stop and start again if the issue persists.',
+        );
         return;
       }
       setState(() {
@@ -190,7 +202,10 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       _waveCtrl.repeat();
     } catch (e) {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _externallyPaused = false;
+        });
         MPToastUtils.showMessage('Failed to resume recording: $e');
       }
     }

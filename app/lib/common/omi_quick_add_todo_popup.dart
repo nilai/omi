@@ -12,6 +12,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../audio/record/mp_audio_upload_service.dart';
+import '../audio/record/mp_flutter_sound_recorder_safe.dart';
 import '../audio/record/mp_global_recording_coordinator.dart';
 import '../audio/record/mp_recording_background_support.dart';
 import '../generated/assets.dart';
@@ -143,24 +144,24 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
-  /// 其它场景开始录音时暂停本弹窗采集。
+  /// 其它场景独占录音：停止并关闭采集，释放麦克风给新入口。
   Future<void> _onInterruptedByOtherOwner() async {
     if (!_isRecording || !_recorderOpened) {
       return;
     }
-    if (_recordingExternallyPaused) {
+    try {
+      await _stopRecorder(deleteFile: true);
+    } catch (_) {}
+    if (!mounted) {
       return;
     }
-    try {
-      if (_recorder.isPaused || !_recorder.isRecording) {
-        return;
-      }
-      await _recorder.pauseRecorder();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _recordingExternallyPaused = true);
-    } catch (_) {}
+    setState(() {
+      _recordingExternallyPaused = false;
+      _isRecording = false;
+    });
+    MPToastUtils.showMessage(
+      'Voice recording stopped to allow another recording.',
+    );
   }
 
   Future<void> _resumeRecordingAfterExternalPause() async {
@@ -170,14 +171,24 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     try {
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await _recorder.resumeRecorder();
+      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(_recorder);
       if (!mounted) {
+        return;
+      }
+      if (!resumed) {
+        MPToastUtils.showMessage(
+          'Couldn\'t resume recording. Stop and start again if the issue persists.',
+        );
+        if (mounted) {
+          setState(() => _recordingExternallyPaused = false);
+        }
         return;
       }
       setState(() => _recordingExternallyPaused = false);
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Failed to resume recording: $e');
+        setState(() => _recordingExternallyPaused = false);
       }
     }
   }
