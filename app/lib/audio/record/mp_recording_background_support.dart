@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:audio_session/audio_session.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
@@ -86,6 +87,9 @@ class MPRecordingBackgroundSupport {
     _interruptionSub = session.interruptionEventStream.listen(
       (AudioInterruptionEvent event) {
         if (!event.begin) {
+          if (Platform.isIOS && _recordingInfrastructureActive) {
+            unawaited(prepareIosNativeRecorderResume());
+          }
           return;
         }
         unawaited(
@@ -114,6 +118,38 @@ class MPRecordingBackgroundSupport {
       if (started is ServiceRequestFailure) {
         // 仍保留已激活的 AudioSession；仅后台可能被系统限制。
       }
+    }
+  }
+
+  /// iOS：在调用 [FlutterSoundRecorder.resumeRecorder] 之前执行。
+  ///
+  /// 系统音频打断后 [AudioSession] 可能已被置为非 active，而 Dart 侧仍可能为 `isPaused`，
+  /// 此时 native `FlautoRecorder` 内 `audioRec` 为空，直接 resume 会 EXC_BAD_ACCESS。
+  /// 录音基建已激活时 [activateForRecording] 会早退不再 [setActive]，故此处单独补一次激活。
+  static Future<void> prepareIosNativeRecorderResume() async {
+    if (!Platform.isIOS || !_recordingInfrastructureActive) {
+      return;
+    }
+    try {
+      final AudioSession session = await AudioSession.instance;
+      await session.configure(
+        AudioSessionConfiguration(
+          avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+          avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth |
+              AVAudioSessionCategoryOptions.defaultToSpeaker,
+          avAudioSessionMode: AVAudioSessionMode.defaultMode,
+          androidAudioAttributes: const AndroidAudioAttributes(
+            contentType: AndroidAudioContentType.speech,
+            flags: AndroidAudioFlags.none,
+            usage: AndroidAudioUsage.voiceCommunication,
+          ),
+          androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+          androidWillPauseWhenDucked: true,
+        ),
+      );
+      await session.setActive(true);
+    } catch (e, st) {
+      debugPrint('MPRecordingBackgroundSupport.prepareIosNativeRecorderResume: $e\n$st');
     }
   }
 

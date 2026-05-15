@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import '../../../../audio/record/mp_audio_upload_service.dart';
+import '../../../../audio/record/mp_flutter_sound_recorder_safe.dart';
 import '../../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../../audio/record/mp_recording_background_support.dart';
 import '../../../../common/mp_analyze_memo_confirm_flow.dart';
@@ -156,25 +157,28 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
-  /// 其它场景开始录音：暂停 Quick Capture 录制。
+  /// 其它场景独占录音：结束本侧采集并释放 native，避免与第二路录音冲突。
   Future<void> _onInterruptedByOtherOwner() async {
     if (_state != _MPQuickCaptureState.recording || !_recorderOpened) {
       return;
     }
-    if (_recordingExternallyPaused) {
+    _waveController?.stop();
+    try {
+      await _stopRecorder(deleteFile: true);
+    } catch (_) {}
+    if (!mounted) {
       return;
     }
-    try {
-      if (_recorder.isPaused || !_recorder.isRecording) {
-        return;
-      }
-      _waveController?.stop();
-      await _recorder.pauseRecorder();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _recordingExternallyPaused = true);
-    } catch (_) {}
+    setState(() {
+      _recordingExternallyPaused = false;
+      _busy = false;
+      _state = _textController.text.trim().isNotEmpty
+          ? _MPQuickCaptureState.textReady
+          : _MPQuickCaptureState.idle;
+    });
+    MPToastUtils.showMessage(
+      'Voice recording stopped to allow another recording.',
+    );
   }
 
   /// 用户点击恢复波形区域后继续录制。
@@ -186,8 +190,18 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     try {
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await _recorder.resumeRecorder();
+      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(_recorder);
       if (!mounted) {
+        return;
+      }
+      if (!resumed) {
+        setState(() {
+          _busy = false;
+          _recordingExternallyPaused = false;
+        });
+        MPToastUtils.showMessage(
+          'Couldn\'t resume recording. Stop and start again if the issue persists.',
+        );
         return;
       }
       setState(() {
@@ -197,7 +211,10 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       _waveController?.repeat();
     } catch (e) {
       if (mounted) {
-        setState(() => _busy = false);
+        setState(() {
+          _busy = false;
+          _recordingExternallyPaused = false;
+        });
         MPToastUtils.showMessage('Failed to resume recording: $e');
       }
     }
