@@ -46,6 +46,8 @@ class MPQuickCaptureDialog extends StatefulWidget {
 class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with SingleTickerProviderStateMixin {
   static const String _kQuickCaptureDirName = 'mp_quick_capture_records';
   static const Color _kPrimaryBlue = Color(0xFF2F7BFF);
+  /// 语音速记单次最长时长（秒）；与 UI 「60s max」及倒计时一致。
+  static const int _kRecordingMaxSeconds = 60;
 
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
@@ -58,6 +60,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   late FlutterSoundRecorder _recorder;
 
   AnimationController? _waveController;
+  Timer? _recordingCountdownTimer;
+  /// 倒计时剩余秒数（60→0）；仅在 [recording] 且未外部抢占时递减。
+  int _recordingSecondsRemaining = _kRecordingMaxSeconds;
 
   _MPQuickCaptureState _state = _MPQuickCaptureState.idle;
   bool _recorderOpened = false;
@@ -87,6 +92,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
 
   @override
   void dispose() {
+    _cancelRecordingCountdown();
     _textController.removeListener(_handleTextChanged);
     _textController.dispose();
     _focusNode.dispose();
@@ -157,11 +163,41 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
+  void _cancelRecordingCountdown() {
+    _recordingCountdownTimer?.cancel();
+    _recordingCountdownTimer = null;
+  }
+
+  /// 每秒递减；归零时提交，与右下角勾选一致。[resetRemaining] 为 false 时表示继续暂停前的剩余秒数。
+  void _startRecordingCountdown({bool resetRemaining = true}) {
+    _cancelRecordingCountdown();
+    if (resetRemaining) {
+      _recordingSecondsRemaining = _kRecordingMaxSeconds;
+    }
+    _recordingCountdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || _state != _MPQuickCaptureState.recording) {
+        _cancelRecordingCountdown();
+        return;
+      }
+      if (_recordingExternallyPaused || _busy) {
+        return;
+      }
+      setState(() {
+        _recordingSecondsRemaining--;
+      });
+      if (_recordingSecondsRemaining <= 0) {
+        _cancelRecordingCountdown();
+        _finishRecordingAndTranscribe();
+      }
+    });
+  }
+
   /// 其它场景独占录音：结束本侧采集并释放 native，避免与第二路录音冲突。
   Future<void> _onInterruptedByOtherOwner() async {
     if (_state != _MPQuickCaptureState.recording || !_recorderOpened) {
       return;
     }
+    _cancelRecordingCountdown();
     _waveController?.stop();
     try {
       await _stopRecorder(deleteFile: true);
@@ -208,6 +244,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         _busy = false;
         _recordingExternallyPaused = false;
       });
+      _startRecordingCountdown(resetRemaining: false);
       _waveController?.repeat();
     } catch (e) {
       if (mounted) {
@@ -225,6 +262,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       return;
     }
     _isClosing = true;
+    _cancelRecordingCountdown();
     _focusNode.unfocus();
     FocusManager.instance.primaryFocus?.unfocus();
     await _stopRecorder(deleteFile: true);
@@ -270,7 +308,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         _busy = false;
         _recordingExternallyPaused = false;
         _state = _MPQuickCaptureState.recording;
+        _recordingSecondsRemaining = _kRecordingMaxSeconds;
       });
+      _startRecordingCountdown(resetRemaining: true);
     } catch (e) {
       await _stopRecorder(deleteFile: true);
       if (!mounted) {
@@ -282,6 +322,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   }
 
   Future<void> _cancelRecordingAndBackToIdle() async {
+    _cancelRecordingCountdown();
     await _stopRecorder(deleteFile: true);
     if (!mounted) {
       return;
@@ -333,6 +374,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     if (_busy || _recordPath == null) {
       return;
     }
+    _cancelRecordingCountdown();
     _recordingExternallyPaused = false;
     setState(() {
       _busy = true;
@@ -355,6 +397,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         _busy = false;
         _state = _MPQuickCaptureState.recording;
       });
+      _startRecordingCountdown(resetRemaining: true);
       return;
     }
     if (filePath == null || filePath.isEmpty) {
@@ -614,7 +657,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
             child: Padding(
               padding: EdgeInsets.fromLTRB(0, 0, 0, safeBottom),
               child: SizedBox(
-                height: 380,
+                height: 400,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
@@ -640,6 +683,37 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
                       ),
                     ),
                     Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                    if (_state == _MPQuickCaptureState.recording &&
+                        !_recordingExternallyPaused &&
+                        !_busy) ...<Widget>[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                'Voice note · ${_kRecordingMaxSeconds}s max',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: OmiFontSize.t5_14,
+                                  color: secondTextColor,
+                                  fontWeight: OmiFontWeight.regular,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              '${_recordingSecondsRemaining}s',
+                              style: TextStyle(
+                                fontSize: OmiFontSize.t5_14,
+                                color: secondTextColor,
+                                fontWeight: OmiFontWeight.regular,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
