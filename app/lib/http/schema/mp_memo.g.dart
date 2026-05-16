@@ -54,6 +54,7 @@ MPAnalyzeMemoSuggestionStruct _$MPAnalyzeMemoSuggestionStructFromJson(
 ) => MPAnalyzeMemoSuggestionStruct(
   type: $enumDecode(_$MPAnalyzeMemoSuggestionTypeEnumMap, json['type']),
   content: json['content'] as String,
+  deadline: (json['deadline'] as num?)?.toInt(),
 );
 
 Map<String, dynamic> _$MPAnalyzeMemoSuggestionStructToJson(
@@ -61,6 +62,7 @@ Map<String, dynamic> _$MPAnalyzeMemoSuggestionStructToJson(
 ) => <String, dynamic>{
   'type': _$MPAnalyzeMemoSuggestionTypeEnumMap[instance.type]!,
   'content': instance.content,
+  'deadline': instance.deadline,
 };
 
 const _$MPAnalyzeMemoSuggestionTypeEnumMap = {
