@@ -198,7 +198,7 @@ MPBatchCreateTodoItem _$MPBatchCreateTodoItemFromJson(
 ) => MPBatchCreateTodoItem(
   title: json['title'] as String,
   priority: json['priority'] as String,
-  deadline: (json['deadline'] as num).toInt(),
+  deadline: (json['deadline'] as num?)?.toInt(),
   memoryId: json['memory_id'] as String?,
 );
 

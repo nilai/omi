@@ -289,7 +289,7 @@ class MPBatchCreateTodoItem {
   final String priority;
 
   @JsonKey(name: 'deadline')
-  final int deadline;
+  final int? deadline;
 
   @JsonKey(name: 'memory_id')
   final String? memoryId;

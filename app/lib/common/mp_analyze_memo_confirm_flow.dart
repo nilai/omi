@@ -27,7 +27,7 @@ class MPAnalyzeMemoConfirmFlow {
         continue;
       }
       if (e.type == MPAnalyzeMemoSuggestionType.todo) {
-        items.add(MPQuickCaptureConfirmItem.todo(content));
+        items.add(MPQuickCaptureConfirmItem.todo(content, e.deadline));
       } else {
         items.add(MPQuickCaptureConfirmItem.memo(content));
       }

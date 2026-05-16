@@ -7,21 +7,23 @@ import '../../../../utils/omi_font_utils.dart';
 /// Quick Capture 确认列表一行（由分析结果组装，不含选中状态）。
 class MPQuickCaptureConfirmItem {
   /// Todo 行。
-  factory MPQuickCaptureConfirmItem.todo(String title) {
-    return MPQuickCaptureConfirmItem._(isTodo: true, text: title);
+  factory MPQuickCaptureConfirmItem.todo(String title, int? deadline) {
+    return MPQuickCaptureConfirmItem._(isTodo: true, text: title, deadline: deadline);
   }
 
   /// Memo 行。
   factory MPQuickCaptureConfirmItem.memo(String content) {
-    return MPQuickCaptureConfirmItem._(isTodo: false, text: content);
+    return MPQuickCaptureConfirmItem._(isTodo: false, text: content, deadline: null);
   }
 
-  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text});
+  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text, required this.deadline});
 
   final bool isTodo;
 
   /// Todo 标题或 Memo 正文（不含 `Todo:` / `Memo:` 前缀）。
   final String text;
+
+  final int? deadline;
 }
 
 /// Quick Capture 确认弹窗返回结果。
@@ -84,10 +86,12 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
 }
 
 class _ConfirmRow {
-  _ConfirmRow({required this.isTodo, required this.text});
+  _ConfirmRow({required this.isTodo, required this.text, required this.deadline});
 
   final bool isTodo;
   String text;
+
+  final int? deadline;
 
   /// 默认全选，点击行切换。
   bool selected = true;
@@ -102,6 +106,7 @@ class _MPQucikCaptureConfirmDialogState
         (MPQuickCaptureConfirmItem e) => _ConfirmRow(
           isTodo: e.isTodo,
           text: e.text.trim(),
+          deadline: e.deadline,
         ),
       )
       .where((_ConfirmRow r) => r.text.isNotEmpty)
@@ -128,7 +133,7 @@ class _MPQucikCaptureConfirmDialogState
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateTodoItem(title: t, priority: '', deadline: 0));
+      out.add(MPBatchCreateTodoItem(title: t, priority: '', deadline: r.deadline));
     }
     return out;
   }
