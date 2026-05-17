@@ -7,8 +7,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 ///
 /// 内容由 [MPHomeAudioStatus] 注入；蓝牙录音通知与「占录时推迟导入/同步」在 [MPHomeCubit] 中处理。
 ///
-/// 导入 / 同步态：进度为自中心向两侧往复扩散的动画条；右侧 **始终** 展示 **x/y**
-///（[MPHomeAudioStatus.currentFile] / [MPHomeAudioStatus.totalFiles]，缺省按 `1/1`）。
+/// 录音 / 导入 / 同步态：进度均为自中心向两侧往复扩散的动画条；导入 / 同步右侧另展示 **x/y**。
 class MPHomeAudioStatusBar extends StatelessWidget {
   const MPHomeAudioStatusBar({super.key, required this.status});
 
@@ -18,8 +17,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool isRecording = status.type == MPHomeAudioStatusType.recording;
     final bool showImportSyncRow =
-        !isRecording &&
-        (status.type == MPHomeAudioStatusType.importing || status.type == MPHomeAudioStatusType.syncing);
+        status.type == MPHomeAudioStatusType.importing || status.type == MPHomeAudioStatusType.syncing;
     final String title = _title();
 
     return Material(
@@ -54,7 +52,7 @@ class MPHomeAudioStatusBar extends StatelessWidget {
                   const SizedBox(height: 6),
                   if (showImportSyncRow)
                     _ImportSyncProgressRow(currentFile: status.currentFile, totalFiles: status.totalFiles),
-                  if (isRecording) const _RecordingPulseBar(),
+                  if (isRecording) const _CenterSpreadAnimatedBar(indicatorColor: redColor),
                 ],
               ),
             ),
@@ -86,21 +84,17 @@ class MPHomeAudioStatusBar extends StatelessWidget {
   }
 }
 
-/// 自轨道中心向左右扩散、往复播放的指示条；右侧 **始终** 展示 **x/y** 文件序号。
-class _ImportSyncProgressRow extends StatefulWidget {
-  const _ImportSyncProgressRow({required this.currentFile, required this.totalFiles});
+/// 自轨道中心向左右对称扩散、往复播放的指示条（录音 / 导入 / 同步共用）。
+class _CenterSpreadAnimatedBar extends StatefulWidget {
+  const _CenterSpreadAnimatedBar({this.indicatorColor = blueTextColor});
 
-  /// 当前正在处理的文件序号（从 1 开始）；与 [totalFiles] 一并由 Cubit / 业务更新。
-  final int? currentFile;
-
-  /// 本次导入或上传的文件总数；为 `null` 或小于 1 时按 **1** 参与 **x/y** 展示。
-  final int? totalFiles;
+  final Color indicatorColor;
 
   @override
-  State<_ImportSyncProgressRow> createState() => _ImportSyncProgressRowState();
+  State<_CenterSpreadAnimatedBar> createState() => _CenterSpreadAnimatedBarState();
 }
 
-class _ImportSyncProgressRowState extends State<_ImportSyncProgressRow> with SingleTickerProviderStateMixin {
+class _CenterSpreadAnimatedBarState extends State<_CenterSpreadAnimatedBar> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   static const Duration _kSpreadDuration = Duration(milliseconds: 1400);
@@ -117,56 +111,66 @@ class _ImportSyncProgressRowState extends State<_ImportSyncProgressRow> with Sin
     super.dispose();
   }
 
-  /// 规范化后的 **x/y**（缺省时为 `1/1`，且保证 `x` 落在 `1…y`）。
+  @override
+  Widget build(BuildContext context) {
+    final Curve curve = Curves.easeInOutCubic;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(999),
+      child: SizedBox(
+        height: 6,
+        width: double.infinity,
+        child: Stack(
+          fit: StackFit.expand,
+          clipBehavior: Clip.hardEdge,
+          children: <Widget>[
+            const Positioned.fill(child: ColoredBox(color: Color(0xFFE8ECEF))),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (BuildContext context, Widget? child) {
+                final double t = curve.transform(_controller.value);
+                final double widthFactor = 0.06 + t * 0.94;
+                return LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    final double maxW = constraints.maxWidth;
+                    final double maxH = constraints.maxHeight;
+                    final double w = (maxW * widthFactor).clamp(2.0, maxW);
+                    return Align(
+                      alignment: Alignment.center,
+                      child: SizedBox(
+                        width: w,
+                        height: maxH,
+                        child: ColoredBox(color: widget.indicatorColor),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 导入 / 同步：共用 [_CenterSpreadAnimatedBar] + 右侧 **x/y**。
+class _ImportSyncProgressRow extends StatelessWidget {
+  const _ImportSyncProgressRow({required this.currentFile, required this.totalFiles});
+
+  final int? currentFile;
+  final int? totalFiles;
+
   String _fileIndexLabel() {
-    final int y = widget.totalFiles == null || widget.totalFiles! < 1 ? 1 : widget.totalFiles!;
-    final int x = (widget.currentFile ?? 1).clamp(1, y);
+    final int y = totalFiles == null || totalFiles! < 1 ? 1 : totalFiles!;
+    final int x = (currentFile ?? 1).clamp(1, y);
     return '$x/$y';
   }
 
   @override
   Widget build(BuildContext context) {
-    final Curve curve = Curves.easeInOutCubic;
     return Row(
       children: <Widget>[
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: SizedBox(
-              height: 6,
-              child: Stack(
-                fit: StackFit.expand,
-                clipBehavior: Clip.hardEdge,
-                children: <Widget>[
-                  const Positioned.fill(child: ColoredBox(color: Color(0xFFE8ECEF))),
-                  AnimatedBuilder(
-                    animation: _controller,
-                    builder: (BuildContext context, Widget? child) {
-                      final double t = curve.transform(_controller.value);
-                      // 自轨道中心向左右对称扩散：宽度由窄到宽往复（repeat reverse）。
-                      final double widthFactor = 0.06 + t * 0.94;
-                      return LayoutBuilder(
-                        builder: (BuildContext context, BoxConstraints constraints) {
-                          final double maxW = constraints.maxWidth;
-                          final double maxH = constraints.maxHeight;
-                          final double w = (maxW * widthFactor).clamp(2.0, maxW);
-                          return Align(
-                            alignment: Alignment.center,
-                            child: SizedBox(
-                              width: w,
-                              height: maxH,
-                              child: const ColoredBox(color: blueTextColor),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
+        const Expanded(child: _CenterSpreadAnimatedBar()),
         const SizedBox(width: 24),
         Text(
           _fileIndexLabel(),
@@ -179,62 +183,6 @@ class _ImportSyncProgressRowState extends State<_ImportSyncProgressRow> with Sin
           ),
         ),
       ],
-    );
-  }
-}
-
-class _RecordingPulseBar extends StatefulWidget {
-  const _RecordingPulseBar();
-
-  @override
-  State<_RecordingPulseBar> createState() => _RecordingPulseBarState();
-}
-
-class _RecordingPulseBarState extends State<_RecordingPulseBar> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: 6,
-        child: Stack(
-          fit: StackFit.expand,
-          children: <Widget>[
-            const ColoredBox(color: Color(0xFFE8ECEF)),
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (BuildContext context, Widget? child) {
-                final double t = _controller.value;
-                final double opacity = 0.5 + t * 0.5;
-                return Align(
-                  alignment: Alignment.centerLeft,
-                  child: FractionallySizedBox(
-                    widthFactor: 0.28 + t * 0.12,
-                    child: Opacity(
-                      opacity: opacity,
-                      child: const ColoredBox(color: blueTextColor),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

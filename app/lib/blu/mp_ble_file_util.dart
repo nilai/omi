@@ -64,16 +64,18 @@ class MPBleFileUtil {
     }
   }
 
-  /// 实时边录边传 `.opus` 结束后：转 MP3 →（可选）从设备导出同名 `.txt` → 写入 [MPAudioLocalRecord] →
-  /// 删除设备端 `.opus` / `.txt` → 刷新首页 → 上传。
+  /// 实时边录边传 `.opus` 结束后：转 MP3 →（可选）[onAfterMp3Converted] →（可选）从设备导出同名 `.txt` →
+  /// 写入 [MPAudioLocalRecord] → 删除设备端 `.opus` / `.txt` → 刷新首页 → 上传。
   ///
   /// [transport] 非空且仍连接时：在设备列表中查找与 [deviceFileName] 同 stem 的 `.txt`；
   /// 找到则导入手机并写入 [MPAudioLocalRecord.txtPath]，随后删除设备端 opus+txt；未找到则仅删除设备端 opus。
+  /// [onAfterMp3Converted]：转 MP3 成功且主音频文件就绪后、txt 导入与上传队列之前调用（供停录通知等）。
   static Future<bool> finalizeRealtimeOpusToLocalRecordAndUpload({
     required String opusPath,
     String? deviceFileName,
     BleTransport? transport,
     bool runUploadQueue = true,
+    Future<void> Function()? onAfterMp3Converted,
   }) async {
     debugPrint('------>>>memopin finalizeRealtimeOpus: $opusPath deviceFile=$deviceFileName');
     final File opusFile = File(opusPath);
@@ -87,6 +89,10 @@ class MPBleFileUtil {
     if (!await primary.exists()) {
       debugPrint('MPBleFileUtil: realtime finalize primary missing: $opusPath');
       return false;
+    }
+
+    if (onAfterMp3Converted != null) {
+      await onAfterMp3Converted();
     }
 
     final String audioPath = primary.path;

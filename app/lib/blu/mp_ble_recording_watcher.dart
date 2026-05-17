@@ -19,8 +19,9 @@ import 'mp_note_ble_protocol.dart';
 /// `bleTransport.responseStream` / `bleTransport.audioStream` 的语义一致：先等待 GATT notify 就绪，再监听重组后的 301 帧流）。
 ///
 /// 按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
-/// 在「开始录音成功」「结束录音成功」、BLE 断开、[detach] 时更新 [lastEmitted] 并
-/// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]。
+/// 在「开始录音成功」、BLE 断开、[detach] 时立即更新 [lastEmitted] 并
+/// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]；
+/// 「结束录音成功」在转 MP3 完成后、导入上传前通知（见 [_handleDeviceRecordingStoppedOk]）。
 ///
 /// **实时音频落盘**（对齐 [MPBleLiveRecordingSession] / [NoteBleTransport] 边录边传）：
 /// - 订阅 **301 原始 notify** + [MPBleRtOpusBuffer] 组 480B 帧；Seq 间隙发 `0x20` 补传；
@@ -31,10 +32,14 @@ import 'mp_note_ble_protocol.dart';
 /// - 续传前 [MPBleFileUtil.trimRawOpusToLastCompletedSeq] 裁剪本地裸 Opus 再 append；
 /// - 链路丢失时 checkpoint + App 通知 `bleDisconnected`；重连后恢复落盘并再发 `deviceRecordingStarted`。
 ///
-/// **设备停止录音（303 停止成功）**：[MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload]（转 MP3、登记、上传），
-/// 与批量导入单条成功路径一致；设备端文件仍由连接成功后的 [syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉取删除。
+/// **设备停止录音（303 停止成功）**：转 MP3 完成后立即
+/// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]（`deviceRecordingStopped`），
+/// 再继续 txt 导入、本地登记、删设备文件与上传（见 [onAfterMp3Converted]）。
 class MPBleRecordingWatcher {
   static const int _kCheckpointEveryNFrames = 10;
+
+  /// 303 停录后正在转 MP3 / 登记 / 上传，尚未对外通知停录。
+  bool _finalizeAfterStopInProgress = false;
   StreamSubscription<List<int>>? _responseSub;
   StreamSubscription<List<int>>? _rawAudioSub;
   StreamSubscription<MPDeviceTransportState>? _connSub;
@@ -497,34 +502,67 @@ class MPBleRecordingWatcher {
         p[0] == MPNoteBleRecordingWire.cmdRecordingStop &&
         p[1] == MPNoteBleRecordingWire.opEndRecording &&
         p[2] == MPNoteBleRecordingWire.resultSuccess) {
-      debugPrint('------>>>memopin recording watcher 303: stop-ok Cmd/Op/Result=${p[0]} ${p[1]} ${p[2]}');
-      print('[AudioDebug] 停止保存音频');
-      print('[AudioDebug] 总计: $_audioPacketsReceived 包, $_audioBytesSaved bytes');
-      print('[AudioDebug] 文件: $_savedAudioPath');
-      String? stopFileName;
-      try {
-        final String name = utf8.decode(p.sublist(4));
-        stopFileName = name.isEmpty ? null : name;
-      } catch (_) {
-        stopFileName = null;
+      unawaited(_handleDeviceRecordingStoppedOk(p));
+    }
+  }
+
+  /// 303 停止成功：关流 → 转 MP3 → 通知停录 → 导入 / 登记 / 上传。
+  Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
+    if (_finalizeAfterStopInProgress) {
+      debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
+      return;
+    }
+    _finalizeAfterStopInProgress = true;
+
+    debugPrint('------>>>memopin recording watcher 303: stop-ok Cmd/Op/Result=${p[0]} ${p[1]} ${p[2]}');
+    print('[AudioDebug] 停止保存音频');
+    print('[AudioDebug] 总计: $_audioPacketsReceived 包, $_audioBytesSaved bytes');
+    print('[AudioDebug] 文件: $_savedAudioPath');
+
+    String? stopFileName;
+    try {
+      final String name = utf8.decode(p.sublist(4));
+      stopFileName = name.isEmpty ? null : name;
+    } catch (_) {
+      stopFileName = null;
+    }
+    final String? deviceFileName = stopFileName ?? _lastEmitted.activeFileName;
+    final String? opusPath = _savedAudioPath;
+    var stopNotified = false;
+
+    Future<void> notifyDeviceRecordingStoppedOnce() async {
+      if (stopNotified || !_lastEmitted.isRecording) {
+        return;
       }
-      final String? opusPath = _savedAudioPath;
-      unawaited(_closeAudioSavingSink());
-      _activeFileNameForRetransmit = null;
-      _rtBuffer.reset();
-      unawaited(MPBlePreferences.instance.clearInterruptedRecording());
-      if (opusPath != null && opusPath.isNotEmpty) {
-        unawaited(
-          _finalizeStoppedRealtimeCapture(
-            opusPath: opusPath,
-            deviceFileName: stopFileName ?? _lastEmitted.activeFileName,
-          ),
-        );
-      }
+      stopNotified = true;
       _emitRecordingStopped(
         changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
         activeFileName: stopFileName,
       );
+    }
+
+    try {
+      await _closeAudioSavingSink();
+      _activeFileNameForRetransmit = null;
+      _rtBuffer.reset();
+      await MPBlePreferences.instance.clearInterruptedRecording();
+      if (opusPath != null && opusPath.isNotEmpty) {
+        await _finalizeStoppedRealtimeCapture(
+          opusPath: opusPath,
+          deviceFileName: deviceFileName,
+          onAfterMp3Converted: notifyDeviceRecordingStoppedOnce,
+        );
+      }
+      if (!stopNotified) {
+        await notifyDeviceRecordingStoppedOnce();
+      }
+    } catch (e, st) {
+      debugPrint('------>>>memopin recording watcher stop finalize pipeline failed: $e\n$st');
+      if (!stopNotified) {
+        await notifyDeviceRecordingStoppedOnce();
+      }
+    } finally {
+      _finalizeAfterStopInProgress = false;
     }
   }
 
@@ -532,12 +570,14 @@ class MPBleRecordingWatcher {
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
+    Future<void> Function()? onAfterMp3Converted,
   }) async {
     try {
       await MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
         opusPath: opusPath,
         deviceFileName: deviceFileName,
         transport: _boundTransport,
+        onAfterMp3Converted: onAfterMp3Converted,
       );
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');
