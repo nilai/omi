@@ -415,7 +415,7 @@ class MPBleLiveRecordingSession {
   IOSink? _sink;
   StreamSubscription<List<int>>? _audioSub;
   StreamSubscription<List<int>>? _retransmitSub;
-  final _MPBleRtOpusBuffer _buffer = _MPBleRtOpusBuffer();
+  final MPBleRtOpusBuffer _buffer = MPBleRtOpusBuffer();
   String? _activeFileNameForRetransmit;
 
   /// 是否已成功订阅并开始写入。
@@ -485,7 +485,7 @@ class MPBleLiveRecordingSession {
     if (p.isEmpty || p[0] != MPNoteBleCommands.retransmitAudio) {
       return;
     }
-    if (_MPBleRtOpusBuffer.isRetransmitCompletionPacket(p)) {
+    if (MPBleRtOpusBuffer.isRetransmitCompletionPacket(p)) {
       return;
     }
     if (p.length < 9) {
@@ -584,7 +584,10 @@ class MPBleLiveRecordingSession {
 }
 
 /// 解析 `e2c1a301` 无 Flag 的 `[Seq 4B BE][480B]` 帧流，检测 Seq 间隙并输出裸 Opus 包。
-class _MPBleRtOpusBuffer {
+///
+/// 供 [MPBleLiveRecordingSession]、[MPBleRecordingWatcher] 边录边传与重连续传共用。
+class MPBleRtOpusBuffer {
+  /// 是否为 `0x20` 补传完成包（无音频载荷）。
   static bool isRetransmitCompletionPacket(List<int> p) {
     if (p.isEmpty || p[0] != MPNoteBleCommands.retransmitAudio) {
       return false;
@@ -601,6 +604,15 @@ class _MPBleRtOpusBuffer {
 
   final List<int> _buf = <int>[];
   int _lastSeq = -1;
+
+  /// 最近完成的 Seq（-1 表示尚无帧）；与 `.seq` sidecar 一致。
+  int get lastCompletedSeq => _lastSeq;
+
+  /// 新录音会话开始前清空缓冲（不影响 sidecar 文件）。
+  void reset() {
+    _buf.clear();
+    _lastSeq = -1;
+  }
 
   Future<void> loadLastSeqFromSidecar(String opusPath) async {
     try {
@@ -626,7 +638,7 @@ class _MPBleRtOpusBuffer {
       final File f = File('$opusPath.seq');
       await f.writeAsString('$_lastSeq', flush: true);
     } catch (e) {
-      debugPrint('_MPBleRtOpusBuffer.persistLastSeqSidecar: $e');
+      debugPrint('MPBleRtOpusBuffer.persistLastSeqSidecar: $e');
     }
   }
 
