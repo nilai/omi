@@ -528,7 +528,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功后：转 MP3、写入本地 record、触发上传（与批量导入登记路径一致）。
+  /// 303 停止成功后：转 MP3、导入配对 txt（若有）、登记 record、删设备端 opus/txt、触发上传。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
@@ -537,6 +537,7 @@ class MPBleRecordingWatcher {
       await MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
         opusPath: opusPath,
         deviceFileName: deviceFileName,
+        transport: _boundTransport,
       );
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');

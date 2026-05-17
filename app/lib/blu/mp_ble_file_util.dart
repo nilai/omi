@@ -64,10 +64,15 @@ class MPBleFileUtil {
     }
   }
 
-  /// 实时边录边传 `.opus` 结束后：转 MP3 → 写入 [MPAudioLocalRecord] → 刷新首页 → 上传（与批量导入单条成功路径一致）。
+  /// 实时边录边传 `.opus` 结束后：转 MP3 →（可选）从设备导出同名 `.txt` → 写入 [MPAudioLocalRecord] →
+  /// 删除设备端 `.opus` / `.txt` → 刷新首页 → 上传。
+  ///
+  /// [transport] 非空且仍连接时：在设备列表中查找与 [deviceFileName] 同 stem 的 `.txt`；
+  /// 找到则导入手机并写入 [MPAudioLocalRecord.txtPath]，随后删除设备端 opus+txt；未找到则仅删除设备端 opus。
   static Future<bool> finalizeRealtimeOpusToLocalRecordAndUpload({
     required String opusPath,
     String? deviceFileName,
+    BleTransport? transport,
     bool runUploadQueue = true,
   }) async {
     debugPrint('------>>>memopin finalizeRealtimeOpus: $opusPath deviceFile=$deviceFileName');
@@ -92,10 +97,28 @@ class MPBleFileUtil {
         ? deviceFileName
         : p.basename(opusPath);
 
+    final BleTransport? ble = transport ?? MPBleConnectionHelper.backgroundBleTransport;
+
+    String? txtPathOnPhone;
+    String? deviceTxtFileName;
+    final String? deviceOpusFileName = _deviceOpusFileNameForBleCleanup(deviceFileName, opusPath);
+    if (ble != null &&
+        deviceOpusFileName != null &&
+        deviceOpusFileName.isNotEmpty &&
+        await _isTransportConnectedSafe(ble)) {
+      final ({String? localTxtPath, String? deviceTxtName}) imported = await _importPairedTxtFromDeviceIfExists(
+        transport: ble,
+        opusFileName: deviceOpusFileName,
+      );
+      txtPathOnPhone = imported.localTxtPath;
+      deviceTxtFileName = imported.deviceTxtName;
+    }
+
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: audioPath,
         mp3Path: mp3Path,
+        txtPath: txtPathOnPhone,
         fileName: recordFileName,
         createAt: createAtSec,
         duration: durationSec,
@@ -104,11 +127,126 @@ class MPBleFileUtil {
       ),
     );
     MPHomeNotification.notifyHomeListRefresh();
+
+    if (ble != null &&
+        deviceOpusFileName != null &&
+        deviceOpusFileName.isNotEmpty &&
+        await _isTransportConnectedSafe(ble)) {
+      await _deleteDeviceFilesAfterRealtimeFinalize(
+        transport: ble,
+        deviceOpusFileName: deviceOpusFileName,
+        deviceTxtFileName: txtPathOnPhone != null ? deviceTxtFileName : null,
+      );
+    }
+
     if (runUploadQueue) {
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     }
-    debugPrint('------>>>memopin finalizeRealtimeOpus: done path=$audioPath');
+    debugPrint(
+      '------>>>memopin finalizeRealtimeOpus: done path=$audioPath txtPath=$txtPathOnPhone',
+    );
     return true;
+  }
+
+  static Future<bool> _isTransportConnectedSafe(BleTransport transport) async {
+    try {
+      return await transport.isConnected();
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// 设备端用于 `0x05` 删除的 `.opus` 文件名（优先 303 上报名）。
+  static String? _deviceOpusFileNameForBleCleanup(String? deviceFileName, String localOpusPath) {
+    final String trimmed = deviceFileName?.trim() ?? '';
+    if (trimmed.isNotEmpty) {
+      if (trimmed.toLowerCase().endsWith('.opus')) {
+        return trimmed;
+      }
+      return '$trimmed.opus';
+    }
+    final String base = p.basename(localOpusPath);
+    if (base.toLowerCase().endsWith('.opus')) {
+      return base;
+    }
+    return null;
+  }
+
+  /// 在设备文件列表中查找与 [opusFileName] 同 stem 的 `.txt`，导出并写入沙盒。
+  static Future<({String? localTxtPath, String? deviceTxtName})> _importPairedTxtFromDeviceIfExists({
+    required BleTransport transport,
+    required String opusFileName,
+  }) async {
+    try {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      final List<NoteFileInfo> allFiles = await MPBleConnectionHelper.fetchMemoPinFileList(transport);
+      final List<NoteFileInfo> txtList = allFiles
+          .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.txt'))
+          .toList(growable: false);
+      final NoteFileInfo? txtMatch = _findTxtForOpus(txtList, opusFileName);
+      if (txtMatch == null) {
+        debugPrint('------>>>memopin finalizeRealtimeOpus: no paired txt on device for $opusFileName');
+        return (localTxtPath: null, deviceTxtName: null);
+      }
+
+      debugPrint('------>>>memopin finalizeRealtimeOpus: importing txt ${txtMatch.name}');
+      final MPNoteBleGattClient txtClient = MPNoteBleGattClient(transport);
+      String? localPath;
+      try {
+        final List<int>? txtBytes = await _collectExportPayloads(
+          client: txtClient,
+          fileName: txtMatch.name,
+          info: txtMatch,
+        );
+        if (txtBytes == null || txtBytes.isEmpty) {
+          debugPrint('MPBleFileUtil: realtime txt export empty: ${txtMatch.name}');
+          return (localTxtPath: null, deviceTxtName: txtMatch.name);
+        }
+        final String deviceDir = await ensureMemoPinDeviceAudioDirectoryPath();
+        localPath = await _writeBytesToDir(
+          directoryPath: deviceDir,
+          fileName: txtMatch.name,
+          bytes: txtBytes,
+        );
+      } finally {
+        await txtClient.dispose();
+      }
+
+      if (localPath == null) {
+        debugPrint('MPBleFileUtil: realtime txt write failed: ${txtMatch.name}');
+        return (localTxtPath: null, deviceTxtName: txtMatch.name);
+      }
+      debugPrint('------>>>memopin finalizeRealtimeOpus: txt saved $localPath');
+      return (localTxtPath: localPath, deviceTxtName: txtMatch.name);
+    } catch (e, st) {
+      debugPrint('------>>>memopin finalizeRealtimeOpus: txt import failed $e\n$st');
+      return (localTxtPath: null, deviceTxtName: null);
+    }
+  }
+
+  /// 实时录音落盘登记后清理设备端文件：有配对 txt 且已导入则删 opus+txt，否则仅删 opus。
+  static Future<void> _deleteDeviceFilesAfterRealtimeFinalize({
+    required BleTransport transport,
+    required String deviceOpusFileName,
+    String? deviceTxtFileName,
+  }) async {
+    final String? txtName = deviceTxtFileName?.trim();
+    if (txtName != null && txtName.isNotEmpty) {
+      debugPrint(
+        '------>>>memopin finalizeRealtimeOpus: delete device opus+txt opus=$deviceOpusFileName txt=$txtName',
+      );
+      await _deleteDeviceOpusAndPairedTxt(
+        transport: transport,
+        opusFileName: deviceOpusFileName,
+        pairedTxtFileName: txtName,
+      );
+      return;
+    }
+    debugPrint('------>>>memopin finalizeRealtimeOpus: delete device opus only $deviceOpusFileName');
+    final bool deleted = await deleteDeviceRecordingFile(transport, deviceOpusFileName);
+    if (!deleted) {
+      debugPrint('MPBleFileUtil: could not delete opus on device after realtime: $deviceOpusFileName');
+    }
   }
 
   static Duration _maxExportWaitForFile(NoteFileInfo info) {
@@ -675,6 +813,7 @@ class MPBleLiveRecordingSession {
     return MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
       opusPath: opusPath,
       deviceFileName: p.basename(opusPath),
+      transport: _transport,
       runUploadQueue: runUploadQueue,
     );
   }
