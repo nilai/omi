@@ -112,8 +112,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       try {
         final bool connected = await _transport!.isConnected();
         if (!connected) {
-          await _disconnectActive();
-        } else {
+          final String remoteId = _transport!.deviceId;
+          final bool reconnected = await MPBleConnectionHelper.tryReconnectBackgroundTransport(remoteId);
+          if (!reconnected && !isClosed) {
+            MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+            _transport = null;
+            _emitAllDevicesDisconnected();
+          }
+        }
+        if (_transport != null && await _transport!.isConnected()) {
           final MPConnectDeviceItem row = await _connectedDeviceItemForActiveTransport();
           if (!isClosed) {
             _attachTransportConnectionListener(_transport!);
@@ -130,7 +137,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
           }
         }
       } catch (_) {
-        await _disconnectActive();
+        MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+        _transport = null;
+        if (!isClosed) {
+          _emitAllDevicesDisconnected();
+        }
       }
     }
     if (!isClosed) {
@@ -508,26 +519,17 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     _transportConnectionSub = null;
   }
 
-  /// 设备侧掉线（关机、超出范围等）：与手动断开一致的列表展示，并释放托管 [BleTransport]。
+  /// 设备侧掉线（关机、超出范围、录音收尾 GATT 繁忙等）：仅刷新 UI，**不**主动 disconnect（仅用户手动断开）。
   Future<void> _onPassiveBleDisconnected() async {
-    if (isClosed || _transport == null) {
+    if (isClosed) {
       return;
     }
     _detachTransportConnectionListener();
 
     final BleTransport? released = _transport;
     _transport = null;
-
-    final BleTransport? parked = MPBleConnectionHelper.backgroundBleTransport;
-    final bool releasedIsParked = released != null && identical(released, parked);
-    await MPBleConnectionHelper.disposeBackgroundBleTransportIfAny();
-    if (released != null && !releasedIsParked) {
-      try {
-        await released.disconnect();
-      } catch (_) {}
-      try {
-        await released.dispose();
-      } catch (_) {}
+    if (released != null) {
+      MPBleConnectionHelper.parkBackgroundBleTransport(released);
     }
 
     if (isClosed) {
@@ -537,24 +539,12 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     _emitAllDevicesDisconnected();
   }
 
+  /// 用户主动断开（连接页「Disconnect」、切换设备前清理）。
   Future<void> _disconnectActive() async {
     _detachTransportConnectionListener();
-    BleTransport? t = _transport;
     _transport = null;
-    t ??= MPBleConnectionHelper.takeBackgroundBleTransport();
-    if (t != null) {
-      try {
-        await t.disconnect();
-      } catch (_) {
-        // ignore
-      }
-      try {
-        await t.dispose();
-      } catch (_) {
-        // ignore
-      }
-    }
-    await MPBleConnectionHelper.disposeBackgroundBleTransportIfAny();
+    MPBleConnectionHelper.takeBackgroundBleTransport();
+    await MPBleConnectionHelper.disconnectBackgroundBleTransportUserInitiated();
   }
 
   /// 停止 BLE 扫描；始终调用插件 [stopScan]（内部已对未在扫的情况做处理），避免仅依赖 [isScanningNow] 漏停。
@@ -574,14 +564,11 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     // 仍在连接态时退出页面：不断开 BLE，仅将 BleTransport 存为背景会话。
     if (_transport != null) {
       try {
-        if (await _transport!.isConnected()) {
-          MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
-          _transport = null;
-        } else {
-          await _disconnectActive();
-        }
+        MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+        _transport = null;
       } catch (_) {
-        await _disconnectActive();
+        MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+        _transport = null;
       }
     }
     await super.close();

@@ -334,11 +334,11 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       _emitRecordingAudioStatusPrioritized();
       return;
     }
-    _flushPendingAfterBleRecordingStopped();
+    _flushPendingAfterBleRecordingStopped(payload);
   }
 
-  /// 蓝牙已停录：应用推迟的 importing/syncing，或清除「纯设备录音」态顶栏。
-  void _flushPendingAfterBleRecordingStopped() {
+  /// 蓝牙已停录：应用推迟的 importing/syncing，或更新顶栏（仅 [deviceRecordingStopped] 切 syncing）。
+  void _flushPendingAfterBleRecordingStopped(MPBleMemopinRecordingStateChangedPayload payload) {
     if (_pendingPostBleRecordingAudioStatus != null) {
       final MPHomeAudioStatus pending = _pendingPostBleRecordingAudioStatus!;
       _pendingPostBleRecordingAudioStatus = null;
@@ -361,8 +361,11 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       return;
     }
     _deferredRecordCreatedCompletion = null;
-    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
-      // 设备停录后即将上传：直接切 syncing，避免 recording → 空白 → syncing 的停顿感。
+    if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
+      return;
+    }
+    if (payload.changeReason == MPBleMemopinRecordingChangeReason.deviceRecordingStopped) {
+      // 仅设备 303 停录成功：切 syncing，由后续 uploadRecords 更新进度。
       _syncCompletedClearTimer?.cancel();
       emit(
         state.copyWith(
@@ -374,7 +377,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           ),
         ),
       );
+      return;
     }
+    emit(state.copyWith(clearAudioStatus: true));
   }
 
   /// 若外接 MemoPin 正在录音，则暂存 [next]；顶栏 **立即** 切为 recording（覆盖 importing / syncing），直至停录再应用暂存态。
@@ -406,6 +411,12 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       currentFile: currentFile,
       totalFiles: totalFiles,
     );
+    // 顶栏仍为 recording 或设备侧仍在录：勿提前展示 syncing（避免停录收尾/后台上传误触）。
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording ||
+        MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      _pendingPostBleRecordingAudioStatus = next;
+      return;
+    }
     if (_deferAudioStatusIfMemoPinRecording(next)) {
       _deferredRecordCreatedCompletion = null;
       return;

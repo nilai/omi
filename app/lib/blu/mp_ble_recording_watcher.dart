@@ -540,10 +540,6 @@ class MPBleRecordingWatcher {
         changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
         activeFileName: stopFileName,
       );
-      // 与首页 cubit 停录切 syncing 配合，上传进度 0% 尽快展示（不等待 BLE txt / 删文件）。
-      MPHomeNotification.notifyUploadProgress(
-        const MPHomeUploadProgressPayload(batchTotal: 1, batchIndex: 1, progress: 0),
-      );
     }
 
     try {

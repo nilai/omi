@@ -105,7 +105,7 @@ class MPBleConnectionHelper {
   /// 连接页关闭后仍要保持的 GATT 会话（不断开 physical link）。
   ///
   /// 由 [MPConnectDeviceCubit] 在 `close` 时 [parkBackgroundBleTransport]，重新进入时
-  /// [takeBackgroundBleTransport] 取回；用户主动断开时由 [disposeBackgroundBleTransportIfAny] 清理。
+  /// [takeBackgroundBleTransport] 取回；**仅**用户主动断开 / 登出时由 [disconnectBackgroundBleTransportUserInitiated] 清理。
   static BleTransport? _backgroundBleTransport;
 
   /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
@@ -129,9 +129,9 @@ class MPBleConnectionHelper {
     return t;
   }
 
-  /// 释放背景会话并断开 BLE（用户主动断开或连接新设备前清理）。
-  static Future<void> disposeBackgroundBleTransportIfAny() async {
-    debugPrint('------>>>memopin disposeBackgroundBleTransportIfAny');
+  /// 释放背景会话并断开 BLE（**仅**用户主动断开、切换设备前清理、登出）。
+  static Future<void> disconnectBackgroundBleTransportUserInitiated() async {
+    debugPrint('------>>>memopin disconnectBackgroundBleTransportUserInitiated');
     await _memopinRecordingWatcher.detach();
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
@@ -149,13 +149,33 @@ class MPBleConnectionHelper {
     }
   }
 
+  /// 对已有背景 [BleTransport] 尝试重连（不因瞬时掉线而 dispose）。
+  static Future<bool> tryReconnectBackgroundTransport(String remoteId) async {
+    final BleTransport? bg = _backgroundBleTransport;
+    if (bg == null || bg.deviceId != remoteId) {
+      return false;
+    }
+    try {
+      if (await bg.isConnected()) {
+        return true;
+      }
+      debugPrint('------>>>memopin tryReconnectBackgroundTransport: reconnect remoteId=$remoteId');
+      await bg.connect();
+      await _memopinRecordingWatcher.attach(bg);
+      return true;
+    } catch (e) {
+      debugPrint('------>>>memopin tryReconnectBackgroundTransport failed: $e');
+      return false;
+    }
+  }
+
   /// 登出或需要彻底释放应用侧 BLE 时调用。
   ///
-  /// 先 [disposeBackgroundBleTransportIfAny]，再对 [FlutterBluePlus.connectedDevices] 执行 [BluetoothDevice.disconnect]，
+  /// 先 [disconnectBackgroundBleTransportUserInitiated]，再对 [FlutterBluePlus.connectedDevices] 执行 [BluetoothDevice.disconnect]，
   /// 以覆盖仅通过系统栈连接、未托管在 [BleTransport] 中的情况。
   static Future<void> disconnectAppBleForLogout() async {
     debugPrint('------>>>memopin disconnectAppBleForLogout');
-    await disposeBackgroundBleTransportIfAny();
+    await disconnectBackgroundBleTransportUserInitiated();
     try {
       final List<BluetoothDevice> connected = FlutterBluePlus.connectedDevices;
       for (final BluetoothDevice d in connected) {
@@ -203,17 +223,20 @@ class MPBleConnectionHelper {
     }
 
     final BleTransport? bg = _backgroundBleTransport;
-    if (bg != null) {
+    if (bg != null && bg.deviceId == r.remoteId) {
       try {
-        if (bg.deviceId == r.remoteId && await bg.isConnected()) {
+        if (await bg.isConnected()) {
           debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: reuse bg remoteId=${r.remoteId}');
           return true;
         }
       } catch (_) {
         // ignore
       }
-      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: dispose stale bg');
-      await disposeBackgroundBleTransportIfAny();
+      if (await tryReconnectBackgroundTransport(r.remoteId)) {
+        debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: reconnected bg remoteId=${r.remoteId}');
+        return true;
+      }
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: bg present but not connected, keep session (no auto disconnect)');
     }
 
     final bool supported = await isBleSupported;
