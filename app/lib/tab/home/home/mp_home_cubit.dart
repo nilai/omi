@@ -143,6 +143,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
     _todoDeletedSub = MPHomeNotification.listenTodoDeleted(_onTodoDeleted);
     _bleConnectedSub = MPHomeNotification.listenBleConnectedSuccess(_onBleConnectedSuccess);
+    _bleMemopinRecordingSub = MPHomeNotification.listenBleMemopinRecordingState(_onBleMemopinRecordingStateChanged);
     initData();
   }
 
@@ -153,6 +154,14 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
   StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
   StreamSubscription<void>? _bleConnectedSub;
+  StreamSubscription<MPBleMemopinRecordingStateChangedPayload>? _bleMemopinRecordingSub;
+
+  /// 外接 MemoPin 仍在录音时，将本应展示为 importing/syncing 的状态暂存，待停录后再 [emit]（见 [_onBleMemopinRecordingStateChanged]）。
+  MPHomeAudioStatus? _pendingPostBleRecordingAudioStatus;
+
+  /// 与 [_pendingPostBleRecordingAudioStatus] 配套：仅在 [_onMemoryRecordCreated] 因设备占录而推迟且为批次最后一条时设置，用于停录后启动 [_syncCompletedClearTimer]。
+  MPHomeRecordCreatedPayload? _deferredRecordCreatedCompletion;
+
   Timer? _syncCompletedClearTimer;
   bool _bleDeviceImportRunning = false;
 
@@ -309,31 +318,94 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
-  /// 演示：设备录音中（对齐 react `setRecording`）
+  static const MPHomeAudioStatus _kRecordingAudioStatus = MPHomeAudioStatus(type: MPHomeAudioStatusType.recording);
+
+  /// 任意状态 → recording 时立即展示（优先于 importing / syncing）。
+  void _emitRecordingAudioStatusPrioritized() {
+    _syncCompletedClearTimer?.cancel();
+    emit(state.copyWith(audioStatus: _kRecordingAudioStatus));
+  }
+
+  /// [MPHomeNotification.listenBleMemopinRecordingState]：设备开始录音 → 顶栏 recording；停录 → 若有推迟的 import/sync 则应用，否则仅当当前为 recording 时隐藏条。
+  void _onBleMemopinRecordingStateChanged(MPBleMemopinRecordingStateChangedPayload payload) {
+    if (payload.isRecording) {
+      _pendingPostBleRecordingAudioStatus = null;
+      _deferredRecordCreatedCompletion = null;
+      _emitRecordingAudioStatusPrioritized();
+      return;
+    }
+    _flushPendingAfterBleRecordingStopped();
+  }
+
+  /// 蓝牙已停录：应用推迟的 importing/syncing，或清除「纯设备录音」态顶栏。
+  void _flushPendingAfterBleRecordingStopped() {
+    if (_pendingPostBleRecordingAudioStatus != null) {
+      final MPHomeAudioStatus pending = _pendingPostBleRecordingAudioStatus!;
+      _pendingPostBleRecordingAudioStatus = null;
+      _syncCompletedClearTimer?.cancel();
+      emit(state.copyWith(audioStatus: pending));
+      if (_deferredRecordCreatedCompletion != null) {
+        final MPHomeRecordCreatedPayload p = _deferredRecordCreatedCompletion!;
+        _deferredRecordCreatedCompletion = null;
+        final int total = p.batchTotal < 1 ? 1 : p.batchTotal;
+        final int index = p.batchIndex.clamp(1, total);
+        if (index >= total) {
+          _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
+            if (!isClosed) {
+              emit(state.copyWith(clearAudioStatus: true));
+              loadData();
+            }
+          });
+        }
+      }
+      return;
+    }
+    _deferredRecordCreatedCompletion = null;
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+      emit(state.copyWith(clearAudioStatus: true));
+    }
+  }
+
+  /// 若外接 MemoPin 正在录音，则暂存 [next]；顶栏 **立即** 切为 recording（覆盖 importing / syncing），直至停录再应用暂存态。
+  ///
+  /// @returns {bool} `true` 表示已推迟，调用方不应再写入 [next]。
+  bool _deferAudioStatusIfMemoPinRecording(MPHomeAudioStatus next) {
+    if (!MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      return false;
+    }
+    _pendingPostBleRecordingAudioStatus = next;
+    if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
+      _emitRecordingAudioStatusPrioritized();
+    }
+    return true;
+  }
+
+  /// 演示：设备录音中（对齐 react `setRecording`）；日常由 [_onBleMemopinRecordingStateChanged] 驱动。
   void showRecordingStatus() {
-    emit(state.copyWith(audioStatus: const MPHomeAudioStatus(type: MPHomeAudioStatusType.recording)));
+    _pendingPostBleRecordingAudioStatus = null;
+    _deferredRecordCreatedCompletion = null;
+    _emitRecordingAudioStatusPrioritized();
   }
 
   /// 文件同步：`progress` 为**当前条**上传进度 0–100；多文件时换条后从 0 重新计。
   void showSyncingStatus({required int currentFile, required int totalFiles, required int progress}) {
-    _syncCompletedClearTimer?.cancel();
-    emit(
-      state.copyWith(
-        audioStatus: MPHomeAudioStatus(
-          type: MPHomeAudioStatusType.syncing,
-          progress: progress.clamp(0, 100),
-          currentFile: currentFile,
-          totalFiles: totalFiles,
-        ),
-      ),
+    final MPHomeAudioStatus next = MPHomeAudioStatus(
+      type: MPHomeAudioStatusType.syncing,
+      progress: progress.clamp(0, 100),
+      currentFile: currentFile,
+      totalFiles: totalFiles,
     );
+    if (_deferAudioStatusIfMemoPinRecording(next)) {
+      _deferredRecordCreatedCompletion = null;
+      return;
+    }
+    _syncCompletedClearTimer?.cancel();
+    _deferredRecordCreatedCompletion = null;
+    emit(state.copyWith(audioStatus: next));
   }
 
   /// 与 [MPHomeUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
   void _onUploadProgress(MPHomeUploadProgressPayload payload) {
-    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
-      return;
-    }
     final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
     showSyncingStatus(currentFile: batchIndex, totalFiles: batchTotal, progress: payload.progress.clamp(0, 100));
@@ -341,24 +413,22 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// [MPHomeNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
   void _onMemoryRecordCreated(MPHomeRecordCreatedPayload payload) {
-    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
-      return;
-    }
     _syncCompletedClearTimer?.cancel();
     final int total = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int index = payload.batchIndex.clamp(1, total);
-    // 本条已创建完成，与 [_onUploadProgress] 单文件进度语义一致（不再用批次折算，避免从 100% 回跳）。
     const int progress = 100;
-    emit(
-      state.copyWith(
-        audioStatus: MPHomeAudioStatus(
-          type: MPHomeAudioStatusType.syncing,
-          progress: progress.clamp(0, 100),
-          currentFile: index,
-          totalFiles: total,
-        ),
-      ),
+    final MPHomeAudioStatus next = MPHomeAudioStatus(
+      type: MPHomeAudioStatusType.syncing,
+      progress: progress.clamp(0, 100),
+      currentFile: index,
+      totalFiles: total,
     );
+    if (_deferAudioStatusIfMemoPinRecording(next)) {
+      _deferredRecordCreatedCompletion = index >= total ? payload : null;
+      return;
+    }
+    _deferredRecordCreatedCompletion = null;
+    emit(state.copyWith(audioStatus: next));
     if (index >= total) {
       _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
         if (!isClosed) {
@@ -371,16 +441,18 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 导入音频（复制到沙盒阶段）；多选时 [currentFile] / [totalFiles] 为当前第几个文件与总个数。
   void showImportingStatus(int progress, {int? currentFile, int? totalFiles}) {
-    emit(
-      state.copyWith(
-        audioStatus: MPHomeAudioStatus(
-          type: MPHomeAudioStatusType.importing,
-          progress: progress.clamp(0, 100),
-          currentFile: currentFile,
-          totalFiles: totalFiles,
-        ),
-      ),
+    final MPHomeAudioStatus next = MPHomeAudioStatus(
+      type: MPHomeAudioStatusType.importing,
+      progress: progress.clamp(0, 100),
+      currentFile: currentFile,
+      totalFiles: totalFiles,
     );
+    if (_deferAudioStatusIfMemoPinRecording(next)) {
+      _deferredRecordCreatedCompletion = null;
+      return;
+    }
+    _deferredRecordCreatedCompletion = null;
+    emit(state.copyWith(audioStatus: next));
   }
 
   void clearAudioStatus() {
@@ -479,6 +551,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _todoDoneSub?.cancel();
     _todoDeletedSub?.cancel();
     _bleConnectedSub?.cancel();
+    _bleMemopinRecordingSub?.cancel();
     return super.close();
   }
 }

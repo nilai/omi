@@ -5,6 +5,8 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 
 /// 首页录音 / 同步 / 导入状态条（对齐 react `AudioStatusBar`）。
 ///
+/// 内容由 [MPHomeAudioStatus] 注入；蓝牙录音通知与「占录时推迟导入/同步」在 [MPHomeCubit] 中处理。
+///
 /// 导入 / 同步态：进度为自中心向两侧往复扩散的动画条；右侧 **始终** 展示 **x/y**
 ///（[MPHomeAudioStatus.currentFile] / [MPHomeAudioStatus.totalFiles]，缺省按 `1/1`）。
 class MPHomeAudioStatusBar extends StatelessWidget {
