@@ -34,9 +34,8 @@ import 'mp_note_ble_protocol.dart';
 /// - 续传前 [MPBleFileUtil.trimRawOpusToLastCompletedSeq] 裁剪本地裸 Opus 再 append；
 /// - 链路丢失时 checkpoint + App 通知 `bleDisconnected`；重连后恢复落盘并再发 `deviceRecordingStarted`。
 ///
-/// **设备停止录音（303 停止成功）**：转 MP3 完成后立即
-/// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]（`deviceRecordingStopped`），
-/// 再登记本地记录并按 [MPAudioUploadManager.uploadRecords] 上传（见 [onAfterMp3Converted]）。
+/// **设备停止录音（303 停止成功）**：转 MP3 后立即停录通知 + syncing（见 [onAfterMp3Converted]），
+/// 登记并 [uploadRecords]；设备 txt 导入 / 删文件在 [MPBleFileUtil.completeRealtimeDeviceSidecarWork] 后台执行。
 class MPBleRecordingWatcher {
   static const int _kCheckpointEveryNFrames = 10;
 
@@ -541,6 +540,10 @@ class MPBleRecordingWatcher {
         changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
         activeFileName: stopFileName,
       );
+      // 与首页 cubit 停录切 syncing 配合，上传进度 0% 尽快展示（不等待 BLE txt / 删文件）。
+      MPHomeNotification.notifyUploadProgress(
+        const MPHomeUploadProgressPayload(batchTotal: 1, batchIndex: 1, progress: 0),
+      );
     }
 
     try {
@@ -568,18 +571,20 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功后：转 MP3 → 登记本地 record → [uploadRecords]（不走全量导入上传队列）。
+  /// 303 停止成功后：转 MP3 → 停录通知 + syncing → 登记 → [uploadRecords]；设备 txt/删文件后台执行。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
     Future<void> Function()? onAfterMp3Converted,
   }) async {
+    final BleTransport? transport = _boundTransport;
     try {
       final MPAudioLocalRecord? record = await MPBleFileUtil.finalizeRealtimeOpusToLocalRecord(
         opusPath: opusPath,
         deviceFileName: deviceFileName,
-        transport: _boundTransport,
+        transport: transport,
         onAfterMp3Converted: onAfterMp3Converted,
+        deferDeviceSidecarWork: true,
       );
       if (record == null) {
         return;
@@ -588,6 +593,15 @@ class MPBleRecordingWatcher {
         <MPAudioLocalRecord>[record],
         rightNowTranscribe: false,
       );
+      if (transport != null) {
+        unawaited(
+          MPBleFileUtil.completeRealtimeDeviceSidecarWork(
+            transport: transport,
+            deviceFileName: deviceFileName,
+            opusPath: opusPath,
+          ),
+        );
+      }
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');
     }

@@ -362,7 +362,18 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
     _deferredRecordCreatedCompletion = null;
     if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
-      emit(state.copyWith(clearAudioStatus: true));
+      // 设备停录后即将上传：直接切 syncing，避免 recording → 空白 → syncing 的停顿感。
+      _syncCompletedClearTimer?.cancel();
+      emit(
+        state.copyWith(
+          audioStatus: const MPHomeAudioStatus(
+            type: MPHomeAudioStatusType.syncing,
+            progress: 0,
+            currentFile: 1,
+            totalFiles: 1,
+          ),
+        ),
+      );
     }
   }
 
