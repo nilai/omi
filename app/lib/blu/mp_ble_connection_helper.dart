@@ -61,6 +61,15 @@ class MPBleConnectionHelper {
   static MPBleMemopinRecordingStateChangedPayload get memoPinRecordingStateSnapshot =>
       _memopinRecordingWatcher.lastEmitted;
 
+  /// 外接 MemoPin 是否正在录音（与 [memoPinRecordingStateSnapshot.isRecording] 一致）。
+  static bool get isMemoPinDeviceRecording => _memopinRecordingWatcher.isRecording;
+
+  /// 当前外接录音文件名（设备 303 上报）。
+  static String? get memoPinActiveRecordingFileName => _memopinRecordingWatcher.activeFileName;
+
+  /// 最近一次实时落盘本地路径。
+  static String? get memoPinLastRealtimeAudioLocalPath => _memopinRecordingWatcher.lastRealtimeAudioLocalPath;
+
   /// 与 [MPHomeNotification.bleMemopinRecordingStateEvents] 相同，便于仅从 Helper 引用。
   static Stream<MPBleMemopinRecordingStateChangedPayload> get memoPinRecordingStateChangedStream =>
       MPHomeNotification.bleMemopinRecordingStateEvents;
@@ -88,7 +97,7 @@ class MPBleConnectionHelper {
     debugPrint('------>>>memopin takeBackgroundBleTransport');
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
-    unawaited(_memopinRecordingWatcher.attach(null));
+    // 不断开 [MPBleRecordingWatcher]：连接页接管同一 [BleTransport] 时仍需监听 303/301。
     return t;
   }
 

@@ -44,6 +44,21 @@ class MPHomeTodoDeletedPayload {
   final String todoId;
 }
 
+/// MemoPin 设备录音状态变化原因（与 [MPBleMemopinRecordingStateChangedPayload.changeReason] 对应）。
+enum MPBleMemopinRecordingChangeReason {
+  /// 303 开始录音成功。
+  deviceRecordingStarted,
+
+  /// 303 结束录音成功。
+  deviceRecordingStopped,
+
+  /// BLE [MPDeviceTransportState.disconnected]。
+  bleDisconnected,
+
+  /// [MPBleRecordingWatcher.detach] / 释放背景会话。
+  watcherDetached,
+}
+
 /// MemoPin 设备录音状态变化（供 UI / 业务订阅）。
 class MPBleMemopinRecordingStateChangedPayload {
   /// 创建载荷。
@@ -51,6 +66,8 @@ class MPBleMemopinRecordingStateChangedPayload {
     required this.isRecording,
     this.activeFileName,
     this.sessionModeByte,
+    this.changeReason,
+    this.lastRealtimeAudioLocalPath,
   });
 
   /// `true` 表示正在录音。
@@ -61,6 +78,12 @@ class MPBleMemopinRecordingStateChangedPayload {
 
   /// 最近一次 `0x01` 成功通知中的 mode：`0x00` memory / `0x01` memo；未知为 `null`。
   final int? sessionModeByte;
+
+  /// 本次状态变化触发原因；快照读取时可为 `null`（仅表示「当前态」，不强调事件）。
+  final MPBleMemopinRecordingChangeReason? changeReason;
+
+  /// 最近一次关闭实时落盘后的本地 `.opus` 路径（停止 / 断连 / detach 后仍可读）。
+  final String? lastRealtimeAudioLocalPath;
 }
 
 /// 首页事件通知：用于跨页面触发首页数据刷新。
