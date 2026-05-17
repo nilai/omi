@@ -116,9 +116,17 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         } else {
           final MPConnectDeviceItem row = await _connectedDeviceItemForActiveTransport();
           if (!isClosed) {
-            emit(state.copyWith(devices: <MPConnectDeviceItem>[row]));
             _attachTransportConnectionListener(_transport!);
-            unawaited(_refreshConnectedDeviceBattery(row.id));
+            final int? batteryPct = await _readBatteryPercentForTransport(_transport!, row.id);
+            if (!isClosed) {
+              emit(
+                state.copyWith(
+                  devices: <MPConnectDeviceItem>[
+                    row.copyWith(batteryPercent: batteryPct ?? 0),
+                  ],
+                ),
+              );
+            }
           }
         }
       } catch (_) {
@@ -163,7 +171,38 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     return 'MemoPin ($remoteId)';
   }
 
-  /// 若状态里尚无「已连接」行但 [_transport] 仍在线，则补齐（扫描列表依赖 [preservedConnectedId]）。
+  /// 当前 [_transport] 若仍在线则返回其 remoteId，否则 `null`。
+  Future<String?> _currentConnectedRemoteId() async {
+    final BleTransport? t = _transport;
+    if (t == null) {
+      return null;
+    }
+    try {
+      if (await t.isConnected()) {
+        return t.deviceId;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return null;
+  }
+
+  /// 断开/被动掉线后：列表全部标为未连接，已连接行电量清零。
+  void _emitAllDevicesDisconnected() {
+    emit(
+      state.copyWith(
+        clearConnectingDeviceId: true,
+        devices: state.devices
+            .map(
+              (MPConnectDeviceItem d) =>
+                  d.copyWith(isConnected: false, batteryPercent: d.isConnected ? 0 : d.batteryPercent),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  /// 若状态里尚无「已连接」行但 [_transport] 仍在线，则补齐（扫描列表依赖实时 GATT 连接态）。
   Future<List<MPConnectDeviceItem>> _keepConnectedRowsForScan() async {
     final List<MPConnectDeviceItem> fromState = state.devices.where((MPConnectDeviceItem d) => d.isConnected).toList();
     if (fromState.isNotEmpty) {
@@ -277,7 +316,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
         !isClosed) {
       emit(state.copyWith(devices: keepConnected));
     }
-    final String? preservedConnectedId = keepConnected.isEmpty ? null : keepConnected.first.id;
     emit(state.copyWith(isScanning: true, devices: _devicesToShowWhileScanning(keepConnected: keepConnected)));
 
     try {
@@ -288,23 +326,31 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       if (generation != _scanGeneration || isClosed) {
         return;
       }
+      final String? activeConnectedId = await _currentConnectedRemoteId();
       final List<MPConnectDeviceItem> next = entries.map((MPBleScanEntry e) {
         return MPConnectDeviceItem(
           id: e.remoteId,
           name: e.displayName,
           batteryPercent: 0,
           signalPercent: e.signalPercent,
-          isConnected: preservedConnectedId != null && preservedConnectedId == e.remoteId,
+          isConnected: activeConnectedId != null && activeConnectedId == e.remoteId,
         );
       }).toList();
 
-      if (preservedConnectedId != null && !next.any((MPConnectDeviceItem i) => i.id == preservedConnectedId)) {
-        // 扫描期间可能已通过 GATT 更新电量，优先使用当前 state 中的已连接行。
-        final MPConnectDeviceItem? prev =
-            state.devices.firstWhereOrNull((MPConnectDeviceItem d) => d.id == preservedConnectedId && d.isConnected) ??
-            keepConnected.firstWhereOrNull((MPConnectDeviceItem d) => d.id == preservedConnectedId);
+      if (activeConnectedId != null && !next.any((MPConnectDeviceItem i) => i.id == activeConnectedId)) {
+        final MPConnectDeviceItem? prev = state.devices.firstWhereOrNull(
+          (MPConnectDeviceItem d) => d.id == activeConnectedId && d.isConnected,
+        );
         if (prev != null) {
           next.insert(0, prev);
+        } else {
+          try {
+            final MPConnectDeviceItem row = await _connectedDeviceItemForActiveTransport();
+            final int? batteryPct = await _readBatteryPercentForTransport(_transport!, activeConnectedId);
+            next.insert(0, row.copyWith(batteryPercent: batteryPct ?? 0));
+          } catch (_) {
+            // ignore
+          }
         }
       }
 
@@ -312,8 +358,8 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
       if (!isClosed) {
         emit(state.copyWith(isScanning: false, devices: next));
-        if (preservedConnectedId != null) {
-          unawaited(_refreshConnectedDeviceBattery(preservedConnectedId));
+        if (activeConnectedId != null) {
+          unawaited(_refreshConnectedDeviceBattery(activeConnectedId));
         }
       }
     } catch (e) {
@@ -338,11 +384,13 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
 
     if (anyConnectedWithId) {
+      _scanGeneration++;
+      await _stopScanSafe();
       await _disconnectActive();
       await MPBlePreferences.instance.clearLastConnectedBleDevice();
-      emit(
-        state.copyWith(devices: state.devices.map((MPConnectDeviceItem d) => d.copyWith(isConnected: false)).toList()),
-      );
+      if (!isClosed) {
+        _emitAllDevicesDisconnected();
+      }
       return;
     }
 
@@ -362,20 +410,25 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       _transport = MPBleConnectionHelper.createBleTransport(device);
       await _transport!.connect();
       MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
-      MPHomeNotification.notifyBleConnectedSuccess();
-      await MPBlePreferences.instance.setLastConnectedBleDevice(remoteId: id, displayName: target.name);
-      emit(
-        state.copyWith(
-          clearConnectingDeviceId: true,
-          devices: state.devices
-              .map(
-                (MPConnectDeviceItem d) => d.id == id ? d.copyWith(isConnected: true) : d.copyWith(isConnected: false),
-              )
-              .toList(),
-        ),
-      );
       _attachTransportConnectionListener(_transport!);
-      unawaited(_refreshConnectedDeviceBattery(id));
+      // 须在 notifyBleConnectedSuccess（首页 GATT 拉文件列表）之前读电量，避免 303 响应被抢占导致误显示 100%。
+      final int? batteryPct = await _readBatteryPercentForTransport(_transport!, id);
+      await MPBlePreferences.instance.setLastConnectedBleDevice(remoteId: id, displayName: target.name);
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            clearConnectingDeviceId: true,
+            devices: state.devices
+                .map(
+                  (MPConnectDeviceItem d) => d.id == id
+                      ? d.copyWith(isConnected: true, batteryPercent: batteryPct ?? 0)
+                      : d.copyWith(isConnected: false, batteryPercent: 0),
+                )
+                .toList(),
+          ),
+        );
+      }
+      MPHomeNotification.notifyBleConnectedSuccess();
     } catch (e) {
       MPToastUtils.showMessage('Connection failed. Move closer to the device and try again.');
       await _disconnectActive();
@@ -383,6 +436,37 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       if (!isClosed && state.connectingDeviceId != null) {
         emit(state.copyWith(clearConnectingDeviceId: true));
       }
+    }
+  }
+
+  /// GATT 就绪后读取电量；连接稳定前略作等待，并对疑似误读的 100% 做二次确认。
+  Future<int?> _readBatteryPercentForTransport(BleTransport transport, String remoteId) async {
+    if (transport.deviceId != remoteId) {
+      return null;
+    }
+    try {
+      if (!await transport.isConnected()) {
+        return null;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 300));
+      if (!await transport.isConnected()) {
+        return null;
+      }
+      final int? first = await MPBleConnectionHelper.readMemoPinBatteryPercent(transport);
+      if (first != null && first != 100) {
+        return first;
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 600));
+      if (!await transport.isConnected()) {
+        return first;
+      }
+      final int? second = await MPBleConnectionHelper.readMemoPinBatteryPercent(transport);
+      if (first == 100 && second != null && second != 100) {
+        return second;
+      }
+      return first ?? second;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -395,24 +479,17 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     if (t == null || t.deviceId != remoteId) {
       return;
     }
-    try {
-      if (!await t.isConnected()) {
-        return;
-      }
-      final int? pct = await MPBleConnectionHelper.readMemoPinBatteryPercent(t);
-      if (pct == null || isClosed || _transport != t) {
-        return;
-      }
-      emit(
-        state.copyWith(
-          devices: state.devices
-              .map((MPConnectDeviceItem d) => d.id == remoteId ? d.copyWith(batteryPercent: pct) : d)
-              .toList(),
-        ),
-      );
-    } catch (_) {
-      // ignore
+    final int? pct = await _readBatteryPercentForTransport(t, remoteId);
+    if (pct == null || isClosed || _transport != t) {
+      return;
     }
+    emit(
+      state.copyWith(
+        devices: state.devices
+            .map((MPConnectDeviceItem d) => d.id == remoteId ? d.copyWith(batteryPercent: pct) : d)
+            .toList(),
+      ),
+    );
   }
 
   /// 订阅当前 [_transport] 的链路状态；外围关机、断距等会进入 [MPDeviceTransportState.disconnected]，用于刷新卡片 UI。
@@ -456,17 +533,8 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     if (isClosed) {
       return;
     }
-    emit(
-      state.copyWith(
-        clearConnectingDeviceId: true,
-        devices: state.devices
-            .map(
-              (MPConnectDeviceItem d) =>
-                  d.copyWith(isConnected: false, batteryPercent: d.isConnected ? 0 : d.batteryPercent),
-            )
-            .toList(),
-      ),
-    );
+    _scanGeneration++;
+    _emitAllDevicesDisconnected();
   }
 
   Future<void> _disconnectActive() async {

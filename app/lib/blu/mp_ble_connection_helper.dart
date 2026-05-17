@@ -48,6 +48,16 @@ class MPBleConnectionHelper {
 
   static final MPBleRecordingWatcher _memopinRecordingWatcher = MPBleRecordingWatcher();
 
+  /// 串行化 MemoPin GATT 命令，避免电量查询与文件列表等并发抢占同一 notify 导致误解析（如电量显示 100%）。
+  static Future<void> _gattExclusiveChain = Future<void>.value();
+
+  /// 在全局链上执行单次 GATT 相关操作。
+  static Future<T> _runGattExclusive<T>(Future<T> Function() action) {
+    final Future<T> run = _gattExclusiveChain.then((_) => action());
+    _gattExclusiveChain = run.whenComplete(() {});
+    return run;
+  }
+
   /// MemoPin 外接设备正在录音时，阻止本机开录/恢复的英文提示。
   static const String memoPinDeviceRecordingBlockMessage =
       'MemoPin device is recording. Please try again later.';
@@ -528,7 +538,11 @@ class MPBleConnectionHelper {
   static MPNoteBleGattClient createMemoPinGattClient(BleTransport transport) => MPNoteBleGattClient(transport);
 
   /// 读取 MemoPin / AI_NOTE 电量：优先走自定义命令 [MPNoteBleCommands.queryBattery]，失败则回退标准 BAS。
-  static Future<int?> readMemoPinBatteryPercent(BleTransport transport) async {
+  static Future<int?> readMemoPinBatteryPercent(BleTransport transport) {
+    return _runGattExclusive(() => _readMemoPinBatteryPercentImpl(transport));
+  }
+
+  static Future<int?> _readMemoPinBatteryPercentImpl(BleTransport transport) async {
     debugPrint('------>>>memopin readMemoPinBatteryPercent: deviceId=${transport.deviceId}');
     try {
       if (!await transport.isConnected()) {
@@ -561,7 +575,11 @@ class MPBleConnectionHelper {
   }
 
   /// 获取设备端录音文件列表（命令 `0x03`，含多包拼接）。
-  static Future<List<NoteFileInfo>> fetchMemoPinFileList(BleTransport transport) async {
+  static Future<List<NoteFileInfo>> fetchMemoPinFileList(BleTransport transport) {
+    return _runGattExclusive(() => _fetchMemoPinFileListImpl(transport));
+  }
+
+  static Future<List<NoteFileInfo>> _fetchMemoPinFileListImpl(BleTransport transport) async {
     debugPrint('------>>>memopin fetchMemoPinFileList: deviceId=${transport.deviceId}');
     final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
     try {
