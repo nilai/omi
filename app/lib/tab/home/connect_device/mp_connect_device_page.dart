@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
@@ -9,6 +10,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../utils/mp_toast_utils.dart';
+import 'mp_ble_debug_page.dart';
 import 'mp_connect_device_cubit.dart';
 
 class MPConnectDevicePage extends StatefulWidget {
@@ -74,6 +76,43 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
             ],
           ),
         ),
+        bottomNavigationBar: kDebugMode
+            ? SafeArea(
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const MPBleDebugPage(),
+                          ),
+                        );
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: const Color(0xFF1C1C1E),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        splashFactory: NoSplash.splashFactory,
+                      ),
+                      child: Text(
+                        'debug_ble',
+                        style: OmiTextStyle.create(
+                          color: Colors.white,
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.medium,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : null,
         body: BlocBuilder<MPConnectDeviceCubit, MPConnectDeviceState>(
           builder: (BuildContext context, MPConnectDeviceState state) {
             final MPConnectDeviceItem? connected = state.connectedDevice;
@@ -83,7 +122,7 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
             return SafeArea(
               top: false,
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 20),
+                padding: EdgeInsets.fromLTRB(12, 8, 12, kDebugMode ? 12 : 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
