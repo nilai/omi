@@ -351,9 +351,7 @@ class MPBleFileUtil {
         return;
       }
 
-      final List<NoteFileInfo> opusList = allFiles
-          .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.opus'))
-          .toList(growable: false);
+      final List<NoteFileInfo> opusList = _filterOpusListForDeviceSync(allFiles);
       final List<NoteFileInfo> txtList = allFiles
           .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.txt'))
           .toList(growable: false);
@@ -485,6 +483,45 @@ class MPBleFileUtil {
       debugPrint('------>>>memopin syncDeviceOpusTxt: FAILED $e\n$st');
       debugPrint('MPBleFileUtil device import failed: $e\n$st');
     }
+  }
+
+  /// 设备批量导入用 Opus 列表：仅 `.opus`、时长 > 0、按文件名（忽略大小写）去重（保留时长更长者，相同时保留 index 更大者）。
+  static List<NoteFileInfo> _filterOpusListForDeviceSync(List<NoteFileInfo> allFiles) {
+    final List<NoteFileInfo> opusOnly = allFiles
+        .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.opus'))
+        .toList(growable: false);
+    final int rawOpus = opusOnly.length;
+
+    final Map<String, NoteFileInfo> dedupedByName = <String, NoteFileInfo>{};
+    var skippedZeroDuration = 0;
+    for (final NoteFileInfo info in opusOnly) {
+      if (info.durationSeconds <= 0) {
+        skippedZeroDuration++;
+        continue;
+      }
+      final String key = info.name.toLowerCase();
+      final NoteFileInfo? existing = dedupedByName[key];
+      if (existing == null) {
+        dedupedByName[key] = info;
+        continue;
+      }
+      final bool preferCurrent = info.durationSeconds > existing.durationSeconds ||
+          (info.durationSeconds == existing.durationSeconds && info.index > existing.index);
+      if (preferCurrent) {
+        dedupedByName[key] = info;
+      }
+    }
+
+    final List<NoteFileInfo> result = dedupedByName.values.toList(growable: false)
+      ..sort((NoteFileInfo a, NoteFileInfo b) => a.index.compareTo(b.index));
+    final int skippedDup = rawOpus - skippedZeroDuration - result.length;
+    if (skippedZeroDuration > 0 || skippedDup > 0) {
+      debugPrint(
+        '------>>>memopin filterOpusForDeviceSync: raw=$rawOpus importable=${result.length} '
+        'skippedZeroDuration=$skippedZeroDuration skippedDuplicateName=$skippedDup',
+      );
+    }
+    return result;
   }
 
   static NoteFileInfo? _findTxtForOpus(List<NoteFileInfo> txtList, String opusFileName) {
