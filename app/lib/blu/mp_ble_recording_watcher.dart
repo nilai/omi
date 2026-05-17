@@ -34,8 +34,8 @@ import 'mp_note_ble_protocol.dart';
 /// - 续传前 [MPBleFileUtil.trimRawOpusToLastCompletedSeq] 裁剪本地裸 Opus 再 append；
 /// - 链路丢失时 checkpoint + App 通知 `bleDisconnected`；重连后恢复落盘并再发 `deviceRecordingStarted`。
 ///
-/// **设备停止录音（303 停止成功）**：转 MP3 后立即停录通知 + syncing（见 [onAfterMp3Converted]），
-/// 登记并 [uploadRecords]；设备 txt 导入 / 删文件在 [MPBleFileUtil.completeRealtimeDeviceSidecarWork] 后台执行。
+/// **设备停止录音（303 停止成功）**：转 MP3 → 导入同名 txt（与 MP3 同目录）→ 登记 record →
+/// [onAfterMp3Converted] 停录通知 → [uploadRecords]；删设备文件在 [completeRealtimeDeviceFileCleanup] 后台执行。
 class MPBleRecordingWatcher {
   static const int _kCheckpointEveryNFrames = 10;
 
@@ -507,7 +507,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功：关流 → 转 MP3 → 通知停录 → 登记本地 record → [uploadRecords]。
+  /// 303 停止成功：关流 → 转 MP3 → 导入 txt → 登记 → 通知停录 → [uploadRecords]。
   Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
     if (_finalizeAfterStopInProgress) {
       debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
@@ -567,7 +567,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功后：转 MP3 → 停录通知 + syncing → 登记 → [uploadRecords]；设备 txt/删文件后台执行。
+  /// 303 停止成功后：转 MP3 → 导入 txt → 登记 → 停录通知 → [uploadRecords]；删设备文件后台执行。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
@@ -580,7 +580,7 @@ class MPBleRecordingWatcher {
         deviceFileName: deviceFileName,
         transport: transport,
         onAfterMp3Converted: onAfterMp3Converted,
-        deferDeviceSidecarWork: true,
+        deferDeviceFileCleanup: true,
       );
       if (record == null) {
         return;
@@ -590,11 +590,15 @@ class MPBleRecordingWatcher {
         rightNowTranscribe: false,
       );
       if (transport != null) {
+        final String? deviceTxtOnDevice = record.txtPath != null && record.txtPath!.trim().isNotEmpty
+            ? p.basename(record.txtPath!.trim())
+            : null;
         unawaited(
-          MPBleFileUtil.completeRealtimeDeviceSidecarWork(
+          MPBleFileUtil.completeRealtimeDeviceFileCleanup(
             transport: transport,
             deviceFileName: deviceFileName,
             opusPath: opusPath,
+            importedDeviceTxtFileName: deviceTxtOnDevice,
           ),
         );
       }

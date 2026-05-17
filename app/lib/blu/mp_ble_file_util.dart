@@ -64,8 +64,8 @@ class MPBleFileUtil {
     }
   }
 
-  /// 实时边录边传 `.opus` 结束后：转 MP3 →（可选）[onAfterMp3Converted] →（可选）从设备导出同名 `.txt` →
-  /// 写入 [MPAudioLocalRecord] → 删除设备端 `.opus` / `.txt` → 刷新首页。
+  /// 实时边录边传 `.opus` 结束后：转 MP3 → 从设备导入同名 `.txt`（与 MP3 同目录）→ 写入 [MPAudioLocalRecord] →
+  /// （可选）[onAfterMp3Converted]（宜在停录 notification 前调用，使导入耗时仍计为 recording）→ 删除设备端文件。
   ///
   /// 不上传；调用方使用 [MPAudioUploadManager.uploadRecords] 按返回的记录上传。
   static Future<MPAudioLocalRecord?> finalizeRealtimeOpusToLocalRecord({
@@ -73,7 +73,7 @@ class MPBleFileUtil {
     String? deviceFileName,
     BleTransport? transport,
     Future<void> Function()? onAfterMp3Converted,
-    bool deferDeviceSidecarWork = false,
+    bool deferDeviceFileCleanup = false,
   }) async {
     debugPrint('------>>>memopin finalizeRealtimeOpus: $opusPath deviceFile=$deviceFileName');
     final File opusFile = File(opusPath);
@@ -89,10 +89,6 @@ class MPBleFileUtil {
       return null;
     }
 
-    if (onAfterMp3Converted != null) {
-      await onAfterMp3Converted();
-    }
-
     final String audioPath = primary.path;
     final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPath);
     final int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
@@ -106,14 +102,15 @@ class MPBleFileUtil {
     String? txtPathOnPhone;
     String? deviceTxtFileName;
     final String? deviceOpusFileName = _deviceOpusFileNameForBleCleanup(deviceFileName, opusPath);
-    if (!deferDeviceSidecarWork &&
-        ble != null &&
+    if (ble != null &&
         deviceOpusFileName != null &&
         deviceOpusFileName.isNotEmpty &&
         await _isTransportConnectedSafe(ble)) {
       final ({String? localTxtPath, String? deviceTxtName}) imported = await _importPairedTxtFromDeviceIfExists(
         transport: ble,
         opusFileName: deviceOpusFileName,
+        localOutputDirectory: p.dirname(audioPath),
+        skipPreListDelay: true,
       );
       txtPathOnPhone = imported.localTxtPath;
       deviceTxtFileName = imported.deviceTxtName;
@@ -132,7 +129,11 @@ class MPBleFileUtil {
     await MPAudioLocalRecordsUtil.instance.add(record);
     MPHomeNotification.notifyHomeListRefresh();
 
-    if (!deferDeviceSidecarWork &&
+    if (onAfterMp3Converted != null) {
+      await onAfterMp3Converted();
+    }
+
+    if (!deferDeviceFileCleanup &&
         ble != null &&
         deviceOpusFileName != null &&
         deviceOpusFileName.isNotEmpty &&
@@ -146,16 +147,17 @@ class MPBleFileUtil {
 
     debugPrint(
       '------>>>memopin finalizeRealtimeOpus: local record path=$audioPath txtPath=$txtPathOnPhone '
-      'deferSidecar=$deferDeviceSidecarWork',
+      'deferCleanup=$deferDeviceFileCleanup',
     );
     return record;
   }
 
-  /// 实时停录上传开始后，后台补做设备端 txt 导出与 opus/txt 删除（不阻塞顶栏 syncing）。
-  static Future<void> completeRealtimeDeviceSidecarWork({
+  /// 实时停录 [uploadRecords] 完成后，后台删除设备端 opus/txt（txt 已在登记前导入）。
+  static Future<void> completeRealtimeDeviceFileCleanup({
     required BleTransport? transport,
     String? deviceFileName,
     required String opusPath,
+    String? importedDeviceTxtFileName,
   }) async {
     final BleTransport? ble = transport ?? MPBleConnectionHelper.backgroundBleTransport;
     final String? deviceOpusFileName = _deviceOpusFileNameForBleCleanup(deviceFileName, opusPath);
@@ -165,29 +167,14 @@ class MPBleFileUtil {
         !await _isTransportConnectedSafe(ble)) {
       return;
     }
-    String? deviceTxtFileName;
-    try {
-      final ({String? localTxtPath, String? deviceTxtName}) imported = await _importPairedTxtFromDeviceIfExists(
-        transport: ble,
-        opusFileName: deviceOpusFileName,
-        skipPreListDelay: true,
-      );
-      deviceTxtFileName = imported.deviceTxtName;
-      debugPrint(
-        '------>>>memopin completeRealtimeDeviceSidecarWork: txt=${imported.localTxtPath} '
-        '(upload may have already finished without txt)',
-      );
-    } catch (e, st) {
-      debugPrint('------>>>memopin completeRealtimeDeviceSidecarWork: txt import failed $e\n$st');
-    }
     try {
       await _deleteDeviceFilesAfterRealtimeFinalize(
         transport: ble,
         deviceOpusFileName: deviceOpusFileName,
-        deviceTxtFileName: deviceTxtFileName,
+        deviceTxtFileName: importedDeviceTxtFileName,
       );
     } catch (e, st) {
-      debugPrint('------>>>memopin completeRealtimeDeviceSidecarWork: device delete failed $e\n$st');
+      debugPrint('------>>>memopin completeRealtimeDeviceFileCleanup failed: $e\n$st');
     }
   }
 
@@ -248,9 +235,12 @@ class MPBleFileUtil {
   }
 
   /// 在设备文件列表中查找与 [opusFileName] 同 stem 的 `.txt`，导出并写入沙盒。
+  ///
+  /// [localOutputDirectory] 非空时 txt 与 MP3 等同目录；否则写入 [ensureMemoPinDeviceAudioDirectoryPath]。
   static Future<({String? localTxtPath, String? deviceTxtName})> _importPairedTxtFromDeviceIfExists({
     required BleTransport transport,
     required String opusFileName,
+    String? localOutputDirectory,
     bool skipPreListDelay = false,
   }) async {
     try {
@@ -280,7 +270,9 @@ class MPBleFileUtil {
           debugPrint('MPBleFileUtil: realtime txt export empty: ${txtMatch.name}');
           return (localTxtPath: null, deviceTxtName: txtMatch.name);
         }
-        final String deviceDir = await ensureMemoPinDeviceAudioDirectoryPath();
+        final String deviceDir = (localOutputDirectory != null && localOutputDirectory.isNotEmpty)
+            ? localOutputDirectory
+            : await ensureMemoPinDeviceAudioDirectoryPath();
         localPath = await _writeBytesToDir(
           directoryPath: deviceDir,
           fileName: txtMatch.name,
