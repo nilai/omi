@@ -65,30 +65,27 @@ class MPBleFileUtil {
   }
 
   /// 实时边录边传 `.opus` 结束后：转 MP3 →（可选）[onAfterMp3Converted] →（可选）从设备导出同名 `.txt` →
-  /// 写入 [MPAudioLocalRecord] → 删除设备端 `.opus` / `.txt` → 刷新首页 → 上传。
+  /// 写入 [MPAudioLocalRecord] → 删除设备端 `.opus` / `.txt` → 刷新首页。
   ///
-  /// [transport] 非空且仍连接时：在设备列表中查找与 [deviceFileName] 同 stem 的 `.txt`；
-  /// 找到则导入手机并写入 [MPAudioLocalRecord.txtPath]，随后删除设备端 opus+txt；未找到则仅删除设备端 opus。
-  /// [onAfterMp3Converted]：转 MP3 成功且主音频文件就绪后、txt 导入与上传队列之前调用（供停录通知等）。
-  static Future<bool> finalizeRealtimeOpusToLocalRecordAndUpload({
+  /// 不上传；调用方使用 [MPAudioUploadManager.uploadRecords] 按返回的记录上传。
+  static Future<MPAudioLocalRecord?> finalizeRealtimeOpusToLocalRecord({
     required String opusPath,
     String? deviceFileName,
     BleTransport? transport,
-    bool runUploadQueue = true,
     Future<void> Function()? onAfterMp3Converted,
   }) async {
     debugPrint('------>>>memopin finalizeRealtimeOpus: $opusPath deviceFile=$deviceFileName');
     final File opusFile = File(opusPath);
     if (!await opusFile.exists() || await opusFile.length() == 0) {
       debugPrint('MPBleFileUtil: realtime opus missing or empty: $opusPath');
-      return false;
+      return null;
     }
 
     final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
     final File primary = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
     if (!await primary.exists()) {
       debugPrint('MPBleFileUtil: realtime finalize primary missing: $opusPath');
-      return false;
+      return null;
     }
 
     if (onAfterMp3Converted != null) {
@@ -97,7 +94,7 @@ class MPBleFileUtil {
 
     final String audioPath = primary.path;
     final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPath);
-    int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
+    final int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
     final int createAtSec = (await primary.lastModified()).millisecondsSinceEpoch ~/ 1000;
     final String recordFileName = deviceFileName != null && deviceFileName.isNotEmpty
         ? deviceFileName
@@ -120,18 +117,17 @@ class MPBleFileUtil {
       deviceTxtFileName = imported.deviceTxtName;
     }
 
-    await MPAudioLocalRecordsUtil.instance.add(
-      MPAudioLocalRecord(
-        path: audioPath,
-        mp3Path: mp3Path,
-        txtPath: txtPathOnPhone,
-        fileName: recordFileName,
-        createAt: createAtSec,
-        duration: durationSec,
-        source: kMemoPinRecordSource,
-        isRemoved: false,
-      ),
+    final MPAudioLocalRecord record = MPAudioLocalRecord(
+      path: audioPath,
+      mp3Path: mp3Path,
+      txtPath: txtPathOnPhone,
+      fileName: recordFileName,
+      createAt: createAtSec,
+      duration: durationSec,
+      source: kMemoPinRecordSource,
+      isRemoved: false,
     );
+    await MPAudioLocalRecordsUtil.instance.add(record);
     MPHomeNotification.notifyHomeListRefresh();
 
     if (ble != null &&
@@ -145,12 +141,41 @@ class MPBleFileUtil {
       );
     }
 
-    if (runUploadQueue) {
-      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
-    }
     debugPrint(
-      '------>>>memopin finalizeRealtimeOpus: done path=$audioPath txtPath=$txtPathOnPhone',
+      '------>>>memopin finalizeRealtimeOpus: local record path=$audioPath txtPath=$txtPathOnPhone',
     );
+    return record;
+  }
+
+  /// 转 MP3、登记本地记录后，按 [uploadRecords] 上传（默认仅本条；[uploadAllPending] 为 true 时上传全部待传队列）。
+  static Future<bool> finalizeRealtimeOpusToLocalRecordAndUpload({
+    required String opusPath,
+    String? deviceFileName,
+    BleTransport? transport,
+    bool runUploadQueue = true,
+    bool uploadAllPending = false,
+    Future<void> Function()? onAfterMp3Converted,
+  }) async {
+    final MPAudioLocalRecord? record = await finalizeRealtimeOpusToLocalRecord(
+      opusPath: opusPath,
+      deviceFileName: deviceFileName,
+      transport: transport,
+      onAfterMp3Converted: onAfterMp3Converted,
+    );
+    if (record == null) {
+      return false;
+    }
+    if (runUploadQueue) {
+      if (uploadAllPending) {
+        await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+      } else {
+        await MPAudioUploadManager.instance.uploadRecords(
+          <MPAudioLocalRecord>[record],
+          rightNowTranscribe: false,
+        );
+      }
+    }
+    debugPrint('------>>>memopin finalizeRealtimeOpus: upload done');
     return true;
   }
 

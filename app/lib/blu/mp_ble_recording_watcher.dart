@@ -7,6 +7,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
+import '../audio/record/mp_audio_local_records_util.dart';
+import '../audio/record/mp_audio_upload_manger.dart';
 import '../common/mp_home_notification.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_transport.dart';
@@ -34,7 +36,7 @@ import 'mp_note_ble_protocol.dart';
 ///
 /// **设备停止录音（303 停止成功）**：转 MP3 完成后立即
 /// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]（`deviceRecordingStopped`），
-/// 再继续 txt 导入、本地登记、删设备文件与上传（见 [onAfterMp3Converted]）。
+/// 再登记本地记录并按 [MPAudioUploadManager.uploadRecords] 上传（见 [onAfterMp3Converted]）。
 class MPBleRecordingWatcher {
   static const int _kCheckpointEveryNFrames = 10;
 
@@ -506,7 +508,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功：关流 → 转 MP3 → 通知停录 → 导入 / 登记 / 上传。
+  /// 303 停止成功：关流 → 转 MP3 → 通知停录 → 登记本地 record → [uploadRecords]。
   Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
     if (_finalizeAfterStopInProgress) {
       debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
@@ -566,18 +568,25 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功后：转 MP3、导入配对 txt（若有）、登记 record、删设备端 opus/txt、触发上传。
+  /// 303 停止成功后：转 MP3 → 登记本地 record → [uploadRecords]（不走全量导入上传队列）。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
     Future<void> Function()? onAfterMp3Converted,
   }) async {
     try {
-      await MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
+      final MPAudioLocalRecord? record = await MPBleFileUtil.finalizeRealtimeOpusToLocalRecord(
         opusPath: opusPath,
         deviceFileName: deviceFileName,
         transport: _boundTransport,
         onAfterMp3Converted: onAfterMp3Converted,
+      );
+      if (record == null) {
+        return;
+      }
+      await MPAudioUploadManager.instance.uploadRecords(
+        <MPAudioLocalRecord>[record],
+        rightNowTranscribe: false,
       );
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');
