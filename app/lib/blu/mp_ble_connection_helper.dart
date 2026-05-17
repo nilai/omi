@@ -58,6 +58,9 @@ class MPBleConnectionHelper {
     return run;
   }
 
+  /// 供 [MPBleFileUtil] 等设备文件命令串行调用（删除与列表/导出互斥）。
+  static Future<T> runMemoPinGattExclusive<T>(Future<T> Function() action) => _runGattExclusive(action);
+
   /// MemoPin 外接设备正在录音时，阻止本机开录/恢复的英文提示。
   static const String memoPinDeviceRecordingBlockMessage =
       'MemoPin device is recording. Please try again later.';

@@ -172,7 +172,6 @@ class MPBleFileUtil {
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
 
         final MPNoteBleGattClient opusClient = MPNoteBleGattClient(transport);
-        String? opusPath;
         try {
           final List<int>? opusBytes =
               await _collectExportPayloads(client: opusClient, fileName: opusInfo.name, info: opusInfo);
@@ -185,14 +184,11 @@ class MPBleFileUtil {
 
           onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 35);
 
-          opusPath = await _writeBytesToDir(
+          final String? opusPath = await _writeBytesToDir(
             directoryPath: deviceDir,
             fileName: opusInfo.name,
             bytes: opusBytes,
           );
-        } finally {
-          await opusClient.dispose();
-        }
 
         if (opusPath == null) {
           debugPrint('------>>>memopin syncDeviceOpusTxt: write opus failed ${opusInfo.name}');
@@ -259,6 +255,7 @@ class MPBleFileUtil {
         if (await transport.isConnected()) {
           await _deleteDeviceOpusAndPairedTxt(
             transport: transport,
+            gattClient: opusClient,
             opusFileName: opusInfo.name,
             pairedTxtFileName: txtMatch?.name,
           );
@@ -267,6 +264,9 @@ class MPBleFileUtil {
         }
 
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+        } finally {
+          await opusClient.dispose();
+        }
       }
 
       debugPrint('------>>>memopin syncDeviceOpusTxt: starting upload queue');
@@ -291,12 +291,19 @@ class MPBleFileUtil {
   }
 
   /// 导入成功后删除设备端 `.opus`；若列表中存在同名 stem 的 `.txt` 则一并删除。
+  ///
+  /// [gattClient] 可与导出共用同一实例，避免 303 订阅反复销毁导致错过 `0x05` 应答。
   static Future<void> _deleteDeviceOpusAndPairedTxt({
     required BleTransport transport,
     required String opusFileName,
     String? pairedTxtFileName,
+    MPNoteBleGattClient? gattClient,
   }) async {
-    final bool opusDeleted = await deleteDeviceRecordingFile(transport, opusFileName);
+    final bool opusDeleted = await deleteDeviceRecordingFile(
+      transport,
+      opusFileName,
+      client: gattClient,
+    );
     debugPrint('------>>>memopin syncDeviceOpusTxt: device delete $opusFileName → $opusDeleted');
     if (!opusDeleted) {
       debugPrint('MPBleFileUtil: could not delete opus on device: $opusFileName');
@@ -307,7 +314,11 @@ class MPBleFileUtil {
       return;
     }
 
-    final bool txtDeleted = await deleteDeviceRecordingFile(transport, txtName);
+    final bool txtDeleted = await deleteDeviceRecordingFile(
+      transport,
+      txtName,
+      client: gattClient,
+    );
     debugPrint('------>>>memopin syncDeviceOpusTxt: device delete $txtName → $txtDeleted');
     if (!txtDeleted) {
       debugPrint('MPBleFileUtil: could not delete txt on device: $txtName');
@@ -387,6 +398,13 @@ class MPBleFileUtil {
       }
       await sub.cancel();
 
+      final bool transferComplete = await client.waitForUploadTransferComplete(
+        timeout: _maxExportWaitForFile(info),
+      );
+      if (!transferComplete) {
+        debugPrint('------>>>memopin _collectExportPayloads: no 0x04 0x02 for $fileName (idle-only end)');
+      }
+
       if (!receivedPayload && buffer.isEmpty) {
         debugPrint('------>>>memopin _collectExportPayloads: no payload $fileName');
         return null;
@@ -405,16 +423,36 @@ class MPBleFileUtil {
   // —— 设备端文件删除 / 本地沙盒删除 ——
 
   /// 删除设备端指定文件名（命令 `0x05` + UTF-8 文件名）。
-  static Future<bool> deleteDeviceRecordingFile(BleTransport transport, String fileName) async {
-    debugPrint('------>>>memopin deleteDeviceRecordingFile: $fileName');
-    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
-    try {
-      final bool ok = await client.deleteFile(fileName);
-      debugPrint('------>>>memopin deleteDeviceRecordingFile: result=$ok $fileName');
-      return ok;
-    } finally {
-      await client.dispose();
-    }
+  ///
+  /// [client] 非空时复用导出阶段的 GATT 客户端（勿在此处 [MPNoteBleGattClient.dispose]）。
+  static Future<bool> deleteDeviceRecordingFile(
+    BleTransport transport,
+    String fileName, {
+    MPNoteBleGattClient? client,
+  }) async {
+    return MPBleConnectionHelper.runMemoPinGattExclusive(() async {
+      final bool ownClient = client == null;
+      final MPNoteBleGattClient gatt = client ?? MPNoteBleGattClient(transport);
+      try {
+        for (int attempt = 1; attempt <= 3; attempt++) {
+          debugPrint('------>>>memopin deleteDeviceRecordingFile: attempt=$attempt $fileName');
+          final bool ok = await gatt.deleteFile(fileName);
+          if (ok) {
+            debugPrint('------>>>memopin deleteDeviceRecordingFile: result=true $fileName');
+            return true;
+          }
+          if (attempt < 3) {
+            await Future<void>.delayed(const Duration(milliseconds: 200));
+          }
+        }
+        debugPrint('------>>>memopin deleteDeviceRecordingFile: result=false $fileName');
+        return false;
+      } finally {
+        if (ownClient) {
+          await gatt.dispose();
+        }
+      }
+    });
   }
 
   /// 显式发起的实时 Opus 会话（非 [MPBleRecordingWatcher] 自动路径）。

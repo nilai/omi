@@ -61,7 +61,7 @@ class MPNoteBleFilePayloadAssembler {
   }
 }
 
-enum _AwaitKind { none, generic, fileList }
+enum _AwaitKind { none, generic, fileList, uploadAccepted, deleteFile }
 
 /// 基于已连接的 [BleTransport]，按 Note 协议发送命令并解析响应；文件导出通过 [recordFilePayloadStream] 订阅。
 ///
@@ -84,6 +84,9 @@ class MPNoteBleGattClient {
   /// 用于文件导出 payload 组装的装配器；通过 [prepareFileExport] 配置。
   MPNoteBleFilePayloadAssembler? _fileAssembler;
 
+  /// 等待设备在 303 上上报 `0x04 0x02`（单文件导出传输结束）。
+  Completer<void>? _uploadTransferCompleteCompleter;
+
   /// 释放订阅；导出进行中请先取消对 payload 流的监听。
   Future<void> dispose() async {
     debugPrint('------>>>memopin MPNoteBleGattClient.dispose');
@@ -94,6 +97,45 @@ class MPNoteBleGattClient {
     _responseCompleter = null;
     _awaitKind = _AwaitKind.none;
     _fileAssembler = null;
+    _uploadTransferCompleteCompleter = null;
+  }
+
+  /// 在 [requestFileExport] 前调用，用于接收随后的 `0x04 0x02` 传输完成通知。
+  void beginTrackingUploadTransferComplete() {
+    _uploadTransferCompleteCompleter = Completer<void>();
+  }
+
+  /// 等待 `0x04 0x02`；未收到则返回 `false`（超时后仍可尝试删除，但成功率更低）。
+  Future<bool> waitForUploadTransferComplete({
+    Duration timeout = const Duration(seconds: 90),
+  }) async {
+    final Completer<void>? c = _uploadTransferCompleteCompleter;
+    if (c == null) {
+      return false;
+    }
+    try {
+      await c.future.timeout(timeout);
+      return true;
+    } catch (_) {
+      debugPrint('------>>>memopin MPNoteBleGattClient.waitForUploadTransferComplete TIMEOUT');
+      return false;
+    } finally {
+      if (identical(_uploadTransferCompleteCompleter, c)) {
+        _uploadTransferCompleteCompleter = null;
+      }
+    }
+  }
+
+  void _maybeCompleteUploadTransfer(List<int> packet) {
+    if (packet.length >= 2 &&
+        packet[0] == MPNoteBleCommands.uploadFile &&
+        packet[1] == 0x02) {
+      final Completer<void>? c = _uploadTransferCompleteCompleter;
+      if (c != null && !c.isCompleted) {
+        debugPrint('------>>>memopin MPNoteBleGattClient: 0x04 0x02 upload transfer complete');
+        c.complete();
+      }
+    }
   }
 
   /// 查询电量（命令 `0xE1`）。
@@ -212,7 +254,7 @@ class MPNoteBleGattClient {
     ];
     final List<int> response = await _sendCommandWithResponse(
       command,
-      awaitKind: _AwaitKind.generic,
+      awaitKind: _AwaitKind.uploadAccepted,
       timeout: timeout,
     );
     final bool ok = response.length >= 2 &&
@@ -223,6 +265,8 @@ class MPNoteBleGattClient {
   }
 
   /// 删除文件（命令 `0x05` + UTF-8 文件名）。
+  ///
+  /// 仅将 `0x05` 应答视为本命令结果，忽略迟到的 `0x04 0x02` 等其它 303 通知。
   Future<bool> deleteFile(
     String fileName, {
     Duration timeout = const Duration(seconds: 10),
@@ -236,7 +280,7 @@ class MPNoteBleGattClient {
     ];
     final List<int> response = await _sendCommandWithResponse(
       command,
-      awaitKind: _AwaitKind.generic,
+      awaitKind: _AwaitKind.deleteFile,
       timeout: timeout,
     );
     final bool ok = response.length >= 2 &&
@@ -249,6 +293,7 @@ class MPNoteBleGattClient {
   /// 在开始导出前调用：重置装配器状态（按扩展名选择 txt 透传或 Opus 分帧）。
   void prepareFileExport(String fileName) {
     debugPrint('------>>>memopin MPNoteBleGattClient.prepareFileExport $fileName');
+    beginTrackingUploadTransferComplete();
     _transport.resetFileReassembler(fileName: fileName);
     _fileAssembler = MPNoteBleFilePayloadAssembler(fileName: fileName);
     _fileAssembler!.reset();
@@ -305,6 +350,8 @@ class MPNoteBleGattClient {
       return;
     }
 
+    _maybeCompleteUploadTransfer(packet);
+
     if (_awaitKind == _AwaitKind.fileList && packet[0] == MPNoteBleCommands.getFileList) {
       if (packet.length == 2 &&
           (packet[1] == 0x00 || packet[1] == 0xff)) {
@@ -319,10 +366,34 @@ class MPNoteBleGattClient {
       return;
     }
 
+    if (_awaitKind == _AwaitKind.uploadAccepted &&
+        _responseCompleter != null &&
+        !_responseCompleter!.isCompleted) {
+      if (packet.length >= 2 &&
+          packet[0] == MPNoteBleCommands.uploadFile &&
+          (packet[1] == 0x01 || packet[1] == 0x00)) {
+        _responseCompleter!.complete(packet);
+      }
+      return;
+    }
+
+    if (_awaitKind == _AwaitKind.deleteFile &&
+        _responseCompleter != null &&
+        !_responseCompleter!.isCompleted) {
+      if (packet.length >= 2 && packet[0] == MPNoteBleCommands.deleteFile) {
+        _responseCompleter!.complete(packet);
+      }
+      return;
+    }
+
     if (_awaitKind == _AwaitKind.generic &&
         _responseCompleter != null &&
         !_responseCompleter!.isCompleted) {
       if (packet[0] == MPNoteBleCommands.getFileList) {
+        return;
+      }
+      if (packet[0] == MPNoteBleCommands.uploadFile ||
+          packet[0] == MPNoteBleCommands.deleteFile) {
         return;
       }
       if (packet[0] == MPNoteBleCommands.retransmitAudio ||
