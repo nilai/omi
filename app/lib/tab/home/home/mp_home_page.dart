@@ -86,6 +86,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
   void didPopNext() {
     if (widget.isTabActive) {
       _cubit.loadData();
+      unawaited(_cubit.refreshBleConnectionState());
     }
   }
 

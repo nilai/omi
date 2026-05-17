@@ -190,17 +190,33 @@ class MPBleConnectionHelper {
     }
   }
 
+  /// 确保 [_backgroundBleTransport] 链路可用（必要时尝试 GATT 探测 / 重连）。
+  static Future<bool> ensureBackgroundTransportReady() async {
+    final BleTransport? bg = _backgroundBleTransport;
+    if (bg == null) {
+      return false;
+    }
+    try {
+      if (await bg.isConnected()) {
+        return true;
+      }
+    } catch (_) {
+      // ignore
+    }
+    final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
+    if (r != null && r.remoteId == bg.deviceId) {
+      return tryReconnectBackgroundTransport(r.remoteId);
+    }
+    return false;
+  }
+
+  /// 供连接页 / 调试页等共用的当前 [BleTransport]（始终读 [_backgroundBleTransport]）。
+  static BleTransport? get activeBleTransport => _backgroundBleTransport;
+
   /// 当前是否存在可用的 BLE 连接（优先检查应用托管会话，其次检查系统已连接设备）。
   static Future<bool> hasConnectedBleDevice() async {
-    final BleTransport? bg = _backgroundBleTransport;
-    if (bg != null) {
-      try {
-        if (await bg.isConnected()) {
-          return true;
-        }
-      } catch (_) {
-        // ignore
-      }
+    if (await ensureBackgroundTransportReady()) {
+      return true;
     }
     try {
       return FlutterBluePlus.connectedDevices.isNotEmpty;

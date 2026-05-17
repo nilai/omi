@@ -174,17 +174,9 @@ class MPBleDebugCubit extends Cubit<MPBleDebugState> {
   }
 
   Future<BleTransport?> _resolveConnectedTransport() async {
-    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
-    if (transport == null) {
+    if (!await MPBleConnectionHelper.ensureBackgroundTransportReady()) {
       return null;
     }
-    try {
-      if (await transport.isConnected()) {
-        return transport;
-      }
-    } catch (_) {
-      // ignore
-    }
-    return null;
+    return MPBleConnectionHelper.activeBleTransport;
   }
 }

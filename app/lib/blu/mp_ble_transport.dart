@@ -420,7 +420,25 @@ class MPBleTransport extends MPDeviceTransport {
   }
 
   @override
-  Future<bool> isConnected() async => _currentState == MPDeviceTransportState.connected;
+  Future<bool> isConnected() async {
+    if (_currentState == MPDeviceTransportState.connected) {
+      return true;
+    }
+    // GATT 繁忙时 connectionState 可能瞬时上报 disconnected，但链路仍可用。
+    if (_connectionSubscription == null) {
+      return false;
+    }
+    try {
+      final int? pct = await readStandardBatteryPercent();
+      if (pct != null) {
+        _updateState(MPDeviceTransportState.connected);
+        return true;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return false;
+  }
 
   @override
   Future<bool> ping() async {
