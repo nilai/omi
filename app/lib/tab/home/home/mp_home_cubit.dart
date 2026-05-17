@@ -394,7 +394,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
-  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus。
+  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus/同名 Txt。
   Future<void> _onBleConnectedSuccess() async {
     if (_bleDeviceImportRunning || isClosed) {
       return;

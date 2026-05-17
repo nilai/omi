@@ -49,7 +49,7 @@ class MPBleFileUtil {
 
   /// 拉取列表 → 按 Opus 逐条导出 `.opus` 与同名 `.txt` 至 [ensureMemoPinDeviceAudioDirectoryPath] → 转 MP3 →
   /// 写入 [MPAudioLocalRecord]（含 [MPAudioLocalRecord.mp3Path]、[MPAudioLocalRecord.txtPath]、转码后主路径）→
-  /// [MPHomeNotification.notifyHomeListRefresh] → 上传队列。
+  /// 删除设备端对应 `.opus` 与同名 `.txt`（若存在）→ [MPHomeNotification.notifyHomeListRefresh] → 上传队列。
   static Future<void> syncDeviceOpusTxtToSandboxRegisterAndUpload({
     required BleTransport transport,
     required MPBleFileUtilCopyProgress onSyncProgress,
@@ -184,11 +184,11 @@ class MPBleFileUtil {
         MPHomeNotification.notifyHomeListRefresh();
 
         if (await transport.isConnected()) {
-          final bool deleted = await deleteDeviceRecordingFile(transport, opusInfo.name);
-          debugPrint('------>>>memopin syncDeviceOpusTxt: device delete ${opusInfo.name} → $deleted');
-          if (!deleted) {
-            debugPrint('MPBleFileUtil: could not delete opus on device: ${opusInfo.name}');
-          }
+          await _deleteDeviceOpusAndPairedTxt(
+            transport: transport,
+            opusFileName: opusInfo.name,
+            pairedTxtFileName: txtMatch?.name,
+          );
         } else {
           debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
         }
@@ -215,6 +215,30 @@ class MPBleFileUtil {
       }
     }
     return null;
+  }
+
+  /// 导入成功后删除设备端 `.opus`；若列表中存在同名 stem 的 `.txt` 则一并删除。
+  static Future<void> _deleteDeviceOpusAndPairedTxt({
+    required BleTransport transport,
+    required String opusFileName,
+    String? pairedTxtFileName,
+  }) async {
+    final bool opusDeleted = await deleteDeviceRecordingFile(transport, opusFileName);
+    debugPrint('------>>>memopin syncDeviceOpusTxt: device delete $opusFileName → $opusDeleted');
+    if (!opusDeleted) {
+      debugPrint('MPBleFileUtil: could not delete opus on device: $opusFileName');
+    }
+
+    final String? txtName = pairedTxtFileName?.trim();
+    if (txtName == null || txtName.isEmpty) {
+      return;
+    }
+
+    final bool txtDeleted = await deleteDeviceRecordingFile(transport, txtName);
+    debugPrint('------>>>memopin syncDeviceOpusTxt: device delete $txtName → $txtDeleted');
+    if (!txtDeleted) {
+      debugPrint('MPBleFileUtil: could not delete txt on device: $txtName');
+    }
   }
 
   static Future<String?> _writeBytesToDir({
