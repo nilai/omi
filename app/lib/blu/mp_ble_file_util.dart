@@ -38,6 +38,79 @@ class MPBleFileUtil {
     return dir;
   }
 
+  /// 将裸 Opus 文件裁到 `(lastCompletedSeq + 1) × 480` 字节，去掉崩溃/断连后可能多写的残帧。
+  static Future<void> trimRawOpusToLastCompletedSeq(String opusPath, int lastCompletedSeq) async {
+    if (lastCompletedSeq < 0) {
+      return;
+    }
+    final File file = File(opusPath);
+    if (!await file.exists()) {
+      return;
+    }
+    final int targetBytes = (lastCompletedSeq + 1) * MPNoteBleFileTransferConstants.opusFrameBytes;
+    final int length = await file.length();
+    if (length <= targetBytes) {
+      return;
+    }
+    debugPrint(
+      '------>>>memopin trimRawOpus: $opusPath ${length}B → ${targetBytes}B (lastSeq=$lastCompletedSeq)',
+    );
+    final RandomAccessFile raf = await file.open(mode: FileMode.write);
+    try {
+      await raf.truncate(targetBytes);
+      await raf.flush();
+    } finally {
+      await raf.close();
+    }
+  }
+
+  /// 实时边录边传 `.opus` 结束后：转 MP3 → 写入 [MPAudioLocalRecord] → 刷新首页 → 上传（与批量导入单条成功路径一致）。
+  static Future<bool> finalizeRealtimeOpusToLocalRecordAndUpload({
+    required String opusPath,
+    String? deviceFileName,
+    bool runUploadQueue = true,
+  }) async {
+    debugPrint('------>>>memopin finalizeRealtimeOpus: $opusPath deviceFile=$deviceFileName');
+    final File opusFile = File(opusPath);
+    if (!await opusFile.exists() || await opusFile.length() == 0) {
+      debugPrint('MPBleFileUtil: realtime opus missing or empty: $opusPath');
+      return false;
+    }
+
+    final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
+    final File primary = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
+    if (!await primary.exists()) {
+      debugPrint('MPBleFileUtil: realtime finalize primary missing: $opusPath');
+      return false;
+    }
+
+    final String audioPath = primary.path;
+    final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPath);
+    int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
+    final int createAtSec = (await primary.lastModified()).millisecondsSinceEpoch ~/ 1000;
+    final String recordFileName = deviceFileName != null && deviceFileName.isNotEmpty
+        ? deviceFileName
+        : p.basename(opusPath);
+
+    await MPAudioLocalRecordsUtil.instance.add(
+      MPAudioLocalRecord(
+        path: audioPath,
+        mp3Path: mp3Path,
+        fileName: recordFileName,
+        createAt: createAtSec,
+        duration: durationSec,
+        source: kMemoPinRecordSource,
+        isRemoved: false,
+      ),
+    );
+    MPHomeNotification.notifyHomeListRefresh();
+    if (runUploadQueue) {
+      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+    }
+    debugPrint('------>>>memopin finalizeRealtimeOpus: done path=$audioPath');
+    return true;
+  }
+
   static Duration _maxExportWaitForFile(NoteFileInfo info) {
     final int sec = info.durationSeconds;
     if (sec <= 0) {
@@ -344,6 +417,11 @@ class MPBleFileUtil {
     }
   }
 
+  /// 显式发起的实时 Opus 会话（非 [MPBleRecordingWatcher] 自动路径）。
+  ///
+  /// 与 Watcher 区别见 [MPBleLiveRecordingSession] 文档：Watcher 在连接后自动监听 303/301；
+  /// 本 API 需业务在「开始录」时主动调用，并自行 [MPBleLiveRecordingSession.finalizeToMp3AndRecord]。
+  ///
   /// 开启实时 Opus 写入（`e2c1a301`）；[kind] 决定 `0x0D` 为仅录音或边录边传；[appendResume] 为 `true` 时续写并尝试 Seq 间隙补传。
   ///
   /// [opusFileName] 须含 `.opus` 后缀，写入目录为 [ensureMemoPinDeviceAudioDirectoryPath]。
@@ -398,7 +476,13 @@ enum MPBleLiveRecordingKind {
   memory,
 }
 
-/// 实时录音写入会话；调用 [finalizeToMp3AndRecord] 结束并落库。
+/// 业务侧显式控制的实时录音写入会话。
+///
+/// **与 [MPBleRecordingWatcher] 的关系（边界说明）**：
+/// - **Watcher**：连接 MemoPin 后由 [MPBleConnectionHelper] 自动 attach，监听设备 303 开始/停止与 301 边录边传，
+///   含断连续传 checkpoint、停止后 [finalizeRealtimeOpusToLocalRecordAndUpload]。
+/// - **本 Session**：若产品要在 App 内按钮「开始/结束」并指定文件名时，才需调用 [startLiveOpusRecording]；
+///   二者不要对同一 transport 重复开 301 落盘，否则可能双写。默认产品路径只用 Watcher 即可。
 class MPBleLiveRecordingSession {
   MPBleLiveRecordingSession._({
     required BleTransport transport,
@@ -550,36 +634,11 @@ class MPBleLiveRecordingSession {
 
     await _buffer.persistLastSeqSidecar(opusPath);
 
-    final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
-    final File primary = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
-    if (!await primary.exists()) {
-      debugPrint('------>>>memopin MPBleLiveRecordingSession.finalize: output missing');
-      debugPrint('MPBleLiveRecordingSession: output file missing');
-      return false;
-    }
-
-    final String audioPath = primary.path;
-    final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPath);
-    int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
-    final int createAtSec = (await primary.lastModified()).millisecondsSinceEpoch ~/ 1000;
-
-    await MPAudioLocalRecordsUtil.instance.add(
-      MPAudioLocalRecord(
-        path: audioPath,
-        mp3Path: mp3Path,
-        fileName: p.basename(opusPath),
-        createAt: createAtSec,
-        duration: durationSec,
-        source: MPBleFileUtil.kMemoPinRecordSource,
-        isRemoved: false,
-      ),
+    return MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
+      opusPath: opusPath,
+      deviceFileName: p.basename(opusPath),
+      runUploadQueue: runUploadQueue,
     );
-    MPHomeNotification.notifyHomeListRefresh();
-    if (runUploadQueue) {
-      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
-    }
-    debugPrint('------>>>memopin MPBleLiveRecordingSession.finalize: success path=${primary.path}');
-    return true;
   }
 }
 

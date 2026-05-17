@@ -27,9 +27,14 @@ import 'mp_note_ble_protocol.dart';
 /// - 303 **开始录音成功** 后打开沙盒 `.opus`；**停止** 后关闭并清除续传持久化。
 ///
 /// **重连续传**（使用中 BLE 闪断、App 冷启动后 [attach]）：
-/// - 链路丢失时持久化续传会话，并向 App 发 [MPBleMemopinRecordingChangeReason.bleDisconnected]（`isRecording: false`）；
-/// - 重连后若仍有待续传会话或收到 303 开始录音，则恢复落盘并再发 [deviceRecordingStarted]。
+/// - 录制中每 N 帧 [checkpoint] 持久化 Seq/路径（应对进程强杀）；
+/// - 续传前 [MPBleFileUtil.trimRawOpusToLastCompletedSeq] 裁剪本地裸 Opus 再 append；
+/// - 链路丢失时 checkpoint + App 通知 `bleDisconnected`；重连后恢复落盘并再发 `deviceRecordingStarted`。
+///
+/// **设备停止录音（303 停止成功）**：[MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload]（转 MP3、登记、上传），
+/// 与批量导入单条成功路径一致；设备端文件仍由连接成功后的 [syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉取删除。
 class MPBleRecordingWatcher {
+  static const int _kCheckpointEveryNFrames = 10;
   StreamSubscription<List<int>>? _responseSub;
   StreamSubscription<List<int>>? _rawAudioSub;
   StreamSubscription<MPDeviceTransportState>? _connSub;
@@ -253,6 +258,9 @@ class MPBleRecordingWatcher {
       print('[AudioDebug] 保存帧#$_audioPacketsReceived: ${frame.length}bytes, 总计=$_audioBytesSaved bytes');
       _lastLogTime = now;
     }
+    if (_audioPacketsReceived % _kCheckpointEveryNFrames == 0) {
+      unawaited(_checkpointInterruptedSession());
+    }
   }
 
   Future<void> _requestRetransmit(int startSeq, int endSeq) async {
@@ -293,12 +301,18 @@ class MPBleRecordingWatcher {
     );
   }
 
-  Future<void> _persistInterruptedSession() async {
+  /// 录制中/断连前：落盘 `.seq` sidecar 并写入 [MPBlePreferences]（供强杀后冷启动续传）。
+  Future<void> _checkpointInterruptedSession() async {
     final BleTransport? transport = _boundTransport;
     final String? path = _savedAudioPath;
     final String? fileName = _lastEmitted.activeFileName ?? _activeFileNameForRetransmit;
     if (transport == null || path == null || path.isEmpty || fileName == null || fileName.isEmpty) {
       return;
+    }
+    try {
+      await _audioFileSink?.flush();
+    } catch (_) {
+      // ignore
     }
     await _rtBuffer.persistLastSeqSidecar(path);
     await MPBlePreferences.instance.saveInterruptedRecording(
@@ -307,8 +321,13 @@ class MPBleRecordingWatcher {
         activeFileName: fileName,
         localOpusPath: path,
         sessionModeByte: _lastSessionModeByte,
+        lastCompletedSeq: _rtBuffer.lastCompletedSeq,
       ),
     );
+  }
+
+  Future<void> _persistInterruptedSession() async {
+    await _checkpointInterruptedSession();
     debugPrint('------>>>memopin recording watcher: persisted interrupted recording seq=${_rtBuffer.lastCompletedSeq}');
   }
 
@@ -338,6 +357,11 @@ class MPBleRecordingWatcher {
     _activeFileNameForRetransmit = fileName;
     transport.resetRealtimeAudioReassembly(fileName: fileName);
     await _rtBuffer.loadLastSeqFromSidecar(path);
+    final int trimSeq = interrupted?.lastCompletedSeq ?? _rtBuffer.lastCompletedSeq;
+    if (trimSeq >= 0) {
+      await MPBleFileUtil.trimRawOpusToLastCompletedSeq(path, trimSeq);
+      await _rtBuffer.loadLastSeqFromSidecar(path);
+    }
     if (_rtBuffer.lastCompletedSeq >= 0) {
       transport.restoreLastCompletedSeq(_rtBuffer.lastCompletedSeq);
     }
@@ -477,10 +501,6 @@ class MPBleRecordingWatcher {
       print('[AudioDebug] 停止保存音频');
       print('[AudioDebug] 总计: $_audioPacketsReceived 包, $_audioBytesSaved bytes');
       print('[AudioDebug] 文件: $_savedAudioPath');
-      unawaited(_closeAudioSavingSink());
-      unawaited(MPBlePreferences.instance.clearInterruptedRecording());
-      _activeFileNameForRetransmit = null;
-      _rtBuffer.reset();
       String? stopFileName;
       try {
         final String name = utf8.decode(p.sublist(4));
@@ -488,10 +508,38 @@ class MPBleRecordingWatcher {
       } catch (_) {
         stopFileName = null;
       }
+      final String? opusPath = _savedAudioPath;
+      unawaited(_closeAudioSavingSink());
+      _activeFileNameForRetransmit = null;
+      _rtBuffer.reset();
+      unawaited(MPBlePreferences.instance.clearInterruptedRecording());
+      if (opusPath != null && opusPath.isNotEmpty) {
+        unawaited(
+          _finalizeStoppedRealtimeCapture(
+            opusPath: opusPath,
+            deviceFileName: stopFileName ?? _lastEmitted.activeFileName,
+          ),
+        );
+      }
       _emitRecordingStopped(
         changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
         activeFileName: stopFileName,
       );
+    }
+  }
+
+  /// 303 停止成功后：转 MP3、写入本地 record、触发上传（与批量导入登记路径一致）。
+  Future<void> _finalizeStoppedRealtimeCapture({
+    required String opusPath,
+    String? deviceFileName,
+  }) async {
+    try {
+      await MPBleFileUtil.finalizeRealtimeOpusToLocalRecordAndUpload(
+        opusPath: opusPath,
+        deviceFileName: deviceFileName,
+      );
+    } catch (e, st) {
+      debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');
     }
   }
 

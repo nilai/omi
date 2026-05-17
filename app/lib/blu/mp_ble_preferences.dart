@@ -25,6 +25,7 @@ class MPBlePreferences {
   static const String _interruptedRecordingFileNameKey = 'mp_ble_interrupted_recording_file_name';
   static const String _interruptedRecordingLocalPathKey = 'mp_ble_interrupted_recording_local_path';
   static const String _interruptedRecordingModeKey = 'mp_ble_interrupted_recording_mode';
+  static const String _interruptedRecordingLastSeqKey = 'mp_ble_interrupted_recording_last_seq';
 
   /// 读取上次连接成功的 BLE 设备；未记录时返回 `null`。
   MPLastBleDeviceRecord? readLastConnectedBleDevice() {
@@ -60,15 +61,17 @@ class MPBlePreferences {
       return null;
     }
     final int? mode = MPPreferences().getInt(_interruptedRecordingModeKey);
+    final int? lastSeq = MPPreferences().getInt(_interruptedRecordingLastSeqKey);
     return MPBleInterruptedRecordingRecord(
       remoteId: remoteId,
       activeFileName: fileName,
       localOpusPath: localPath,
       sessionModeByte: mode,
+      lastCompletedSeq: lastSeq,
     );
   }
 
-  /// 保存待重连续传的录音会话（BLE 链路丢失或 App 被杀前调用）。
+  /// 保存待重连续传的录音会话（BLE 链路丢失、录制中 checkpoint 或 App 被杀前调用）。
   Future<void> saveInterruptedRecording(MPBleInterruptedRecordingRecord record) async {
     await MPPreferences().saveString(_interruptedRecordingRemoteIdKey, record.remoteId);
     await MPPreferences().saveString(_interruptedRecordingFileNameKey, record.activeFileName);
@@ -78,6 +81,11 @@ class MPBlePreferences {
     } else {
       await MPPreferences().remove(_interruptedRecordingModeKey);
     }
+    if (record.lastCompletedSeq != null && record.lastCompletedSeq! >= 0) {
+      await MPPreferences().saveInt(_interruptedRecordingLastSeqKey, record.lastCompletedSeq!);
+    } else {
+      await MPPreferences().remove(_interruptedRecordingLastSeqKey);
+    }
   }
 
   /// 清除待续传会话（正常停止录音、用户断开 BLE、续传成功后）。
@@ -86,6 +94,7 @@ class MPBlePreferences {
     await MPPreferences().remove(_interruptedRecordingFileNameKey);
     await MPPreferences().remove(_interruptedRecordingLocalPathKey);
     await MPPreferences().remove(_interruptedRecordingModeKey);
+    await MPPreferences().remove(_interruptedRecordingLastSeqKey);
   }
 }
 
@@ -97,6 +106,7 @@ class MPBleInterruptedRecordingRecord {
     required this.activeFileName,
     required this.localOpusPath,
     this.sessionModeByte,
+    this.lastCompletedSeq,
   });
 
   /// 设备 [BleTransport.deviceId]。
@@ -110,5 +120,8 @@ class MPBleInterruptedRecordingRecord {
 
   /// 录音 mode 字节；未知为 `null`。
   final int? sessionModeByte;
+
+  /// 已确认落盘的最后一帧 Seq（裸 Opus 每帧 480B）；未知为 `null`。
+  final int? lastCompletedSeq;
 }
 
