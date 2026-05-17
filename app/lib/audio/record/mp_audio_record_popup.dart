@@ -44,11 +44,7 @@ class MPPassThroughBarrierDialogRoute extends RawDialogRoute<MPAudioRecordResult
 ///
 /// 返回 [MPAudioRecordResult] 表示用户点击 Save；取消或关闭为 `null`。
 Future<MPAudioRecordResult?> showMPAudioRecordPopup(BuildContext context) async {
-  final bool isRecording = await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard();
-  if (isRecording) {
-    if (context.mounted) {
-      MPToastUtils.showMessage('The external device is recording. Recording on this phone isn\'t available.', context: context);
-    }
+  if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(context: context)) {
     return null;
   }
   if (!context.mounted) {
@@ -187,14 +183,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
 
-  /// 外接 MemoPin 开始录音：引导态仅提示；录音态则暂停本机采集（不关闭弹窗、不删文件）。
+  /// 外接 MemoPin 开始录音：引导态仅提示；录音态则暂停本机采集（须用户手动点播放恢复，不自动续录）。
   Future<void> _onBleDeviceRecordingStartedPauseLocal() async {
     if (!mounted) {
       return;
     }
     if (_step == _MPAudioRecordStep.intro) {
       MPToastUtils.showMessage(
-        'The external device is recording. Recording on this phone isn\'t available.',
+        MPBleConnectionHelper.memoPinDeviceRecordingBlockMessage,
         context: context,
       );
       return;
@@ -205,7 +201,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
     if (didPause) {
       MPToastUtils.showMessage(
-        'Recording paused: the external device is now recording.',
+        'MemoPin device started recording. Tap the button to resume recording on this phone.',
         context: context,
       );
     }
@@ -326,12 +322,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
-      if (await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard()) {
+      if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(context: context)) {
         if (mounted) {
-          MPToastUtils.showMessage(
-            'The external device is recording. Recording on this phone isn\'t available.',
-            context: context,
-          );
           setState(() => _busy = false);
         }
         return;
@@ -381,12 +373,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     setState(() => _busy = true);
     try {
       if (_isPaused) {
-        if (await MPBleConnectionHelper.isMemoPinDeviceRecordingForLocalRecordingGuard()) {
+        if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(context: context)) {
           if (mounted) {
-            MPToastUtils.showMessage(
-              'The external device is recording. Recording on this phone isn\'t available.',
-              context: context,
-            );
             setState(() => _busy = false);
           }
           return;

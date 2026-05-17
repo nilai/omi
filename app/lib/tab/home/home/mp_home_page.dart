@@ -15,6 +15,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 
 import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
+import '../../../blu/mp_ble_connection_helper.dart';
 import '../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/mp_home_notification.dart';
@@ -196,6 +197,17 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                           subtitle: 'Record a new audio memory',
                           onTap: () async {
                             Navigator.pop(ctx);
+                            if (!context.mounted) {
+                              return;
+                            }
+                            if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(
+                              context: context,
+                            )) {
+                              return;
+                            }
+                            if (!context.mounted) {
+                              return;
+                            }
                             await showMPAudioRecordPopup(context);
                           },
                         ),

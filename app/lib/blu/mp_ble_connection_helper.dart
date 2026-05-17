@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/permission/omi_permission_service.dart';
 import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:permission_manager/permission_manager.dart';
 
 import 'mp_ble_transport.dart';
@@ -45,6 +47,19 @@ class MPBleConnectionHelper {
   MPBleConnectionHelper._();
 
   static final MPBleRecordingWatcher _memopinRecordingWatcher = MPBleRecordingWatcher();
+
+  /// MemoPin 外接设备正在录音时，阻止本机开录/恢复的英文提示。
+  static const String memoPinDeviceRecordingBlockMessage =
+      'MemoPin device is recording. Please try again later.';
+
+  /// 若外接 MemoPin 正在录音则弹出 [memoPinDeviceRecordingBlockMessage] 并返回 `true`。
+  static Future<bool> showBlockMessageIfMemoPinDeviceIsRecording({BuildContext? context}) async {
+    if (!await isMemoPinDeviceRecordingForLocalRecordingGuard()) {
+      return false;
+    }
+    MPToastUtils.showMessage(memoPinDeviceRecordingBlockMessage, context: context);
+    return true;
+  }
 
   /// 外接 MemoPin 是否正在录音：用于禁止本机开录 / 恢复采集。
   ///
