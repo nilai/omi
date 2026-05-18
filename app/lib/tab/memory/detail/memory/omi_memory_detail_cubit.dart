@@ -1053,7 +1053,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryCreatedTodoLineData newItem = MPMemoryCreatedTodoLineData(
       id: '',
       title: title,
-      priority: MPMemoryTodoPriorityKind.medium,
+      priority: MPMemoryTodoPriorityKind.low,
       deadlineLabel: null,
       description: null,
     );
@@ -1699,6 +1699,7 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
     priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'normal'),
     deadlineLabel: t.deadline,
     description: t.description,
+    status: t.status,
   );
 }
 

@@ -216,12 +216,18 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       timeLabel = row.timeLabel;
     }
     if (section == MPTodayFocusTodoSection.completed) {
-      await showMPCompletedTodoActionPopup(
+      final bool? mutated = await showMPCompletedTodoActionPopup(
         context,
         params: MPCompletedTodoActionPopupParams(title: row.title),
-        onRestore: () => _cubit.restoreCompletedAt(index),
-        onDelete: () => _cubit.deleteCompletedAt(index),
+        onRestore: () => _cubit.restoreCompletedAtApi(index),
+        onDelete: () => _cubit.deleteCompletedAtApi(index),
       );
+      if (!mounted) {
+        return;
+      }
+      if (mutated == true) {
+        await _cubit.refreshListsAfterMutation();
+      }
       return;
     }
     final bool mutated = await _showOmiEditTodoPopupWithMemoryContext(

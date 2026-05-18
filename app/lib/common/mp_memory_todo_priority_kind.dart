@@ -4,7 +4,7 @@ enum MPMemoryTodoPriorityKind {
   high,
 
   /// 灰色：Medium
-  medium,
+  low,
 
   /// 橙色：Normal
   normal,

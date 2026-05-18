@@ -606,7 +606,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  Future<bool> restoreCompletedAt(int index) async {
+  /// 仅调用恢复接口，不刷新列表（弹窗先关闭后再由页面触发 [refreshListsAfterMutation]）。
+  Future<bool> restoreCompletedAtApi(int index) async {
     if (!_isInteractive) {
       return false;
     }
@@ -619,14 +620,18 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
+    return MPTodoManager().updateTodoWithRequest(
+      todoId: todoId,
+      title: row.title,
+      priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
+      deadlineUnixSec: row.deadlineUnixSec,
+      isCompleted: false,
+    );
+  }
+
+  Future<bool> restoreCompletedAt(int index) async {
     return _runWithBlockingGlobalLoading(() async {
-      final bool ok = await MPTodoManager().updateTodoWithRequest(
-        todoId: todoId,
-        title: row.title,
-        priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
-        deadlineUnixSec: row.deadlineUnixSec,
-        isCompleted: false,
-      );
+      final bool ok = await restoreCompletedAtApi(index);
       if (!ok || isClosed) {
         return false;
       }
@@ -634,7 +639,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  Future<bool> deleteCompletedAt(int index) async {
+  /// 仅调用删除接口，不刷新列表。
+  Future<bool> deleteCompletedAtApi(int index) async {
     if (!_isInteractive) {
       return false;
     }
@@ -648,8 +654,12 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       emit(state.copyWith(completedItems: next));
       return true;
     }
+    return MPTodoManager().deleteTodo(todoId);
+  }
+
+  Future<bool> deleteCompletedAt(int index) async {
     return _runWithBlockingGlobalLoading(() async {
-      final bool ok = await MPTodoManager().deleteTodo(todoId);
+      final bool ok = await deleteCompletedAtApi(index);
       if (!ok) {
         return false;
       }

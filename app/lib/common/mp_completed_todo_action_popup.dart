@@ -14,13 +14,14 @@ class MPCompletedTodoActionPopupParams {
   final String statusLabel;
 }
 
-Future<void> showMPCompletedTodoActionPopup(
+/// 返回 `true` 表示恢复或删除已成功（弹窗已关闭，由调用方决定是否刷新列表）。
+Future<bool?> showMPCompletedTodoActionPopup(
   BuildContext context, {
   required MPCompletedTodoActionPopupParams params,
   Future<bool> Function()? onRestore,
   Future<bool> Function()? onDelete,
 }) {
-  return showModalBottomSheet<void>(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
@@ -73,7 +74,7 @@ class _MPCompletedTodoActionPopupSheetState
       return;
     }
     if (ok) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
       return;
     }
     setState(() => _restoring = false);
@@ -93,7 +94,7 @@ class _MPCompletedTodoActionPopupSheetState
       return;
     }
     if (ok) {
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
       return;
     }
     setState(() => _deleting = false);

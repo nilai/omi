@@ -10,6 +10,7 @@ class MPMemoryCreatedTodoLineData {
     this.priority,
     this.deadlineLabel,
     this.description,
+    this.status,
   });
 
   /// 与接口 [MPTodoStruct.id] 一致；本地新增尚未落库时可为空串。
@@ -21,6 +22,11 @@ class MPMemoryCreatedTodoLineData {
   /// 截止时间 Unix 时间戳（秒或毫秒）；null 表示无截止时间。
   final int? deadlineLabel;
   final String? description;
+
+  /// 与 [MPTodoStruct.status] 一致：`2` 表示已完成。
+  final int? status;
+
+  bool get isCompleted => status == 2;
 }
 
 /// 「TODOS CREATED」整卡数据

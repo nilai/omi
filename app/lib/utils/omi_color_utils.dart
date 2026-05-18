@@ -44,6 +44,15 @@ const Color pinkTextColor = Color(0xFFDB2777);
 
  /// 红色颜色
  const Color redColor = Color(0xFFFF3B30);
+
+/// Todo 高优先级 `#ff3b30`
+const Color todoPriorityHighColor = Color(0xFFFF3B30);
+
+/// Todo 普通优先级 `#ff9500`
+const Color todoPriorityNormalColor = Color(0xFFFF9500);
+
+/// Todo 低优先级 `#8e8e93`
+const Color todoPriorityLowColor = Color(0xFF8E8E93);
 ///主标题背景颜色
  const Color pageColor = Color(0xFFF2F2F7);
 /// 线背景色

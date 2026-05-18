@@ -136,24 +136,24 @@ class _MPCreatedTodoRow extends StatelessWidget {
   final MPMemoryCreatedTodoLineData item;
   final VoidCallback? onTap;
 
-  Color _priorityColor() {
-    switch (item.priority ?? MPMemoryTodoPriorityKind.normal) {
-      case MPMemoryTodoPriorityKind.high:
-        return redColor;
-      case MPMemoryTodoPriorityKind.medium:
-        return secondTextColor;
-      case MPMemoryTodoPriorityKind.normal:
-        return orangeTextColor;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final bool completed = item.isCompleted;
+    final MPMemoryTodoPriorityKind priorityKind =
+         item.priority ?? MPMemoryTodoPriorityKind.normal;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: completed
+            ? BoxDecoration(
+                color: pageColor,
+                borderRadius: BorderRadius.circular(8),
+              )
+            : null,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -161,8 +161,10 @@ class _MPCreatedTodoRow extends StatelessWidget {
               item.title ?? '',
               style: OmiTextStyle.create(
                 fontSize: OmiFontSize.t4_13,
-                fontWeight: OmiFontWeight.bold,
-                color: mainTextColor,
+                fontWeight: completed ? OmiFontWeight.regular : OmiFontWeight.bold,
+                color: completed ? omiAuxiliaryText : mainTextColor,
+                decoration: completed ? TextDecoration.lineThrough : TextDecoration.none,
+                decorationColor: omiAuxiliaryText,
                 height: 1.35,
               ),
             ),
@@ -173,11 +175,11 @@ class _MPCreatedTodoRow extends StatelessWidget {
               runSpacing: 4,
               children: <Widget>[
                 Text(
-                  MPTodoPriorityUtils.labelForKind(item.priority ?? MPMemoryTodoPriorityKind.normal),
+                  MPTodoPriorityUtils.labelForKind(priorityKind),
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
-                    color: _priorityColor(),
+                    color: MPTodoPriorityUtils.colorForKind(priorityKind),
                     height: 1.3,
                   ),
                 ),
@@ -186,7 +188,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
-                    color: secondTextColor,
+                    color: omiAuxiliaryText,
                     height: 1.3,
                   ),
                 ),
@@ -195,7 +197,7 @@ class _MPCreatedTodoRow extends StatelessWidget {
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
-                    color: secondTextColor,
+                    color: omiAuxiliaryText,
                     height: 1.3,
                   ),
                 ),
