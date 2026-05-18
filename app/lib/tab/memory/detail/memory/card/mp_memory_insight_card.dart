@@ -118,13 +118,13 @@ class _MPInsightVisual {
           cardBg: pinkTextColor.withAlpha(30),
           accent: pinkTextColor,
           iconBg: pinkTextColor,
-          buttonBg: pinkTextColor.withAlpha(60),
+          buttonBg: Color(0x33EC4899).withAlpha(20),
           buttonForeground: pinkTextColor,
           icon: Assets.omiDetailGift,
         );
       case MPInsightCardTone.followUp:
         return _MPInsightVisual(
-          cardBg: orangeTextColor.withAlpha(30),
+          cardBg: Color(0xFFFAF8F3),
           accent: orangeTextColor,
           iconBg: orangeTextColor,
           buttonBg: orangeTextColor.withAlpha(60),

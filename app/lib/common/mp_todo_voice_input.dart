@@ -89,7 +89,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   /// 与 [_controller] 是否含非空 trim 同步，用于右侧「发送 / 麦克风」切换，避免仅依赖外层 rebuild。
   bool _hasTrimmedText = false;
 
-  late final AnimationController _waveCtrl;
   late final AnimationController _dotsCtrl;
 
   void _onControllerChanged() {
@@ -112,10 +111,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     _controller.addListener(_onControllerChanged);
     _focusNode = FocusNode();
     _recorder = FlutterSoundRecorder();
-    _waveCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
     _dotsCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -126,7 +121,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   void dispose() {
     unawaited(_stopRecorder(deleteFile: true));
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
-    _waveCtrl.dispose();
     _dotsCtrl.dispose();
     _focusNode.dispose();
     _controller.removeListener(_onControllerChanged);
@@ -174,7 +168,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     if (_mode != MPTodoVoiceInputMode.recording || !_recorderOpened) {
       return;
     }
-    _waveCtrl.stop();
     try {
       await _stopRecorder(deleteFile: true);
     } catch (_) {}
@@ -221,7 +214,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         _busy = false;
         _externallyPaused = false;
       });
-      _waveCtrl.repeat();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -299,7 +291,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         _externallyPaused = false;
         _mode = MPTodoVoiceInputMode.recording;
       });
-      _waveCtrl.repeat();
     } catch (e) {
       await _stopRecorder(deleteFile: true);
       if (mounted) {
@@ -310,7 +301,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   }
 
   Future<void> _cancelRecording() async {
-    _waveCtrl.stop();
     await _stopRecorder(deleteFile: true);
     if (!mounted) return;
     setState(() {
@@ -326,7 +316,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       MPToastUtils.showMessage('Invalid recording file.');
       return;
     }
-    _waveCtrl.stop();
     setState(() {
       _mode = MPTodoVoiceInputMode.transcribing;
       _busy = true;
@@ -458,8 +447,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Ink(
-          width: 40,
-          height: 40,
+          width: 32,
+          height: 32,
           decoration: BoxDecoration(
             color: bg,
             shape: BoxShape.circle,
@@ -476,7 +465,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   Widget _textMode() {
     return Container(
       height: 52,
-      padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(_cornerRadius),
@@ -505,8 +494,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
                 hintText: widget.hintText,
                 hintStyle: OmiTextStyle.create(
                   fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.regular,
-                  color: secondTextColor.withValues(alpha: 0.7),
+                  fontWeight: OmiFontWeight.medium,
+                  color: secondTextColor,
                 ),
               ),
             ),
@@ -515,8 +504,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
           if (_hasTrimmedText)
             _sending
                 ? Container(
-                    width: 40,
-                    height: 40,
+                    width: 32,
+                    height: 32,
                     decoration: const BoxDecoration(
                       color: blueTextColor,
                       shape: BoxShape.circle,
@@ -542,7 +531,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
                   )
           else
             _circleButton(
-              bg: const Color(0xFFEAF7EF),
+              bg: Color(0x1A2D5A47).withAlpha(20),
               onTap: _sending ? null : _startRecording,
               child: const Icon(
                 Icons.mic_none_rounded,
@@ -572,7 +561,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
             child: const Icon(
               Icons.close_rounded,
               size: 18,
-              color: secondTextColor,
+              color: Color(0xFF8E8E93),
             ),
           ),
           const SizedBox(width: 12),
@@ -594,7 +583,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
                       ),
                     ),
                   )
-                : _MPTodoMiniWaveform(controller: _waveCtrl),
+                : const Center(child: _MPTodoMiniWaveform()),
           ),
           const SizedBox(width: 12),
           _circleButton(
@@ -652,52 +641,116 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 }
 
 class _MPTodoMiniWaveform extends StatelessWidget {
-  const _MPTodoMiniWaveform({required this.controller});
+  const _MPTodoMiniWaveform();
 
-  final Animation<double> controller;
+  static const int _barCount = 12;
 
-  static const int _bars = 16;
+  /// 对应 CSS `height: random * 20 + 10`（10–30px），固定种子避免 rebuild 抖动。
+  static const List<double> _barHeights = <double>[
+    8,
+    6,
+    10,
+    16,
+    10,
+    8,
+    11,
+    12,
+    11,
+    10,
+    8,
+    6,
+  ];
 
-  double _barHeight(int i, double p) {
-    final double t = (i / (_bars - 1)) * 2 * math.pi;
-    final double wave = 0.5 + 0.5 * math.sin(t + p * 2 * math.pi);
-    return 6 + wave * 16;
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: List<Widget>.generate(_barCount, (int i) {
+        return Padding(
+          padding: EdgeInsets.only(right: i == _barCount - 1 ? 0 : 3),
+          child: _MPTodoAnimatedWaveBar(
+            color: blueTextColor,
+            height: _barHeights[i],
+            delay: Duration(milliseconds: (i * 40)),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// 对应 CSS `@keyframes wave`：`scaleY(1) → scaleY(1.5) → scaleY(1)`，1s ease-in-out infinite。
+class _MPTodoAnimatedWaveBar extends StatefulWidget {
+  const _MPTodoAnimatedWaveBar({
+    required this.color,
+    required this.height,
+    required this.delay,
+  });
+
+  final Color color;
+  final double height;
+  final Duration delay;
+
+  @override
+  State<_MPTodoAnimatedWaveBar> createState() => _MPTodoAnimatedWaveBarState();
+}
+
+class _MPTodoAnimatedWaveBarState extends State<_MPTodoAnimatedWaveBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleY;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+    _scaleY = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1, end: 1.5),
+        weight: 50,
+      ),
+      TweenSequenceItem<double>(
+        tween: Tween<double>(begin: 1.5, end: 1),
+        weight: 50,
+      ),
+    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    Future<void>.delayed(widget.delay, () {
+      if (mounted) {
+        _controller.repeat();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: _scaleY,
       builder: (BuildContext context, Widget? child) {
-        final double p = controller.value;
-        return LayoutBuilder(
-          builder: (BuildContext context, BoxConstraints constraints) {
-            final double slotWidth = constraints.maxWidth / _bars;
-            final double barWidth = math.min(3.0, math.max(1.0, slotWidth * 0.48));
-            return Row(
-              children: List<Widget>.generate(_bars, (int i) {
-                final double h = _barHeight(i, p);
-                final bool strong = i > _bars * 0.6;
-                return Expanded(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: Container(
-                      width: barWidth,
-                      height: h,
-                      decoration: BoxDecoration(
-                        color: strong
-                            ? blueTextColor
-                            : blueTextColor.withValues(alpha: 0.35),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            );
-          },
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.diagonal3Values(1, _scaleY.value, 1),
+          child: child,
         );
       },
+      child: Container(
+        width: 1.5,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: widget.color,
+          // borderRadius: BorderRadius.circular(999),
+        ),
+      ),
     );
   }
 }

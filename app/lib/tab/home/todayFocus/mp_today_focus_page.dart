@@ -250,7 +250,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         fit: StackFit.expand,
         children: <Widget>[
           Scaffold(
-            backgroundColor: Color(0xFFF0F0F0),
+            backgroundColor: Color(0xFFF2F2F7),
             appBar: PreferredSize(
               preferredSize: MPCustomNavBar.preferredSizeOf(context),
               child: MPCustomNavBar(

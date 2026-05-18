@@ -467,7 +467,7 @@ class _MPTodayTodoRevealAddToFocusRowState
             width: _kActionWidth,
             child: Container(
               alignment: Alignment.center,
-              color: omiEmphasisGreen,
+              color: greenTextColor,
               child: SizedBox.expand(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
