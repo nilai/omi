@@ -117,10 +117,6 @@ class MPMemoryDetailCardData {
   }
 }
 
-const Color _kCardBg = greenDeepColor;
-const Color _kSegmentTrack = Color(0xFF1A3D2E);
-const Color _kSegmentSelected = Color(0xFF4A6B5A);
-
 /// Memory 详情：标题 + 元信息 + 音频波形 + 说话人 + **底部分段切换**
 class MPMemoryDetailContentCard extends StatefulWidget {
   const MPMemoryDetailContentCard({
@@ -662,7 +658,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       decoration: BoxDecoration(
-        color: widget.showBackground ? _kCardBg : Colors.transparent,
+        color: widget.showBackground ? greenDeepColor : Colors.transparent,
         borderRadius: widget.showBackground ? BorderRadius.circular(16) : null,
       ),
       child: Column(
@@ -1164,7 +1160,7 @@ class _SegmentSwitcher extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: useMemoStyle ? Colors.transparent : _kSegmentTrack,
+        color: useMemoStyle ? Colors.transparent : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1187,7 +1183,7 @@ class _SegmentSwitcher extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
                     color: isSel
-                        ? (useMemoStyle ? Colors.white : _kSegmentSelected)
+                        ? (useMemoStyle ? Colors.white : Colors.white.withValues(alpha: 0.1))
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: isSel && useMemoStyle

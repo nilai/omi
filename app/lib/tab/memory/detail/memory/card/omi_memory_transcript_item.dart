@@ -105,7 +105,7 @@ class MPMemoryTranscriptItem extends StatelessWidget {
             color: isSelected
                 ? (useMemoStyle
                       ? const Color(0xFFEAF4FF)
-                      : Colors.white.withValues(alpha: 0.25))
+                      : Colors.white.withValues(alpha: 0.1))
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(2),
             border: isSelected && useMemoStyle

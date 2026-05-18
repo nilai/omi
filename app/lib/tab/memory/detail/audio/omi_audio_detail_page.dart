@@ -265,7 +265,6 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                                         .onSeekByWaveFraction(frac);
                                   },
                                   child: _AudioWaveform(
-                                    isPlaying: state.isPlaying,
                                     progress: state.progress,
                                   ),
                                 );
@@ -291,18 +290,18 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                             const SizedBox(height: 40),
                             Center(
                               child: Container(
-                                width: 50,
-                                height: 50,
+                                width: 54,
+                                height: 54,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFE8F0FF),
+                                  color: Color(0x1A007AFF).withAlpha(10),
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 child: Center(
                                   child: OmiImageLoader.localImg(
                                     Assets.tabAskAi,
                                     color: blueTextColor,
-                                    width: 20,
-                                    height: 20,
+                                    width: 24,
+                                    height: 24,
                                   ),
                                 ),
                               ),
@@ -341,46 +340,54 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                         MediaQuery.viewPaddingOf(context).bottom,
                       ),
                       child: SizedBox(
-                        height: 56,
+                        height: 50,
                         width: 240,
-                        child: TextButton(
-                          onPressed: () async {
-                            final MPAudioDetailCubit cubit =
-                                context.read<MPAudioDetailCubit>();
-                            await cubit.pauseIfPlaying();
-                            if (!context.mounted) return;
-                            await cubit.onSummarizeTap(context);
-                          },
-                          style: TextButton.styleFrom(
-                            backgroundColor: const Color(0xFFE8F0FF),
-                            foregroundColor: blueTextColor,
-                            shape: RoundedRectangleBorder(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: <Color>[
+                                Color(0xFFE8F5FF),
+                                Color(0xFFDBEAFE),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(color: const Color(0x1A007AFF)),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            borderRadius: BorderRadius.circular(18),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(18),
-                              side: const BorderSide(
-                                color: Color(0xFFD8E7FF),
-                                width: 1,
+                              onTap: () async {
+                                final MPAudioDetailCubit cubit =
+                                    context.read<MPAudioDetailCubit>();
+                                await cubit.pauseIfPlaying();
+                                if (!context.mounted) return;
+                                await cubit.onSummarizeTap(context);
+                              },
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: <Widget>[
+                                  OmiImageLoader.localImg(
+                                    Assets.tabAskAi,
+                                    color: blueTextColor,
+                                    width: 20,
+                                    height: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'AI Summarize',
+                                    style: OmiTextStyle.create(
+                                      fontSize: OmiFontSize.t8_17,
+                                      fontWeight: OmiFontWeight.bold,
+                                      color: blueTextColor,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: <Widget>[
-                              OmiImageLoader.localImg(
-                                Assets.tabAskAi,
-                                color: blueTextColor,
-                                width: 20,
-                                height: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'AI Summarize',
-                                style: OmiTextStyle.create(
-                                  fontSize: OmiFontSize.t8_17,
-                                  fontWeight: OmiFontWeight.bold,
-                                  color: blueTextColor,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
@@ -396,112 +403,96 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
   }
 }
 
-class _AudioWaveform extends StatefulWidget {
-  const _AudioWaveform({required this.isPlaying, required this.progress});
+class _AudioWaveform extends StatelessWidget {
+  const _AudioWaveform({required this.progress});
 
-  final bool isPlaying;
   final double progress;
 
-  @override
-  State<_AudioWaveform> createState() => _AudioWaveformState();
-}
+  /// 对应 Tailwind `h-24`（96px）。
+  static const double _waveHeight = 96;
 
-class _AudioWaveformState extends State<_AudioWaveform>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _pulse;
+  static const double _barWidth = 1.5;
+  static const double _barGap = 1;
+  static const int _minBarCount = 48;
+  static const int _maxBarCount = 200;
+  static const Color _playedColor = Color(0xFF1C1C1E);
+  static const Color _unplayedColor = Color(0xFFD1D1D6);
 
-  static const int _n = 86;
-  static const double _h = 74;
-
-  void _ensurePulseRepeating() {
-    if (!widget.isPlaying) {
-      return;
+  /// 根据可用宽度计算竖条数量：`n * width + (n-1) * gap <= maxWidth`。
+  static int _barCountForWidth(double maxWidth) {
+    if (maxWidth <= 0) {
+      return _minBarCount;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !widget.isPlaying) {
-        return;
-      }
-      // 首帧或部分机型上，在 initState / didUpdateWidget 同步调 repeat 时 Ticker 未就绪，动画不跑。
-      if (!_pulse.isAnimating) {
-        _pulse.repeat();
-      }
-    });
+    final int n = ((maxWidth + _barGap) / (_barWidth + _barGap)).floor();
+    return n.clamp(_minBarCount, _maxBarCount);
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _pulse = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    if (widget.isPlaying) {
-      _ensurePulseRepeating();
-    }
+  /// 确定性伪随机 [0, 1)，避免 rebuild 抖动。
+  static double _hash01(int i, int seed) {
+    int x = i * 374761393 + seed * 668265263;
+    x = (x ^ (x >> 13)) * 1274126177;
+    x ^= x >> 16;
+    return (x & 0x7fffffff) / 0x7fffffff;
   }
 
-  @override
-  void didUpdateWidget(covariant _AudioWaveform oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (!widget.isPlaying) {
-      if (oldWidget.isPlaying) {
-        _pulse.stop();
-      }
-      return;
-    }
-    // 正在播：除 false→true 外，若应播但未在动画（漏掉 didUpdate），补一次 repeat。
-    if (!oldWidget.isPlaying || !_pulse.isAnimating) {
-      _ensurePulseRepeating();
-    }
-  }
+  /// 多层不规则波形 + 分段噪声；用归一化位置 [u] 打破前后半段相似。
+  static double _barHeightPercent(int i, int barCount) {
+    final int n = math.max(barCount, 2);
+    final double u = i / (n - 1);
+    final double t = i.toDouble();
 
-  @override
-  void dispose() {
-    _pulse.dispose();
-    super.dispose();
+    // 前后半段用不同相位/频率，避免 1、2 段镜像相似。
+    final double halfBias = u < 0.5 ? 0.0 : 4.17;
+    final double waveA = math.sin(t * 0.53 + u * 19.7 + halfBias) * 11;
+    final double waveB = math.sin(u * 31.4 + t * 0.71 + 1.3) * 10;
+    final double waveC = math.cos(t * 1.27 + u * 47.2 + halfBias * 0.6) * 8;
+    final double waveD = math.sin((t + u * n) * 0.67 + 2.9) * 6;
+
+    // 每 20% 宽度换一组噪声种子，降低段落重复感。
+    final int segment = (u * 5).floor().clamp(0, 4);
+    final double noise =
+        (_hash01(i + n * 7 + segment * 131, 17) - 0.5) * 28 +
+        (_hash01(i * 19 + segment * 59 + n, 53) - 0.5) * 20 +
+        (_hash01((i * 1000 * (u + 0.11)).round(), 97) - 0.5) * 14;
+
+    // 非对称包络：前段缓升、中段起伏、后段偏高。
+    final double envelope = 0.65 +
+        0.24 * math.sin(u * 5.9 + 0.4) +
+        0.20 * math.sin(u * 13.1 + 2.1) +
+        0.14 * u;
+    final double raw = 44 + (waveA + waveB + waveC + waveD + noise) * envelope;
+    return math.max(18, math.min(85, raw));
   }
 
   @override
   Widget build(BuildContext context) {
-    final double p = widget.isPlaying ? _pulse.value : 0.0;
-    return SizedBox(
-      height: _h,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List<Widget>.generate(_n, (int i) {
-          final bool isPlayed = (i + 1) / _n <= widget.progress;
-          final double t = i / (_n - 1);
-          final double base =
-              0.28 +
-              0.52 *
-                  (0.5 +
-                      0.5 *
-                          math.sin((t * 5.6 + 0.35) * 2 * math.pi) *
-                          math.sin((t * 2.1 + 0.1) * 2 * math.pi));
-          final double wobble = widget.isPlaying
-              ? (0.92 + 0.12 * math.sin((p * 2 * math.pi) + t * 10.0))
-              : 1.0;
-          final double v = (base * wobble).clamp(0.0, 1.0);
-          final double barH = 10 + v * (_h - 10);
-          return Expanded(
-            child: Align(
-              alignment: Alignment.center,
-              child: Container(
-                width: 2,
-                height: barH,
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final int barCount = _barCountForWidth(constraints.maxWidth);
+        return SizedBox(
+          width: constraints.maxWidth,
+          height: _waveHeight,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            spacing: _barGap,
+            children: List<Widget>.generate(barCount, (int i) {
+              final double barProgress = i / barCount;
+              final bool isPlayed = barProgress <= progress;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOut,
+                width: _barWidth,
+                height: _waveHeight * _barHeightPercent(i, barCount) / 100,
                 decoration: BoxDecoration(
-                  color: isPlayed ? Colors.black : const Color(0xFFD1D1D6),
-                  borderRadius: BorderRadius.circular(999),
+                  color: isPlayed ? _playedColor : _unplayedColor,
+                  borderRadius: BorderRadius.circular(_barWidth / 2),
                 ),
-              ),
-            ),
-          );
-        }),
-      ),
+              );
+            }),
+          ),
+        );
+      },
     );
   }
 }
@@ -517,47 +508,52 @@ class _PlayButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback? onTap;
 
+  static const Color _iconColor = Color(0xFF1C1C1E);
+  static const double _iconSize = 28;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      shape: const CircleBorder(),
-      elevation: 0,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: isLoading ? null : onTap,
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white,
-            boxShadow: <BoxShadow>[
-              BoxShadow(
-                color: Color(0x14000000),
-                blurRadius: 12,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Center(
-            child: isLoading
-                ? SizedBox(
-                    width: 26,
-                    height: 26,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: mainTextColor,
-                    ),
-                  )
-                : OmiImageLoader.localImg(
-                    isPlaying ? Assets.omiPause : Assets.omiPlay,
-                    width: 26,
-                    height: 26,
-                    color: mainTextColor,
-                    fit: BoxFit.contain,
+    return GestureDetector(
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(color: const Color(0xFFE5E5EA)),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: Color(0x1A000000),
+              blurRadius: 10,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: isLoading
+              ? const SizedBox(
+                  width: _iconSize,
+                  height: _iconSize,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _iconColor,
                   ),
-          ),
+                )
+              : isPlaying
+                  ? Icon(
+                      Icons.pause_rounded,
+                      size: _iconSize,
+                      color: _iconColor,
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(left: 2),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        size: _iconSize,
+                        color: _iconColor,
+                      ),
+                    ),
         ),
       ),
     );

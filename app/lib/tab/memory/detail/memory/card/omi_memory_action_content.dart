@@ -220,10 +220,10 @@ class _MPMemoryActionCard extends StatelessWidget {
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: useMemoStyle ? omiWhiteText : Colors.white.withValues(alpha: 0.2),
+        color: useMemoStyle ? omiWhiteText : Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: useMemoStyle ? const Color(0xFFE5E5EA) : Colors.white.withValues(alpha: 0.6),
+          color: useMemoStyle ? const Color(0xFFE5E5EA) : Colors.white.withValues(alpha: 0.04),
           width: 0.5,
         ),
       ),
