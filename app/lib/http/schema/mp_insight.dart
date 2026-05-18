@@ -117,6 +117,8 @@ MPTodoStruct? _mpInsightTodoFromDynamic(dynamic raw) {
     preCreateStatus: parsed.preCreateStatus,
     memoryId: parsed.memoryId,
     slot: parsed.slot,
+    description: parsed.description,
+    insightId: parsed.insightId,
   );
 }
 
