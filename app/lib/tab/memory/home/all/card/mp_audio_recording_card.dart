@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../../../generated/assets.dart';
 import '../../../detail/audio/omi_audio_detail_page.dart';
 
 /// 录音记忆卡片数据（与设计稿：主/副时间、来源、时长）
@@ -12,6 +14,7 @@ class MPAudioRecordingCardData {
     required this.secondaryTimeLabel,
     required this.sourceLabel,
     required this.durationLabel,
+    this.showProcessing = false,
   });
 
   /// 首行粗体时间，如 `Jan 18, 2026, 11:20 AM`
@@ -25,6 +28,9 @@ class MPAudioRecordingCardData {
 
   /// 时长文案，如 `3m47s`
   final String durationLabel;
+
+  /// `status == 1` 时展示底部 Processing 区域。
+  final bool showProcessing;
 }
 
 const Color _kBorder = Color(0xFFE8E8E6);
@@ -133,6 +139,54 @@ class MPAudioRecordingCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (data.showProcessing) ...<Widget>[
+                  const SizedBox(height: 12),
+                  Divider(height: 1, thickness: 1, color: _kBorder),
+                  const SizedBox(height: 12),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      OmiImageLoader.localImg(
+                        Assets.omiSparkles,
+                        width: 20,
+                        height: 20,
+                        color: blueTextColor,
+                        fit: BoxFit.contain,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Text(
+                              'Processing recording...',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t5_14,
+                                fontWeight: OmiFontWeight.bold,
+                                color: mainTextColor,
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Transcribing and generating summary',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: OmiTextStyle.create(
+                                fontSize: OmiFontSize.t4_13,
+                                fontWeight: OmiFontWeight.regular,
+                                color: secondTextColor,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

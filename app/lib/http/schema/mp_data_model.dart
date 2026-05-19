@@ -433,6 +433,10 @@ class MPMemoryStruct {
 
   @JsonKey(name: 'source')
   final String? source;
+
+  /// 仅录音等类型的处理状态；`1` 表示转写/摘要生成中。
+  @JsonKey(name: 'status', fromJson: mpNullableIntFromJson)
+  final int? status;
   
   @JsonKey(name: 'memory_feed')
   final MPMemoryFeedStruct? memoryFeed;
@@ -454,6 +458,7 @@ class MPMemoryStruct {
     this.duration,
     this.memoList,
     this.source,
+    this.status,
     this.memoryFeed,
     this.summaryContent,
     this.onlyRecordContent,

@@ -1500,6 +1500,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
             insightContent: content.isNotEmpty ? content : null,
             insightSuggestion: suggestion.isNotEmpty ? suggestion : null,
             hasAddedTodo: f.hasAddedTodo == true,
+            description: content.isNotEmpty ? content : null
           ),
         ),
       );

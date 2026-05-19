@@ -610,6 +610,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
           secondaryTimeLabel: secondaryTimeLabel,
           sourceLabel: m.source ?? '',
           durationLabel: _formatDurationSeconds(m.duration ?? 0),
+          showProcessing: (m.status ?? 0) == 1,
         ),
       );
     case MPMemoryType.summary:

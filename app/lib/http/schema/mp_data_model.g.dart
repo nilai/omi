@@ -156,6 +156,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) => MPMemorySt
       ?.map((e) => MPMemoStruct.fromJson(e as Map<String, dynamic>))
       .toList(),
   source: json['source'] as String?,
+  status: mpNullableIntFromJson(json['status']),
   memoryFeed: json['memory_feed'] == null
       ? null
       : MPMemoryFeedStruct.fromJson(json['memory_feed'] as Map<String, dynamic>),
@@ -179,6 +180,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) => <String,
   'unread_item_cnt': instance.unreadItemCnt,
   'memo_list': instance.memoList?.map((e) => e.toJson()).toList(),
   'source': instance.source,
+  'status': instance.status,
   'memory_feed': instance.memoryFeed?.toJson(),
   'summary_content': instance.summaryContent?.toJson(),
   'only_record_content': instance.onlyRecordContent?.toJson(),
