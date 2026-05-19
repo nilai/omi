@@ -479,7 +479,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String title = (t.title ?? '').trim();
     return MPTodayFocusCardItem(
       title: title.isEmpty ? '—' : title,
-      subtext: 'scheduled for ${_formatDeadlineLabel(t.deadline)}',
+      // subtext: 'scheduled for ${_formatDeadlineLabel(t.deadline)}',
+      subtext: t.reason ?? '',
       timeLabel: _formatDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
