@@ -26,12 +26,12 @@ String _todayFocusMemorySimpleInfoHiveKey(int memoryId) => 'mp_insight_memory_si
 class MPTodayFocusAISuggestionItem {
   const MPTodayFocusAISuggestionItem({
     required this.title,
-    required this.scheduledTimeLabel,
+    required this.reason,
     required this.todoId,
   });
 
   final String title;
-  final String scheduledTimeLabel;
+  final String reason;
 
   /// 与 [MPTodoStruct.id] 一致，用于 [MPReplaceTodayFocusRequest.todoId]。
   final String todoId;
@@ -398,7 +398,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
           final String id = (t.id ?? '').trim();
           return MPTodayFocusAISuggestionItem(
             title: title.isEmpty ? '—' : title,
-            scheduledTimeLabel: _formatDeadlineLabel(t.deadline),
+            reason: t.reason ?? '',
             todoId: id,
           );
         })
@@ -479,7 +479,6 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String title = (t.title ?? '').trim();
     return MPTodayFocusCardItem(
       title: title.isEmpty ? '—' : title,
-      // subtext: 'scheduled for ${_formatDeadlineLabel(t.deadline)}',
       subtext: t.reason ?? '',
       timeLabel: _formatDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
