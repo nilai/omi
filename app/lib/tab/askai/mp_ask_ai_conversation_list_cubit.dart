@@ -33,11 +33,13 @@ class MPAskAIConversationListState {
     MPAskAIConversationListPhase? phase,
     List<MPAskAIConversationItem>? items,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return MPAskAIConversationListState(
       phase: phase ?? this.phase,
       items: items ?? this.items,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage:
+          clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -55,74 +57,110 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
 
   Future<void> initData() => refresh();
 
-  /// [fromPullToRefresh] 为 `true` 时保持当前列表展示，仅后台拉取第一页。
+  /// [fromPullToRefresh] 为 `true` 时保持当前列表，后台拉取后更新。
   Future<void> refresh({bool fromPullToRefresh = false}) async {
     final bool keepVisibleList = fromPullToRefresh &&
         state.phase == MPAskAIConversationListPhase.loaded;
-    if (!keepVisibleList) {
-      emit(
-        const MPAskAIConversationListState(
-          phase: MPAskAIConversationListPhase.loading,
-        ),
-      );
-    }
-    try {
-      final List<MPAskAIConversationItem> items = await _fetchFirstPageFromServer();
-      await MPHiveUtil.instance.putPrimitive(
-        key: _kConversationListCacheKey,
-        value: items
-            .map(
-              (MPAskAIConversationItem item) => <String, dynamic>{
-                'id': item.id,
-                'title': item.title,
-              },
-            )
-            .toList(growable: false),
-      );
-      emit(
-        MPAskAIConversationListState(
-          phase: MPAskAIConversationListPhase.loaded,
-          items: items,
-        ),
-      );
-    } catch (e) {
-      final List<dynamic>? cached = await MPHiveUtil.instance
-          .getPrimitive<List<dynamic>>(_kConversationListCacheKey);
-      final List<MPAskAIConversationItem> cachedItems = cached == null
-          ? const <MPAskAIConversationItem>[]
-          : cached
-                .whereType<Map>()
-                .map((Map raw) {
-                  final Map<String, dynamic> map =
-                      Map<String, dynamic>.from(raw);
-                  final String id = (map['id'] ?? '').toString();
-                  final String title = (map['title'] ?? '').toString();
-                  if (id.trim().isEmpty || title.trim().isEmpty) {
-                    return null;
-                  }
-                  return MPAskAIConversationItem(id: id, title: title);
-                })
-                .whereType<MPAskAIConversationItem>()
-                .toList(growable: false);
 
-      if (cachedItems.isNotEmpty) {
+    bool bootstrappedFromCache = false;
+    if (!keepVisibleList) {
+      final List<MPAskAIConversationItem> cached = await _loadItemsFromCache();
+      if (cached.isNotEmpty) {
+        bootstrappedFromCache = true;
+        if (!isClosed) {
+          emit(
+            MPAskAIConversationListState(
+              phase: MPAskAIConversationListPhase.loaded,
+              items: cached,
+            ),
+          );
+        }
+      } else {
+        if (!isClosed) {
+          emit(
+            const MPAskAIConversationListState(
+              phase: MPAskAIConversationListPhase.loading,
+            ),
+          );
+        }
+      }
+    }
+
+    try {
+      final List<MPAskAIConversationItem> items =
+          await _fetchFirstPageFromServer();
+      await _persistItemsToCache(items);
+      if (!isClosed) {
         emit(
           MPAskAIConversationListState(
             phase: MPAskAIConversationListPhase.loaded,
-            items: cachedItems,
+            items: items,
+          ),
+        );
+      }
+    } catch (e) {
+      if (bootstrappedFromCache || keepVisibleList) {
+        return;
+      }
+      final List<MPAskAIConversationItem> cached = await _loadItemsFromCache();
+      if (cached.isNotEmpty) {
+        if (!isClosed) {
+          emit(
+            MPAskAIConversationListState(
+              phase: MPAskAIConversationListPhase.loaded,
+              items: cached,
+              errorMessage: e.toString(),
+            ),
+          );
+        }
+        return;
+      }
+      if (!isClosed) {
+        emit(
+          MPAskAIConversationListState(
+            phase: MPAskAIConversationListPhase.error,
             errorMessage: e.toString(),
           ),
         );
-        return;
       }
-
-      emit(
-        MPAskAIConversationListState(
-          phase: MPAskAIConversationListPhase.error,
-          errorMessage: e.toString(),
-        ),
-      );
     }
+  }
+
+  Future<List<MPAskAIConversationItem>> _loadItemsFromCache() async {
+    final List<dynamic>? cached = await MPHiveUtil.instance
+        .getPrimitive<List<dynamic>>(_kConversationListCacheKey);
+    if (cached == null) {
+      return const <MPAskAIConversationItem>[];
+    }
+    return cached
+        .whereType<Map>()
+        .map((Map raw) {
+          final Map<String, dynamic> map = Map<String, dynamic>.from(raw);
+          final String id = (map['id'] ?? '').toString();
+          final String title = (map['title'] ?? '').toString();
+          if (id.trim().isEmpty || title.trim().isEmpty) {
+            return null;
+          }
+          return MPAskAIConversationItem(id: id, title: title);
+        })
+        .whereType<MPAskAIConversationItem>()
+        .toList(growable: false);
+  }
+
+  Future<void> _persistItemsToCache(
+    List<MPAskAIConversationItem> items,
+  ) async {
+    await MPHiveUtil.instance.putPrimitive(
+      key: _kConversationListCacheKey,
+      value: items
+          .map(
+            (MPAskAIConversationItem item) => <String, dynamic>{
+              'id': item.id,
+              'title': item.title,
+            },
+          )
+          .toList(growable: false),
+    );
   }
 
   Future<List<MPAskAIConversationItem>> _fetchFirstPageFromServer() async {
