@@ -18,6 +18,7 @@ import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../blu/mp_ble_connection_helper.dart';
 import '../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../audio/record/mp_audio_upload_manger.dart';
+import '../../../common/mp_date_utils.dart';
 import '../../../common/mp_home_notification.dart';
 import '../../../common/mp_todo_context_utile.dart';
 import '../../../common/omi_edit_todo_popup.dart';
@@ -158,7 +159,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
         memoryType: todoContext.memoryType,
         insightId: item.insightId,
         insightType: todoContext.insightType,
-        deadlineUnixSec: item.deadlineUnixSec == 0 ? null : item.deadlineUnixSec,
+        deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(item.deadlineUnixSec),
       ),
       onDelete: () async {
         await _cubit.loadData();

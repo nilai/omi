@@ -313,7 +313,7 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
             if (!ok) {
               return;
             }
-            context.read<OmiMemoryDetailCubit>().addTodoFromQuickInput(line);
+            await context.read<OmiMemoryDetailCubit>().refresh();
           },
           onAddMemo: () async {
             final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
@@ -339,7 +339,7 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
               MPToastUtils.showMessage(resp?.baseResp.message ?? 'Couldn\'t create memo. Please try again later.');
               return;
             }
-            context.read<OmiMemoryDetailCubit>().addMemoFromQuickInput(line);
+            await context.read<OmiMemoryDetailCubit>().refresh();
           },
           onAskAi: () => _openMemoryAskAiChatForDetail(context, memoryId),
         ),

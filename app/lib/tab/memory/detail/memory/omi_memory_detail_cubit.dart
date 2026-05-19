@@ -1696,8 +1696,8 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
   return MPMemoryCreatedTodoLineData(
     id: t.id,
     title: t.title,
-    priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'normal'),
-    deadlineLabel: t.deadline,
+    priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'Normal'),
+    deadlineLabel: MPDateUtils.normalizeTodoDeadline(t.deadline),
     description: t.description,
     status: t.status,
   );

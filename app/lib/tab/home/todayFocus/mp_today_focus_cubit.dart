@@ -5,8 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../../../cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
+import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
+import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
@@ -483,7 +485,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       memoryId: t.memoryId,
       slot: t.slot,
       insightId: t.insightId,
-      deadlineUnixSec: t.deadline,
+      deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(t.deadline),
       description: t.description,
     );
   }
@@ -500,8 +502,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       status: st,
-      priorityApi: (t.priority ?? 'normal').toLowerCase(),
-      deadlineUnixSec: t.deadline,
+      priorityApi: MPTodoUtils.mapPriorityToApi(
+        MPTodoUtils.normalizePriorityPickerLabel(t.priority ?? 'Normal'),
+      ),
+      deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(t.deadline),
       sourceSection: section,
       isChecked: st == 2,
       highlighted: st == 3,
@@ -511,13 +515,14 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     );
   }
 
-  /// [MPTodoStruct.deadline] 为 Unix 秒。
+  /// [MPTodoStruct.deadline] 为 Unix 秒；`null` / `0` 展示为 `No deadline`。
   static String _formatDeadlineLabel(int? deadlineSec) {
-    if (deadlineSec == null || deadlineSec <= 0) {
-      return '';
+    final int? normalized = MPDateUtils.normalizeTodoDeadline(deadlineSec);
+    if (normalized == null) {
+      return 'No deadline';
     }
     final DateTime dt = DateTime.fromMillisecondsSinceEpoch(
-      deadlineSec * 1000,
+      normalized * 1000,
     );
     final DateTime now = DateTime.now();
     final DateTime today = DateTime(now.year, now.month, now.day);
@@ -623,7 +628,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return MPTodoManager().updateTodoWithRequest(
       todoId: todoId,
       title: row.title,
-      priority: row.priorityApi.trim().isEmpty ? 'normal' : row.priorityApi,
+      priority: row.priorityApi.trim().isEmpty ? 'Normal' : row.priorityApi,
       deadlineUnixSec: row.deadlineUnixSec,
       isCompleted: false,
     );

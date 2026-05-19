@@ -4,14 +4,23 @@ import 'package:intl/intl.dart';
 class MPDateUtils {
   MPDateUtils._();
 
-  /// 秒或毫秒时间戳转本地 [DateTime]；`raw > 1e10` 视为毫秒。
-  static DateTime? dateTimeFromUnixEpoch(int? raw) {
-    if (raw == null) {
+  /// 服务端 `deadline` 为 `null`、空或 `0` 时视为无截止时间。
+  static int? normalizeTodoDeadline(int? raw) {
+    if (raw == null || raw <= 0) {
       return null;
     }
-    return raw > 10000000000
-        ? DateTime.fromMillisecondsSinceEpoch(raw)
-        : DateTime.fromMillisecondsSinceEpoch(raw * 1000);
+    return raw;
+  }
+
+  /// 秒或毫秒时间戳转本地 [DateTime]；`raw > 1e10` 视为毫秒。
+  static DateTime? dateTimeFromUnixEpoch(int? raw) {
+    final int? normalized = normalizeTodoDeadline(raw);
+    if (normalized == null) {
+      return null;
+    }
+    return normalized > 10000000000
+        ? DateTime.fromMillisecondsSinceEpoch(normalized)
+        : DateTime.fromMillisecondsSinceEpoch(normalized * 1000);
   }
 
   /// 日期部分：当天为 `Today`，否则为 `MMM d, y`；无截止时间为 `No deadline`。

@@ -20,30 +20,38 @@ class MPTodoUtils {
     switch (raw.trim()) {
       case 'High priority':
       case 'High':
+      case 'high':
+      case 'high priority':
         return 'High';
       case 'Medium':
+      case 'medium':
         return 'Normal';
       case 'Low':
+      case 'low':
+      case 'Low priority':
+      case 'low priority':
         return 'Low';
       case 'Normal':
+      case 'normal':
       default:
         return 'Normal';
     }
   }
 
-  /// UI 优先级文案 → 接口 `priority` 字段（`low` / `normal` / `high`）。
+  /// UI 优先级文案 → 接口 `priority` 字段（`Low` / `Normal` / `High`）。
   static String mapPriorityToApi(String ui) {
     switch (ui.trim()) {
       case 'Low':
-        return 'low';
+      case 'Low priority':
+        return 'Low';
       case 'High':
       case 'High priority':
-        return 'high';
+        return 'High';
       case 'Medium':
-        return 'normal';
+        return 'Normal';
       case 'Normal':
       default:
-        return 'normal';
+        return 'Normal';
     }
   }
 }

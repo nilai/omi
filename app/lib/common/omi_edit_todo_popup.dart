@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/omi_button.dart';
@@ -209,39 +210,6 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     _deadlineUnixSec = sec;
   }
 
-  void _syncInitialWhenFromParams() {
-    final String w = _when;
-    if (w == 'No deadline' || w == 'Today' || w == 'Tomorrow') {
-      _pickedCalendarDate = null;
-      return;
-    }
-    if (_deadlineUnixSec != null) {
-      final DateTime dt =
-          DateTime.fromMillisecondsSinceEpoch(_deadlineUnixSec! * 1000);
-      final DateTime d = DateTime(dt.year, dt.month, dt.day);
-      final DateTime today = _dateOnly(DateTime.now());
-      if (d == today) {
-        _when = 'Today';
-        _pickedCalendarDate = null;
-      } else if (d == today.add(const Duration(days: 1))) {
-        _when = 'Tomorrow';
-        _pickedCalendarDate = null;
-      } else {
-        _pickedCalendarDate = d;
-        _when = DateFormat('MMM d, y').format(d);
-      }
-      return;
-    }
-    try {
-      final DateTime parsed = DateFormat('yyyy年M月d日').parse(w, false);
-      _pickedCalendarDate =
-          DateTime(parsed.year, parsed.month, parsed.day);
-      _when = DateFormat('MMM d, y').format(_pickedCalendarDate!);
-    } catch (_) {
-      _pickedCalendarDate = null;
-    }
-  }
-
   Future<void> _pickDateOnlyFlow() async {
     final DateTime now = DateTime.now();
     final DateTime today = _dateOnly(now);
@@ -293,17 +261,15 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     _priority =
         MPTodoUtils.normalizePriorityPickerLabel(widget.params.priorityLabel);
     _notesController = TextEditingController(text: widget.params.notes);
-    if (widget.params.deadlineUnixSec != null) {
-      _applyInitialDeadlineSeconds(widget.params.deadlineUnixSec!);
+    final int? normalizedDeadline =
+        MPDateUtils.normalizeTodoDeadline(widget.params.deadlineUnixSec);
+    if (normalizedDeadline != null) {
+      _applyInitialDeadlineSeconds(normalizedDeadline);
     } else {
-      _when = widget.params.whenLabel;
-      _time = widget.params.timeLabel;
-      if (_time.startsWith('--')) {
-        _time = '';
-      }
+      _when = 'No deadline';
+      _time = '';
       _deadlineUnixSec = null;
-      _syncInitialWhenFromParams();
-      _syncDeadlineFromWhenAndTime();
+      _pickedCalendarDate = null;
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_swipe_reveal_bus.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -15,7 +16,7 @@ class MPTodayFocusTodoRowData {
     this.memoryId,
     this.insightId,
     this.status = 1,
-    this.priorityApi = 'normal',
+    this.priorityApi = 'Normal',
     this.deadlineUnixSec,
     this.sourceSection,
     this.isChecked = false,
@@ -278,7 +279,7 @@ class _MPTodayFocusTodoGroupedListState
       final MPTodayFocusTodoRowData row = items[i];
       Widget cell = MPTodayFocusTodoItem(
         title: row.title,
-        timeLabel: row.timeLabel,
+        timeLabel: _timeLabelForRow(row),
         isChecked: row.isChecked,
         tone: tone,
         highlighted: row.highlighted,
@@ -304,6 +305,15 @@ class _MPTodayFocusTodoGroupedListState
       out.add(cell);
     }
     return out;
+  }
+
+  /// 右侧时间：`deadlineUnixSec` 为 `null` / `0` 时展示 `No deadline`。
+  static String _timeLabelForRow(MPTodayFocusTodoRowData row) {
+    if (MPDateUtils.normalizeTodoDeadline(row.deadlineUnixSec) == null) {
+      return 'No deadline';
+    }
+    final String label = row.timeLabel.trim();
+    return label.isEmpty ? 'No deadline' : label;
   }
 
   void _addGapIfNeeded(List<Widget> children) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:memo_pin/common/mp_todo_notification.dart';
+import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -42,12 +43,12 @@ class MPTodoManager {
   // AI-generated START - 创建 Todo 任务
   /// 通过 API 创建 Todo 任务
   /// [title] 任务标题
-  /// [priority] 优先级（high, normal, low）
+  /// [priority] 优先级（High, Normal, Low）
   /// [deadline] Unix **秒**时间戳；`null` 时使用**当前时刻**的时间戳。
   /// 返回 true 表示创建成功，false 表示创建失败
   Future<bool> createTodo({
     required String title,
-    String priority = 'normal',
+    String priority = 'Normal',
     int? deadline,
     String? memoryId,
     String? feedCardId,
@@ -95,7 +96,7 @@ class MPTodoManager {
     required String title,
     String? todoId,
     String? memoryId,
-    String priority = 'normal',
+    String priority = 'Normal',
     int? deadline,
     String? feedCardId,
     int? preCreateStatus,
@@ -150,10 +151,11 @@ class MPTodoManager {
   /// 返回 true 表示创建成功，false 表示创建失败
   Future<bool> addTodo(TodoTaskItem todo) async {
     try {
-      // 转换 priorityTag 为 API 需要的格式（小写）
-      String priority = 'normal';
+      String priority = 'Normal';
       if (todo.priorityTag != null) {
-        priority = todo.priorityTag!.toLowerCase();
+        priority = MPTodoUtils.mapPriorityToApi(
+          MPTodoUtils.normalizePriorityPickerLabel(todo.priorityTag!),
+        );
       }
 
       // 转换 date 为 Unix 秒（date 可能是 "YYYY-MM-DD" 或 "Dec 16"）

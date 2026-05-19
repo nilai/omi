@@ -106,7 +106,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                       whenLabel: MPDateUtils.formatWhenLabelFromDeadline(data.items[i].deadlineLabel),
                       timeLabel: MPDateUtils.formatTimeLabelFromDeadline(data.items[i].deadlineLabel),
                       todoId: data.items[i].id ?? '',
-                      deadlineUnixSec: deadlineUnixSec == 0 ? null : deadlineUnixSec,
+                      deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(deadlineUnixSec),
                     ),
                     onDelete: () {
                       final String todoId = (data.items[i].id ?? '').trim();
@@ -119,6 +119,9 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                         skipApi: true,
                       );
                     },
+                    onMarkAsDone: () {
+                      context.read<OmiMemoryDetailCubit>().refresh();
+                    }
                   );
                 },
               ),

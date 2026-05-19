@@ -96,24 +96,29 @@ class MPSpeakerStruct {
 }
 
 /// Todo `deadline`：兼容 JSON 为 int、[num] 或数字字符串（Unix 秒）。
+/// `null`、空字符串、`0` 均视为无截止时间。
 int? mpTodoDeadlineFromJson(Object? json) {
   if (json == null) {
     return null;
   }
+  int? parsed;
   if (json is int) {
-    return json;
-  }
-  if (json is num) {
-    return json.toInt();
-  }
-  if (json is String) {
+    parsed = json;
+  } else if (json is num) {
+    parsed = json.toInt();
+  } else if (json is String) {
     final String s = json.trim();
     if (s.isEmpty) {
       return null;
     }
-    return int.tryParse(s);
+    parsed = int.tryParse(s);
+  } else {
+    return null;
   }
-  return null;
+  if (parsed == null || parsed <= 0) {
+    return null;
+  }
+  return parsed;
 }
 
 Object? mpTodoDeadlineToJson(int? value) => value;
