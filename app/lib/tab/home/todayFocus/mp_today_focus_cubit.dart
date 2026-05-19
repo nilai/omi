@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import '../../../cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
@@ -14,6 +13,7 @@ import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
@@ -480,7 +480,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return MPTodayFocusCardItem(
       title: title.isEmpty ? '—' : title,
       subtext: t.reason ?? '',
-      timeLabel: _formatDeadlineLabel(t.deadline),
+      timeLabel: MPTimeUtils.formatTodoDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       slot: t.slot,
@@ -498,7 +498,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String title = (t.title ?? '').trim();
     return MPTodayFocusTodoRowData(
       title: title.isEmpty ? '—' : title,
-      timeLabel: _formatDeadlineLabel(t.deadline),
+      timeLabel: MPTimeUtils.formatTodoDeadlineLabel(t.deadline),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       status: st,
@@ -513,28 +513,6 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       insightId: t.insightId,
       description: t.description,
     );
-  }
-
-  /// [MPTodoStruct.deadline] 为 Unix 秒；`null` / `0` 展示为 `No deadline`。
-  static String _formatDeadlineLabel(int? deadlineSec) {
-    final int? normalized = MPDateUtils.normalizeTodoDeadline(deadlineSec);
-    if (normalized == null) {
-      return 'No deadline';
-    }
-    final DateTime dt = DateTime.fromMillisecondsSinceEpoch(
-      normalized * 1000,
-    );
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime day = DateTime(dt.year, dt.month, dt.day);
-    if (day == today) {
-      return DateFormat('HH:mm').format(dt);
-    }
-    final int daysFromToday = day.difference(today).inDays;
-    if (daysFromToday > 0 && daysFromToday <= 7) {
-      return DateFormat('EEE HH:mm').format(dt);
-    }
-    return DateFormat('MMM d').format(dt);
   }
 
   /// 页面在 loading/empty/error 时也常驻展示「ALL TO DOS」输入框，
