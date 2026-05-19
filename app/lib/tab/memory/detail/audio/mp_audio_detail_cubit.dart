@@ -12,6 +12,7 @@ import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:path/path.dart' as p;
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
@@ -809,12 +810,8 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   }
 }
 
-DateTime _audioDetailDateTime(int raw) {
-  if (raw > 10000000000) {
-    return DateTime.fromMillisecondsSinceEpoch(raw);
-  }
-  return DateTime.fromMillisecondsSinceEpoch(raw * 1000);
-}
+DateTime _audioDetailDateTime(int raw) =>
+    MPTimeUtils.dateTimeFromUnixEpoch(raw)!;
 
 /// 已播放/总时长角标（`M:SS` 或 `H:MM:SS`）。
 String _formatMmSs(Duration d) {

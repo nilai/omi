@@ -3,6 +3,7 @@ import 'package:memo_pin/common/mp_todo_notification.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
 import 'package:memo_pin/http/schema/mp_todo.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 /// Todo 任务数据模型
@@ -168,7 +169,8 @@ class MPTodoManager {
             final int? m = int.tryParse(p[1]);
             final int? d = int.tryParse(p[2]);
             if (y != null && m != null && d != null) {
-              deadlineUnix = DateTime(y, m, d).millisecondsSinceEpoch ~/ 1000;
+              deadlineUnix =
+                  MPTimeUtils.unixSecondsFromLocalParts(year: y, month: m, day: d) ?? 0;
             } else {
               deadlineUnix = 0;
             }
@@ -180,10 +182,14 @@ class MPTodoManager {
           final parts = todo.date.split(' ');
           if (parts.length == 2) {
             final monthIndex = months.indexOf(parts[0]);
-            final day = int.tryParse(parts[1]) ?? DateTime.now().day;
-            final now = DateTime.now();
-            final dt = DateTime(now.year, monthIndex + 1, day);
-            deadlineUnix = dt.millisecondsSinceEpoch ~/ 1000;
+            final day = int.tryParse(parts[1]) ?? MPTimeUtils.nowInTimeZone().day;
+            final now = MPTimeUtils.nowInTimeZone();
+            deadlineUnix = MPTimeUtils.unixSecondsFromLocalParts(
+                  year: now.year,
+                  month: monthIndex + 1,
+                  day: day,
+                ) ??
+                0;
           } else {
             deadlineUnix = 0;
           }

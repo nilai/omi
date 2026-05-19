@@ -10,6 +10,7 @@ import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/common/mp_todo_priority_utils.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
@@ -1652,12 +1653,8 @@ mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
 /// [MPMemoryFeedStruct.feeds] 顺序映射为 [MPMemoryDetailCardData.feedBlocks]（Insight / Todos / Memos / You asked 等可混合）。
 MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) => mpMemoryStructToDetailBundle(m).data;
 
-DateTime _detailServerTime(int createAt) {
-  if (createAt > 10000000000) {
-    return DateTime.fromMillisecondsSinceEpoch(createAt);
-  }
-  return DateTime.fromMillisecondsSinceEpoch(createAt * 1000);
-}
+DateTime _detailServerTime(int createAt) =>
+    MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
 
 String _formatDetailDuration(int? seconds) {
   if (seconds == null || seconds <= 0) {
@@ -1677,9 +1674,7 @@ String _feedCardTimeLabel(int? createAt) {
   if (createAt == null) {
     return ' ';
   }
-  final DateTime dt = createAt > 10000000000
-      ? DateTime.fromMillisecondsSinceEpoch(createAt)
-      : DateTime.fromMillisecondsSinceEpoch(createAt * 1000);
+  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
   return DateFormat('MMM d, h:mm a').format(dt);
 }
 
@@ -1687,9 +1682,7 @@ String _feedCardHeaderTimeLabel(int? createAt) {
   if (createAt == null) {
     return 'Just now';
   }
-  final DateTime dt = createAt > 10000000000
-      ? DateTime.fromMillisecondsSinceEpoch(createAt)
-      : DateTime.fromMillisecondsSinceEpoch(createAt * 1000);
+  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
   return DateFormat('MMM d, h:mm a').format(dt);
 }
 

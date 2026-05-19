@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../utils/mp_time_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../common/mp_custom_nav_bar.dart';
 import '../memory/omi_memory_detail_page.dart';
@@ -112,9 +113,7 @@ String _headlineFromCreateAt(int? ts) {
   if (ts == null || ts <= 0) {
     return 'Audio Memory';
   }
-  final DateTime dt = ts > 10000000000
-      ? DateTime.fromMillisecondsSinceEpoch(ts)
-      : DateTime.fromMillisecondsSinceEpoch(ts * 1000);
+  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(ts)!;
   return DateFormat('MMM d, y, h:mm a').format(dt);
 }
 
@@ -122,9 +121,7 @@ String _metaLineFromCreateAt(int? ts) {
   if (ts == null || ts <= 0) {
     return '';
   }
-  final DateTime dt = ts > 10000000000
-      ? DateTime.fromMillisecondsSinceEpoch(ts)
-      : DateTime.fromMillisecondsSinceEpoch(ts * 1000);
+  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(ts)!;
   final String longDate =
       '${DateFormat('MMMM d, y').format(dt)} at ${DateFormat('h:mm a').format(dt)}';
   return '$longDate  ·  MemoPin';

@@ -9,6 +9,7 @@ import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -679,12 +680,8 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
   );
 }
 
-DateTime _memoryDateTimeFromServer(int createAt) {
-  if (createAt > 10000000000) {
-    return DateTime.fromMillisecondsSinceEpoch(createAt);
-  }
-  return DateTime.fromMillisecondsSinceEpoch(createAt * 1000);
-}
+DateTime _memoryDateTimeFromServer(int createAt) =>
+    MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
 
 String _shortTimeLabel(int createAt) {
   return DateFormat('MMM d, y, h:mm a').format(_memoryDateTimeFromServer(createAt));

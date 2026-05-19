@@ -1,27 +1,17 @@
 import 'package:intl/intl.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 
 /// Unix 时间戳与 Todo 截止时间展示文案。
 class MPDateUtils {
   MPDateUtils._();
 
   /// 服务端 `deadline` 为 `null`、空或 `0` 时视为无截止时间。
-  static int? normalizeTodoDeadline(int? raw) {
-    if (raw == null || raw <= 0) {
-      return null;
-    }
-    return raw;
-  }
+  static int? normalizeTodoDeadline(int? raw) =>
+      MPTimeUtils.normalizeUnixTimestamp(raw);
 
-  /// 秒或毫秒时间戳转本地 [DateTime]；`raw > 1e10` 视为毫秒。
-  static DateTime? dateTimeFromUnixEpoch(int? raw) {
-    final int? normalized = normalizeTodoDeadline(raw);
-    if (normalized == null) {
-      return null;
-    }
-    return normalized > 10000000000
-        ? DateTime.fromMillisecondsSinceEpoch(normalized)
-        : DateTime.fromMillisecondsSinceEpoch(normalized * 1000);
-  }
+  /// 秒或毫秒时间戳转应用时区 [DateTime]；`raw > 1e10` 视为毫秒。
+  static DateTime? dateTimeFromUnixEpoch(int? raw) =>
+      MPTimeUtils.dateTimeFromUnixEpoch(raw);
 
   /// 日期部分：当天为 `Today`，否则为 `MMM d, y`；无截止时间为 `No deadline`。
   static String formatWhenLabelFromDeadline(int? deadline) {
@@ -29,8 +19,7 @@ class MPDateUtils {
     if (dt == null) {
       return 'No deadline';
     }
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime day = DateTime(dt.year, dt.month, dt.day);
     if (day == today) {
       return 'Today';
@@ -53,8 +42,7 @@ class MPDateUtils {
     if (dt == null) {
       return 'No deadline';
     }
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime day = DateTime(dt.year, dt.month, dt.day);
     final String when =
         day == today ? 'Today' : DateFormat('MMM d, y').format(dt);
@@ -77,8 +65,8 @@ class MPDateUtils {
     if (dt == null) {
       return '';
     }
-    final DateTime now = DateTime.now();
-    final DateTime todayStart = DateTime(now.year, now.month, now.day);
+    final DateTime now = MPTimeUtils.nowInTimeZone();
+    final DateTime todayStart = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime eventDay = DateTime(dt.year, dt.month, dt.day);
     final int diffDays = todayStart.difference(eventDay).inDays;
     if (diffDays < 0) {
@@ -123,8 +111,7 @@ class MPDateUtils {
     if (dt == null) {
       return '';
     }
-    final DateTime now = DateTime.now();
-    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime day = DateTime(dt.year, dt.month, dt.day);
     final String timePart = DateFormat('h:mm a').format(dt);
     if (day == today) {

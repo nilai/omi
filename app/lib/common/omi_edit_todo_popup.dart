@@ -6,6 +6,7 @@ import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/common/omi_todo_more_sheet.dart';
 import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -130,9 +131,8 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     final String t = raw.trim();
     if (t.isEmpty || t.startsWith('--')) {
       if (fallbackFromSec != null) {
-        final DateTime dt = DateTime.fromMillisecondsSinceEpoch(
-          fallbackFromSec * 1000,
-        );
+        final DateTime dt =
+            MPTimeUtils.dateTimeFromUnixEpoch(fallbackFromSec)!;
         return TimeOfDay(hour: dt.hour, minute: dt.minute);
       }
       return const TimeOfDay(hour: 9, minute: 0);
@@ -156,7 +156,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
       _time,
       fallbackFromSec: secBefore,
     );
-    final DateTime now = DateTime.now();
+    final DateTime now = MPTimeUtils.nowInTimeZone();
     late final DateTime day;
     if (_when == 'Today') {
       day = _dateOnly(now);
@@ -178,21 +178,20 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
         }
       }
     }
-    final DateTime combined = DateTime(
-      day.year,
-      day.month,
-      day.day,
-      tod.hour,
-      tod.minute,
+    _deadlineUnixSec = MPTimeUtils.unixSecondsFromLocalParts(
+      year: day.year,
+      month: day.month,
+      day: day.day,
+      hour: tod.hour,
+      minute: tod.minute,
     );
-    _deadlineUnixSec = combined.millisecondsSinceEpoch ~/ 1000;
   }
 
   void _applyInitialDeadlineSeconds(int raw) {
     final int sec = raw > 10000000000 ? raw ~/ 1000 : raw;
-    final DateTime local = DateTime.fromMillisecondsSinceEpoch(sec * 1000);
+    final DateTime local = MPTimeUtils.dateTimeFromUnixEpoch(sec)!;
     final DateTime day = DateTime(local.year, local.month, local.day);
-    final DateTime today = _dateOnly(DateTime.now());
+    final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
     _pickedCalendarDate = day;
@@ -211,7 +210,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   }
 
   Future<void> _pickDateOnlyFlow() async {
-    final DateTime now = DateTime.now();
+    final DateTime now = MPTimeUtils.nowInTimeZone();
     final DateTime today = _dateOnly(now);
     final DateTime? date = await showDatePicker(
       context: context,

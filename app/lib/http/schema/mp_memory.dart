@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import 'mp_data_model.dart';
 
@@ -832,9 +833,9 @@ class AudioRecord {
   /// 是否创建成功
   bool get isSuccess => statusCode == 0;
 
-  /// 获取录音时间（DateTime格式）
+  /// 获取录音时间（应用时区 [DateTime]）
   DateTime get recordTime =>
-      DateTime.fromMillisecondsSinceEpoch(recordTs * 1000);
+      MPTimeUtils.dateTimeFromUnixEpoch(recordTs)!;
 
   @override
   String toString() {
