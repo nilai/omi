@@ -8,6 +8,7 @@ import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -18,19 +19,6 @@ import '../../../http/schema/mp_insight.dart';
 
 /// Hive 中缓存 [MPGetHomeOverviewResponse.toJson] 的 key。
 const String _kHomeOverviewHiveKey = 'mp_home_overview_v1';
-
-String _formatTodoDeadlineTime(int? deadline) {
-  if (deadline == null) {
-    return '';
-  }
-  final DateTime? dt = MPDateUtils.dateTimeFromUnixEpoch(deadline);
-  if (dt == null) {
-    return '';
-  }
-  final String hh = dt.hour.toString().padLeft(2, '0');
-  final String mm = dt.minute.toString().padLeft(2, '0');
-  return '$hh:$mm';
-}
 
 /// 首页音频条状态类型（对齐 react `AudioStatusBar`）
 enum MPHomeAudioStatusType { recording, syncing, importing }
@@ -208,7 +196,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeTodoItem(
           id: e.id ?? '',
           title: e.title ?? '',
-          time: _formatTodoDeadlineTime(e.deadline),
+          time: MPTimeUtils.formatTodoDeadlineLabel(e.deadline),
           reason: e.reason ?? '',
           memoryId: e.memoryId,
           insightId: e.insightId,
