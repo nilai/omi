@@ -22,29 +22,21 @@ class MPAskAIConversationListState {
   const MPAskAIConversationListState({
     required this.phase,
     this.items = const <MPAskAIConversationItem>[],
-    this.isLoadingMore = false,
-    this.hasMore = true,
     this.errorMessage,
   });
 
   final MPAskAIConversationListPhase phase;
   final List<MPAskAIConversationItem> items;
-  final bool isLoadingMore;
-  final bool hasMore;
   final String? errorMessage;
 
   MPAskAIConversationListState copyWith({
     MPAskAIConversationListPhase? phase,
     List<MPAskAIConversationItem>? items,
-    bool? isLoadingMore,
-    bool? hasMore,
     String? errorMessage,
   }) {
     return MPAskAIConversationListState(
       phase: phase ?? this.phase,
       items: items ?? this.items,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
       errorMessage: errorMessage ?? this.errorMessage,
     );
   }
@@ -60,24 +52,25 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
 
   static const int _pageSize = 20;
   static const String _kConversationListCacheKey = 'ask_ai_conversation_list';
-  String? _cursor;
 
   Future<void> initData() => refresh();
 
-  Future<void> refresh() async {
-    emit(
-      const MPAskAIConversationListState(
-        phase: MPAskAIConversationListPhase.loading,
-      ),
-    );
-    try {
-      final _MPAskAIConversationPageResult result = await _fetchPageFromServer(
-        pageSize: _pageSize,
-        cursor: null,
+  /// [fromPullToRefresh] 为 `true` 时保持当前列表展示，仅后台拉取第一页。
+  Future<void> refresh({bool fromPullToRefresh = false}) async {
+    final bool keepVisibleList = fromPullToRefresh &&
+        state.phase == MPAskAIConversationListPhase.loaded;
+    if (!keepVisibleList) {
+      emit(
+        const MPAskAIConversationListState(
+          phase: MPAskAIConversationListPhase.loading,
+        ),
       );
+    }
+    try {
+      final List<MPAskAIConversationItem> items = await _fetchFirstPageFromServer();
       await MPHiveUtil.instance.putPrimitive(
         key: _kConversationListCacheKey,
-        value: result.items
+        value: items
             .map(
               (MPAskAIConversationItem item) => <String, dynamic>{
                 'id': item.id,
@@ -86,12 +79,10 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
             )
             .toList(growable: false),
       );
-      _cursor = result.nextCursor;
       emit(
         MPAskAIConversationListState(
           phase: MPAskAIConversationListPhase.loaded,
-          items: result.items,
-          hasMore: result.hasMore,
+          items: items,
         ),
       );
     } catch (e) {
@@ -115,19 +106,16 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
                 .toList(growable: false);
 
       if (cachedItems.isNotEmpty) {
-        _cursor = cachedItems.last.id;
         emit(
           MPAskAIConversationListState(
             phase: MPAskAIConversationListPhase.loaded,
             items: cachedItems,
-            hasMore: false,
             errorMessage: e.toString(),
           ),
         );
         return;
       }
 
-      _cursor = null;
       emit(
         MPAskAIConversationListState(
           phase: MPAskAIConversationListPhase.error,
@@ -137,42 +125,10 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     }
   }
 
-  Future<void> loadMore() async {
-    final MPAskAIConversationListState cur = state;
-    if (cur.phase != MPAskAIConversationListPhase.loaded) return;
-    if (cur.isLoadingMore || !cur.hasMore) return;
-
-    emit(cur.copyWith(isLoadingMore: true));
-    try {
-      final _MPAskAIConversationPageResult result = await _fetchPageFromServer(
-        pageSize: _pageSize,
-        cursor: _cursor,
-      );
-      _cursor = result.nextCursor;
-      emit(
-        cur.copyWith(
-          items: <MPAskAIConversationItem>[...cur.items, ...result.items],
-          isLoadingMore: false,
-          hasMore: result.hasMore,
-        ),
-      );
-    } catch (e) {
-      emit(
-        cur.copyWith(
-          isLoadingMore: false,
-          errorMessage: e.toString(),
-        ),
-      );
-    }
-  }
-
-  Future<_MPAskAIConversationPageResult> _fetchPageFromServer({
-    required int pageSize,
-    required String? cursor,
-  }) async {
+  Future<List<MPAskAIConversationItem>> _fetchFirstPageFromServer() async {
     final MPGetConversationListResponse? response =
         await getConversationList(
-      MPGetConversationListRequest(pageSize: pageSize, cursor: cursor),
+      MPGetConversationListRequest(pageSize: _pageSize, cursor: null),
     );
     if (response == null) {
       throw Exception('Failed to load conversations');
@@ -180,7 +136,7 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     if (response.baseResp.code != 0) {
       throw Exception(response.baseResp.message);
     }
-    final List<MPAskAIConversationItem> items = response.conversations
+    return response.conversations
         .map(
           (MPConversationHeaderStruct e) {
             final String title = e.title.trim().isEmpty
@@ -193,23 +149,5 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
           },
         )
         .toList(growable: false);
-    final String? nextCursor = items.isEmpty ? null : items.last.id;
-    return _MPAskAIConversationPageResult(
-      items: items,
-      hasMore: response.hasMore,
-      nextCursor: nextCursor,
-    );
   }
-}
-
-class _MPAskAIConversationPageResult {
-  const _MPAskAIConversationPageResult({
-    required this.items,
-    required this.hasMore,
-    required this.nextCursor,
-  });
-
-  final List<MPAskAIConversationItem> items;
-  final bool hasMore;
-  final String? nextCursor;
 }

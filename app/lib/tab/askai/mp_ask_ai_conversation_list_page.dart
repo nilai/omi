@@ -19,40 +19,16 @@ class MPAskAIConversationListPage extends StatelessWidget {
   }
 }
 
-class _MPAskAIConversationListView extends StatefulWidget {
+class _MPAskAIConversationListView extends StatelessWidget {
   const _MPAskAIConversationListView();
 
-  @override
-  State<_MPAskAIConversationListView> createState() =>
-      _MPAskAIConversationListViewState();
-}
-
-class _MPAskAIConversationListViewState
-    extends State<_MPAskAIConversationListView> {
-  late final ScrollController _scrollController;
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController = ScrollController()..addListener(_onScroll);
+  Future<void> _onPullRefresh(BuildContext context) {
+    return context
+        .read<MPAskAIConversationListCubit>()
+        .refresh(fromPullToRefresh: true);
   }
 
-  @override
-  void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!_scrollController.hasClients) return;
-    final double threshold = _scrollController.position.maxScrollExtent - 120;
-    if (_scrollController.position.pixels >= threshold) {
-      context.read<MPAskAIConversationListCubit>().loadMore();
-    }
-  }
-
-  void _openNewChatPage() {
+  void _openNewChatPage(BuildContext context) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => const MPAskAIChatPage(
@@ -62,7 +38,7 @@ class _MPAskAIConversationListViewState
     );
   }
 
-  void _onTapConversationItem(MPAskAIConversationItem item) {
+  void _onTapConversationItem(BuildContext context, MPAskAIConversationItem item) {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
@@ -108,7 +84,7 @@ class _MPAskAIConversationListViewState
                             child: Row(
                               children: <Widget>[
                                 InkWell(
-                                  onTap: _openNewChatPage,
+                                  onTap: () => _openNewChatPage(context),
                                   borderRadius: BorderRadius.circular(14),
                                   child: Container(
                                     width: 34,
@@ -186,7 +162,7 @@ class _MPAskAIConversationListViewState
                             ),
                           ),
                           Expanded(
-                            child: _buildListByState(state),
+                            child: _buildListByState(context, state),
                           ),
                         ],
                       );
@@ -199,7 +175,10 @@ class _MPAskAIConversationListViewState
     );
   }
 
-  Widget _buildListByState(MPAskAIConversationListState state) {
+  Widget _buildListByState(
+    BuildContext context,
+    MPAskAIConversationListState state,
+  ) {
     switch (state.phase) {
       case MPAskAIConversationListPhase.loading:
         return const Center(
@@ -210,22 +189,34 @@ class _MPAskAIConversationListViewState
           ),
         );
       case MPAskAIConversationListPhase.error:
-        return Center(
-          child: Text(
-            state.errorMessage ?? 'Load failed',
-            style: OmiTextStyle.create(
-              color: secondTextColor,
-              fontSize: OmiFontSize.t4_13,
-              fontWeight: OmiFontWeight.regular,
-            ),
+        return RefreshIndicator(
+          onRefresh: () => _onPullRefresh(context),
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            children: <Widget>[
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.4,
+                child: Center(
+                  child: Text(
+                    state.errorMessage ?? 'Load failed',
+                    textAlign: TextAlign.center,
+                    style: OmiTextStyle.create(
+                      color: secondTextColor,
+                      fontSize: OmiFontSize.t4_13,
+                      fontWeight: OmiFontWeight.regular,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       case MPAskAIConversationListPhase.loaded:
         if (state.items.isEmpty) {
           return RefreshIndicator(
-            onRefresh: () => context.read<MPAskAIConversationListCubit>().refresh(),
+            onRefresh: () => _onPullRefresh(context),
             child: ListView(
-              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
               children: <Widget>[
@@ -247,24 +238,12 @@ class _MPAskAIConversationListViewState
           );
         }
         return RefreshIndicator(
-          onRefresh: () => context.read<MPAskAIConversationListCubit>().refresh(),
+          onRefresh: () => _onPullRefresh(context),
           child: ListView.builder(
-            controller: _scrollController,
-            itemCount: state.items.length + (state.isLoadingMore ? 1 : 0),
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: state.items.length,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             itemBuilder: (BuildContext context, int index) {
-              if (index >= state.items.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
-              }
               final MPAskAIConversationItem item = state.items[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),
@@ -272,11 +251,13 @@ class _MPAskAIConversationListViewState
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(8),
-                    onTap: () => _onTapConversationItem(item),
+                    onTap: () => _onTapConversationItem(context, item),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(
                         item.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: OmiTextStyle.create(
                           color: mainTextColor,
                           fontSize: OmiFontSize.t6_15,
