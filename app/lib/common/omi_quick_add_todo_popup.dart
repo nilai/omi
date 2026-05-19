@@ -171,7 +171,10 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     try {
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(_recorder);
+      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(
+        _recorder,
+        recorderOpened: _recorderOpened,
+      );
       if (!mounted) {
         return;
       }

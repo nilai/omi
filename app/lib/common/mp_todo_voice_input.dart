@@ -136,18 +136,18 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   }
 
   Future<void> _stopRecorder({required bool deleteFile}) async {
+    final bool wasOpened = _recorderOpened;
+    _recorderOpened = false;
     try {
-      if (_recorderOpened &&
-          (_recorder.isRecording || _recorder.isPaused)) {
+      if (wasOpened && (_recorder.isRecording || _recorder.isPaused)) {
         await _recorder.stopRecorder();
       }
     } catch (_) {}
     try {
-      if (_recorderOpened) {
+      if (wasOpened) {
         await _recorder.closeRecorder();
       }
     } catch (_) {}
-    _recorderOpened = false;
     if (deleteFile && _recordPath != null) {
       final File file = File(_recordPath!);
       if (await file.exists()) {
@@ -196,7 +196,10 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     try {
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(_recorder);
+      final bool resumed = await MPFlutterSoundRecorderSafe.resumeIfPaused(
+        _recorder,
+        recorderOpened: _recorderOpened,
+      );
       if (!mounted) {
         return;
       }

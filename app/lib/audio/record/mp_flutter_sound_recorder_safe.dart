@@ -28,19 +28,31 @@ class MPFlutterSoundRecorderSafe {
     }
   }
 
-  /// 仅在 [FlutterSoundRecorder.isPaused] 为 true 时恢复；已在录制中则视为成功（不调用 native）。
-  /// 无法恢复（已停止或状态不一致）时返回 `false`，调用方应清除本地「已暂停」UI 状态。
-  static Future<bool> resumeIfPaused(FlutterSoundRecorder recorder) async {
+  /// 仅在 [FlutterSoundRecorder.isPaused] 为 true 且会话仍打开时恢复。
+  ///
+  /// [recorderOpened] 须与业务侧 `_recorderOpened` 一致；Save/Close 后须先置为 `false` 再
+  /// `stopRecorder`，避免 native 已 `release` 而 Dart 仍 `isPaused` 时调用 resume 崩溃。
+  static Future<bool> resumeIfPaused(
+    FlutterSoundRecorder recorder, {
+    required bool recorderOpened,
+  }) async {
+    if (!recorderOpened) {
+      return false;
+    }
+    // iOS 上 native resumeRecorder 在 audioRec 已释放时仍会 EXC_BAD_ACCESS，无法被 Dart 捕获。
+    // 长录音弹窗等场景请用 stop + 新分段 start；此处直接返回 false 避免崩溃。
+    if (Platform.isIOS) {
+      return false;
+    }
     try {
+      if (recorder.isStopped) {
+        return false;
+      }
       if (recorder.isRecording) {
         return true;
       }
       if (!recorder.isPaused) {
         return false;
-      }
-      if (Platform.isIOS) {
-        await MPRecordingBackgroundSupport.prepareIosNativeRecorderResume();
-        await Future<void>.delayed(const Duration(milliseconds: 50));
       }
       await recorder.resumeRecorder();
       return true;

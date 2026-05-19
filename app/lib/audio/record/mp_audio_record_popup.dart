@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
+import 'package:memo_pin/audio/record/mp_flutter_sound_recorder_safe.dart';
 import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
@@ -103,7 +104,20 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
   bool _recorderOpened = false;
 
+  /// 每次 [openRecorder]/释放递增，用于丢弃 Save/Close 进行中的 resume 请求。
+  int _recorderSessionId = 0;
+
   String? _recordPath;
+
+  /// iOS：每次「暂停」为 stop 一段文件，「继续」起新段；保存时合并 ADTS。
+  final List<String> _recordSegmentPaths = <String>[];
+
+  static const Codec _kRecordCodec = Codec.aacADTS;
+  static const int _kRecordBitRate = 8000;
+  static const int _kRecordSampleRate = 8000;
+  static const int _kRecordChannels = 1;
+
+  bool get _useIosSegmentPauseResume => Platform.isIOS;
 
   /// 已累计的录音时长（不含当前 active 段）。
   Duration _completedRecordingSegments = Duration.zero;
@@ -156,7 +170,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   Future<void> _releaseRecorder({required bool deleteFile}) async {
     _tickTimer?.cancel();
     _tickTimer = null;
-    if (_recorderOpened) {
+    _recorderSessionId++;
+    final bool wasOpened = _recorderOpened;
+    _recorderOpened = false;
+    _isPaused = false;
+    if (wasOpened) {
       try {
         if (_recorder.isRecording || _recorder.isPaused) {
           await _recorder.stopRecorder();
@@ -165,16 +183,18 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       try {
         await _recorder.closeRecorder();
       } catch (_) {}
-      _recorderOpened = false;
     }
-    if (deleteFile && _recordPath != null) {
-      try {
-        final File f = File(_recordPath!);
-        if (await f.exists()) {
-          await f.delete();
-        }
-      } catch (_) {}
+    if (deleteFile) {
+      for (final String seg in _recordSegmentPaths) {
+        try {
+          final File f = File(seg);
+          if (await f.exists()) {
+            await f.delete();
+          }
+        } catch (_) {}
+      }
     }
+    _recordSegmentPaths.clear();
     _recordPath = null;
     _completedRecordingSegments = Duration.zero;
     _activeRecordingSegmentStart = null;
@@ -207,6 +227,152 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
   }
 
+  Future<void> _startRecorderToPath(String path) async {
+    await _recorder.startRecorder(
+      toFile: path,
+      codec: _kRecordCodec,
+      bitRate: _kRecordBitRate,
+      numChannels: _kRecordChannels,
+      sampleRate: _kRecordSampleRate,
+    );
+  }
+
+  Future<String> _newSegmentPath() async {
+    final Directory dir = await getTemporaryDirectory();
+    return p.join(
+      dir.path,
+      'omi_focus_${DateTime.now().millisecondsSinceEpoch}_${_recordSegmentPaths.length}.aac',
+    );
+  }
+
+  void _trackSegmentPath(String path) {
+    if (path.isEmpty) {
+      return;
+    }
+    if (!_recordSegmentPaths.contains(path)) {
+      _recordSegmentPaths.add(path);
+    }
+    _recordPath = path;
+  }
+
+  /// iOS：stop 当前段；Android：pauseRecorder。
+  Future<bool> _pauseNativeRecording() async {
+    if (_useIosSegmentPauseResume) {
+      if (!_recorder.isRecording) {
+        return true;
+      }
+      try {
+        final String? stopped = await _recorder.stopRecorder();
+        if (stopped != null && stopped.isNotEmpty) {
+          _trackSegmentPath(stopped);
+        } else if (_recordPath != null) {
+          _trackSegmentPath(_recordPath!);
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+        return true;
+      } catch (e, st) {
+        debugPrint('_pauseNativeRecording iOS: $e\n$st');
+        return false;
+      }
+    }
+    return MPFlutterSoundRecorderSafe.pauseIfRecording(_recorder);
+  }
+
+  /// iOS：新文件 start；Android：resumeRecorder。
+  Future<bool> _resumeNativeRecording() async {
+    if (!_recorderOpened || _recordPath == null) {
+      return false;
+    }
+    if (_recorder.isRecording) {
+      return true;
+    }
+    if (_useIosSegmentPauseResume) {
+      await MPRecordingBackgroundSupport.prepareIosNativeRecorderResume();
+      try {
+        if (!_recorderOpened) {
+          await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
+          _recorderOpened = true;
+        }
+        final String path = await _newSegmentPath();
+        await _startRecorderToPath(path);
+        if (!_recorder.isRecording) {
+          return false;
+        }
+        _trackSegmentPath(path);
+        return true;
+      } catch (e, st) {
+        debugPrint('_resumeNativeRecording iOS: $e\n$st');
+        return false;
+      }
+    }
+    return MPFlutterSoundRecorderSafe.resumeIfPaused(
+      _recorder,
+      recorderOpened: _recorderOpened,
+    );
+  }
+
+  Future<String?> _mergeAacAdtsSegments(List<String> paths) async {
+    if (paths.isEmpty) {
+      return null;
+    }
+    if (paths.length == 1) {
+      return paths.first;
+    }
+    final Directory dir = await getTemporaryDirectory();
+    final String merged = p.join(
+      dir.path,
+      'omi_focus_merged_${DateTime.now().millisecondsSinceEpoch}.aac',
+    );
+    final IOSink sink = File(merged).openWrite();
+    try {
+      for (final String path in paths) {
+        final File f = File(path);
+        if (await f.exists()) {
+          sink.add(await f.readAsBytes());
+        }
+      }
+    } finally {
+      await sink.close();
+    }
+    for (final String path in paths) {
+      if (path == merged) {
+        continue;
+      }
+      try {
+        final File f = File(path);
+        if (await f.exists()) {
+          await f.delete();
+        }
+      } catch (_) {}
+    }
+    return merged;
+  }
+
+  /// 停止采集并返回最终可保存的单文件路径（iOS 多段按录制顺序合并为一条 ADTS）。
+  Future<String?> _finalizeRecordingFilePath() async {
+    final List<String> paths = List<String>.from(_recordSegmentPaths);
+    if (_recorder.isRecording) {
+      final String? stopped = await _recorder.stopRecorder();
+      if (stopped != null && stopped.isNotEmpty && !paths.contains(stopped)) {
+        paths.add(stopped);
+      }
+    } else if (_recordPath != null &&
+        _recordPath!.isNotEmpty &&
+        !paths.contains(_recordPath!)) {
+      paths.add(_recordPath!);
+    }
+    _recordSegmentPaths
+      ..clear()
+      ..addAll(paths);
+    if (paths.isEmpty) {
+      return _recordPath;
+    }
+    if (!_useIosSegmentPauseResume || paths.length == 1) {
+      return paths.last;
+    }
+    return _mergeAacAdtsSegments(paths);
+  }
+
   /// 与 [_onInterruptedByOtherOwner] 共用：暂停当前连续采集段并刷新 UI。
   Future<bool> _pauseRecordingDueToExternalInterruption() async {
     if (_busy || _step != _MPAudioRecordStep.recording || _recordPath == null || !_recorderOpened) {
@@ -217,8 +383,23 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
     setState(() => _busy = true);
     try {
-      await _recorder.pauseRecorder();
+      if (!_useIosSegmentPauseResume && _recorder.isPaused) {
+        if (!mounted) {
+          return false;
+        }
+        setState(() {
+          _activeRecordingSegmentStart = null;
+          _isPaused = true;
+          _busy = false;
+        });
+        return true;
+      }
+      final bool paused = await _pauseNativeRecording();
       if (!mounted) {
+        return false;
+      }
+      if (!paused && (_recorder.isRecording || (!_useIosSegmentPauseResume && !_recorder.isPaused))) {
+        setState(() => _busy = false);
         return false;
       }
       setState(() {
@@ -334,18 +515,16 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       final Directory dir = await getTemporaryDirectory();
       final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
+      _recorderSessionId++;
+      final int sessionId = _recorderSessionId;
       _recorderOpened = true;
-      await _recorder.startRecorder(
-        toFile: path,
-        codec: Codec.aacADTS,
-        bitRate: 8000,
-        numChannels: 1,
-        sampleRate: 8000,
-      );
-      if (!mounted) {
+      await _startRecorderToPath(path);
+      if (!mounted || sessionId != _recorderSessionId) {
         await _releaseRecorder(deleteFile: true);
         return;
       }
+      _recordSegmentPaths.clear();
+      _trackSegmentPath(path);
       setState(() {
         _recordPath = path;
         _step = _MPAudioRecordStep.recording;
@@ -370,6 +549,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (_busy || _recordPath == null || !_recorderOpened) {
       return;
     }
+    final int sessionId = _recorderSessionId;
     setState(() => _busy = true);
     try {
       if (_isPaused) {
@@ -379,28 +559,57 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           }
           return;
         }
+        if (!mounted || sessionId != _recorderSessionId || !_recorderOpened) {
+          return;
+        }
         await MPGlobalRecordingCoordinator.instance
             .beforeLocalRecordingStarts(_recordingOwnerToken);
-        await _recorder.resumeRecorder();
-        if (mounted) {
-          setState(() {
-            _activeRecordingSegmentStart = DateTime.now();
-            _isPaused = false;
-            _busy = false;
-          });
+        if (!mounted || sessionId != _recorderSessionId || !_recorderOpened) {
+          return;
         }
-      } else {
-        await _recorder.pauseRecorder();
-        if (mounted) {
+        final bool resumed = await _resumeNativeRecording();
+        if (!mounted || sessionId != _recorderSessionId) {
+          return;
+        }
+        if (!resumed) {
           setState(() {
-            if (_activeRecordingSegmentStart != null) {
-              _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
-              _activeRecordingSegmentStart = null;
+            _busy = false;
+            if (_recorderOpened && _recorder.isRecording) {
+              _isPaused = false;
+              _activeRecordingSegmentStart = DateTime.now();
+            } else {
+              _isPaused = true;
             }
-            _isPaused = true;
-            _busy = false;
           });
+          MPToastUtils.showMessage(
+            'Couldn\'t resume recording. Tap again or save your recording.',
+            context: context,
+          );
+          return;
         }
+        setState(() {
+          _activeRecordingSegmentStart = DateTime.now();
+          _isPaused = false;
+          _busy = false;
+        });
+      } else {
+        final bool paused = await _pauseNativeRecording();
+        if (!mounted) {
+          return;
+        }
+        if (!paused && !_useIosSegmentPauseResume && !_recorder.isPaused) {
+          setState(() => _busy = false);
+          MPToastUtils.showMessage('Couldn\'t pause recording.', context: context);
+          return;
+        }
+        setState(() {
+          if (_activeRecordingSegmentStart != null) {
+            _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
+            _activeRecordingSegmentStart = null;
+          }
+          _isPaused = true;
+          _busy = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -435,18 +644,24 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
     setState(() => _busy = true);
+    _recorderSessionId++;
     _tickTimer?.cancel();
     _tickTimer = null;
     final Duration total = _recordingElapsed;
-    String outPath = _recordPath!;
+    String? outPath;
     try {
+      // 须在 close 之前 finalize：先 stop/合并全部分段，再关会话（勿提前置 _recorderOpened=false）。
+      outPath = await _finalizeRecordingFilePath();
       if (_recorderOpened) {
-        final String? stopped = await _recorder.stopRecorder();
-        outPath = stopped ?? outPath;
-        await _recorder.closeRecorder();
+        try {
+          await _recorder.closeRecorder();
+        } catch (_) {}
         _recorderOpened = false;
       }
+      _isPaused = false;
       await MPRecordingBackgroundSupport.deactivateAfterRecording();
+      MPGlobalRecordingCoordinator.instance
+          .notifyRecordingSessionEnded(_recordingOwnerToken);
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t save: $e');
@@ -455,7 +670,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await _releaseRecorder(deleteFile: false);
       return;
     }
-    if (!mounted || outPath.isEmpty) {
+    if (!mounted || outPath == null || outPath.isEmpty) {
       if (mounted) {
         setState(() => _busy = false);
       }
