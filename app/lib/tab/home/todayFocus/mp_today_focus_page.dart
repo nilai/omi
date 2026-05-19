@@ -337,8 +337,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         if (showFocusCard) const SizedBox(height: 16),
                         MPTodayFocusAddCard(
                           title: state.currentAiFocusSuggestion!.title,
-                          scheduledTimeLabel:
-                              state.currentAiFocusSuggestion!.scheduledTimeLabel,
+                          reason:
+                              state.currentAiFocusSuggestion!.reason,
                           addButtonText: _addingAiFocus ? 'Adding…' : 'Add to Focus',
                           onDismiss: () {
                             setState(() {

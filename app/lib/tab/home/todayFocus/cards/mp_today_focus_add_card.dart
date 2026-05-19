@@ -11,7 +11,7 @@ class MPTodayFocusAddCard extends StatelessWidget {
   const MPTodayFocusAddCard({
     super.key,
     required this.title,
-    this.scheduledTimeLabel,
+    this.reason,
     this.headerLabel = 'SUGGESTED BY AI',
     this.addButtonText = 'Add to Focus',
     this.onAddToFocus,
@@ -20,8 +20,7 @@ class MPTodayFocusAddCard extends StatelessWidget {
 
   final String title;
 
-  /// 展示为 `→ Scheduled for {值}`；为 `null` 或空串时不显示该行。
-  final String? scheduledTimeLabel;
+  final String? reason;
 
   final String headerLabel;
   final String addButtonText;
@@ -30,8 +29,8 @@ class MPTodayFocusAddCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool showSchedule = scheduledTimeLabel != null &&
-        scheduledTimeLabel!.trim().isNotEmpty;
+    final bool showSchedule = reason != null &&
+        reason!.trim().isNotEmpty;
 
     return Column(
       children: [
@@ -104,7 +103,7 @@ class MPTodayFocusAddCard extends StatelessWidget {
               if (showSchedule) ...<Widget>[
                 const SizedBox(height: 6),
                 Text(
-                  '→ Scheduled for ${scheduledTimeLabel!.trim()}',
+                  reason ?? '',
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
