@@ -1392,7 +1392,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
                 .map(
                   (MPMemoStruct memo) => MPMemoryMyMemoLine(
                     text: memo.content,
-                    type: memo.type ?? MPMemoType.highlightMemo,
+                    type: memo.type ?? MPMemoType.manualMemo,
                     memoId: memo.id.trim().isEmpty ? null : memo.id,
                   ),
                 )

@@ -12,7 +12,7 @@ import '../mp_memo_detail_sheet.dart';
 class MPMemoryMyMemoLine {
   const MPMemoryMyMemoLine({
     required this.text,
-    this.type = MPMemoType.highlightMemo,
+    this.type = MPMemoType.manualMemo,
     this.memoId,
   });
 
