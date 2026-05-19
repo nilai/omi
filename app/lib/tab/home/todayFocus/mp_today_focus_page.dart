@@ -21,6 +21,7 @@ import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
 import 'mp_today_focus_cubit.dart';
 import 'mp_today_focus_full_sheet.dart';
+import 'mp_today_focus_swipe_reveal_bus.dart';
 
 /// Today Focus：Today's Focus + ALL TO DOS 输入 + 分组待办列表（三态 + 下拉刷新）
 class MPTodayFocusPage extends StatefulWidget {
@@ -32,6 +33,7 @@ class MPTodayFocusPage extends StatefulWidget {
 
 class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   late final MPTodayFocusCubit _cubit = MPTodayFocusCubit()..initData();
+  final MPTodayFocusSwipeRevealBus _swipeRevealBus = MPTodayFocusSwipeRevealBus();
 
   StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
 
@@ -54,6 +56,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
   @override
   void dispose() {
     _todoDeletedSub?.cancel();
+    _swipeRevealBus.dispose();
     _cubit.close();
     super.dispose();
   }
@@ -322,6 +325,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                       if (showFocusCard) ...<Widget>[
                         MPTodayFocusCard(
                           data: state.focusCard,
+                          swipeRevealBus: _swipeRevealBus,
                           onItemDeleted: (int i) async {
                             await _cubit.removeFocusItemAt(i);
                           },
@@ -352,6 +356,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                       ),
                       const SizedBox(height: 24),
                       MPTodayFocusTodoGroupedList(
+                        swipeRevealBus: _swipeRevealBus,
                         todayItems: state.todayItems,
                         upcomingItems: state.upcomingItems,
                         futureItems: state.futureItems,

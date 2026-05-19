@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_swipe_reveal_bus.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -56,6 +57,7 @@ enum MPTodayFocusTodoSection {
 class MPTodayFocusTodoGroupedList extends StatefulWidget {
   const MPTodayFocusTodoGroupedList({
     super.key,
+    required this.swipeRevealBus,
     this.todayItems = const <MPTodayFocusTodoRowData>[],
     this.upcomingItems = const <MPTodayFocusTodoRowData>[],
     this.futureItems = const <MPTodayFocusTodoRowData>[],
@@ -73,6 +75,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.itemGap = 4,
   });
 
+  final MPTodayFocusSwipeRevealBus swipeRevealBus;
   final List<MPTodayFocusTodoRowData> todayItems;
   final List<MPTodayFocusTodoRowData> upcomingItems;
   final List<MPTodayFocusTodoRowData> futureItems;
@@ -111,23 +114,12 @@ class _MPTodayFocusTodoGroupedListState
   late bool _overdueExpanded;
   late bool _completedExpanded;
 
-  /// Today 分组右滑「Add to Focus」行互斥：同一时间仅允许一个处于展开态。
-  /// 值为当前展开行的 id；`null` 表示都收起。
-  late final ValueNotifier<String?> _openTodayAddToFocusRowId =
-      ValueNotifier<String?>(null);
-
   @override
   void initState() {
     super.initState();
     _futureExpanded = widget.initialFutureExpanded;
     _overdueExpanded = widget.initialOverdueExpanded;
     _completedExpanded = widget.initialCompletedExpanded;
-  }
-
-  @override
-  void dispose() {
-    _openTodayAddToFocusRowId.dispose();
-    super.dispose();
   }
 
   @override
@@ -303,7 +295,7 @@ class _MPTodayFocusTodoGroupedListState
         cell = _MPTodayTodoRevealAddToFocusRow(
           key: ValueKey<String>('mp_${rowId}'),
           rowId: rowId,
-          openRowId: _openTodayAddToFocusRowId,
+          swipeRevealBus: widget.swipeRevealBus,
           onAdd: () => widget.onItemAddToFocus!(section, i),
           child: cell,
         );
@@ -402,13 +394,13 @@ class _MPTodayTodoRevealAddToFocusRow extends StatefulWidget {
   const _MPTodayTodoRevealAddToFocusRow({
     super.key,
     required this.rowId,
-    required this.openRowId,
+    required this.swipeRevealBus,
     required this.child,
     required this.onAdd,
   });
 
   final String rowId;
-  final ValueNotifier<String?> openRowId;
+  final MPTodayFocusSwipeRevealBus swipeRevealBus;
   final Widget child;
   final VoidCallback onAdd;
 
@@ -424,9 +416,13 @@ class _MPTodayTodoRevealAddToFocusRowState
   /// 非负数，0 为闭合，`_kActionWidth` 为完全露出按钮区。
   double _offsetX = 0;
 
-  void _onOpenRowIdChanged() {
+  void _onBusChanged() {
     if (!mounted) return;
-    if (widget.openRowId.value != widget.rowId && _offsetX != 0) {
+    final String? openAddId = widget.swipeRevealBus.openAddRowId.value;
+    final bool shouldClose =
+        (openAddId != null && openAddId != widget.rowId) ||
+        widget.swipeRevealBus.openRemoveRowId.value != null;
+    if (shouldClose && _offsetX != 0) {
       setState(() => _offsetX = 0);
     }
   }
@@ -434,22 +430,27 @@ class _MPTodayTodoRevealAddToFocusRowState
   @override
   void initState() {
     super.initState();
-    widget.openRowId.addListener(_onOpenRowIdChanged);
+    widget.swipeRevealBus.openAddRowId.addListener(_onBusChanged);
+    widget.swipeRevealBus.openRemoveRowId.addListener(_onBusChanged);
   }
 
   @override
   void dispose() {
-    widget.openRowId.removeListener(_onOpenRowIdChanged);
+    widget.swipeRevealBus.openAddRowId.removeListener(_onBusChanged);
+    widget.swipeRevealBus.openRemoveRowId.removeListener(_onBusChanged);
     super.dispose();
   }
 
   void _close() {
     if (!mounted) return;
     setState(() => _offsetX = 0);
+    if (widget.swipeRevealBus.openAddRowId.value == widget.rowId) {
+      widget.swipeRevealBus.openAddRowId.value = null;
+    }
   }
 
   void _setOpen() {
-    widget.openRowId.value = widget.rowId;
+    widget.swipeRevealBus.openAdd(widget.rowId);
   }
 
   @override
@@ -513,8 +514,8 @@ class _MPTodayTodoRevealAddToFocusRowState
               });
               if (_offsetX > 0) {
                 _setOpen();
-              } else if (widget.openRowId.value == widget.rowId) {
-                widget.openRowId.value = null;
+              } else if (widget.swipeRevealBus.openAddRowId.value == widget.rowId) {
+                widget.swipeRevealBus.openAddRowId.value = null;
               }
             },
             child: Transform.translate(

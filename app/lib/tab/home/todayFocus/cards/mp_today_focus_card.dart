@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_swipe_reveal_bus.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -65,11 +66,13 @@ class MPTodayFocusCard extends StatelessWidget {
   const MPTodayFocusCard({
     super.key,
     required this.data,
+    required this.swipeRevealBus,
     this.onItemTap,
     this.onItemDeleted,
   });
 
   final MPTodayFocusCardData data;
+  final MPTodayFocusSwipeRevealBus swipeRevealBus;
   final void Function(int index, MPTodayFocusCardItem item)? onItemTap;
 
   /// 左滑露出删除按钮，点击删除后回调；为 `null` 时不启用。
@@ -123,10 +126,12 @@ class MPTodayFocusCard extends StatelessWidget {
                     ),
                   );
             if (onItemDeleted != null) {
+              final String rowId =
+                  'focus_remove_${item.todoId}_${index}_${item.title}_${item.timeLabel}';
               content = _MPTodayFocusRevealDeleteRow(
-                key: ValueKey<String>(
-                  'mp_today_focus_${item.todoId}_${index}_${item.title}_${item.timeLabel}',
-                ),
+                key: ValueKey<String>('mp_$rowId'),
+                rowId: rowId,
+                swipeRevealBus: swipeRevealBus,
                 cardBgColor: _kCardBg,
                 onDelete: () => onItemDeleted!(index),
                 child: content,
@@ -150,11 +155,15 @@ class MPTodayFocusCard extends StatelessWidget {
 class _MPTodayFocusRevealDeleteRow extends StatefulWidget {
   const _MPTodayFocusRevealDeleteRow({
     super.key,
+    required this.rowId,
+    required this.swipeRevealBus,
     required this.cardBgColor,
     required this.child,
     required this.onDelete,
   });
 
+  final String rowId;
+  final MPTodayFocusSwipeRevealBus swipeRevealBus;
   final Color cardBgColor;
   final Widget child;
   final VoidCallback onDelete;
@@ -170,6 +179,39 @@ class _MPTodayFocusRevealDeleteRowState
 
   /// 非正数，0 为闭合，`-_kActionWidth` 为完全露出删除区。
   double _offsetX = 0;
+
+  void _onBusChanged() {
+    if (!mounted) return;
+    final String? openRemoveId = widget.swipeRevealBus.openRemoveRowId.value;
+    final bool shouldClose =
+        (openRemoveId != null && openRemoveId != widget.rowId) ||
+        widget.swipeRevealBus.openAddRowId.value != null;
+    if (shouldClose && _offsetX != 0) {
+      setState(() => _offsetX = 0);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    widget.swipeRevealBus.openRemoveRowId.addListener(_onBusChanged);
+    widget.swipeRevealBus.openAddRowId.addListener(_onBusChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.swipeRevealBus.openRemoveRowId.removeListener(_onBusChanged);
+    widget.swipeRevealBus.openAddRowId.removeListener(_onBusChanged);
+    super.dispose();
+  }
+
+  void _close() {
+    if (!mounted) return;
+    setState(() => _offsetX = 0);
+    if (widget.swipeRevealBus.openRemoveRowId.value == widget.rowId) {
+      widget.swipeRevealBus.openRemoveRowId.value = null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +231,10 @@ class _MPTodayFocusRevealDeleteRowState
               child: SizedBox.expand(
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: widget.onDelete,
+                  onTap: () {
+                    _close();
+                    widget.onDelete();
+                  },
                   child: Center(
                     child: Text(
                       'Remove from\nfocus',
@@ -226,6 +271,12 @@ class _MPTodayFocusRevealDeleteRowState
                   _offsetX = 0;
                 }
               });
+              if (_offsetX == -_kActionWidth) {
+                widget.swipeRevealBus.openRemove(widget.rowId);
+              } else if (widget.swipeRevealBus.openRemoveRowId.value ==
+                  widget.rowId) {
+                widget.swipeRevealBus.openRemoveRowId.value = null;
+              }
             },
             child: Transform.translate(
               offset: Offset(_offsetX, 0),
