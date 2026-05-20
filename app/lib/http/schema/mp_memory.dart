@@ -675,11 +675,15 @@ class MPGetSummaryStatusResponse {
   @JsonKey(name: 'status')
   final int status;
 
+  @JsonKey(name: 'type')
+  final int type;
+
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
   MPGetSummaryStatusResponse({
     required this.status,
+    required this.type,
     required this.baseResp,
   });
 

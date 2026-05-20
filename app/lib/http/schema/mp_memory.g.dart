@@ -457,6 +457,7 @@ MPGetSummaryStatusResponse _$MPGetSummaryStatusResponseFromJson(
   Map<String, dynamic> json,
 ) => MPGetSummaryStatusResponse(
   status: (json['status'] as num).toInt(),
+  type: (json['type'] as num).toInt(),
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
@@ -464,6 +465,7 @@ Map<String, dynamic> _$MPGetSummaryStatusResponseToJson(
   MPGetSummaryStatusResponse instance,
 ) => <String, dynamic>{
   'status': instance.status,
+  'type': instance.type,
   'base_resp': instance.baseResp,
 };
 

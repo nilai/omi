@@ -4,6 +4,7 @@ import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_memory.dart';
 import 'audio/omi_audio_detail_page.dart';
+import 'memo/omi_memo_detail_page.dart';
 import 'memory/omi_memory_detail_page.dart';
 import 'trans/mp_memory_transition_page.dart';
 
@@ -43,20 +44,29 @@ class MPMemoryDetailPageHelper {
       if (status == 1) {
         Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (_) => MPMemoryTransitionBlocPage(
-              memoryId: id,
-              createAt: createAt,
-              headline: title,
-            ),
+            builder: (_) => MPMemoryTransitionBlocPage(memoryId: id, createAt: createAt, headline: title),
           ),
         );
         return;
       }
-      if (type == MPMemoryType.onlyRecord) {
-        Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
-        return;
+      final MPMemoryType type = MPMemoryType.values[summaryStatus?.type ?? 0];
+      switch (type) {
+        case MPMemoryType.onlyRecord:
+          Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
+          break;
+        case MPMemoryType.summary:
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoDetailPage(memoryId: id)));
+          break;
+        case MPMemoryType.memoryFeed:
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute<void>(builder: (BuildContext context) => OmiMemoryDetailPage(memoryId: id)));
+          break;
+        case MPMemoryType.memoList:
+          break;
       }
-      Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiMemoryDetailPage(memoryId: id)));
     } finally {
       isOpening = false;
     }
