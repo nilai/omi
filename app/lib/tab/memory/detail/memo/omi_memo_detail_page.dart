@@ -333,8 +333,8 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
           if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
             return;
           }
-          final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
-          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
+          final String aboutText = s.data!.title.trim().isEmpty ? 'Memo' : s.data!.title;
+          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId, title: aboutText));
           final String conversationId = lastConversation?.conversationId ?? '';
           final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
           // ignore: use_build_context_synchronously

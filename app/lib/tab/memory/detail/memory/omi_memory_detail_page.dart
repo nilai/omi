@@ -38,7 +38,7 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
   }
   final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
   final MPGetLastConversationResponse? lastConversation = await getLastConversation(
-    MPGetLastConversationRequest(conversationType: 1, paramId: memoryId),
+    MPGetLastConversationRequest(conversationType: 1, paramId: memoryId, title: aboutText),
   );
   final String conversationId = lastConversation?.conversationId ?? '';
   final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;

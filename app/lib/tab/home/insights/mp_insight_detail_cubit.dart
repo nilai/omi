@@ -390,7 +390,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
   Future<void> onAskAiButtonPressed(BuildContext context) async {
     final List<dynamic> responses = await Future.wait<dynamic>(<Future<dynamic>>[
       getInsightSuggestion(MPGetInsightSuggestionRequest(insightId: insightItem.id)),
-      getLastConversation(MPGetLastConversationRequest(conversationType: 2, paramId: insightItem.id)),
+      getLastConversation(MPGetLastConversationRequest(conversationType: 2, paramId: insightItem.id, title: insightItem.title)),
     ]);
 
     final MPGetInsightSuggestionResponse? suggestionResp = responses[0] as MPGetInsightSuggestionResponse?;
