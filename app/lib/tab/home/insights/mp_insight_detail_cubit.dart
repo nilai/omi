@@ -412,7 +412,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
     Navigator.of(targetContext).push(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
-          aboutText: insightItem.title,
+          aboutText: lastConversationResp?.title ?? insightItem.title,
           suggestedQuestions: questions,
           conversationId: conversationId,
           type: MPAskAIChatType.insight,

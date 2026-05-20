@@ -340,7 +340,7 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
           // ignore: use_build_context_synchronously
           Navigator.of(targetContext!).push(
             MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
+              builder: (_) => MPAskAIChatPage(aboutText: lastConversation?.title ?? aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
             ),
           );
         },

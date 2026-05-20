@@ -49,7 +49,7 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
   Navigator.of(targetContext).push(
     MaterialPageRoute<void>(
       builder: (_) => MPAskAIChatPage(
-        aboutText: aboutText,
+        aboutText: lastConversation?.title ?? aboutText,
         suggestedQuestions: const <String>[],
         conversationId: conversationId,
         type: MPAskAIChatType.memory,
