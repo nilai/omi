@@ -334,13 +334,13 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
             return;
           }
           final String aboutText = s.data!.title.trim().isEmpty ? 'Memo' : s.data!.title;
-          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId, title: aboutText));
+          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
           final String conversationId = lastConversation?.conversationId ?? '';
           final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
           // ignore: use_build_context_synchronously
           Navigator.of(targetContext!).push(
             MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(aboutText: lastConversation?.title ?? aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
+              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
             ),
           );
         },

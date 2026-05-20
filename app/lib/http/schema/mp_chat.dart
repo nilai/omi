@@ -295,10 +295,7 @@ class MPGetLastConversationResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  @JsonKey(name: 'title')
-  final String? title;
-
-  MPGetLastConversationResponse({required this.conversationId, required this.baseResp, this.title});
+  MPGetLastConversationResponse({required this.conversationId, required this.baseResp});
 
   factory MPGetLastConversationResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetLastConversationResponseFromJson(json);

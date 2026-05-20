@@ -38,7 +38,7 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
   }
   final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
   final MPGetLastConversationResponse? lastConversation = await getLastConversation(
-    MPGetLastConversationRequest(conversationType: 1, paramId: memoryId, title: aboutText),
+    MPGetLastConversationRequest(conversationType: 1, paramId: memoryId),
   );
   final String conversationId = lastConversation?.conversationId ?? '';
   final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
@@ -49,7 +49,7 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
   Navigator.of(targetContext).push(
     MaterialPageRoute<void>(
       builder: (_) => MPAskAIChatPage(
-        aboutText: lastConversation?.title ?? aboutText,
+        aboutText: aboutText,
         suggestedQuestions: const <String>[],
         conversationId: conversationId,
         type: MPAskAIChatType.memory,

@@ -238,7 +238,6 @@ MPGetLastConversationResponse _$MPGetLastConversationResponseFromJson(
   Map<String, dynamic> json,
 ) => MPGetLastConversationResponse(
   conversationId: json['conversation_id'] as String,
-  title: json['title'] as String?,
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
@@ -246,7 +245,6 @@ Map<String, dynamic> _$MPGetLastConversationResponseToJson(
   MPGetLastConversationResponse instance,
 ) => <String, dynamic>{
   'conversation_id': instance.conversationId,
-  'title': instance.title,
   'base_resp': instance.baseResp,
 };
 
