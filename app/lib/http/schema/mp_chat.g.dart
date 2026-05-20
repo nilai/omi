@@ -225,7 +225,6 @@ MPGetLastConversationRequest _$MPGetLastConversationRequestFromJson(
 ) => MPGetLastConversationRequest(
   conversationType: (json['conversation_type'] as num).toInt(),
   paramId: json['param_id'] as String,
-  title: json['title'] as String?,
 );
 
 Map<String, dynamic> _$MPGetLastConversationRequestToJson(
@@ -233,7 +232,6 @@ Map<String, dynamic> _$MPGetLastConversationRequestToJson(
 ) => <String, dynamic>{
   'conversation_type': instance.conversationType,
   'param_id': instance.paramId,
-  'title': instance.title,
 };
 
 MPGetLastConversationResponse _$MPGetLastConversationResponseFromJson(

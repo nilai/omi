@@ -276,13 +276,10 @@ class MPGetLastConversationRequest {
   @JsonKey(name: 'conversation_type')
   final int conversationType;
 
-  @JsonKey(name: 'title')
-  final String? title;
-
   @JsonKey(name: 'param_id')
   final String paramId;
 
-  MPGetLastConversationRequest({required this.conversationType, required this.paramId, this.title});
+  MPGetLastConversationRequest({required this.conversationType, required this.paramId,});
 
   factory MPGetLastConversationRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetLastConversationRequestFromJson(json);
