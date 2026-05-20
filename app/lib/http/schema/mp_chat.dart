@@ -50,11 +50,7 @@ class MPCreateConversationResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPCreateConversationResponse({
-    required this.conversationId,
-    required this.greet,
-    required this.baseResp,
-  });
+  MPCreateConversationResponse({required this.conversationId, required this.greet, required this.baseResp});
 
   factory MPCreateConversationResponse.fromJson(Map<String, dynamic> json) =>
       _$MPCreateConversationResponseFromJson(json);
@@ -70,13 +66,9 @@ class MPChatRequest {
   @JsonKey(name: 'conversation_id')
   final String conversationId;
 
-  MPChatRequest({
-    required this.message,
-    required this.conversationId,
-  });
+  MPChatRequest({required this.message, required this.conversationId});
 
-  factory MPChatRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPChatRequestFromJson(json);
+  factory MPChatRequest.fromJson(Map<String, dynamic> json) => _$MPChatRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPChatRequestToJson(this);
 }
@@ -89,10 +81,7 @@ class MPGetConversationListRequest {
   @JsonKey(name: 'cursor')
   final String? cursor;
 
-  MPGetConversationListRequest({
-    required this.pageSize,
-    this.cursor,
-  });
+  MPGetConversationListRequest({required this.pageSize, this.cursor});
 
   factory MPGetConversationListRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationListRequestFromJson(json);
@@ -108,13 +97,9 @@ class MPConversationHeaderStruct {
   @JsonKey(name: 'title')
   final String title;
 
-  MPConversationHeaderStruct({
-    required this.id,
-    required this.title,
-  });
+  MPConversationHeaderStruct({required this.id, required this.title});
 
-  factory MPConversationHeaderStruct.fromJson(Map<String, dynamic> json) =>
-      _$MPConversationHeaderStructFromJson(json);
+  factory MPConversationHeaderStruct.fromJson(Map<String, dynamic> json) => _$MPConversationHeaderStructFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPConversationHeaderStructToJson(this);
 }
@@ -130,11 +115,7 @@ class MPGetConversationListResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPGetConversationListResponse({
-    required this.conversations,
-    required this.hasMore,
-    required this.baseResp,
-  });
+  MPGetConversationListResponse({required this.conversations, required this.hasMore, required this.baseResp});
 
   factory MPGetConversationListResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationListResponseFromJson(json);
@@ -153,17 +134,12 @@ class MPGetConversationDetailRequest {
   @JsonKey(name: 'cursor')
   final String? cursor;
 
-  MPGetConversationDetailRequest({
-    required this.conversationId,
-    required this.pageSize,
-    this.cursor,
-  });
+  MPGetConversationDetailRequest({required this.conversationId, required this.pageSize, this.cursor});
 
   factory MPGetConversationDetailRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationDetailRequestFromJson(json);
 
-  Map<String, dynamic> toJson() =>
-      _$MPGetConversationDetailRequestToJson(this);
+  Map<String, dynamic> toJson() => _$MPGetConversationDetailRequestToJson(this);
 }
 
 @JsonSerializable()
@@ -177,14 +153,9 @@ class MPConversationStruct {
   @JsonKey(name: 'time')
   final String time;
 
-  MPConversationStruct({
-    required this.speaker,
-    required this.content,
-    required this.time,
-  });
+  MPConversationStruct({required this.speaker, required this.content, required this.time});
 
-  factory MPConversationStruct.fromJson(Map<String, dynamic> json) =>
-      _$MPConversationStructFromJson(json);
+  factory MPConversationStruct.fromJson(Map<String, dynamic> json) => _$MPConversationStructFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPConversationStructToJson(this);
 }
@@ -213,8 +184,7 @@ class MPGetConversationDetailResponse {
   factory MPGetConversationDetailResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationDetailResponseFromJson(json);
 
-  Map<String, dynamic> toJson() =>
-      _$MPGetConversationDetailResponseToJson(this);
+  Map<String, dynamic> toJson() => _$MPGetConversationDetailResponseToJson(this);
 }
 
 @JsonSerializable()
@@ -222,12 +192,9 @@ class MPTranscriptRequest {
   @JsonKey(name: 'audio_url')
   final String audioUrl;
 
-  MPTranscriptRequest({
-    required this.audioUrl,
-  });
+  MPTranscriptRequest({required this.audioUrl});
 
-  factory MPTranscriptRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPTranscriptRequestFromJson(json);
+  factory MPTranscriptRequest.fromJson(Map<String, dynamic> json) => _$MPTranscriptRequestFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPTranscriptRequestToJson(this);
 }
@@ -240,13 +207,9 @@ class MPTranscriptResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPTranscriptResponse({
-    required this.content,
-    required this.baseResp,
-  });
+  MPTranscriptResponse({required this.content, required this.baseResp});
 
-  factory MPTranscriptResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPTranscriptResponseFromJson(json);
+  factory MPTranscriptResponse.fromJson(Map<String, dynamic> json) => _$MPTranscriptResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPTranscriptResponseToJson(this);
 }
@@ -258,8 +221,7 @@ class MPGetChatSuggestionCardRequest {
   factory MPGetChatSuggestionCardRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetChatSuggestionCardRequestFromJson(json);
 
-  Map<String, dynamic> toJson() =>
-      _$MPGetChatSuggestionCardRequestToJson(this);
+  Map<String, dynamic> toJson() => _$MPGetChatSuggestionCardRequestToJson(this);
 }
 
 @JsonSerializable()
@@ -287,8 +249,7 @@ class MPChatSuggestionCard {
     required this.suggestions,
   });
 
-  factory MPChatSuggestionCard.fromJson(Map<String, dynamic> json) =>
-      _$MPChatSuggestionCardFromJson(json);
+  factory MPChatSuggestionCard.fromJson(Map<String, dynamic> json) => _$MPChatSuggestionCardFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPChatSuggestionCardToJson(this);
 }
@@ -301,33 +262,27 @@ class MPGetChatSuggestionCardsResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPGetChatSuggestionCardsResponse({
-    required this.suggestion,
-    required this.baseResp,
-  });
+  MPGetChatSuggestionCardsResponse({required this.suggestion, required this.baseResp});
 
-  factory MPGetChatSuggestionCardsResponse.fromJson(
-    Map<String, dynamic> json,
-  ) =>
+  factory MPGetChatSuggestionCardsResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetChatSuggestionCardsResponseFromJson(json);
 
-  Map<String, dynamic> toJson() =>
-      _$MPGetChatSuggestionCardsResponseToJson(this);
+  Map<String, dynamic> toJson() => _$MPGetChatSuggestionCardsResponseToJson(this);
 }
 
 @JsonSerializable()
 class MPGetLastConversationRequest {
   // 1: memory, 2: insight  0: 其它
   @JsonKey(name: 'conversation_type')
-  final int conversationType; 
+  final int conversationType;
+
+  @JsonKey(name: 'title')
+  final String? title;
 
   @JsonKey(name: 'param_id')
   final String paramId;
 
-  MPGetLastConversationRequest({
-    required this.conversationType,
-    required this.paramId,
-  });
+  MPGetLastConversationRequest({required this.conversationType, required this.paramId, this.title});
 
   factory MPGetLastConversationRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetLastConversationRequestFromJson(json);
@@ -343,10 +298,10 @@ class MPGetLastConversationResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPGetLastConversationResponse({
-    required this.conversationId,
-    required this.baseResp,
-  });
+  @JsonKey(name: 'title')
+  final String? title;
+
+  MPGetLastConversationResponse({required this.conversationId, required this.baseResp, this.title});
 
   factory MPGetLastConversationResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetLastConversationResponseFromJson(json);
@@ -359,9 +314,7 @@ class MPGetConversationTitleRequest {
   @JsonKey(name: 'conversation_id')
   final String conversationId;
 
-  MPGetConversationTitleRequest({
-    required this.conversationId,
-  });
+  MPGetConversationTitleRequest({required this.conversationId});
 
   factory MPGetConversationTitleRequest.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationTitleRequestFromJson(json);
@@ -377,10 +330,7 @@ class MPGetConversationTitleResponse {
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPGetConversationTitleResponse({
-    required this.title,
-    required this.baseResp,
-  });
+  MPGetConversationTitleResponse({required this.title, required this.baseResp});
 
   factory MPGetConversationTitleResponse.fromJson(Map<String, dynamic> json) =>
       _$MPGetConversationTitleResponseFromJson(json);
