@@ -51,6 +51,7 @@ class MPHomeTodoItem {
     this.insightId,
     this.deadlineUnixSec,
     this.description,
+    this.note,
   });
 
   final String id;
@@ -61,6 +62,9 @@ class MPHomeTodoItem {
   final int? memoryId;
   final String? insightId;
   final String? description;
+
+  /// 与 [MPTodoStruct.note] 一致，编辑 Todo 弹窗 NOTES 回显。
+  final String? note;
 
   /// 与 [MPTodoStruct.deadline] 一致（Unix 秒）；无截止为 `null`。
   final int? deadlineUnixSec;
@@ -203,6 +207,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           deadlineUnixSec: e.deadline,
           completed: e.status == 2,
           description: e.description,
+          note: e.note,
         ),
       );
     }

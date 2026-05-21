@@ -16,6 +16,7 @@ class MPTodayFocusCardItem {
     this.slot,
     this.deadlineUnixSec,
     this.description,
+    this.note,
   });
 
   final String title;
@@ -38,6 +39,9 @@ class MPTodayFocusCardItem {
   final int? deadlineUnixSec;
 
   final String? description;
+
+  /// 与 [MPTodoStruct.note] 一致，编辑 Todo 弹窗 NOTES 回显。
+  final String? note;
 }
 
 /// 「Today's Focus」整卡数据

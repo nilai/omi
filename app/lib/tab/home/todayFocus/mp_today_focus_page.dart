@@ -166,7 +166,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     final bool mutated = await _showOmiEditTodoPopupWithMemoryContext(
       memoryId: item.memoryId,
       title: item.title,
-      notes: item.description ?? '',
+      notes: item.note ?? '',
       whenLabel: 'Today',
       timeLabel: item.timeLabel,
       todoId: item.todoId,
@@ -236,7 +236,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     final bool mutated = await _showOmiEditTodoPopupWithMemoryContext(
       memoryId: row.memoryId,
       title: row.title,
-      notes: row.description ?? '',
+      notes: row.note ?? '',
       whenLabel: whenLabel,
       timeLabel: timeLabel,
       todoId: row.todoId,

@@ -22,7 +22,7 @@ class MPTodayFocusTodoRowData {
     this.isChecked = false,
     this.highlighted = false,
     this.slot,
-    this.description,
+    this.note,
   });
 
   final String title;
@@ -41,8 +41,8 @@ class MPTodayFocusTodoRowData {
 
   /// 仅 Overdue：浅灰高亮底
   final bool highlighted;
-
-  final String? description;
+  
+  final String? note;
 }
 
 /// 分组标识（回调里区分来源）

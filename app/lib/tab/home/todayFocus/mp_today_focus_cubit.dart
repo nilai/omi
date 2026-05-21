@@ -487,6 +487,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       insightId: t.insightId,
       deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(t.deadline),
       description: t.description,
+      note: t.note,
     );
   }
 
@@ -511,7 +512,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       highlighted: st == 3,
       slot: t.slot,
       insightId: t.insightId,
-      description: t.description,
+      note: t.note,
     );
   }
 
@@ -689,6 +690,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       slot: slot,
       insightId: todo.insightId,
       deadlineUnixSec: todo.deadlineUnixSec,
+      note: todo.note,
     );
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }

@@ -151,7 +151,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
         contextMemoryLabel: todoContext.label,
         contextMemoryTitle: todoContext.title,
         contextMetaLine: todoContext.metaLine,
-        notes: item.description ?? '',
+        notes: item.note ?? '',
         whenLabel: 'Today',
         timeLabel: (item.time == null || item.time!.isEmpty) ? '--:--' : item.time!,
         todoId: item.id,
