@@ -145,14 +145,18 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   }
 
   /// 组装分析结果并展示确认弹窗（与 Today Focus 共用 [MPAnalyzeMemoConfirmFlow]）。
+  ///
+  /// [memoType]：文本输入为 `0`，录音转写为 `1`。
   Future<void> _showAnalyzeConfirmDialog({
     required String originalText,
     required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
+    required int memoType,
   }) async {
     await MPAnalyzeMemoConfirmFlow.showConfirmAndBatchCreate(
       widget.hostContext,
       originalText: originalText,
       structuredSuggestions: structuredSuggestions,
+      memoType: memoType,
     );
   }
 
@@ -397,7 +401,11 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     if (!widget.hostContext.mounted) {
       return;
     }
-    await _showAnalyzeConfirmDialog(originalText: memoText, structuredSuggestions: response.structuredSuggestions);
+    await _showAnalyzeConfirmDialog(
+      originalText: memoText,
+      structuredSuggestions: response.structuredSuggestions,
+      memoType: 0,
+    );
   }
 
   void _showVoiceRetryOnFailure() {
@@ -465,6 +473,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     await _showAnalyzeConfirmDialog(
       originalText: memoText,
       structuredSuggestions: response.structuredSuggestions,
+      memoType: 1,
     );
   }
 

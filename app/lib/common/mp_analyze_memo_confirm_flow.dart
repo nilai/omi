@@ -18,6 +18,7 @@ class MPAnalyzeMemoConfirmFlow {
     BuildContext context, {
     required String originalText,
     required List<MPAnalyzeMemoSuggestionStruct> structuredSuggestions,
+    required int memoType,
   }) async {
     final String fallbackText = originalText.trim();
     final List<MPQuickCaptureConfirmItem> items = <MPQuickCaptureConfirmItem>[];
@@ -29,7 +30,7 @@ class MPAnalyzeMemoConfirmFlow {
       if (e.type == MPAnalyzeMemoSuggestionType.todo) {
         items.add(MPQuickCaptureConfirmItem.todo(content, e.deadline));
       } else {
-        items.add(MPQuickCaptureConfirmItem.memo(content));
+        items.add(MPQuickCaptureConfirmItem.memo(content, memoType));
       }
     }
     final MPQuickCaptureConfirmResult? result = await MPQucikCaptureConfirmDialog.show(

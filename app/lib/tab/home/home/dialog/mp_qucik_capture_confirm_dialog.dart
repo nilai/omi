@@ -8,15 +8,15 @@ import '../../../../utils/omi_font_utils.dart';
 class MPQuickCaptureConfirmItem {
   /// Todo 行。
   factory MPQuickCaptureConfirmItem.todo(String title, int? deadline) {
-    return MPQuickCaptureConfirmItem._(isTodo: true, text: title, deadline: deadline);
+    return MPQuickCaptureConfirmItem._(isTodo: true, text: title, deadline: deadline, type: 0);
   }
 
   /// Memo 行。
-  factory MPQuickCaptureConfirmItem.memo(String content) {
-    return MPQuickCaptureConfirmItem._(isTodo: false, text: content, deadline: null);
+  factory MPQuickCaptureConfirmItem.memo(String content, int type) {
+    return MPQuickCaptureConfirmItem._(isTodo: false, text: content, deadline: null, type: type);
   }
 
-  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text, required this.deadline});
+  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text, required this.deadline, required this.type});
 
   final bool isTodo;
 
@@ -24,6 +24,8 @@ class MPQuickCaptureConfirmItem {
   final String text;
 
   final int? deadline;
+
+  final int type;
 }
 
 /// Quick Capture 确认弹窗返回结果。
@@ -96,7 +98,7 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
 }
 
 class _ConfirmRow {
-  _ConfirmRow({required this.isTodo, required this.text, required this.deadline});
+  _ConfirmRow({required this.isTodo, required this.text, required this.deadline, required this.type});
 
   final bool isTodo;
   String text;
@@ -105,6 +107,8 @@ class _ConfirmRow {
 
   /// 默认全选，点击行切换。
   bool selected = true;
+
+  final int type;
 }
 
 class _MPQucikCaptureConfirmDialogState
@@ -117,6 +121,7 @@ class _MPQucikCaptureConfirmDialogState
           isTodo: e.isTodo,
           text: e.text.trim(),
           deadline: e.deadline,
+          type: e.type,
         ),
       )
       .where((_ConfirmRow r) => r.text.isNotEmpty)
@@ -229,7 +234,7 @@ class _MPQucikCaptureConfirmDialogState
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateMemoItem(content: t, createAt: 0));
+      out.add(MPBatchCreateMemoItem(content: t, createAt: 0, type: r.type));
     }
     return out;
   }
