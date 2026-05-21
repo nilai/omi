@@ -96,26 +96,6 @@ Future<MPTranscriptResponse?> transcript(MPTranscriptRequest req) async {
   return null;
 }
 
-// GET /api/v1/chat/get_title
-Future<MPGetConversationTitleResponse?> getConversationTitle(
-  MPGetConversationTitleRequest req,
-) async {
-  final response = await makeApiCall(
-    url: '${Env.apiBaseUrl}api/v1/chat/get_title?conversation_id=${req.conversationId}',
-    headers: {},
-    method: 'GET',
-    body: '',
-  );
-  if (response == null) return null;
-  debugPrint('getConversationTitle response: ${response.body}');
-  if (response.statusCode == 200) {
-    return MPGetConversationTitleResponse.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
-  }
-  return null;
-}
-
 // GET /api/v1/chat/suggestion_cards
 Future<MPGetChatSuggestionCardsResponse?> getChatSuggestionCards(
   MPGetChatSuggestionCardRequest req,

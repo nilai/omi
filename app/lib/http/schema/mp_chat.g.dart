@@ -247,24 +247,3 @@ Map<String, dynamic> _$MPGetLastConversationResponseToJson(
   'conversation_id': instance.conversationId,
   'base_resp': instance.baseResp,
 };
-
-MPGetConversationTitleRequest _$MPGetConversationTitleRequestFromJson(
-  Map<String, dynamic> json,
-) => MPGetConversationTitleRequest(
-  conversationId: json['conversation_id'] as String,
-);
-
-Map<String, dynamic> _$MPGetConversationTitleRequestToJson(
-  MPGetConversationTitleRequest instance,
-) => <String, dynamic>{'conversation_id': instance.conversationId};
-
-MPGetConversationTitleResponse _$MPGetConversationTitleResponseFromJson(
-  Map<String, dynamic> json,
-) => MPGetConversationTitleResponse(
-  title: json['title'] as String,
-  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
-);
-
-Map<String, dynamic> _$MPGetConversationTitleResponseToJson(
-  MPGetConversationTitleResponse instance,
-) => <String, dynamic>{'title': instance.title, 'base_resp': instance.baseResp};

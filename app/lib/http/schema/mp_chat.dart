@@ -302,32 +302,3 @@ class MPGetLastConversationResponse {
 
   Map<String, dynamic> toJson() => _$MPGetLastConversationResponseToJson(this);
 }
-
-@JsonSerializable()
-class MPGetConversationTitleRequest {
-  @JsonKey(name: 'conversation_id')
-  final String conversationId;
-
-  MPGetConversationTitleRequest({required this.conversationId});
-
-  factory MPGetConversationTitleRequest.fromJson(Map<String, dynamic> json) =>
-      _$MPGetConversationTitleRequestFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MPGetConversationTitleRequestToJson(this);
-}
-
-@JsonSerializable()
-class MPGetConversationTitleResponse {
-  @JsonKey(name: 'title')
-  final String title;
-
-  @JsonKey(name: 'base_resp')
-  final MPBaseResp baseResp;
-
-  MPGetConversationTitleResponse({required this.title, required this.baseResp});
-
-  factory MPGetConversationTitleResponse.fromJson(Map<String, dynamic> json) =>
-      _$MPGetConversationTitleResponseFromJson(json);
-
-  Map<String, dynamic> toJson() => _$MPGetConversationTitleResponseToJson(this);
-}
