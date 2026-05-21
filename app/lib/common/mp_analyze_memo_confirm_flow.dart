@@ -40,13 +40,24 @@ class MPAnalyzeMemoConfirmFlow {
     if (result == null || !result.confirmed) {
       return false;
     }
-    if (result.todos.isEmpty && result.memos.isEmpty) {
+    final String? chosenOriginal = result.originalText?.trim();
+    final bool useOriginalText =
+        chosenOriginal != null && chosenOriginal.isNotEmpty;
+    if (!useOriginalText && result.todos.isEmpty && result.memos.isEmpty) {
       MPToastUtils.showMessage('No suggestions selected.');
       return false;
     }
-    final MPBatchCreateResponse? response = await batchCreate(
-      MPBatchCreateRequest(todos: result.todos, memos: result.memos),
-    );
+    final MPBatchCreateRequest request;
+    if (useOriginalText) {
+      request = MPBatchCreateRequest(
+        memos: <MPBatchCreateMemoItem>[
+          MPBatchCreateMemoItem(content: chosenOriginal, createAt: 0),
+        ],
+      );
+    } else {
+      request = MPBatchCreateRequest(todos: result.todos, memos: result.memos);
+    }
+    final MPBatchCreateResponse? response = await batchCreate(request);
     if (response == null) {
       return false;
     }

@@ -31,6 +31,7 @@ class MPQuickCaptureConfirmResult {
   /// 构造函数。
   const MPQuickCaptureConfirmResult({
     required this.confirmed,
+    this.originalText,
     required this.todos,
     required this.memos,
   });
@@ -38,11 +39,20 @@ class MPQuickCaptureConfirmResult {
   /// 是否点击确认。
   final bool confirmed;
 
+  /// 用户选中 ORIGINAL TEXT 区域并确认时，为原始文案；选中 STRUCTURED SUGGESTIONS 时为 `null`。
+  final String? originalText;
+
   /// 用户勾选且编辑后的 Todo（仅 [confirmed] 为 true 时有意义）。
   final List<MPBatchCreateTodoItem> todos;
 
   /// 用户勾选且编辑后的 Memo（仅 [confirmed] 为 true 时有意义）。
   final List<MPBatchCreateMemoItem> memos;
+}
+
+/// 互斥选中区域：原始文案 / 结构化建议列表。
+enum _MPConfirmSelectionRegion {
+  originalText,
+  items,
 }
 
 /// Quick Capture 结构化确认弹窗。
@@ -112,9 +122,88 @@ class _MPQucikCaptureConfirmDialogState
       .where((_ConfirmRow r) => r.text.isNotEmpty)
       .toList(growable: true);
 
+  /// 默认选中 items 区域且全部 item 已勾选（见 [_ConfirmRow.selected]）。
+  _MPConfirmSelectionRegion _activeRegion = _MPConfirmSelectionRegion.items;
+
   int? _editingIndex;
   TextEditingController? _editingController;
   final FocusNode _editingFocusNode = FocusNode();
+
+  bool get _isOriginalTextRegionActive =>
+      _activeRegion == _MPConfirmSelectionRegion.originalText;
+
+  bool get _isItemsRegionActive => _activeRegion == _MPConfirmSelectionRegion.items;
+
+  BoxDecoration _buildRegionCardDecoration({required bool isActive}) {
+    return BoxDecoration(
+      color: isActive ? Colors.white : const Color(0xFFFAFAFC),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: isActive ? _kBlue : lineColor.withValues(alpha: 0.9),
+        width: isActive ? 2 : 1,
+      ),
+      boxShadow: isActive
+          ? <BoxShadow>[
+              BoxShadow(
+                color: _kBlue.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
+          : null,
+    );
+  }
+
+  void _selectOriginalTextRegion() {
+    setState(() {
+      _activeRegion = _MPConfirmSelectionRegion.originalText;
+      for (final _ConfirmRow r in _rows) {
+        r.selected = false;
+      }
+      _editingIndex = null;
+      _editingController?.dispose();
+      _editingController = null;
+      _editingFocusNode.unfocus();
+    });
+  }
+
+  /// 仅切换至 items 区域；从 originalText 切回时恢复全部勾选。
+  void _selectItemsRegion() {
+    final bool fromOriginalText = _isOriginalTextRegionActive;
+    setState(() {
+      _activeRegion = _MPConfirmSelectionRegion.items;
+      if (fromOriginalText) {
+        for (final _ConfirmRow r in _rows) {
+          r.selected = true;
+        }
+      }
+    });
+  }
+
+  MPQuickCaptureConfirmResult _buildPopResult({required bool confirmed}) {
+    if (!confirmed) {
+      return const MPQuickCaptureConfirmResult(
+        confirmed: false,
+        originalText: null,
+        todos: <MPBatchCreateTodoItem>[],
+        memos: <MPBatchCreateMemoItem>[],
+      );
+    }
+    if (_isOriginalTextRegionActive) {
+      return MPQuickCaptureConfirmResult(
+        confirmed: true,
+        originalText: widget.originalText.trim(),
+        todos: const <MPBatchCreateTodoItem>[],
+        memos: const <MPBatchCreateMemoItem>[],
+      );
+    }
+    return MPQuickCaptureConfirmResult(
+      confirmed: true,
+      originalText: null,
+      todos: _selectedTodos(),
+      memos: _selectedMemos(),
+    );
+  }
 
   @override
   void dispose() {
@@ -187,8 +276,12 @@ class _MPQucikCaptureConfirmDialogState
     setState(() => _editingIndex = null);
   }
 
-  void _toggleSelected(int index) {
+  void _onItemSelectionTap(int index) {
     if (index < 0 || index >= _rows.length) {
+      return;
+    }
+    // originalText 区域选中时，须先点击 items 区域，再点击 item 才能勾选。
+    if (_isOriginalTextRegionActive) {
       return;
     }
     setState(() => _rows[index].selected = !_rows[index].selected);
@@ -214,13 +307,7 @@ class _MPQucikCaptureConfirmDialogState
           ),
           const Spacer(),
           IconButton(
-            onPressed: () => Navigator.of(context).pop(
-              MPQuickCaptureConfirmResult(
-                confirmed: false,
-                todos: const <MPBatchCreateTodoItem>[],
-                memos: const <MPBatchCreateMemoItem>[],
-              ),
-            ),
+            onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
             icon: const Icon(Icons.close_rounded),
             color: secondTextColor,
           ),
@@ -242,21 +329,32 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   Widget _buildOriginalTextCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAFAFC),
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: _selectOriginalTextRegion,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: lineColor.withValues(alpha: 0.9)),
-      ),
-      child: Text(
-        widget.originalText,
-        style: TextStyle(
-          fontSize: OmiFontSize.t8_17,
-          fontWeight: OmiFontWeight.medium,
-          color: mainTextColor,
-          height: 1.35,
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: _buildRegionCardDecoration(
+            isActive: _isOriginalTextRegionActive,
+          ),
+          child: Text(
+            widget.originalText,
+            style: TextStyle(
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.medium,
+              color: mainTextColor,
+              height: 1.35,
+            ),
+          ),
         ),
       ),
     );
@@ -303,7 +401,7 @@ class _MPQucikCaptureConfirmDialogState
             child: Material(
               type: MaterialType.transparency,
               child: InkWell(
-                onTap: editing ? null : () => _toggleSelected(index),
+                onTap: editing ? null : () => _onItemSelectionTap(index),
                 splashFactory: NoSplash.splashFactory,
                 splashColor: Colors.transparent,
                 highlightColor: Colors.transparent,
@@ -386,15 +484,24 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   Widget _buildIssuesCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: _selectItemsRegion,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kBlue, width: 2),
-      ),
-      child: Column(
-        children: List<Widget>.generate(_rows.length, _buildIssueTile),
+        splashFactory: NoSplash.splashFactory,
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
+        overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: _buildRegionCardDecoration(isActive: _isItemsRegionActive),
+          child: Column(
+            children: List<Widget>.generate(_rows.length, _buildIssueTile),
+          ),
+        ),
       ),
     );
   }
@@ -408,13 +515,7 @@ class _MPQucikCaptureConfirmDialogState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(
-                  MPQuickCaptureConfirmResult(
-                    confirmed: false,
-                    todos: const <MPBatchCreateTodoItem>[],
-                    memos: const <MPBatchCreateMemoItem>[],
-                  ),
-                ),
+                onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFFF5F5F9),
                   foregroundColor: mainTextColor,
@@ -438,13 +539,7 @@ class _MPQucikCaptureConfirmDialogState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(
-                  MPQuickCaptureConfirmResult(
-                    confirmed: true,
-                    todos: _selectedTodos(),
-                    memos: _selectedMemos(),
-                  ),
-                ),
+                onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: true)),
                 style: TextButton.styleFrom(
                   backgroundColor: _kBlue,
                   foregroundColor: Colors.white,
