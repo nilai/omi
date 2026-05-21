@@ -79,7 +79,9 @@ Future<bool> showOmiEditTodoPopup(
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -519,9 +521,21 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
       duration: const Duration(milliseconds: 220),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                FocusManager.instance.primaryFocus?.unfocus();
+                Navigator.of(context).pop(false);
+              },
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxSheetHeight),
           child: Container(
             clipBehavior: Clip.antiAlias,
@@ -778,6 +792,8 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
             ),
           ),
         ),
+          ),
+        ],
       ),
     );
   }
