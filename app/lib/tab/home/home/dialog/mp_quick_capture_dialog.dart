@@ -67,6 +67,9 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
   _MPQuickCaptureState _state = _MPQuickCaptureState.idle;
   bool _recorderOpened = false;
   String? _recordPath;
+  /// 上传成功后的录音 URL；分析失败重试时可直接调分析接口。
+  String? _cachedRecordUri;
+  bool _showVoiceRetry = false;
   bool _busy = false;
   bool _isClosing = false;
   late NavigatorState _sheetNavigator;
@@ -102,6 +105,29 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     unawaited(_stopRecorder(deleteFile: true));
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
+  }
+
+  void _clearVoiceRetryState({bool deleteLocalRecording = false}) {
+    _cachedRecordUri = null;
+    _showVoiceRetry = false;
+    if (deleteLocalRecording) {
+      unawaited(_stopRecorder(deleteFile: true));
+    }
+  }
+
+  /// 点击输入框或录音按钮时隐藏 Retry，并清空录音 URL / 本地文件，避免与新一轮录音混淆。
+  void _onInputOrRecordEngaged() {
+    final bool shouldReset = _showVoiceRetry ||
+        (_cachedRecordUri != null && _cachedRecordUri!.trim().isNotEmpty) ||
+        (_recordPath != null && _recordPath!.isNotEmpty);
+    if (!shouldReset) {
+      return;
+    }
+    setState(() {
+      _showVoiceRetry = false;
+      _cachedRecordUri = null;
+    });
+    unawaited(_stopRecorder(deleteFile: true));
   }
 
   void _handleTextChanged() {
@@ -278,6 +304,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     if (_busy) {
       return;
     }
+    _onInputOrRecordEngaged();
     _focusNode.unfocus();
     setState(() => _busy = true);
     try {
@@ -373,14 +400,116 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     await _showAnalyzeConfirmDialog(originalText: memoText, structuredSuggestions: response.structuredSuggestions);
   }
 
+  void _showVoiceRetryOnFailure() {
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _busy = false;
+      _showVoiceRetry = true;
+      _state = _textController.text.trim().isNotEmpty
+          ? _MPQuickCaptureState.textReady
+          : _MPQuickCaptureState.idle;
+    });
+  }
+
+  Future<bool> _uploadLocalRecordingFile(String filePath) async {
+    final File file = File(filePath);
+    if (!await file.exists()) {
+      MPToastUtils.showMessage('Recording file not found.');
+      return false;
+    }
+    final List<int> bytes = await file.readAsBytes();
+    final String? recordUri =
+        await MPAudioUploadService().uploadMPAudioBytes(bytes, 'audio/aac');
+    if (recordUri == null || recordUri.isEmpty) {
+      MPToastUtils.showMessage('Failed to upload audio.');
+      return false;
+    }
+    _cachedRecordUri = recordUri;
+    return true;
+  }
+
+  Future<void> _analyzeCachedRecordUri() async {
+    final String? recordUri = _cachedRecordUri;
+    if (recordUri == null || recordUri.isEmpty) {
+      MPToastUtils.showMessage('No uploaded recording. Please record again.');
+      _showVoiceRetryOnFailure();
+      return;
+    }
+    final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
+      MPAnalyzeMemoRecordRequest(
+        recordUrl: recordUri,
+        createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      ),
+    );
+    if (!mounted || _isClosing) {
+      return;
+    }
+    if (response == null || response.baseResp.code != 0) {
+      MPToastUtils.showMessage(
+        response?.baseResp.message ?? 'Transcription failed. Please try again later.',
+      );
+      _showVoiceRetryOnFailure();
+      return;
+    }
+    _clearVoiceRetryState(deleteLocalRecording: true);
+    final String memoText = response.originalText.trim();
+    _isClosing = true;
+    if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
+      _sheetNavigator.pop();
+    }
+    if (!widget.hostContext.mounted) {
+      return;
+    }
+    await _showAnalyzeConfirmDialog(
+      originalText: memoText,
+      structuredSuggestions: response.structuredSuggestions,
+    );
+  }
+
+  Future<void> _retryVoiceUploadAndAnalyze() async {
+    if (_busy) {
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _showVoiceRetry = false;
+      _state = _MPQuickCaptureState.transcribingVoice;
+    });
+    final String? cachedUri = _cachedRecordUri?.trim();
+    if (cachedUri != null && cachedUri.isNotEmpty) {
+      await _analyzeCachedRecordUri();
+      return;
+    }
+    final String? filePath = _recordPath;
+    if (filePath == null || filePath.isEmpty) {
+      if (mounted) {
+        MPToastUtils.showMessage('Recording file not found. Please record again.');
+        _showVoiceRetryOnFailure();
+      }
+      return;
+    }
+    final bool uploaded = await _uploadLocalRecordingFile(filePath);
+    if (!mounted || _isClosing) {
+      return;
+    }
+    if (!uploaded) {
+      _showVoiceRetryOnFailure();
+      return;
+    }
+    await _analyzeCachedRecordUri();
+  }
+
   Future<void> _finishRecordingAndTranscribe() async {
-    if (_busy || _recordPath == null) {
+    if (_busy) {
       return;
     }
     _cancelRecordingCountdown();
     _recordingExternallyPaused = false;
     setState(() {
       _busy = true;
+      _showVoiceRetry = false;
       _state = _MPQuickCaptureState.transcribingVoice;
     });
     String? filePath = _recordPath;
@@ -391,6 +520,8 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         _recorderOpened = false;
       }
       await MPRecordingBackgroundSupport.deactivateAfterRecording();
+      MPGlobalRecordingCoordinator.instance
+          .notifyRecordingSessionEnded(_recordingOwnerToken);
     } catch (e) {
       if (!mounted) {
         return;
@@ -414,56 +545,16 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       });
       return;
     }
-    final File file = File(filePath);
-    if (!await file.exists()) {
-      if (!mounted) {
-        return;
-      }
-      MPToastUtils.showMessage('Recording file not found.');
-      setState(() {
-        _busy = false;
-        _state = _MPQuickCaptureState.idle;
-      });
-      return;
-    }
-    final List<int> bytes = await file.readAsBytes();
-    final String contentType = 'audio/aac';
-    final String? recordUri = await MPAudioUploadService().uploadMPAudioBytes(bytes, contentType);
-    if (recordUri == null || recordUri.isEmpty) {
-      if (mounted) {
-        MPToastUtils.showMessage('Failed to upload audio.');
-        setState(() {
-          _busy = false;
-          _state = _MPQuickCaptureState.idle;
-        });
-      }
-      await _stopRecorder(deleteFile: true);
-      return;
-    }
-    final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
-      MPAnalyzeMemoRecordRequest(recordUrl: recordUri, createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000),
-    );
-    await _stopRecorder(deleteFile: true);
+    _recordPath = filePath;
+    final bool uploaded = await _uploadLocalRecordingFile(filePath);
     if (!mounted || _isClosing) {
       return;
     }
-    if (response == null || response.baseResp.code != 0) {
-      setState(() {
-        _busy = false;
-        _state = _MPQuickCaptureState.idle;
-      });
-      MPToastUtils.showMessage(response?.baseResp.message ?? 'Transcription failed. Please try again later.');
+    if (!uploaded) {
+      _showVoiceRetryOnFailure();
       return;
     }
-    final String memoText = response.originalText.trim();
-    _isClosing = true;
-    if (_sheetNavigator.mounted && _sheetNavigator.canPop()) {
-      _sheetNavigator.pop();
-    }
-    if (!widget.hostContext.mounted) {
-      return;
-    }
-    await _showAnalyzeConfirmDialog(originalText: memoText, structuredSuggestions: response.structuredSuggestions);
+    await _analyzeCachedRecordUri();
   }
 
   Widget _buildBottomAction() {
@@ -506,6 +597,45 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       case _MPQuickCaptureState.transcribingVoice:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildRetryTextButton() {
+    return GestureDetector(
+      onTap: _busy ? null : _retryVoiceUploadAndAnalyze,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Text(
+          'Retry',
+          style: TextStyle(
+            fontSize: OmiFontSize.t7_16,
+            color: _kPrimaryBlue,
+            fontWeight: OmiFontWeight.medium,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 底部操作区：Retry 与录音/提交按钮同一行（Retry 在左）。
+  Widget _buildBottomBar() {
+    if (_state == _MPQuickCaptureState.recording) {
+      return _buildBottomAction();
+    }
+    final Widget action = _buildBottomAction();
+    final bool showRetry = _showVoiceRetry &&
+        (_state == _MPQuickCaptureState.idle ||
+            _state == _MPQuickCaptureState.textReady);
+    if (!showRetry) {
+      return Align(alignment: Alignment.centerRight, child: action);
+    }
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: <Widget>[
+        _buildRetryTextButton(),
+        const Spacer(),
+        action,
+      ],
+    );
   }
 
   Widget _circleActionButton({
@@ -622,6 +752,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         maxLines: null,
         minLines: 1,
         textInputAction: TextInputAction.newline,
+        onTap: _onInputOrRecordEngaged,
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: 'Capture a thought, idea, or task...',
@@ -732,9 +863,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
                     Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-                      child: _state == _MPQuickCaptureState.recording
-                          ? _buildBottomAction()
-                          : Align(alignment: Alignment.centerRight, child: _buildBottomAction()),
+                      child: _buildBottomBar(),
                     ),
                   ],
                 ),
