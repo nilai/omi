@@ -28,6 +28,7 @@ MPCreateTodoRequest _$MPCreateTodoRequestFromJson(Map<String, dynamic> json) =>
       priority: json['priority'] as String,
       deadline: (json['deadline'] as num?)?.toInt(),
       feedCardId: json['feed_card_id'] as String?,
+      note: json['note'] as String?,
     );
 
 Map<String, dynamic> _$MPCreateTodoRequestToJson(
@@ -39,6 +40,7 @@ Map<String, dynamic> _$MPCreateTodoRequestToJson(
   'priority': instance.priority,
   'deadline': instance.deadline,
   'feed_card_id': instance.feedCardId,
+  'note': instance.note,
 };
 
 MPDoneTodoRequest _$MPDoneTodoRequestFromJson(Map<String, dynamic> json) =>
@@ -64,6 +66,7 @@ MPUpdateTodoRequest _$MPUpdateTodoRequestFromJson(Map<String, dynamic> json) =>
       preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
       feedCardId: json['feed_card_id'] as String?,
       source: json['source'] as String?,
+      note: json['note'] as String?,
     );
 
 Map<String, dynamic> _$MPUpdateTodoRequestToJson(
@@ -77,6 +80,7 @@ Map<String, dynamic> _$MPUpdateTodoRequestToJson(
   'pre_create_status': instance.preCreateStatus,
   'feed_card_id': instance.feedCardId,
   'source': instance.source,
+  'note': instance.note,
 };
 
 GetTodoGroupedListResponse _$GetTodoGroupedListResponseFromJson(

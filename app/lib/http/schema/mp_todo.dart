@@ -65,6 +65,9 @@ class MPCreateTodoRequest {
   @JsonKey(name: 'feed_card_id')
   final String? feedCardId;
 
+  @JsonKey(name: 'note')
+  final String? note;
+
   MPCreateTodoRequest({
     required this.title,
     this.memoryId,
@@ -72,6 +75,7 @@ class MPCreateTodoRequest {
     required this.priority,
     required this.deadline,
     this.feedCardId,
+    this.note,
   });
 
   factory MPCreateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPCreateTodoRequestFromJson(json);
@@ -132,6 +136,9 @@ class MPUpdateTodoRequest {
   @JsonKey(name: 'source')
   final String? source;
 
+  @JsonKey(name: 'note')
+  final String? note;
+
   MPUpdateTodoRequest({
     required this.todoId,
     required this.title,
@@ -141,6 +148,7 @@ class MPUpdateTodoRequest {
     this.preCreateStatus,
     this.feedCardId,
     this.source,
+    this.note,
   });
 
   factory MPUpdateTodoRequest.fromJson(Map<String, dynamic> json) => _$MPUpdateTodoRequestFromJson(json);
