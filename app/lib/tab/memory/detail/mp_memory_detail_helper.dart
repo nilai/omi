@@ -27,6 +27,9 @@ class MPMemoryDetailPageHelper {
     if (isOpening) {
       return;
     }
+    if (type == MPMemoryType.memoList) {
+      return;
+    }
     final String id = memoryId.trim();
     if (id.isEmpty) {
       return;
