@@ -167,17 +167,9 @@ class _MPQucikCaptureConfirmDialogState
     });
   }
 
-  /// 仅切换至 items 区域；从 originalText 切回时恢复全部勾选。
+  /// 仅切换至 items 区域高亮，不改变各行勾选状态。
   void _selectItemsRegion() {
-    final bool fromOriginalText = _isOriginalTextRegionActive;
-    setState(() {
-      _activeRegion = _MPConfirmSelectionRegion.items;
-      if (fromOriginalText) {
-        for (final _ConfirmRow r in _rows) {
-          r.selected = true;
-        }
-      }
-    });
+    setState(() => _activeRegion = _MPConfirmSelectionRegion.items);
   }
 
   MPQuickCaptureConfirmResult _buildPopResult({required bool confirmed}) {
@@ -280,7 +272,7 @@ class _MPQucikCaptureConfirmDialogState
     if (index < 0 || index >= _rows.length) {
       return;
     }
-    // originalText 选中时：点击 items 内任意行仅切换区域（不勾选单行），须再次点击才 toggle。
+    // originalText 选中时：点击 item 行仅激活 items 区域，不勾选；再次点击 item 才 toggle。
     if (_isOriginalTextRegionActive) {
       _selectItemsRegion();
       return;
