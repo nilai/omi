@@ -318,6 +318,8 @@ class _MPTodayFocusItemRow extends StatelessWidget {
             children: <Widget>[
               Text(
                 item.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: OmiTextStyle.create(
                   fontSize: OmiFontSize.t5_14,
                   fontWeight: OmiFontWeight.medium,
@@ -328,6 +330,8 @@ class _MPTodayFocusItemRow extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '→ ${item.subtext}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: OmiTextStyle.create(
                   fontSize: OmiFontSize.t4_13,
                   fontWeight: OmiFontWeight.regular,
@@ -341,6 +345,9 @@ class _MPTodayFocusItemRow extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           item.timeLabel,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.end,
           style: OmiTextStyle.create(
             fontSize: OmiFontSize.t5_14,
             fontWeight: OmiFontWeight.regular,

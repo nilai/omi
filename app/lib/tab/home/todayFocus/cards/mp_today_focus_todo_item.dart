@@ -116,6 +116,8 @@ class MPTodayFocusTodoItem extends StatelessWidget {
         Expanded(
           child: Text(
             title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: _titleStyle(),
           ),
         ),
@@ -125,6 +127,9 @@ class MPTodayFocusTodoItem extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               timeLabel,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
               style: _timeStyle(),
             ),
           ),

@@ -145,7 +145,7 @@ class _FocusFullRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   title.trim().isEmpty ? '—' : title.trim(),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t5_14,

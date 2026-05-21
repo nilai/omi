@@ -93,6 +93,8 @@ class MPTodayFocusAddCard extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: OmiTextStyle.create(
                   fontSize: OmiFontSize.t6_15,
                   fontWeight: OmiFontWeight.bold,
@@ -104,6 +106,8 @@ class MPTodayFocusAddCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   reason ?? '',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,
