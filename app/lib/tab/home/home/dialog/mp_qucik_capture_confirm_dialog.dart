@@ -280,8 +280,9 @@ class _MPQucikCaptureConfirmDialogState
     if (index < 0 || index >= _rows.length) {
       return;
     }
-    // originalText 区域选中时，须先点击 items 区域，再点击 item 才能勾选。
+    // originalText 选中时：点击 items 内任意行仅切换区域（不勾选单行），须再次点击才 toggle。
     if (_isOriginalTextRegionActive) {
+      _selectItemsRegion();
       return;
     }
     setState(() => _rows[index].selected = !_rows[index].selected);
