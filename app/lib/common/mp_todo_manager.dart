@@ -53,6 +53,7 @@ class MPTodoManager {
     int? deadline,
     String? memoryId,
     String? feedCardId,
+    String? note,
   }) async {
     try {
       final int deadlineUnix = deadline ?? 0;
@@ -64,6 +65,7 @@ class MPTodoManager {
         priority: priority,
         deadline: deadlineUnix,
         feedCardId: feedCardId,
+        note: _trimmedNoteOrNull(note),
       );
 
       // 调用 API
@@ -103,6 +105,7 @@ class MPTodoManager {
     int? preCreateStatus,
     String? source,
     String? insightId,
+    String? note,
   }) async {
     try {
       final int deadlineUnix = deadline ?? 0;
@@ -117,6 +120,7 @@ class MPTodoManager {
           isCompleted: false,
           preCreateStatus: preCreateStatus,
           source: source,
+          note: note,
         );
       }
 
@@ -127,6 +131,7 @@ class MPTodoManager {
         deadline: deadlineUnix,
         feedCardId: feedCardId,
         insightId: insightId,
+        note: _trimmedNoteOrNull(note),
       );
       final MPCreateTodoResponse? response = await MPTodo.createTodo(request);
       if (response == null) {
@@ -255,6 +260,7 @@ class MPTodoManager {
     required bool isCompleted,
     int? preCreateStatus,
     String? source,
+    String? note,
   }) async {
     try {
       if (todoId.isEmpty) {
@@ -280,6 +286,7 @@ class MPTodoManager {
         isCompleted: isCompleted,
         preCreateStatus: preCreateStatus,
         source: source,
+        note: _trimmedNoteOrNull(note),
       );
 
       final response = await MPTodo.updateTodo(request);
@@ -334,4 +341,9 @@ class MPTodoManager {
   }
 
   // AI-generated END - deleteTodo
+
+  static String? _trimmedNoteOrNull(String? note) {
+    final String trimmed = note?.trim() ?? '';
+    return trimmed.isEmpty ? null : trimmed;
+  }
 }

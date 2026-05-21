@@ -596,6 +596,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
                                 preCreateStatus: p.preCreateStatus,
                                 source: p.source,
                                 insightId: p.insightId,
+                                note: _notesController.text,
                               );
                               if (!context.mounted) {
                                 return;

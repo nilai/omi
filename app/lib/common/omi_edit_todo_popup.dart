@@ -770,6 +770,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                     priority: MPTodoUtils.mapPriorityToApi(_priority),
                                     deadlineUnixSec: _deadlineUnixSec,
                                     isCompleted: true,
+                                    note: _notesController.text,
                                   );
                                   MPHomeNotification.notifyHomeListRefresh();
                                   if (!context.mounted) {
