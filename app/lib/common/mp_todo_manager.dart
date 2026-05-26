@@ -65,7 +65,7 @@ class MPTodoManager {
         priority: priority,
         deadline: deadlineUnix,
         feedCardId: feedCardId,
-        note: _trimmedNoteOrNull(note),
+        description: _trimmedNoteOrNull(note),
       );
 
       // 调用 API
@@ -131,7 +131,7 @@ class MPTodoManager {
         deadline: deadlineUnix,
         feedCardId: feedCardId,
         insightId: insightId,
-        note: _trimmedNoteOrNull(note),
+        description: _trimmedNoteOrNull(note),
       );
       final MPCreateTodoResponse? response = await MPTodo.createTodo(request);
       if (response == null) {
@@ -286,7 +286,7 @@ class MPTodoManager {
         isCompleted: isCompleted,
         preCreateStatus: preCreateStatus,
         source: source,
-        note: _trimmedNoteOrNull(note),
+        description: _trimmedNoteOrNull(note),
       );
 
       final response = await MPTodo.updateTodo(request);
