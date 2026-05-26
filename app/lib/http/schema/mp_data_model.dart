@@ -40,7 +40,23 @@ enum MPMemoryType {
 
   /// 
   @JsonValue(6)
-  memoList,
+  memoList;
+
+  /// 将后端 / Thrift 的 `type` 整型（1/2/5/6）转为枚举，勿用 [values] 下标。
+  static MPMemoryType fromWireValue(int value) {
+    switch (value) {
+      case 1:
+        return MPMemoryType.summary;
+      case 2:
+        return MPMemoryType.onlyRecord;
+      case 5:
+        return MPMemoryType.memoryFeed;
+      case 6:
+        return MPMemoryType.memoList;
+      default:
+        return MPMemoryType.summary;
+    }
+  }
 }
 
 /// 与后端 `MemoType` 对齐：1 = HIGHLIGHT_MEMO，2 = MANUAL_MEMO。

@@ -52,8 +52,8 @@ class MPMemoryDetailPageHelper {
         );
         return;
       }
-      final MPMemoryType type = MPMemoryType.values[summaryStatus?.type ?? 0];
-      switch (type) {
+      final MPMemoryType newType = MPMemoryType.fromWireValue(summaryStatus?.type ?? 0);
+      switch (newType) {
         case MPMemoryType.onlyRecord:
           Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
           break;
