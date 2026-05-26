@@ -111,7 +111,29 @@ class _MPInsightVisual {
   final Color buttonForeground;
   final String? icon;
 
-  static _MPInsightVisual of(MPInsightCardTone tone) {
+  /// 按模块分类标题与 [tone] 解析标题左侧图标资源。
+  static String _iconAsset({
+    required MPInsightCardTone tone,
+    String? categoryTitle,
+  }) {
+    if (tone == MPInsightCardTone.followUp) {
+      return Assets.omiDetailBookmark;
+    }
+    final String key = (categoryTitle ?? '').trim().toUpperCase();
+    if (key.contains('EXECUTION')) {
+      return Assets.omiDetailCode;
+    }
+    if (key.contains('CREATIVE')) {
+      return Assets.omiDetailLightbulb;
+    }
+    return Assets.omiDetailBriefcase;
+  }
+
+  static _MPInsightVisual of({
+    required MPInsightCardTone tone,
+    String? categoryTitle,
+  }) {
+    final String icon = _iconAsset(tone: tone, categoryTitle: categoryTitle);
     switch (tone) {
       case MPInsightCardTone.business:
         return _MPInsightVisual(
@@ -120,7 +142,7 @@ class _MPInsightVisual {
           iconBg: pinkTextColor,
           buttonBg: Color(0x33EC4899).withAlpha(20),
           buttonForeground: pinkTextColor,
-          icon: Assets.omiDetailGift,
+          icon: icon,
         );
       case MPInsightCardTone.followUp:
         return _MPInsightVisual(
@@ -129,7 +151,7 @@ class _MPInsightVisual {
           iconBg: orangeTextColor,
           buttonBg: orangeTextColor.withAlpha(60),
           buttonForeground: orangeTextColor,
-          icon: Assets.omiDetailGift,
+          icon: icon,
         );
     }
   }
@@ -453,7 +475,10 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
 
   @override
   Widget build(BuildContext context) {
-    final _MPInsightVisual v = _MPInsightVisual.of(widget.data.tone);
+    final _MPInsightVisual v = _MPInsightVisual.of(
+      tone: widget.data.tone,
+      categoryTitle: widget.data.categoryTitle,
+    );
     final MarkdownStyleSheet mdStyle = _mpInsightMarkdownStyle(v.accent);
 
     Widget buildMarkdownBody() {

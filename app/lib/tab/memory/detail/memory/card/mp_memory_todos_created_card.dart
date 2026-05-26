@@ -47,7 +47,7 @@ class MPMemoryTodosCreatedCard extends StatelessWidget {
                   decoration: const BoxDecoration(color: Color(0xFFE8F5E9), shape: BoxShape.circle),
                   child: Center(
                     child: OmiImageLoader.localImg(
-                      Assets.omiDetailCheck,
+                      Assets.omiDetailSquareCheck,
                       width: 12,
                       height: 12,
                       color: greenDeepColor,

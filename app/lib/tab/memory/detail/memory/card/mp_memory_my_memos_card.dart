@@ -144,7 +144,7 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
                       ),
                       child: Center(
                         child: OmiImageLoader.localImg(
-                          Assets.omiDetailEdit,
+                          Assets.omiDetailPenlIne,
                           width: 12,
                           height: 12,
                           color: _kLeftStripe,
