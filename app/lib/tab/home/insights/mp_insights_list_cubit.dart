@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../common/mp_date_utils.dart';
+import '../../../utils/mp_time_utils.dart';
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_insight.dart';
 
@@ -204,45 +206,59 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     }
   }
 
+  /// 时间戳 → 列表日期文案：当年为 `Feb 2`，非当年为 `2024 Feb 2`。
+  String _formatInsightPeriodLabel(int timestamp) {
+    final DateTime? dt = MPDateUtils.dateTimeFromUnixEpoch(timestamp);
+    if (dt == null) {
+      return '';
+    }
+    final int currentYear = MPTimeUtils.nowInTimeZone().year;
+    if (dt.year == currentYear) {
+      return DateFormat('MMM d').format(dt);
+    }
+    return DateFormat('y MMM d').format(dt);
+  }
+
+  Future<_PageResult> _fetchPage({required int page}) async {
+    final MPGetInsightFeedListResponse? response = await getInsightFeedList(
+      MPGetInsightFeedListRequest(
+        pageSize: _pageSize,
+        cursor: page == 0 ? null : '${page * _pageSize}',
+      ),
+    );
+    if (response != null && response.baseResp.code == 0) {
+      final List<MPInsightCardStruct> cards = response.cards;
+      final List<MPInsightListItem> list = <MPInsightListItem>[];
+      for (final MPInsightCardStruct card in cards) {
+        if (card.id.isEmpty) continue;
+        if (card.cycleType <= 0) continue;
+        if (card.cycleType > 4) continue;
+        list.add(MPInsightListItem(
+          id: card.id,
+          type: MPInsightCardType.values[card.cycleType - 1],
+          periodLabel: _formatInsightPeriodLabel(card.createAt),
+          title: card.title,
+          subtitle: card.subTitle,
+          content: card.content,
+          unreadCount: 0,
+          showPatternDeepLine: false,
+          decisionsCount: 0,
+          followUpsCount: 0,
+          risksCount: 0,
+          completedCount: 0,
+          pendingCount: 0,
+          recommendationsCount: 0,
+        ));
+      }
+      return _PageResult(items: list, hasMore: response.hasMore);
+    }
+    return const _PageResult(items: <MPInsightListItem>[], hasMore: false);
+  }
 }
 
 class _PageResult {
   const _PageResult({required this.items, required this.hasMore});
   final List<MPInsightListItem> items;
   final bool hasMore;
-}
-
-/// 
-Future<_PageResult> _fetchPage({
-  required int page,
-}) async {
-  final MPGetInsightFeedListResponse? response = await getInsightFeedList(MPGetInsightFeedListRequest(pageSize: MPInsightsListCubit._pageSize, cursor: page == 0 ? null : '${page * MPInsightsListCubit._pageSize}'));
-  if (response != null && response.baseResp.code == 0) {
-    final cards = response.cards;
-    final List<MPInsightListItem> list = <MPInsightListItem>[];
-    for (final MPInsightCardStruct card in cards) {
-      if (card.id.isEmpty) continue;
-      if (card.cycleType <= 0) continue;
-      if (card.cycleType > 4) continue;
-      list.add(MPInsightListItem(
-        id: card.id,
-        type: MPInsightCardType.values[card.cycleType - 1],
-        periodLabel: MPDateUtils.formatRelativeTimeAgo(card.createAt),
-        title: card.title,
-        subtitle: card.subTitle,
-        content: card.content,
-        unreadCount: 0,
-        showPatternDeepLine: false,
-        decisionsCount: 0,
-        followUpsCount: 0,
-        risksCount: 0,
-        completedCount: 0,
-        pendingCount: 0,
-        recommendationsCount: 0,
-      ));
-    }
-    return _PageResult(items: list, hasMore: response?.hasMore ?? false);
-  }
-  return _PageResult(items: [], hasMore: false);
 }
 
