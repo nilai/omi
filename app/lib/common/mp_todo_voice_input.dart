@@ -148,13 +148,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
         await _recorder.closeRecorder();
       }
     } catch (_) {}
-    if (deleteFile && _recordPath != null) {
-      final File file = File(_recordPath!);
-      if (await file.exists()) {
-        try {
-          await file.delete();
-        } catch (_) {}
-      }
+    if (deleteFile) {
+      await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();

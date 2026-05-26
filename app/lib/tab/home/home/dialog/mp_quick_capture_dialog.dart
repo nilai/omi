@@ -7,9 +7,7 @@ import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import '../../../../audio/record/audio_record.dart';
 import '../../../../audio/record/mp_audio_upload_service.dart';
-import '../../../../utils/mp_aac_to_mp3_util.dart';
 import '../../../../audio/record/mp_flutter_sound_recorder_safe.dart';
 import '../../../../audio/record/mp_global_recording_coordinator.dart';
 import '../../../../audio/record/mp_recording_background_support.dart';
@@ -181,13 +179,8 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       }
     } catch (_) {}
     _recorderOpened = false;
-    if (deleteFile && _recordPath != null) {
-      final File file = File(_recordPath!);
-      if (await file.exists()) {
-        try {
-          await file.delete();
-        } catch (_) {}
-      }
+    if (deleteFile) {
+      await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
@@ -429,28 +422,22 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       MPToastUtils.showMessage('Recording file not found.');
       return false;
     }
-
-    String pathToUpload = trimmed;
-    if (p.extension(trimmed).toLowerCase() == '.aac') {
-      final String? mp3Path = await MPAacToMp3Util.convertAacFileToMp3(trimmed);
-      if (mp3Path == null || mp3Path.isEmpty) {
-        MPToastUtils.showMessage('Couldn\'t convert recording to MP3. Please try again.');
-        return false;
-      }
-      pathToUpload = mp3Path;
-      _recordPath = mp3Path;
-    }
-
-    final File file = File(pathToUpload);
+    final File file = File(trimmed);
     if (!await file.exists()) {
       MPToastUtils.showMessage('Recording file not found.');
       return false;
     }
-    final List<int> bytes = await file.readAsBytes();
-    final String? recordUri = await MPAudioUploadService().uploadMPAudioBytes(
-      bytes,
-      getAudioMimeType(pathToUpload),
-    );
+    final bool wasAac = p.extension(trimmed).toLowerCase() == '.aac';
+    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
+    if (wasAac) {
+      final String mp3Path = p.join(
+        p.dirname(trimmed),
+        '${p.basenameWithoutExtension(trimmed)}.mp3',
+      );
+      if (await File(mp3Path).exists()) {
+        _recordPath = mp3Path;
+      }
+    }
     if (recordUri == null || recordUri.isEmpty) {
       MPToastUtils.showMessage('Failed to upload audio.');
       return false;

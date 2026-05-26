@@ -133,13 +133,8 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       }
     } catch (_) {}
     _recorderOpened = false;
-    if (deleteFile && _recordPath != null) {
-      final File file = File(_recordPath!);
-      if (await file.exists()) {
-        try {
-          await file.delete();
-        } catch (_) {}
-      }
+    if (deleteFile) {
+      await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
