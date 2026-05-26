@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_todo_popup_guard.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/omi_button.dart';
@@ -74,26 +75,34 @@ Future<bool> showOmiEditTodoPopup(
   required OmiEditTodoPopupParams params,
   VoidCallback? onMarkAsDone,
   Future<bool> Function()? onDelete,
-}) {
-  return showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    isDismissible: true,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
-    clipBehavior: Clip.antiAlias,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (BuildContext sheetContext) {
-      return _OmiEditTodoPopupSheet(
-        params: params,
-        onMarkAsDone: onMarkAsDone,
-        rootContext: context,
-        onDelete: onDelete,
-      );
-    },
-  ).then((bool? value) => value == true);
+}) async {
+  if (!MPTodoPopupGuard.tryAcquire()) {
+    return false;
+  }
+  try {
+    final bool? value = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      clipBehavior: Clip.antiAlias,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext sheetContext) {
+        return _OmiEditTodoPopupSheet(
+          params: params,
+          onMarkAsDone: onMarkAsDone,
+          rootContext: context,
+          onDelete: onDelete,
+        );
+      },
+    );
+    return value == true;
+  } finally {
+    MPTodoPopupGuard.release();
+  }
 }
 
 class _OmiEditTodoPopupSheet extends StatefulWidget {

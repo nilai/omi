@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_todo_popup_guard.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/omi_button.dart';
@@ -119,17 +120,24 @@ Future<MPAddTodoPopupResult?> showMPAddTodoPopup(
   BuildContext context, {
   MPAddTodoPopupParams params = const MPAddTodoPopupParams(),
   VoidCallback? onContextTap,
-}) {
-  return showModalBottomSheet<MPAddTodoPopupResult>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: false,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black54,
-    builder: (BuildContext sheetContext) {
-      return _MPAddTodoPopupSheet(params: params, onContextTap: onContextTap);
-    },
-  );
+}) async {
+  if (!MPTodoPopupGuard.tryAcquire()) {
+    return null;
+  }
+  try {
+    return await showModalBottomSheet<MPAddTodoPopupResult>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: false,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (BuildContext sheetContext) {
+        return _MPAddTodoPopupSheet(params: params, onContextTap: onContextTap);
+      },
+    );
+  } finally {
+    MPTodoPopupGuard.release();
+  }
 }
 
 class _MPAddTodoPopupSheet extends StatefulWidget {
