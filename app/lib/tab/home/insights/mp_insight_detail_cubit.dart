@@ -497,9 +497,19 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     );
   }
 
-  /// 页面初始化：拉取详情
+  /// 页面初始化：拉取详情。
+  ///
+  /// 加载失败时：若已有详情数据则继续展示内容；无数据则进入错误页。
   Future<void> initData() async {
-    emit(MPInsightDetailState.loading());
+    final MPInsightDetailData? previousData = state.data;
+    final bool hasData = previousData != null;
+
+    if (!hasData) {
+      emit(MPInsightDetailState.loading());
+    } else {
+      emit(MPInsightDetailState.loaded(previousData));
+    }
+
     try {
       final MPInsightDetailData loaded = await _buildDetailData(_item);
       emit(MPInsightDetailState.loaded(loaded));
@@ -508,7 +518,11 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
         unawaited(_refreshMemorySimpleInfoAfterInit(loaded, mid));
       }
     } catch (e) {
-      emit(MPInsightDetailState.error(e.toString()));
+      if (hasData) {
+        emit(MPInsightDetailState.loaded(previousData));
+      } else {
+        emit(MPInsightDetailState.error(e.toString()));
+      }
     }
   }
 
