@@ -321,10 +321,10 @@ class MPBatchCreateMemoItem {
   @JsonKey(name: 'memory_id')
   final String? memoryId;
 
-  @JsonKey(name: 'type')
-  final int type;
+  @JsonKey(name: 'source')
+  final String source;
 
-  MPBatchCreateMemoItem({required this.content, required this.createAt, this.memoryId, this.type = 0});
+  MPBatchCreateMemoItem({required this.content, required this.createAt, this.memoryId, this.source = 'text'});
 
   factory MPBatchCreateMemoItem.fromJson(Map<String, dynamic> json) => _$MPBatchCreateMemoItemFromJson(json);
 

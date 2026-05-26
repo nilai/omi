@@ -221,7 +221,7 @@ MPBatchCreateMemoItem _$MPBatchCreateMemoItemFromJson(
   content: json['content'] as String,
   createAt: (json['create_at'] as num).toInt(),
   memoryId: json['memory_id'] as String?,
-  type: (json['type'] as num?)?.toInt() ?? 0,
+  source: json['source'] as String? ?? 'text',
 );
 
 Map<String, dynamic> _$MPBatchCreateMemoItemToJson(
@@ -230,7 +230,7 @@ Map<String, dynamic> _$MPBatchCreateMemoItemToJson(
   'content': instance.content,
   'create_at': instance.createAt,
   'memory_id': instance.memoryId,
-  'type': instance.type,
+  'source': instance.source,
 };
 
 MPBatchCreateRequest _$MPBatchCreateRequestFromJson(

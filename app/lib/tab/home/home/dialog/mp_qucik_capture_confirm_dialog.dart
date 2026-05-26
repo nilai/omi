@@ -234,7 +234,11 @@ class _MPQucikCaptureConfirmDialogState
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateMemoItem(content: t, createAt: 0, type: r.type));
+      out.add(MPBatchCreateMemoItem(
+        content: t,
+        createAt: 0,
+        source: r.type == 1 ? 'record' : 'text',
+      ));
     }
     return out;
   }
