@@ -11,6 +11,7 @@ import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_aac_to_mp3_util.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -686,10 +687,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
     
-    final String? savedPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempFile);
+    final String? savedPath = await MPAacToMp3Util.persistTempAacRecordingAsMp3(tempFile);
     if (savedPath == null || savedPath.isEmpty) {
       if (mounted) {
-        MPToastUtils.showMessage('Couldn\'t save locally. Please try again.');
+        MPToastUtils.showMessage('Couldn\'t convert recording to MP3. Please try again.');
         setState(() => _busy = false);
       }
       return;
@@ -698,6 +699,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: savedPath,
+        mp3Path: savedPath,
         fileName: 'record_$createAt',
         createAt: createAt,
         duration: total.inSeconds,
