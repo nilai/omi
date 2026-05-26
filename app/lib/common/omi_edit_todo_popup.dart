@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/omi_button.dart';
@@ -259,18 +258,20 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   @override
   void initState() {
     super.initState();
-    _priority =
-        MPTodoUtils.normalizePriorityPickerLabel(widget.params.priorityLabel);
-    _notesController = TextEditingController(text: widget.params.notes);
-    final int? normalizedDeadline =
-        MPDateUtils.normalizeTodoDeadline(widget.params.deadlineUnixSec);
-    if (normalizedDeadline != null) {
-      _applyInitialDeadlineSeconds(normalizedDeadline);
+    final OmiEditTodoPopupParams p = widget.params;
+    _priority = MPTodoUtils.normalizePriorityPickerLabel(p.priorityLabel);
+    _notesController = TextEditingController(text: p.notes);
+    final bool isInitialDeadlineValid =
+        p.deadlineUnixSec != null && p.deadlineUnixSec! > 0;
+    if (isInitialDeadlineValid) {
+      _applyInitialDeadlineSeconds(p.deadlineUnixSec!);
     } else {
-      _when = 'No deadline';
-      _time = '';
-      _deadlineUnixSec = null;
+      _when = p.whenLabel;
+      _time = p.whenLabel == 'No deadline'
+          ? ''
+          : (p.timeLabel.isNotEmpty ? p.timeLabel : '09:00');
       _pickedCalendarDate = null;
+      _syncDeadlineFromWhenAndTime();
     }
   }
 

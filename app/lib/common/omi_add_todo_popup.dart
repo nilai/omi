@@ -182,7 +182,8 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _titleController = TextEditingController(text: p.initialTitle);
     _notesController = TextEditingController(text: p.initialNotes);
     _priority = MPTodoUtils.normalizePriorityPickerLabel(p.initialPriority);
-    if (p.initialDeadlineTimestamp != null) {
+    bool isInitialDeadlineValid = p.initialDeadlineTimestamp != null && p.initialDeadlineTimestamp! > 0;
+    if (isInitialDeadlineValid) {
       _applyInitialDeadlineSeconds(p.initialDeadlineTimestamp!);
     } else {
       _when = p.initialWhen;
