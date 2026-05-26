@@ -135,6 +135,15 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
   bool _busy = false;
 
+  /// 首次 Save 已 finalize 并 close recorder；重试时不再走分段合并。
+  bool _saveRecorderFinalized = false;
+
+  /// finalize 后的临时合并 AAC（转码成功前保留，供 Save 重试）。
+  String? _finalizedTempAacPath;
+
+  /// 已复制到本地存储、待转码的 AAC（转码失败时保留，供 Save 重试）。
+  String? _pendingPersistedAacPath;
+
   /// 上传阶段进度（`null` 表示未在上传）；由 [MPAudioUploadManager.uploadLocalRecord] 的 [onPerFileProgress] 更新。
   // int? _uploadProgressPct;
   int _uploadBatchIndex = 1;
@@ -199,6 +208,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _recordPath = null;
     _completedRecordingSegments = Duration.zero;
     _activeRecordingSegmentStart = null;
+    if (deleteFile) {
+      unawaited(_clearSavePendingAudioFiles());
+    } else {
+      _resetSavePendingState();
+    }
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
@@ -640,6 +654,27 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     }
   }
 
+  void _resetSavePendingState() {
+    _saveRecorderFinalized = false;
+    _finalizedTempAacPath = null;
+    _pendingPersistedAacPath = null;
+  }
+
+  Future<void> _clearSavePendingAudioFiles() async {
+    for (final String? path in <String?>[_finalizedTempAacPath, _pendingPersistedAacPath]) {
+      if (path == null || path.isEmpty) {
+        continue;
+      }
+      try {
+        final File f = File(path);
+        if (await f.exists()) {
+          await f.delete();
+        }
+      } catch (_) {}
+    }
+    _resetSavePendingState();
+  }
+
   Future<void> _onSave() async {
     if (_busy || _recordPath == null) {
       return;
@@ -649,20 +684,29 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _tickTimer?.cancel();
     _tickTimer = null;
     final Duration total = _recordingElapsed;
-    String? outPath;
     try {
-      // 须在 close 之前 finalize：先 stop/合并全部分段，再关会话（勿提前置 _recorderOpened=false）。
-      outPath = await _finalizeRecordingFilePath();
-      if (_recorderOpened) {
-        try {
-          await _recorder.closeRecorder();
-        } catch (_) {}
-        _recorderOpened = false;
+      if (!_saveRecorderFinalized) {
+        // 须在 close 之前 finalize：先 stop/合并全部分段，再关会话（勿提前置 _recorderOpened=false）。
+        final String? outPath = await _finalizeRecordingFilePath();
+        if (_recorderOpened) {
+          try {
+            await _recorder.closeRecorder();
+          } catch (_) {}
+          _recorderOpened = false;
+        }
+        _isPaused = false;
+        await MPRecordingBackgroundSupport.deactivateAfterRecording();
+        MPGlobalRecordingCoordinator.instance
+            .notifyRecordingSessionEnded(_recordingOwnerToken);
+        if (outPath == null || outPath.isEmpty) {
+          if (mounted) {
+            setState(() => _busy = false);
+          }
+          return;
+        }
+        _finalizedTempAacPath = outPath;
+        _saveRecorderFinalized = true;
       }
-      _isPaused = false;
-      await MPRecordingBackgroundSupport.deactivateAfterRecording();
-      MPGlobalRecordingCoordinator.instance
-          .notifyRecordingSessionEnded(_recordingOwnerToken);
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t save: $e');
@@ -671,23 +715,39 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await _releaseRecorder(deleteFile: false);
       return;
     }
-    if (!mounted || outPath == null || outPath.isEmpty) {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-      return;
-    }
 
-    final File tempFile = File(outPath);
-    if (!await tempFile.exists()) {
+    final String? persistedAac = _pendingPersistedAacPath?.trim();
+    final bool hasPersistedAac =
+        persistedAac != null && persistedAac.isNotEmpty && await File(persistedAac).exists();
+    final String? tempAac = _finalizedTempAacPath?.trim();
+    final bool hasTempAac = tempAac != null && tempAac.isNotEmpty && await File(tempAac).exists();
+    if (!hasPersistedAac && !hasTempAac) {
       if (mounted) {
         MPToastUtils.showMessage('Recording file not found.');
         setState(() => _busy = false);
       }
       return;
     }
-    
-    final String? savedPath = await MPAacToMp3Util.persistTempAacRecordingAsMp3(tempFile);
+
+    String? savedPath;
+    if (hasPersistedAac) {
+      savedPath = await MPAacToMp3Util.convertAacFileToMp3(persistedAac);
+    } else {
+      final String? copiedAacPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(
+        File(tempAac!),
+        deleteAfterCopy: false,
+      );
+      if (copiedAacPath == null || copiedAacPath.isEmpty) {
+        if (mounted) {
+          MPToastUtils.showMessage('Couldn\'t save locally. Please try again.');
+          setState(() => _busy = false);
+        }
+        return;
+      }
+      _pendingPersistedAacPath = copiedAacPath;
+      savedPath = await MPAacToMp3Util.convertAacFileToMp3(copiedAacPath);
+    }
+
     if (savedPath == null || savedPath.isEmpty) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t convert recording to MP3. Please try again.');
@@ -695,6 +755,15 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       }
       return;
     }
+    if (hasTempAac) {
+      try {
+        final File tempFile = File(tempAac);
+        if (await tempFile.exists()) {
+          await tempFile.delete();
+        }
+      } catch (_) {}
+    }
+    _resetSavePendingState();
     final createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(

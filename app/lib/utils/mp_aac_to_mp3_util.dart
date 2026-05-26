@@ -12,21 +12,33 @@ import '../audio/record/mp_audio_local_records_util.dart';
 class MPAacToMp3Util {
   MPAacToMp3Util._();
 
-  /// 手机端录音：临时 AAC 落盘后转同目录同名 MP3，删除 AAC，返回 MP3 绝对路径。
-  static Future<String?> persistTempAacRecordingAsMp3(File tempAacFile) async {
-    final String? aacPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(tempAacFile);
+  /// 手机端录音：临时 AAC 落盘后转同目录同名 MP3；**仅转码成功**时删除 AAC 与 [tempAacFile]。
+  ///
+  /// [existingPersistedAacPath] 非空时跳过复制，直接对该路径转码（Save 重试场景）。
+  static Future<String?> persistTempAacRecordingAsMp3(
+    File tempAacFile, {
+    String? existingPersistedAacPath,
+  }) async {
+    final String? aacPath = existingPersistedAacPath?.trim().isNotEmpty == true
+        ? existingPersistedAacPath!.trim()
+        : await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(
+            tempAacFile,
+            deleteAfterCopy: false,
+          );
     if (aacPath == null || aacPath.isEmpty) {
       return null;
     }
     final String? mp3Path = await convertAacFileToMp3(aacPath);
     if (mp3Path == null) {
+      return null;
+    }
+    if (existingPersistedAacPath == null || existingPersistedAacPath.trim().isEmpty) {
       try {
-        final File leftover = File(aacPath);
-        if (await leftover.exists()) {
-          await leftover.delete();
+        if (await tempAacFile.exists()) {
+          await tempAacFile.delete();
         }
       } catch (e) {
-        debugPrint('MPAacToMp3Util: cleanup aac after failed transcode: $e');
+        debugPrint('MPAacToMp3Util: delete temp aac after success: $e');
       }
     }
     return mp3Path;
