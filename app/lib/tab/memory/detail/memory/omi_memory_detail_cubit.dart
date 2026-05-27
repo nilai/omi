@@ -1114,7 +1114,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (cur.phase != OmiMemoryDetailPhase.loaded || cur.data == null) return;
 
     final MPMemoryDetailCardData d = cur.data!;
-    final MPMemoryMyMemoLine newLine = MPMemoryMyMemoLine(text: line, type: MPMemoType.manualMemo);
+    final MPMemoryMyMemoLine newLine = MPMemoryMyMemoLine(text: line, source: 'text');
 
     final List<MPMemoryFeedBlock> nextBlocks = List<MPMemoryFeedBlock>.from(d.feedBlocks);
     int existingIndex = -1;
@@ -1393,8 +1393,8 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
                 .map(
                   (MPMemoStruct memo) => MPMemoryMyMemoLine(
                     text: memo.content,
-                    type: memo.type ?? MPMemoType.manualMemo,
-                    memoId: memo.id.trim().isEmpty ? null : memo.id,
+                      source: memo.source,
+                      memoId: memo.id.trim().isEmpty ? null : memo.id,
                   ),
                 )
                 .toList(growable: false),

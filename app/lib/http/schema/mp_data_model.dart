@@ -59,15 +59,6 @@ enum MPMemoryType {
   }
 }
 
-/// 与后端 `MemoType` 对齐：1 = HIGHLIGHT_MEMO，2 = MANUAL_MEMO。
-enum MPMemoType {
-  @JsonValue(1)
-  highlightMemo,
-
-  @JsonValue(2)
-  manualMemo,
-}
-
 // Speaker Struct
 @JsonSerializable()
 class MPSpeakerStruct {
@@ -606,8 +597,8 @@ class MPMemoStruct {
   @JsonKey(name: 'relate_memory_id')
   final int? relateMemoryId;
 
-  @JsonKey(name: 'type')
-  final MPMemoType? type;
+  @JsonKey(name: 'source')
+  final String? source;
 
   MPMemoStruct({
     required this.id,
@@ -616,7 +607,7 @@ class MPMemoStruct {
     this.tags,
     this.createAt,
     this.relateMemoryId,
-    this.type,
+    this.source,
   });
 
   factory MPMemoStruct.fromJson(Map<String, dynamic> json) => _$MPMemoStructFromJson(json);

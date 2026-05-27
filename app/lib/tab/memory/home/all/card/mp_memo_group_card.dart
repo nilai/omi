@@ -107,7 +107,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
  
     showMPMemoDetailSheet(
       context,
-      variant: MPMemoDetailSheetVariant.manual,
+      variant: MPMemoDetailSheetVariant.fromWireValue(memo.source ?? 'record'),
       memoId: memo.id.trim().isEmpty ? null : memo.id,
       manualMemoText: memo.content,
       linkedMemoryText: memo.title,

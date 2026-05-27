@@ -22,7 +22,18 @@ enum MPMemoDetailSheetVariant {
   voice,
 
   /// 浅灰内容区：橙色 sparkles +「Highlight」+ 蓝色来源行 + 正文。
-  highlight,
+  highlight;
+
+  static MPMemoDetailSheetVariant fromWireValue(String? value) {
+    switch (value) {
+      case 'record':  
+        return MPMemoDetailSheetVariant.voice;
+      case 'text':
+        return MPMemoDetailSheetVariant.manual;
+      default:
+        return MPMemoDetailSheetVariant.highlight;
+    }
+  }
 }
 
 /// 打开 Memo 详情弹窗。

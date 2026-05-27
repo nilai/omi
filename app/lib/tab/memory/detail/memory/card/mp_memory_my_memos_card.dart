@@ -12,14 +12,14 @@ import '../mp_memo_detail_sheet.dart';
 class MPMemoryMyMemoLine {
   const MPMemoryMyMemoLine({
     required this.text,
-    this.type = MPMemoType.manualMemo,
+    this.source,
     this.memoId,
   });
 
   final String text;
 
   /// `highlightMemo` → Highlight 弹窗；`manualMemo` → Manual Memo 弹窗。
-  final MPMemoType type;
+  final String? source;
 
   /// 服务端 Memo id；有值时删除会先请求接口。
   final String? memoId;
@@ -74,9 +74,7 @@ class _MPMemoryMyMemosCardState extends State<MPMemoryMyMemosCard> {
   /// 显示 Memo 详情底部弹窗（按 [MPMemoryMyMemoLine.type] 区分 Manual / Highlight）。
   void _showMemoSheet(BuildContext context, MPMemoryMyMemoLine line) {
     final MPMemoDetailSheetVariant variant =
-        line.type == MPMemoType.manualMemo
-            ? MPMemoDetailSheetVariant.manual
-            : MPMemoDetailSheetVariant.highlight;
+        MPMemoDetailSheetVariant.fromWireValue(line.source);
     final bool isManual = variant == MPMemoDetailSheetVariant.manual;
     showMPMemoDetailSheet(
       context,

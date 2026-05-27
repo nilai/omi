@@ -246,7 +246,7 @@ MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
   createAt: (json['create_at'] as num?)?.toInt(),
   relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
-  type: $enumDecodeNullable(_$MPMemoTypeEnumMap, json['type']),
+  source: json['source'] as String?,
 );
 
 Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) => <String, dynamic>{
@@ -256,10 +256,9 @@ Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) => <String, dyn
   'tags': instance.tags,
   'create_at': instance.createAt,
   'relate_memory_id': instance.relateMemoryId,
-  'type': _$MPMemoTypeEnumMap[instance.type],
+  'source': instance.source,
 };
 
-const _$MPMemoTypeEnumMap = {MPMemoType.highlightMemo: 1, MPMemoType.manualMemo: 2};
 
 MPExpertStruct _$MPExpertStructFromJson(Map<String, dynamic> json) => MPExpertStruct(
   id: json['id'] as String,
