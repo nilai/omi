@@ -54,6 +54,22 @@ Future<MPDoneTodoResponse?> doneTodo(MPDoneTodoRequest req) async {
   return null;
 }
 
+// POST /api/v1/todo/clear
+Future<MPClearTodoResponse?> clearTodo(MPClearTodoRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/todo/clear',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('clearTodo response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPClearTodoResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
 // POST /api/v1/todo/delete
 Future<MPDeleteTodoResponse?> deleteTodo(MPDeleteTodoRequest req) async {
   var response = await makeApiCall(
