@@ -68,6 +68,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.initialOverdueExpanded = true,
     this.initialCompletedExpanded = true,
     this.onOverdueClear,
+    this.onCompletedClear,
     this.clearLabel = 'Clear',
     this.onItemCheckChanged,
     this.onItemTap,
@@ -88,6 +89,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
   final bool initialCompletedExpanded;
 
   final VoidCallback? onOverdueClear;
+  final VoidCallback? onCompletedClear;
   final String clearLabel;
 
   final void Function(
@@ -232,28 +234,35 @@ class _MPTodayFocusTodoGroupedListState
     );
   }
 
+  Widget _clearTrailingButton(VoidCallback? onClear) {
+    if (onClear == null) {
+      return const SizedBox.shrink();
+    }
+    return TextButton(
+      onPressed: onClear,
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        foregroundColor: secondTextColor.withValues(alpha: 0.75),
+      ),
+      child: Text(
+        widget.clearLabel,
+        style: OmiTextStyle.create(
+          fontSize: OmiFontSize.t3_12,
+          fontWeight: OmiFontWeight.regular,
+          color: secondTextColor.withValues(alpha: 0.75),
+        ),
+      ),
+    );
+  }
+
   Widget _overdueHeader() {
     return _collapsibleMutedHeader(
       title: 'Overdue',
       expanded: _overdueExpanded,
       onToggle: () => setState(() => _overdueExpanded = !_overdueExpanded),
-      trailing: TextButton(
-        onPressed: widget.onOverdueClear,
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          minimumSize: Size.zero,
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          foregroundColor: secondTextColor.withValues(alpha: 0.75),
-        ),
-        child: Text(
-          widget.clearLabel,
-          style: OmiTextStyle.create(
-            fontSize: OmiFontSize.t3_12,
-            fontWeight: OmiFontWeight.regular,
-            color: secondTextColor.withValues(alpha: 0.75),
-          ),
-        ),
-      ),
+      trailing: _clearTrailingButton(widget.onOverdueClear),
     );
   }
 
@@ -262,7 +271,7 @@ class _MPTodayFocusTodoGroupedListState
       title: 'Completed',
       expanded: _completedExpanded,
       onToggle: () => setState(() => _completedExpanded = !_completedExpanded),
-      trailing: null,
+      trailing: _clearTrailingButton(widget.onCompletedClear),
     );
   }
 

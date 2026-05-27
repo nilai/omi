@@ -650,9 +650,47 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  void clearOverdue() {
-    if (!_isInteractive) return;
-    emit(state.copyWith(overdueItems: const <MPTodayFocusTodoRowData>[]));
+  /// 清空 Overdue 模块下全部待办（调用 [clearTodo]）。
+  Future<void> clearOverdue() => _clearTodoSection(state.overdueItems);
+
+  /// 清空 Completed 模块下全部待办（调用 [clearTodo]）。
+  Future<void> clearCompleted() => _clearTodoSection(state.completedItems);
+
+  /// 将 [items] 中全部 [MPTodayFocusTodoRowData.todoId] 作为 [MPClearTodoRequest.todoIds] 发起清除。
+  Future<void> _clearTodoSection(List<MPTodayFocusTodoRowData> items) async {
+    if (!_isInteractive || items.isEmpty) {
+      return;
+    }
+    final List<String> todoIds = items
+        .map((MPTodayFocusTodoRowData row) => row.todoId.trim())
+        .where((String id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (todoIds.isEmpty) {
+      return;
+    }
+    await _runWithBlockingGlobalLoading(() async {
+      try {
+        final MPClearTodoResponse? resp = await clearTodo(
+          MPClearTodoRequest(todoIds: todoIds),
+        );
+        if (resp == null) {
+          MPToastUtils.showMessage('Couldn\'t clear to-dos. Please try again later.');
+          return false;
+        }
+        if (resp.baseResp.code != 0) {
+          MPToastUtils.showMessage(
+            resp.baseResp.message.isEmpty
+                ? 'Couldn\'t clear to-dos.'
+                : resp.baseResp.message,
+          );
+          return false;
+        }
+        return _silentResyncTodoListsFromServer();
+      } catch (_) {
+        MPToastUtils.showMessage('Couldn\'t clear to-dos. Please try again later.');
+        return false;
+      }
+    });
   }
 
   /// Today's Focus 满槽时：用 [todo] 替换对应位（槽位取自 [MPTodayFocusTodoRowData.slot]，与接口 [MPTodoStruct.slot] 一致）。

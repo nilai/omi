@@ -363,7 +363,8 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         overdueItems: state.overdueItems,
                         completedItems: state.completedItems,
                         initialFutureExpanded: true,
-                        onOverdueClear: _cubit.clearOverdue,
+                        onOverdueClear: () => unawaited(_cubit.clearOverdue()),
+                        onCompletedClear: () => unawaited(_cubit.clearCompleted()),
                         onItemCheckChanged: _cubit.setTodoChecked,
                         onItemAddToFocus:
                             (MPTodayFocusTodoSection section, int index) {
