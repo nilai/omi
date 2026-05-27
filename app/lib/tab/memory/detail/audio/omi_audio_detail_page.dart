@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/mp_share_export_sheet.dart';
@@ -114,39 +113,16 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                     showEditTitle: false,
                     showModifyDate: false,
                     showDelete: true,
+                    memoryId: memoryId,
                   ),
                 );
                 if (kind == null) return;
                 if (!context.mounted) return;
 
                 if (kind == MPMemoryOptionKind.delete) {
-                  final bool ok = await showMPConfirmDeleteDialog(
-                    context,
-                    params: const MPConfirmDeleteDialogParams(
-                      title: 'Delete Memory',
-                      messageLine1: 'Are you sure you want to delete this memory?',
-                      messageLine2: 'This action cannot be undone.',
-                      cancelText: 'No, Keep',
-                      confirmText: 'Yes, Delete',
-                    ),
-                  );
-                  if (!context.mounted) return;
-                  if (!ok) return;
-
-                  final MPDeleteMemoryResponse? resp = await deleteMemory(
-                    MPDeleteMemoryRequest(memoryId: memoryId),
-                  );
-                  if (!context.mounted) return;
-                  if (resp == null || resp.baseResp.code != 0) {
-                    MPToastUtils.showMessage(
-                      resp?.baseResp.message ?? 'Couldn\'t delete. Please try again later.',
-                    );
-                    return;
-                  }
-
+                  // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
                   MPMemoryNotification.notifyMemoryDeleted(memoryId);
                   Navigator.of(context).pop();
-                  return;
                 }
               },
               child: OmiImageLoader.localImg(
