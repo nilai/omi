@@ -340,6 +340,7 @@ MPUserStruct _$MPUserStructFromJson(Map<String, dynamic> json) => MPUserStruct(
   birthday: json['brithday'] as String,
   aiSettings: MPUserAISettings.fromJson(json['ai_settings'] as Map<String, dynamic>),
   rightNowTranscribe: json['right_now_transcribe'] as bool?,
+  createAt: mpNullableIntFromJson(json['created_at']),
 );
 
 Map<String, dynamic> _$MPUserStructToJson(MPUserStruct instance) => <String, dynamic>{
@@ -350,6 +351,7 @@ Map<String, dynamic> _$MPUserStructToJson(MPUserStruct instance) => <String, dyn
   'brithday': instance.birthday,
   'ai_settings': instance.aiSettings,
   'right_now_transcribe': instance.rightNowTranscribe,
+  'created_at': instance.createAt,
 };
 
 MPSpeakerWithDetailStruct _$MPSpeakerWithDetailStructFromJson(Map<String, dynamic> json) => MPSpeakerWithDetailStruct(

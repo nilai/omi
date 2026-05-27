@@ -781,6 +781,9 @@ class MPUserStruct {
   @JsonKey(name: 'right_now_transcribe')
   final bool? rightNowTranscribe;
 
+  @JsonKey(name: 'created_at', fromJson: mpNullableIntFromJson)
+  final int? createAt;
+
   MPUserStruct({
     required this.userName,
     required this.email,
@@ -789,6 +792,7 @@ class MPUserStruct {
     required this.birthday,
     required this.aiSettings,
     this.rightNowTranscribe,
+    this.createAt,
   });
 
   factory MPUserStruct.fromJson(Map<String, dynamic> json) => _$MPUserStructFromJson(json);

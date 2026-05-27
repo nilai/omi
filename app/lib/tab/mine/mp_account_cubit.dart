@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../http/api/mp_user.dart';
+import '../../utils/mp_time_utils.dart';
 import '../../http/schema/mp_user.dart';
 import '../../login/mp_login_util.dart';
 import '../../login/mp_user.dart';
@@ -46,15 +48,25 @@ class MPAccountCubit extends Cubit<MPAccountState> {
     final String email = response.user.email.trim();
     MPUser.instance.name = name.isNotEmpty ? name : null;
     await MPUser.instance.setEmail(email.isNotEmpty ? email : null);
-
+    final String memberSinceLabel = _memberSinceLabelFromCreateAt(response.user.createAt);
     emit(
       state.copyWith(
         profileStatus: MPAccountProfileStatus.loaded,
         displayName: name.isNotEmpty ? name : _defaultDisplayName,
         displayEmail: email.isNotEmpty ? email : await _fallbackEmail(),
+        memberSinceLabel: memberSinceLabel,
         clearErrorMessage: true,
       ),
     );
+  }
+
+  /// `Member since January 2024`；无效 [createAt] 返回空字符串。
+  static String _memberSinceLabelFromCreateAt(int? createAt) {
+    final DateTime? dt = MPTimeUtils.dateTimeFromUnixEpoch(createAt);
+    if (dt == null) {
+      return '';
+    }
+    return 'Member since ${DateFormat('MMMM yyyy').format(dt)}';
   }
 
   void _emitProfileFallback({required MPAccountProfileStatus profileStatus, required String message}) async {
@@ -65,6 +77,7 @@ class MPAccountCubit extends Cubit<MPAccountState> {
         profileStatus: profileStatus,
         displayName: _fallbackName(),
         displayEmail: email,
+        memberSinceLabel: '',
         errorMessage: message,
       ),
     );

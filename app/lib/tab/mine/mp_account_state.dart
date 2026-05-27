@@ -17,6 +17,7 @@ class MPAccountState {
     required this.profileStatus,
     required this.displayName,
     required this.displayEmail,
+    this.memberSinceLabel = '',
     this.errorMessage,
     this.signOutInProgress = false,
   });
@@ -26,11 +27,15 @@ class MPAccountState {
         profileStatus: MPAccountProfileStatus.loading,
         displayName: '',
         displayEmail: '',
+        memberSinceLabel: '',
       );
 
   final MPAccountProfileStatus profileStatus;
   final String displayName;
   final String displayEmail;
+
+  /// 如 `Member since January 2024`；无有效 [create_at] 时为空。
+  final String memberSinceLabel;
   final String? errorMessage;
   final bool signOutInProgress;
 
@@ -38,6 +43,7 @@ class MPAccountState {
     MPAccountProfileStatus? profileStatus,
     String? displayName,
     String? displayEmail,
+    String? memberSinceLabel,
     String? errorMessage,
     bool clearErrorMessage = false,
     bool? signOutInProgress,
@@ -46,6 +52,7 @@ class MPAccountState {
       profileStatus: profileStatus ?? this.profileStatus,
       displayName: displayName ?? this.displayName,
       displayEmail: displayEmail ?? this.displayEmail,
+      memberSinceLabel: memberSinceLabel ?? this.memberSinceLabel,
       errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       signOutInProgress: signOutInProgress ?? this.signOutInProgress,
     );

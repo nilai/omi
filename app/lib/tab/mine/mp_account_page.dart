@@ -157,15 +157,19 @@ class _MPAccountView extends StatelessWidget {
                           color: secondTextColor.withValues(alpha: 0.95),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Member since January 2024',
-                        style: TextStyle(
-                          fontSize: OmiFontSize.t4_13,
-                          fontWeight: OmiFontWeight.regular,
-                          color: secondTextColor.withValues(alpha: 0.9),
+                      if (state.memberSinceLabel.isNotEmpty) ...<Widget>[
+                        const SizedBox(height: 4),
+                        Text(
+                          state.memberSinceLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: OmiFontSize.t4_13,
+                            fontWeight: OmiFontWeight.regular,
+                            color: secondTextColor.withValues(alpha: 0.9),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
