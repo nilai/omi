@@ -225,6 +225,7 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   List<MPBatchCreateMemoItem> _selectedMemos() {
+    final int memoCreateAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final List<MPBatchCreateMemoItem> out = <MPBatchCreateMemoItem>[];
     for (final _ConfirmRow r in _rows) {
       if (!r.selected || r.isTodo) {
@@ -236,7 +237,7 @@ class _MPQucikCaptureConfirmDialogState
       }
       out.add(MPBatchCreateMemoItem(
         content: t,
-        createAt: 0,
+        createAt: memoCreateAt,
         source: r.type == 1 ? 'record' : 'text',
       ));
     }

@@ -48,11 +48,12 @@ class MPAnalyzeMemoConfirmFlow {
       MPToastUtils.showMessage('No suggestions selected.');
       return false;
     }
+    final int memoCreateAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final MPBatchCreateRequest request;
     if (useOriginalText) {
       request = MPBatchCreateRequest(
         memos: <MPBatchCreateMemoItem>[
-          MPBatchCreateMemoItem(content: chosenOriginal, createAt: 0),
+          MPBatchCreateMemoItem(content: chosenOriginal, createAt: memoCreateAt),
         ],
       );
     } else {
