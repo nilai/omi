@@ -9,6 +9,7 @@ import 'package:memo_pin/utils/bluetooth/bluetooth_adapter.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:permission_manager/permission_manager.dart';
 
+import 'mp_ble_file_util.dart';
 import 'mp_ble_transport.dart';
 import 'mp_ble_recording_watcher.dart';
 import 'mp_ble_preferences.dart';
@@ -132,6 +133,7 @@ class MPBleConnectionHelper {
   /// 释放背景会话并断开 BLE（**仅**用户主动断开、切换设备前清理、登出）。
   static Future<void> disconnectBackgroundBleTransportUserInitiated() async {
     debugPrint('------>>>memopin disconnectBackgroundBleTransportUserInitiated');
+    await MPBleFileUtil.cancelActiveDeviceSync();
     await _memopinRecordingWatcher.detach();
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
@@ -147,6 +149,7 @@ class MPBleConnectionHelper {
         // ignore
       }
     }
+    MPHomeNotification.notifyBleDisconnected();
   }
 
   /// 对已有背景 [BleTransport] 尝试重连（不因瞬时掉线而 dispose）。
@@ -213,13 +216,14 @@ class MPBleConnectionHelper {
   /// 供连接页 / 调试页等共用的当前 [BleTransport]（始终读 [_backgroundBleTransport]）。
   static BleTransport? get activeBleTransport => _backgroundBleTransport;
 
-  /// 当前是否存在可用的 BLE 连接（优先检查应用托管会话，其次检查系统已连接设备）。
+  /// 首页顶栏等 UI：仅当应用仍持有 [backgroundBleTransport] 且 GATT 可用时为 `true`（不因系统层仍连着而误判）。
   static Future<bool> hasConnectedBleDevice() async {
-    if (await ensureBackgroundTransportReady()) {
-      return true;
+    final BleTransport? bg = _backgroundBleTransport;
+    if (bg == null) {
+      return false;
     }
     try {
-      return FlutterBluePlus.connectedDevices.isNotEmpty;
+      return await bg.isConnected();
     } catch (_) {
       return false;
     }

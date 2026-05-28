@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/blu/mp_ble_file_util.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
@@ -131,6 +133,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
     _todoDeletedSub = MPHomeNotification.listenTodoDeleted(_onTodoDeleted);
     _bleConnectedSub = MPHomeNotification.listenBleConnectedSuccess(_onBleConnectedSuccess);
+    _bleDisconnectedSub = MPHomeNotification.listenBleDisconnected(_onBleDisconnected);
     _bleMemopinRecordingSub = MPHomeNotification.listenBleMemopinRecordingState(_onBleMemopinRecordingStateChanged);
     initData();
   }
@@ -142,7 +145,11 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
   StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
   StreamSubscription<void>? _bleConnectedSub;
+  StreamSubscription<void>? _bleDisconnectedSub;
   StreamSubscription<MPBleMemopinRecordingStateChangedPayload>? _bleMemopinRecordingSub;
+
+  /// 断连时若顶栏为「录音」，则忽略后续上传进度（避免误展示上传条）。
+  bool _suppressBleUploadStatusAfterDisconnect = false;
 
   /// 外接 MemoPin 仍在录音时，将本应展示为 importing/syncing 的状态暂存，待停录后再 [emit]（见 [_onBleMemopinRecordingStateChanged]）。
   MPHomeAudioStatus? _pendingPostBleRecordingAudioStatus;
@@ -327,6 +334,13 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 蓝牙已停录：应用推迟的 importing/syncing，或更新顶栏（仅 [deviceRecordingStopped] 切 syncing）。
   void _flushPendingAfterBleRecordingStopped(MPBleMemopinRecordingStateChangedPayload payload) {
+    if (payload.changeReason == MPBleMemopinRecordingChangeReason.bleDisconnected ||
+        payload.changeReason == MPBleMemopinRecordingChangeReason.watcherDetached) {
+      if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+        _clearBleTopBarForRecordingDisconnect();
+      }
+      return;
+    }
     if (_pendingPostBleRecordingAudioStatus != null) {
       final MPHomeAudioStatus pending = _pendingPostBleRecordingAudioStatus!;
       _pendingPostBleRecordingAudioStatus = null;
@@ -416,6 +430,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 与 [MPHomeUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
   void _onUploadProgress(MPHomeUploadProgressPayload payload) {
+    if (_suppressBleUploadStatusAfterDisconnect) {
+      return;
+    }
     final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
     showSyncingStatus(currentFile: batchIndex, totalFiles: batchTotal, progress: payload.progress.clamp(0, 100));
@@ -476,6 +493,62 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     loadData();
   }
 
+  /// 录音中断连：顶栏消失，且不再响应上传进度。
+  void _clearBleTopBarForRecordingDisconnect() {
+    _suppressBleUploadStatusAfterDisconnect = true;
+    _pendingPostBleRecordingAudioStatus = null;
+    _deferredRecordCreatedCompletion = null;
+    _syncCompletedClearTimer?.cancel();
+    if (!isClosed) {
+      emit(
+        state.copyWith(
+          isBleConnected: false,
+          clearAudioStatus: true,
+        ),
+      );
+    }
+  }
+
+  /// [MPHomeNotification.notifyBleDisconnected]：按当前顶栏状态处理断连。
+  void _onBleDisconnected() {
+    unawaited(_handleBleDisconnected());
+  }
+
+  Future<void> _handleBleDisconnected() async {
+    final MPHomeAudioStatusType? statusType = state.audioStatus?.type;
+
+    if (statusType == MPHomeAudioStatusType.syncing) {
+      _pendingPostBleRecordingAudioStatus = null;
+      _deferredRecordCreatedCompletion = null;
+      if (!isClosed) {
+        emit(state.copyWith(isBleConnected: false));
+      }
+      await refreshBleConnectionState();
+      return;
+    }
+
+    if (statusType == MPHomeAudioStatusType.importing) {
+      _pendingPostBleRecordingAudioStatus = null;
+      _deferredRecordCreatedCompletion = null;
+      _syncCompletedClearTimer?.cancel();
+      final List<MPAudioLocalRecord> toUpload = MPBleFileUtil.takePendingUploadAfterAbort();
+      if (!isClosed) {
+        emit(state.copyWith(isBleConnected: false, clearAudioStatus: true));
+      }
+      if (toUpload.isNotEmpty) {
+        await MPAudioUploadManager.instance.uploadRecords(
+          toUpload,
+          rightNowTranscribe: false,
+        );
+      }
+      await refreshBleConnectionState();
+      return;
+    }
+
+    _clearBleTopBarForRecordingDisconnect();
+    await refreshBleConnectionState();
+  }
+
   /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus/同名 Txt。
   Future<void> _onBleConnectedSuccess() async {
     if (_bleDeviceImportRunning || isClosed) {
@@ -486,6 +559,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       debugPrint('MPHomeCubit: Bluetooth session unavailable.');
       return;
     }
+    _suppressBleUploadStatusAfterDisconnect = false;
     _bleDeviceImportRunning = true;
     try {
       debugPrint('MPHomeCubit: Bluetooth connected. Starting device import...');
@@ -495,7 +569,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
         onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
-          if (!isClosed) {
+          if (!isClosed && !_suppressBleUploadStatusAfterDisconnect) {
             showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
           }
         },
@@ -506,9 +580,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       _bleDeviceImportRunning = false;
       if (!isClosed) {
         await refreshBleConnectionState();
-        if (state.audioStatus?.type == MPHomeAudioStatusType.importing) {
-          emit(state.copyWith(clearAudioStatus: true));
-        }
       }
     }
   }
@@ -561,6 +632,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _todoDoneSub?.cancel();
     _todoDeletedSub?.cancel();
     _bleConnectedSub?.cancel();
+    _bleDisconnectedSub?.cancel();
     _bleMemopinRecordingSub?.cancel();
     return super.close();
   }

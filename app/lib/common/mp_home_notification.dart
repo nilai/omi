@@ -102,6 +102,8 @@ class MPHomeNotification {
       StreamController<MPHomeTodoDeletedPayload>.broadcast();
   static final StreamController<void> _bleConnectedSuccessBus =
       StreamController<void>.broadcast();
+  static final StreamController<void> _bleDisconnectedBus =
+      StreamController<void>.broadcast();
   static final StreamController<MPBleMemopinRecordingStateChangedPayload> _bleMemopinRecordingBus =
       StreamController<MPBleMemopinRecordingStateChangedPayload>.broadcast();
 
@@ -116,6 +118,7 @@ class MPHomeNotification {
       _todoDeletedBus.stream;
   static Stream<void> get bleConnectedSuccessEvents =>
       _bleConnectedSuccessBus.stream;
+  static Stream<void> get bleDisconnectedEvents => _bleDisconnectedBus.stream;
   static Stream<MPBleMemopinRecordingStateChangedPayload> get bleMemopinRecordingStateEvents =>
       _bleMemopinRecordingBus.stream;
 
@@ -155,6 +158,12 @@ class MPHomeNotification {
     }
   }
 
+  static void _emitBleDisconnected() {
+    if (!_bleDisconnectedBus.isClosed) {
+      _bleDisconnectedBus.add(null);
+    }
+  }
+
   static void _emitBleMemopinRecordingState(MPBleMemopinRecordingStateChangedPayload payload) {
     if (!_bleMemopinRecordingBus.isClosed) {
       _bleMemopinRecordingBus.add(payload);
@@ -186,6 +195,9 @@ class MPHomeNotification {
 
   /// BLE 与其它入口在 **连接成功并可使用 GATT** 后调用：首页订阅以触发设备文件导入等。
   static void notifyBleConnectedSuccess() => _emitBleConnectedSuccess();
+
+  /// 用户主动断开、释放背景会话或设备被动掉线后调用：首页收起 BLE 相关顶栏状态。
+  static void notifyBleDisconnected() => _emitBleDisconnected();
 
   /// 首页监听：收到后执行 `loadData` 刷新。
   static StreamSubscription<void> listenHomeListRefresh(
@@ -227,6 +239,13 @@ class MPHomeNotification {
     void Function() onBleConnected,
   ) {
     return bleConnectedSuccessEvents.listen((_) => onBleConnected());
+  }
+
+  /// 首页监听：MemoPin BLE 已断开（主动断开或链路丢失）。
+  static StreamSubscription<void> listenBleDisconnected(
+    void Function() onBleDisconnected,
+  ) {
+    return bleDisconnectedEvents.listen((_) => onBleDisconnected());
   }
 
   /// 监听 MemoPin 录音中 / 空闲状态变化。

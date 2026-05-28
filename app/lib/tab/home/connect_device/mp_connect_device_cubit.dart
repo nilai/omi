@@ -536,6 +536,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
     _detachTransportConnectionListener();
     _transport = null;
+    MPHomeNotification.notifyBleDisconnected();
 
     if (isClosed) {
       return;

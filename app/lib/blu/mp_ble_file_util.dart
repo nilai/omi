@@ -8,11 +8,13 @@ import 'package:path_provider/path_provider.dart';
 import '../audio/import/mp_audio_import_utils.dart';
 import '../audio/record/mp_audio_local_records_util.dart';
 import '../audio/record/mp_audio_upload_manger.dart';
+import '../audio/record/mp_audio_upload_service.dart';
 import '../common/mp_home_notification.dart';
 import '../utils/mp_opus_to_mp3_util.dart';
 
 import 'mp_ble_transport.dart';
 import 'mp_ble_connection_helper.dart';
+import 'mp_device_transport.dart';
 import 'mp_note_ble_gatt_client.dart';
 import 'mp_note_ble_protocol.dart';
 import 'note_device.dart';
@@ -21,6 +23,31 @@ import 'note_device.dart';
 typedef MPBleFileUtilCopyProgress =
     void Function({required int fileIndex, required int fileTotal, required int progressPercent});
 
+/// 设备批量导入过程中尚未完整落库的文件痕迹（断连时清理）。
+class _DeviceImportScratch {
+  String? opusPath;
+  String? txtPath;
+  String? mp3Path;
+  MPAudioLocalRecord? registeredRecord;
+
+  void clear() {
+    opusPath = null;
+    txtPath = null;
+    mp3Path = null;
+    registeredRecord = null;
+  }
+}
+
+class _DeviceSyncSession {
+  _DeviceSyncSession(this.transport);
+
+  final BleTransport transport;
+  final Completer<void> abortCompleter = Completer<void>();
+  final _DeviceImportScratch scratch = _DeviceImportScratch();
+  final List<MPAudioLocalRecord> completedRecords = <MPAudioLocalRecord>[];
+  StreamSubscription<MPDeviceTransportState>? connectionSub;
+}
+
 /// MemoPin 设备文件：列表拆分、沙盒落盘、Opus→MP3、本地记录与上传。
 class MPBleFileUtil {
   MPBleFileUtil._();
@@ -28,6 +55,78 @@ class MPBleFileUtil {
   static const String kMemoPinRecordSource = 'MemoPin';
   static const String _kSandboxDirName = 'mp_memopin_device_audio';
   static const Duration _kIdleDone = Duration(seconds: 2);
+
+  static _DeviceSyncSession? _activeDeviceSync;
+  static List<MPAudioLocalRecord> _pendingUploadAfterAbort = <MPAudioLocalRecord>[];
+
+  /// 中止进行中的设备文件导入，清理未完成文件；已成功登记项可通过 [takePendingUploadAfterAbort] 取出。
+  static Future<void> cancelActiveDeviceSync() async {
+    final _DeviceSyncSession? session = _activeDeviceSync;
+    if (session == null) {
+      return;
+    }
+    if (!session.abortCompleter.isCompleted) {
+      session.abortCompleter.complete();
+    }
+    await _cleanupIncompleteDeviceImportScratch(session.scratch);
+    session.scratch.clear();
+    _pendingUploadAfterAbort = List<MPAudioLocalRecord>.from(session.completedRecords);
+    debugPrint(
+      '------>>>memopin cancelActiveDeviceSync: pendingUpload=${_pendingUploadAfterAbort.length}',
+    );
+  }
+
+  /// 取回 [cancelActiveDeviceSync] 时本会话已完成登记、待上传的记录（取出后清空缓存）。
+  static List<MPAudioLocalRecord> takePendingUploadAfterAbort() {
+    final List<MPAudioLocalRecord> pending = List<MPAudioLocalRecord>.from(_pendingUploadAfterAbort);
+    _pendingUploadAfterAbort = <MPAudioLocalRecord>[];
+    return pending;
+  }
+
+  static bool _isDeviceSyncAborted() {
+    final _DeviceSyncSession? session = _activeDeviceSync;
+    return session != null && session.abortCompleter.isCompleted;
+  }
+
+  static Future<void> _endDeviceSyncSession(_DeviceSyncSession session) async {
+    await session.connectionSub?.cancel();
+    session.connectionSub = null;
+    if (identical(_activeDeviceSync, session)) {
+      _activeDeviceSync = null;
+    }
+  }
+
+  static Future<void> _cleanupIncompleteDeviceImportScratch(_DeviceImportScratch scratch) async {
+    final MPAudioLocalRecord? registered = scratch.registeredRecord;
+    if (registered != null) {
+      await MPAudioLocalRecordsUtil.instance.removeHard(registered);
+      await MPAudioUploadService.deleteLocalRecordingArtifacts(registered.path);
+      await _deleteLocalFileQuietly(registered.txtPath);
+      final String? opus = scratch.opusPath?.trim();
+      if (opus != null && opus.isNotEmpty && opus != registered.path.trim()) {
+        await _deleteLocalFileQuietly(opus);
+      }
+      return;
+    }
+    await _deleteLocalFileQuietly(scratch.opusPath);
+    await _deleteLocalFileQuietly(scratch.txtPath);
+    await _deleteLocalFileQuietly(scratch.mp3Path);
+  }
+
+  static Future<void> _deleteLocalFileQuietly(String? path) async {
+    final String trimmed = path?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      return;
+    }
+    try {
+      final File file = File(trimmed);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      debugPrint('MPBleFileUtil: delete local file failed ($trimmed): $e');
+    }
+  }
 
   /// 应用 Documents 下 MemoPin 设备音频目录（导出 `.opus` / `.txt` / `.mp3`）。
   static Future<String> ensureMemoPinDeviceAudioDirectoryPath() async {
@@ -336,7 +435,23 @@ class MPBleFileUtil {
     required MPBleFileUtilCopyProgress onSyncProgress,
   }) async {
     debugPrint('------>>>memopin syncDeviceOpusTxt: begin deviceId=${transport.deviceId}');
+    if (_activeDeviceSync != null) {
+      debugPrint('MPBleFileUtil: device import already in progress.');
+      return;
+    }
+
+    final _DeviceSyncSession session = _DeviceSyncSession(transport);
+    _activeDeviceSync = session;
+    _pendingUploadAfterAbort = <MPAudioLocalRecord>[];
+    var syncAborted = false;
+
     try {
+      session.connectionSub = transport.connectionStateStream.listen((MPDeviceTransportState s) {
+        if (s == MPDeviceTransportState.disconnected || s == MPDeviceTransportState.disconnecting) {
+          unawaited(cancelActiveDeviceSync());
+        }
+      });
+
       if (!await transport.isConnected()) {
         debugPrint('------>>>memopin syncDeviceOpusTxt: not connected, abort');
         debugPrint('MPBleFileUtil: Bluetooth is not connected.');
@@ -345,6 +460,10 @@ class MPBleFileUtil {
 
       debugPrint('MPBleFileUtil: fetching file list from device...');
       final List<NoteFileInfo> allFiles = await MPBleConnectionHelper.fetchMemoPinFileList(transport);
+      if (_isDeviceSyncAborted()) {
+        syncAborted = true;
+        return;
+      }
       debugPrint('------>>>memopin syncDeviceOpusTxt: file list total=${allFiles.length}');
       if (allFiles.isEmpty) {
         debugPrint('MPBleFileUtil: no files on the device.');
@@ -367,12 +486,14 @@ class MPBleFileUtil {
 
       final int total = opusList.length;
       for (int i = 0; i < total; i++) {
-        if (!await transport.isConnected()) {
+        if (_isDeviceSyncAborted() || !await transport.isConnected()) {
+          syncAborted = true;
           debugPrint('------>>>memopin syncDeviceOpusTxt: disconnected mid-sync at index=${i + 1}/$total');
           debugPrint('MPBleFileUtil: Bluetooth disconnected during sync.');
           break;
         }
 
+        session.scratch.clear();
         final NoteFileInfo opusInfo = opusList[i];
         debugPrint('------>>>memopin syncDeviceOpusTxt: processing [$i+1/$total] ${opusInfo.name}');
         onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
@@ -381,6 +502,10 @@ class MPBleFileUtil {
         try {
           final List<int>? opusBytes =
               await _collectExportPayloads(client: opusClient, fileName: opusInfo.name, info: opusInfo);
+          if (_isDeviceSyncAborted()) {
+            syncAborted = true;
+            break;
+          }
           if (opusBytes == null || opusBytes.isEmpty) {
             debugPrint('------>>>memopin syncDeviceOpusTxt: export opus empty ${opusInfo.name}');
             debugPrint('MPBleFileUtil: failed to export opus: ${opusInfo.name}');
@@ -396,55 +521,76 @@ class MPBleFileUtil {
             bytes: opusBytes,
           );
 
-        if (opusPath == null) {
-          debugPrint('------>>>memopin syncDeviceOpusTxt: write opus failed ${opusInfo.name}');
-          debugPrint('MPBleFileUtil: failed to write opus: ${opusInfo.name}');
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          continue;
-        }
-
-        String? txtPathWritten;
-        final NoteFileInfo? txtMatch = _findTxtForOpus(txtList, opusInfo.name);
-        if (txtMatch != null) {
-          final MPNoteBleGattClient txtClient = MPNoteBleGattClient(transport);
-          try {
-            final List<int>? txtBytes =
-                await _collectExportPayloads(client: txtClient, fileName: txtMatch.name, info: txtMatch);
-            if (txtBytes != null && txtBytes.isNotEmpty) {
-              txtPathWritten = await _writeBytesToDir(
-                directoryPath: deviceDir,
-                fileName: txtMatch.name,
-                bytes: txtBytes,
-              );
-            }
-          } finally {
-            await txtClient.dispose();
+          if (opusPath == null) {
+            debugPrint('------>>>memopin syncDeviceOpusTxt: write opus failed ${opusInfo.name}');
+            debugPrint('MPBleFileUtil: failed to write opus: ${opusInfo.name}');
+            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            continue;
           }
-        }
+          session.scratch.opusPath = opusPath;
 
-        onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 55);
+          if (_isDeviceSyncAborted()) {
+            syncAborted = true;
+            break;
+          }
 
-        final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
-        final File primaryFile = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
-        if (!await primaryFile.exists()) {
-          debugPrint('------>>>memopin syncDeviceOpusTxt: primary missing after convert ${opusInfo.name}');
-          debugPrint('MPBleFileUtil: primary audio missing after convert: ${opusInfo.name}');
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          continue;
-        }
+          String? txtPathWritten;
+          final NoteFileInfo? txtMatch = _findTxtForOpus(txtList, opusInfo.name);
+          if (txtMatch != null) {
+            final MPNoteBleGattClient txtClient = MPNoteBleGattClient(transport);
+            try {
+              final List<int>? txtBytes =
+                  await _collectExportPayloads(client: txtClient, fileName: txtMatch.name, info: txtMatch);
+              if (_isDeviceSyncAborted()) {
+                syncAborted = true;
+                break;
+              }
+              if (txtBytes != null && txtBytes.isNotEmpty) {
+                txtPathWritten = await _writeBytesToDir(
+                  directoryPath: deviceDir,
+                  fileName: txtMatch.name,
+                  bytes: txtBytes,
+                );
+                session.scratch.txtPath = txtPathWritten;
+              }
+            } finally {
+              await txtClient.dispose();
+            }
+          }
 
-        onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 80);
+          if (syncAborted || _isDeviceSyncAborted()) {
+            syncAborted = true;
+            break;
+          }
 
-        final String audioPathForRecord = primaryFile.path;
-        final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPathForRecord);
-        int durationSec = (durAudio != null && durAudio > 0) ? durAudio : opusInfo.durationSeconds;
-        if (durationSec <= 0) {
-          durationSec = 1;
-        }
-        final int createAtSec = (await primaryFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 55);
 
-        await MPAudioLocalRecordsUtil.instance.add(
-          MPAudioLocalRecord(
+          final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
+          session.scratch.mp3Path = mp3Path;
+          final File primaryFile = File((mp3Path != null && mp3Path.isNotEmpty) ? mp3Path : opusPath);
+          if (!await primaryFile.exists()) {
+            debugPrint('------>>>memopin syncDeviceOpusTxt: primary missing after convert ${opusInfo.name}');
+            debugPrint('MPBleFileUtil: primary audio missing after convert: ${opusInfo.name}');
+            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            continue;
+          }
+
+          if (_isDeviceSyncAborted()) {
+            syncAborted = true;
+            break;
+          }
+
+          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 80);
+
+          final String audioPathForRecord = primaryFile.path;
+          final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPathForRecord);
+          int durationSec = (durAudio != null && durAudio > 0) ? durAudio : opusInfo.durationSeconds;
+          if (durationSec <= 0) {
+            durationSec = 1;
+          }
+          final int createAtSec = (await primaryFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+
+          final MPAudioLocalRecord record = MPAudioLocalRecord(
             path: audioPathForRecord,
             mp3Path: mp3Path,
             txtPath: txtPathWritten,
@@ -453,26 +599,43 @@ class MPBleFileUtil {
             duration: durationSec,
             source: kMemoPinRecordSource,
             isRemoved: false,
-          ),
-        );
-
-        MPHomeNotification.notifyHomeListRefresh();
-
-        if (await transport.isConnected()) {
-          await _deleteDeviceOpusAndPairedTxt(
-            transport: transport,
-            gattClient: opusClient,
-            opusFileName: opusInfo.name,
-            pairedTxtFileName: txtMatch?.name,
           );
-        } else {
-          debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
-        }
+          session.scratch.registeredRecord = record;
+          await MPAudioLocalRecordsUtil.instance.add(record);
+          session.completedRecords.add(record);
+          session.scratch.registeredRecord = null;
+          session.scratch.clear();
 
-        onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+          MPHomeNotification.notifyHomeListRefresh();
+
+          if (await transport.isConnected()) {
+            await _deleteDeviceOpusAndPairedTxt(
+              transport: transport,
+              gattClient: opusClient,
+              opusFileName: opusInfo.name,
+              pairedTxtFileName: txtMatch?.name,
+            );
+          } else {
+            debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
+          }
+
+          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
         } finally {
+          if (syncAborted || _isDeviceSyncAborted()) {
+            await _cleanupIncompleteDeviceImportScratch(session.scratch);
+            session.scratch.clear();
+          }
           await opusClient.dispose();
         }
+        if (syncAborted || _isDeviceSyncAborted()) {
+          syncAborted = true;
+          break;
+        }
+      }
+
+      if (syncAborted || _isDeviceSyncAborted()) {
+        debugPrint('------>>>memopin syncDeviceOpusTxt: aborted, skip upload');
+        return;
       }
 
       debugPrint('------>>>memopin syncDeviceOpusTxt: starting upload queue');
@@ -480,8 +643,15 @@ class MPBleFileUtil {
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
       debugPrint('------>>>memopin syncDeviceOpusTxt: done');
     } catch (e, st) {
+      syncAborted = true;
       debugPrint('------>>>memopin syncDeviceOpusTxt: FAILED $e\n$st');
       debugPrint('MPBleFileUtil device import failed: $e\n$st');
+    } finally {
+      if (syncAborted || _isDeviceSyncAborted()) {
+        await _cleanupIncompleteDeviceImportScratch(session.scratch);
+        session.scratch.clear();
+      }
+      await _endDeviceSyncSession(session);
     }
   }
 
@@ -635,19 +805,41 @@ class MPBleFileUtil {
         return null;
       }
 
-      await Future.any<void>(<Future<void>>[idleDone.future, Future<void>.delayed(_maxExportWaitForFile(info))]);
+      final Future<void>? abortFuture = _activeDeviceSync?.abortCompleter.future;
+      final List<Future<void>> waitTargets = <Future<void>>[
+        idleDone.future,
+        Future<void>.delayed(_maxExportWaitForFile(info)),
+      ];
+      if (abortFuture != null) {
+        waitTargets.add(abortFuture);
+      }
+      await Future.any<void>(waitTargets);
       idleTimer?.cancel();
+
+      if (_isDeviceSyncAborted()) {
+        await sub.cancel();
+        debugPrint('------>>>memopin _collectExportPayloads: aborted $fileName');
+        return null;
+      }
 
       for (final List<int> tail in client.flushFileExportAssemblerTail()) {
         buffer.addAll(tail);
       }
       await sub.cancel();
 
+      if (_isDeviceSyncAborted()) {
+        return null;
+      }
+
       final bool transferComplete = await client.waitForUploadTransferComplete(
         timeout: _maxExportWaitForFile(info),
       );
       if (!transferComplete) {
         debugPrint('------>>>memopin _collectExportPayloads: no 0x04 0x02 for $fileName (idle-only end)');
+      }
+
+      if (_isDeviceSyncAborted()) {
+        return null;
       }
 
       if (!receivedPayload && buffer.isEmpty) {
