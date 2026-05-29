@@ -153,7 +153,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       showMPTodayFocusFullSheet(
         context,
         items: s.focusCard.items.take(3).toList(),
-        onSelect: (int replaceSlot, MPTodayFocusCardItem _) {
+        onSelect: (int? replaceSlot, MPTodayFocusCardItem _) {
           unawaited(runAdd(replaceSlot: replaceSlot));
         },
       );
