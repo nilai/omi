@@ -421,6 +421,10 @@ class MPBleTransport extends MPDeviceTransport {
 
   @override
   Future<bool> isConnected() async {
+    if (_currentState == MPDeviceTransportState.disconnected ||
+        _currentState == MPDeviceTransportState.disconnecting) {
+      return false;
+    }
     if (_currentState == MPDeviceTransportState.connected) {
       return true;
     }

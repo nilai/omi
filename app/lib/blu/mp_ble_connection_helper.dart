@@ -12,6 +12,7 @@ import 'package:permission_manager/permission_manager.dart';
 import 'mp_ble_file_util.dart';
 import 'mp_ble_transport.dart';
 import 'mp_ble_recording_watcher.dart';
+import 'mp_device_transport.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_scan_uuids.dart';
 import 'mp_note_ble_gatt_client.dart';
@@ -109,12 +110,19 @@ class MPBleConnectionHelper {
   /// [takeBackgroundBleTransport] 取回；**仅**用户主动断开 / 登出时由 [disconnectBackgroundBleTransportUserInitiated] 清理。
   static BleTransport? _backgroundBleTransport;
 
+  static StreamSubscription<MPDeviceTransportState>? _backgroundConnSub;
+
   /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
   static void parkBackgroundBleTransport(BleTransport? transport) {
     debugPrint(
       '------>>>memopin parkBackgroundBleTransport: ${transport == null ? "null" : "deviceId=${transport.deviceId}"}',
     );
     _backgroundBleTransport = transport;
+    if (transport != null) {
+      _attachBackgroundConnectionMonitor(transport);
+    } else {
+      _detachBackgroundConnectionMonitor();
+    }
     unawaited(_memopinRecordingWatcher.attach(transport));
   }
 
@@ -126,13 +134,51 @@ class MPBleConnectionHelper {
     debugPrint('------>>>memopin takeBackgroundBleTransport');
     final BleTransport? t = _backgroundBleTransport;
     _backgroundBleTransport = null;
+    _detachBackgroundConnectionMonitor();
     // 不断开 [MPBleRecordingWatcher]：连接页接管同一 [BleTransport] 时仍需监听 303/301。
     return t;
+  }
+
+  /// 背景会话链路监听：设备关机/超出范围时通知首页更新顶栏图标（连接页关闭后仍生效）。
+  static void _attachBackgroundConnectionMonitor(BleTransport transport) {
+    unawaited(_backgroundConnSub?.cancel());
+    _backgroundConnSub = transport.connectionStateStream.listen((MPDeviceTransportState s) {
+      if (s == MPDeviceTransportState.disconnected || s == MPDeviceTransportState.disconnecting) {
+        unawaited(_onBackgroundTransportLinkLost());
+      }
+    });
+  }
+
+  static void _detachBackgroundConnectionMonitor() {
+    unawaited(_backgroundConnSub?.cancel());
+    _backgroundConnSub = null;
+  }
+
+  /// 被动掉线：二次确认后通知首页（忽略 GATT 瞬时 disconnected）。
+  static Future<void> _onBackgroundTransportLinkLost() async {
+    final BleTransport? t = _backgroundBleTransport;
+    if (t == null) {
+      return;
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!identical(_backgroundBleTransport, t)) {
+      return;
+    }
+    try {
+      if (await t.isConnected()) {
+        return;
+      }
+    } catch (_) {
+      // treat as disconnected
+    }
+    debugPrint('------>>>memopin background BLE link lost deviceId=${t.deviceId}');
+    MPHomeNotification.notifyBleDisconnected();
   }
 
   /// 释放背景会话并断开 BLE（**仅**用户主动断开、切换设备前清理、登出）。
   static Future<void> disconnectBackgroundBleTransportUserInitiated() async {
     debugPrint('------>>>memopin disconnectBackgroundBleTransportUserInitiated');
+    _detachBackgroundConnectionMonitor();
     await MPBleFileUtil.cancelActiveDeviceSync();
     await _memopinRecordingWatcher.detach();
     final BleTransport? t = _backgroundBleTransport;
@@ -160,11 +206,13 @@ class MPBleConnectionHelper {
     }
     try {
       if (await bg.isConnected()) {
+        _attachBackgroundConnectionMonitor(bg);
         return true;
       }
       debugPrint('------>>>memopin tryReconnectBackgroundTransport: reconnect remoteId=$remoteId');
       await bg.connect();
       await _memopinRecordingWatcher.attach(bg);
+      _attachBackgroundConnectionMonitor(bg);
       return true;
     } catch (e) {
       debugPrint('------>>>memopin tryReconnectBackgroundTransport failed: $e');
@@ -247,6 +295,7 @@ class MPBleConnectionHelper {
       try {
         if (await bg.isConnected()) {
           debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: reuse bg remoteId=${r.remoteId}');
+          _attachBackgroundConnectionMonitor(bg);
           return true;
         }
       } catch (_) {

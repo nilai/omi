@@ -523,7 +523,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       if (!isClosed) {
         emit(state.copyWith(isBleConnected: false));
       }
-      await refreshBleConnectionState();
       return;
     }
 
@@ -541,12 +540,10 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           rightNowTranscribe: false,
         );
       }
-      await refreshBleConnectionState();
       return;
     }
 
     _clearBleTopBarForRecordingDisconnect();
-    await refreshBleConnectionState();
   }
 
   /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus/同名 Txt。
