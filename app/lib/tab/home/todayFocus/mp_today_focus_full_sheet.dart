@@ -8,7 +8,7 @@ import 'cards/mp_today_focus_card.dart';
 Future<void> showMPTodayFocusFullSheet(
   BuildContext context, {
   required List<MPTodayFocusCardItem> items,
-  void Function(int replaceSlot, MPTodayFocusCardItem item)? onSelect,
+  void Function(int? replaceSlot, MPTodayFocusCardItem item)? onSelect,
 }) {
   return showDialog<void>(
     context: context,
@@ -24,7 +24,7 @@ class _MPTodayFocusFullDialog extends StatelessWidget {
   const _MPTodayFocusFullDialog({required this.items, this.onSelect});
 
   final List<MPTodayFocusCardItem> items;
-  final void Function(int index, MPTodayFocusCardItem item)? onSelect;
+  final void Function(int? index, MPTodayFocusCardItem item)? onSelect;
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +102,7 @@ class _MPTodayFocusFullDialog extends StatelessWidget {
                               ? null
                               : () {
                                   Navigator.of(context).maybePop();
-                                  onSelect?.call(it.slot ?? 0, it);
+                                  onSelect?.call(it.slot, it);
                                 },
                         ),
                       );

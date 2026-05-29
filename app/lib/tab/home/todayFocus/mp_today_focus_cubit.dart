@@ -836,7 +836,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       return false;
     }
     final MPTodayFocusCardItem item = items[index];
-    final int focusSlot = item.slot ?? index;
+    final int focusSlot = item.slot ?? (index+1);
     return _runWithBlockingGlobalLoading(() async {
       final MPRemoveTodayFocusResponse? resp = await removeTodayFocus(
         MPRemoveTodayFocusRequest(slot: focusSlot),

@@ -384,7 +384,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                             showMPTodayFocusFullSheet(
                               context,
                               items: state.focusCard.items.take(3).toList(),
-                              onSelect: (int slot, MPTodayFocusCardItem _) {
+                              onSelect: (int? slot, MPTodayFocusCardItem _) {
                                 unawaited(() async {
                                   final bool ok = await _cubit.replaceTodayFocusSlot(
                                     slot: slot,
