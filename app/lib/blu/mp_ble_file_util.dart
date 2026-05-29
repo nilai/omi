@@ -655,6 +655,77 @@ class MPBleFileUtil {
     }
   }
 
+  /// 设备文件列表中正在录音的 Opus（`durationSeconds == 0`）；取 index 最大者。
+  static NoteFileInfo? findInProgressRecordingOpus(List<NoteFileInfo> allFiles) {
+    NoteFileInfo? best;
+    for (final NoteFileInfo info in allFiles) {
+      if (!info.name.toLowerCase().endsWith('.opus')) {
+        continue;
+      }
+      if (info.durationSeconds > 0) {
+        continue;
+      }
+      if (best == null || info.index > best.index) {
+        best = info;
+      }
+    }
+    return best;
+  }
+
+  /// 文件列表中 index 最大的 Opus（设备录音中时长可能已 > 0，此时作候选）。
+  static NoteFileInfo? findLatestOpusFile(List<NoteFileInfo> allFiles) {
+    NoteFileInfo? best;
+    for (final NoteFileInfo info in allFiles) {
+      if (!info.name.toLowerCase().endsWith('.opus')) {
+        continue;
+      }
+      if (best == null || info.index > best.index) {
+        best = info;
+      }
+    }
+    return best;
+  }
+
+  /// 按设备端文件名在列表中查找；未命中时合成 [NoteFileInfo] 供导出。
+  static NoteFileInfo resolveOpusFileInfo(List<NoteFileInfo> allFiles, String deviceFileName) {
+    final String target = deviceFileName.trim();
+    for (final NoteFileInfo info in allFiles) {
+      if (info.name.toLowerCase() == target.toLowerCase()) {
+        return info;
+      }
+    }
+    return NoteFileInfo(index: 0, name: target, durationSeconds: 0);
+  }
+
+  /// 裸 Opus 字节数对应的最后完成 Seq（无完整帧时返回 -1）。
+  static int lastCompletedSeqForRawOpusBytes(int byteLength) {
+    if (byteLength < MPNoteBleFileTransferConstants.opusFrameBytes) {
+      return -1;
+    }
+    return (byteLength ~/ MPNoteBleFileTransferConstants.opusFrameBytes) - 1;
+  }
+
+  /// 导出设备端单个 Opus 至 [ensureMemoPinDeviceAudioDirectoryPath]，返回本地路径。
+  static Future<String?> exportDeviceOpusFileToSandbox({
+    required BleTransport transport,
+    required NoteFileInfo info,
+  }) async {
+    return MPBleConnectionHelper.runMemoPinGattExclusive(() async {
+      final String dir = await ensureMemoPinDeviceAudioDirectoryPath();
+      final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+      try {
+        final List<int>? bytes =
+            await _collectExportPayloads(client: client, fileName: info.name, info: info);
+        if (bytes == null || bytes.isEmpty) {
+          return null;
+        }
+        return _writeBytesToDir(directoryPath: dir, fileName: info.name, bytes: bytes);
+      } finally {
+        await client.dispose();
+      }
+    });
+  }
+
   /// 设备批量导入用 Opus 列表：仅 `.opus`、时长 > 0、按文件名（忽略大小写）去重（保留时长更长者，相同时保留 index 更大者）。
   static List<NoteFileInfo> _filterOpusListForDeviceSync(List<NoteFileInfo> allFiles) {
     final List<NoteFileInfo> opusOnly = allFiles

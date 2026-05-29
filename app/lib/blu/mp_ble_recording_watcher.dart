@@ -11,11 +11,13 @@ import '../audio/record/mp_audio_local_records_util.dart';
 import '../audio/record/mp_audio_upload_manger.dart';
 import '../common/mp_home_notification.dart';
 import 'mp_ble_preferences.dart';
+import 'mp_ble_connection_helper.dart';
 import 'mp_ble_transport.dart';
 import 'mp_ble_file_util.dart';
 import 'mp_device_transport.dart';
 import 'mp_note_ble_gatt_client.dart';
 import 'mp_note_ble_protocol.dart';
+import 'note_device.dart';
 
 /// 订阅 **response `e2c1a303`** 与 **audioData `e2c1a301`**（与 `ble/note_ble_debug_provider.dart` [NoteBleDebugProvider] 使用
 /// `bleTransport.responseStream` / `bleTransport.audioStream` 的语义一致：先等待 GATT notify 就绪，再监听重组后的 301 帧流）。
@@ -41,6 +43,7 @@ class MPBleRecordingWatcher {
 
   /// 303 停录后正在转 MP3 / 登记 / 上传，尚未对外通知停录。
   bool _finalizeAfterStopInProgress = false;
+  bool _probe301AudioSeen = false;
   StreamSubscription<List<int>>? _responseSub;
   StreamSubscription<List<int>>? _rawAudioSub;
   StreamSubscription<MPDeviceTransportState>? _connSub;
@@ -64,6 +67,8 @@ class MPBleRecordingWatcher {
 
   int? _lastSessionModeByte;
 
+  Completer<void>? _connectProbeCompleter;
+
   /// 最近一次关闭实时落盘后的本地路径（停止 / 断连 / detach 后仍保留，直至下次开始录音）。
   String? _lastRealtimeAudioLocalPath;
 
@@ -85,6 +90,22 @@ class MPBleRecordingWatcher {
   /// 是否已绑定传输并建立 301/303 订阅。
   bool get isWatcherAttached => _boundTransport != null;
 
+  /// 等待 [attach] 内录音连接探测结束（[MPBleConnectionHelper.parkBackgroundBleTransport] 会 await）。
+  Future<void> waitForConnectProbe() async {
+    final Completer<void>? c = _connectProbeCompleter;
+    if (c != null) {
+      await c.future;
+    }
+  }
+
+  void _completeConnectProbe() {
+    final Completer<void>? c = _connectProbeCompleter;
+    if (c != null && !c.isCompleted) {
+      c.complete();
+    }
+    _connectProbeCompleter = null;
+  }
+
   /// 最近一次实时落盘文件路径（见 [MPBleMemopinRecordingStateChangedPayload.lastRealtimeAudioLocalPath]）。
   String? get lastRealtimeAudioLocalPath => _lastRealtimeAudioLocalPath;
 
@@ -93,10 +114,21 @@ class MPBleRecordingWatcher {
     debugPrint(
       '------>>>memopin recording watcher attach: ${transport == null ? "detach" : "deviceId=${transport.deviceId}"}',
     );
-    await detach();
     if (transport == null) {
+      await detach();
       return;
     }
+    if (_boundTransport?.deviceId == transport.deviceId && _responseSub != null) {
+      debugPrint('------>>>memopin recording watcher attach: same device already subscribed, re-probe only');
+      _connectProbeCompleter = Completer<void>();
+      try {
+        await _probeAndJoinActiveDeviceRecordingOnConnect(transport);
+      } finally {
+        _completeConnectProbe();
+      }
+      return;
+    }
+    await detach();
     await _start(transport);
   }
 
@@ -165,46 +197,52 @@ class MPBleRecordingWatcher {
 
   Future<void> _start(BleTransport transport) async {
     debugPrint('------>>>memopin recording watcher _start: deviceId=${transport.deviceId}');
+    _connectProbeCompleter = Completer<void>();
     try {
-      if (!await transport.isConnected()) {
-        debugPrint('------>>>memopin recording watcher _start: not connected, abort');
+      try {
+        if (!await transport.isConnected()) {
+          debugPrint('------>>>memopin recording watcher _start: not connected, abort');
+          return;
+        }
+      } catch (_) {
+        debugPrint('------>>>memopin recording watcher _start: isConnected check failed, abort');
         return;
       }
-    } catch (_) {
-      debugPrint('------>>>memopin recording watcher _start: isConnected check failed, abort');
-      return;
-    }
 
-    debugPrint('------>>>memopin recording watcher _start: ensureGattSubscriptionsReady → response/audioStream');
+      debugPrint('------>>>memopin recording watcher _start: ensureGattSubscriptionsReady → response/audioStream');
 
-    try {
-      await transport.ensureGattSubscriptionsReady();
-      _boundTransport = transport;
+      try {
+        await transport.ensureGattSubscriptionsReady();
+        _boundTransport = transport;
 
-      await _restoreRecordingStateFromDiskIfNeeded(transport.deviceId);
+        await _restoreRecordingStateFromDiskIfNeeded(transport.deviceId);
 
-      _connSub = transport.connectionStateStream.listen(
-        (MPDeviceTransportState s) {
-          if (s == MPDeviceTransportState.disconnected) {
-            _linkWasLost = true;
-            unawaited(_onBleLinkLost());
-          } else if (s == MPDeviceTransportState.connected && _linkWasLost) {
-            _linkWasLost = false;
-            unawaited(_onBleLinkRestored(transport));
-          }
-        },
-        onError: (Object e, StackTrace st) =>
-            debugPrint('------>>>memopin recording watcher connectionStateStream: $e\n$st'),
-      );
+        _connSub = transport.connectionStateStream.listen(
+          (MPDeviceTransportState s) {
+            if (s == MPDeviceTransportState.disconnected) {
+              _linkWasLost = true;
+              unawaited(_onBleLinkLost());
+            } else if (s == MPDeviceTransportState.connected && _linkWasLost) {
+              _linkWasLost = false;
+              unawaited(_onBleLinkRestored(transport));
+            }
+          },
+          onError: (Object e, StackTrace st) =>
+              debugPrint('------>>>memopin recording watcher connectionStateStream: $e\n$st'),
+        );
 
-      await _subscribeStreams(transport);
-      await _tryResumeInterruptedCapture(transport);
-    } catch (e, st) {
-      debugPrint('------>>>memopin recording watcher _start: subscribe failed: $e\n$st');
-      _boundTransport = null;
-      await _connSub?.cancel();
-      _connSub = null;
-      await _cancelStreamSubscriptions();
+        await _subscribeStreams(transport);
+        await _tryResumeInterruptedCapture(transport);
+        await _probeAndJoinActiveDeviceRecordingOnConnect(transport);
+      } catch (e, st) {
+        debugPrint('------>>>memopin recording watcher _start: subscribe failed: $e\n$st');
+        _boundTransport = null;
+        await _connSub?.cancel();
+        _connSub = null;
+        await _cancelStreamSubscriptions();
+      }
+    } finally {
+      _completeConnectProbe();
     }
   }
 
@@ -240,6 +278,7 @@ class MPBleRecordingWatcher {
 
   void _onRawAudio301(List<int> packet) {
     if (_audioFileSink == null) {
+      _probe301AudioSeen = true;
       return;
     }
     _rtBuffer.feed(
@@ -394,6 +433,141 @@ class MPBleRecordingWatcher {
     }
   }
 
+  /// 连接后探测录音态（等待 303 重放 / 301 实时流）并导入连接前已有 Opus 数据。
+  Future<void> _probeAndJoinActiveDeviceRecordingOnConnect(BleTransport transport) async {
+    final String? recordingName = _lastEmitted.activeFileName?.trim();
+    if (_lastEmitted.isRecording &&
+        _audioFileSink != null &&
+        recordingName != null &&
+        recordingName.isNotEmpty &&
+        _savedAudioPath != null &&
+        p.basename(_savedAudioPath!).toLowerCase() == recordingName.toLowerCase()) {
+      return;
+    }
+
+    _probe301AudioSeen = false;
+
+    try {
+      await MPBleConnectionHelper.runMemoPinGattExclusive(() async {
+        final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+        try {
+          await client.setRecordingTransportMode(MPNoteBleRecordingTransportModes.recordAndStream);
+        } finally {
+          await client.dispose();
+        }
+      });
+    } catch (e) {
+      debugPrint('------>>>memopin recording watcher: set recordAndStream failed: $e');
+    }
+
+    await Future<void>.delayed(const Duration(milliseconds: 900));
+    if (!_lastEmitted.isRecording) {
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+    }
+
+    try {
+      final List<NoteFileInfo> allFiles =
+          await MPBleConnectionHelper.fetchMemoPinFileListForRecordingProbe(transport);
+      final NoteFileInfo? zeroDur = MPBleFileUtil.findInProgressRecordingOpus(allFiles);
+      final NoteFileInfo? latestOpus = MPBleFileUtil.findLatestOpusFile(allFiles);
+
+      NoteFileInfo? active;
+      if (_lastEmitted.isRecording) {
+        final String? name = _lastEmitted.activeFileName;
+        if (name != null && name.isNotEmpty) {
+          active = MPBleFileUtil.resolveOpusFileInfo(allFiles, name);
+        }
+      }
+      active ??= zeroDur;
+      if (active == null && (_probe301AudioSeen || _lastEmitted.isRecording)) {
+        active = latestOpus;
+      }
+      if (active == null && _probe301AudioSeen) {
+        active = NoteFileInfo(index: 0, name: 'session.opus', durationSeconds: 0);
+      }
+
+      if (active == null) {
+        debugPrint(
+          '------>>>memopin recording watcher: no active recording on connect '
+          'files=${allFiles.length} probe301=$_probe301AudioSeen',
+        );
+        return;
+      }
+
+      debugPrint(
+        '------>>>memopin recording watcher: probe join ${active.name} '
+        'recording=${_lastEmitted.isRecording} probe301=$_probe301AudioSeen files=${allFiles.length}',
+      );
+
+      if (!_lastEmitted.isRecording) {
+        _emitIfChanged(
+          MPBleMemopinRecordingStateChangedPayload(
+            isRecording: true,
+            activeFileName: active.name,
+            sessionModeByte: _lastSessionModeByte,
+            changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
+          ),
+          forceEmit: true,
+        );
+      }
+
+      unawaited(_joinActiveRecordingSession(transport, active));
+    } catch (e, st) {
+      debugPrint('------>>>memopin recording watcher probe join failed: $e\n$st');
+    }
+  }
+
+  /// 导出设备端正在录的 Opus、续接 301 实时落盘。
+  Future<void> _joinActiveRecordingSession(BleTransport transport, NoteFileInfo active) async {
+    final String dir = await MPBleFileUtil.ensureMemoPinDeviceAudioDirectoryPath();
+    String localPath = p.join(dir, active.name);
+
+    await _closeAudioSavingSink(persistSeqSidecar: false);
+
+    final String? exported = await MPBleFileUtil.exportDeviceOpusFileToSandbox(
+      transport: transport,
+      info: active,
+    );
+    if (exported != null && exported.isNotEmpty) {
+      localPath = exported;
+    } else {
+      final File placeholder = File(localPath);
+      if (!await placeholder.exists()) {
+        await placeholder.create(recursive: true);
+      }
+    }
+
+    final File localFile = File(localPath);
+    final int rawBytes = await localFile.exists() ? await localFile.length() : 0;
+    final int lastSeq = MPBleFileUtil.lastCompletedSeqForRawOpusBytes(rawBytes);
+    if (lastSeq >= 0) {
+      await MPBleFileUtil.trimRawOpusToLastCompletedSeq(localPath, lastSeq);
+    }
+
+    _savedAudioPath = localPath;
+    _activeFileNameForRetransmit = active.name;
+    _rtBuffer.reset();
+    await _rtBuffer.loadLastSeqFromSidecar(localPath);
+    if (_rtBuffer.lastCompletedSeq < 0 && lastSeq >= 0) {
+      await File('$localPath.seq').writeAsString('$lastSeq', flush: true);
+      await _rtBuffer.loadLastSeqFromSidecar(localPath);
+    }
+
+    transport.resetRealtimeAudioReassembly(fileName: active.name);
+    if (_rtBuffer.lastCompletedSeq >= 0) {
+      transport.restoreLastCompletedSeq(_rtBuffer.lastCompletedSeq);
+    }
+
+    _audioPacketsReceived = 0;
+    _audioBytesSaved = await localFile.exists() ? await localFile.length() : 0;
+    _lastLogTime = null;
+    _audioFileSink = localFile.openWrite(mode: FileMode.append);
+    debugPrint(
+      '------>>>memopin recording watcher: joined active recording path=$localPath '
+      'lastSeq=${_rtBuffer.lastCompletedSeq} bytes=$_audioBytesSaved',
+    );
+  }
+
   Future<void> _ensureAudioSavingSinkOpen({bool appendIfPathExists = false}) async {
     if (_audioFileSink != null) {
       return;
@@ -454,9 +628,13 @@ class MPBleRecordingWatcher {
       }
       return;
     }
-    if (p.length >= 5 &&
-        p[0] == MPNoteBleRecordingWire.cmdRecordingStart &&
-        p[1] == MPNoteBleRecordingWire.opStartRecordingAck) {
+    if (p.length >= 4 && p[0] == MPNoteBleRecordingWire.cmdRecordingStart) {
+      final int op = p[1] & 0xff;
+      final int recordState = p[2] & 0xff;
+      final bool startBranch = op == MPNoteBleRecordingWire.opStartRecordingAck || recordState == 0x01;
+      if (!startBranch) {
+        return;
+      }
       debugPrint(
         '------>>>memopin recording watcher 303: start-ok Cmd/Op/State=${p[0]} ${p[1]} ${p[2]} mode=${p[3] & 0xff}',
       );

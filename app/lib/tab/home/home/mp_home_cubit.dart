@@ -546,6 +546,15 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _clearBleTopBarForRecordingDisconnect();
   }
 
+  /// 将 [MPBleRecordingWatcher] 当前录音快照同步到首页顶栏（连接成功时兜底）。
+  void _syncBleRecordingTopBarFromSnapshot() {
+    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      _pendingPostBleRecordingAudioStatus = null;
+      _deferredRecordCreatedCompletion = null;
+      _emitRecordingAudioStatusPrioritized();
+    }
+  }
+
   /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus/同名 Txt。
   Future<void> _onBleConnectedSuccess() async {
     if (_bleDeviceImportRunning || isClosed) {
@@ -557,12 +566,18 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       return;
     }
     _suppressBleUploadStatusAfterDisconnect = false;
+    if (!isClosed) {
+      emit(state.copyWith(isBleConnected: true));
+    }
+    await MPBleConnectionHelper.waitForRecordingConnectProbe();
+    _syncBleRecordingTopBarFromSnapshot();
+    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      debugPrint('MPHomeCubit: device is recording, skip batch import until stop');
+      return;
+    }
     _bleDeviceImportRunning = true;
     try {
       debugPrint('MPHomeCubit: Bluetooth connected. Starting device import...');
-      if (!isClosed) {
-        emit(state.copyWith(isBleConnected: true));
-      }
       await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
         onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {

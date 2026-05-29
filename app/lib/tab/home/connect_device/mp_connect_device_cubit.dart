@@ -110,7 +110,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
           final String remoteId = _transport!.deviceId;
           final bool reconnected = await MPBleConnectionHelper.tryReconnectBackgroundTransport(remoteId);
           if (!reconnected && !isClosed) {
-            MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+            await MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
             _transport = null;
             _emitAllDevicesDisconnected();
           }
@@ -132,7 +132,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
           }
         }
       } catch (_) {
-        MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+        await MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
         _transport = null;
         if (!isClosed) {
           _emitAllDevicesDisconnected();
@@ -415,7 +415,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       final BluetoothDevice device = MPBleConnectionHelper.bluetoothDeviceFromRemoteId(id);
       _transport = MPBleConnectionHelper.createBleTransport(device);
       await _transport!.connect();
-      MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
+      await MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
       _attachTransportConnectionListener(_transport!);
       // 须在 notifyBleConnectedSuccess（首页 GATT 拉文件列表）之前读电量，避免 303 响应被抢占导致误显示 100%。
       final int? batteryPct = await _readBatteryPercentForTransport(_transport!, id);

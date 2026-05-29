@@ -223,17 +223,31 @@ class MPNoteBleGattClient {
     debugPrint('------>>>memopin MPNoteBleGattClient.sendRetransmitAudioRequest: write sent (${cmd.length} bytes)');
   }
 
-  /// 获取设备端录音文件列表（命令 `0x03`，支持多包拼接）。
+  /// 获取设备端录音文件列表（命令 `0x03`，含多包拼接）。
   Future<List<NoteFileInfo>> getFileList({
     Duration timeout = const Duration(seconds: 10),
   }) async {
-    debugPrint('------>>>memopin MPNoteBleGattClient.getFileList');
+    return _getFileListParsed(timeout: timeout, includeAllOpus: false);
+  }
+
+  /// 录音探测用文件列表：包含所有 `.opus`（不过滤文件名格式）。
+  Future<List<NoteFileInfo>> getFileListForRecordingProbe({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    return _getFileListParsed(timeout: timeout, includeAllOpus: true);
+  }
+
+  Future<List<NoteFileInfo>> _getFileListParsed({
+    required Duration timeout,
+    required bool includeAllOpus,
+  }) async {
+    debugPrint('------>>>memopin MPNoteBleGattClient.getFileList includeAllOpus=$includeAllOpus');
     final List<int> response = await _sendCommandWithResponse(
       <int>[MPNoteBleCommands.getFileList],
       awaitKind: _AwaitKind.fileList,
       timeout: timeout,
     );
-    final List<NoteFileInfo> files = _parseFileList(response);
+    final List<NoteFileInfo> files = _parseFileList(response, includeAllOpus: includeAllOpus);
     debugPrint('------>>>memopin MPNoteBleGattClient.getFileList → ${files.length} files');
     return files;
   }
@@ -484,7 +498,7 @@ class MPNoteBleGattClient {
     }
   }
 
-  List<NoteFileInfo> _parseFileList(List<int> response) {
+  List<NoteFileInfo> _parseFileList(List<int> response, {bool includeAllOpus = false}) {
     if (response.isEmpty || response[0] != MPNoteBleCommands.getFileList) {
       debugPrint('------>>>memopin _parseFileList: empty or bad header len=${response.length}');
       return <NoteFileInfo>[];
@@ -512,7 +526,10 @@ class MPNoteBleGattClient {
           response.sublist(offset + 4, offset + 4 + nameLength);
       final String name = utf8.decode(fileNameBytes);
       debugPrint('------>>>memopin _parseFileList entry: $name duration=$duration');
-      if (name.isNotEmpty && name.length >= 15 && name.contains('_')) {
+      final bool accepted = includeAllOpus
+          ? name.toLowerCase().endsWith('.opus')
+          : (name.isNotEmpty && name.length >= 15 && name.contains('_'));
+      if (accepted) {
         files.add(
           NoteFileInfo(
             index: index,

@@ -113,7 +113,7 @@ class MPBleConnectionHelper {
   static StreamSubscription<MPDeviceTransportState>? _backgroundConnSub;
 
   /// 将当前已连接的 [transport] 存为背景会话（仅持有引用，不 disconnect）。
-  static void parkBackgroundBleTransport(BleTransport? transport) {
+  static Future<void> parkBackgroundBleTransport(BleTransport? transport) async {
     debugPrint(
       '------>>>memopin parkBackgroundBleTransport: ${transport == null ? "null" : "deviceId=${transport.deviceId}"}',
     );
@@ -123,7 +123,8 @@ class MPBleConnectionHelper {
     } else {
       _detachBackgroundConnectionMonitor();
     }
-    unawaited(_memopinRecordingWatcher.attach(transport));
+    await _memopinRecordingWatcher.attach(transport);
+    await _memopinRecordingWatcher.waitForConnectProbe();
   }
 
   /// 当前背景持有的 [BleTransport]（未停放时为 `null`）；与连接页 [_transport] 可能指向同一实例。
@@ -212,6 +213,7 @@ class MPBleConnectionHelper {
       debugPrint('------>>>memopin tryReconnectBackgroundTransport: reconnect remoteId=$remoteId');
       await bg.connect();
       await _memopinRecordingWatcher.attach(bg);
+      await _memopinRecordingWatcher.waitForConnectProbe();
       _attachBackgroundConnectionMonitor(bg);
       return true;
     } catch (e) {
@@ -329,7 +331,7 @@ class MPBleConnectionHelper {
     try {
       debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connecting remoteId=${r.remoteId}');
       await transport.connect();
-      parkBackgroundBleTransport(transport);
+      await MPBleConnectionHelper.parkBackgroundBleTransport(transport);
       MPHomeNotification.notifyBleConnectedSuccess();
       debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connected OK');
       return true;
@@ -667,6 +669,28 @@ class MPBleConnectionHelper {
     } catch (_) {
       return null;
     }
+  }
+
+  /// 录音连接探测用：返回设备上全部 `.opus`（含录音中、文件名未带 `_` 的项）。
+  static Future<List<NoteFileInfo>> fetchMemoPinFileListForRecordingProbe(BleTransport transport) {
+    return _runGattExclusive(() => _fetchMemoPinFileListForRecordingProbeImpl(transport));
+  }
+
+  static Future<List<NoteFileInfo>> _fetchMemoPinFileListForRecordingProbeImpl(BleTransport transport) async {
+    debugPrint('------>>>memopin fetchMemoPinFileListForRecordingProbe: deviceId=${transport.deviceId}');
+    final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
+    try {
+      final List<NoteFileInfo> list = await client.getFileListForRecordingProbe();
+      debugPrint('------>>>memopin fetchMemoPinFileListForRecordingProbe: count=${list.length}');
+      return list;
+    } finally {
+      await client.dispose();
+    }
+  }
+
+  /// 等待本次 [parkBackgroundBleTransport] 触发的录音连接探测结束（供首页同步顶栏）。
+  static Future<void> waitForRecordingConnectProbe() {
+    return _memopinRecordingWatcher.waitForConnectProbe();
   }
 
   /// 获取设备端录音文件列表（命令 `0x03`，含多包拼接）。
