@@ -11,7 +11,6 @@ import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
-import 'package:memo_pin/utils/mp_aac_to_mp3_util.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -731,7 +730,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
     String? savedPath;
     if (hasPersistedAac) {
-      savedPath = await MPAacToMp3Util.convertAacFileToMp3(persistedAac);
+      savedPath = persistedAac;
     } else {
       final String? copiedAacPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(
         File(tempAac!),
@@ -745,15 +744,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         return;
       }
       _pendingPersistedAacPath = copiedAacPath;
-      savedPath = await MPAacToMp3Util.convertAacFileToMp3(copiedAacPath);
-    }
-
-    if (savedPath == null || savedPath.isEmpty) {
-      if (mounted) {
-        MPToastUtils.showMessage('Couldn\'t convert recording to MP3. Please try again.');
-        setState(() => _busy = false);
-      }
-      return;
+      savedPath = copiedAacPath;
     }
     if (hasTempAac) {
       try {
@@ -768,7 +759,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: savedPath,
-        mp3Path: savedPath,
         fileName: 'record_$createAt',
         createAt: createAt,
         duration: total.inSeconds,

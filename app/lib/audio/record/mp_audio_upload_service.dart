@@ -2,11 +2,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 
 import '../../http/api/mp_memory.dart';
 import '../../http/schema/mp_memory.dart';
-import '../../utils/mp_aac_to_mp3_util.dart';
 import 'audio_record.dart';
 
 
@@ -26,7 +24,7 @@ class MPAudioUploadService {
   ///
   /// 返回 上传后的uri, 不同场景保存使用
   ///
-  /// 本地 `.aac` 会先经 [MPAacToMp3Util] 转为 MP3，再以 `audio/mpeg` 上传。
+  /// 按文件扩展名选择 MIME 类型（如 `.aac` → `audio/aac`）直接上传。
   Future<String?> uploadMPAudio(
     File audioFile, {
     Function(int current, int total)? onProgress,
@@ -76,25 +74,13 @@ class MPAudioUploadService {
     }
   }
 
-  /// 上传前将 AAC 转为同目录 MP3；已是其它格式则原样返回。
+  /// 上传前校验文件存在；不做格式转码。
   static Future<File?> _resolveAudioFileForUpload(File audioFile) async {
     if (!await audioFile.exists()) {
       debugPrint('MPAudioUploadService: file does not exist: ${audioFile.path}');
       return null;
     }
-    if (p.extension(audioFile.path).toLowerCase() != '.aac') {
-      return audioFile;
-    }
-    final String? mp3Path = await MPAacToMp3Util.convertAacFileToMp3(audioFile.path);
-    if (mp3Path == null || mp3Path.isEmpty) {
-      debugPrint('MPAudioUploadService: AAC to MP3 conversion failed');
-      return null;
-    }
-    final File mp3File = File(mp3Path);
-    if (!await mp3File.exists()) {
-      return null;
-    }
-    return mp3File;
+    return audioFile;
   }
 
   /// 使用指定 [contentType] 走预签名 URL + S3（与 [uploadMPAudio] 相同步骤）。
@@ -145,15 +131,11 @@ class MPAudioUploadService {
   ///
   /// 返回 上传后的uri, 不同场景保存使用
   ///
-  /// [contentType] 为 `audio/aac` 时先落盘转 MP3，再走 [uploadMPAudio]。
   Future<String?> uploadMPAudioBytes(
     List<int> audioBytes,
     String contentType, {
     Function(int current, int total)? onProgress,
   }) async {
-    if (contentType.toLowerCase() == 'audio/aac') {
-      return _uploadAacBytesAsMp3(audioBytes, onProgress: onProgress);
-    }
     try {
       debugPrint('MPAudioUploadService: uploading bytes with type $contentType');
 
@@ -182,42 +164,6 @@ class MPAudioUploadService {
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during bytes upload: $e');
       return null;
-    }
-  }
-
-  /// AAC 字节 → 临时文件 → 转 MP3 → [uploadMPAudio]。
-  Future<String?> _uploadAacBytesAsMp3(
-    List<int> audioBytes, {
-    Function(int current, int total)? onProgress,
-  }) async {
-    final Directory tempDir = await getTemporaryDirectory();
-    final String aacPath = p.join(
-      tempDir.path,
-      'mp_upload_${DateTime.now().millisecondsSinceEpoch}.aac',
-    );
-    final File aacFile = File(aacPath);
-    try {
-      await aacFile.writeAsBytes(audioBytes, flush: true);
-      return uploadMPAudio(aacFile, onProgress: onProgress);
-    } catch (e) {
-      debugPrint('MPAudioUploadService: _uploadAacBytesAsMp3 failed: $e');
-      return null;
-    } finally {
-      try {
-        if (await aacFile.exists()) {
-          await aacFile.delete();
-        }
-      } catch (_) {}
-      final String mp3Path = p.join(
-        tempDir.path,
-        '${p.basenameWithoutExtension(aacPath)}.mp3',
-      );
-      try {
-        final File mp3 = File(mp3Path);
-        if (await mp3.exists()) {
-          await mp3.delete();
-        }
-      } catch (_) {}
     }
   }
 
