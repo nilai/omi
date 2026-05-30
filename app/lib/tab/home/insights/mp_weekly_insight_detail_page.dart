@@ -80,7 +80,7 @@ class _MPWeeklyAppBar extends StatelessWidget {
                     style: OmiTextStyle.create(
                       color: mainTextColor,
                       fontSize: OmiFontSize.t8_17,
-                      fontWeight: OmiFontWeight.medium,
+                      fontWeight: OmiFontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -252,7 +252,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
                   title,
                   style: OmiTextStyle.create(
                     color: mainTextColor,
-                    fontSize: OmiFontSize.t9_18,
+                    fontSize: OmiFontSize.t11_20,
                     fontWeight: OmiFontWeight.bold,
                     height: 1.15,
                   ),
@@ -311,8 +311,8 @@ class _MPWeeklySummaryCard extends StatelessWidget {
             'Week Summary',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
@@ -320,7 +320,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
             'Focus Areas',
             style: OmiTextStyle.create(
               color: secondTextColor,
-              fontSize: OmiFontSize.t5_14,
+              fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.regular,
             ),
           ),
@@ -340,7 +340,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
               'Key Metrics',
               style: OmiTextStyle.create(
                 color: secondTextColor,
-                fontSize: OmiFontSize.t5_14,
+                fontSize: OmiFontSize.t4_13,
                 fontWeight: OmiFontWeight.regular,
               ),
             ),
@@ -359,7 +359,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                           m.value,
                           style: OmiTextStyle.create(
                             color: const Color(0xFF3A8FBB),
-                            fontSize: OmiFontSize.t13_22,
+                            fontSize: OmiFontSize.t14_24,
                             fontWeight: OmiFontWeight.bold,
                           ),
                         ),
@@ -368,7 +368,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                           m.label,
                           style: OmiTextStyle.create(
                             color: secondTextColor,
-                            fontSize: OmiFontSize.t4_13,
+                            fontSize: OmiFontSize.t3_12,
                             fontWeight: OmiFontWeight.regular,
                           ),
                         ),
@@ -400,7 +400,7 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
             'Accomplishments',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t11_20,
+              fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
               height: 1.15,
             ),
@@ -473,8 +473,8 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
             'Challenges & Learnings',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
@@ -495,7 +495,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
                     item.title,
                     style: OmiTextStyle.create(
                       color: mainTextColor,
-                      fontSize: OmiFontSize.t6_15,
+                      fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.medium,
                     ),
                   ),
@@ -504,7 +504,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
                     item.description,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
-                      fontSize: OmiFontSize.t5_14,
+                      fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.45,
                     ),
@@ -534,8 +534,8 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
             'Pending Items',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
@@ -605,8 +605,8 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
             'Next Week Priorities',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
@@ -631,7 +631,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                       '${e.key + 1}',
                       style: OmiTextStyle.create(
                         color: Colors.white,
-                        fontSize: OmiFontSize.t3_12,
+                        fontSize: OmiFontSize.t4_13,
                         fontWeight: OmiFontWeight.bold,
                         height: 1,
                       ),
@@ -760,8 +760,8 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
             'Expert Weekly Feedback',
             style: OmiTextStyle.create(
               color: mainTextColor,
-              fontSize: OmiFontSize.t6_15,
-              fontWeight: OmiFontWeight.medium,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.bold,
             ),
           ),
           const SizedBox(height: 10),
@@ -782,8 +782,8 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                         item.title,
                         style: OmiTextStyle.create(
                           color: mainTextColor,
-                          fontSize: OmiFontSize.t5_14,
-                          fontWeight: OmiFontWeight.medium,
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.bold,
                         ),
                       ),
                     ],
@@ -793,7 +793,7 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                     item.content,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
-                      fontSize: OmiFontSize.t4_13,
+                      fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.4,
                     ),
