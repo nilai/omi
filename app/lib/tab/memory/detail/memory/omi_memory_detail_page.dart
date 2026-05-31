@@ -10,6 +10,7 @@ import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/http/api/mp_chat.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -344,7 +345,7 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
               MPCreateMemoWithTextRequest(
                 content: line,
                 memoryId: memoryId,
-                createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                createAt: MPTimeUtils.nowUnixSeconds(),
               ),
             );
             if (!context.mounted) return;

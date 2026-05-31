@@ -184,7 +184,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
 
   void _armSuppressPlaybackCompleted() {
     _suppressPlaybackCompletedUntilMs =
-        DateTime.now().millisecondsSinceEpoch + _kSuppressCompletedAfterSourceMs;
+        MPTimeUtils.nowUnixMilliseconds() + _kSuppressCompletedAfterSourceMs;
   }
 
   void _stopPlaybackUiTimer() {
@@ -260,7 +260,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       return;
     }
 
-    final bool suppressCompleted = DateTime.now().millisecondsSinceEpoch <
+    final bool suppressCompleted = MPTimeUtils.nowUnixMilliseconds() <
         _suppressPlaybackCompletedUntilMs;
 
     final Duration pos = _audioPlayer.position;
@@ -723,7 +723,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
           await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
       String resolvedFileId = fileId.trim();
       if (resolvedFileId.isEmpty) {
-        resolvedFileId = DateTime.now().millisecondsSinceEpoch.toString();
+        resolvedFileId = MPTimeUtils.nowUnixMilliseconds().toString();
       }
       String ext = '.m4a';
       final String path = uri.path;
@@ -745,7 +745,7 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
         MPAudioLocalRecord(
           path: playablePath,
           fileName: '$resolvedFileId$ext',
-          createAt: DateTime.now().millisecondsSinceEpoch,
+          createAt: MPTimeUtils.nowUnixMilliseconds(),
           duration: _parseDurationSeconds(durationLabel),
           source: 'mobilePhone',
           fileId: resolvedFileId,

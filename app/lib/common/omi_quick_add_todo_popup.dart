@@ -19,6 +19,7 @@ import '../generated/assets.dart';
 import '../http/api/mp_chat.dart';
 import '../http/schema/mp_chat.dart';
 import '../permission/omi_microphone_manager.dart';
+import '../utils/mp_time_utils.dart';
 import '../utils/mp_toast_utils.dart';
 
 /// 快捷添加 Todo 输入弹窗结果。
@@ -224,7 +225,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
         dir,
-        'omi_quick_add_${DateTime.now().millisecondsSinceEpoch}.aac',
+        'omi_quick_add_${MPTimeUtils.nowUnixMilliseconds()}.aac',
       );
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;

@@ -9,7 +9,7 @@ class MPDateUtils {
   static int? normalizeTodoDeadline(int? raw) =>
       MPTimeUtils.normalizeUnixTimestamp(raw);
 
-  /// 秒或毫秒时间戳转应用时区 [DateTime]；`raw > 1e10` 视为毫秒。
+  /// 秒或毫秒时间戳转 UTC [DateTime]；`raw > 1e10` 视为毫秒。
   static DateTime? dateTimeFromUnixEpoch(int? raw) =>
       MPTimeUtils.dateTimeFromUnixEpoch(raw);
 
@@ -20,7 +20,7 @@ class MPDateUtils {
       return 'No deadline';
     }
     final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
-    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final DateTime day = DateTime.utc(dt.year, dt.month, dt.day);
     if (day == today) {
       return 'Today';
     }
@@ -43,7 +43,7 @@ class MPDateUtils {
       return 'No deadline';
     }
     final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
-    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final DateTime day = DateTime.utc(dt.year, dt.month, dt.day);
     final String when =
         day == today ? 'Today' : DateFormat('MMM d, y').format(dt);
     final String time = DateFormat('HH:mm:ss').format(dt);
@@ -67,7 +67,7 @@ class MPDateUtils {
     }
     final DateTime now = MPTimeUtils.nowInTimeZone();
     final DateTime todayStart = MPTimeUtils.startOfTodayInTimeZone();
-    final DateTime eventDay = DateTime(dt.year, dt.month, dt.day);
+    final DateTime eventDay = DateTime.utc(dt.year, dt.month, dt.day);
     final int diffDays = todayStart.difference(eventDay).inDays;
     if (diffDays < 0) {
       return '';
@@ -112,7 +112,7 @@ class MPDateUtils {
       return '';
     }
     final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
-    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final DateTime day = DateTime.utc(dt.year, dt.month, dt.day);
     final String timePart = DateFormat('h:mm a').format(dt);
     if (day == today) {
       return 'Today, $timePart';

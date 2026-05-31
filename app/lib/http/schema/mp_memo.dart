@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import 'mp_base.dart';
 
@@ -14,7 +15,7 @@ int _memoParseCreateAtForCtor(Object? raw) {
 
 int _memoNormalizeUnixSeconds(int value) {
   if (value <= 0) {
-    return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return MPTimeUtils.nowUnixSeconds();
   }
   return value;
 }

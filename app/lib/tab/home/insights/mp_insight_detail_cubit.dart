@@ -349,6 +349,15 @@ class MPMonthlyInsightDetailData {
   final String askAiButtonText;
 }
 
+/// Insight Todo 预填 Notes：优先 [MPTodoStruct.description]，否则 [MPTodoStruct.reason]（如 Weekly 的 sub_title）。
+String _insightTodoInitialNotes(MPTodoStruct todo) {
+  final String description = (todo.description ?? '').trim();
+  if (description.isNotEmpty) {
+    return description;
+  }
+  return (todo.reason ?? '').trim();
+}
+
 /// Insight 详情 Cubit 基类：沉淀通用交互逻辑。
 abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
   MPInsightDetailBaseCubit(super.initialState);
@@ -374,7 +383,7 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           contextMemoryTitle: content?.title ?? '',
           contextMetaLine: content?.metaLine ?? '',
           insightId: insightItem.id,
-          initialNotes: todo.description ?? '',
+          initialNotes: _insightTodoInitialNotes(todo),
         ),
         onContextTap: () {
           Navigator.of(context).pop();

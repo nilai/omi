@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/env/env.dart';
 import 'package:memo_pin/http/shared.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -231,7 +232,7 @@ class MPAudioLocalRecordsUtil {
     if (File(newPath).existsSync()) {
       newPath = p.join(
         p.dirname(f.path),
-        '${p.basenameWithoutExtension(f.path)}_${DateTime.now().millisecondsSinceEpoch}$ext',
+        '${p.basenameWithoutExtension(f.path)}_${MPTimeUtils.nowUnixMilliseconds()}$ext',
       );
     }
     await f.rename(newPath);
@@ -341,7 +342,7 @@ class MPAudioLocalRecordsUtil {
       }
       final String dir = await ensureLocalStorageDirectoryPath();
       final String ext = p.extension(tempFile.path);
-      final String name = 'omi_record_${DateTime.now().millisecondsSinceEpoch}${ext.isEmpty ? '.aac' : ext}';
+      final String name = 'omi_record_${MPTimeUtils.nowUnixMilliseconds()}${ext.isEmpty ? '.aac' : ext}';
       final String destPath = p.join(dir, name);
       await tempFile.copy(destPath);
       if (deleteAfterCopy) {

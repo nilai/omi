@@ -55,7 +55,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// 热启动回到前台时刷新时区（用户可能已切换系统时区或跨区旅行）。
+  /// 热启动回到前台时确保时间工具已初始化（应用固定 UTC 时区）。
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../cache/mp_hive_util.dart';
+import '../../utils/mp_time_utils.dart';
 import '../../http/api/mp_chat.dart';
 import '../../http/schema/mp_chat.dart';
 import 'mp_ask_ai_chat_page.dart';
@@ -124,7 +125,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
     List<MPAskAIChatMessage> next = <MPAskAIChatMessage>[
       ...current,
       MPAskAIChatMessage(
-        id: 'u_${DateTime.now().microsecondsSinceEpoch}',
+        id: 'u_${MPTimeUtils.nowUnixMicroseconds()}',
         role: MPAskAIMessageRole.user,
         content: message,
       ),
@@ -167,7 +168,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         next = <MPAskAIChatMessage>[
           ...next,
           MPAskAIChatMessage(
-            id: 'a_${DateTime.now().microsecondsSinceEpoch}',
+            id: 'a_${MPTimeUtils.nowUnixMicroseconds()}',
             role: MPAskAIMessageRole.ai,
             content: created.greet.trim(),
           ),
@@ -194,7 +195,7 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         final List<MPAskAIChatMessage> merged = <MPAskAIChatMessage>[
           ...next,
           MPAskAIChatMessage(
-            id: 'a_${DateTime.now().microsecondsSinceEpoch}',
+            id: 'a_${MPTimeUtils.nowUnixMicroseconds()}',
             role: MPAskAIMessageRole.ai,
             content: aiText,
           ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -235,7 +236,7 @@ class _MPAnalyzeSuggestedTasksSheetState
         final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
           MPCreateMemoWithTextRequest(
             content: content,
-            createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+            createAt: MPTimeUtils.nowUnixSeconds(),
           ),
         );
         ok = resp != null && resp.baseResp.code == 0;

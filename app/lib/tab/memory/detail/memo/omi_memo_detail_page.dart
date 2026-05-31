@@ -15,6 +15,7 @@ import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/tab/memory/detail/memo/omi_memo_detail_cubit.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_content_card.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_detail_bottom_bar.dart';
@@ -294,7 +295,7 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
             MPCreateMemoWithTextRequest(
               content: line,
               memoryId: memoryId,
-              createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+              createAt: MPTimeUtils.nowUnixSeconds(),
             ),
           );
           if (!context.mounted) return;

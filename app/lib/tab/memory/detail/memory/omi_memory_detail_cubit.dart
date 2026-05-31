@@ -223,7 +223,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
   }
 
   void _armSuppressPlaybackCompleted() {
-    _suppressPlaybackCompletedUntilMs = DateTime.now().millisecondsSinceEpoch + _kSuppressCompletedAfterSourceMs;
+    _suppressPlaybackCompletedUntilMs = MPTimeUtils.nowUnixMilliseconds() + _kSuppressCompletedAfterSourceMs;
   }
 
   void _stopPlaybackUiTimer() {
@@ -270,7 +270,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       return;
     }
 
-    final bool suppressCompleted = DateTime.now().millisecondsSinceEpoch < _suppressPlaybackCompletedUntilMs;
+    final bool suppressCompleted = MPTimeUtils.nowUnixMilliseconds() < _suppressPlaybackCompletedUntilMs;
 
     final Duration pos = _audioPlayer.position;
     final Duration? dur = _audioPlayer.duration;
@@ -861,7 +861,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       }
       final String audioDirPath = await MPAudioLocalRecordsUtil.ensureLocalStorageDirectoryPath();
       if (fileId.isEmpty) {
-        fileId = DateTime.now().millisecondsSinceEpoch.toString();
+        fileId = MPTimeUtils.nowUnixMilliseconds().toString();
       }
       String ext = '.m4a';
       final String path = uri.path;
@@ -882,7 +882,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
         MPAudioLocalRecord(
           path: playablePath,
           fileName: '$fileId$ext',
-          createAt: DateTime.now().millisecondsSinceEpoch,
+          createAt: MPTimeUtils.nowUnixMilliseconds(),
           duration: _parseDurationSeconds(durationLabel),
           source: 'mobilePhone',
           fileId: fileId,

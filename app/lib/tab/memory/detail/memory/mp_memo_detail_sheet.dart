@@ -3,6 +3,7 @@ import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/tab/memory/detail/memory/mp_analyze_suggested_tasks_sheet.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -112,7 +113,7 @@ Future<void> showMPMemoDetailSheet(
                             MPAnalyzeMemoTextRequest(
                               content: memoText.trim(),
                               createAt:
-                                  DateTime.now().millisecondsSinceEpoch ~/ 1000,
+                                  MPTimeUtils.nowUnixSeconds(),
                             ),
                           );
                           if (resp == null) {

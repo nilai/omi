@@ -11,7 +11,7 @@ import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
-import 'package:memo_pin/utils/mp_aac_to_mp3_util.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -256,7 +256,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     final Directory dir = await getTemporaryDirectory();
     return p.join(
       dir.path,
-      'omi_focus_${DateTime.now().millisecondsSinceEpoch}_${_recordSegmentPaths.length}.aac',
+      'omi_focus_${MPTimeUtils.nowUnixMilliseconds()}_${_recordSegmentPaths.length}.aac',
     );
   }
 
@@ -336,7 +336,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     final Directory dir = await getTemporaryDirectory();
     final String merged = p.join(
       dir.path,
-      'omi_focus_merged_${DateTime.now().millisecondsSinceEpoch}.aac',
+      'omi_focus_merged_${MPTimeUtils.nowUnixMilliseconds()}.aac',
     );
     final IOSink sink = File(merged).openWrite();
     try {
@@ -528,7 +528,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
-      final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
+      final String path = p.join(dir.path, 'omi_focus_${MPTimeUtils.nowUnixMilliseconds()}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderSessionId++;
       final int sessionId = _recorderSessionId;
@@ -731,7 +731,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
     String? savedPath;
     if (hasPersistedAac) {
-      savedPath = await MPAacToMp3Util.convertAacFileToMp3(persistedAac);
+      savedPath = persistedAac;
     } else {
       final String? copiedAacPath = await MPAudioLocalRecordsUtil.copyTempFileToLocalStorage(
         File(tempAac!),
@@ -745,15 +745,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         return;
       }
       _pendingPersistedAacPath = copiedAacPath;
-      savedPath = await MPAacToMp3Util.convertAacFileToMp3(copiedAacPath);
-    }
-
-    if (savedPath == null || savedPath.isEmpty) {
-      if (mounted) {
-        MPToastUtils.showMessage('Couldn\'t convert recording to MP3. Please try again.');
-        setState(() => _busy = false);
-      }
-      return;
+      savedPath = copiedAacPath;
     }
     if (hasTempAac) {
       try {
@@ -764,11 +756,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       } catch (_) {}
     }
     _resetSavePendingState();
-    final createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final createAt = MPTimeUtils.nowUnixSeconds();
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: savedPath,
-        mp3Path: savedPath,
         fileName: 'record_$createAt',
         createAt: createAt,
         duration: total.inSeconds,

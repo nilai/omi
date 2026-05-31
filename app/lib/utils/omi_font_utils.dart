@@ -17,6 +17,7 @@ class OmiFontSize {
   static double get t9_18 => 18;
   static double get t11_20 => 20;
   static double get t13_22 => 22;
+  static double get t14_24 => 24;
   static double get t16_25 => 25;
   static double get t21_30 => 30;
   static double get t33_42 => 42;
