@@ -153,7 +153,6 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           imageAsset: Assets.mpRefreshCw,
           iconBg: Color(0xFFEAF7EF),
           iconColor: greenTextColor,
-          titleColor: greenTextColor,
         ),
       );
     }
@@ -166,7 +165,6 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           imageAsset: Assets.mpTrash,
           iconBg: Color(0xFFFDEBEC),
           iconColor: redColor,
-          titleColor: redColor,
         ),
       );
     }
