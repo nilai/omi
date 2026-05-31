@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -74,7 +75,7 @@ class MPAudioImportUtils {
       final File sandboxFile = File(path);
       final int? dur = await _getAudioDurationSeconds(path);
       final int durationSec = (dur != null && dur > 0) ? dur : 1;
-      final int createAt = (await sandboxFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+      final int createAt = MPTimeUtils.unixSecondsFromDateTime(await sandboxFile.lastModified());
       await MPAudioLocalRecordsUtil.instance.add(
         MPAudioLocalRecord(
           path: path,
@@ -308,7 +309,7 @@ class MPAudioImportUtils {
       final Directory dir = await _getPersistentAudioDirectory();
       final String originalFileName = sourceFile.path.split('/').last;
       final String safeFileName = _generateSafeFileName(originalFileName);
-      final String targetPath = '${dir.path}/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+      final String targetPath = '${dir.path}/${MPTimeUtils.nowUnixMilliseconds()}_$safeFileName';
       final File targetFile = File(targetPath);
 
       if (await targetFile.exists()) {

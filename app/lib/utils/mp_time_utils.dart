@@ -1,45 +1,40 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:intl/intl.dart';
-import 'package:memo_pin/utils/mp_preferences.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
-import 'package:timezone/timezone.dart' as tz;
 
-/// 应用时区与 Unix 时间戳标准化（展示、比较、写入均走此处）。
+/// 应用时区与 Unix 时间戳标准化（展示、比较、写入均走此处，固定 UTC）。
 class MPTimeUtils {
   MPTimeUtils._();
 
-  static const String _prefTimeZoneKey = 'mp_cached_time_zone';
+  /// 固定 UTC 时区标识。
+  static const String fixedTimeZone = 'UTC';
 
-  static bool _dbInitialized = false;
-  static String? _cachedTimeZoneName;
+  /// 当前应用固定时区名（始终为 [fixedTimeZone]）。
+  static String get timeZoneName => fixedTimeZone;
 
-  /// 当前缓存的 IANA 时区名（如 `Asia/Shanghai`）；未初始化时为空。
-  static String? get timeZoneName => _cachedTimeZoneName;
+  /// 初始化时间工具（冷启动前调用一次即可）。
+  static Future<void> ensureInitialized() async {}
 
-  /// 加载偏好缓存并初始化时区数据库（冷启动前调用一次即可）。
-  static Future<void> ensureInitialized() async {
-    if (!_dbInitialized) {
-      tz_data.initializeTimeZones();
-      _dbInitialized = true;
-    }
-    _cachedTimeZoneName ??= _readTimeZoneFromPrefs();
-  }
+  /// 应用固定 UTC 时区（保留以兼容生命周期回调）。
+  static Future<void> refreshTimeZone() async {}
 
-  /// 从系统读取本地时区并写入内存与 [MPPreferences]。
-  static Future<void> refreshTimeZone() async {
-    await ensureInitialized();
-    try {
-      final String name = await FlutterTimezone.getLocalTimezone();
-      if (name.trim().isEmpty) {
-        return;
-      }
-      await _applyTimeZoneName(name.trim());
-    } catch (e, stackTrace) {
-      debugPrint('MPTimeUtils.refreshTimeZone failed — $e\n$stackTrace');
-      _ensureFallbackTimeZone();
-    }
-  }
+  /// 当前 UTC Unix 秒（写入 createAt / record_ts 等）。
+  static int nowUnixSeconds() =>
+      DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+
+  /// 当前 UTC Unix 毫秒。
+  static int nowUnixMilliseconds() =>
+      DateTime.now().toUtc().millisecondsSinceEpoch;
+
+  /// 当前 UTC Unix 微秒（本地 ID 等）。
+  static int nowUnixMicroseconds() =>
+      DateTime.now().toUtc().microsecondsSinceEpoch;
+
+  /// 相对当前 UTC 时刻偏移 [offset] 后的 Unix 毫秒。
+  static int unixMillisecondsWithOffset(Duration offset) =>
+      DateTime.now().toUtc().add(offset).millisecondsSinceEpoch;
+
+  /// 文件修改时间等 → UTC Unix 秒。
+  static int unixSecondsFromDateTime(DateTime dateTime) =>
+      dateTime.toUtc().millisecondsSinceEpoch ~/ 1000;
 
   /// `null` / `<= 0` 视为无效时间戳。
   static int? normalizeUnixTimestamp(int? raw) {
@@ -49,7 +44,7 @@ class MPTimeUtils {
     return raw;
   }
 
-  /// 秒或毫秒 Unix 时间戳 → 当前应用时区下的本地 [DateTime]。
+  /// 秒或毫秒 Unix 时间戳 → UTC [DateTime]。
   static DateTime? dateTimeFromUnixEpoch(int? raw) {
     final int? normalized = normalizeUnixTimestamp(raw);
     if (normalized == null) {
@@ -57,22 +52,19 @@ class MPTimeUtils {
     }
     final int ms =
         normalized > 10000000000 ? normalized : normalized * 1000;
-    return _toLocalDateTime(ms);
+    return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
   }
 
-  /// 当前应用时区下的「现在」。
-  static DateTime nowInTimeZone() {
-    final tz.Location loc = _location();
-    return tz.TZDateTime.now(loc);
-  }
+  /// UTC 时区下的「现在」。
+  static DateTime nowInTimeZone() => DateTime.now().toUtc();
 
-  /// 当前应用时区下今日 0 点（用于 Today / Yesterday 等日历比较）。
+  /// UTC 时区下今日 0 点（用于 Today / Yesterday 等日历比较）。
   static DateTime startOfTodayInTimeZone() {
     final DateTime now = nowInTimeZone();
-    return DateTime(now.year, now.month, now.day);
+    return DateTime.utc(now.year, now.month, now.day);
   }
 
-  /// 本地日历 + 时刻 → Unix 秒（写入服务端 deadline / createAt 等）。
+  /// UTC 日历 + 时刻 → Unix 秒（写入服务端 deadline / createAt 等）。
   static int? unixSecondsFromLocalParts({
     required int year,
     required int month,
@@ -81,16 +73,7 @@ class MPTimeUtils {
     int minute = 0,
     int second = 0,
   }) {
-    final tz.Location loc = _location();
-    final tz.TZDateTime dt = tz.TZDateTime(
-      loc,
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-    );
+    final DateTime dt = DateTime.utc(year, month, day, hour, minute, second);
     return dt.millisecondsSinceEpoch ~/ 1000;
   }
 
@@ -104,7 +87,7 @@ class MPTimeUtils {
       return 'No deadline';
     }
     final DateTime today = startOfTodayInTimeZone();
-    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    final DateTime day = DateTime.utc(dt.year, dt.month, dt.day);
     if (day == today) {
       return DateFormat('HH:mm').format(dt);
     }
@@ -113,39 +96,5 @@ class MPTimeUtils {
       return DateFormat('EEE HH:mm').format(dt);
     }
     return DateFormat('MMM d').format(dt);
-  }
-
-  static DateTime _toLocalDateTime(int epochMs) {
-    final tz.Location loc = _location();
-    return tz.TZDateTime.fromMillisecondsSinceEpoch(loc, epochMs);
-  }
-
-  static tz.Location _location() {
-    _ensureFallbackTimeZone();
-    final String name = _cachedTimeZoneName!;
-    try {
-      return tz.getLocation(name);
-    } catch (_) {
-      return tz.UTC;
-    }
-  }
-
-  static void _ensureFallbackTimeZone() {
-    if (_cachedTimeZoneName != null && _cachedTimeZoneName!.isNotEmpty) {
-      return;
-    }
-    final String offsetName = DateTime.now().timeZoneName;
-    _cachedTimeZoneName =
-        offsetName.isNotEmpty ? offsetName : 'UTC';
-  }
-
-  static String? _readTimeZoneFromPrefs() {
-    final String stored = MPPreferences().getString(_prefTimeZoneKey);
-    return stored.isEmpty ? null : stored;
-  }
-
-  static Future<void> _applyTimeZoneName(String name) async {
-    _cachedTimeZoneName = name;
-    await MPPreferences().saveString(_prefTimeZoneKey, name);
   }
 }

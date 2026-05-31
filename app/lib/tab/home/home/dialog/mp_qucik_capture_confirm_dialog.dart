@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../http/schema/mp_todo.dart';
+import '../../../../utils/mp_time_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
 
@@ -225,7 +226,7 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   List<MPBatchCreateMemoItem> _selectedMemos() {
-    final int memoCreateAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final int memoCreateAt = MPTimeUtils.nowUnixSeconds();
     final List<MPBatchCreateMemoItem> out = <MPBatchCreateMemoItem>[];
     for (final _ConfirmRow r in _rows) {
       if (!r.selected || r.isTodo) {

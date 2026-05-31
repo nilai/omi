@@ -15,6 +15,7 @@ import '../../../../common/mp_analyze_memo_confirm_flow.dart';
 import '../../../../http/api/mp_memo.dart';
 import '../../../../http/schema/mp_memo.dart';
 import '../../../../permission/omi_microphone_manager.dart';
+import '../../../../utils/mp_time_utils.dart';
 import '../../../../utils/mp_toast_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
@@ -318,7 +319,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final String dir = await _ensureQuickCaptureDirectory();
-      final String path = p.join(dir, 'omi_quick_capture_${DateTime.now().millisecondsSinceEpoch}.aac');
+      final String path = p.join(dir, 'omi_quick_capture_${MPTimeUtils.nowUnixMilliseconds()}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;
       await _recorder.startRecorder(
@@ -375,7 +376,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       _state = _MPQuickCaptureState.analyzingText;
     });
     final MPAnalyzeMemoTextResponse? response = await analyzeMemoText(
-      MPAnalyzeMemoTextRequest(content: content, createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000),
+      MPAnalyzeMemoTextRequest(content: content, createAt: MPTimeUtils.nowUnixSeconds()),
     );
     if (!mounted || _isClosing) {
       return;
@@ -456,7 +457,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     final MPAnalyzeMemoRecordResponse? response = await analyzeMemoRecord(
       MPAnalyzeMemoRecordRequest(
         recordUrl: recordUri,
-        createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+        createAt: MPTimeUtils.nowUnixSeconds(),
       ),
     );
     if (!mounted || _isClosing) {

@@ -4,6 +4,7 @@ import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../../../generated/assets.dart';
@@ -116,7 +117,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
           final MPAnalyzeMemoTextResponse? resp = await analyzeMemoText(
             MPAnalyzeMemoTextRequest(
               content: memoText.trim(),
-              createAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+              createAt: MPTimeUtils.nowUnixSeconds(),
             ),
           );
           if (resp == null) {

@@ -11,6 +11,7 @@ import '../audio/record/mp_audio_upload_manger.dart';
 import '../audio/record/mp_audio_upload_service.dart';
 import '../common/mp_home_notification.dart';
 import '../utils/mp_opus_to_mp3_util.dart';
+import '../utils/mp_time_utils.dart';
 
 import 'mp_ble_transport.dart';
 import 'mp_ble_connection_helper.dart';
@@ -191,7 +192,7 @@ class MPBleFileUtil {
     final String audioPath = primary.path;
     final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPath);
     final int durationSec = (durAudio != null && durAudio > 0) ? durAudio : 1;
-    final int createAtSec = (await primary.lastModified()).millisecondsSinceEpoch ~/ 1000;
+    final int createAtSec = MPTimeUtils.unixSecondsFromDateTime(await primary.lastModified());
     final String recordFileName = deviceFileName != null && deviceFileName.isNotEmpty
         ? deviceFileName
         : p.basename(opusPath);
@@ -588,7 +589,7 @@ class MPBleFileUtil {
           if (durationSec <= 0) {
             durationSec = 1;
           }
-          final int createAtSec = (await primaryFile.lastModified()).millisecondsSinceEpoch ~/ 1000;
+          final int createAtSec = MPTimeUtils.unixSecondsFromDateTime(await primaryFile.lastModified());
 
           final MPAudioLocalRecord record = MPAudioLocalRecord(
             path: audioPathForRecord,

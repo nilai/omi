@@ -204,7 +204,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
   void _applyInitialDeadlineSeconds(int raw) {
     final int sec = raw > 10000000000 ? raw ~/ 1000 : raw;
     final DateTime local = MPTimeUtils.dateTimeFromUnixEpoch(sec)!;
-    final DateTime day = DateTime(local.year, local.month, local.day);
+    final DateTime day = DateTime.utc(local.year, local.month, local.day);
     final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
@@ -222,7 +222,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _deadlineUnixSec = sec;
   }
 
-  static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+  static DateTime _dateOnly(DateTime d) => DateTime.utc(d.year, d.month, d.day);
 
   TimeOfDay _parseTimeOfDayOrDefault(String raw) {
     final String t = raw.trim();
@@ -374,8 +374,8 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: _pickedCalendarDate ?? today,
-      firstDate: DateTime(today.year - 1),
-      lastDate: DateTime(today.year + 5),
+      firstDate: DateTime.utc(today.year - 1),
+      lastDate: DateTime.utc(today.year + 5),
     );
     if (!mounted || date == null) {
       return;

@@ -10,6 +10,7 @@ import '../audio/record/mp_flutter_sound_recorder_safe.dart';
 import '../audio/record/mp_global_recording_coordinator.dart';
 import '../audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -226,7 +227,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
         dir,
-        'mp_voice_text_${DateTime.now().millisecondsSinceEpoch}.aac',
+        'mp_voice_text_${MPTimeUtils.nowUnixMilliseconds()}.aac',
       );
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;

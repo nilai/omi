@@ -1,4 +1,5 @@
 import '../utils/mp_preferences.dart';
+import '../utils/mp_time_utils.dart';
 
 class MPUser {
   /// 用户信息
@@ -136,7 +137,7 @@ class MPUser {
 
   /// 设置 token 过期时间（秒）。
   Future<void> setTokenExpiresTime(int value) async {
-    final int timestamp = DateTime.now().add(Duration(seconds: value - 2)).millisecondsSinceEpoch;
+    final int timestamp = MPTimeUtils.unixMillisecondsWithOffset(Duration(seconds: value - 2));
     await MPPreferences().saveInt(_tokenExpiresTimeKey, timestamp);
     _tokenExpiresTime = DateTime.fromMillisecondsSinceEpoch(timestamp);
   }

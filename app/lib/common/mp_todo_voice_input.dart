@@ -13,6 +13,7 @@ import 'package:memo_pin/permission/omi_microphone_manager.dart';
 
 import '../http/api/mp_chat.dart';
 import '../http/schema/mp_chat.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -268,7 +269,7 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
         dir,
-        'omi_todo_voice_${DateTime.now().millisecondsSinceEpoch}.aac',
+        'omi_todo_voice_${MPTimeUtils.nowUnixMilliseconds()}.aac',
       );
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderOpened = true;

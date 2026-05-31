@@ -4,6 +4,7 @@ import '../http/api/mp_todo.dart';
 import '../http/schema/mp_memo.dart';
 import '../http/schema/mp_todo.dart';
 import '../tab/home/home/dialog/mp_qucik_capture_confirm_dialog.dart';
+import '../utils/mp_time_utils.dart';
 import '../utils/mp_toast_utils.dart';
 
 /// Quick Capture 同款：展示分析结果确认弹窗并在确认后 [batchCreate]。
@@ -48,7 +49,7 @@ class MPAnalyzeMemoConfirmFlow {
       MPToastUtils.showMessage('No suggestions selected.');
       return false;
     }
-    final int memoCreateAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final int memoCreateAt = MPTimeUtils.nowUnixSeconds();
     final MPBatchCreateRequest request;
     if (useOriginalText) {
       request = MPBatchCreateRequest(

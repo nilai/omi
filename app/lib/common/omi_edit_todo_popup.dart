@@ -132,7 +132,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   bool _isMarkingDone = false;
 
   static DateTime _dateOnly(DateTime d) =>
-      DateTime(d.year, d.month, d.day);
+      DateTime.utc(d.year, d.month, d.day);
 
   TimeOfDay _parseTimeOfDayFromEdit(
     String raw, {
@@ -177,12 +177,12 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     } else {
       try {
         final DateTime parsed = DateFormat('MMM d, y').parse(_when, false);
-        day = DateTime(parsed.year, parsed.month, parsed.day);
+        day = DateTime.utc(parsed.year, parsed.month, parsed.day);
       } catch (_) {
         try {
           final DateTime parsed =
               DateFormat('yyyy年M月d日').parse(_when, false);
-          day = DateTime(parsed.year, parsed.month, parsed.day);
+          day = DateTime.utc(parsed.year, parsed.month, parsed.day);
         } catch (_) {
           return;
         }
@@ -200,7 +200,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   void _applyInitialDeadlineSeconds(int raw) {
     final int sec = raw > 10000000000 ? raw ~/ 1000 : raw;
     final DateTime local = MPTimeUtils.dateTimeFromUnixEpoch(sec)!;
-    final DateTime day = DateTime(local.year, local.month, local.day);
+    final DateTime day = DateTime.utc(local.year, local.month, local.day);
     final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
@@ -225,8 +225,8 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: _pickedCalendarDate ?? today,
-      firstDate: DateTime(today.year - 1),
-      lastDate: DateTime(today.year + 5),
+      firstDate: DateTime.utc(today.year - 1),
+      lastDate: DateTime.utc(today.year + 5),
     );
     if (!mounted || date == null) {
       return;

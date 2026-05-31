@@ -11,6 +11,7 @@ import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
+import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -255,7 +256,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     final Directory dir = await getTemporaryDirectory();
     return p.join(
       dir.path,
-      'omi_focus_${DateTime.now().millisecondsSinceEpoch}_${_recordSegmentPaths.length}.aac',
+      'omi_focus_${MPTimeUtils.nowUnixMilliseconds()}_${_recordSegmentPaths.length}.aac',
     );
   }
 
@@ -335,7 +336,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     final Directory dir = await getTemporaryDirectory();
     final String merged = p.join(
       dir.path,
-      'omi_focus_merged_${DateTime.now().millisecondsSinceEpoch}.aac',
+      'omi_focus_merged_${MPTimeUtils.nowUnixMilliseconds()}.aac',
     );
     final IOSink sink = File(merged).openWrite();
     try {
@@ -527,7 +528,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       await MPRecordingBackgroundSupport.activateForRecording();
       final Directory dir = await getTemporaryDirectory();
-      final String path = p.join(dir.path, 'omi_focus_${DateTime.now().millisecondsSinceEpoch}.aac');
+      final String path = p.join(dir.path, 'omi_focus_${MPTimeUtils.nowUnixMilliseconds()}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
       _recorderSessionId++;
       final int sessionId = _recorderSessionId;
@@ -755,7 +756,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       } catch (_) {}
     }
     _resetSavePendingState();
-    final createAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final createAt = MPTimeUtils.nowUnixSeconds();
     await MPAudioLocalRecordsUtil.instance.add(
       MPAudioLocalRecord(
         path: savedPath,
