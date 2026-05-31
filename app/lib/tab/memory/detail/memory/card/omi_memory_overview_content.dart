@@ -11,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 /// Memory 详情 **Overview** 分段内容（支持 Markdown；接口摘要可为 Markdown 字符串）。
 ///
 /// 当 [scrollWithParent] 为 false 且正文高度超过 [height] 时，展示 Show more / Show less；
-/// 展开后高度为正文真实高度（不再内嵌滚动）。
+/// 收起时限制在 [height] 内裁剪；展开后随页面整体滚动，高度为正文真实高度。
 class MPMemoryOverviewContent extends StatefulWidget {
   const MPMemoryOverviewContent({
     super.key,
@@ -19,16 +19,12 @@ class MPMemoryOverviewContent extends StatefulWidget {
     this.height = 300,
     this.scrollWithParent = false,
     this.useMemoStyle = false,
-    this.onExpandedChanged,
   });
 
   final String content;
   final double height;
   final bool scrollWithParent;
   final bool useMemoStyle;
-
-  /// 展开/收起时通知父级（用于去掉外层固定高度约束）。
-  final ValueChanged<bool>? onExpandedChanged;
 
   static MarkdownStyleSheet _styleSheet(bool useMemoStyle) {
     final Color bodyColor = useMemoStyle
@@ -154,7 +150,6 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
     if (oldWidget.content != widget.content || oldWidget.height != widget.height) {
       _expanded = false;
       _overflows = null;
-      widget.onExpandedChanged?.call(false);
       _scheduleMeasure();
     }
   }
@@ -185,77 +180,89 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
     setState(() => _overflows = overflow);
   }
 
-  void _setExpanded(bool value) {
-    if (_expanded == value) {
-      return;
-    }
-    setState(() => _expanded = value);
-    widget.onExpandedChanged?.call(value);
-  }
-
   Color get _toggleColor =>
       widget.useMemoStyle ? blueTextColor : const Color(0xFFB8D9FF);
 
   @override
   Widget build(BuildContext context) {
     final MarkdownStyleSheet sheet = MPMemoryOverviewContent._styleSheet(widget.useMemoStyle);
-    final Widget body = _buildMarkdownBody(sheet);
-
-    final Widget contentView = Align(
-      alignment: Alignment.topLeft,
-      child: body,
-    );
 
     if (widget.scrollWithParent) {
-      return contentView;
+      return Align(
+        alignment: Alignment.topLeft,
+        child: _buildMarkdownBody(sheet),
+      );
     }
 
     final bool showToggle = _overflows == true;
-    // 测量完成前按折叠高度展示，避免先全高再收起的闪烁。
-    final bool collapsed = _overflows != false && !_expanded;
+    // 测量完成前（null）先按最大高度裁剪，避免长文撑出屏幕。
+    final bool shouldCollapse = !_expanded && (_overflows ?? true);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: <Widget>[
-        Offstage(
-          offstage: true,
-          child: KeyedSubtree(key: _measureKey, child: body),
-        ),
-        if (collapsed)
-          SizedBox(
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double layoutWidth = constraints.maxWidth.isFinite && constraints.maxWidth > 0
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        final Widget measureBody = SizedBox(
+          width: layoutWidth,
+          child: _buildMarkdownBody(sheet),
+        );
+        final Widget visibleBody = SizedBox(
+          width: layoutWidth,
+          child: _buildMarkdownBody(sheet),
+        );
+
+        Widget bodySlot;
+        if (shouldCollapse) {
+          bodySlot = SizedBox(
             height: widget.height,
             child: ClipRect(
               clipBehavior: Clip.hardEdge,
               child: Align(
                 alignment: Alignment.topLeft,
-                child: contentView,
+                child: visibleBody,
               ),
             ),
-          )
-        else
-          contentView,
-        if (showToggle) ...<Widget>[
-          const SizedBox(height: 8),
-          GestureDetector(
-            onTap: () => _setExpanded(!_expanded),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Text(
-                _expanded ? 'Show less' : 'Show more',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: OmiTextStyle.create(
-                  fontSize: OmiFontSize.t4_13,
-                  fontWeight: OmiFontWeight.medium,
-                  color: _toggleColor,
+          );
+        } else {
+          bodySlot = Align(
+            alignment: Alignment.topLeft,
+            child: visibleBody,
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Offstage(
+              offstage: true,
+              child: KeyedSubtree(key: _measureKey, child: measureBody),
+            ),
+            bodySlot,
+            if (showToggle) ...<Widget>[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Text(
+                    _expanded ? 'Show less' : 'Show more',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmiTextStyle.create(
+                      fontSize: OmiFontSize.t4_13,
+                      fontWeight: OmiFontWeight.medium,
+                      color: _toggleColor,
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-        ],
-      ],
+            ],
+          ],
+        );
+      },
     );
   }
 

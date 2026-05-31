@@ -5,8 +5,10 @@ import 'package:memo_pin/common/mp_confirm_delete_dialog.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
+import 'package:memo_pin/generated/assets.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 「更多 / Options」弹窗每一项的类型。
@@ -24,16 +26,18 @@ class MPMemoryOptionItem {
     required this.kind,
     required this.title,
     required this.subtitle,
-    required this.icon,
     required this.iconBg,
     required this.iconColor,
+    this.icon,
+    this.imageAsset,
     this.titleColor,
-  });
+  }) : assert(icon != null || imageAsset != null);
 
   final MPMemoryOptionKind kind;
   final String title;
   final String subtitle;
-  final IconData icon;
+  final IconData? icon;
+  final String? imageAsset;
   final Color iconBg;
   final Color iconColor;
   final Color? titleColor;
@@ -122,7 +126,7 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           kind: MPMemoryOptionKind.editTitle,
           title: 'Edit Title',
           subtitle: 'Change the memory title',
-          icon: Icons.edit_outlined,
+          imageAsset: Assets.omiDetailPenlIne,
           iconBg: Color(0xFFE8F4FF),
           iconColor: blueTextColor,
         ),
@@ -146,9 +150,10 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           kind: MPMemoryOptionKind.generateResummary,
           title: 'Generate Resummary',
           subtitle: 'Regenerate AI summary from recording',
-          icon: Icons.autorenew_rounded,
+          imageAsset: Assets.mpRefreshCw,
           iconBg: Color(0xFFEAF7EF),
-          iconColor: Color(0xFF34C759),
+          iconColor: greenTextColor,
+          titleColor: greenTextColor,
         ),
       );
     }
@@ -158,7 +163,7 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           kind: MPMemoryOptionKind.delete,
           title: 'Delete',
           subtitle: 'Remove this memory',
-          icon: Icons.delete_outline_rounded,
+          imageAsset: Assets.mpTrash,
           iconBg: Color(0xFFFDEBEC),
           iconColor: redColor,
           titleColor: redColor,
@@ -332,7 +337,15 @@ class _MPMemoryOptionTile extends StatelessWidget {
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
-                  child: Icon(item.icon, size: 22, color: item.iconColor),
+                  child: item.imageAsset != null
+                      ? OmiImageLoader.localImg(
+                          item.imageAsset!,
+                          width: 22,
+                          height: 22,
+                          color: item.iconColor,
+                          fit: BoxFit.contain,
+                        )
+                      : Icon(item.icon, size: 22, color: item.iconColor),
                 ),
               ),
               const SizedBox(width: 12),

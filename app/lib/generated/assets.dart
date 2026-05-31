@@ -20,6 +20,8 @@ class Assets {
   static const String mpMineMic = 'assets/images/3x/mp_mine_mic.png';
   static const String mpMineSparkles = 'assets/images/3x/mp_mine_sparkles.png';
   static const String mpMineTrash = 'assets/images/3x/mp_mine_trash.png';
+  static const String mpRefreshCw = 'assets/images/3x/mp_refresh_cw.png';
+  static const String mpTrash = 'assets/images/3x/mp_trash.png';
   static const String mpMineUpload = 'assets/images/3x/mp_mine_upload.png';
   static const String mpMineUser = 'assets/images/3x/mp_mine_user.png';
   static const String mpMineUsers = 'assets/images/3x/mp_mine_users.png';

@@ -179,9 +179,6 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
   /// 可变的 Actions 列表（创建 Todo 成功后对应项变为 [MPMemoryActionItemStatus.created]）
   late List<MPMemoryActionItemData> _actionItems;
 
-  /// Overview 正文 Show more 展开后，分段区使用真实高度而非固定 330。
-  bool _overviewExpanded = false;
-
   bool get _isMemoCard => widget.cardType == MPMemoryDetailCardType.memo;
 
   @override
@@ -222,9 +219,6 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     }
     if (oldWidget.data.actionItems != widget.data.actionItems) {
       _actionItems = List<MPMemoryActionItemData>.from(widget.data.actionItems);
-    }
-    if (oldWidget.data.overviewText != widget.data.overviewText) {
-      _overviewExpanded = false;
     }
   }
 
@@ -778,9 +772,7 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
             },
           ),
           const SizedBox(height: 12),
-          if (widget.segmentBodyScrollWithParent)
-            _buildSegmentBody()
-          else if (_segment == MPMemoryDetailSegment.overview && _overviewExpanded)
+          if (widget.segmentBodyScrollWithParent || _segment == MPMemoryDetailSegment.overview)
             _buildSegmentBody()
           else
             SizedBox(height: 330, child: _buildSegmentBody()),
@@ -798,12 +790,6 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           content: d.overviewText,
           scrollWithParent: widget.segmentBodyScrollWithParent,
           useMemoStyle: _isMemoCard,
-          onExpandedChanged: (bool expanded) {
-            if (_overviewExpanded == expanded) {
-              return;
-            }
-            setState(() => _overviewExpanded = expanded);
-          },
         );
       case MPMemoryDetailSegment.transcript:
         final int? selectedIndex = _selectedTranscriptIndex();
