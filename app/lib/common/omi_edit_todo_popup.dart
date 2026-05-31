@@ -609,13 +609,17 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                                 final bool ok = await showMPConfirmDeleteDialog(
                                   widget.rootContext,
                                 );
-                                if (!ok || !context.mounted) return;
+                                if (!ok || !widget.rootContext.mounted) {
+                                  return;
+                                }
                                 final String todoId =
                                     widget.params.todoId.trim();
                                 if (todoId.isNotEmpty) {
                                   final bool deleted = await MPTodoManager()
                                       .deleteTodo(todoId);
-                                  if (!deleted) return;
+                                  if (!deleted || !widget.rootContext.mounted) {
+                                    return;
+                                  }
                                   if (widget.onDelete == null) {
                                     MPHomeNotification.notifyTodoDeleted(
                                       MPHomeTodoDeletedPayload(todoId: todoId),

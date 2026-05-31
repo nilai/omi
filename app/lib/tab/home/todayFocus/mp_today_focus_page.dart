@@ -242,6 +242,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       todoId: row.todoId,
       insightId: row.insightId,
       deadlineUnixSec: row.deadlineUnixSec,
+      onDelete: () => _cubit.refreshListsAfterMutation(),
     );
     if (!mounted) {
       return;
