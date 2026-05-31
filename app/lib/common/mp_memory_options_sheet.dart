@@ -148,12 +148,11 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
       items.add(
         const MPMemoryOptionItem(
           kind: MPMemoryOptionKind.generateResummary,
-          title: 'Generate Resummary',
-          subtitle: 'Regenerate AI summary from recording',
+          title: 'Regenerate Summary',
+          subtitle: 'Generate a new summary version',
           imageAsset: Assets.mpRefreshCw,
-          iconBg: Color(0xFFEAF7EF),
-          iconColor: greenTextColor,
-          titleColor: greenTextColor,
+          iconBg: Color(0xFFF5F0FF),
+          iconColor: purpleTextColor,
         ),
       );
     }
