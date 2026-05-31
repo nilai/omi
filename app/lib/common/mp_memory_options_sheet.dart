@@ -10,7 +10,13 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 /// 「更多 / Options」弹窗每一项的类型。
-enum MPMemoryOptionKind { manageProjects, editTitle, modifyDate, delete }
+enum MPMemoryOptionKind {
+  manageProjects,
+  editTitle,
+  modifyDate,
+  generateResummary,
+  delete,
+}
 
 /// 单项配置。
 class MPMemoryOptionItem {
@@ -42,6 +48,7 @@ class MPMemoryOptionsSheetParams {
     this.showManageProjects = true,
     this.showEditTitle = true,
     this.showModifyDate = true,
+    this.showGenerateResummary = false,
     this.showDelete = true,
     this.cancelText = 'Cancel',
     this.memoryId,
@@ -56,6 +63,7 @@ class MPMemoryOptionsSheetParams {
   final bool showManageProjects;
   final bool showEditTitle;
   final bool showModifyDate;
+  final bool showGenerateResummary;
   final bool showDelete;
 
   final String cancelText;
@@ -129,6 +137,18 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           icon: Icons.access_time_rounded,
           iconBg: Color(0xFFFFF2E5),
           iconColor: Color(0xFFFF9500),
+        ),
+      );
+    }
+    if (params.showGenerateResummary) {
+      items.add(
+        const MPMemoryOptionItem(
+          kind: MPMemoryOptionKind.generateResummary,
+          title: 'Generate Resummary',
+          subtitle: 'Regenerate AI summary from recording',
+          icon: Icons.autorenew_rounded,
+          iconBg: Color(0xFFEAF7EF),
+          iconColor: Color(0xFF34C759),
         ),
       );
     }

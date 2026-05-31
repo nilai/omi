@@ -4,12 +4,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
-import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 
 import '../omi_memory_detail_cubit.dart';
-import 'mp_memory_generate_summary_sheet.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_feed_block.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_overview_content.dart';
@@ -180,6 +178,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
 
   /// 可变的 Actions 列表（创建 Todo 成功后对应项变为 [MPMemoryActionItemStatus.created]）
   late List<MPMemoryActionItemData> _actionItems;
+
+  /// Overview 正文 Show more 展开后，分段区使用真实高度而非固定 330。
+  bool _overviewExpanded = false;
+
   bool get _isMemoCard => widget.cardType == MPMemoryDetailCardType.memo;
 
   @override
@@ -220,6 +222,9 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
     }
     if (oldWidget.data.actionItems != widget.data.actionItems) {
       _actionItems = List<MPMemoryActionItemData>.from(widget.data.actionItems);
+    }
+    if (oldWidget.data.overviewText != widget.data.overviewText) {
+      _overviewExpanded = false;
     }
   }
 
@@ -775,58 +780,10 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           const SizedBox(height: 12),
           if (widget.segmentBodyScrollWithParent)
             _buildSegmentBody()
+          else if (_segment == MPMemoryDetailSegment.overview && _overviewExpanded)
+            _buildSegmentBody()
           else
             SizedBox(height: 330, child: _buildSegmentBody()),
-          if (widget.cardType == MPMemoryDetailCardType.memory) ...<Widget>[
-            const SizedBox(height: 16),
-
-            /// 分段区与「Generate Resummary」之间的浅灰分隔线（约 0.5 逻辑像素）
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                width: double.infinity,
-                height: 0.5,
-                color: Colors.white.withValues(alpha: 0.28),
-              ),
-            ),
-            const SizedBox(height: 16),
-            OmiButton(
-              textColor: Colors.white,
-              bgColor: Colors.white.withValues(alpha: 0.15),
-              icon: OmiImageLoader.localImg(
-                Assets.omiRefreshGenerateSummary,
-                width: 20,
-                height: 20,
-                color: Colors.white,
-                fit: BoxFit.cover,
-              ),
-              text: 'Generate Resummary',
-              width: double.infinity,
-              height: 50,
-              onPressed: () async {
-                final String recordUrl = (widget.data.recordUri ?? '').trim().isNotEmpty
-                    ? (widget.data.recordUri ?? '').trim()
-                    : (widget.data.recordFile ?? '').trim();
-                final MPSummaryRecordRequest? req =
-                    await showMPMemoryGenerateSummarySheet(
-                  context,
-                  memoryId: widget.data.memoryId,
-                  recordUrl: recordUrl,
-                  isRegen: true,
-                  onChangeMode: () {
-                    // TODO: 切换 Autopilot / 其它模式
-                  },
-                );
-                if (!context.mounted) return;
-                if (req != null) {
-                  await context
-                      .read<OmiMemoryDetailCubit>()
-                      .runSummaryRegeneration(req);
-                }
-              },
-            ),
-            const SizedBox(height: 12),
-          ],
         ],
       ),
     );
@@ -841,6 +798,12 @@ class _MPMemoryDetailContentCardState extends State<MPMemoryDetailContentCard> {
           content: d.overviewText,
           scrollWithParent: widget.segmentBodyScrollWithParent,
           useMemoStyle: _isMemoCard,
+          onExpandedChanged: (bool expanded) {
+            if (_overviewExpanded == expanded) {
+              return;
+            }
+            setState(() => _overviewExpanded = expanded);
+          },
         );
       case MPMemoryDetailSegment.transcript:
         final int? selectedIndex = _selectedTranscriptIndex();

@@ -175,6 +175,8 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
                   case MPMemoryOptionKind.modifyDate:
                     // TODO: Modify date
                     break;
+                  case MPMemoryOptionKind.generateResummary:
+                    break;
                   case MPMemoryOptionKind.delete:
                     // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
                     MPMemoryNotification.notifyMemoryDeleted(memoryId);
