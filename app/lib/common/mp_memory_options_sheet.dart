@@ -165,7 +165,6 @@ class _MPMemoryOptionsSheet extends StatelessWidget {
           imageAsset: Assets.mpTrash,
           iconBg: Color(0xFFFDEBEC),
           iconColor: redColor,
-          titleColor: redColor,
         ),
       );
     }
