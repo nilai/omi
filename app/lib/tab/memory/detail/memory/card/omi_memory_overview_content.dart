@@ -255,11 +255,15 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
       child: ClipRect(
         clipBehavior: Clip.hardEdge,
         child: Stack(
-          fit: StackFit.expand,
           children: <Widget>[
             Align(
               alignment: Alignment.topLeft,
-              child: visibleBody,
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minHeight: 0,
+                maxHeight: double.infinity,
+                child: visibleBody,
+              ),
             ),
             if (showFade)
               Positioned(
