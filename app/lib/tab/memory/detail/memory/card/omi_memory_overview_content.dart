@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:memo_pin/generated/assets.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
+import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -180,8 +182,111 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
     setState(() => _overflows = overflow);
   }
 
-  Color get _toggleColor =>
-      widget.useMemoStyle ? blueTextColor : const Color(0xFFB8D9FF);
+  /// 展开/收起按钮与底部渐变色（深色 Memory 卡片 / 浅色 Memo）。
+  ({Color fg, Color bg, Color border, Color gradientEnd}) get _toggleTheme {
+    if (widget.useMemoStyle) {
+      return (
+        fg: mainTextColor,
+        bg: const Color(0xFFF2F2F7),
+        border: lineColor,
+        gradientEnd: pageColor,
+      );
+    }
+    return (
+      fg: Colors.white,
+      bg: Colors.white.withValues(alpha: 0.12),
+      border: Colors.white.withValues(alpha: 0.35),
+      gradientEnd: greenDeepColor,
+    );
+  }
+
+  Widget _buildExpandToggle() {
+    final ({Color fg, Color bg, Color border, Color gradientEnd}) theme = _toggleTheme;
+    final String label = _expanded ? 'Show less' : 'Show more';
+    final String arrowAsset = _expanded ? Assets.omiArrowUp : Assets.omiArrowDown;
+
+    return GestureDetector(
+      onTap: () => setState(() => _expanded = !_expanded),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        height: 44,
+        decoration: BoxDecoration(
+          color: theme.bg,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: theme.border, width: 1),
+        ),
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            OmiImageLoader.localImg(
+              arrowAsset,
+              width: 14,
+              height: 14,
+              color: theme.fg,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: OmiTextStyle.create(
+                fontSize: OmiFontSize.t4_13,
+                fontWeight: OmiFontWeight.bold,
+                color: theme.fg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollapsedBody({
+    required Widget visibleBody,
+    required bool showFade,
+  }) {
+    final ({Color fg, Color bg, Color border, Color gradientEnd}) theme = _toggleTheme;
+
+    return SizedBox(
+      height: widget.height,
+      child: ClipRect(
+        clipBehavior: Clip.hardEdge,
+        child: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Align(
+              alignment: Alignment.topLeft,
+              child: visibleBody,
+            ),
+            if (showFade)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 56,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: <Color>[
+                          theme.gradientEnd.withValues(alpha: 0),
+                          theme.gradientEnd.withValues(alpha: 0.92),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,27 +317,18 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
           child: _buildMarkdownBody(sheet),
         );
 
-        Widget bodySlot;
-        if (shouldCollapse) {
-          bodySlot = SizedBox(
-            height: widget.height,
-            child: ClipRect(
-              clipBehavior: Clip.hardEdge,
-              child: Align(
+        final Widget bodySlot = shouldCollapse
+            ? _buildCollapsedBody(
+                visibleBody: visibleBody,
+                showFade: showToggle,
+              )
+            : Align(
                 alignment: Alignment.topLeft,
                 child: visibleBody,
-              ),
-            ),
-          );
-        } else {
-          bodySlot = Align(
-            alignment: Alignment.topLeft,
-            child: visibleBody,
-          );
-        }
+              );
 
         return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             Offstage(
@@ -241,24 +337,8 @@ class _MPMemoryOverviewContentState extends State<MPMemoryOverviewContent> {
             ),
             bodySlot,
             if (showToggle) ...<Widget>[
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => setState(() => _expanded = !_expanded),
-                behavior: HitTestBehavior.opaque,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Text(
-                    _expanded ? 'Show less' : 'Show more',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: OmiTextStyle.create(
-                      fontSize: OmiFontSize.t4_13,
-                      fontWeight: OmiFontWeight.medium,
-                      color: _toggleColor,
-                    ),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 10),
+              _buildExpandToggle(),
             ],
           ],
         );
