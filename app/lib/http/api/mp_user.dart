@@ -19,3 +19,19 @@ Future<MPGetUserProfileResponse?> getUserProfile(MPGetUserProfileRequest req) as
   }
   return null;
 }
+
+// POST /api/v1/user/update_profile
+Future<MPUpdateUserProfileResponse?> updateUserProfile(MPUpdateUserProfileRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/user/update_profile',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('updateUserProfile response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPUpdateUserProfileResponse.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+  }
+  return null;
+}
