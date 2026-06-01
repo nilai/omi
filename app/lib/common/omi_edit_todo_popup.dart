@@ -587,40 +587,63 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     }
   }
 
+  Widget _buildMarkAsDoneButton() {
+    final bool disabled = _isActionInProgress;
+    return GestureDetector(
+      onTap: disabled ? null : _onMarkAsDoneTap,
+      child: Opacity(
+        opacity: disabled ? 0.5 : 1,
+        child: Container(
+          height: 50,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: greenDeepColor, width: 1.5),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              OmiImageLoader.localImg(
+                Assets.omiDetailCheck,
+                width: 16,
+                height: 16,
+                color: greenDeepColor,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  _isMarkingDone ? 'Saving…' : 'Mark as done',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: OmiTextStyle.create(
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.medium,
+                    color: greenDeepColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildBottomActions(double safeBottom) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, safeBottom + 16),
       child: Row(
         children: <Widget>[
-          Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: greenDeepColor),
-              ),
-              child: OmiButton(
-                text: _isMarkingDone ? 'Saving…' : 'Mark as done',
-                icon: OmiImageLoader.localImg(
-                  Assets.omiDetailCheck,
-                  width: 16,
-                  height: 16,
-                  color: greenDeepColor,
-                ),
-                textColor: greenDeepColor,
-                bgColor: Colors.white,
-                height: 50,
-                borderRadius: BorderRadius.circular(12),
-                onPressed: _isActionInProgress ? null : _onMarkAsDoneTap,
-              ),
-            ),
-          ),
+          Expanded(child: _buildMarkAsDoneButton()),
           const SizedBox(width: 10),
           Expanded(
             child: OmiButton(
               text: _isSavingChanges ? 'Saving…' : 'Save changes',
               textColor: Colors.white,
               bgColor: greenDeepColor,
+              width: double.infinity,
               height: 50,
               borderRadius: BorderRadius.circular(12),
               onPressed: _isActionInProgress ? null : _onSaveChangesTap,
