@@ -105,13 +105,23 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
   int get _moreCount => (_total - _kCollapsedPreviewCount).clamp(0, _total);
 
   void _openMemoDetailSheet(BuildContext context, MPMemoStruct memo) {
- 
+    final MPMemoDetailSheetVariant variant =
+        MPMemoDetailSheetVariant.fromWireValue(memo.source ?? 'record');
+    final bool isManual = variant == MPMemoDetailSheetVariant.manual;
+    final bool isVoice = variant == MPMemoDetailSheetVariant.voice;
+    final String displayTitle = memo.title.trim();
+    final String displayContent = memo.content.trim();
+
     showMPMemoDetailSheet(
       context,
-      variant: MPMemoDetailSheetVariant.fromWireValue(memo.source ?? 'record'),
+      variant: variant,
       memoId: memo.id.trim().isEmpty ? null : memo.id,
-      manualMemoText: memo.content,
-      linkedMemoryText: memo.title,
+      manualMemoText: isManual ? displayContent : '',
+      linkedMemoryText: isManual ? displayTitle : '',
+      voiceTitle: isVoice ? displayTitle : '',
+      voiceBody: isVoice ? displayContent : '',
+      highlightSourceLine: (!isManual && !isVoice) ? displayTitle : '',
+      highlightMemoText: (!isManual && !isVoice) ? displayContent : '',
       onAnalyze: (String memoText) async {
         try {
           final MPAnalyzeMemoTextResponse? resp = await analyzeMemoText(
