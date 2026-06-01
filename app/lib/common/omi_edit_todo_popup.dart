@@ -130,6 +130,9 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   int? _deadlineUnixSec;
   DateTime? _pickedCalendarDate;
   bool _isMarkingDone = false;
+  bool _isSavingChanges = false;
+
+  bool get _isActionInProgress => _isMarkingDone || _isSavingChanges;
 
   static DateTime _dateOnly(DateTime d) =>
       DateTime.utc(d.year, d.month, d.day);
@@ -521,6 +524,113 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     );
   }
 
+  Future<void> _onMarkAsDoneTap() async {
+    if (_isActionInProgress) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    final String tid = widget.params.todoId.trim();
+    if (tid.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return;
+    }
+    _syncDeadlineFromWhenAndTime();
+    setState(() => _isMarkingDone = true);
+    final bool ok = await MPTodoManager().updateTodoWithRequest(
+      todoId: tid,
+      title: widget.params.title,
+      priority: MPTodoUtils.mapPriorityToApi(_priority),
+      deadlineUnixSec: _deadlineUnixSec,
+      isCompleted: true,
+      note: _notesController.text,
+    );
+    MPHomeNotification.notifyHomeListRefresh();
+    if (!mounted) {
+      return;
+    }
+    if (ok) {
+      widget.onMarkAsDone?.call();
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() => _isMarkingDone = false);
+    }
+  }
+
+  Future<void> _onSaveChangesTap() async {
+    if (_isActionInProgress) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    final String tid = widget.params.todoId.trim();
+    if (tid.isEmpty) {
+      MPToastUtils.showMessage('Task ID cannot be empty.');
+      return;
+    }
+    _syncDeadlineFromWhenAndTime();
+    setState(() => _isSavingChanges = true);
+    final bool ok = await MPTodoManager().updateTodoWithRequest(
+      todoId: tid,
+      title: widget.params.title,
+      priority: MPTodoUtils.mapPriorityToApi(_priority),
+      deadlineUnixSec: _deadlineUnixSec,
+      isCompleted: false,
+      note: _notesController.text,
+    );
+    if (!mounted) {
+      return;
+    }
+    if (ok) {
+      MPHomeNotification.notifyHomeListRefresh();
+      Navigator.of(context).pop(true);
+    } else {
+      setState(() => _isSavingChanges = false);
+    }
+  }
+
+  Widget _buildBottomActions(double safeBottom) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 0, 16, safeBottom + 16),
+      child: Row(
+        children: <Widget>[
+          Expanded(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: greenDeepColor),
+              ),
+              child: OmiButton(
+                text: _isMarkingDone ? 'Saving…' : 'Mark as done',
+                icon: OmiImageLoader.localImg(
+                  Assets.omiDetailCheck,
+                  width: 16,
+                  height: 16,
+                  color: greenDeepColor,
+                ),
+                textColor: greenDeepColor,
+                bgColor: Colors.white,
+                height: 50,
+                borderRadius: BorderRadius.circular(12),
+                onPressed: _isActionInProgress ? null : _onMarkAsDoneTap,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: OmiButton(
+              text: _isSavingChanges ? 'Saving…' : 'Save changes',
+              textColor: Colors.white,
+              bgColor: greenDeepColor,
+              height: 50,
+              borderRadius: BorderRadius.circular(12),
+              onPressed: _isActionInProgress ? null : _onSaveChangesTap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -654,7 +764,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                     onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
                     child: SingleChildScrollView(
                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, safeBottom + 16),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                       child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
@@ -753,56 +863,13 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
                             ],
                           ],
                         ),
-                        const SizedBox(height: 18),
-                        OmiButton(
-                          text: _isMarkingDone ? 'Saving…' : 'Mark as done',
-                          icon: OmiImageLoader.localImg(
-                            Assets.omiDetailCheck,
-                            width: 16,
-                            height: 16,
-                            color: Colors.white,
-                          ),
-                          textColor: Colors.white,
-                          bgColor: greenDeepColor,
-                          width: double.infinity,
-                          height: 50,
-                          borderRadius: BorderRadius.circular(12),
-                          onPressed: _isMarkingDone
-                              ? null
-                              : () async {
-                                  final String tid = widget.params.todoId.trim();
-                                  if (tid.isEmpty) {
-                                    MPToastUtils.showMessage('Task ID cannot be empty.');
-                                    return;
-                                  }
-                                  _syncDeadlineFromWhenAndTime();
-                                  setState(() => _isMarkingDone = true);
-                                  final bool ok =
-                                      await MPTodoManager().updateTodoWithRequest(
-                                    todoId: tid,
-                                    title: widget.params.title,
-                                    priority: MPTodoUtils.mapPriorityToApi(_priority),
-                                    deadlineUnixSec: _deadlineUnixSec,
-                                    isCompleted: true,
-                                    note: _notesController.text,
-                                  );
-                                  MPHomeNotification.notifyHomeListRefresh();
-                                  if (!context.mounted) {
-                                    return;
-                                  }
-                                  if (ok) {
-                                    widget.onMarkAsDone?.call();
-                                    Navigator.of(context).pop(true);
-                                  } else {
-                                    setState(() => _isMarkingDone = false);
-                                  }
-                                },
-                        ),
                       ],
                       ),
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                _buildBottomActions(safeBottom),
               ],
             ),
           ),
