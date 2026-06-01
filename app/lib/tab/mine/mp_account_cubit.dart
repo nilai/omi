@@ -46,8 +46,11 @@ class MPAccountCubit extends Cubit<MPAccountState> {
 
     final String name = response.user.userName.trim();
     final String email = response.user.email.trim();
-    MPUser.instance.name = name.isNotEmpty ? name : null;
+    await MPUser.instance.setName(name.isNotEmpty ? name : null);
     await MPUser.instance.setEmail(email.isNotEmpty ? email : null);
+    await MPUser.instance.setAvatar(response.user.avatar.trim().isNotEmpty ? response.user.avatar.trim() : null);
+    await MPUser.instance.setPhone(response.user.phone.trim().isNotEmpty ? response.user.phone.trim() : null);
+    await MPUser.instance.setBrithday(response.user.birthday.trim().isNotEmpty ? response.user.birthday.trim() : null);
     final String memberSinceLabel = _memberSinceLabelFromCreateAt(response.user.createAt);
     emit(
       state.copyWith(
@@ -92,8 +95,8 @@ class MPAccountCubit extends Cubit<MPAccountState> {
   }
 
   static String _fallbackNameStatic() {
-    final String? n = MPUser.instance.name?.trim();
-    if (n != null && n.isNotEmpty) {
+    final String n = MPUser.instance.name.trim();
+    if (n.isNotEmpty) {
       return n;
     }
     return _defaultDisplayName;

@@ -1,5 +1,6 @@
 import '../cache/mp_hive_util.dart';
 import '../cache/omi_cache_manager.dart';
+import '../login/mp_user_profile_sync_util.dart';
 import '../tab/askai/mp_ask_ai_question_util.dart';
 
 /// 会话初始化入口（登录成功 / 已登录冷启动共用）。
@@ -16,6 +17,12 @@ class MPAppSessionBootstrap {
     await OmiCacheManager().reloadServerCacheFromCurrentUserHive();
 
     // 非关键步骤：后台预热，不阻塞首屏渲染与登录后跳转。
+    Future<void>(() async {
+      try {
+        await MPUserProfileSyncUtil.syncIfLoggedIn();
+      } catch (_) {}
+    });
+
     Future<void>(() async {
       try {
         await MPAskAIQuestionUtil.fetchQuestionsAndCache();

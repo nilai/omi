@@ -2,8 +2,10 @@ import '../utils/mp_preferences.dart';
 import '../utils/mp_time_utils.dart';
 
 class MPUser {
-  /// 用户信息
-  String? name;
+  String? _name;
+  String? _avatar;
+  String? _phone;
+  String? _brithday;
 
   String? _accessToken;
   String? _userId;
@@ -28,6 +30,78 @@ class MPUser {
   static const String _refreshTokenKey = 'mp_refreshToken';
   static const String _emailKey = 'mp_email';
   static const String _tokenExpiresTimeKey = 'mp_tokenExpiresTime';
+  static const String _nameKey = 'mp_name';
+  static const String _avatarKey = 'mp_avatar';
+  static const String _phoneKey = 'mp_phone';
+  static const String _brithdayKey = 'mp_brithday';
+
+  /// 获取昵称：优先内存，其次本地。
+  String get name {
+    if (_name?.isNotEmpty == true) {
+      return _name!;
+    }
+    final String value = MPPreferences().getString(_nameKey);
+    if (value.isNotEmpty) {
+      _name = value;
+    }
+    return value;
+  }
+
+  /// 设置昵称：null 或空字符串时清除。
+  Future<void> setName(String? value) async {
+    await _saveOptionalString(_nameKey, value, (String? next) => _name = next);
+  }
+
+  /// 获取头像 URL：优先内存，其次本地。
+  String get avatar {
+    if (_avatar?.isNotEmpty == true) {
+      return _avatar!;
+    }
+    final String value = MPPreferences().getString(_avatarKey);
+    if (value.isNotEmpty) {
+      _avatar = value;
+    }
+    return value;
+  }
+
+  /// 设置头像 URL：null 或空字符串时清除。
+  Future<void> setAvatar(String? value) async {
+    await _saveOptionalString(_avatarKey, value, (String? next) => _avatar = next);
+  }
+
+  /// 获取手机号：优先内存，其次本地。
+  String get phone {
+    if (_phone?.isNotEmpty == true) {
+      return _phone!;
+    }
+    final String value = MPPreferences().getString(_phoneKey);
+    if (value.isNotEmpty) {
+      _phone = value;
+    }
+    return value;
+  }
+
+  /// 设置手机号：null 或空字符串时清除。
+  Future<void> setPhone(String? value) async {
+    await _saveOptionalString(_phoneKey, value, (String? next) => _phone = next);
+  }
+
+  /// 获取生日：优先内存，其次本地。
+  String get brithday {
+    if (_brithday?.isNotEmpty == true) {
+      return _brithday!;
+    }
+    final String value = MPPreferences().getString(_brithdayKey);
+    if (value.isNotEmpty) {
+      _brithday = value;
+    }
+    return value;
+  }
+
+  /// 设置生日：null 或空字符串时清除。
+  Future<void> setBrithday(String? value) async {
+    await _saveOptionalString(_brithdayKey, value, (String? next) => _brithday = next);
+  }
 
   /// 获取访问令牌：优先内存，其次本地。
   String get accessToken {
@@ -154,12 +228,34 @@ class MPUser {
     await setUserId(null);
     await setRefreshToken(null);
     await setEmail(null);
+    await setName(null);
+    await setAvatar(null);
+    await setPhone(null);
+    await setBrithday(null);
     await clearTokenExpiresTime();
-    name = null;
     _accessToken = null;
     _userId = null;
     _refreshToken = null;
     _email = null;
+    _name = null;
+    _avatar = null;
+    _phone = null;
+    _brithday = null;
     _tokenExpiresTime = null;
+  }
+
+  Future<void> _saveOptionalString(
+    String key,
+    String? value,
+    void Function(String? next) assign,
+  ) async {
+    final String? trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      await MPPreferences().remove(key);
+      assign(null);
+      return;
+    }
+    await MPPreferences().saveString(key, trimmed);
+    assign(trimmed);
   }
 }

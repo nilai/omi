@@ -5,6 +5,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/http/shared.dart';
 import 'app/mp_app_session_bootstrap.dart';
+import 'login/mp_user_profile_sync_util.dart';
 import 'login/home/mp_login_page.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/tab/omi_main_tab_page.dart';
@@ -55,11 +56,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// 热启动回到前台时确保时间工具已初始化（应用固定 UTC 时区）。
+  /// 热启动回到前台时刷新时区并同步用户资料。
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       unawaited(MPTimeUtils.refreshTimeZone());
+      if (ApiTools.hasAccessToken()) {
+        unawaited(MPUserProfileSyncUtil.syncIfLoggedIn());
+      }
     }
   }
 
