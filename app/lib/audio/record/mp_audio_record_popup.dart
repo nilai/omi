@@ -144,10 +144,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   /// 首次 Save 已 finalize 并 close recorder；重试时不再走分段合并。
   bool _saveRecorderFinalized = false;
 
-  /// finalize 后的临时合并 AAC（转码成功前保留，供 Save 重试）。
+  /// finalize 后的临时合并 AAC（供 Save 重试）。
   String? _finalizedTempAacPath;
 
-  /// 已复制到本地存储、待转码的 AAC（转码失败时保留，供 Save 重试）。
+  /// 已复制到本地存储的 AAC（供 Save 重试）。
   String? _pendingPersistedAacPath;
 
   /// 上传阶段进度（`null` 表示未在上传）；由 [MPAudioUploadManager.uploadLocalRecord] 的 [onPerFileProgress] 更新。

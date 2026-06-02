@@ -81,14 +81,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.13.1"
-  audio_decoder:
-    dependency: "direct main"
-    description:
-      name: audio_decoder
-      sha256: "09f50218026e49e42e1eca56ea9d7f622b206b88fbceb7fd6dc40c9050ba95f1"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "0.8.0"
   audio_session:
     dependency: "direct main"
     description:
@@ -2108,14 +2100,6 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.2.1"
-  wav:
-    dependency: "direct main"
-    description:
-      name: wav
-      sha256: "2c932c74a531befedcb1d44bb24dd95fea8c801590d560c73fa94f35c5ef6551"
-      url: "https://pub.flutter-io.cn"
-    source: hosted
-    version: "1.5.0"
   web:
     dependency: transitive
     description:

@@ -40,7 +40,7 @@ class MPAudioUploadService {
     );
   }
 
-  /// 删除本地录音文件及其 AAC 转码产生的同主文件名 `.mp3`（若存在）。
+  /// 删除本地录音文件；若存在同主文件名的 `.mp3` 伴生文件（历史遗留）则一并删除。
   static Future<void> deleteLocalRecordingArtifacts(String? recordPath) async {
     final String trimmed = recordPath?.trim() ?? '';
     if (trimmed.isEmpty) {

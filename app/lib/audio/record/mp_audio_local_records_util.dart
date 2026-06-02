@@ -29,7 +29,7 @@ class MPAudioLocalRecord {
   /// 本地绝对路径
   final String path;
 
-  /// 转码后的 MP3 绝对路径（可选；可与 [path] 相同）。
+  /// 蓝牙设备 Opus 转码后的 MP3 绝对路径（可选；手机端录音不使用）。
   final String? mp3Path;
 
   /// 设备时间戳等配套 `.txt` 的本地绝对路径（可选）。

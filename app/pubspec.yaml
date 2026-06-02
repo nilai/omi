@@ -66,7 +66,6 @@ dependencies:
   shared_preferences: 2.5.3
   flutter_secure_storage: ^9.2.2
   url_launcher: ^6.3.0
-  wav: ^1.4.0
   path: ^1.9.0
   uuid: ^4.4.0
   tuple: ^2.0.2
@@ -121,7 +120,6 @@ dependencies:
   permission_manager: ^2.0.8
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  audio_decoder: ^0.8.0
 
 dependency_overrides:
   uuid: ^4.4.0
