@@ -9,6 +9,20 @@ import 'package:flutter_sound/flutter_sound.dart';
 
 import 'mp_global_recording_coordinator.dart';
 
+/// [MPRecordingBackgroundSupport.activateForRecording] 的激活结果。
+class MPRecordingBackgroundActivationResult {
+  const MPRecordingBackgroundActivationResult({
+    required this.audioSessionActive,
+    required this.backgroundRecordingReliable,
+  });
+
+  /// 系统 AudioSession 是否已成功激活。
+  final bool audioSessionActive;
+
+  /// 退后台时是否具备可靠的后台录音能力（Android 前台服务、iOS 会话等）。
+  final bool backgroundRecordingReliable;
+}
+
 /// Task isolate 入口（Android 麦克风前台服务）；须为顶层函数以便引擎注册。
 @pragma('vm:entry-point')
 void mpRecordingForegroundTaskCallback() {
@@ -35,7 +49,11 @@ class MPRecordingBackgroundSupport {
 
   static bool _foregroundTaskInitialized = false;
   static bool _recordingInfrastructureActive = false;
+  static bool _backgroundRecordingReliable = true;
   static StreamSubscription<AudioInterruptionEvent>? _interruptionSub;
+
+  /// 当前录音会话退后台是否可靠（与 [activateForRecording] 结果一致）。
+  static bool get isBackgroundRecordingReliable => _backgroundRecordingReliable;
 
   static Future<void> _ensureForegroundTaskInitialized() async {
     if (_foregroundTaskInitialized) {
@@ -62,10 +80,15 @@ class MPRecordingBackgroundSupport {
   }
 
   /// 在打开录音器之前调用：PlayAndRecord 会话 +（Android）麦克风前台服务。
-  static Future<void> activateForRecording() async {
+  static Future<MPRecordingBackgroundActivationResult> activateForRecording() async {
     if (_recordingInfrastructureActive) {
-      return;
+      return MPRecordingBackgroundActivationResult(
+        audioSessionActive: true,
+        backgroundRecordingReliable: _backgroundRecordingReliable,
+      );
     }
+    bool audioSessionActive = true;
+    bool backgroundRecordingReliable = true;
     final AudioSession session = await AudioSession.instance;
     await session.configure(
       AudioSessionConfiguration(
@@ -82,7 +105,13 @@ class MPRecordingBackgroundSupport {
         androidWillPauseWhenDucked: true,
       ),
     );
-    await session.setActive(true);
+    try {
+      await session.setActive(true);
+    } catch (e, st) {
+      debugPrint('MPRecordingBackgroundSupport.activateForRecording setActive: $e\n$st');
+      audioSessionActive = false;
+      backgroundRecordingReliable = false;
+    }
     await _interruptionSub?.cancel();
     _interruptionSub = session.interruptionEventStream.listen(
       (AudioInterruptionEvent event) {
@@ -107,17 +136,45 @@ class MPRecordingBackgroundSupport {
         await FlutterForegroundTask.requestNotificationPermission();
       }
       if (await FlutterForegroundTask.isRunningService) {
-        return;
+        backgroundRecordingReliable = audioSessionActive;
+      } else {
+        final ServiceRequestResult started = await FlutterForegroundTask.startService(
+          serviceTypes: const <ForegroundServiceTypes>[ForegroundServiceTypes.microphone],
+          notificationTitle: 'MemoPin',
+          notificationText: 'Recording in progress…',
+          callback: mpRecordingForegroundTaskCallback,
+        );
+        if (started is ServiceRequestFailure) {
+          backgroundRecordingReliable = false;
+          debugPrint('MPRecordingBackgroundSupport: foreground service start failed.');
+        } else {
+          backgroundRecordingReliable = await FlutterForegroundTask.isRunningService;
+        }
       }
-      final ServiceRequestResult started = await FlutterForegroundTask.startService(
-        serviceTypes: const <ForegroundServiceTypes>[ForegroundServiceTypes.microphone],
-        notificationTitle: 'MemoPin',
-        notificationText: 'Recording in progress…',
-        callback: mpRecordingForegroundTaskCallback,
-      );
-      if (started is ServiceRequestFailure) {
-        // 仍保留已激活的 AudioSession；仅后台可能被系统限制。
-      }
+    }
+
+    if (!audioSessionActive) {
+      backgroundRecordingReliable = false;
+    }
+    _backgroundRecordingReliable = backgroundRecordingReliable;
+    return MPRecordingBackgroundActivationResult(
+      audioSessionActive: audioSessionActive,
+      backgroundRecordingReliable: backgroundRecordingReliable,
+    );
+  }
+
+  /// 录音进行中补激活 AudioSession（如从后台回到前台后 native 已停但会话仍应可用）。
+  static Future<bool> ensureAudioSessionActiveForRecording() async {
+    if (!_recordingInfrastructureActive) {
+      return false;
+    }
+    try {
+      final AudioSession session = await AudioSession.instance;
+      await session.setActive(true);
+      return true;
+    } catch (e, st) {
+      debugPrint('MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording: $e\n$st');
+      return false;
     }
   }
 
@@ -159,6 +216,7 @@ class MPRecordingBackgroundSupport {
       return;
     }
     _recordingInfrastructureActive = false;
+    _backgroundRecordingReliable = true;
     await _interruptionSub?.cancel();
     _interruptionSub = null;
     try {
