@@ -78,7 +78,7 @@ class _MPPatternInsightBody extends StatelessWidget {
         final int appearedCount = item.patternMemoryTitles.length;
         final String topDescription = state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
         final String whyText = state.data!.paragraphs.length > 1 ? state.data!.paragraphs[1] : '';
-        final MPTodoStruct? nextStepLine = state.data!.tips.isNotEmpty ? state.data!.tips.first : null;
+        final List<MPTodoStruct> nextSteps = state.data!.tips;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -115,7 +115,7 @@ class _MPPatternInsightBody extends StatelessWidget {
                         const SizedBox(height: 16),
                         _WhyThisMattersSection(whyText: whyText),
                         const SizedBox(height: 16),
-                        _SuggestedNextStepSection(nextStep: nextStepLine),
+                        _SuggestedNextStepSection(nextSteps: nextSteps),
                         const SizedBox(height: 18),
                         _AskAiButton(),
                         const SizedBox(height: 24),
@@ -361,22 +361,19 @@ class _WhyThisMattersSection extends StatelessWidget {
 }
 
 class _SuggestedNextStepSection extends StatefulWidget {
-  const _SuggestedNextStepSection({this.nextStep});
+  const _SuggestedNextStepSection({required this.nextSteps});
 
-  final MPTodoStruct? nextStep;
+  final List<MPTodoStruct> nextSteps;
 
   @override
   State<_SuggestedNextStepSection> createState() => _SuggestedNextStepSectionState();
 }
 
 class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
-  bool _added = false;
+  final Set<int> _addedIndexes = <int>{};
 
   @override
   Widget build(BuildContext context) {
-    final String text = (widget.nextStep?.title ?? '').trim();
-    final bool canAdd = text.trim().isNotEmpty;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -398,94 +395,103 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
         const SizedBox(height: 12),
         Divider(color: const Color(0xFFEDEDED), height: 1),
         const SizedBox(height: 14),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Expanded(
-              child: Text(
-                text,
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t6_15,
-                  fontWeight: OmiFontWeight.regular,
-                  height: 1.6,
+        ...widget.nextSteps.asMap().entries.map((MapEntry<int, MPTodoStruct> entry) {
+          final MPTodoStruct nextStep = entry.value;
+          final String text = (nextStep.title ?? '').trim();
+          final bool canAdd = text.isNotEmpty;
+          final bool isAdded = _addedIndexes.contains(entry.key);
+          final bool isLast = entry.key == widget.nextSteps.length - 1;
+
+          return Padding(
+            padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: Text(
+                    text,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: OmiTextStyle.create(
+                      color: secondTextColor,
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.regular,
+                      height: 1.6,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            if (canAdd) ...<Widget>[
-              const SizedBox(width: 12),
-              _added
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE8F7EE),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Added',
+                if (canAdd) ...<Widget>[
+                  const SizedBox(width: 12),
+                  isAdded
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE8F7EE),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: <Widget>[
+                              const Icon(Icons.check, size: 13, color: Color(0xFF34C759)),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Added',
+                                style: OmiTextStyle.create(
+                                  color: const Color(0xFF1BAA52),
+                                  fontSize: OmiFontSize.t4_13,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : TextButton(
+                          onPressed: () async {
+                            final cubit = context.read<MPInsightDetailCubit>();
+                            final MPInsightDetailData? data = cubit.state.data;
+                            final title = data?.item.title ?? '';
+                            final subtitle = data?.item.subtitle ?? '';
+                            final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Pattern Insight:' : '';
+                            final MPAddTodoPopupResult? result = await cubit.showAddTodoPopup(
+                              nextStep,
+                              context,
+                              MPInsightTodoContentStruct(
+                                label: label,
+                                title: title,
+                                metaLine: subtitle,
+                              ),
+                            );
+                            if (!mounted) {
+                              return;
+                            }
+                            if (result != null) {
+                              setState(() => _addedIndexes.add(entry.key));
+                            }
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: const Color(0xFF0A84FF),
+                            backgroundColor: const Color(0xFFEAF2FF),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                            minimumSize: const Size(0, 0),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          child: Text(
+                            'Add As Todo',
                             style: OmiTextStyle.create(
-                              color: const Color(0xFF1BAA52),
+                              color: const Color(0xFF0A84FF),
                               fontSize: OmiFontSize.t4_13,
                               fontWeight: OmiFontWeight.medium,
                               height: 1.1,
                             ),
                           ),
-                        ],
-                      ),
-                    )
-                  : TextButton(
-                      onPressed: () async {
-                        if (widget.nextStep == null) {
-                          return;
-                        }
-                        final cubit = context.read<MPInsightDetailCubit>();
-                        final MPInsightDetailData? data = cubit.state.data;
-                        final title = data?.item.title ?? '';
-                        final subtitle = data?.item.subtitle ?? '';
-                        final String label = title.isNotEmpty || subtitle.isNotEmpty ? 'From Pattern Insight:' : '';
-                        final MPAddTodoPopupResult? result =
-                            await cubit.showAddTodoPopup(
-                          widget.nextStep!,
-                          context,
-                          MPInsightTodoContentStruct(
-                            label: label,
-                            title: title,
-                            metaLine: subtitle,
-                          ),
-                        );
-                        if (!mounted) {
-                          return;
-                        }
-                        if (result != null) {
-                          setState(() => _added = true);
-                        }
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF0A84FF),
-                        backgroundColor: const Color(0xFFEAF2FF),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        minimumSize: const Size(0, 0),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      ),
-                      child: Text(
-                        'Add As Todo',
-                        style: OmiTextStyle.create(
-                          color: const Color(0xFF0A84FF),
-                          fontSize: OmiFontSize.t4_13,
-                          fontWeight: OmiFontWeight.medium,
-                          height: 1.1,
                         ),
-                      ),
-                    ),
-            ],
-          ],
-        ),
+                ],
+              ],
+            ),
+          );
+        }),
       ],
     );
   }
