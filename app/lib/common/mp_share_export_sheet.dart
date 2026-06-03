@@ -33,7 +33,9 @@ Future<MPShareExportKind?> showMPShareExportSheet(
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext sheetContext) {
-      return _MPShareExportSheet(params: params);
+      return MPDismissibleModalBackdrop(
+        child: _MPShareExportSheet(params: params),
+      );
     },
   );
 }
@@ -93,8 +95,7 @@ class _MPShareExportSheet extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: MPDismissibleModalBackdrop(
-        child: Container(
+      child: Container(
           decoration: const BoxDecoration(
             color: _kSheetBg,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -174,7 +175,6 @@ class _MPShareExportSheet extends StatelessWidget {
                 ),
               ),
             ),
-          ),
     );
   }
 }

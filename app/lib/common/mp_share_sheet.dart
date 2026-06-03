@@ -102,7 +102,13 @@ Future<MPShareSheetResult?> showMPShareSheet(
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext sheetContext) {
-      return _MPShareSheet(params: params, rootContext: context, onShare: onShare);
+      return MPDismissibleModalBackdrop(
+        child: _MPShareSheet(
+          params: params,
+          rootContext: context,
+          onShare: onShare,
+        ),
+      );
     },
   );
 }
@@ -169,8 +175,7 @@ class _MPShareSheetState extends State<_MPShareSheet> {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: MPDismissibleModalBackdrop(
-        child: Container(
+      child: Container(
           decoration: const BoxDecoration(
             color: _kSheetBg,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -333,7 +338,6 @@ class _MPShareSheetState extends State<_MPShareSheet> {
                 ),
               ),
             ),
-          ),
     );
   }
 }

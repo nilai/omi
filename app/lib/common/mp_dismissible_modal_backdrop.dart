@@ -32,20 +32,29 @@ class MPDismissibleModalBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: <Widget>[
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => _handleDismiss(context),
+    final Size screenSize = MediaQuery.sizeOf(context);
+
+    return SizedBox(
+      height: screenSize.height,
+      width: screenSize.width,
+      child: Stack(
+        fit: StackFit.expand,
+        children: <Widget>[
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _handleDismiss(context),
+            ),
           ),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: child,
-        ),
-      ],
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: GestureDetector(
+              onTap: () {},
+              child: child,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
