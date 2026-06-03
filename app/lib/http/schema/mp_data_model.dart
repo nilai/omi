@@ -83,6 +83,9 @@ class MPSpeakerStruct {
   @JsonKey(name: 'created_at')
   final int? createdAt;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   @JsonKey(name: 'duration')
   final int? duration;
 
@@ -94,6 +97,7 @@ class MPSpeakerStruct {
     this.myselfVoice,
     this.audioUrl,
     this.createdAt,
+    this.showTime,
     this.duration,
   });
 
@@ -213,6 +217,9 @@ class MPTodoStruct {
   )
   final int? deadline;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   //（1-进行中，0-已删除，2-已完成, 3-已超期）
   @JsonKey(name: 'status')
   final int? status;
@@ -241,6 +248,7 @@ class MPTodoStruct {
     this.owner,
     this.priority,
     this.deadline,
+    this.showTime,
     this.status,
     this.reason,
     this.preCreateStatus,
@@ -299,6 +307,9 @@ class MPSummaryMemoryStruct {
   @JsonKey(name: 'create_at')
   final int? createAt;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   @JsonKey(name: 'duration')
   final int? duration;
 
@@ -336,6 +347,7 @@ class MPSummaryMemoryStruct {
     this.title,
     this.content,
     this.createAt,
+    this.showTime,
     this.duration,
     this.participants,
     this.participantsCnt,
@@ -415,6 +427,9 @@ class MPMemoryStruct {
   @JsonKey(name: 'create_at', fromJson: mpIntFromJson)
   final int createAt;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   @JsonKey(name: 'title')
   final String? title;
 
@@ -458,6 +473,7 @@ class MPMemoryStruct {
   MPMemoryStruct({
     required this.id,
     required this.createAt,
+    this.showTime,
     required this.title,
     this.subTitle,
     required this.type,
@@ -494,6 +510,9 @@ class MPFeedCardStruct {
   @JsonKey(name: 'create_at', fromJson: mpNullableIntFromJson)
   final int? createAt;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   @JsonKey(name: 'content')
   final String? content;
 
@@ -528,6 +547,7 @@ class MPFeedCardStruct {
     this.type,
     this.title,
     this.createAt,
+    this.showTime,
     this.content,
     this.todos,
     this.hasAddedTodo,
@@ -594,6 +614,9 @@ class MPMemoStruct {
   @JsonKey(name: 'create_at')
   final int? createAt;
 
+  @JsonKey(name: 'show_time')
+  final String? showTime;
+
   @JsonKey(name: 'relate_memory_id')
   final int? relateMemoryId;
 
@@ -606,6 +629,7 @@ class MPMemoStruct {
     required this.content,
     this.tags,
     this.createAt,
+    this.showTime,
     this.relateMemoryId,
     this.source,
   });

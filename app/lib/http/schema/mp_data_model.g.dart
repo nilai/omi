@@ -28,6 +28,7 @@ MPSpeakerStruct _$MPSpeakerStructFromJson(Map<String, dynamic> json) =>
       myselfVoice: json['myself_voice'] as bool?,
       audioUrl: json['audio_url'] as String?,
       createdAt: (json['created_at'] as num?)?.toInt(),
+      showTime: json['show_time'] as String?,
       duration: (json['duration'] as num?)?.toInt(),
     );
 
@@ -40,6 +41,7 @@ Map<String, dynamic> _$MPSpeakerStructToJson(MPSpeakerStruct instance) =>
       'myself_voice': instance.myselfVoice,
       'audio_url': instance.audioUrl,
       'created_at': instance.createdAt,
+      'show_time': instance.showTime,
       'duration': instance.duration,
     };
 
@@ -51,6 +53,7 @@ MPTodoStruct _$MPTodoStructFromJson(Map<String, dynamic> json) => MPTodoStruct(
       : MPSpeakerStruct.fromJson(json['owner'] as Map<String, dynamic>),
   priority: json['priority'] as String?,
   deadline: mpTodoDeadlineFromJson(json['deadline']),
+  showTime: json['show_time'] as String?,
   status: (json['status'] as num?)?.toInt(),
   reason: json['reason'] as String?,
   preCreateStatus: (json['pre_create_status'] as num?)?.toInt(),
@@ -67,6 +70,7 @@ Map<String, dynamic> _$MPTodoStructToJson(MPTodoStruct instance) =>
       'owner': instance.owner?.toJson(),
       'priority': instance.priority,
       'deadline': mpTodoDeadlineToJson(instance.deadline),
+      'show_time': instance.showTime,
       'status': instance.status,
       'reason': instance.reason,
       'pre_create_status': instance.preCreateStatus,
@@ -100,6 +104,7 @@ MPSummaryMemoryStruct _$MPSummaryMemoryStructFromJson(
   title: json['title'] as String?,
   content: json['content'] as String?,
   createAt: (json['create_at'] as num?)?.toInt(),
+  showTime: json['show_time'] as String?,
   duration: (json['duration'] as num?)?.toInt(),
   participants: (json['participants'] as List<dynamic>?)
       ?.map((e) => MPSpeakerStruct.fromJson(e as Map<String, dynamic>))
@@ -126,6 +131,7 @@ Map<String, dynamic> _$MPSummaryMemoryStructToJson(
   'title': instance.title,
   'content': instance.content,
   'create_at': instance.createAt,
+  'show_time': instance.showTime,
   'duration': instance.duration,
   'participants': instance.participants?.map((e) => e.toJson()).toList(),
   'participants_cnt': instance.participantsCnt,
@@ -174,6 +180,7 @@ MPMemoryStruct _$MPMemoryStructFromJson(Map<String, dynamic> json) =>
     MPMemoryStruct(
       id: json['id'] as String?,
       createAt: mpIntFromJson(json['create_at']),
+      showTime: json['show_time'] as String?,
       title: json['title'] as String?,
       subTitle: json['sub_title'] as String?,
       type: $enumDecodeNullable(_$MPMemoryTypeEnumMap, json['type']),
@@ -206,6 +213,7 @@ Map<String, dynamic> _$MPMemoryStructToJson(MPMemoryStruct instance) =>
     <String, dynamic>{
       'id': instance.id,
       'create_at': instance.createAt,
+      'show_time': instance.showTime,
       'title': instance.title,
       'sub_title': instance.subTitle,
       'type': _$MPMemoryTypeEnumMap[instance.type],
@@ -233,6 +241,7 @@ MPFeedCardStruct _$MPFeedCardStructFromJson(Map<String, dynamic> json) =>
       type: (json['type'] as num?)?.toInt(),
       title: json['title'] as String?,
       createAt: mpNullableIntFromJson(json['create_at']),
+      showTime: json['show_time'] as String?,
       content: json['content'] as String?,
       todos: (json['todos'] as List<dynamic>?)
           ?.map((e) => MPTodoStruct.fromJson(e as Map<String, dynamic>))
@@ -257,6 +266,7 @@ Map<String, dynamic> _$MPFeedCardStructToJson(MPFeedCardStruct instance) =>
       'type': instance.type,
       'title': instance.title,
       'create_at': instance.createAt,
+      'show_time': instance.showTime,
       'content': instance.content,
       'todos': instance.todos?.map((e) => e.toJson()).toList(),
       'has_added_todo': instance.hasAddedTodo,
@@ -293,6 +303,7 @@ MPMemoStruct _$MPMemoStructFromJson(Map<String, dynamic> json) => MPMemoStruct(
   content: json['content'] as String,
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
   createAt: (json['create_at'] as num?)?.toInt(),
+  showTime: json['show_time'] as String?,
   relateMemoryId: (json['relate_memory_id'] as num?)?.toInt(),
   source: json['source'] as String?,
 );
@@ -304,6 +315,7 @@ Map<String, dynamic> _$MPMemoStructToJson(MPMemoStruct instance) =>
       'content': instance.content,
       'tags': instance.tags,
       'create_at': instance.createAt,
+      'show_time': instance.showTime,
       'relate_memory_id': instance.relateMemoryId,
       'source': instance.source,
     };
