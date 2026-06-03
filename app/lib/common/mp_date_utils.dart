@@ -9,6 +9,95 @@ class MPDateUtils {
   static int? normalizeTodoDeadline(int? raw) =>
       MPTimeUtils.normalizeUnixTimestamp(raw);
 
+  /// 接口 `show_time`（如 `2026-05-11 02:00:00`）→ UTC Unix 秒；解析失败为 `null`。
+  static int? unixSecondsFromShowTime(String? showTime) {
+    final String raw = (showTime ?? '').trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    const List<String> patterns = <String>[
+      'yyyy-MM-dd HH:mm:ss',
+      'yyyy-MM-dd HH:mm',
+    ];
+    for (final String pattern in patterns) {
+      try {
+        final DateTime dt = DateFormat(pattern).parseUtc(raw);
+        return dt.millisecondsSinceEpoch ~/ 1000;
+      } catch (_) {
+        // try next pattern
+      }
+    }
+    return null;
+  }
+
+  /// 优先解析 [showTime]；失败时使用 [fallbackUnix]（秒或毫秒）。
+  static int? resolveTimestampFromShowTime(String? showTime, {int? fallbackUnix}) {
+    return unixSecondsFromShowTime(showTime) ??
+        MPTimeUtils.normalizeUnixTimestamp(fallbackUnix);
+  }
+
+  /// Todo 列表：由 `show_time` 解析后走 [MPTimeUtils.formatTodoDeadlineLabel]。
+  static String formatTodoDisplayFromShowTime(String? showTime, {int? fallbackDeadlineUnix}) {
+    return MPTimeUtils.formatTodoDeadlineLabel(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackDeadlineUnix),
+    );
+  }
+
+  /// Memory 列表相对时间：由 `show_time` 解析后走 [formatRelativeTimeAgo]。
+  static String formatMemoryRelativeFromShowTime(String? showTime, {int? fallbackCreateAt}) {
+    return formatRelativeTimeAgo(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
+    );
+  }
+
+  /// Memory 列表短格式：`MMM d, y, h:mm a`。
+  static String formatMemoryShortTimeFromShowTime(String? showTime, {int? fallbackCreateAt}) {
+    final DateTime? dt = dateTimeFromUnixEpoch(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
+    );
+    if (dt == null) {
+      return '';
+    }
+    return DateFormat('MMM d, y, h:mm a').format(dt);
+  }
+
+  /// 录音卡片副行：`MMMM d, y · h:mm a`。
+  static String formatMemoryLongTimeFromShowTime(String? showTime, {int? fallbackCreateAt}) {
+    final DateTime? dt = dateTimeFromUnixEpoch(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
+    );
+    if (dt == null) {
+      return '';
+    }
+    return DateFormat('MMMM d, y · h:mm a').format(dt);
+  }
+
+  /// Memory / Memo 详情 meta 时间片段：`MMM d, y, h:mm a`。
+  static String formatMemoryDetailMetaTimeFromShowTime(String? showTime, {int? fallbackCreateAt}) {
+    final DateTime? dt = dateTimeFromUnixEpoch(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
+    );
+    if (dt == null) {
+      return '';
+    }
+    return DateFormat('MMM d, y, h:mm a').format(dt);
+  }
+
+  /// Feed 卡片时间：`MMM d, h:mm a`；无有效时间戳时为 [emptyFallback]。
+  static String formatFeedCardTimeFromShowTime(
+    String? showTime, {
+    int? fallbackCreateAt,
+    String emptyFallback = ' ',
+  }) {
+    final DateTime? dt = dateTimeFromUnixEpoch(
+      resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
+    );
+    if (dt == null) {
+      return emptyFallback;
+    }
+    return DateFormat('MMM d, h:mm a').format(dt);
+  }
+
   /// 秒或毫秒时间戳转 UTC [DateTime]；`raw > 1e10` 视为毫秒。
   static DateTime? dateTimeFromUnixEpoch(int? raw) =>
       MPTimeUtils.dateTimeFromUnixEpoch(raw);

@@ -479,7 +479,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return MPTodayFocusCardItem(
       title: title.isEmpty ? '—' : title,
       subtext: t.reason ?? '',
-      timeLabel: (t.showTime ?? '').trim(),
+      timeLabel: MPDateUtils.formatTodoDisplayFromShowTime(
+        t.showTime,
+        fallbackDeadlineUnix: t.deadline,
+      ),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       slot: t.slot,
@@ -497,7 +500,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String title = (t.title ?? '').trim();
     return MPTodayFocusTodoRowData(
       title: title.isEmpty ? '—' : title,
-      timeLabel: (t.showTime ?? '').trim(),
+      timeLabel: MPDateUtils.formatTodoDisplayFromShowTime(
+        t.showTime,
+        fallbackDeadlineUnix: t.deadline,
+      ),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       status: st,

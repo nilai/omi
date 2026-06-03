@@ -196,9 +196,12 @@ class _MPCreatedTodoRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  (item.showTime ?? '').trim().isEmpty
-                      ? 'No deadline'
-                      : (item.showTime ?? '').trim(),
+                  MPDateUtils.deadlineLineText(
+                    MPDateUtils.resolveTimestampFromShowTime(
+                      item.showTime,
+                      fallbackUnix: item.deadlineLabel,
+                    ),
+                  ),
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t3_12,
                     fontWeight: OmiFontWeight.regular,

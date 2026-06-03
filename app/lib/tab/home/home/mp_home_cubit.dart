@@ -202,7 +202,10 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeTodoItem(
           id: e.id ?? '',
           title: e.title ?? '',
-          time: (e.showTime ?? '').trim().isEmpty ? null : (e.showTime ?? '').trim(),
+          time: MPDateUtils.formatTodoDisplayFromShowTime(
+            e.showTime,
+            fallbackDeadlineUnix: e.deadline,
+          ),
           reason: e.reason ?? '',
           memoryId: e.memoryId,
           insightId: e.insightId,
@@ -219,14 +222,21 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         titleOrDate = e.content ?? '';
       }
       if (titleOrDate.isEmpty) {
-        final String date = MPDateUtils.formatDeadlineLineText(e.createAt);
+        final int? ts = MPDateUtils.resolveTimestampFromShowTime(
+          e.showTime,
+          fallbackUnix: e.createAt,
+        );
+        final String date = MPDateUtils.formatDeadlineLineText(ts);
         titleOrDate = '$date file';
       }
       recentMemories.add(
         MPHomeMemoryItem(
           id: e.id ?? '',
           titleOrDate: titleOrDate,
-          timeLabel: (e.showTime ?? '').trim(),
+          timeLabel: MPDateUtils.formatMemoryRelativeFromShowTime(
+            e.showTime,
+            fallbackCreateAt: e.createAt,
+          ),
           createAt: e.createAt,
           type: e.type ?? MPMemoryType.onlyRecord,
         ),

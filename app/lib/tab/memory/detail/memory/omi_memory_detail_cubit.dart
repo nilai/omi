@@ -1586,7 +1586,10 @@ _mpMemoryStructToDetailBundleFromSources(
             )
             .toList(growable: false);
 
-  final String timePart = (sm?.showTime ?? m.showTime ?? '').trim();
+  final String timePart = MPDateUtils.formatMemoryDetailMetaTimeFromShowTime(
+    sm?.showTime ?? m.showTime,
+    fallbackCreateAt: sm?.createAt ?? m.createAt,
+  );
   final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
   final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
   final List<String> metaParts = <String>[
@@ -1670,12 +1673,16 @@ String _formatDetailDuration(int? seconds) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-String _feedCardTimeLabel(MPFeedCardStruct f) => (f.showTime ?? '').trim();
+String _feedCardTimeLabel(MPFeedCardStruct f) => MPDateUtils.formatFeedCardTimeFromShowTime(
+      f.showTime,
+      fallbackCreateAt: f.createAt,
+    );
 
-String _feedCardHeaderTimeLabel(MPFeedCardStruct f) {
-  final String t = (f.showTime ?? '').trim();
-  return t.isEmpty ? 'Just now' : t;
-}
+String _feedCardHeaderTimeLabel(MPFeedCardStruct f) => MPDateUtils.formatFeedCardTimeFromShowTime(
+      f.showTime,
+      fallbackCreateAt: f.createAt,
+      emptyFallback: 'Just now',
+    );
 
 MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
   return MPMemoryCreatedTodoLineData(

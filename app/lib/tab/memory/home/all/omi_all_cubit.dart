@@ -9,6 +9,7 @@ import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 
+import 'package:memo_pin/common/mp_date_utils.dart';
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
 import 'card/mp_memory_card.dart';
@@ -592,10 +593,15 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
       final String contentTrim = m.content ?? ''.trim();
       final String primaryTimeLabel;
       final String secondaryTimeLabel;
-      final String showTime = (m.showTime ?? '').trim();
       if (titleTrim.isEmpty && contentTrim.isEmpty) {
-        primaryTimeLabel = showTime;
-        secondaryTimeLabel = '';
+        primaryTimeLabel = MPDateUtils.formatMemoryShortTimeFromShowTime(
+          m.showTime,
+          fallbackCreateAt: m.createAt,
+        );
+        secondaryTimeLabel = MPDateUtils.formatMemoryLongTimeFromShowTime(
+          m.showTime,
+          fallbackCreateAt: m.createAt,
+        );
       } else {
         primaryTimeLabel = m.title ?? '';
         secondaryTimeLabel = m.content ?? '';
@@ -624,7 +630,10 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: false,
           title: m.title ?? '',
-          timeLabel: (m.showTime ?? '').trim(),
+          timeLabel: MPDateUtils.formatMemoryShortTimeFromShowTime(
+            m.showTime,
+            fallbackCreateAt: m.createAt,
+          ),
           createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
@@ -644,7 +653,10 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: true,
           title: m.title ?? '',
-          timeLabel: (m.showTime ?? '').trim(),
+          timeLabel: MPDateUtils.formatMemoryShortTimeFromShowTime(
+            m.showTime,
+            fallbackCreateAt: m.createAt,
+          ),
           createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
