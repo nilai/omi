@@ -207,9 +207,9 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
 
   void _applyInitialDeadlineSeconds(int raw) {
     final int sec = raw > 10000000000 ? raw ~/ 1000 : raw;
-    final DateTime local = MPTimeUtils.dateTimeFromUnixEpoch(sec)!;
-    final DateTime day = DateTime.utc(local.year, local.month, local.day);
-    final DateTime today = MPTimeUtils.startOfTodayInTimeZone();
+    final DateTime local = MPTimeUtils.dateTimeFromUnixEpoch(sec)!.toLocal();
+    final DateTime day = _dateOnlyLocal(local);
+    final DateTime today = _dateOnlyLocal(DateTime.now());
     final DateTime tomorrow = today.add(const Duration(days: 1));
 
     _pickedCalendarDate = day;
@@ -226,7 +226,23 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _deadlineUnixSec = sec;
   }
 
-  static DateTime _dateOnly(DateTime d) => DateTime.utc(d.year, d.month, d.day);
+  static DateTime _dateOnlyLocal(DateTime d) =>
+      DateTime(d.year, d.month, d.day);
+
+  /// 本地日历日 + 时刻 → UTC Unix 秒（写入服务端 deadline）。
+  static int _unixSecondsUtcFromLocalParts({
+    required int year,
+    required int month,
+    required int day,
+    int hour = 0,
+    int minute = 0,
+    int second = 0,
+  }) {
+    return DateTime(year, month, day, hour, minute, second)
+        .toUtc()
+        .millisecondsSinceEpoch ~/
+        1000;
+  }
 
   TimeOfDay _parseTimeOfDayOrDefault(String raw) {
     final String t = raw.trim();
@@ -246,13 +262,13 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       return;
     }
     final TimeOfDay tod = _parseTimeOfDayOrDefault(_time);
-    final DateTime now = MPTimeUtils.nowInTimeZone();
+    final DateTime now = DateTime.now();
     DateTime day;
 
     if (_when == 'Today') {
-      day = _dateOnly(now);
+      day = _dateOnlyLocal(now);
     } else if (_when == 'Tomorrow') {
-      day = _dateOnly(now).add(const Duration(days: 1));
+      day = _dateOnlyLocal(now).add(const Duration(days: 1));
     } else if (_pickedCalendarDate != null) {
       day = _pickedCalendarDate!;
     } else {
@@ -260,7 +276,7 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
       return;
     }
 
-    _deadlineUnixSec = MPTimeUtils.unixSecondsFromLocalParts(
+    _deadlineUnixSec = _unixSecondsUtcFromLocalParts(
       year: day.year,
       month: day.month,
       day: day.day,
@@ -377,19 +393,19 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
 
   /// 「Pick a date」：只选日期；**不**改 [\_time]，时间与日期独立，由下方 TIME 行单独选择。
   Future<void> _pickDateOnlyFlow() async {
-    final DateTime now = MPTimeUtils.nowInTimeZone();
-    final DateTime today = _dateOnly(now);
+    final DateTime now = DateTime.now();
+    final DateTime today = _dateOnlyLocal(now);
     final DateTime? date = await showDatePicker(
       context: context,
       initialDate: _pickedCalendarDate ?? today,
-      firstDate: DateTime.utc(today.year - 1),
-      lastDate: DateTime.utc(today.year + 5),
+      firstDate: DateTime(today.year - 1),
+      lastDate: DateTime(today.year + 5),
     );
     if (!mounted || date == null) {
       return;
     }
     setState(() {
-      _pickedCalendarDate = _dateOnly(date);
+      _pickedCalendarDate = _dateOnlyLocal(date);
       _when = DateFormat('MMM d, y').format(_pickedCalendarDate!);
       _syncDeadlineUnixFromWhenAndTime();
     });
