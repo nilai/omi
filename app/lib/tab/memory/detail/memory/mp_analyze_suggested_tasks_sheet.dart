@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
@@ -34,7 +35,9 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -617,9 +620,7 @@ class _MPAnalyzeSuggestedTasksSheetState
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
           padding: EdgeInsets.only(bottom: keyboardInset),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: () => FocusScope.of(context).unfocus(),
+          child: MPDismissibleModalBackdrop(
             child: Container(
               width: double.infinity,
               color: Colors.white,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../common/mp_dismissible_modal_backdrop.dart';
 import '../../../../main.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
@@ -28,8 +29,10 @@ class MPInsightsMoreDialog extends StatelessWidget {
     await showModalBottomSheet<void>(
       context: targetContext,
       isScrollControlled: true,
+      isDismissible: true,
       useSafeArea: false,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (BuildContext sheetContext) {
         return MPInsightsMoreDialog(
           onDeleteTap: () {
@@ -50,12 +53,13 @@ class MPInsightsMoreDialog extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF2F2F7),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SafeArea(
+      child: MPDismissibleModalBackdrop(
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
           top: false,
           child: Padding(
             padding: EdgeInsets.fromLTRB(14, 10, 14, 12 + safeBottom),
@@ -122,6 +126,7 @@ class MPInsightsMoreDialog extends StatelessWidget {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

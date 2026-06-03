@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -24,7 +25,9 @@ Future<bool?> showMPCompletedTodoActionPopup(
   return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
     clipBehavior: Clip.antiAlias,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -104,8 +107,7 @@ class _MPCompletedTodoActionPopupSheetState
   Widget build(BuildContext context) {
     final double safeBottom = MediaQuery.viewPaddingOf(context).bottom;
     final bool disabled = _restoring || _deleting;
-    return Container(
-      color: Colors.white,
+    return MPDismissibleModalBackdrop(
       child: Container(
         clipBehavior: Clip.antiAlias,
         decoration: const BoxDecoration(
@@ -227,3 +229,4 @@ class _MPCompletedTodoActionPopupSheetState
     );
   }
 }
+

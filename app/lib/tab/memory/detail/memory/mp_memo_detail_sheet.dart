@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
@@ -67,7 +68,9 @@ Future<void> showMPMemoDetailSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
+    barrierColor: Colors.black54,
     builder: (BuildContext sheetContext) {
       final double bottomInset = MediaQuery.viewPaddingOf(sheetContext).bottom;
       final double bottomPad = 20 + bottomInset;
@@ -169,7 +172,8 @@ Future<void> showMPMemoDetailSheet(
             ],
           );
 
-      return SizedBox(
+      return MPDismissibleModalBackdrop(
+        child: SizedBox(
         width: double.infinity,
         child: Container(
           clipBehavior: Clip.antiAlias,
@@ -457,6 +461,7 @@ Future<void> showMPMemoDetailSheet(
               ],
             ),
           ),
+        ),
         ),
       );
     },

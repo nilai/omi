@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../common/mp_dismissible_modal_backdrop.dart';
 import '../../../../http/schema/mp_todo.dart';
 import '../../../../utils/mp_time_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
@@ -82,8 +83,10 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
     return showModalBottomSheet<MPQuickCaptureConfirmResult>(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
       useSafeArea: false,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       builder: (BuildContext sheetContext) {
         return MPQucikCaptureConfirmDialog(
           originalText: originalText,
@@ -578,9 +581,7 @@ class _MPQucikCaptureConfirmDialogState
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
+      child: MPDismissibleModalBackdrop(
         child: Container(
           decoration: const BoxDecoration(
             color: Colors.white,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -26,18 +27,21 @@ Future<MPSummaryRecordRequest?> showMPMemoryGenerateSummarySheet(
   return showModalBottomSheet<MPSummaryRecordRequest?>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     /// 使用根 Navigator，避免嵌套路由（如 Tab）时底部 sheet 不显示或层级异常
     useRootNavigator: true,
     useSafeArea: false,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext ctx) {
-      return _MPGenerateSummarySheet(
+      return MPDismissibleModalBackdrop(
+        child: _MPGenerateSummarySheet(
         memoryId: memoryId,
         recordUrl: recordUrl,
         isRegen: isRegen,
         recordMemoAt: recordMemoAt,
         onChangeMode: onChangeMode,
+        ),
       );
     },
   );

@@ -32,6 +32,7 @@ class MPMemoryUpdateNameDialog extends StatefulWidget {
   }) {
     showDialog<bool>(
       context: context,
+      barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.5),
       builder: (context) => MPMemoryUpdateNameDialog(
         memoryId: memoryId,

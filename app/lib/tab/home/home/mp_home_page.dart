@@ -21,6 +21,7 @@ import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/mp_date_utils.dart';
 import '../../../common/mp_home_notification.dart';
 import '../../../common/mp_todo_context_utile.dart';
+import '../../../common/mp_dismissible_modal_backdrop.dart';
 import '../../../common/omi_edit_todo_popup.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
@@ -171,10 +172,13 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
   void _openAddOptions() {
     showModalBottomSheet<void>(
       context: context,
+      isDismissible: true,
       backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
       isScrollControlled: true,
       builder: (BuildContext ctx) {
-        return Padding(
+        return MPDismissibleModalBackdrop(
+          child: Padding(
           padding: EdgeInsets.only(left: 20, right: 20, bottom: MediaQuery.paddingOf(ctx).bottom + 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -259,6 +263,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                 ),
               ),
             ],
+          ),
           ),
         );
       },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/mp_todo_popup_guard.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
@@ -128,11 +129,14 @@ Future<MPAddTodoPopupResult?> showMPAddTodoPopup(
     return await showModalBottomSheet<MPAddTodoPopupResult>(
       context: context,
       isScrollControlled: true,
+      isDismissible: true,
       useSafeArea: false,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
       builder: (BuildContext sheetContext) {
-        return _MPAddTodoPopupSheet(params: params, onContextTap: onContextTap);
+        return MPDismissibleModalBackdrop(
+          child: _MPAddTodoPopupSheet(params: params, onContextTap: onContextTap),
+        );
       },
     );
   } finally {
@@ -284,6 +288,8 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _unfocusKeyboard();
     final String? v = await showModalBottomSheet<String>(
       context: context,
+      isDismissible: true,
+      barrierColor: Colors.black54,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext ctx) {
@@ -318,6 +324,8 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _unfocusKeyboard();
     final String? v = await showModalBottomSheet<String>(
       context: context,
+      isDismissible: true,
+      barrierColor: Colors.black54,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
       builder: (BuildContext ctx) {
@@ -391,6 +399,8 @@ class _MPAddTodoPopupSheetState extends State<_MPAddTodoPopupSheet> {
     _unfocusKeyboard();
     final String? v = await showModalBottomSheet<String>(
       context: context,
+      isDismissible: true,
+      barrierColor: Colors.black54,
       backgroundColor: Colors.white,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
@@ -96,6 +97,7 @@ Future<MPShareSheetResult?> showMPShareSheet(
   return showModalBottomSheet<MPShareSheetResult>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     useSafeArea: false,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
@@ -167,20 +169,14 @@ class _MPShareSheetState extends State<_MPShareSheet> {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => FocusScope.of(context).unfocus(),
+      child: MPDismissibleModalBackdrop(
         child: Container(
-          color: Colors.transparent,
-          child: Align(
-            alignment: Alignment.bottomCenter,
-            child: Container(
-              decoration: const BoxDecoration(
-                color: _kSheetBg,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Padding(
+          decoration: const BoxDecoration(
+            color: _kSheetBg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
                 padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + bottomSafe),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
@@ -338,8 +334,6 @@ class _MPShareSheetState extends State<_MPShareSheet> {
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

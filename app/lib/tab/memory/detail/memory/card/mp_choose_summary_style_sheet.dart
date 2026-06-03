@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -23,17 +24,20 @@ Future<void> showMPChooseSummaryStyleSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     useRootNavigator: true,
     useSafeArea: false,
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black54,
     builder: (BuildContext ctx) {
-      return _MPChooseSummaryStyleSheet(
-        recentTemplate: recentTemplate,
-        recommendTemplates: recommendTemplates,
-        initialSelected: initialSelected,
-        onTemplateConfirmed: onTemplateConfirmed,
-        onBrowseAllStyles: onBrowseAllStyles,
+      return MPDismissibleModalBackdrop(
+        child: _MPChooseSummaryStyleSheet(
+          recentTemplate: recentTemplate,
+          recommendTemplates: recommendTemplates,
+          initialSelected: initialSelected,
+          onTemplateConfirmed: onTemplateConfirmed,
+          onBrowseAllStyles: onBrowseAllStyles,
+        ),
       );
     },
   );

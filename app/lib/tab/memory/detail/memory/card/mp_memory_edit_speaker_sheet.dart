@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
 import 'package:memo_pin/common/omi_button.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -25,9 +26,13 @@ Future<MPMemoryEditSpeakerResult?> showMPMemoryEditSpeakerSheet({
   return showModalBottomSheet<MPMemoryEditSpeakerResult>(
     context: context,
     isScrollControlled: true,
+    isDismissible: true,
     backgroundColor: Colors.transparent,
-    builder: (BuildContext ctx) => _MPEditSpeakerSheetBody(
-      currentSpeakerName: currentSpeakerName,
+    barrierColor: Colors.black54,
+    builder: (BuildContext ctx) => MPDismissibleModalBackdrop(
+      child: _MPEditSpeakerSheetBody(
+        currentSpeakerName: currentSpeakerName,
+      ),
     ),
   );
 }

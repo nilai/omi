@@ -299,12 +299,14 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
   }) {
     return showModalBottomSheet<String>(
       context: context,
+      isDismissible: true,
+      barrierColor: Colors.black54,
       useSafeArea: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return SafeArea(
           top: false,
           child: Column(
