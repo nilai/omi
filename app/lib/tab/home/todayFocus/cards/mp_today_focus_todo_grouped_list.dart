@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/tab/home/todayFocus/mp_today_focus_swipe_reveal_bus.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -316,11 +315,8 @@ class _MPTodayFocusTodoGroupedListState
     return out;
   }
 
-  /// 右侧时间：`deadlineUnixSec` 为 `null` / `0` 时展示 `No deadline`。
+  /// 右侧时间：展示接口 [MPTodayFocusTodoRowData.timeLabel]（`show_time`）。
   static String _timeLabelForRow(MPTodayFocusTodoRowData row) {
-    if (MPDateUtils.normalizeTodoDeadline(row.deadlineUnixSec) == null) {
-      return 'No deadline';
-    }
     final String label = row.timeLabel.trim();
     return label.isEmpty ? 'No deadline' : label;
   }

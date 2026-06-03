@@ -3,13 +3,11 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
-import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import 'card/mp_audio_recording_card.dart';
 import 'card/mp_memo_group_card.dart';
@@ -592,13 +590,12 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
     case MPMemoryType.onlyRecord:
       final String titleTrim = m.title ?? ''.trim();
       final String contentTrim = m.content ?? ''.trim();
-      final int createAt = m.createAt;
       final String primaryTimeLabel;
       final String secondaryTimeLabel;
+      final String showTime = (m.showTime ?? '').trim();
       if (titleTrim.isEmpty && contentTrim.isEmpty) {
-        primaryTimeLabel = _audioRecordingTimePrimaryFromCreateAt(createAt);
-        secondaryTimeLabel =
-            _audioRecordingTimeSecondaryFromCreateAt(createAt);
+        primaryTimeLabel = showTime;
+        secondaryTimeLabel = '';
       } else {
         primaryTimeLabel = m.title ?? '';
         secondaryTimeLabel = m.content ?? '';
@@ -627,7 +624,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: false,
           title: m.title ?? '',
-          timeLabel: _shortTimeLabel(m.createAt),
+          timeLabel: (m.showTime ?? '').trim(),
           createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
@@ -647,7 +644,7 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
         data: MPMemoryCardData(
           showActivity: true,
           title: m.title ?? '',
-          timeLabel: _shortTimeLabel(m.createAt),
+          timeLabel: (m.showTime ?? '').trim(),
           createAt: m.createAt,
           preview: m.content ?? '',
           badgeCount: hasUnread ? unread : null,
@@ -678,30 +675,6 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
       items: memos,
     ),
   );
-}
-
-DateTime _memoryDateTimeFromServer(int createAt) =>
-    MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
-
-String _shortTimeLabel(int createAt) {
-  return DateFormat('MMM d, y, h:mm a').format(_memoryDateTimeFromServer(createAt));
-}
-
-/// 录音卡片无标题/正文时，首行时间（与列表其它 Memory 时间风格一致）。
-String _audioRecordingTimePrimaryFromCreateAt(int createAt) {
-  if (createAt <= 0) {
-    return '';
-  }
-  return _shortTimeLabel(createAt);
-}
-
-/// 录音卡片无标题/正文时，第二行时间（略长，与 [MPAudioRecordingCardData] 设计双行时间一致）。
-String _audioRecordingTimeSecondaryFromCreateAt(int createAt) {
-  if (createAt <= 0) {
-    return '';
-  }
-  return DateFormat('MMMM d, y · h:mm a')
-      .format(_memoryDateTimeFromServer(createAt));
 }
 
 String _formatDurationSeconds(int seconds) {

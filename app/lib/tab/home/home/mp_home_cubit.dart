@@ -10,7 +10,6 @@ import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
-import 'package:memo_pin/utils/mp_time_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -203,7 +202,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeTodoItem(
           id: e.id ?? '',
           title: e.title ?? '',
-          time: MPTimeUtils.formatTodoDeadlineLabel(e.deadline),
+          time: (e.showTime ?? '').trim().isEmpty ? null : (e.showTime ?? '').trim(),
           reason: e.reason ?? '',
           memoryId: e.memoryId,
           insightId: e.insightId,
@@ -227,7 +226,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeMemoryItem(
           id: e.id ?? '',
           titleOrDate: titleOrDate,
-          timeLabel: MPDateUtils.formatRelativeTimeAgo(e.createAt),
+          timeLabel: (e.showTime ?? '').trim(),
           createAt: e.createAt,
           type: e.type ?? MPMemoryType.onlyRecord,
         ),

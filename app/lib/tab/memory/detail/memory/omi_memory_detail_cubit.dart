@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
@@ -1388,7 +1387,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       feedBlocks.add(
         MPMemoryFeedMyMemoBlock(
           MPMemoryMyMemosCardData(
-            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            headerTimeLabel: _feedCardHeaderTimeLabel(f),
             lines: memos
                 .map(
                   (MPMemoStruct memo) => MPMemoryMyMemoLine(
@@ -1411,7 +1410,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       feedBlocks.add(
         MPMemoryFeedTodosCreatedBlock(
           MPMemoryTodosCreatedCardData(
-            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            headerTimeLabel: _feedCardHeaderTimeLabel(f),
             items: todos.map(_mptodoToCreatedLine).toList(growable: false),
           ),
         ),
@@ -1422,7 +1421,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       feedBlocks.add(
         MPMemoryFeedYouAskedBlock(
           MPMemoryYouAskedCardData(
-            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            headerTimeLabel: _feedCardHeaderTimeLabel(f),
             userMessage: f.askAICard?.ask ?? '',
             aiReply: f.askAICard?.answer ?? '',
             count: f.askAICard?.count,
@@ -1439,7 +1438,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
           feedBlocks.add(
             MPMemoryFeedResummaryLoadingBlock(
               MPMemoryResummaryLoadingCardData(
-                headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+                headerTimeLabel: _feedCardHeaderTimeLabel(f),
                 summaryMemoryId: sid,
               ),
             ),
@@ -1455,7 +1454,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
       feedBlocks.add(
         MPMemoryFeedResummaryBlock(
           MPMemoryResummaryCardData(
-            headerTimeLabel: _feedCardHeaderTimeLabel(f.createAt),
+            headerTimeLabel: _feedCardHeaderTimeLabel(f),
             mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
             sectionTitle: '',
             bodyText: body.isNotEmpty ? body : ' ',
@@ -1492,7 +1491,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
           MPMemoryInsightItemData(
             feedCardId: f.id,
             tone: MPInsightCardTone.business,
-            timeLabel: _feedCardTimeLabel(f.createAt),
+            timeLabel: _feedCardTimeLabel(f),
             bodyText: bodyForTodo,
             categoryTitle: categoryTitle,
             title: title ?? '',
@@ -1513,7 +1512,7 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
         MPMemoryInsightItemData(
           feedCardId: f.id,
           tone: MPInsightCardTone.followUp,
-          timeLabel: _feedCardTimeLabel(f.createAt),
+          timeLabel: _feedCardTimeLabel(f),
           bodyText: bodyText,
           title: title ?? '',
           metaLine: metaLine ?? '',
@@ -1587,11 +1586,15 @@ _mpMemoryStructToDetailBundleFromSources(
             )
             .toList(growable: false);
 
-  final int metaCreateAt = sm?.createAt ?? m.createAt;
-  final DateTime dt = _detailServerTime(metaCreateAt);
+  final String timePart = (sm?.showTime ?? m.showTime ?? '').trim();
   final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
   final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
-  final String metaLine = '${DateFormat('MMM d, y, h:mm a').format(dt)} • $durationLabel • $sourceLabel';
+  final List<String> metaParts = <String>[
+    if (timePart.isNotEmpty) timePart,
+    durationLabel,
+    if (sourceLabel.isNotEmpty) sourceLabel,
+  ];
+  final String metaLine = metaParts.join(' • ');
 
   final List<MPMemoryFeedBlock> built = _buildFeedBlocksFromCards(feedCards, title, metaLine);
 
@@ -1653,9 +1656,6 @@ mpMemoryStructToMemoDetailBundle(MPMemoryStruct m) {
 /// [MPMemoryFeedStruct.feeds] 顺序映射为 [MPMemoryDetailCardData.feedBlocks]（Insight / Todos / Memos / You asked 等可混合）。
 MPMemoryDetailCardData mpMemoryStructToDetailCardData(MPMemoryStruct m) => mpMemoryStructToDetailBundle(m).data;
 
-DateTime _detailServerTime(int createAt) =>
-    MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
-
 String _formatDetailDuration(int? seconds) {
   if (seconds == null || seconds <= 0) {
     return '0:00';
@@ -1670,20 +1670,11 @@ String _formatDetailDuration(int? seconds) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-String _feedCardTimeLabel(int? createAt) {
-  if (createAt == null) {
-    return ' ';
-  }
-  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
-  return DateFormat('MMM d, h:mm a').format(dt);
-}
+String _feedCardTimeLabel(MPFeedCardStruct f) => (f.showTime ?? '').trim();
 
-String _feedCardHeaderTimeLabel(int? createAt) {
-  if (createAt == null) {
-    return 'Just now';
-  }
-  final DateTime dt = MPTimeUtils.dateTimeFromUnixEpoch(createAt)!;
-  return DateFormat('MMM d, h:mm a').format(dt);
+String _feedCardHeaderTimeLabel(MPFeedCardStruct f) {
+  final String t = (f.showTime ?? '').trim();
+  return t.isEmpty ? 'Just now' : t;
 }
 
 MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
@@ -1692,6 +1683,7 @@ MPMemoryCreatedTodoLineData _mptodoToCreatedLine(MPTodoStruct t) {
     title: t.title,
     priority: MPTodoPriorityUtils.fromServerString(t.priority ?? 'Normal'),
     deadlineLabel: MPDateUtils.normalizeTodoDeadline(t.deadline),
+    showTime: (t.showTime ?? '').trim(),
     description: t.description,
     status: t.status,
   );

@@ -9,6 +9,7 @@ class MPMemoryCreatedTodoLineData {
     this.title,
     this.priority,
     this.deadlineLabel,
+    this.showTime,
     this.description,
     this.status,
   });
@@ -19,8 +20,11 @@ class MPMemoryCreatedTodoLineData {
   final String? title;
   final MPMemoryTodoPriorityKind? priority;
 
-  /// 截止时间 Unix 时间戳（秒或毫秒）；null 表示无截止时间。
+  /// 截止时间 Unix 时间戳（秒或毫秒）；null 表示无截止时间（编辑弹窗用）。
   final int? deadlineLabel;
+
+  /// 列表展示用时间（接口 `show_time`）。
+  final String? showTime;
   final String? description;
 
   /// 与 [MPTodoStruct.status] 一致：`2` 表示已完成。

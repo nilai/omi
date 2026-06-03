@@ -13,7 +13,6 @@ import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
-import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import 'cards/mp_today_focus_card.dart';
@@ -480,7 +479,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     return MPTodayFocusCardItem(
       title: title.isEmpty ? '—' : title,
       subtext: t.reason ?? '',
-      timeLabel: MPTimeUtils.formatTodoDeadlineLabel(t.deadline),
+      timeLabel: (t.showTime ?? '').trim(),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       slot: t.slot,
@@ -498,7 +497,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String title = (t.title ?? '').trim();
     return MPTodayFocusTodoRowData(
       title: title.isEmpty ? '—' : title,
-      timeLabel: MPTimeUtils.formatTodoDeadlineLabel(t.deadline),
+      timeLabel: (t.showTime ?? '').trim(),
       todoId: (t.id ?? '').trim(),
       memoryId: t.memoryId,
       status: st,
