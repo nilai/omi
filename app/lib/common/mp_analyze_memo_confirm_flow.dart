@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'mp_home_notification.dart';
 import '../http/api/mp_todo.dart';
 import '../http/schema/mp_memo.dart';
 import '../http/schema/mp_todo.dart';
@@ -69,6 +70,7 @@ class MPAnalyzeMemoConfirmFlow {
       return false;
     }
     MPToastUtils.showMessage('todos and memos created.');
+    MPHomeNotification.notifyHomeListRefresh();
     return true;
   }
 }
