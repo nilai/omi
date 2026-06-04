@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import '../../app/mp_app_session_bootstrap.dart';
 import '../../cache/mp_hive_util.dart';
 import '../../http/api/mp_login.dart';
+import '../../http/schema/mp_base.dart';
 import '../../http/schema/mp_login.dart';
 import '../../tab/omi_main_tab_page.dart';
 import '../../utils/mp_uuid_util.dart';
@@ -15,6 +16,9 @@ import '../verify/mp_verify_page.dart';
 /// 认证页 Cubit：表单输入、模式切换与提交校验。
 class MPLoginCubit extends Cubit<MPLoginState> {
   MPLoginCubit() : super(const MPLoginState());
+
+  static const int _kEmailErrorCode = 10001;
+  static const int _kPasswordErrorCode = 30001;
 
   BuildContext? _context;
 
@@ -95,7 +99,7 @@ class MPLoginCubit extends Cubit<MPLoginState> {
         (Route<dynamic> route) => false,
       );
     } else {
-      MPToastUtils.showMessage(response?.baseResp.message ?? 'Login failed');
+      _handleAuthFailure(response?.baseResp, 'Login failed');
     }
   }
 
@@ -111,7 +115,28 @@ class MPLoginCubit extends Cubit<MPLoginState> {
         ),
       );
     } else {
-      MPToastUtils.showMessage(response?.baseResp.message ?? 'Send code failed');
+      _handleAuthFailure(response?.baseResp, 'Send code failed');
     }
+  }
+
+  /**
+   * 处理登录/注册接口失败：10001 展示在邮箱下，30001 展示在密码下，其余 toast。
+   */
+  void _handleAuthFailure(MPBaseResp? baseResp, String fallbackMessage) {
+    if (isClosed) {
+      return;
+    }
+    final int code = baseResp?.code ?? -1;
+    final String message = (baseResp?.message.isNotEmpty ?? false) ? baseResp!.message : fallbackMessage;
+
+    if (code == _kEmailErrorCode) {
+      emit(state.copyWith(emailError: message, passwordError: null));
+      return;
+    }
+    if (code == _kPasswordErrorCode) {
+      emit(state.copyWith(passwordError: message, emailError: null));
+      return;
+    }
+    MPToastUtils.showMessage(message);
   }
 }
