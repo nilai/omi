@@ -665,15 +665,14 @@ class _TodayFocusCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (todo.time != null)
-                      Text(
-                        todo.time!,
-                        style: TextStyle(
-                          fontSize: OmiFontSize.t4_13,
-                          color: omiAuxiliaryText,
-                          fontWeight: OmiFontWeight.medium,
-                        ),
+                    Text(
+                      todo.time ?? 'No deadline',
+                      style: TextStyle(
+                        fontSize: OmiFontSize.t4_13,
+                        color: omiAuxiliaryText,
+                        fontWeight: OmiFontWeight.medium,
                       ),
+                    ),
                   ],
                 ),
               ),

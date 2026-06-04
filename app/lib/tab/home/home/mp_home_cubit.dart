@@ -202,10 +202,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeTodoItem(
           id: e.id ?? '',
           title: e.title ?? '',
-          time: MPDateUtils.formatTodoDisplayFromShowTime(
-            e.showTime,
-            fallbackDeadlineUnix: e.deadline,
-          ),
+          time: MPDateUtils.formatHomeItemTimeFromShowTime(e.showTime),
           reason: e.reason ?? '',
           memoryId: e.memoryId,
           insightId: e.insightId,
@@ -233,10 +230,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         MPHomeMemoryItem(
           id: e.id ?? '',
           titleOrDate: titleOrDate,
-          timeLabel: MPDateUtils.formatMemoryRelativeFromShowTime(
-            e.showTime,
-            fallbackCreateAt: e.createAt,
-          ),
+          timeLabel: MPDateUtils.formatHomeItemTimeFromShowTime(e.showTime),
           createAt: e.createAt,
           type: e.type ?? MPMemoryType.onlyRecord,
         ),

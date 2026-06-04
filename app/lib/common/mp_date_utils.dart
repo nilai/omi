@@ -30,6 +30,49 @@ class MPDateUtils {
     return null;
   }
 
+  /// 接口 `show_time` 按设备本地时区解析为 Unix 秒；空或解析失败为 `null`。
+  static int? unixSecondsFromShowTimeLocal(String? showTime) {
+    final String raw = (showTime ?? '').trim();
+    if (raw.isEmpty) {
+      return null;
+    }
+    const List<String> patterns = <String>[
+      'yyyy-MM-dd HH:mm:ss',
+      'yyyy-MM-dd HH:mm',
+    ];
+    for (final String pattern in patterns) {
+      try {
+        final DateTime dt = DateFormat(pattern).parse(raw);
+        return dt.millisecondsSinceEpoch ~/ 1000;
+      } catch (_) {
+        // try next pattern
+      }
+    }
+    return null;
+  }
+
+  /// 首页 Today's Focus / Recent Memory：仅 [showTime]，本地时区解析后展示；无有效时间为 `No deadline`。
+  ///
+  /// 当天 `HH:mm`；未来 7 日内 `EEE HH:mm`；更远 `MMM d`。
+  static String formatHomeItemTimeFromShowTime(String? showTime) {
+    final int? unix = unixSecondsFromShowTimeLocal(showTime);
+    if (unix == null) {
+      return 'No deadline';
+    }
+    final DateTime dt = DateTime.fromMillisecondsSinceEpoch(unix * 1000);
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime day = DateTime(dt.year, dt.month, dt.day);
+    if (day == today) {
+      return DateFormat('HH:mm').format(dt);
+    }
+    final int daysFromToday = day.difference(today).inDays;
+    if (daysFromToday > 0 && daysFromToday <= 7) {
+      return DateFormat('EEE HH:mm').format(dt);
+    }
+    return DateFormat('MMM d').format(dt);
+  }
+
   /// 优先解析 [showTime]；失败时使用 [fallbackUnix]（秒或毫秒）。
   static int? resolveTimestampFromShowTime(String? showTime, {int? fallbackUnix}) {
     return unixSecondsFromShowTime(showTime) ??
@@ -98,7 +141,17 @@ class MPDateUtils {
   }
 
   /// Memory 列表相对时间：由 `show_time` 解析后走 [formatRelativeTimeAgo]。
+  ///
+  /// `show_time` 解析成功但晚于当前时刻时，展示 `Just now`。
   static String formatMemoryRelativeFromShowTime(String? showTime, {int? fallbackCreateAt}) {
+    final int? fromShow = unixSecondsFromShowTime(showTime);
+    if (fromShow != null) {
+      final DateTime? showDt = dateTimeFromUnixEpoch(fromShow);
+      final DateTime now = MPTimeUtils.nowInTimeZone();
+      if (showDt != null && showDt.isAfter(now)) {
+        return 'Just now';
+      }
+    }
     return formatRelativeTimeAgo(
       resolveTimestampFromShowTime(showTime, fallbackUnix: fallbackCreateAt),
     );
@@ -226,7 +279,7 @@ class MPDateUtils {
     }
     final Duration diff = now.difference(dt);
     if (diff.isNegative) {
-      return '';
+      return 'Just now';
     }
     if (diff.inSeconds < 60) {
       return 'Just now';
