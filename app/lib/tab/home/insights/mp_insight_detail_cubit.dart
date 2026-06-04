@@ -349,6 +349,9 @@ class MPMonthlyInsightDetailData {
   final String askAiButtonText;
 }
 
+/// 后端 [MPTodoStruct.preCreateStatus]：`0` 未添加，非 `0` 已添加。
+bool mpInsightTodoIsAdded(MPTodoStruct todo) => (todo.preCreateStatus ?? 0) != 0;
+
 /// Insight Todo 预填 Notes：优先 [MPTodoStruct.description]，否则 [MPTodoStruct.reason]（如 Weekly 的 sub_title）。
 String _insightTodoInitialNotes(MPTodoStruct todo) {
   final String description = (todo.description ?? '').trim();
@@ -383,6 +386,8 @@ abstract class MPInsightDetailBaseCubit extends Cubit<MPInsightDetailState> {
           contextMemoryTitle: content?.title ?? '',
           contextMetaLine: content?.metaLine ?? '',
           insightId: insightItem.id,
+          todoId: (todo.id ?? '').trim().isEmpty ? null : todo.id,
+          preCreateStatus: 1,
           initialNotes: _insightTodoInitialNotes(todo),
         ),
         onContextTap: () {

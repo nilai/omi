@@ -822,7 +822,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
           ...widget.items.asMap().entries.map((MapEntry<int, MPTodoStruct> e) {
             final int idx = e.key;
             final MPTodoStruct f = e.value;
-            final bool isAdded = _addedIndexes.contains(idx);
+            final bool isAdded = _addedIndexes.contains(idx) || mpInsightTodoIsAdded(f);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(

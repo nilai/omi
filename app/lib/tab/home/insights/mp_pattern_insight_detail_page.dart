@@ -399,7 +399,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
           final MPTodoStruct nextStep = entry.value;
           final String text = (nextStep.title ?? '').trim();
           final bool canAdd = text.isNotEmpty;
-          final bool isAdded = _addedIndexes.contains(entry.key);
+          final bool isAdded = _addedIndexes.contains(entry.key) || mpInsightTodoIsAdded(nextStep);
           final bool isLast = entry.key == widget.nextSteps.length - 1;
 
           return Padding(

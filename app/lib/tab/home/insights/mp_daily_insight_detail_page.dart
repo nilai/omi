@@ -434,7 +434,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
             child: Column(
               children: widget.items.asMap().entries.map((MapEntry<int, MPTodoStruct> entry) {
                 final MPTodoStruct focus = entry.value;
-                final bool isAdded = _addedIndexes.contains(entry.key);
+                final bool isAdded = _addedIndexes.contains(entry.key) || mpInsightTodoIsAdded(focus);
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(

@@ -612,7 +612,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
           const SizedBox(height: 10),
           ...widget.items.asMap().entries.map((MapEntry<int, MPWeeklyPriorityItem> e) {
             final MPWeeklyPriorityItem item = e.value;
-            final bool isAdded = _addedIndexes.contains(e.key);
+            final bool isAdded = _addedIndexes.contains(e.key) || mpInsightTodoIsAdded(item.todo);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
