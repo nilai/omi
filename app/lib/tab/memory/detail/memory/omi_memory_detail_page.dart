@@ -37,7 +37,8 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
   if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
     return;
   }
-  final String aboutText = s.data!.title.trim().isEmpty ? 'Memory' : s.data!.title;
+  final String aboutText =
+      s.data!.navTitle.trim().isNotEmpty ? s.data!.navTitle : 'Memory';
   final MPGetLastConversationResponse? lastConversation = await getLastConversation(
     MPGetLastConversationRequest(conversationType: 1, paramId: memoryId),
   );
@@ -140,12 +141,18 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
     final String memoryId = widget.memoryId;
     return MPDetailVisibilityRefresh(
       onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
-      child: Scaffold(
+      child: BlocBuilder<OmiMemoryDetailCubit, OmiMemoryDetailState>(
+        builder: (BuildContext context, OmiMemoryDetailState pageState) {
+          final String navTitle = pageState.phase == OmiMemoryDetailPhase.loaded &&
+                  pageState.data != null
+              ? pageState.data!.navTitle
+              : 'Memory';
+          return Scaffold(
         backgroundColor: pageColor,
         appBar: PreferredSize(
           preferredSize: MPCustomNavBar.preferredSizeOf(context),
           child: MPCustomNavBar(
-            title: 'Memory',
+            title: navTitle,
             actions: <Widget>[
               GestureDetector(
                 onTap: () async {
@@ -240,81 +247,7 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
             ],
           ),
         ),
-        body: BlocBuilder<OmiMemoryDetailCubit, OmiMemoryDetailState>(
-          builder: (BuildContext context, OmiMemoryDetailState state) {
-            switch (state.phase) {
-              case OmiMemoryDetailPhase.loading:
-                return const MPTristatePage(type: MPTristateType.loading);
-              case OmiMemoryDetailPhase.error:
-                return MPTristatePage(
-                  type: MPTristateType.error,
-                  data: MPTristatePageData(
-                    title: 'Unable to load memory detail',
-                    description: 'Please try again',
-                    onButtonPressed: () {
-                      context.read<OmiMemoryDetailCubit>().retry();
-                    },
-                  ),
-                );
-              case OmiMemoryDetailPhase.loaded:
-                final MPMemoryDetailCardData data = state.data!;
-                return RefreshIndicator(
-                  onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
-                  child: NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification n) {
-                      // if (n.metrics.axis != Axis.vertical) {
-                      //   return false;
-                      // }
-                      // if (n is! ScrollUpdateNotification) {
-                      //   return false;
-                      // }
-                      // if (n.metrics.pixels >= n.metrics.maxScrollExtent - 160) {
-                      //   context.read<OmiMemoryDetailCubit>().loadMoreFeeds();
-                      // }
-                      return false;
-                    },
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: MPMemoryDetailContentCard(
-                              data: data,
-                              useExternalPlaybackProgress: true,
-                              onSegmentChanged: (MPMemoryDetailSegment s) {},
-                              onPlayTap: () => context.read<OmiMemoryDetailCubit>().onPlayTap(),
-                              onSeekPlay: (Duration p) => context.read<OmiMemoryDetailCubit>().onSeekPlay(p),
-                              onSeekWaveFraction: (double f) =>
-                                  context.read<OmiMemoryDetailCubit>().onSeekByWaveFraction(f),
-                              isAudioPlaying: state.isAudioPlaying,
-                            ),
-                          ),
-                          MPMemoryDetailFeedSection(
-                            data: data,
-                            onYouAskedTap: () => _openMemoryAskAiChatForDetail(context, memoryId),
-                          ),
-                          if (state.isLoadingMore)
-                            const Padding(
-                              padding: EdgeInsets.only(top: 16, bottom: 8),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 28,
-                                  height: 28,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-            }
-          },
-        ),
+        body: _buildBody(context, memoryId, pageState),
         bottomNavigationBar: MPMemoryDetailBottomBar(
           onAddTodo: () async {
             final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(context);
@@ -357,7 +290,78 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
           },
           onAskAi: () => _openMemoryAskAiChatForDetail(context, memoryId),
         ),
+          );
+        },
       ),
     );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    String memoryId,
+    OmiMemoryDetailState state,
+  ) {
+    switch (state.phase) {
+      case OmiMemoryDetailPhase.loading:
+        return const MPTristatePage(type: MPTristateType.loading);
+      case OmiMemoryDetailPhase.error:
+        return MPTristatePage(
+          type: MPTristateType.error,
+          data: MPTristatePageData(
+            title: 'Unable to load memory detail',
+            description: 'Please try again',
+            onButtonPressed: () {
+              context.read<OmiMemoryDetailCubit>().retry();
+            },
+          ),
+        );
+      case OmiMemoryDetailPhase.loaded:
+        final MPMemoryDetailCardData data = state.data!;
+        return RefreshIndicator(
+          onRefresh: () => context.read<OmiMemoryDetailCubit>().refresh(),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification n) {
+              return false;
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: MPMemoryDetailContentCard(
+                      data: data,
+                      useExternalPlaybackProgress: true,
+                      onSegmentChanged: (MPMemoryDetailSegment s) {},
+                      onPlayTap: () => context.read<OmiMemoryDetailCubit>().onPlayTap(),
+                      onSeekPlay: (Duration p) => context.read<OmiMemoryDetailCubit>().onSeekPlay(p),
+                      onSeekWaveFraction: (double f) =>
+                          context.read<OmiMemoryDetailCubit>().onSeekByWaveFraction(f),
+                      isAudioPlaying: state.isAudioPlaying,
+                    ),
+                  ),
+                  MPMemoryDetailFeedSection(
+                    data: data,
+                    onYouAskedTap: () => _openMemoryAskAiChatForDetail(context, memoryId),
+                  ),
+                  if (state.isLoadingMore)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 16, bottom: 8),
+                      child: Center(
+                        child: SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        );
+    }
   }
 }

@@ -589,31 +589,21 @@ MPMemoryEntry _mpMemoryStructToEntry(MPMemoryStruct m) {
   switch (m.type ?? MPMemoryType.onlyRecord) {
     // onlyRecord → audioRecording → [MPAudioRecordingCard]
     case MPMemoryType.onlyRecord:
-      final String titleTrim = m.title ?? ''.trim();
-      final String contentTrim = m.content ?? ''.trim();
-      final String primaryTimeLabel;
-      final String secondaryTimeLabel;
-      if (titleTrim.isEmpty && contentTrim.isEmpty) {
-        primaryTimeLabel = MPDateUtils.formatMemoryShortTimeFromShowTime(
-          m.showTime,
-          fallbackCreateAt: m.createAt,
-        );
-        secondaryTimeLabel = MPDateUtils.formatMemoryLongTimeFromShowTime(
-          m.showTime,
-          fallbackCreateAt: m.createAt,
-        );
-      } else {
-        primaryTimeLabel = m.title ?? '';
-        secondaryTimeLabel = m.content ?? '';
-      }
+      final ({String primary, String secondary}) labels =
+          MPDateUtils.resolveAudioRecordingLabels(
+        title: m.title,
+        content: m.content,
+        showTime: m.showTime,
+        createAt: m.createAt,
+      );
       return MPMemoryEntry.audioRecording(
         id: m.id ?? '',
         type: m.type ?? MPMemoryType.onlyRecord,
         audioData: MPAudioRecordingCardData(
-          primaryTimeLabel: primaryTimeLabel,
-          secondaryTimeLabel: secondaryTimeLabel,
+          primaryTimeLabel: labels.primary,
+          secondaryTimeLabel: labels.secondary,
           sourceLabel: m.source ?? '',
-          durationLabel: _formatDurationSeconds(m.duration ?? 0),
+          durationLabel: MPDateUtils.formatMemoryDurationCompact(m.duration),
           showProcessing: (m.status ?? 0) == 1,
         ),
       );
@@ -687,16 +677,4 @@ MPMemoryEntry _mpMemoryStructToMemoGroupEntry(MPMemoryStruct m) {
       items: memos,
     ),
   );
-}
-
-String _formatDurationSeconds(int seconds) {
-  if (seconds <= 0) {
-    return '0s';
-  }
-  final int m = seconds ~/ 60;
-  final int s = seconds % 60;
-  if (m > 0) {
-    return '${m}m${s}s';
-  }
-  return '${s}s';
 }

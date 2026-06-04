@@ -625,7 +625,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     if (t.isEmpty) {
       return;
     }
-    emit(state.copyWith(data: state.data!.copyWith(title: t)));
+    emit(state.copyWith(data: state.data!.copyWith(title: t, navTitle: t)));
   }
 
   /// 应用进入后台（[AppLifecycleState.paused]）时暂停当前播放，与点击暂停行为一致。
@@ -1087,6 +1087,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
       memoryId: d.memoryId,
       title: d.title,
+      navTitle: d.navTitle,
       metaLine: d.metaLine,
       audioTimeStart: d.audioTimeStart,
       audioTimeEnd: d.audioTimeEnd,
@@ -1145,6 +1146,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
       memoryId: d.memoryId,
       title: d.title,
+      navTitle: d.navTitle,
       metaLine: d.metaLine,
       audioTimeStart: d.audioTimeStart,
       audioTimeEnd: d.audioTimeEnd,
@@ -1278,6 +1280,7 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     final MPMemoryDetailCardData nextData = MPMemoryDetailCardData(
       memoryId: d.memoryId,
       title: d.title,
+      navTitle: d.navTitle,
       metaLine: d.metaLine,
       audioTimeStart: d.audioTimeStart,
       audioTimeEnd: d.audioTimeEnd,
@@ -1544,8 +1547,13 @@ _mpMemoryStructToDetailBundleFromSources(
   required List<MPFeedCardStruct> feedCards,
 }) {
   final bool isSummaryGenerating = (sm?.status ?? 0) == 1;
-  final String rawTitle = (sm?.title ?? '').trim();
-  final String title = rawTitle.isNotEmpty ? rawTitle : m.title ?? ''.trim();
+  final String title = MPDateUtils.memoryListTitle(m.title);
+  final String navTitle = MPDateUtils.resolveMemoryDetailNavTitle(
+    title: m.title,
+    showTime: m.showTime,
+    fallbackCreateAt: m.createAt,
+    emptyFallback: 'Memory',
+  );
 
   final String overviewText = sm?.summary?.trim() ?? '';
 
@@ -1586,9 +1594,9 @@ _mpMemoryStructToDetailBundleFromSources(
             )
             .toList(growable: false);
 
-  final String timePart = MPDateUtils.formatMemoryDetailMetaTimeFromShowTime(
-    sm?.showTime ?? m.showTime,
-    fallbackCreateAt: sm?.createAt ?? m.createAt,
+  final String timePart = MPDateUtils.formatMemoryShortTimeFromShowTime(
+    m.showTime,
+    fallbackCreateAt: m.createAt,
   );
   final String durationLabel = _formatDetailDuration(sm?.duration ?? m.duration);
   final String sourceLabel = (sm?.source ?? m.source ?? '').trim();
@@ -1610,6 +1618,7 @@ _mpMemoryStructToDetailBundleFromSources(
   final MPMemoryDetailCardData data = MPMemoryDetailCardData(
     memoryId: m.id ?? '',
     title: title,
+    navTitle: navTitle,
     metaLine: metaLine,
     audioTimeStart: '0:00',
     audioTimeEnd: durationLabel,

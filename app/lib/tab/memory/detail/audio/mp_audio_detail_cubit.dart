@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
@@ -12,6 +11,7 @@ import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:path/path.dart' as p;
+import 'package:memo_pin/common/mp_date_utils.dart';
 import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -810,9 +810,6 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
   }
 }
 
-DateTime _audioDetailDateTime(int raw) =>
-    MPTimeUtils.dateTimeFromUnixEpoch(raw)!;
-
 /// 已播放/总时长角标（`M:SS` 或 `H:MM:SS`）。
 String _formatMmSs(Duration d) {
   Duration x = d;
@@ -829,34 +826,26 @@ String _formatMmSs(Duration d) {
   return '$m:${s.toString().padLeft(2, '0')}';
 }
 
-String _formatDurationLabel(int? seconds) {
-  if (seconds == null || seconds <= 0) {
-    return '0s';
-  }
-  final int m = seconds ~/ 60;
-  final int s = seconds % 60;
-  if (m > 60) {
-    final int h = m ~/ 60;
-    final int mm = m % 60;
-    return '${h}h${mm}m${s}s';
-  }
-  if (m > 0) {
-    return '${m}m${s}s';
-  }
-  return '${s}s';
-}
+String _formatDurationLabel(int? seconds) =>
+    MPDateUtils.formatMemoryDurationCompact(seconds);
 
 MPAudioDetailData _mapOnlyRecordToAudioData(
   MPMemoryStruct m,
   MPOnlyRecordMemoryStruct only,
 ) {
-  final DateTime dt = _audioDetailDateTime(m.createAt);
-  final String title = DateFormat('MMM d, y, h:mm a').format(dt);
-  final String longDate =
-      '${DateFormat('MMMM d, y').format(dt)} at ${DateFormat('h:mm a').format(dt)}';
+  final ({String primary, String secondary}) labels =
+      MPDateUtils.resolveAudioRecordingLabels(
+    title: m.title,
+    content: m.content,
+    showTime: m.showTime,
+    createAt: m.createAt,
+  );
   final String source = (only.source ?? m.source ?? '').trim();
-  final String subtitle =
-      source.isNotEmpty ? '$longDate  ·  $source' : longDate;
+  final String subtitle = labels.secondary.trim().isEmpty
+      ? source
+      : source.isNotEmpty
+          ? '${labels.secondary}  ·  $source'
+          : labels.secondary;
 
   final int? sec = m.duration;
   final Duration total = Duration(
@@ -865,7 +854,7 @@ MPAudioDetailData _mapOnlyRecordToAudioData(
   final String rightTime = _formatDurationLabel(sec);
 
   return MPAudioDetailData(
-    title: title,
+    title: labels.primary,
     subtitle: subtitle,
     leftTime: '0:00',
     rightTime: rightTime,

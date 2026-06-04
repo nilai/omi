@@ -34,6 +34,7 @@ class MPMemoryDetailCardData {
   const MPMemoryDetailCardData({
     required this.memoryId,
     required this.title,
+    required this.navTitle,
     required this.metaLine,
     required this.audioTimeStart,
     required this.audioTimeEnd,
@@ -53,6 +54,9 @@ class MPMemoryDetailCardData {
   final String memoryId;
 
   final String title;
+
+  /// 导航栏标题：与 All 列表卡片主标题规则一致（无 title 时用时间兜底）。
+  final String navTitle;
 
   /// 与详情接口 [MPMemoryStruct.type] 一致；用于 Todo 弹窗 [MPAddTodoPopupParams.memoryType] 等。
   final MPMemoryType? memoryType;
@@ -81,6 +85,7 @@ class MPMemoryDetailCardData {
   MPMemoryDetailCardData copyWith({
     String? memoryId,
     String? title,
+    String? navTitle,
     String? metaLine,
     String? audioTimeStart,
     String? audioTimeEnd,
@@ -98,6 +103,7 @@ class MPMemoryDetailCardData {
     return MPMemoryDetailCardData(
       memoryId: memoryId ?? this.memoryId,
       title: title ?? this.title,
+      navTitle: navTitle ?? this.navTitle,
       metaLine: metaLine ?? this.metaLine,
       audioTimeStart: audioTimeStart ?? this.audioTimeStart,
       audioTimeEnd: audioTimeEnd ?? this.audioTimeEnd,

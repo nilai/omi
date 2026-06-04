@@ -36,6 +36,60 @@ class MPDateUtils {
         MPTimeUtils.normalizeUnixTimestamp(fallbackUnix);
   }
 
+  /// 与 All 列表 [MPMemoryCard] 主标题一致：根级 `title`（trim 后）。
+  static String memoryListTitle(String? title) => (title ?? '').trim();
+
+  /// 与 All 列表 [MPAudioRecordingCard] 主/副标题规则一致。
+  static ({String primary, String secondary}) resolveAudioRecordingLabels({
+    required String? title,
+    required String? content,
+    required String? showTime,
+    required int? createAt,
+  }) {
+    final String titleTrim = memoryListTitle(title);
+    final String contentTrim = (content ?? '').trim();
+    if (titleTrim.isEmpty && contentTrim.isEmpty) {
+      return (
+        primary: formatMemoryShortTimeFromShowTime(showTime, fallbackCreateAt: createAt),
+        secondary: formatMemoryLongTimeFromShowTime(showTime, fallbackCreateAt: createAt),
+      );
+    }
+    return (primary: title ?? '', secondary: content ?? '');
+  }
+
+  /// 详情导航栏标题：与列表卡片一致，无 title 时用 [formatMemoryShortTimeFromShowTime] 兜底。
+  static String resolveMemoryDetailNavTitle({
+    required String? title,
+    String? showTime,
+    int? fallbackCreateAt,
+    String emptyFallback = '',
+  }) {
+    final String trimmed = memoryListTitle(title);
+    if (trimmed.isNotEmpty) {
+      return trimmed;
+    }
+    final String timeLabel =
+        formatMemoryShortTimeFromShowTime(showTime, fallbackCreateAt: fallbackCreateAt);
+    if (timeLabel.isNotEmpty) {
+      return timeLabel;
+    }
+    return emptyFallback;
+  }
+
+  /// 与 All 列表录音卡片时长格式一致（如 `3m47s`）。
+  static String formatMemoryDurationCompact(int? seconds) {
+    final int s = seconds ?? 0;
+    if (s <= 0) {
+      return '0s';
+    }
+    final int m = s ~/ 60;
+    final int sec = s % 60;
+    if (m > 0) {
+      return '${m}m${sec}s';
+    }
+    return '${sec}s';
+  }
+
   /// Todo 列表：由 `show_time` 解析后走 [MPTimeUtils.formatTodoDeadlineLabel]。
   static String formatTodoDisplayFromShowTime(String? showTime, {int? fallbackDeadlineUnix}) {
     return MPTimeUtils.formatTodoDeadlineLabel(
