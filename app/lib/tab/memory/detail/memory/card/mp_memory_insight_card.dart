@@ -304,6 +304,13 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
     }
   }
 
+  /// 接口 [suggestion] 非空时才展示 Suggestion 区块与 follow-up todo 操作。
+  bool get _hasInsightSuggestion => (widget.data.insightSuggestion ?? '').trim().isNotEmpty;
+
+  /// business insight 且存在 suggestion 时展示底部 follow-up 区域。
+  bool get _shouldShowFollowUpFooter =>
+      widget.data.tone != MPInsightCardTone.followUp && _hasInsightSuggestion;
+
   Widget _buildFollowUpFooter(_MPInsightVisual v) {
     if (_followUpTodoAdded) {
       return Container(
@@ -641,8 +648,10 @@ class _MPMemoryInsightCardState extends State<MPMemoryInsightCard> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 10),
-                widget.data.tone == MPInsightCardTone.followUp ? const SizedBox.shrink() : _buildFollowUpFooter(v),
+                if (_shouldShowFollowUpFooter) ...<Widget>[
+                  const SizedBox(height: 10),
+                  _buildFollowUpFooter(v),
+                ],
               ],
             ),
           );
