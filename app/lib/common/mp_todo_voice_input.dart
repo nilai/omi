@@ -71,6 +71,22 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
     with TickerProviderStateMixin {
   static const String _kRecordDirName = 'mp_todo_voice_input_records';
 
+  static const double _kTextLineHeight = 1.25;
+
+  static final double _kTextFontSize = OmiFontSize.t6_15;
+
+  static const double _kFieldContentPaddingVertical = 16;
+
+  static const double _kContainerVerticalPadding = 8;
+
+  static const double _kSideButtonSize = 32;
+
+  static double get _minTextFieldHeight =>
+      _kTextFontSize * _kTextLineHeight + _kFieldContentPaddingVertical;
+
+  static double get _minContainerHeight =>
+      math.max(_kSideButtonSize, _minTextFieldHeight) + _kContainerVerticalPadding;
+
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
 
@@ -95,7 +111,6 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
   void _onControllerChanged() {
     if (!mounted) return;
     final bool next = _controller.text.trim().isNotEmpty;
-    if (next == _hasTrimmedText) return;
     setState(() => _hasTrimmedText = next);
   }
 
@@ -463,7 +478,8 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   Widget _textMode() {
     return Container(
-      height: 52,
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: _minContainerHeight),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -473,28 +489,37 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
             : null,
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Expanded(
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
               readOnly: _sending,
-              onChanged: widget.onChanged,
+              minLines: 1,
+              maxLines: null,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              onChanged: (String value) {
+                widget.onChanged?.call(value);
+              },
               onSubmitted: (_) => unawaited(_submitTyped()),
               style: OmiTextStyle.create(
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.medium,
                 color: mainTextColor,
-                height: 1.25,
+                height: _kTextLineHeight,
               ),
               decoration: InputDecoration(
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 border: InputBorder.none,
                 hintText: widget.hintText,
                 hintStyle: OmiTextStyle.create(
                   fontSize: OmiFontSize.t6_15,
                   fontWeight: OmiFontWeight.medium,
                   color: secondTextColor,
+                  height: _kTextLineHeight,
                 ),
               ),
             ),
