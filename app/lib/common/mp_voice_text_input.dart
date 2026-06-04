@@ -58,6 +58,27 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
     with TickerProviderStateMixin {
   static const String _kRecordDirName = 'mp_voice_text_input_records';
 
+  /// 文本区最多可见行数；超出后 [TextField] 内部滚动。
+  static const int _kMaxVisibleLines = 2;
+
+  static const double _kTextLineHeight = 1.25;
+
+  static final double _kTextFontSize = OmiFontSize.t6_15;
+
+  /// 与 [InputDecoration.contentPadding] 上下各 8 对应。
+  static const double _kFieldContentPaddingVertical = 16;
+
+  static const double _kContainerVerticalPadding = 8;
+
+  static const double _kSideButtonSize = 40;
+
+  static double get _minTextFieldHeight =>
+      _kTextFontSize * _kTextLineHeight + _kFieldContentPaddingVertical;
+
+  /// 单行时与右侧按钮对齐的最小高度。
+  static double get _minContainerHeight =>
+      math.max(_kSideButtonSize, _minTextFieldHeight) + _kContainerVerticalPadding;
+
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
 
@@ -77,6 +98,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
 
   late final AnimationController _waveCtrl;
   late final AnimationController _dotsCtrl;
+  late final ScrollController _textScrollController;
 
   @override
   void initState() {
@@ -98,12 +120,14 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       vsync: this,
       duration: const Duration(milliseconds: 900),
     );
+    _textScrollController = ScrollController();
   }
 
   @override
   void dispose() {
     unawaited(_stopRecorder(deleteFile: true));
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
+    _textScrollController.dispose();
     _waveCtrl.dispose();
     _dotsCtrl.dispose();
     if (_ownsFocusNode) {
@@ -439,7 +463,8 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
 
   Widget _buildTextMode() {
     return Container(
-      height: 48,
+      width: double.infinity,
+      constraints: BoxConstraints(minHeight: _minContainerHeight),
       padding: const EdgeInsets.fromLTRB(14, 4, 8, 4),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -447,12 +472,19 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
         border: Border.all(color: const Color(0xFFEAEAEE)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Expanded(
             child: TextField(
               controller: _controller,
               focusNode: _focusNode,
+              scrollController: _textScrollController,
               autofocus: widget.autofocus,
+              minLines: 1,
+              maxLines: _kMaxVisibleLines,
+              keyboardType: TextInputType.multiline,
+              textInputAction: TextInputAction.newline,
+              scrollPhysics: const ClampingScrollPhysics(),
               onChanged: (String value) {
                 if (mounted) {
                   setState(() {});
@@ -464,15 +496,18 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.regular,
                 color: mainTextColor,
+                height: _kTextLineHeight,
               ),
               decoration: InputDecoration(
                 isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 border: InputBorder.none,
                 hintText: widget.hintText,
                 hintStyle: OmiTextStyle.create(
                   fontSize: OmiFontSize.t6_15,
                   fontWeight: OmiFontWeight.regular,
                   color: secondTextColor.withValues(alpha: 0.7),
+                  height: _kTextLineHeight,
                 ),
               ),
             ),

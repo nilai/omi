@@ -77,6 +77,24 @@ class _OmiQuickAddTodoSheet extends StatefulWidget {
 class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
   static const String _kRecordDirName = 'omi_quick_add_input_records';
 
+  static const int _kMaxVisibleLines = 2;
+
+  static const double _kTextLineHeight = 1.25;
+
+  static final double _kTextFontSize = OmiFontSize.t6_15;
+
+  static const double _kFieldContentPaddingVertical = 16;
+
+  static const double _kInputVerticalPadding = 8;
+
+  static const double _kSideButtonSize = 40;
+
+  static double get _minTextFieldHeight =>
+      _kTextFontSize * _kTextLineHeight + _kFieldContentPaddingVertical;
+
+  static double get _minInputHeight =>
+      math.max(_kSideButtonSize, _minTextFieldHeight) + _kInputVerticalPadding;
+
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
 
@@ -85,6 +103,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
 
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _textScrollController = ScrollController();
   bool _isRecording = false;
   bool _isTranscribing = false;
   bool _isSubmitting = false;
@@ -109,6 +128,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     _controller.dispose();
     _focusNode.dispose();
+    _textScrollController.dispose();
     super.dispose();
   }
 
@@ -475,10 +495,12 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
               )
             else
               Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: <Widget>[
                   Expanded(
                     child: Container(
-                      height: 46,
+                      width: double.infinity,
+                      constraints: BoxConstraints(minHeight: _minInputHeight),
                       padding: const EdgeInsets.symmetric(horizontal: 14),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -488,21 +510,30 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
                       child: TextField(
                         controller: _controller,
                         focusNode: _focusNode,
+                        scrollController: _textScrollController,
                         autofocus: true,
-                        textInputAction: TextInputAction.done,
+                        minLines: 1,
+                        maxLines: _kMaxVisibleLines,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
+                        scrollPhysics: const ClampingScrollPhysics(),
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _submit(),
                         decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
                           border: InputBorder.none,
                           hintText: widget.params.hintText,
                           hintStyle: OmiTextStyle.create(
                             fontSize: OmiFontSize.t6_15,
                             color: secondTextColor,
+                            height: _kTextLineHeight,
                           ),
                         ),
                         style: OmiTextStyle.create(
                           fontSize: OmiFontSize.t6_15,
                           color: mainTextColor,
+                          height: _kTextLineHeight,
                         ),
                       ),
                     ),
