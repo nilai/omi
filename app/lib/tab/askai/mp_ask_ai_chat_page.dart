@@ -211,7 +211,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                   border: Border(top: BorderSide(color: Color(0xFFE8E8E8))),
                 ),
                 child: MPVoiceTextInput(
-                  hintText: 'Ask AI anything about this memory...',
+                  hintText: 'Ask about your memories...',
                   onSubmitted: (MPVoiceTextInputResult result) =>
                       _onSubmit(context, result),
                 ),
