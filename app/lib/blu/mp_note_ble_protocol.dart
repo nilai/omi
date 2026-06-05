@@ -4,7 +4,7 @@ import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// MemoPin / AI_NOTE 设备 BLE 协议常量（与 `ble/note_commands.dart` 对齐，供 `BleTransport` GATT 访问使用）。
 
-/// Note 服务与特征 UUID（128-bit 字符串，与 `flutter_blue_plus` 的 `str128` 比较一致）。
+/// Note 服务与特征 UUID（128-bit 字符串，与 `flutter_reactive_ble` [Uuid] 比较一致）。
 abstract class MPNoteBleUUIDs {
   //  78563400-ecf0-89b1-c845-2b9e631f4d7a
   static const uuidPre = "e2c1a30"; //"7856340";

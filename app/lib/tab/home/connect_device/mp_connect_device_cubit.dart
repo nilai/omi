@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
 import 'package:memo_pin/blu/mp_device_transport.dart';
 import 'package:memo_pin/blu/mp_ble_preferences.dart';
@@ -21,7 +21,7 @@ class MPConnectDeviceItem {
     this.isConnected = false,
   });
 
-  /// 远端设备 ID（[BluetoothDevice.remoteId] 字符串）
+  /// 远端 BLE 设备 ID 字符串。
   final String id;
   final String name;
 
@@ -166,15 +166,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     if (r != null && r.remoteId == remoteId) {
       return r.displayName;
     }
-    try {
-      final String raw = BluetoothDevice.fromId(remoteId).platformName.trim();
-      if (raw.isNotEmpty) {
-        return raw;
-      }
-    } catch (_) {
-      // ignore
-    }
-    return 'MemoPin ($remoteId)';
+    return MPBleConnectionHelper.resolveMemoPinDisplayName(remoteId);
   }
 
   /// 当前 [_transport] 若仍在线则返回其 remoteId，否则 `null`。
@@ -297,10 +289,15 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       adapterOn = await MPBleConnectionHelper.waitForAdapterOn(timeout: const Duration(seconds: 5));
     }
     if (!adapterOn) {
-      final BluetoothAdapterState s = FlutterBluePlus.adapterStateNow;
-      if (s == BluetoothAdapterState.unauthorized) {
+      final BleStatus s = MPBleConnectionHelper.bleStatus;
+      if (s == BleStatus.unauthorized) {
         MPToastUtils.showMessage(
           'Bluetooth is off or access was denied. Turn on Bluetooth or allow access in Settings.',
+          duration: const Duration(seconds: 5),
+        );
+      } else if (s == BleStatus.locationServicesDisabled) {
+        MPToastUtils.showMessage(
+          'Location services are disabled. Turn on Location to scan for Bluetooth devices.',
           duration: const Duration(seconds: 5),
         );
       } else {
@@ -417,8 +414,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     final bool recentlyScanned = target.signalPercent > 0;
 
     try {
-      final BluetoothDevice device = MPBleConnectionHelper.bluetoothDeviceFromRemoteId(id);
-      _transport = MPBleConnectionHelper.createBleTransport(device);
+      _transport = MPBleConnectionHelper.createBleTransport(id, displayName: target.name);
       await _transport!.connect(skipAdvertisementVerify: recentlyScanned);
       await MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
       _attachTransportConnectionListener(_transport!);

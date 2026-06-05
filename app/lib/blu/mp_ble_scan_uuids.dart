@@ -4,7 +4,7 @@
 library;
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
 /// 首轮扫描 [withServices]：仅 aiNote 主服务（及可选附加），不再包含 Omi / Friend Pendant 等其它业务 UUID。
 abstract class MPBleScanFilterUuids {
@@ -23,21 +23,15 @@ abstract class MPBleScanFilterUuids {
         ...additionalMemoPinAdvertisementServices,
       ];
 
-  /// 比较用规范化（去 `-`、小写）；避免插件 `str128` / `toString()` 与常量字面量格式不一致导致误判。
-  static String normalizeUuid128(String raw) =>
-      raw.toLowerCase().replaceAll('-', '');
+  /// 比较用规范化（去 `-`、小写）；避免插件 `toString()` 与常量字面量格式不一致导致误判。
+  static String normalizeUuid128(String raw) => raw.toLowerCase().replaceAll('-', '');
 
-  /// 广播中的 [AdvertisementData.serviceUuids] 是否命中 MemoPin 已知主服务列表。
-  static bool matchesMemoPinAdvertisedService(Iterable<Guid> advertised) {
-    final Set<String> targets =
-        memoPinRecognizedServiceUuidStrings.map(normalizeUuid128).toSet();
-    for (final Guid g in advertised) {
-      if (targets.contains(normalizeUuid128(g.str128))) {
-        debugPrint('------>>>memopin matchesMemoPinAdvertisedService: true (str128)');
-        return true;
-      }
+  /// 广播中的 serviceUuids 是否命中 MemoPin 已知主服务列表。
+  static bool matchesMemoPinAdvertisedService(Iterable<Uuid> advertised) {
+    final Set<String> targets = memoPinRecognizedServiceUuidStrings.map(normalizeUuid128).toSet();
+    for (final Uuid g in advertised) {
       if (targets.contains(normalizeUuid128(g.toString()))) {
-        debugPrint('------>>>memopin matchesMemoPinAdvertisedService: true (toString)');
+        debugPrint('------>>>memopin matchesMemoPinAdvertisedService: true');
         return true;
       }
     }
@@ -45,19 +39,19 @@ abstract class MPBleScanFilterUuids {
     return false;
   }
 
-  /// 供 [FlutterBluePlus.startScan] / [BluetoothAdapter.startScan] 的 `withServices`。
+  /// 供 [MPBlePlatform.runScan] 的 `withServices`。
   ///
   /// 仅 [memoPinRecognizedServiceUuidStrings]（aiNote + [additionalMemoPinAdvertisementServices]），去重。
-  static List<Guid> get scanFilterGuids {
-    final List<Guid> out = <Guid>[];
+  static List<Uuid> get scanFilterUuids {
+    final List<Uuid> out = <Uuid>[];
     final Set<String> seen = <String>{};
     for (final String s in memoPinRecognizedServiceUuidStrings) {
       final String k = normalizeUuid128(s);
       if (seen.add(k)) {
-        out.add(Guid(s));
+        out.add(Uuid.parse(s));
       }
     }
-    debugPrint('------>>>memopin scanFilterGuids: count=${out.length}');
+    debugPrint('------>>>memopin scanFilterUuids: count=${out.length}');
     return out;
   }
 }

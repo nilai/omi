@@ -1,13 +1,13 @@
 /// MemoPin BLE 传输层：与 `ble/note_ble_transport.dart` [NoteBleTransport] 行为对齐，
-/// 使用 `flutter_reactive_ble` 连接与 GATT；扫描侧仍可用 `flutter_blue_plus` 的 [fbp.BluetoothDevice] 携带 `remoteId`。
+/// 扫描、连接与 GATT 均使用 `flutter_reactive_ble`（经 [MPBlePlatform] 单例）。
 library;
 
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart' as fbp;
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 
+import 'mp_ble_platform.dart';
 import 'mp_device_transport.dart';
 import 'mp_note_audio_packet_reassembler.dart';
 import 'mp_note_ble_protocol.dart';
@@ -16,14 +16,15 @@ const int _kNoteMtuSize = 517;
 const int _kConnectionStabilizeDelayMs = 200;
 const int _kServiceDiscoveryTimeoutSec = 10;
 const int _kAdvertisementVerifyTimeoutSec = 5;
-/// FBP 停扫后等待射频释放，再交给 reactive_ble 扫描/连接。
-const int _kBleRadioSettleDelayMs = 400;
-const int _kAdvertisementVerifyMaxAttempts = 3;
+const int _kBleRadioSettleDelayMs = 300;
+const int _kAdvertisementVerifyMaxAttempts = 2;
 
 /// MemoPin Note 服务 BLE 传输实现（与 [NoteBleTransport] 能力对齐）。
 class MPBleTransport extends MPDeviceTransport {
-  /// 使用已发现的 FBP 设备构造；连接时以 [fbp.BluetoothDevice.remoteId] 作为 `flutter_reactive_ble` 设备 ID。
-  MPBleTransport(this._fbpDevice) : _deviceId = _fbpDevice.remoteId.str {
+  /// 以扫描得到的 [deviceId] 构造传输实例。
+  MPBleTransport(this._deviceId, {String displayName = '', FlutterReactiveBle? ble})
+    : _displayName = displayName,
+      _ble = ble ?? MPBlePlatform.instance.ble {
     _reassembler = MPAudioPacketReassembler(
       tag: 'MPBle',
       onFrameComplete: (int seq, List<int> frame) {
@@ -44,9 +45,9 @@ class MPBleTransport extends MPDeviceTransport {
     );
   }
 
-  final fbp.BluetoothDevice _fbpDevice;
   final String _deviceId;
-  final FlutterReactiveBle _ble = FlutterReactiveBle();
+  final String _displayName;
+  final FlutterReactiveBle _ble;
 
   final StreamController<MPDeviceTransportState> _connectionStateController =
       StreamController<MPDeviceTransportState>.broadcast();
@@ -154,12 +155,13 @@ class MPBleTransport extends MPDeviceTransport {
       return;
     }
 
-    final bool wasScanning = fbp.FlutterBluePlus.isScanningNow;
-    if (wasScanning) {
-      await fbp.FlutterBluePlus.stopScan();
-      debugPrint('MPBleTransport 已停止 flutter_blue_plus 扫描');
+    if (!await MPBlePlatform.instance.waitUntilBleReady(timeout: const Duration(seconds: 8))) {
+      throw Exception('蓝牙未就绪，无法连接');
     }
-    if (wasScanning || skipAdvertisementVerify) {
+
+    final bool wasScanning = MPBlePlatform.instance.isScanningNow;
+    if (wasScanning) {
+      await MPBlePlatform.instance.stopScan();
       await Future<void>.delayed(const Duration(milliseconds: _kBleRadioSettleDelayMs));
     }
 
@@ -245,7 +247,7 @@ class MPBleTransport extends MPDeviceTransport {
     );
   }
 
-  /// 在连接前确认目标仍在广播；FBP 刚停扫时 reactive_ble 首轮可能漏检，故带有限次重试。
+  /// 连接前确认目标仍在广播；仅对未出现在本轮扫描结果中的设备执行。
   Future<bool> _verifyDeviceAdvertisement() async {
     for (int attempt = 1; attempt <= _kAdvertisementVerifyMaxAttempts; attempt++) {
       final bool found = await _verifyDeviceAdvertisementOnce(attempt: attempt);
@@ -262,7 +264,7 @@ class MPBleTransport extends MPDeviceTransport {
 
   Future<bool> _verifyDeviceAdvertisementOnce({required int attempt}) async {
     debugPrint(
-      'MPBleTransport 广播验证($attempt/$_kAdvertisementVerifyMaxAttempts): $_deviceId (${_fbpDevice.platformName})',
+      'MPBleTransport 广播验证($attempt/$_kAdvertisementVerifyMaxAttempts): $_deviceId ($_displayName)',
     );
     final Completer<bool> found = Completer<bool>();
     StreamSubscription<DiscoveredDevice>? sub;

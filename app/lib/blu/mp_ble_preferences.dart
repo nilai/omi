@@ -5,7 +5,7 @@ class MPLastBleDeviceRecord {
   /// 创建记录。
   const MPLastBleDeviceRecord({required this.remoteId, required this.displayName});
 
-  /// [BluetoothDevice.remoteId] 字符串。
+  /// BLE 设备 ID 字符串。
   final String remoteId;
 
   /// 列表展示名（与广播名或用户可见名一致）。

@@ -16,8 +16,7 @@
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
 
-    <!-- BLE: flutter_blue_plus does not merge permissions in the plugin; declare them in the app manifest.
-         See https://pub.dev/packages/flutter_blue_plus#add-permissions-for-android-no-location -->
+    <!-- BLE: flutter_reactive_ble + PermissionManager；扫描/连接权限在 Manifest 声明，运行时由应用申请 -->
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="false" />
