@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../../cache/omi_cache_manager.dart';
 import '../../../common/mp_date_utils.dart';
 import '../../../utils/mp_time_utils.dart';
 import '../../../http/api/mp_insight.dart';
@@ -136,44 +137,69 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
   /// 首次进入 / 刷新第一页
   Future<void> initData() => load();
 
-  /// 刷新第一页：重置游标并拉取
+  /// 刷新第一页：先读本地缓存展示，再拉取后端并更新缓存
   Future<void> load() async {
     final List<MPInsightListItem> before = List<MPInsightListItem>.from(state.items);
-    final bool hasData = before.isNotEmpty;
+    bool hasData = before.isNotEmpty;
+    bool bootstrappedFromCache = false;
 
     if (!hasData) {
-      emit(const MPInsightsListState(phase: MPInsightsListPhase.loading));
+      await OmiCacheManager().initialize();
+      final _PageResult? cached = _loadCachedFirstPage();
+      if (cached != null && cached.items.isNotEmpty) {
+        emit(
+          MPInsightsListState(
+            phase: MPInsightsListPhase.loaded,
+            items: cached.items,
+            hasMore: true,
+          ),
+        );
+        hasData = true;
+        bootstrappedFromCache = true;
+      } else {
+        emit(const MPInsightsListState(phase: MPInsightsListPhase.loading));
+      }
     } else {
-      emit(state.copyWith(
-        phase: MPInsightsListPhase.loaded,
-        errorMessage: null,
-        isLoadingMore: false,
-      ));
+      emit(
+        state.copyWith(
+          phase: MPInsightsListPhase.loaded,
+          errorMessage: null,
+          isLoadingMore: false,
+        ),
+      );
     }
 
     try {
       _cursorPage = 0;
       final _PageResult result = await _fetchPage(page: _cursorPage);
       if (result.items.isEmpty) {
-        emit(const MPInsightsListState(
-          phase: MPInsightsListPhase.empty,
-          hasMore: false,
-        ));
+        emit(
+          const MPInsightsListState(
+            phase: MPInsightsListPhase.empty,
+            hasMore: false,
+          ),
+        );
         return;
       }
 
-      emit(MPInsightsListState(
-        phase: MPInsightsListPhase.loaded,
-        items: result.items,
-        hasMore: result.hasMore,
-      ));
+      emit(
+        MPInsightsListState(
+          phase: MPInsightsListPhase.loaded,
+          items: result.items,
+          hasMore: result.hasMore,
+        ),
+      );
     } catch (e) {
-      emit(MPInsightsListState(
-        phase: hasData ? MPInsightsListPhase.loaded : MPInsightsListPhase.error,
-        items: hasData ? before : const <MPInsightListItem>[],
-        errorMessage: e.toString(),
-        hasMore: hasData ? state.hasMore : false,
-      ));
+      if (hasData || bootstrappedFromCache) {
+        return;
+      }
+      emit(
+        MPInsightsListState(
+          phase: MPInsightsListPhase.error,
+          errorMessage: e.toString(),
+          hasMore: false,
+        ),
+      );
     }
   }
 
@@ -219,21 +245,40 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     return DateFormat('y MMM d').format(dt);
   }
 
-  Future<_PageResult> _fetchPage({required int page}) async {
-    final MPGetInsightFeedListResponse? response = await getInsightFeedList(
-      MPGetInsightFeedListRequest(
-        pageSize: _pageSize,
-        cursor: page == 0 ? null : '${page * _pageSize}',
-      ),
-    );
-    if (response != null && response.baseResp.code == 0) {
-      final List<MPInsightCardStruct> cards = response.cards;
-      final List<MPInsightListItem> list = <MPInsightListItem>[];
-      for (final MPInsightCardStruct card in cards) {
-        if (card.id.isEmpty) continue;
-        if (card.cycleType <= 0) continue;
-        if (card.cycleType > 4) continue;
-        list.add(MPInsightListItem(
+  _PageResult? _loadCachedFirstPage() {
+    final dynamic cached = OmiCacheManager().getInsightFeedFirstPage();
+    if (cached is! Map) {
+      return null;
+    }
+    try {
+      final MPGetInsightFeedListResponse response = MPGetInsightFeedListResponse.fromJson(
+        Map<String, dynamic>.from(cached),
+      );
+      if (response.baseResp.code != 0) {
+        return null;
+      }
+      final List<MPInsightListItem> items = _mapCardsToItems(response.cards);
+      if (items.isEmpty) {
+        return null;
+      }
+      return _PageResult(items: items, hasMore: response.hasMore);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _persistFirstPageCache(MPGetInsightFeedListResponse response) {
+    OmiCacheManager().putInsightFeedFirstPage(response.toJson());
+  }
+
+  List<MPInsightListItem> _mapCardsToItems(List<MPInsightCardStruct> cards) {
+    final List<MPInsightListItem> list = <MPInsightListItem>[];
+    for (final MPInsightCardStruct card in cards) {
+      if (card.id.isEmpty) continue;
+      if (card.cycleType <= 0) continue;
+      if (card.cycleType > 4) continue;
+      list.add(
+        MPInsightListItem(
           id: card.id,
           type: MPInsightCardType.values[card.cycleType - 1],
           periodLabel: _formatInsightPeriodLabel(card.createAt),
@@ -248,11 +293,32 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
           completedCount: 0,
           pendingCount: 0,
           recommendationsCount: 0,
-        ));
-      }
-      return _PageResult(items: list, hasMore: response.hasMore);
+        ),
+      );
     }
-    return const _PageResult(items: <MPInsightListItem>[], hasMore: false);
+    return list;
+  }
+
+  Future<_PageResult> _fetchPage({required int page}) async {
+    final MPGetInsightFeedListResponse? response = await getInsightFeedList(
+      MPGetInsightFeedListRequest(
+        pageSize: _pageSize,
+        cursor: page == 0 ? null : '${page * _pageSize}',
+      ),
+    );
+    if (response == null) {
+      throw StateError('getInsightFeedList failed');
+    }
+    if (response.baseResp.code != 0) {
+      throw StateError(response.baseResp.message);
+    }
+    if (page == 0) {
+      _persistFirstPageCache(response);
+    }
+    return _PageResult(
+      items: _mapCardsToItems(response.cards),
+      hasMore: response.hasMore,
+    );
   }
 }
 

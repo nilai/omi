@@ -44,6 +44,9 @@ class OmiCacheKeys {
 
   /// All To-Dos / Today Focus 页：分组列表 + Focus candidates 接口快照（JSON Map）
   static const String todayFocusBundle = 'mp_srv_today_focus_bundle_v1';
+
+  /// Insights 列表第一页（`GetInsightFeedList` 响应 JSON）
+  static const String insightFeedFirstPage = 'mp_srv_insight_feed_first_page_v1';
 }
 
 /// 服务端返回数据的缓存：内存 + 磁盘持久化
