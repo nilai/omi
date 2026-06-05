@@ -10,6 +10,10 @@ class MPGlobalRecordingCoordinator {
   final Map<Object, Future<void> Function()> _interruptHandlers =
       <Object, Future<void> Function()>{};
 
+  /// 系统音频焦点变化时尝试维持采集（与 [registerSystemAudioMaintainHandler] 配对）。
+  final Map<Object, Future<void> Function()> _systemAudioMaintainHandlers =
+      <Object, Future<void> Function()>{};
+
   /// 外接 BLE 设备进入「录音中」时：暂停本机采集等（与 [registerBleDeviceRecordingStopHandler] 配对）。
   final Map<Object, Future<void> Function()> _bleDeviceRecordingStopHandlers =
       <Object, Future<void> Function()>{};
@@ -49,9 +53,24 @@ class MPGlobalRecordingCoordinator {
     }
   }
 
+  /// 注册系统音频焦点变化时的维持采集回调；页面 / 组件 [dispose] 前须 [unregisterSystemAudioMaintainHandler]。
+  void registerSystemAudioMaintainHandler(
+    Object ownerToken,
+    Future<void> Function() onSystemAudioFocusAttemptMaintain,
+  ) {
+    _systemAudioMaintainHandlers[ownerToken] =
+        onSystemAudioFocusAttemptMaintain;
+  }
+
+  /// 解除 [registerSystemAudioMaintainHandler]。
+  void unregisterSystemAudioMaintainHandler(Object ownerToken) {
+    _systemAudioMaintainHandlers.remove(ownerToken);
+  }
+
   /// 解除注册。
   void unregister(Object ownerToken) {
     _interruptHandlers.remove(ownerToken);
+    _systemAudioMaintainHandlers.remove(ownerToken);
     if (_exclusiveOwner == ownerToken) {
       _exclusiveOwner = null;
     }
@@ -83,13 +102,13 @@ class MPGlobalRecordingCoordinator {
     }
   }
 
-  /// 系统音频焦点被抢占（来电、其它 App 播放等）时调用：仅暂停当前独占持有者的采集，
-  /// 行为与各入口注册的「被其它录音入口中断」一致，用户可在本场景手动恢复。
-  Future<void> notifySystemAudioFocusShouldPauseCurrentRecording() async {
+  /// 系统音频焦点被抢占或恢复时调用：通知当前独占持有者尝试维持/恢复采集（不主动暂停）。
+  Future<void> notifySystemAudioFocusAttemptMaintainRecording() async {
     if (_exclusiveOwner == null) {
       return;
     }
-    final Future<void> Function()? fn = _interruptHandlers[_exclusiveOwner];
+    final Future<void> Function()? fn =
+        _systemAudioMaintainHandlers[_exclusiveOwner];
     if (fn == null) {
       return;
     }

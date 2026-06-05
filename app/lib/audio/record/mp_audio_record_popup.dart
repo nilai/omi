@@ -163,6 +163,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       _recordingOwnerToken,
       _onInterruptedByOtherOwner,
     );
+    MPGlobalRecordingCoordinator.instance.registerSystemAudioMaintainHandler(
+      _recordingOwnerToken,
+      _attemptMaintainRecordingAfterSystemInterruption,
+    );
     MPGlobalRecordingCoordinator.instance.registerBleDeviceRecordingStopHandler(
       _bleDeviceRecordingStopToken,
       _onBleDeviceRecordingStartedPauseLocal,
@@ -179,6 +183,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _tickTimer?.cancel();
     unawaited(_releaseRecorder(deleteFile: true));
     MPGlobalRecordingCoordinator.instance.unregisterBleDeviceRecordingStopHandler(_bleDeviceRecordingStopToken);
+    MPGlobalRecordingCoordinator.instance.unregisterSystemAudioMaintainHandler(_recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
   }
@@ -339,6 +344,29 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     });
   }
 
+  /// 系统音频焦点变化或 native 意外停录时：优先尝试恢复采集，避免退后台后被其它 App 打断即暂停。
+  Future<void> _attemptMaintainRecordingAfterSystemInterruption() async {
+    if (!mounted || _busy || _step != _MPAudioRecordStep.recording || _isPaused || !_recorderOpened) {
+      return;
+    }
+    await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording();
+    if (!mounted || _busy || _isPaused) {
+      return;
+    }
+    if (_isNativeActivelyCapturing()) {
+      return;
+    }
+    final bool resumed = await _resumeNativeRecording();
+    if (!mounted || _busy || _isPaused) {
+      return;
+    }
+    if (resumed) {
+      setState(() {
+        _activeRecordingSegmentStart ??= DateTime.now();
+      });
+    }
+  }
+
   /// 对齐 native 录音状态、AudioSession 与 UI；watchdog / 生命周期回调入口。
   Future<void> _reconcileRecordingWithNative() async {
     if (!mounted || _busy || _step != _MPAudioRecordStep.recording || _isPaused || !_recorderOpened) {
@@ -351,12 +379,20 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
     if (!_backgroundRecordingReliable && appInBackground) {
       if (!_isNativeActivelyCapturing()) {
+        await _attemptMaintainRecordingAfterSystemInterruption();
+        if (_isNativeActivelyCapturing()) {
+          return;
+        }
         await _applyNativeInactivePauseSilently();
       }
       return;
     }
 
     if (!_isNativeActivelyCapturing()) {
+      await _attemptMaintainRecordingAfterSystemInterruption();
+      if (_isNativeActivelyCapturing()) {
+        return;
+      }
       await _applyNativeInactivePauseSilently();
       return;
     }

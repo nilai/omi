@@ -42,8 +42,8 @@ class _MPRecordingForegroundTaskHandler extends TaskHandler {
 }
 
 /// 首页等「应用内录音」退后台时：配置系统音频会话（iOS/Android）、在 Android 上启动麦克风前台服务，
-/// 并订阅 [AudioSession.interruptionEventStream]：其它 App / 来电抢占音频焦点时通过
-/// [MPGlobalRecordingCoordinator.notifySystemAudioFocusShouldPauseCurrentRecording] 暂停当前采集（用户可手动恢复）。
+/// 并订阅 [AudioSession.interruptionEventStream]：其它 App / 来电抢占音频焦点时尝试重新激活会话并
+/// 通知当前持有者维持采集（不主动暂停；native 若被系统停掉则由各入口自行恢复）。
 class MPRecordingBackgroundSupport {
   MPRecordingBackgroundSupport._();
 
@@ -102,7 +102,7 @@ class MPRecordingBackgroundSupport {
           usage: AndroidAudioUsage.voiceCommunication,
         ),
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-        androidWillPauseWhenDucked: true,
+        androidWillPauseWhenDucked: false,
       ),
     );
     try {
@@ -119,12 +119,10 @@ class MPRecordingBackgroundSupport {
           if (Platform.isIOS && _recordingInfrastructureActive) {
             unawaited(prepareIosNativeRecorderResume());
           }
+          unawaited(_handleSystemAudioInterruptionEnded());
           return;
         }
-        unawaited(
-          MPGlobalRecordingCoordinator.instance
-              .notifySystemAudioFocusShouldPauseCurrentRecording(),
-        );
+        unawaited(_handleSystemAudioInterruptionBegin());
       },
     );
     _recordingInfrastructureActive = true;
@@ -201,13 +199,33 @@ class MPRecordingBackgroundSupport {
             usage: AndroidAudioUsage.voiceCommunication,
           ),
           androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-          androidWillPauseWhenDucked: true,
+          androidWillPauseWhenDucked: false,
         ),
       );
       await session.setActive(true);
     } catch (e, st) {
       debugPrint('MPRecordingBackgroundSupport.prepareIosNativeRecorderResume: $e\n$st');
     }
+  }
+
+  /// 系统音频焦点被抢占：重新激活会话并通知当前持有者尝试维持采集（不主动暂停）。
+  static Future<void> _handleSystemAudioInterruptionBegin() async {
+    if (!_recordingInfrastructureActive) {
+      return;
+    }
+    await ensureAudioSessionActiveForRecording();
+    await MPGlobalRecordingCoordinator.instance
+        .notifySystemAudioFocusAttemptMaintainRecording();
+  }
+
+  /// 系统音频打断结束：再次激活会话并尝试恢复采集。
+  static Future<void> _handleSystemAudioInterruptionEnded() async {
+    if (!_recordingInfrastructureActive) {
+      return;
+    }
+    await ensureAudioSessionActiveForRecording();
+    await MPGlobalRecordingCoordinator.instance
+        .notifySystemAudioFocusAttemptMaintainRecording();
   }
 
   /// 录音结束或取消时调用，释放会话并停止前台服务。
