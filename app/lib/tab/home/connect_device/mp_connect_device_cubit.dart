@@ -405,16 +405,21 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
 
     emit(state.copyWith(connectingDeviceId: id));
+    _scanGeneration++;
+    await _stopScanSafe();
     await _disconnectActive();
 
     emit(
       state.copyWith(devices: state.devices.map((MPConnectDeviceItem d) => d.copyWith(isConnected: false)).toList()),
     );
 
+    /// 扫描结果中 RSSI 已映射为 signalPercent；仅持久化占位行 signalPercent 为 0。
+    final bool recentlyScanned = target.signalPercent > 0;
+
     try {
       final BluetoothDevice device = MPBleConnectionHelper.bluetoothDeviceFromRemoteId(id);
       _transport = MPBleConnectionHelper.createBleTransport(device);
-      await _transport!.connect();
+      await _transport!.connect(skipAdvertisementVerify: recentlyScanned);
       await MPBleConnectionHelper.parkBackgroundBleTransport(_transport);
       _attachTransportConnectionListener(_transport!);
       // 须在 notifyBleConnectedSuccess（首页 GATT 拉文件列表）之前读电量，避免 303 响应被抢占导致误显示 100%。

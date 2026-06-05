@@ -16,6 +16,9 @@ const int _kNoteMtuSize = 517;
 const int _kConnectionStabilizeDelayMs = 200;
 const int _kServiceDiscoveryTimeoutSec = 10;
 const int _kAdvertisementVerifyTimeoutSec = 5;
+/// FBP 停扫后等待射频释放，再交给 reactive_ble 扫描/连接。
+const int _kBleRadioSettleDelayMs = 400;
+const int _kAdvertisementVerifyMaxAttempts = 3;
 
 /// MemoPin Note 服务 BLE 传输实现（与 [NoteBleTransport] 能力对齐）。
 class MPBleTransport extends MPDeviceTransport {
@@ -146,14 +149,18 @@ class MPBleTransport extends MPDeviceTransport {
   }
 
   @override
-  Future<void> connect() async {
+  Future<void> connect({bool skipAdvertisementVerify = false}) async {
     if (_currentState == MPDeviceTransportState.connected) {
       return;
     }
 
-    if (fbp.FlutterBluePlus.isScanningNow) {
+    final bool wasScanning = fbp.FlutterBluePlus.isScanningNow;
+    if (wasScanning) {
       await fbp.FlutterBluePlus.stopScan();
       debugPrint('MPBleTransport 已停止 flutter_blue_plus 扫描');
+    }
+    if (wasScanning || skipAdvertisementVerify) {
+      await Future<void>.delayed(const Duration(milliseconds: _kBleRadioSettleDelayMs));
     }
 
     await _connectionSubscription?.cancel();
@@ -169,7 +176,7 @@ class MPBleTransport extends MPDeviceTransport {
     _connectionCompleter = Completer<void>();
     _gattSubscriptionsCompleter = Completer<void>();
 
-    final bool advertising = await _verifyDeviceAdvertisement();
+    final bool advertising = skipAdvertisementVerify || await _verifyDeviceAdvertisement();
     if (!advertising) {
       _updateState(MPDeviceTransportState.disconnected);
       if (!_gattSubscriptionsCompleter!.isCompleted) {
@@ -238,8 +245,25 @@ class MPBleTransport extends MPDeviceTransport {
     );
   }
 
+  /// 在连接前确认目标仍在广播；FBP 刚停扫时 reactive_ble 首轮可能漏检，故带有限次重试。
   Future<bool> _verifyDeviceAdvertisement() async {
-    debugPrint('MPBleTransport 广播验证: $_deviceId (${_fbpDevice.platformName}) 期望服务=${MPNoteBleUUIDs.service}');
+    for (int attempt = 1; attempt <= _kAdvertisementVerifyMaxAttempts; attempt++) {
+      final bool found = await _verifyDeviceAdvertisementOnce(attempt: attempt);
+      if (found) {
+        return true;
+      }
+      if (attempt < _kAdvertisementVerifyMaxAttempts) {
+        debugPrint('MPBleTransport 广播验证第 $attempt 次未找到 $_deviceId，${_kBleRadioSettleDelayMs}ms 后重试');
+        await Future<void>.delayed(const Duration(milliseconds: _kBleRadioSettleDelayMs));
+      }
+    }
+    return false;
+  }
+
+  Future<bool> _verifyDeviceAdvertisementOnce({required int attempt}) async {
+    debugPrint(
+      'MPBleTransport 广播验证($attempt/$_kAdvertisementVerifyMaxAttempts): $_deviceId (${_fbpDevice.platformName})',
+    );
     final Completer<bool> found = Completer<bool>();
     StreamSubscription<DiscoveredDevice>? sub;
     try {
@@ -252,6 +276,7 @@ class MPBleTransport extends MPDeviceTransport {
               }
             },
             onError: (Object e) {
+              debugPrint('MPBleTransport 广播验证扫描错误: $e');
               if (!found.isCompleted) {
                 found.complete(false);
               }
