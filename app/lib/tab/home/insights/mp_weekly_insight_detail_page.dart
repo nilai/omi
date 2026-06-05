@@ -8,6 +8,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../generated/assets.dart';
+import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -23,15 +24,22 @@ class MPWeeklyInsightDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<MPInsightDetailCubit>(
       create: (_) => MPInsightDetailCubit(item: item)..initData(),
-      child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
-        builder: (BuildContext context, MPInsightDetailState state) {
-          return Scaffold(
-            backgroundColor: _kWeeklyPageBgColor,
-            appBar: PreferredSize(
-              preferredSize: _MPWeeklyAppBar.preferredSizeOf(context),
-              child: _MPWeeklyAppBar(subtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
+      child: Builder(
+        builder: (BuildContext context) {
+          return MPDetailVisibilityRefresh(
+            onRefresh: () => context.read<MPInsightDetailCubit>().refresh(),
+            child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
+              builder: (BuildContext context, MPInsightDetailState state) {
+                return Scaffold(
+                  backgroundColor: _kWeeklyPageBgColor,
+                  appBar: PreferredSize(
+                    preferredSize: _MPWeeklyAppBar.preferredSizeOf(context),
+                    child: _MPWeeklyAppBar(subtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
+                  ),
+                  body: _MPWeeklyInsightBody(state: state),
+                );
+              },
             ),
-            body: _MPWeeklyInsightBody(state: state),
           );
         },
       ),

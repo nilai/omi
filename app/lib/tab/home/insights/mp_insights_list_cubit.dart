@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import '../../../cache/omi_cache_manager.dart';
+import '../../../cache/mp_hive_util.dart';
 import '../../../common/mp_date_utils.dart';
 import '../../../utils/mp_time_utils.dart';
 import '../../../http/api/mp_insight.dart';
@@ -130,6 +130,7 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
   MPInsightsListCubit() : super(const MPInsightsListState(phase: MPInsightsListPhase.loading));
 
   static const int _pageSize = 20;
+  static const String _kInsightFeedFirstPageCacheKey = 'insight_feed_first_page_v1';
 
   /// 当前分页索引（从 0 开始；next page = [_cursorPage]）
   int _cursorPage = 0;
@@ -144,8 +145,7 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     bool bootstrappedFromCache = false;
 
     if (!hasData) {
-      await OmiCacheManager().initialize();
-      final _PageResult? cached = _loadCachedFirstPage();
+      final _PageResult? cached = await _loadCachedFirstPage();
       if (cached != null && cached.items.isNotEmpty) {
         emit(
           MPInsightsListState(
@@ -245,15 +245,13 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     return DateFormat('y MMM d').format(dt);
   }
 
-  _PageResult? _loadCachedFirstPage() {
-    final dynamic cached = OmiCacheManager().getInsightFeedFirstPage();
-    if (cached is! Map) {
+  Future<_PageResult?> _loadCachedFirstPage() async {
+    final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(_kInsightFeedFirstPageCacheKey);
+    if (cached == null) {
       return null;
     }
     try {
-      final MPGetInsightFeedListResponse response = MPGetInsightFeedListResponse.fromJson(
-        Map<String, dynamic>.from(cached),
-      );
+      final MPGetInsightFeedListResponse response = MPGetInsightFeedListResponse.fromJson(cached);
       if (response.baseResp.code != 0) {
         return null;
       }
@@ -267,8 +265,8 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     }
   }
 
-  void _persistFirstPageCache(MPGetInsightFeedListResponse response) {
-    OmiCacheManager().putInsightFeedFirstPage(response.toJson());
+  Future<void> _persistFirstPageCache(MPGetInsightFeedListResponse response) async {
+    await MPHiveUtil.instance.putMap(key: _kInsightFeedFirstPageCacheKey, value: response.toJson());
   }
 
   List<MPInsightListItem> _mapCardsToItems(List<MPInsightCardStruct> cards) {
@@ -313,7 +311,7 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
       throw StateError(response.baseResp.message);
     }
     if (page == 0) {
-      _persistFirstPageCache(response);
+      await _persistFirstPageCache(response);
     }
     return _PageResult(
       items: _mapCardsToItems(response.cards),

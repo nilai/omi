@@ -50,14 +50,6 @@ class OmiCacheManager {
   /// 读取 Today Focus 缓存包（decode 后为 `Map`，含 `grouped` / 可选 `candidates`）
   dynamic getTodayFocusBundle() => OmiServerCache().getDecoded(OmiCacheKeys.todayFocusBundle);
 
-  /// 缓存 Insights 列表第一页数据
-  void putInsightFeedFirstPage(Object? value) =>
-      OmiServerCache().putJson(OmiCacheKeys.insightFeedFirstPage, value);
-
-  /// 读取 Insights 列表第一页数据
-  dynamic getInsightFeedFirstPage() =>
-      OmiServerCache().getDecoded(OmiCacheKeys.insightFeedFirstPage);
-
   /// 清空所有缓存数据（首页第一页、Memory 第一页、全部首页详情等）
   void clearAll() => OmiServerCache().clear();
 }

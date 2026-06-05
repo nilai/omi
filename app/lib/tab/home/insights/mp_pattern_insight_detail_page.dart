@@ -9,6 +9,7 @@ import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -22,30 +23,37 @@ class MPPatternInsightDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<MPInsightDetailCubit>(
       create: (_) => MPInsightDetailCubit(item: item)..initData(),
-      child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
-        builder: (BuildContext context, MPInsightDetailState state) {
-          return Scaffold(
-            backgroundColor: pageColor,
-            appBar: PreferredSize(
-              preferredSize: MPCustomNavBar.preferredSizeOf(context),
-              child: MPCustomNavBar(
-                title: 'Pattern Insight',
-                backgroundColor: pageColor,
-                onBack: () => Navigator.of(context).maybePop(),
-                actions: <Widget>[
-                  IconButton(
-                    icon: const Icon(Icons.share_outlined, color: blueTextColor),
-                    tooltip: 'Share',
-                    onPressed: () => context.read<MPInsightDetailCubit>().showShareExportSheet(context),
+      child: Builder(
+        builder: (BuildContext context) {
+          return MPDetailVisibilityRefresh(
+            onRefresh: () => context.read<MPInsightDetailCubit>().refresh(),
+            child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
+              builder: (BuildContext context, MPInsightDetailState state) {
+                return Scaffold(
+                  backgroundColor: pageColor,
+                  appBar: PreferredSize(
+                    preferredSize: MPCustomNavBar.preferredSizeOf(context),
+                    child: MPCustomNavBar(
+                      title: 'Pattern Insight',
+                      backgroundColor: pageColor,
+                      onBack: () => Navigator.of(context).maybePop(),
+                      actions: <Widget>[
+                        IconButton(
+                          icon: const Icon(Icons.share_outlined, color: blueTextColor),
+                          tooltip: 'Share',
+                          onPressed: () => context.read<MPInsightDetailCubit>().showShareExportSheet(context),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.more_vert, color: blueTextColor),
+                          onPressed: () => context.read<MPInsightDetailCubit>().showMoreDialog(context),
+                        ),
+                      ],
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.more_vert, color: blueTextColor),
-                    onPressed: () => context.read<MPInsightDetailCubit>().showMoreDialog(context),
-                  ),
-                ],
-              ),
+                  body: _MPPatternInsightBody(state: state),
+                );
+              },
             ),
-            body: _MPPatternInsightBody(state: state),
           );
         },
       ),

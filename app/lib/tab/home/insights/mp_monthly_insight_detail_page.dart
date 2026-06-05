@@ -7,6 +7,7 @@ import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -22,15 +23,22 @@ class MPMonthlyInsightDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider<MPInsightDetailCubit>(
       create: (_) => MPInsightDetailCubit(item: item)..initData(),
-      child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
-        builder: (BuildContext context, MPInsightDetailState state) {
-          return Scaffold(
-            backgroundColor: pageColor,
-            appBar: PreferredSize(
-              preferredSize: _MPMonthlyAppBar.preferredSizeOf(context),
-              child: _MPMonthlyAppBar(monthSubtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
+      child: Builder(
+        builder: (BuildContext context) {
+          return MPDetailVisibilityRefresh(
+            onRefresh: () => context.read<MPInsightDetailCubit>().refresh(),
+            child: BlocBuilder<MPInsightDetailCubit, MPInsightDetailState>(
+              builder: (BuildContext context, MPInsightDetailState state) {
+                return Scaffold(
+                  backgroundColor: pageColor,
+                  appBar: PreferredSize(
+                    preferredSize: _MPMonthlyAppBar.preferredSizeOf(context),
+                    child: _MPMonthlyAppBar(monthSubtitle: item.periodLabel, onBack: () => Navigator.of(context).maybePop()),
+                  ),
+                  body: _MPMonthlyInsightBody(state: state),
+                );
+              },
             ),
-            body: _MPMonthlyInsightBody(state: state),
           );
         },
       ),

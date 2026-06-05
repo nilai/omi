@@ -511,31 +511,68 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     );
   }
 
-  /// 页面初始化：拉取详情。
+  /// 页面初始化：先读本地缓存展示，再拉取后端并更新缓存。
   ///
   /// 加载失败时：若已有详情数据则继续展示内容；无数据则进入错误页。
   Future<void> initData() async {
     final MPInsightDetailData? previousData = state.data;
-    final bool hasData = previousData != null;
+    bool hasData = previousData != null;
+    bool bootstrappedFromCache = false;
 
     if (!hasData) {
-      emit(MPInsightDetailState.loading());
+      final MPGetInsightDetailResponse? cachedResponse = await _tryLoadCachedDetailResponse();
+      if (cachedResponse != null) {
+        try {
+          final MPInsightDetailData cached = _mapResponseToDetailData(_item, cachedResponse);
+          emit(MPInsightDetailState.loaded(cached));
+          hasData = true;
+          bootstrappedFromCache = true;
+          final int? mid = cached.memoryId;
+          if (mid != null) {
+            unawaited(_refreshMemorySimpleInfoAfterInit(cached, mid));
+          }
+        } catch (_) {
+          emit(MPInsightDetailState.loading());
+        }
+      } else {
+        emit(MPInsightDetailState.loading());
+      }
     } else {
       emit(MPInsightDetailState.loaded(previousData));
     }
 
     try {
-      final MPInsightDetailData loaded = await _buildDetailData(_item);
+      final MPInsightDetailData loaded = await _fetchDetailFromServer(_item);
       emit(MPInsightDetailState.loaded(loaded));
       final int? mid = loaded.memoryId;
       if (mid != null) {
         unawaited(_refreshMemorySimpleInfoAfterInit(loaded, mid));
       }
     } catch (e) {
-      if (hasData) {
-        emit(MPInsightDetailState.loaded(previousData));
-      } else {
-        emit(MPInsightDetailState.error(e.toString()));
+      if (hasData || bootstrappedFromCache) {
+        return;
+      }
+      emit(MPInsightDetailState.error(e.toString()));
+    }
+  }
+
+  /// 路由重新可见 / 应用回前台：后台刷新详情，不打断已展示内容。
+  Future<void> refresh() async {
+    if (state.phase == MPInsightDetailPhase.loading) {
+      return;
+    }
+    try {
+      final MPInsightDetailData loaded = await _fetchDetailFromServer(_item);
+      if (!isClosed) {
+        emit(MPInsightDetailState.loaded(loaded));
+        final int? mid = loaded.memoryId;
+        if (mid != null) {
+          unawaited(_refreshMemorySimpleInfoAfterInit(loaded, mid));
+        }
+      }
+    } catch (_) {
+      if (state.phase == MPInsightDetailPhase.loaded && state.data != null) {
+        MPToastUtils.showMessage('Refresh failed. Please try again later.');
       }
     }
   }
@@ -552,34 +589,44 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
     }
   }
 
-  Future<MPInsightDetailData> _buildDetailData(MPInsightListItem item) async {
-    final String cacheKey = '$_insightDetailCacheKeyPrefix${item.id}';
-    MPGetInsightDetailResponse? response;
+  String _insightDetailCacheKey() => '$_insightDetailCacheKeyPrefix${_item.id}';
 
+  Future<void> _persistDetailCache(MPGetInsightDetailResponse response) async {
+    await MPHiveUtil.instance.putMap(key: _insightDetailCacheKey(), value: response.toJson());
+  }
+
+  Future<MPGetInsightDetailResponse?> _tryLoadCachedDetailResponse() async {
+    final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(_insightDetailCacheKey());
+    if (cached == null) {
+      return null;
+    }
     try {
-      final MPGetInsightDetailResponse? serverResponse = await getInsightDetail(
-        MPGetInsightDetailRequest(insightId: item.id),
-      );
-      if (serverResponse != null && serverResponse.baseResp.code == 0) {
-        response = serverResponse;
-        await MPHiveUtil.instance.putMap(key: cacheKey, value: response.toJson());
+      final MPGetInsightDetailResponse response = MPGetInsightDetailResponse.fromJson(cached);
+      if (response.baseResp.code == 0) {
+        return response;
       }
     } catch (_) {}
+    return null;
+  }
 
-    if (response == null) {
-      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(cacheKey);
-      if (cached != null) {
-        final MPGetInsightDetailResponse cachedResponse = MPGetInsightDetailResponse.fromJson(cached);
-        if (cachedResponse.baseResp.code == 0) {
-          response = cachedResponse;
-        }
-      }
+  Future<MPInsightDetailData> _fetchDetailFromServer(MPInsightListItem item) async {
+    final MPGetInsightDetailResponse? serverResponse = await getInsightDetail(
+      MPGetInsightDetailRequest(insightId: item.id),
+    );
+    if (serverResponse == null) {
+      throw StateError('getInsightDetail failed');
     }
-
-    if (response == null) {
-      throw Exception('insight detail request failed and cache missing');
+    if (serverResponse.baseResp.code != 0) {
+      throw StateError(serverResponse.baseResp.message);
     }
+    await _persistDetailCache(serverResponse);
+    return _mapResponseToDetailData(item, serverResponse);
+  }
 
+  MPInsightDetailData _mapResponseToDetailData(
+    MPInsightListItem item,
+    MPGetInsightDetailResponse response,
+  ) {
     final int? memoryId = response.insightDetail.memoryId;
     switch (item.type) {
       case MPInsightCardType.daily:
