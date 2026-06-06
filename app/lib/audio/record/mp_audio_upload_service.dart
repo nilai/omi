@@ -192,7 +192,7 @@ class MPAudioUploadService {
     return null;
   }
 
-  /// 带重试的上传到 S3（60s 无响应超时，最多重试 2 次）
+  /// 带重试的上传到 S3（连续 60s 无网络收发则超时，最多重试 2 次）
   Future<bool> _uploadToS3WithRetry(
     String uploadUrl,
     File audioFile,
@@ -217,7 +217,7 @@ class MPAudioUploadService {
     return false;
   }
 
-  /// 带重试的上传字节到 S3（60s 无响应超时，最多重试 2 次）
+  /// 带重试的上传字节到 S3（连续 60s 无网络收发则超时，最多重试 2 次）
   Future<bool> _uploadBytesToS3WithRetry(
     String uploadUrl,
     List<int> audioBytes,

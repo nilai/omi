@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart' as http_io;
 
 import '../../env/env.dart';
 import '../../http/schema/mp_memory.dart';
@@ -21,8 +23,143 @@ Map<String, String> audioMimeTypes = {
 /// 支持的音频文件扩展名列表
 List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac', 'opus'];
 
-/// S3 PUT 上传无响应超时（秒）
-const Duration kS3UploadTimeout = Duration(seconds: 60);
+/// S3 PUT 上传空闲超时：连续该时长无网络收发则判定失败（大文件可慢传，不受总时长限制）。
+const Duration kS3UploadIdleTimeout = Duration(seconds: 60);
+
+/// 分块大小；较小分块可在慢速网络下更频繁刷新空闲计时，避免误超时。
+const int _kS3UploadStreamChunkSize = 16 * 1024;
+
+/// 监控 S3 PUT 上传过程中的网络空闲时间。
+class _S3UploadIdleWatch {
+  _S3UploadIdleWatch(this._idleLimit);
+
+  final Duration _idleLimit;
+  DateTime _lastActivity = DateTime.now();
+  Timer? _timer;
+  HttpClient? _clientToAbort;
+  bool _timedOut = false;
+
+  bool get hasTimedOut => _timedOut;
+
+  void bindClient(HttpClient client) {
+    _clientToAbort = client;
+  }
+
+  void markActivity() {
+    _lastActivity = DateTime.now();
+  }
+
+  void start() {
+    markActivity();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _checkIdle());
+  }
+
+  void stop() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
+  void _checkIdle() {
+    if (_timedOut) {
+      return;
+    }
+    if (DateTime.now().difference(_lastActivity) > _idleLimit) {
+      _timedOut = true;
+      _clientToAbort?.close(force: true);
+    }
+  }
+
+  void throwIfTimedOut() {
+    if (_timedOut) {
+      throw TimeoutException('S3 upload idle timeout');
+    }
+  }
+}
+
+Stream<List<int>> _chunkedByteStream(List<int> bytes) async* {
+  for (int offset = 0; offset < bytes.length; offset += _kS3UploadStreamChunkSize) {
+    final int end = math.min(offset + _kS3UploadStreamChunkSize, bytes.length);
+    yield bytes.sublist(offset, end);
+  }
+}
+
+Stream<List<int>> _fileChunkStream(File file) async* {
+  final RandomAccessFile handle = await file.open();
+  try {
+    while (true) {
+      final List<int> buffer = await handle.read(_kS3UploadStreamChunkSize);
+      if (buffer.isEmpty) {
+        break;
+      }
+      yield buffer;
+    }
+  } finally {
+    await handle.close();
+  }
+}
+
+/// 在 body 流每块产出时刷新 idle 计时。
+Stream<List<int>> _attachIdleWatch(Stream<List<int>> source, _S3UploadIdleWatch idle) {
+  return source.map((List<int> chunk) {
+    idle.throwIfTimedOut();
+    idle.markActivity();
+    return chunk;
+  });
+}
+
+/// [http.StreamedRequest] PUT 到 S3，[kS3UploadIdleTimeout] 内无收发则超时。
+Future<bool> _s3PutWithIdleTimeout({
+  required String uploadUrl,
+  required Stream<List<int>> bodyStream,
+  required int contentLength,
+  required String contentType,
+}) async {
+  final HttpClient rawClient = HttpClient();
+  final http.Client client = http_io.IOClient(rawClient);
+  final _S3UploadIdleWatch idle = _S3UploadIdleWatch(kS3UploadIdleTimeout);
+  idle.bindClient(rawClient);
+  idle.start();
+
+  try {
+    final http.StreamedRequest request = http.StreamedRequest('PUT', Uri.parse(uploadUrl));
+    request.headers['Content-Type'] = contentType;
+    request.contentLength = contentLength;
+
+    final Stream<List<int>> monitoredBody = _attachIdleWatch(bodyStream, idle);
+    unawaited(
+      request.sink.addStream(monitoredBody).whenComplete(request.sink.close),
+    );
+
+    idle.throwIfTimedOut();
+    final http.StreamedResponse streamedResponse = await client.send(request);
+    idle.markActivity();
+
+    final int statusCode = streamedResponse.statusCode;
+    await for (final List<int> _ in streamedResponse.stream) {
+      idle.throwIfTimedOut();
+      idle.markActivity();
+    }
+
+    idle.throwIfTimedOut();
+    debugPrint('_s3PutWithIdleTimeout: status $statusCode');
+    if (statusCode == 200 || statusCode == 204) {
+      return true;
+    }
+    debugPrint('_s3PutWithIdleTimeout error $statusCode');
+    return false;
+  } on TimeoutException {
+    rethrow;
+  } catch (e) {
+    if (idle.hasTimedOut) {
+      throw TimeoutException('S3 upload idle timeout');
+    }
+    debugPrint('_s3PutWithIdleTimeout exception: $e');
+    return false;
+  } finally {
+    idle.stop();
+    client.close();
+  }
+}
 
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {
@@ -74,33 +211,13 @@ Future<bool> uploadAudioToS3(
   String contentType,
 ) async {
   try {
-    // 读取文件字节
-    final bytes = await audioFile.readAsBytes();
-
-    // 直接使用 PUT 方法上传到 S3 预签名 URL
-    final response = await http
-        .put(
-          Uri.parse(uploadUrl),
-          headers: {
-            'Content-Type': contentType,
-            'Content-Length': bytes.length.toString(),
-          },
-          body: bytes,
-        )
-        .timeout(
-          kS3UploadTimeout,
-          onTimeout: () => throw TimeoutException('S3 upload timeout'),
-        );
-
-    debugPrint('uploadAudioToS3: status ${response.statusCode}');
-
-    // S3 返回 200 或 204 表示成功
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      return true;
-    } else {
-      debugPrint('uploadAudioToS3 error ${response.statusCode}: ${response.body}');
-      return false;
-    }
+    final int contentLength = await audioFile.length();
+    return await _s3PutWithIdleTimeout(
+      uploadUrl: uploadUrl,
+      bodyStream: _fileChunkStream(audioFile),
+      contentLength: contentLength,
+      contentType: contentType,
+    );
   } on TimeoutException {
     rethrow;
   } catch (e) {
@@ -122,30 +239,12 @@ Future<bool> uploadAudioToS3Bytes(
   String contentType,
 ) async {
   try {
-    // 直接使用 PUT 方法上传到 S3 预签名 URL
-    final response = await http
-        .put(
-          Uri.parse(uploadUrl),
-          headers: {
-            'Content-Type': contentType,
-            'Content-Length': audioBytes.length.toString(),
-          },
-          body: audioBytes,
-        )
-        .timeout(
-          kS3UploadTimeout,
-          onTimeout: () => throw TimeoutException('S3 upload timeout'),
-        );
-
-    debugPrint('uploadAudioToS3Bytes: status ${response.statusCode}');
-
-    // S3 返回 200 或 204 表示成功
-    if (response.statusCode == 200 || response.statusCode == 204) {
-      return true;
-    } else {
-      debugPrint('uploadAudioToS3Bytes error ${response.statusCode}: ${response.body}');
-      return false;
-    }
+    return await _s3PutWithIdleTimeout(
+      uploadUrl: uploadUrl,
+      bodyStream: _chunkedByteStream(audioBytes),
+      contentLength: audioBytes.length,
+      contentType: contentType,
+    );
   } on TimeoutException {
     rethrow;
   } catch (e) {
