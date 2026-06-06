@@ -72,6 +72,9 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
   MPGetTemplateListResponse? _tplResp;
   MPTemplateStruct? _selectedTemplate;
 
+  /// [initState] 中启动的模板列表请求，供 Change 等待后再打开样式选择弹窗。
+  Future<void>? _templatesLoadFuture;
+
   static const Color _kFeatureCardBg = Color(0xFFF2F2F7);
   static const Color _kAutopilotBg = Color(0xFFF7F2E8);
   static const Color _kAutopilotBorder = Color(0xFFE8DCC8);
@@ -93,7 +96,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
     super.initState();
     _selectedTemplate = _kAutoPilotTemplate;
     _loadCachedSelectedTemplate();
-    _loadTemplates();
+    _templatesLoadFuture = _loadTemplates();
   }
 
   Future<void> _loadCachedSelectedTemplate() async {
@@ -175,6 +178,30 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
   String get _modeSubtitle {
     final MPTemplateStruct? tpl = _selectedTemplate;
     return tpl?.subTitle ?? '';
+  }
+
+  /// 等待模板列表就绪后打开「Choose summary style」弹窗。
+  Future<void> _onChangeTap() async {
+    await _templatesLoadFuture;
+    if (!mounted) return;
+    final MPGetTemplateListResponse? resp = _tplResp;
+    if (resp == null) {
+      MPToastUtils.showMessage('Failed to load summary styles. Please try again.');
+      return;
+    }
+    await showMPChooseSummaryStyleSheet(
+      context,
+      recentTemplate: resp.recentTemplate,
+      recommendTemplates: resp.recommendTemplates,
+      initialSelected: _selectedTemplate,
+      onTemplateConfirmed: (MPTemplateStruct tpl) {
+        setState(() {
+          _selectedTemplate = tpl;
+        });
+        _cacheSelectedTemplate(tpl);
+        widget.onChangeMode?.call();
+      },
+    );
   }
 
   void _onConfirmGenerate() {
@@ -368,25 +395,7 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
                                 ),
                               ),
                               InkWell(
-                                onTap: () {
-                                  final MPGetTemplateListResponse? resp =
-                                      _tplResp;
-                                  if (resp == null) return;
-                                  showMPChooseSummaryStyleSheet(
-                                    context,
-                                    recentTemplate: resp.recentTemplate,
-                                    recommendTemplates: resp.recommendTemplates,
-                                    initialSelected: _selectedTemplate,
-                                    onTemplateConfirmed:
-                                        (MPTemplateStruct tpl) {
-                                      setState(() {
-                                        _selectedTemplate = tpl;
-                                      });
-                                      _cacheSelectedTemplate(tpl);
-                                      widget.onChangeMode?.call();
-                                    },
-                                  );
-                                },
+                                onTap: _onChangeTap,
                                 borderRadius: BorderRadius.circular(8),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(

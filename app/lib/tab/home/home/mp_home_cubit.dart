@@ -171,6 +171,16 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void initData() {
     connectBluetoothToLastRecordedDevice();
     loadData();
+    unawaited(_uploadPendingLocalAudioFilesOnColdStart());
+  }
+
+  /// 冷启动进入首页后，上传本地待传音频队列。
+  Future<void> _uploadPendingLocalAudioFilesOnColdStart() async {
+    try {
+      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+    } catch (e, st) {
+      debugPrint('MPHomeCubit: upload pending local audio on cold start failed: $e\n$st');
+    }
   }
 
   /// 若本地存在上次连接的 BLE 记录，则短扫并建链后 [MPBleConnectionHelper.parkBackgroundBleTransport]；无记录则立即返回。
