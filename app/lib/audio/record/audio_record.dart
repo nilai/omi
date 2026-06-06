@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -19,6 +20,9 @@ Map<String, String> audioMimeTypes = {
 
 /// 支持的音频文件扩展名列表
 List<String> audioExtensions = ['m4a', 'wav', 'mp3', 'aac', 'opus'];
+
+/// S3 PUT 上传无响应超时（秒）
+const Duration kS3UploadTimeout = Duration(seconds: 60);
 
 /// 根据文件扩展名获取MIME类型
 String getAudioMimeType(String filename) {
@@ -74,14 +78,19 @@ Future<bool> uploadAudioToS3(
     final bytes = await audioFile.readAsBytes();
 
     // 直接使用 PUT 方法上传到 S3 预签名 URL
-    final response = await http.put(
-      Uri.parse(uploadUrl),
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': bytes.length.toString(),
-      },
-      body: bytes,
-    );
+    final response = await http
+        .put(
+          Uri.parse(uploadUrl),
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': bytes.length.toString(),
+          },
+          body: bytes,
+        )
+        .timeout(
+          kS3UploadTimeout,
+          onTimeout: () => throw TimeoutException('S3 upload timeout'),
+        );
 
     debugPrint('uploadAudioToS3: status ${response.statusCode}');
 
@@ -92,6 +101,8 @@ Future<bool> uploadAudioToS3(
       debugPrint('uploadAudioToS3 error ${response.statusCode}: ${response.body}');
       return false;
     }
+  } on TimeoutException {
+    rethrow;
   } catch (e) {
     debugPrint('uploadAudioToS3 exception: $e');
     return false;
@@ -112,14 +123,19 @@ Future<bool> uploadAudioToS3Bytes(
 ) async {
   try {
     // 直接使用 PUT 方法上传到 S3 预签名 URL
-    final response = await http.put(
-      Uri.parse(uploadUrl),
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': audioBytes.length.toString(),
-      },
-      body: audioBytes,
-    );
+    final response = await http
+        .put(
+          Uri.parse(uploadUrl),
+          headers: {
+            'Content-Type': contentType,
+            'Content-Length': audioBytes.length.toString(),
+          },
+          body: audioBytes,
+        )
+        .timeout(
+          kS3UploadTimeout,
+          onTimeout: () => throw TimeoutException('S3 upload timeout'),
+        );
 
     debugPrint('uploadAudioToS3Bytes: status ${response.statusCode}');
 
@@ -130,6 +146,8 @@ Future<bool> uploadAudioToS3Bytes(
       debugPrint('uploadAudioToS3Bytes error ${response.statusCode}: ${response.body}');
       return false;
     }
+  } on TimeoutException {
+    rethrow;
   } catch (e) {
     debugPrint('uploadAudioToS3Bytes exception: $e');
     return false;

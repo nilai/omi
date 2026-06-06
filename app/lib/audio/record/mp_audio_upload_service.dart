@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,8 +15,11 @@ import 'audio_record.dart';
 /// 1. 获取预签名URL
 /// 2. 上传文件到S3
 class MPAudioUploadService {
-  /// 最大重试次数（用于网络错误）
+  /// 获取预签名 URL 的最大重试次数
   static const int _maxRetries = 3;
+
+  /// S3 PUT 上传最大重试次数（首次上传 + 2 次重试）
+  static const int _s3MaxRetries = 2;
 
   /// 上传音频文件的完整流程
   ///
@@ -188,42 +192,52 @@ class MPAudioUploadService {
     return null;
   }
 
-  /// 带重试的上传到 S3
+  /// 带重试的上传到 S3（60s 无响应超时，最多重试 2 次）
   Future<bool> _uploadToS3WithRetry(
     String uploadUrl,
     File audioFile,
     String contentType,
   ) async {
-    for (int i = 0; i <= _maxRetries; i++) {
+    for (int i = 0; i <= _s3MaxRetries; i++) {
       try {
         final result = await uploadAudioToS3(uploadUrl, audioFile, contentType);
         if (result) return true;
+        debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} failed');
+      } on TimeoutException catch (e) {
+        debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} timeout: $e');
       } catch (e) {
         debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} failed: $e');
-        if (i == _maxRetries) return false;
-        // 简单的延迟重试
-        await Future.delayed(const Duration(seconds: 1));
       }
+      if (i == _s3MaxRetries) {
+        debugPrint('MPAudioUploadService: uploadToS3 failed after ${_s3MaxRetries + 1} attempts');
+        return false;
+      }
+      await Future.delayed(const Duration(seconds: 1));
     }
     return false;
   }
 
-  /// 带重试的上传字节到 S3
+  /// 带重试的上传字节到 S3（60s 无响应超时，最多重试 2 次）
   Future<bool> _uploadBytesToS3WithRetry(
     String uploadUrl,
     List<int> audioBytes,
     String contentType,
   ) async {
-    for (int i = 0; i <= _maxRetries; i++) {
+    for (int i = 0; i <= _s3MaxRetries; i++) {
       try {
         final result = await uploadAudioToS3Bytes(uploadUrl, audioBytes, contentType);
         if (result) return true;
+        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} failed');
+      } on TimeoutException catch (e) {
+        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} timeout: $e');
       } catch (e) {
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} failed: $e');
-        if (i == _maxRetries) return false;
-        // 简单的延迟重试
-        await Future.delayed(const Duration(seconds: 1));
       }
+      if (i == _s3MaxRetries) {
+        debugPrint('MPAudioUploadService: uploadBytesToS3 failed after ${_s3MaxRetries + 1} attempts');
+        return false;
+      }
+      await Future.delayed(const Duration(seconds: 1));
     }
     return false;
   }
