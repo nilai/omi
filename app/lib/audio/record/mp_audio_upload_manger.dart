@@ -29,6 +29,22 @@ void _emitUploadProgress(
   );
 }
 
+/// 单条上传失败：通知首页 Toast；最后一条时由 [isLastInBatch] 触发状态条收口。
+void _notifyBatchUploadFailure({
+  required int batchIndex,
+  required int batchTotal,
+  MPAudioUploadPerFileProgress? onPerFileProgress,
+}) {
+  MPHomeNotification.notifyUploadFailed(
+    MPHomeUploadFailedPayload(
+      batchTotal: batchTotal,
+      batchIndex: batchIndex,
+      isLastInBatch: batchIndex >= batchTotal,
+    ),
+  );
+  _emitUploadProgress(onPerFileProgress, batchIndex: batchIndex, batchTotal: batchTotal, progress: 100);
+}
+
 /// 多文件上传进度：[totalFiles] 为当前队列中待处理条数 + 正在上传的 1 条；[currentFileIndex] 为本次 Worker 会话内从 1 开始的序号；[progress] 为当前文件 0–100。
 typedef MPAudioUploadMultiProgress =
     void Function({required int totalFiles, required int currentFileIndex, required int progress});
@@ -254,6 +270,12 @@ class MPAudioUploadManager {
           },
         );
         if (txtUri == null || txtUri.isEmpty) {
+          debugPrint('MPAudioUploadManager: failed to upload txt companion.');
+          _notifyBatchUploadFailure(
+            batchIndex: i + 1,
+            batchTotal: n,
+            onPerFileProgress: onPerFileProgress,
+          );
           continue;
         }
       }
@@ -261,7 +283,11 @@ class MPAudioUploadManager {
       final String? audioUri = await uploadService.uploadMPAudio(f, onProgress: (int current, int total) {});
       if (audioUri == null || audioUri.isEmpty) {
         debugPrint('MPAudioUploadManager: failed to upload audio.');
-        _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
+        _notifyBatchUploadFailure(
+          batchIndex: i + 1,
+          batchTotal: n,
+          onPerFileProgress: onPerFileProgress,
+        );
         continue;
       }
 
@@ -285,7 +311,11 @@ class MPAudioUploadManager {
       );
       if (created == null || created.baseResp.code != 0) {
         debugPrint('MPAudioUploadManager: failed to create record.');
-        _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
+        _notifyBatchUploadFailure(
+          batchIndex: i + 1,
+          batchTotal: n,
+          onPerFileProgress: onPerFileProgress,
+        );
         continue;
       }
 

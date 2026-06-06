@@ -10,6 +10,7 @@ import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
 import '../../../http/api/mp_home.dart';
@@ -128,6 +129,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   MPHomeCubit() : super(_initialState()) {
     _recordCreatedSub = MPHomeNotification.listenRecordCreated(_onMemoryRecordCreated);
     _uploadProgressSub = MPHomeNotification.listenUploadProgress(_onUploadProgress);
+    _uploadFailedSub = MPHomeNotification.listenUploadFailed(_onUploadFailed);
     _homeListRefreshSub = MPHomeNotification.listenHomeListRefresh(_onHomeListRefresh);
     _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
     _todoDeletedSub = MPHomeNotification.listenTodoDeleted(_onTodoDeleted);
@@ -140,6 +142,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   Timer? _insightsTimer;
   StreamSubscription<MPHomeRecordCreatedPayload>? _recordCreatedSub;
   StreamSubscription<MPHomeUploadProgressPayload>? _uploadProgressSub;
+  StreamSubscription<MPHomeUploadFailedPayload>? _uploadFailedSub;
   StreamSubscription<void>? _homeListRefreshSub;
   StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
   StreamSubscription<MPHomeTodoDeletedPayload>? _todoDeletedSub;
@@ -155,6 +158,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 与 [_pendingPostBleRecordingAudioStatus] 配套：仅在 [_onMemoryRecordCreated] 因设备占录而推迟且为批次最后一条时设置，用于停录后启动 [_syncCompletedClearTimer]。
   MPHomeRecordCreatedPayload? _deferredRecordCreatedCompletion;
+
+  /// 批量上传最后一条失败时，因设备占录推迟状态条收口的标记。
+  bool _deferredBatchUploadFinished = false;
 
   Timer? _syncCompletedClearTimer;
   bool _bleDeviceImportRunning = false;
@@ -339,6 +345,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     if (payload.isRecording) {
       _pendingPostBleRecordingAudioStatus = null;
       _deferredRecordCreatedCompletion = null;
+      _deferredBatchUploadFinished = false;
       _emitRecordingAudioStatusPrioritized();
       return;
     }
@@ -365,13 +372,11 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         final int total = p.batchTotal < 1 ? 1 : p.batchTotal;
         final int index = p.batchIndex.clamp(1, total);
         if (index >= total) {
-          _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
-            if (!isClosed) {
-              emit(state.copyWith(clearAudioStatus: true));
-              loadData();
-            }
-          });
+          _scheduleSyncingStatusBarClear();
         }
+      } else if (_deferredBatchUploadFinished) {
+        _deferredBatchUploadFinished = false;
+        _scheduleSyncingStatusBarClear();
       }
       return;
     }
@@ -451,32 +456,71 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     showSyncingStatus(currentFile: batchIndex, totalFiles: batchTotal, progress: payload.progress.clamp(0, 100));
   }
 
+  /// 批量上传失败：Toast 提示序号；最后一条时状态条切为完成态后延时清除。
+  void _onUploadFailed(MPHomeUploadFailedPayload payload) {
+    final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
+    final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
+    MPToastUtils.showMessage('File $batchIndex upload failed.');
+    if (payload.isLastInBatch) {
+      _applySyncingBatchCompleteStatus(
+        batchIndex: batchIndex,
+        batchTotal: batchTotal,
+        onDeferredLastItem: () {
+          _deferredBatchUploadFinished = true;
+        },
+      );
+    }
+  }
+
   /// [MPHomeNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
   void _onMemoryRecordCreated(MPHomeRecordCreatedPayload payload) {
+    _applySyncingBatchCompleteStatus(
+      batchIndex: payload.batchIndex,
+      batchTotal: payload.batchTotal,
+      onDeferredLastItem: () {
+        _deferredRecordCreatedCompletion = payload;
+      },
+    );
+  }
+
+  /// 本批次单条处理结束（成功或最后一条失败）：顶栏 syncing 100%，最后一条时延时清除。
+  void _applySyncingBatchCompleteStatus({
+    required int batchIndex,
+    required int batchTotal,
+    required void Function() onDeferredLastItem,
+  }) {
     _syncCompletedClearTimer?.cancel();
-    final int total = payload.batchTotal < 1 ? 1 : payload.batchTotal;
-    final int index = payload.batchIndex.clamp(1, total);
-    const int progress = 100;
+    final int total = batchTotal < 1 ? 1 : batchTotal;
+    final int index = batchIndex.clamp(1, total);
     final MPHomeAudioStatus next = MPHomeAudioStatus(
       type: MPHomeAudioStatusType.syncing,
-      progress: progress.clamp(0, 100),
+      progress: 100,
       currentFile: index,
       totalFiles: total,
     );
     if (_deferAudioStatusIfMemoPinRecording(next)) {
-      _deferredRecordCreatedCompletion = index >= total ? payload : null;
+      if (index >= total) {
+        onDeferredLastItem();
+      }
       return;
     }
     _deferredRecordCreatedCompletion = null;
+    _deferredBatchUploadFinished = false;
     emit(state.copyWith(audioStatus: next));
     if (index >= total) {
-      _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
-        if (!isClosed) {
-          emit(state.copyWith(clearAudioStatus: true));
-          loadData();
-        }
-      });
+      _scheduleSyncingStatusBarClear();
     }
+  }
+
+  /// 上传完成态展示约 1.6s 后清除顶栏并刷新列表。
+  void _scheduleSyncingStatusBarClear() {
+    _syncCompletedClearTimer?.cancel();
+    _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
+      if (!isClosed) {
+        emit(state.copyWith(clearAudioStatus: true));
+        loadData();
+      }
+    });
   }
 
   /// 导入音频（复制到沙盒阶段）；多选时 [currentFile] / [totalFiles] 为当前第几个文件与总个数。
@@ -511,6 +555,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _suppressBleUploadStatusAfterDisconnect = true;
     _pendingPostBleRecordingAudioStatus = null;
     _deferredRecordCreatedCompletion = null;
+    _deferredBatchUploadFinished = false;
     _syncCompletedClearTimer?.cancel();
     if (!isClosed) {
       emit(
@@ -653,6 +698,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _syncCompletedClearTimer = null;
     _recordCreatedSub?.cancel();
     _uploadProgressSub?.cancel();
+    _uploadFailedSub?.cancel();
     _homeListRefreshSub?.cancel();
     _todoDoneSub?.cancel();
     _todoDeletedSub?.cancel();

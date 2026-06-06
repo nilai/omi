@@ -13,6 +13,21 @@ class MPHomeUploadProgressPayload {
   final int progress;
 }
 
+/// 批量上传中单条文件失败（Toast 提示；[isLastInBatch] 为 true 时同时触发状态条收口）。
+class MPHomeUploadFailedPayload {
+  const MPHomeUploadFailedPayload({
+    required this.batchTotal,
+    required this.batchIndex,
+    required this.isLastInBatch,
+  });
+
+  final int batchTotal;
+  final int batchIndex;
+
+  /// 是否为本批次最后一条；`true` 时首页状态条切为完成态后延时清除。
+  final bool isLastInBatch;
+}
+
 /// 本地录音上传并创建 record 成功后的首页通知载荷。
 class MPHomeRecordCreatedPayload {
   const MPHomeRecordCreatedPayload({
@@ -96,6 +111,8 @@ class MPHomeNotification {
       StreamController<MPHomeUploadProgressPayload>.broadcast();
   static final StreamController<MPHomeRecordCreatedPayload> _recordCreatedBus =
       StreamController<MPHomeRecordCreatedPayload>.broadcast();
+  static final StreamController<MPHomeUploadFailedPayload> _uploadFailedBus =
+      StreamController<MPHomeUploadFailedPayload>.broadcast();
   static final StreamController<MPHomeTodoDonePayload> _todoDoneBus =
       StreamController<MPHomeTodoDonePayload>.broadcast();
   static final StreamController<MPHomeTodoDeletedPayload> _todoDeletedBus =
@@ -112,6 +129,8 @@ class MPHomeNotification {
       _uploadProgressBus.stream;
   static Stream<MPHomeRecordCreatedPayload> get recordCreatedEvents =>
       _recordCreatedBus.stream;
+  static Stream<MPHomeUploadFailedPayload> get uploadFailedEvents =>
+      _uploadFailedBus.stream;
   static Stream<MPHomeTodoDonePayload> get todoDoneEvents =>
       _todoDoneBus.stream;
   static Stream<MPHomeTodoDeletedPayload> get todoDeletedEvents =>
@@ -137,6 +156,12 @@ class MPHomeNotification {
   static void _emitRecordCreated(MPHomeRecordCreatedPayload payload) {
     if (!_recordCreatedBus.isClosed) {
       _recordCreatedBus.add(payload);
+    }
+  }
+
+  static void _emitUploadFailed(MPHomeUploadFailedPayload payload) {
+    if (!_uploadFailedBus.isClosed) {
+      _uploadFailedBus.add(payload);
     }
   }
 
@@ -181,6 +206,10 @@ class MPHomeNotification {
   static void notifyRecordCreated(MPHomeRecordCreatedPayload payload) =>
       _emitRecordCreated(payload);
 
+  /// 上传侧调用：通知首页某条文件上传失败（含是否为本批次最后一条）。
+  static void notifyUploadFailed(MPHomeUploadFailedPayload payload) =>
+      _emitUploadFailed(payload);
+
   /// Todo 操作调用：通知首页某条 todo 已完成。
   static void notifyTodoDone(MPHomeTodoDonePayload payload) =>
       _emitTodoDone(payload);
@@ -218,6 +247,13 @@ class MPHomeNotification {
     void Function(MPHomeRecordCreatedPayload payload) onCreated,
   ) {
     return recordCreatedEvents.listen(onCreated);
+  }
+
+  /// 首页监听上传失败事件。
+  static StreamSubscription<MPHomeUploadFailedPayload> listenUploadFailed(
+    void Function(MPHomeUploadFailedPayload payload) onFailed,
+  ) {
+    return uploadFailedEvents.listen(onFailed);
   }
 
   /// 首页监听 Todo 完成事件。
