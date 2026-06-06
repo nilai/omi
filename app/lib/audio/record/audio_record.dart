@@ -119,6 +119,10 @@ Future<bool> _s3PutWithIdleTimeout({
   final _S3UploadIdleWatch idle = _S3UploadIdleWatch(kS3UploadIdleTimeout);
   idle.bindClient(rawClient);
   idle.start();
+  debugPrint(
+    '_s3PutWithIdleTimeout: start PUT contentLength=$contentLength '
+    'contentType=$contentType idleTimeout=${kS3UploadIdleTimeout.inSeconds}s',
+  );
 
   try {
     final http.StreamedRequest request = http.StreamedRequest('PUT', Uri.parse(uploadUrl));
@@ -141,16 +145,18 @@ Future<bool> _s3PutWithIdleTimeout({
     }
 
     idle.throwIfTimedOut();
-    debugPrint('_s3PutWithIdleTimeout: status $statusCode');
+    debugPrint('_s3PutWithIdleTimeout: done status=$statusCode contentLength=$contentLength');
     if (statusCode == 200 || statusCode == 204) {
       return true;
     }
-    debugPrint('_s3PutWithIdleTimeout error $statusCode');
+    debugPrint('_s3PutWithIdleTimeout: HTTP error status=$statusCode');
     return false;
-  } on TimeoutException {
+  } on TimeoutException catch (e) {
+    debugPrint('_s3PutWithIdleTimeout: idle timeout contentLength=$contentLength error=$e');
     rethrow;
   } catch (e) {
     if (idle.hasTimedOut) {
+      debugPrint('_s3PutWithIdleTimeout: idle timeout (forced abort) contentLength=$contentLength');
       throw TimeoutException('S3 upload idle timeout');
     }
     debugPrint('_s3PutWithIdleTimeout exception: $e');

@@ -100,7 +100,7 @@ class MPAudioUploadService {
         'MPAudioUploadService: uploading ${file.path} with type $contentType',
       );
 
-      onProgress?.call(1, 3);
+      _emitUploadStepProgress(onProgress, 1, 3, 'getPresignedUrl');
       final presignedUrl = await _getPresignedUrlWithRetry(contentType);
       if (presignedUrl == null) {
         debugPrint('MPAudioUploadService: failed to get presigned URL');
@@ -108,7 +108,7 @@ class MPAudioUploadService {
       }
       debugPrint('MPAudioUploadService: got presigned URL: ${presignedUrl.uri}');
 
-      onProgress?.call(2, 3);
+      _emitUploadStepProgress(onProgress, 2, 3, 'uploadToS3');
       final uploadSuccess = await _uploadToS3WithRetry(
         presignedUrl.uploadUrl,
         file,
@@ -119,7 +119,7 @@ class MPAudioUploadService {
         return null;
       }
       debugPrint('MPAudioUploadService: uploaded to S3 successfully');
-      onProgress?.call(3, 3);
+      _emitUploadStepProgress(onProgress, 3, 3, 'done');
       return presignedUrl.uri;
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during upload: $e');
@@ -143,8 +143,7 @@ class MPAudioUploadService {
     try {
       debugPrint('MPAudioUploadService: uploading bytes with type $contentType');
 
-      // 步骤 1: 获取预签名 URL
-      onProgress?.call(1, 3);
+      _emitUploadStepProgress(onProgress, 1, 3, 'getPresignedUrl');
       final presignedUrl = await _getPresignedUrlWithRetry(contentType);
       if (presignedUrl == null) {
         debugPrint('MPAudioUploadService: failed to get presigned URL');
@@ -152,8 +151,7 @@ class MPAudioUploadService {
       }
       debugPrint('MPAudioUploadService: got presigned URL: ${presignedUrl.uri}');
 
-      // 步骤 2: 上传字节到 S3
-      onProgress?.call(2, 3);
+      _emitUploadStepProgress(onProgress, 2, 3, 'uploadToS3');
       final uploadSuccess = await _uploadBytesToS3WithRetry(
         presignedUrl.uploadUrl,
         audioBytes,
@@ -164,6 +162,7 @@ class MPAudioUploadService {
         return null;
       }
       debugPrint('MPAudioUploadService: uploaded bytes to S3 successfully');
+      _emitUploadStepProgress(onProgress, 3, 3, 'done');
       return presignedUrl.uri;
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during bytes upload: $e');
@@ -171,23 +170,44 @@ class MPAudioUploadService {
     }
   }
 
+  void _emitUploadStepProgress(
+    void Function(int current, int total)? onProgress,
+    int current,
+    int total,
+    String step,
+  ) {
+    debugPrint('MPAudioUploadService: upload step $current/$total ($step)');
+    onProgress?.call(current, total);
+  }
+
   Future<MPGetUploadRecordUrlResponse?> _getPresignedUrlWithRetry(
     String contentType,
   ) async {
     for (int i = 0; i <= _maxRetries; i++) {
+      final int attempt = i + 1;
+      final int maxAttempts = _maxRetries + 1;
+      debugPrint(
+        'MPAudioUploadService: getPresignedUrl attempt $attempt/$maxAttempts contentType=$contentType',
+      );
       try {
-        //  final result = await getPresignedUrl(contentType);
         final req = MPGetUploadRecordUrlRequest(
           contentType: contentType,
         );
         final result = await getUploadRecordUrl(req);
-        if (result != null) return result;
+        if (result != null) {
+          debugPrint('MPAudioUploadService: getPresignedUrl success on attempt $attempt');
+          return result;
+        }
+        debugPrint('MPAudioUploadService: getPresignedUrl attempt $attempt returned null');
       } catch (e) {
-        debugPrint('MPAudioUploadService: getPresignedUrl attempt ${i + 1} failed: $e');
-        if (i == _maxRetries) return null;
-        // 简单的延迟重试
-        await Future.delayed(const Duration(seconds: 1));
+        debugPrint('MPAudioUploadService: getPresignedUrl attempt $attempt failed: $e');
       }
+      if (i == _maxRetries) {
+        debugPrint('MPAudioUploadService: getPresignedUrl failed after $maxAttempts attempts');
+        return null;
+      }
+      debugPrint('MPAudioUploadService: getPresignedUrl retry in 1s (next attempt ${attempt + 1})');
+      await Future.delayed(const Duration(seconds: 1));
     }
     return null;
   }
@@ -198,20 +218,31 @@ class MPAudioUploadService {
     File audioFile,
     String contentType,
   ) async {
+    final int fileSize = await audioFile.length();
     for (int i = 0; i <= _s3MaxRetries; i++) {
+      final int attempt = i + 1;
+      final int maxAttempts = _s3MaxRetries + 1;
+      debugPrint(
+        'MPAudioUploadService: uploadToS3 attempt $attempt/$maxAttempts '
+        'path=${audioFile.path} size=$fileSize contentType=$contentType',
+      );
       try {
         final result = await uploadAudioToS3(uploadUrl, audioFile, contentType);
-        if (result) return true;
-        debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} failed');
+        if (result) {
+          debugPrint('MPAudioUploadService: uploadToS3 success on attempt $attempt');
+          return true;
+        }
+        debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed (returned false)');
       } on TimeoutException catch (e) {
-        debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} timeout: $e');
+        debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
-        debugPrint('MPAudioUploadService: uploadToS3 attempt ${i + 1} failed: $e');
+        debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed: $e');
       }
       if (i == _s3MaxRetries) {
-        debugPrint('MPAudioUploadService: uploadToS3 failed after ${_s3MaxRetries + 1} attempts');
+        debugPrint('MPAudioUploadService: uploadToS3 failed after $maxAttempts attempts');
         return false;
       }
+      debugPrint('MPAudioUploadService: uploadToS3 retry in 1s (next attempt ${attempt + 1})');
       await Future.delayed(const Duration(seconds: 1));
     }
     return false;
@@ -224,19 +255,29 @@ class MPAudioUploadService {
     String contentType,
   ) async {
     for (int i = 0; i <= _s3MaxRetries; i++) {
+      final int attempt = i + 1;
+      final int maxAttempts = _s3MaxRetries + 1;
+      debugPrint(
+        'MPAudioUploadService: uploadBytesToS3 attempt $attempt/$maxAttempts '
+        'size=${audioBytes.length} contentType=$contentType',
+      );
       try {
         final result = await uploadAudioToS3Bytes(uploadUrl, audioBytes, contentType);
-        if (result) return true;
-        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} failed');
+        if (result) {
+          debugPrint('MPAudioUploadService: uploadBytesToS3 success on attempt $attempt');
+          return true;
+        }
+        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed (returned false)');
       } on TimeoutException catch (e) {
-        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} timeout: $e');
+        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
-        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt ${i + 1} failed: $e');
+        debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed: $e');
       }
       if (i == _s3MaxRetries) {
-        debugPrint('MPAudioUploadService: uploadBytesToS3 failed after ${_s3MaxRetries + 1} attempts');
+        debugPrint('MPAudioUploadService: uploadBytesToS3 failed after $maxAttempts attempts');
         return false;
       }
+      debugPrint('MPAudioUploadService: uploadBytesToS3 retry in 1s (next attempt ${attempt + 1})');
       await Future.delayed(const Duration(seconds: 1));
     }
     return false;

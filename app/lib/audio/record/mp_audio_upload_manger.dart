@@ -23,6 +23,7 @@ void _emitUploadProgress(
   required int progress,
 }) {
   final int p = progress.clamp(0, 100);
+  debugPrint('MPAudioUploadManager: upload progress $batchIndex/$batchTotal → $p%');
   onPerFileProgress?.call(batchIndex: batchIndex, batchTotal: batchTotal, progress: p);
   MPHomeNotification.notifyUploadProgress(
     MPHomeUploadProgressPayload(batchTotal: batchTotal, batchIndex: batchIndex, progress: p),
@@ -35,6 +36,10 @@ void _notifyBatchUploadFailure({
   required int batchTotal,
   MPAudioUploadPerFileProgress? onPerFileProgress,
 }) {
+  final bool isLastInBatch = batchIndex >= batchTotal;
+  debugPrint(
+    'MPAudioUploadManager: upload failed file $batchIndex/$batchTotal, isLastInBatch=$isLastInBatch',
+  );
   MPHomeNotification.notifyUploadFailed(
     MPHomeUploadFailedPayload(
       batchTotal: batchTotal,
@@ -206,11 +211,13 @@ class MPAudioUploadManager {
     final int n = audioRecords.length;
     MPCreateRecordResponse? lastCreated;
     final MPAudioUploadService uploadService = MPAudioUploadService();
+    debugPrint('MPAudioUploadManager: batch upload start, total=$n');
 
     for (int i = 0; i < n; i++) {
       final MPAudioLocalRecord record = audioRecords[i];
       final String audioPath = _audioFilePathForUpload(record);
       final File f = File(audioPath);
+      debugPrint('MPAudioUploadManager: batch upload file ${i + 1}/$n path=$audioPath');
       if (!await f.exists()) {
         record.isRemoved = true;
         try {
@@ -260,6 +267,7 @@ class MPAudioUploadManager {
       _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 0);
       String? txtUri;
       if (hasTxt) {
+        debugPrint('MPAudioUploadManager: uploading txt companion for file ${i + 1}/$n');
         txtUri = await uploadService.uploadRecordFile(
           txtCompanion,
           contentType: 'text/plain; charset=utf-8',
@@ -267,6 +275,7 @@ class MPAudioUploadManager {
             if (total <= 0) {
               return;
             }
+            debugPrint('MPAudioUploadManager: txt file ${i + 1}/$n step $current/$total');
           },
         );
         if (txtUri == null || txtUri.isEmpty) {
@@ -280,7 +289,12 @@ class MPAudioUploadManager {
         }
       }
 
-      final String? audioUri = await uploadService.uploadMPAudio(f, onProgress: (int current, int total) {});
+      final String? audioUri = await uploadService.uploadMPAudio(
+        f,
+        onProgress: (int current, int total) {
+          debugPrint('MPAudioUploadManager: audio file ${i + 1}/$n step $current/$total');
+        },
+      );
       if (audioUri == null || audioUri.isEmpty) {
         debugPrint('MPAudioUploadManager: failed to upload audio.');
         _notifyBatchUploadFailure(
@@ -356,10 +370,14 @@ class MPAudioUploadManager {
       MPHomeNotification.notifyRecordCreated(
         MPHomeRecordCreatedPayload(memoryId: created.memoryId, batchTotal: n, batchIndex: i + 1),
       );
+      debugPrint(
+        'MPAudioUploadManager: upload success file ${i + 1}/$n memoryId=${created.memoryId}',
+      );
 
       lastCreated = created;
     }
 
+    debugPrint('MPAudioUploadManager: batch upload end, total=$n');
     return lastCreated;
   }
 }
