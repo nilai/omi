@@ -30,6 +30,7 @@ import '../../../../http/api/mp_chat.dart';
 import '../../../../http/schema/mp_chat.dart';
 import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
+import '../mp_detail_generate_resummary.dart';
 import '../mp_detail_visibility_refresh.dart';
 
 /// Memo 详情页：与 Memory 详情共用 [OmiMemoryDetailState] / UI，由 [OmiMemoDetailCubit] 使用根级 `summary_memory` 映射数据。
@@ -143,7 +144,10 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
               onTap: () async {
                 final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
                   context,
-                  params: MPMemoryOptionsSheetParams(memoryId: memoryId),
+                  params: MPMemoryOptionsSheetParams(
+                    memoryId: memoryId,
+                    showGenerateResummary: true,
+                  ),
                 );
                 if (kind == null) return;
                 if (!context.mounted) return;
@@ -177,6 +181,7 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
                     // TODO: Modify date
                     break;
                   case MPMemoryOptionKind.generateResummary:
+                    await openMPDetailGenerateResummary(context);
                     break;
                   case MPMemoryOptionKind.delete:
                     // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。

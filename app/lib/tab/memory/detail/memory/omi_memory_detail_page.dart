@@ -25,11 +25,11 @@ import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
 import '../../../../main.dart';
 import '../../../askai/mp_ask_ai_chat_page.dart';
+import '../mp_detail_generate_resummary.dart';
 import '../mp_detail_visibility_refresh.dart';
 import 'card/mp_memory_detail_content_card.dart';
 import 'card/mp_memory_detail_feed_section.dart';
 import 'card/mp_memory_detail_bottom_bar.dart';
-import 'card/mp_memory_generate_summary_sheet.dart';
 import 'omi_memory_detail_cubit.dart';
 
 Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId) async {
@@ -59,33 +59,6 @@ Future<void> _openMemoryAskAiChatForDetail(BuildContext context, String memoryId
       ),
     ),
   );
-}
-
-/// 打开 Generate Resummary 配置弹窗并触发重新摘要（与原先卡片内按钮逻辑一致）。
-Future<void> _openGenerateResummaryForDetail(BuildContext context) async {
-  final OmiMemoryDetailCubit cubit = context.read<OmiMemoryDetailCubit>();
-  final OmiMemoryDetailState s = cubit.state;
-  if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
-    MPToastUtils.showMessage('Please wait until loading finishes.');
-    return;
-  }
-  final MPMemoryDetailCardData d = s.data!;
-  final String recordUrl = (d.recordUri ?? '').trim().isNotEmpty
-      ? (d.recordUri ?? '').trim()
-      : (d.recordFile ?? '').trim();
-  final MPSummaryRecordRequest? req = await showMPMemoryGenerateSummarySheet(
-    context,
-    memoryId: d.memoryId,
-    recordUrl: recordUrl,
-    isRegen: true,
-    onChangeMode: () {
-      // TODO: 切换 Autopilot / 其它模式
-    },
-  );
-  if (!context.mounted) return;
-  if (req != null) {
-    await cubit.runSummaryRegeneration(req);
-  }
 }
 
 /// Memory 详情页（顶部 [MPCustomNavBar]：返回 + 标题 + 分享 / 更多）
@@ -226,7 +199,7 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
                       // TODO: Modify date
                       break;
                     case MPMemoryOptionKind.generateResummary:
-                      await _openGenerateResummaryForDetail(context);
+                      await openMPDetailGenerateResummary(context);
                       break;
                     case MPMemoryOptionKind.delete:
                       // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
