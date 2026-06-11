@@ -249,7 +249,7 @@ Future<http.Response?> makeApiCall({
 
     return response;
   } catch (e, stackTrace) {
-    debugPrint('HTTP request failed: $e, $stackTrace');
+    httpDebugPrint('HTTP request failed: $e, $stackTrace');
     PlatformManager.instance.crashReporter.reportCrash(e, stackTrace, userAttributes: {'url': url, 'method': method});
     return null;
   } finally {}
@@ -262,15 +262,15 @@ Future<http.Response> _performRequest(String url, Map<String, String> headers, S
   final stopwatch = Stopwatch()..start();
 
   // 记录请求详情
-  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  debugPrint('🌐 HTTP REQUEST');
-  debugPrint('Method: $method');
-  debugPrint('URL: $url');
-  debugPrint('Headers: ${_sanitizeHeaders(headers)}');
+  httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  httpDebugPrint('🌐 HTTP REQUEST');
+  httpDebugPrint('Method: $method');
+  httpDebugPrint('URL: $url');
+  httpDebugPrint('Headers: ${_sanitizeHeaders(headers)}');
   if (body.isNotEmpty) {
-    debugPrint('Body: $body');
+    httpDebugPrint('Body: $body');
   }
-  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   http.Response response;
 
@@ -312,15 +312,15 @@ Future<http.Response> _performRequest(String url, Map<String, String> headers, S
 
   // 记录响应详情
   final statusIcon = response.statusCode >= 200 && response.statusCode < 300 ? '✅' : '❌';
-  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  debugPrint('$statusIcon HTTP RESPONSE');
-  debugPrint('Method: $method');
-  debugPrint('URL: $url');
-  debugPrint('Status: ${response.statusCode}');
-  debugPrint('Duration: ${stopwatch.elapsedMilliseconds}ms');
+  httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  httpDebugPrint('$statusIcon HTTP RESPONSE');
+  httpDebugPrint('Method: $method');
+  httpDebugPrint('URL: $url');
+  httpDebugPrint('Status: ${response.statusCode}');
+  httpDebugPrint('Duration: ${stopwatch.elapsedMilliseconds}ms');
   final bodyForLog = _truncateResponse(response.body, maxLength: kDebugMode ? null : 1000);
-  debugPrint('Response Body: $bodyForLog');
-  debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  httpDebugPrint('Response Body: $bodyForLog');
+  httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
   return response;
 }
@@ -335,6 +335,20 @@ String _sanitizeHeaders(Map<String, String> headers) {
     }
   }
   return sanitized.toString();
+}
+
+/// 网络请求日志时间戳，格式 HH:mm:ss.SSS。
+String _httpLogTimestamp() {
+  final now = DateTime.now();
+  return '${now.hour.toString().padLeft(2, '0')}:'
+      '${now.minute.toString().padLeft(2, '0')}:'
+      '${now.second.toString().padLeft(2, '0')}.'
+      '${now.millisecond.toString().padLeft(3, '0')}';
+}
+
+/// 带时间戳的网络请求 debugPrint。
+void httpDebugPrint(String message) {
+  debugPrint('[${_httpLogTimestamp()}] $message');
 }
 
 /// 截断过长的响应内容以便控制台阅读。
@@ -372,7 +386,7 @@ Future<http.Response> makeMultipartApiCall({
     var streamedResponse = await ApiClient._client.send(request);
     return await http.Response.fromStream(streamedResponse);
   } catch (e, stackTrace) {
-    debugPrint('Multipart HTTP request failed: $e, $stackTrace');
+    httpDebugPrint('Multipart HTTP request failed: $e, $stackTrace');
     PlatformManager.instance.crashReporter.reportCrash(e, stackTrace, userAttributes: {'url': url, 'method': method});
     rethrow;
   }
@@ -385,16 +399,16 @@ Stream<String> makeStreamingApiCall({
   String method = 'POST',
 }) async* {
   try {
-    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    debugPrint('🌊 STREAMING REQUEST');
-    debugPrint('Method: $method');
-    debugPrint('URL: $url');
+    httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    httpDebugPrint('🌊 STREAMING REQUEST');
+    httpDebugPrint('Method: $method');
+    httpDebugPrint('URL: $url');
     final builtHeaders = await buildHeaders(requireAuthCheck: _isRequiredAuthCheck(url), fromHeaders: headers);
-    debugPrint('Headers: ${_sanitizeHeaders(builtHeaders)}');
+    httpDebugPrint('Headers: ${_sanitizeHeaders(builtHeaders)}');
     if (body.isNotEmpty) {
-      debugPrint('Body: $body');
+      httpDebugPrint('Body: $body');
     }
-    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    httpDebugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     var request = http.Request(method, Uri.parse(url));
     request.headers.addAll(builtHeaders);
@@ -408,11 +422,11 @@ Stream<String> makeStreamingApiCall({
 
     if (streamedResponse.statusCode != 200) {
       Logger.error('Streaming request failed: ${streamedResponse.statusCode}');
-      debugPrint('❌ STREAMING RESPONSE: ${streamedResponse.statusCode}');
+      httpDebugPrint('❌ STREAMING RESPONSE: ${streamedResponse.statusCode}');
       return;
     }
 
-    debugPrint('✅ STREAMING RESPONSE: ${streamedResponse.statusCode} - Started receiving data...');
+    httpDebugPrint('✅ STREAMING RESPONSE: ${streamedResponse.statusCode} - Started receiving data...');
     int chunkCount = 0;
 
     var buffers = <String>[];
@@ -434,7 +448,7 @@ Stream<String> makeStreamingApiCall({
 
         chunkCount++;
         final chunkText = _truncateResponse(line, maxLength: kDebugMode ? null : 200);
-        debugPrint('📦 Chunk #$chunkCount: $chunkText');
+        httpDebugPrint('📦 Chunk #$chunkCount: $chunkText');
         yield line;
       }
     }
@@ -443,11 +457,11 @@ Stream<String> makeStreamingApiCall({
     if (buffers.isNotEmpty) {
       chunkCount++;
       final finalChunk = _truncateResponse(buffers.join(), maxLength: kDebugMode ? null : 200);
-      debugPrint('📦 Chunk #$chunkCount (final): $finalChunk');
+      httpDebugPrint('📦 Chunk #$chunkCount (final): $finalChunk');
       yield buffers.join();
     }
 
-    debugPrint('🏁 STREAMING COMPLETE: Received $chunkCount chunks');
+    httpDebugPrint('🏁 STREAMING COMPLETE: Received $chunkCount chunks');
   } catch (e, stackTrace) {
     Logger.error('Streaming request error: $e');
     PlatformManager.instance.crashReporter.reportCrash(e, stackTrace, userAttributes: {'url': url, 'method': method});

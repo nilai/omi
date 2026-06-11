@@ -10,6 +10,7 @@ import 'login/home/mp_login_page.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/tab/omi_main_tab_page.dart';
 import 'env/env.dart';
+import 'utils/mp_debug_print.dart';
 import 'utils/mp_preferences.dart';
 import 'utils/mp_time_utils.dart';
 import 'utils/mp_uuid_util.dart';
@@ -17,6 +18,7 @@ import 'utils/platform/platform_manager.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  MPDebugPrint.setup();
   FlutterForegroundTask.initCommunicationPort();
   // 必须先初始化 SharedPreferences，[MPUser.userId] 才能读到正确值；
   // 否则 [OmiServerCache] 会用空 userId 打开错误的 Hive box，且只 initialize 一次，
