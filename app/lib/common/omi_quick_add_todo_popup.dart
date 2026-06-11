@@ -77,7 +77,7 @@ class _OmiQuickAddTodoSheet extends StatefulWidget {
 class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
   static const String _kRecordDirName = 'omi_quick_add_input_records';
 
-  static const int _kMaxVisibleLines = 2;
+  static const int _kMaxVisibleLines = 8;
 
   static const double _kTextLineHeight = 1.25;
 

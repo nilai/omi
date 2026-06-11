@@ -81,6 +81,9 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
 
   static const double _kSideButtonSize = 32;
 
+  /// 文本区最多可见行数；超出后 [TextField] 内部滚动。
+  static const int _kMaxVisibleLines = 8;
+
   static double get _minTextFieldHeight =>
       _kTextFontSize * _kTextLineHeight + _kFieldContentPaddingVertical;
 
@@ -497,9 +500,10 @@ class _MPTodoVoiceInputState extends State<MPTodoVoiceInput>
               focusNode: _focusNode,
               readOnly: _sending,
               minLines: 1,
-              maxLines: null,
+              maxLines: _kMaxVisibleLines,
               keyboardType: TextInputType.multiline,
               textInputAction: TextInputAction.newline,
+              scrollPhysics: const ClampingScrollPhysics(),
               onChanged: (String value) {
                 widget.onChanged?.call(value);
               },

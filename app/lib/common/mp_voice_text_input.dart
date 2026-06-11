@@ -59,7 +59,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
   static const String _kRecordDirName = 'mp_voice_text_input_records';
 
   /// 文本区最多可见行数；超出后 [TextField] 内部滚动。
-  static const int _kMaxVisibleLines = 2;
+  static const int _kMaxVisibleLines = 8;
 
   static const double _kTextLineHeight = 1.25;
 
