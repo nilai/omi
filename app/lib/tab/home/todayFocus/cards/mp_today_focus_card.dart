@@ -111,20 +111,11 @@ class MPTodayFocusCard extends StatelessWidget {
           if (data.items.isNotEmpty) const SizedBox(height: 16),
           ...List<Widget>.generate(data.items.length, (int index) {
             final MPTodayFocusCardItem item = data.items[index];
-            final Widget row = _MPTodayFocusItemRow(item: item);
-            Widget content = onItemTap == null
-                ? row
-                : Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => onItemTap!(index, item),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: row,
-                      ),
-                    ),
-                  );
+            final Widget row = Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: _MPTodayFocusItemRow(item: item),
+            );
+            Widget content = row;
             if (onItemDeleted != null) {
               final String rowId =
                   'focus_remove_${item.todoId}_${index}_${item.title}_${item.timeLabel}';
@@ -134,7 +125,16 @@ class MPTodayFocusCard extends StatelessWidget {
                 swipeRevealBus: swipeRevealBus,
                 cardBgColor: _kCardBg,
                 onDelete: () => onItemDeleted!(index),
-                child: content,
+                onContentTap: onItemTap == null
+                    ? null
+                    : () => onItemTap!(index, item),
+                child: row,
+              );
+            } else if (onItemTap != null) {
+              content = GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onItemTap!(index, item),
+                child: row,
               );
             }
             if (index == 0) {
@@ -160,6 +160,7 @@ class _MPTodayFocusRevealDeleteRow extends StatefulWidget {
     required this.cardBgColor,
     required this.child,
     required this.onDelete,
+    this.onContentTap,
   });
 
   final String rowId;
@@ -167,6 +168,7 @@ class _MPTodayFocusRevealDeleteRow extends StatefulWidget {
   final Color cardBgColor;
   final Widget child;
   final VoidCallback onDelete;
+  final VoidCallback? onContentTap;
 
   @override
   State<_MPTodayFocusRevealDeleteRow> createState() =>
@@ -211,6 +213,19 @@ class _MPTodayFocusRevealDeleteRowState
     if (widget.swipeRevealBus.openRemoveRowId.value == widget.rowId) {
       widget.swipeRevealBus.openRemoveRowId.value = null;
     }
+  }
+
+  /// 点击行内容：normal 显示弹窗；已露出 Remove 时仅收回到 normal。
+  void _handleContentTap() {
+    final VoidCallback? onContentTap = widget.onContentTap;
+    if (onContentTap == null) {
+      return;
+    }
+    if (_offsetX != 0) {
+      _close();
+      return;
+    }
+    onContentTap();
   }
 
   @override
@@ -280,10 +295,14 @@ class _MPTodayFocusRevealDeleteRowState
             },
             child: Transform.translate(
               offset: Offset(_offsetX, 0),
-              child: Container(
-                width: double.infinity,
-                color: widget.cardBgColor,
-                child: widget.child,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onContentTap == null ? null : _handleContentTap,
+                child: Container(
+                  width: double.infinity,
+                  color: widget.cardBgColor,
+                  child: widget.child,
+                ),
               ),
             ),
           ),

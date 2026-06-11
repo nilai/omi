@@ -285,32 +285,50 @@ class _MPTodayFocusTodoGroupedListState
         out.add(SizedBox(height: widget.itemGap));
       }
       final MPTodayFocusTodoRowData row = items[i];
-      Widget cell = MPTodayFocusTodoItem(
-        title: row.title,
-        timeLabel: _timeLabelForRow(row),
-        isChecked: row.isChecked,
-        tone: tone,
-        highlighted: row.highlighted,
-        onChanged: widget.onItemCheckChanged == null
-            ? null
-            : (bool v) => widget.onItemCheckChanged!(section, i, v),
-        onTap: widget.onItemTap == null ? null : () => widget.onItemTap!(section, i),
-      );
+      final VoidCallback? contentTap = widget.onItemTap == null
+          ? null
+          : () => widget.onItemTap!(section, i);
 
       if (section == MPTodayFocusTodoSection.today &&
           widget.onItemAddToFocus != null) {
         final String rowId =
             'today_add_focus_${row.todoId}_${i}_${row.title}_${row.timeLabel}';
-        cell = _MPTodayTodoRevealAddToFocusRow(
-          key: ValueKey<String>('mp_${rowId}'),
-          rowId: rowId,
-          swipeRevealBus: widget.swipeRevealBus,
-          onAdd: () => widget.onItemAddToFocus!(section, i),
-          child: cell,
+        out.add(
+          _MPTodayTodoRevealAddToFocusRow(
+            key: ValueKey<String>('mp_${rowId}'),
+            rowId: rowId,
+            swipeRevealBus: widget.swipeRevealBus,
+            onAdd: () => widget.onItemAddToFocus!(section, i),
+            onContentTap: contentTap,
+            builder: (VoidCallback? onTitleTap) => MPTodayFocusTodoItem(
+              title: row.title,
+              timeLabel: _timeLabelForRow(row),
+              isChecked: row.isChecked,
+              tone: tone,
+              highlighted: row.highlighted,
+              onChanged: widget.onItemCheckChanged == null
+                  ? null
+                  : (bool v) => widget.onItemCheckChanged!(section, i, v),
+              onTap: onTitleTap,
+            ),
+          ),
         );
+        continue;
       }
 
-      out.add(cell);
+      out.add(
+        MPTodayFocusTodoItem(
+          title: row.title,
+          timeLabel: _timeLabelForRow(row),
+          isChecked: row.isChecked,
+          tone: tone,
+          highlighted: row.highlighted,
+          onChanged: widget.onItemCheckChanged == null
+              ? null
+              : (bool v) => widget.onItemCheckChanged!(section, i, v),
+          onTap: contentTap,
+        ),
+      );
     }
     return out;
   }
@@ -410,14 +428,16 @@ class _MPTodayTodoRevealAddToFocusRow extends StatefulWidget {
     super.key,
     required this.rowId,
     required this.swipeRevealBus,
-    required this.child,
+    required this.builder,
     required this.onAdd,
+    this.onContentTap,
   });
 
   final String rowId;
   final MPTodayFocusSwipeRevealBus swipeRevealBus;
-  final Widget child;
+  final Widget Function(VoidCallback? onTitleTap) builder;
   final VoidCallback onAdd;
+  final VoidCallback? onContentTap;
 
   @override
   State<_MPTodayTodoRevealAddToFocusRow> createState() =>
@@ -466,6 +486,19 @@ class _MPTodayTodoRevealAddToFocusRowState
 
   void _setOpen() {
     widget.swipeRevealBus.openAdd(widget.rowId);
+  }
+
+  /// 点击行标题：normal 显示弹窗；已露出 Add to Today's Focus 时仅收回到 normal。
+  void _handleContentTap() {
+    final VoidCallback? onContentTap = widget.onContentTap;
+    if (onContentTap == null) {
+      return;
+    }
+    if (_offsetX > 0) {
+      _close();
+      return;
+    }
+    onContentTap();
   }
 
   @override
@@ -535,7 +568,9 @@ class _MPTodayTodoRevealAddToFocusRowState
             },
             child: Transform.translate(
               offset: Offset(_offsetX, 0),
-              child: widget.child,
+              child: widget.builder(
+                widget.onContentTap == null ? null : _handleContentTap,
+              ),
             ),
           ),
         ],
