@@ -486,6 +486,9 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       insightId: t.insightId,
       deadlineUnixSec: MPDateUtils.normalizeTodoDeadline(t.deadline),
       description: t.description,
+      priorityApi: MPTodoUtils.mapPriorityToApi(
+        MPTodoUtils.normalizePriorityPickerLabel(t.priority ?? 'Normal'),
+      ),
     );
   }
 
@@ -726,6 +729,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       slot: slot,
       insightId: todo.insightId,
       deadlineUnixSec: todo.deadlineUnixSec,
+      priorityApi: todo.priorityApi.trim().isEmpty ? 'Normal' : todo.priorityApi,
     );
     emit(state.copyWith(focusCard: state.focusCard.copyWith(items: next)));
   }

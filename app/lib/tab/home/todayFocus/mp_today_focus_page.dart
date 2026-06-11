@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_completed_todo_action_popup.dart';
+import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
 import 'package:memo_pin/common/mp_todo_voice_input.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
@@ -96,6 +97,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     required String todoId,
     required String? insightId,
     int? deadlineUnixSec,
+    String priorityApi = 'Normal',
     Future<bool> Function()? onDelete,
   }) async {
     if (!mounted) {
@@ -118,6 +120,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
         contextMemoryTitle: todoContext.title,
         contextMetaLine: todoContext.metaLine,
         notes: notes,
+        priorityLabel: MPTodoUtils.normalizePriorityPickerLabel(priorityApi),
         whenLabel: whenLabel,
         timeLabel: resolvedTimeLabel,
         todoId: todoId,
@@ -172,6 +175,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       todoId: item.todoId,
       insightId: item.insightId,
       deadlineUnixSec: item.deadlineUnixSec,
+      priorityApi: item.priorityApi,
       onDelete: () async {
         final bool ok = await _cubit.removeFocusItemAt(index);
         return ok;
@@ -242,6 +246,7 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       todoId: row.todoId,
       insightId: row.insightId,
       deadlineUnixSec: row.deadlineUnixSec,
+      priorityApi: row.priorityApi,
       onDelete: () => _cubit.refreshListsAfterMutation(),
     );
     if (!mounted) {

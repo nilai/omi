@@ -16,6 +16,7 @@ class MPTodayFocusCardItem {
     this.slot,
     this.deadlineUnixSec,
     this.description,
+    this.priorityApi = 'Normal',
   });
 
   final String title;
@@ -38,6 +39,9 @@ class MPTodayFocusCardItem {
   final int? deadlineUnixSec;
 
   final String? description;
+
+  /// 与服务端 `priority` 一致（`Low` / `Normal` / `High`）。
+  final String priorityApi;
 }
 
 /// 「Today's Focus」整卡数据
