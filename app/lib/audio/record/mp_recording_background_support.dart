@@ -53,16 +53,20 @@ class MPRecordingBackgroundSupport {
   static bool _backgroundRecordingReliable = true;
   static bool _mixWithOthersEnabled = false;
   static StreamSubscription<AudioInterruptionEvent>? _interruptionSub;
-  static Timer? _mixSessionKeepAliveTimer;
 
-  /// 混音模式下定期补激活原生 AudioSession，对抗微信等 App 抢占。
-  static const Duration _kMixSessionKeepAliveInterval = Duration(seconds: 2);
+  /// 混音 + 原生录音时由 iOS/Android 原生层处理打断，Dart 侧不再轮询 maintain。
+  static bool _nativeRecorderHandlesInterruptions = false;
 
   /// 当前录音会话退后台是否可靠（与 [activateForRecording] 结果一致）。
   static bool get isBackgroundRecordingReliable => _backgroundRecordingReliable;
 
   /// 当前是否为混音模式（可与系统录音备忘录等并存）。
   static bool get isMixWithOthersEnabled => _mixWithOthersEnabled;
+
+  /// 首页原生录音：打断续录由原生插件负责，避免 Dart 重复处理。
+  static void setNativeRecorderHandlesInterruptions(bool enabled) {
+    _nativeRecorderHandlesInterruptions = enabled;
+  }
 
   /// 独占录音：与其它 App 互抢麦克风（语音输入、快速捕获等）。
   static AudioSessionConfiguration _exclusiveRecordingSessionConfiguration() {
@@ -104,41 +108,31 @@ class MPRecordingBackgroundSupport {
     );
   }
 
-  static Future<bool> _applyActiveRecordingSession({required bool activate}) async {
+  static Future<bool> _applyActiveRecordingSession({required bool activate, bool reconfigure = true}) async {
     if (_mixWithOthersEnabled && Platform.isIOS) {
       if (activate) {
-        final AudioSession session = await AudioSession.instance;
-        await session.configure(_mixRecordingSessionConfiguration());
-        await _setRecordingSessionActive(true);
+        if (reconfigure) {
+          final AudioSession session = await AudioSession.instance;
+          await session.configure(_mixRecordingSessionConfiguration());
+          await _setRecordingSessionActive(true);
+          return MPRecordingSessionNative.applyMixRecordingSession();
+        }
+        // 原生录音进行中：跳过重复 configure/applyMix，避免 MethodChannel 阻塞 UI。
+        if (_nativeRecorderHandlesInterruptions) {
+          return true;
+        }
         return MPRecordingSessionNative.applyMixRecordingSession();
       }
       return await _setRecordingSessionActive(false);
     }
     if (activate) {
-      final AudioSession session = await AudioSession.instance;
-      await session.configure(_activeRecordingSessionConfiguration());
+      if (reconfigure) {
+        final AudioSession session = await AudioSession.instance;
+        await session.configure(_activeRecordingSessionConfiguration());
+      }
       return _setRecordingSessionActive(true);
     }
     return _setRecordingSessionActive(false);
-  }
-
-  static void _startMixSessionKeepAlive() {
-    if (!_mixWithOthersEnabled) {
-      return;
-    }
-    _mixSessionKeepAliveTimer?.cancel();
-    _mixSessionKeepAliveTimer = Timer.periodic(_kMixSessionKeepAliveInterval, (_) {
-      if (!_recordingInfrastructureActive || !_mixWithOthersEnabled) {
-        return;
-      }
-      unawaited(_applyActiveRecordingSession(activate: true));
-      unawaited(MPGlobalRecordingCoordinator.instance.notifySystemAudioFocusAttemptMaintainRecording());
-    });
-  }
-
-  static void _stopMixSessionKeepAlive() {
-    _mixSessionKeepAliveTimer?.cancel();
-    _mixSessionKeepAliveTimer = null;
   }
 
   static AudioSessionConfiguration _activeRecordingSessionConfiguration() {
@@ -208,9 +202,6 @@ class MPRecordingBackgroundSupport {
     if (!audioSessionActive) {
       backgroundRecordingReliable = false;
     }
-    if (_mixWithOthersEnabled) {
-      _startMixSessionKeepAlive();
-    }
 
     final AudioSession session = await AudioSession.instance;
 
@@ -219,7 +210,9 @@ class MPRecordingBackgroundSupport {
       _interruptionSub = session.interruptionEventStream.listen(
         (AudioInterruptionEvent event) {
           if (!event.begin) {
-            if (Platform.isIOS && _recordingInfrastructureActive) {
+            if (Platform.isIOS &&
+                _recordingInfrastructureActive &&
+                !_nativeRecorderHandlesInterruptions) {
               unawaited(prepareIosNativeRecorderResume());
             }
             unawaited(_handleSystemAudioInterruptionEnded());
@@ -266,13 +259,13 @@ class MPRecordingBackgroundSupport {
     );
   }
 
-  /// 录音进行中补激活 AudioSession（如从后台回到前台后 native 已停但会话仍应可用）。
+  /// 录音进行中补激活 AudioSession（轻量：混音模式不重复 configure）。
   static Future<bool> ensureAudioSessionActiveForRecording() async {
     if (!_recordingInfrastructureActive) {
       return false;
     }
     try {
-      return await _applyActiveRecordingSession(activate: true);
+      return await _applyActiveRecordingSession(activate: true, reconfigure: false);
     } catch (e, st) {
       debugPrint('MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording: $e\n$st');
       return false;
@@ -294,23 +287,24 @@ class MPRecordingBackgroundSupport {
     }
   }
 
-  /// 系统音频焦点被抢占：混音模式下立即维持采集，不主动暂停。
+  /// 系统音频焦点被抢占：原生录音模式下仅轻量补 session，不触发 Dart 侧 maintain 风暴。
   static Future<void> _handleSystemAudioInterruptionBegin() async {
     if (!_recordingInfrastructureActive) {
       return;
     }
+    if (_nativeRecorderHandlesInterruptions) {
+      return;
+    }
     await ensureAudioSessionActiveForRecording();
     await MPGlobalRecordingCoordinator.instance.notifySystemAudioFocusAttemptMaintainRecording();
-    if (_mixWithOthersEnabled) {
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-      await ensureAudioSessionActiveForRecording();
-      await MPGlobalRecordingCoordinator.instance.notifySystemAudioFocusAttemptMaintainRecording();
-    }
   }
 
-  /// 系统音频打断结束：再次激活会话并尝试恢复采集。
+  /// 系统音频打断结束：原生录音模式下由原生 EventChannel 通知，此处不重复 maintain。
   static Future<void> _handleSystemAudioInterruptionEnded() async {
     if (!_recordingInfrastructureActive) {
+      return;
+    }
+    if (_nativeRecorderHandlesInterruptions) {
       return;
     }
     await ensureAudioSessionActiveForRecording();
@@ -322,10 +316,10 @@ class MPRecordingBackgroundSupport {
     if (!_recordingInfrastructureActive) {
       return;
     }
-    _stopMixSessionKeepAlive();
     _recordingInfrastructureActive = false;
     _backgroundRecordingReliable = true;
     _mixWithOthersEnabled = false;
+    _nativeRecorderHandlesInterruptions = false;
     await _interruptionSub?.cancel();
     _interruptionSub = null;
     try {
