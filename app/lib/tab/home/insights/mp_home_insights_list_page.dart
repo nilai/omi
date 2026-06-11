@@ -343,16 +343,9 @@ class _MPInsightCard extends StatelessWidget {
                     color: orangeTextColor,
                   ),
                 ),
-              Padding(
-                padding: EdgeInsets.only(
-                  left: item.type == MPInsightCardType.pattern ? 8 : 0,
-                  right: 0,
-                  top: 0,
-                  bottom: 0,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
@@ -474,7 +467,6 @@ class _MPInsightCard extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
             ],
           ),
         ),
