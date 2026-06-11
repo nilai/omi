@@ -199,16 +199,32 @@ class _MPInsightCard extends StatelessWidget {
     }
   }
 
-  Color _cardBgColor() {
+  LinearGradient _cardGradient() {
     switch (item.type) {
       case MPInsightCardType.daily:
-        return const Color(0xFFE8E4F1);
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFF5F3FF), Color(0xFFEDE9FE)],
+        );
       case MPInsightCardType.weekly:
-        return const Color(0xFFF1DBBE);
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFFFF7ED), Color(0xFFFED7AA)],
+        );
       case MPInsightCardType.monthly:
-        return const Color(0xFFD4E8F3);
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFF0F9FF), Color(0xFFE0F7FA)],
+        );
       case MPInsightCardType.pattern:
-        return const Color(0xFFF3E0A8);
+        return const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[Color(0xFFFFF3E0), Color(0xFFFFE082)],
+        );
     }
   }
 
@@ -299,7 +315,7 @@ class _MPInsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color accent = _accentColor();
     final IconData icon = _iconData();
-    final Color cardBg = _cardBgColor();
+    final LinearGradient cardGradient = _cardGradient();
     final Color borderColor = _cardBorderColor();
 
     return Material(
@@ -310,7 +326,7 @@ class _MPInsightCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: cardBg,
+            gradient: cardGradient,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: borderColor, width: 1.2),
           ),
