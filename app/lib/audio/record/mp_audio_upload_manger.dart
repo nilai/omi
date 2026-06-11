@@ -31,10 +31,11 @@ void _emitUploadProgress(
 }
 
 /// 单条上传失败：通知首页 Toast；最后一条时由 [isLastInBatch] 触发状态条收口。
+///
+/// 失败路径不再追加 `progress: 100` 进度事件，避免首页 [showSyncingStatus] 取消已安排的清除定时器。
 void _notifyBatchUploadFailure({
   required int batchIndex,
   required int batchTotal,
-  MPAudioUploadPerFileProgress? onPerFileProgress,
 }) {
   final bool isLastInBatch = batchIndex >= batchTotal;
   debugPrint(
@@ -44,10 +45,9 @@ void _notifyBatchUploadFailure({
     MPHomeUploadFailedPayload(
       batchTotal: batchTotal,
       batchIndex: batchIndex,
-      isLastInBatch: batchIndex >= batchTotal,
+      isLastInBatch: isLastInBatch,
     ),
   );
-  _emitUploadProgress(onPerFileProgress, batchIndex: batchIndex, batchTotal: batchTotal, progress: 100);
 }
 
 /// 多文件上传进度：[totalFiles] 为当前队列中待处理条数 + 正在上传的 1 条；[currentFileIndex] 为本次 Worker 会话内从 1 开始的序号；[progress] 为当前文件 0–100。
@@ -294,7 +294,6 @@ class MPAudioUploadManager {
           _notifyBatchUploadFailure(
             batchIndex: i + 1,
             batchTotal: n,
-            onPerFileProgress: onPerFileProgress,
           );
           continue;
         }
@@ -311,7 +310,6 @@ class MPAudioUploadManager {
         _notifyBatchUploadFailure(
           batchIndex: i + 1,
           batchTotal: n,
-          onPerFileProgress: onPerFileProgress,
         );
         continue;
       }
@@ -339,7 +337,6 @@ class MPAudioUploadManager {
         _notifyBatchUploadFailure(
           batchIndex: i + 1,
           batchTotal: n,
-          onPerFileProgress: onPerFileProgress,
         );
         continue;
       }
