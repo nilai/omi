@@ -119,6 +119,11 @@ class _MPQucikCaptureConfirmDialogState
     extends State<MPQucikCaptureConfirmDialog> {
   static const Color _kBlue = Color(0xFF2F7BFF);
 
+  /// [_editingIndex] 为 -1 时表示正在编辑 ORIGINAL TEXT。
+  static const int _kOriginalTextEditKey = -1;
+
+  late String _originalText = widget.originalText;
+
   late final List<_ConfirmRow> _rows = widget.items
       .map(
         (MPQuickCaptureConfirmItem e) => _ConfirmRow(
@@ -178,7 +183,13 @@ class _MPQucikCaptureConfirmDialogState
 
   /// 仅切换至 items 区域高亮，不改变各行勾选状态。
   void _selectItemsRegion() {
-    setState(() => _activeRegion = _MPConfirmSelectionRegion.items);
+    setState(() {
+      _activeRegion = _MPConfirmSelectionRegion.items;
+      _editingIndex = null;
+      _editingController?.dispose();
+      _editingController = null;
+      _editingFocusNode.unfocus();
+    });
   }
 
   MPQuickCaptureConfirmResult _buildPopResult({required bool confirmed}) {
@@ -193,7 +204,7 @@ class _MPQucikCaptureConfirmDialogState
     if (_isOriginalTextRegionActive) {
       return MPQuickCaptureConfirmResult(
         confirmed: true,
-        originalText: widget.originalText.trim(),
+        originalText: _originalText.trim(),
         todos: const <MPBatchCreateTodoItem>[],
         memos: const <MPBatchCreateMemoItem>[],
       );
@@ -248,6 +259,24 @@ class _MPQucikCaptureConfirmDialogState
     return out;
   }
 
+  /// 开始编辑 ORIGINAL TEXT。
+  void _startEditOriginalText() {
+    _editingController?.dispose();
+    _editingController = TextEditingController(text: _originalText);
+    setState(() {
+      _activeRegion = _MPConfirmSelectionRegion.originalText;
+      for (final _ConfirmRow r in _rows) {
+        r.selected = false;
+      }
+      _editingIndex = _kOriginalTextEditKey;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _editingFocusNode.requestFocus();
+      }
+    });
+  }
+
   /// 开始编辑指定问题。
   void _startEdit(int index) {
     if (index < 0 || index >= _rows.length) {
@@ -266,20 +295,79 @@ class _MPQucikCaptureConfirmDialogState
   /// 保存当前编辑内容并返回普通列表态。
   void _saveEdit() {
     final int? index = _editingIndex;
-    if (index == null ||
-        _editingController == null ||
-        index < 0 ||
-        index >= _rows.length) {
+    if (index == null || _editingController == null) {
       return;
     }
     final String next = _editingController!.text.trim();
-    if (next.isNotEmpty) {
-      _rows[index].text = next;
+    if (index == _kOriginalTextEditKey) {
+      if (next.isNotEmpty) {
+        _originalText = next;
+      }
+    } else if (index >= 0 && index < _rows.length) {
+      if (next.isNotEmpty) {
+        _rows[index].text = next;
+      }
+    } else {
+      return;
     }
     _editingController?.dispose();
     _editingController = null;
     _editingFocusNode.unfocus();
     setState(() => _editingIndex = null);
+  }
+
+  /// 编辑态输入框（ORIGINAL TEXT 与 item 行共用样式）。
+  Widget _buildEditTextField() {
+    return TextField(
+      controller: _editingController,
+      focusNode: _editingFocusNode,
+      minLines: 1,
+      maxLines: 4,
+      style: TextStyle(
+        fontSize: OmiFontSize.t9_18,
+        fontWeight: OmiFontWeight.medium,
+        color: mainTextColor,
+        height: 1.3,
+      ),
+      decoration: InputDecoration(
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 8,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _kBlue, width: 1.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _kBlue, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: _kBlue, width: 1.5),
+        ),
+      ),
+    );
+  }
+
+  /// 编辑 / 保存按钮（与 item 行一致）。
+  Widget _buildEditActionButton({
+    required bool editing,
+    required VoidCallback onTap,
+    EdgeInsetsGeometry padding = EdgeInsets.zero,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: padding,
+        child: Icon(
+          editing ? Icons.check_rounded : Icons.edit_outlined,
+          color: editing ? _kBlue : secondTextColor,
+          size: editing ? 20 : 19,
+        ),
+      ),
+    );
   }
 
   void _onItemSelectionTap(int index) {
@@ -336,10 +424,11 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   Widget _buildOriginalTextCard() {
+    final bool editing = _editingIndex == _kOriginalTextEditKey;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: _selectOriginalTextRegion,
+        onTap: editing ? null : _selectOriginalTextRegion,
         borderRadius: BorderRadius.circular(12),
         splashFactory: NoSplash.splashFactory,
         splashColor: Colors.transparent,
@@ -353,14 +442,28 @@ class _MPQucikCaptureConfirmDialogState
           decoration: _buildRegionCardDecoration(
             isActive: _isOriginalTextRegionActive,
           ),
-          child: Text(
-            widget.originalText,
-            style: TextStyle(
-              fontSize: OmiFontSize.t8_17,
-              fontWeight: OmiFontWeight.medium,
-              color: mainTextColor,
-              height: 1.35,
-            ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Expanded(
+                child: editing
+                    ? _buildEditTextField()
+                    : Text(
+                        _originalText,
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t8_17,
+                          fontWeight: OmiFontWeight.medium,
+                          color: mainTextColor,
+                          height: 1.35,
+                        ),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              _buildEditActionButton(
+                editing: editing,
+                onTap: editing ? _saveEdit : _startEditOriginalText,
+              ),
+            ],
           ),
         ),
       ),
@@ -425,37 +528,7 @@ class _MPQucikCaptureConfirmDialogState
                     const SizedBox(width: 10),
                     Expanded(
                       child: editing
-                          ? TextField(
-                              controller: _editingController,
-                              focusNode: _editingFocusNode,
-                              minLines: 1,
-                              maxLines: 4,
-                              style: TextStyle(
-                                fontSize: OmiFontSize.t9_18,
-                                fontWeight: OmiFontWeight.medium,
-                                color: mainTextColor,
-                                height: 1.3,
-                              ),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: const BorderSide(color: _kBlue, width: 1.5),
-                                ),
-                              ),
-                            )
+                          ? _buildEditTextField()
                           : Text(
                               _displayLine(row),
                               maxLines: 8,
@@ -474,16 +547,10 @@ class _MPQucikCaptureConfirmDialogState
             ),
           ),
           const SizedBox(width: 8),
-          GestureDetector(
+          _buildEditActionButton(
+            editing: editing,
             onTap: editing ? _saveEdit : () => _startEdit(index),
-            child: Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Icon(
-                editing ? Icons.check_rounded : Icons.edit_outlined,
-                color: editing ? _kBlue : secondTextColor,
-                size: editing ? 20 : 19,
-              ),
-            ),
+            padding: const EdgeInsets.only(top: 2),
           ),
         ],
       ),
