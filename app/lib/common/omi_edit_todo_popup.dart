@@ -152,6 +152,25 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
         1000;
   }
 
+  /// TIME 是否为已选的具体时刻（`HH:mm`）；否则视为 No deadline。
+  bool _isSelectedTime(String raw) {
+    final String t = raw.trim();
+    if (t.isEmpty || t == 'No deadline' || t.startsWith('--')) {
+      return false;
+    }
+    final RegExp pattern = RegExp(r'^\d{1,2}:\d{2}$');
+    if (!pattern.hasMatch(t)) {
+      return false;
+    }
+    final List<String> parts = t.split(':');
+    final int? h = int.tryParse(parts[0]);
+    final int? m = int.tryParse(parts[1]);
+    if (h == null || m == null) {
+      return false;
+    }
+    return h >= 0 && h <= 23 && m >= 0 && m <= 59;
+  }
+
   TimeOfDay _parseTimeOfDayFromEdit(
     String raw, {
     int? fallbackFromSec,
@@ -252,7 +271,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
     setState(() {
       _pickedCalendarDate = _dateOnlyLocal(date);
       _when = DateFormat('MMM d, y').format(_pickedCalendarDate!);
-      if (_time.isEmpty) {
+      if (!_isSelectedTime(_time)) {
         _time = '09:00';
       }
       _syncDeadlineFromWhenAndTime();
@@ -275,7 +294,7 @@ class _OmiEditTodoPopupSheetState extends State<_OmiEditTodoPopupSheet> {
       _pickedCalendarDate = null;
       if (v == 'No deadline') {
         _time = '';
-      } else if (_time.isEmpty) {
+      } else if (!_isSelectedTime(_time)) {
         _time = '09:00';
       }
       _syncDeadlineFromWhenAndTime();
