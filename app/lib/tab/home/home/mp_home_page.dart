@@ -100,11 +100,11 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
     }
   }
 
-  /// 应用回到前台且当前展示 Home Tab 时刷新（避免挂在其它 Tab 时无谓请求）。
+  /// 应用回到前台：检测待传本地音频；当前展示 Home Tab 时再刷新列表。
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && widget.isTabActive) {
-      _cubit.loadData();
+    if (state == AppLifecycleState.resumed) {
+      _cubit.onAppResumed(shouldRefreshHomeData: widget.isTabActive);
     }
   }
 

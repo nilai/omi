@@ -165,6 +165,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   Timer? _syncCompletedClearTimer;
   bool _bleDeviceImportRunning = false;
 
+  /// 本地待传音频批量上传任务是否仍在执行（含冷/热启动触发的队列上传）。
+  bool _pendingLocalAudioUploadRunning = false;
+
   static MPHomeState _initialState() {
     return MPHomeState(
       upNextTodos: const <MPHomeTodoItem>[],
@@ -177,15 +180,45 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void initData() {
     connectBluetoothToLastRecordedDevice();
     loadData();
-    unawaited(_uploadPendingLocalAudioFilesOnColdStart());
+    unawaited(_uploadPendingLocalAudioFilesIfNeeded(isHotStart: false));
   }
 
-  /// 冷启动进入首页后，上传本地待传音频队列。
-  Future<void> _uploadPendingLocalAudioFilesOnColdStart() async {
+  /// 应用回到前台（热启动）：刷新首页数据，并检测本地待传音频。
+  void onAppResumed({required bool shouldRefreshHomeData}) {
+    if (shouldRefreshHomeData) {
+      loadData();
+    }
+    unawaited(_uploadPendingLocalAudioFilesIfNeeded(isHotStart: true));
+  }
+
+  /// 是否正在同步设备文件或上传本地音频（热启动时用于跳过重复检测上传）。
+  bool _isSyncOrUploadInProgress() {
+    if (_bleDeviceImportRunning || _pendingLocalAudioUploadRunning) {
+      return true;
+    }
+    final MPHomeAudioStatusType? type = state.audioStatus?.type;
+    return type == MPHomeAudioStatusType.syncing || type == MPHomeAudioStatusType.importing;
+  }
+
+  /// 检测本地待传音频队列，有则上传；热启动时若已在同步/上传则跳过。
+  Future<void> _uploadPendingLocalAudioFilesIfNeeded({required bool isHotStart}) async {
+    if (isHotStart && _isSyncOrUploadInProgress()) {
+      debugPrint('MPHomeCubit: skip pending local audio upload on hot start — sync/upload in progress');
+      return;
+    }
     try {
+      final bool hasPending = await MPAudioUploadManager.instance.hasPendingUploadableRecords();
+      if (!hasPending) {
+        return;
+      }
+      _pendingLocalAudioUploadRunning = true;
       await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
     } catch (e, st) {
-      debugPrint('MPHomeCubit: upload pending local audio on cold start failed: $e\n$st');
+      debugPrint(
+        'MPHomeCubit: upload pending local audio failed (hotStart=$isHotStart): $e\n$st',
+      );
+    } finally {
+      _pendingLocalAudioUploadRunning = false;
     }
   }
 

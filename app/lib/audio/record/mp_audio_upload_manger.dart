@@ -105,6 +105,17 @@ class MPAudioUploadManager {
     return r.createAt;
   }
 
+  /// 本地是否仍有待上传的音频记录（未逻辑删除且文件路径有效）。
+  Future<bool> hasPendingUploadableRecords() async {
+    try {
+      final List<MPAudioLocalRecord> records = await MPAudioLocalRecordsUtil.instance.queryAll(includeRemoved: false);
+      return records.any((MPAudioLocalRecord r) => !r.isRemoved && _isUploadableAudioRecord(r));
+    } catch (e) {
+      debugPrint('MPAudioUploadManager: hasPendingUploadableRecords failed: $e');
+      return false;
+    }
+  }
+
   /// 基于 [MPAudioLocalRecordsUtil.queryAll] 筛出待上传音频并上传（含导入后已登记的全量队列）。
   Future<MPCreateRecordResponse?> uploadAllRecordingFiles({
     bool rightNowTranscribe = false,
