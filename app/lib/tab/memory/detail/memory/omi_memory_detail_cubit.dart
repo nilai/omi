@@ -1459,9 +1459,11 @@ List<MPMemoryFeedBlock> _buildFeedBlocksFromCards(List<MPFeedCardStruct> feeds, 
           MPMemoryResummaryCardData(
             headerTimeLabel: _feedCardHeaderTimeLabel(f),
             mainTitle: mainTitle.isNotEmpty ? mainTitle : 'Resummary',
-            sectionTitle: '',
             bodyText: body.isNotEmpty ? body : ' ',
-            badgeLabel: (f.templateName ?? '').isNotEmpty ? f.templateName ?? '' : 'Autopilot mode',
+            badgeLabel: (f.templateName ?? '').isNotEmpty
+                ? f.templateName ?? ''
+                : 'Autopilot mode',
+            summaryMemoryId: (f.id ?? '').trim().isNotEmpty ? f.id : null,
           ),
         ),
       );

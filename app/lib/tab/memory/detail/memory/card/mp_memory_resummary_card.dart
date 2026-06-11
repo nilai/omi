@@ -147,35 +147,23 @@ class MPMemoryResummaryCardData {
     this.badgeLabel = 'Autopilot mode',
     this.summaryMemoryId,
     required this.mainTitle,
-    required this.sectionTitle,
     required this.bodyText,
-    this.expandedSectionTitle,
-    this.expandedSectionBody,
   });
 
   /// 头部右侧时间
   final String headerTimeLabel;
 
-  /// 标题下胶囊标签，如 `Autopilot mode`
+  /// 标题下胶囊标签（接口 [MPFeedCardStruct.templateName]）
   final String badgeLabel;
 
   /// 与接口返回的 summary_memory_id 对齐，用于本地定位更新
   final String? summaryMemoryId;
 
-  /// 主标题，如 `Strategic Investment Analysis`
+  /// 主标题（接口 [MPFeedCardStruct.title]，纯文本展示）
   final String mainTitle;
 
-  /// 小节标题，如 `Executive Summary`
-  final String sectionTitle;
-
-  /// 正文（折叠时为截断展示，展开后显示完整）
+  /// Markdown 正文（接口 [MPFeedCardStruct.content]）
   final String bodyText;
-
-  /// 展开后额外区块标题，如 `Bottom Line`；与 [expandedSectionBody] 搭配使用
-  final String? expandedSectionTitle;
-
-  /// 展开后额外正文（如 Bottom Line 段落）
-  final String? expandedSectionBody;
 }
 
 /// RESUMMARY 生成中占位卡片数据
@@ -396,13 +384,8 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
         _kCollapsedBodyLines;
   }
 
-  /// 是否存在「更多内容」：有展开区块，或正文在折叠行数内显示不下
+  /// 正文 Markdown 在折叠行数内是否显示不下
   bool _hasMoreContent(double bodyMaxWidth) {
-    final bool hasExtra = _d.expandedSectionBody != null &&
-        _d.expandedSectionBody!.trim().isNotEmpty;
-    if (hasExtra) {
-      return true;
-    }
     return _markdownBodyExceedsCollapsedLines(_d.bodyText, bodyMaxWidth);
   }
 
@@ -506,6 +489,8 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                     color: greenTextColor,
                     height: 1.2,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ),
@@ -518,17 +503,9 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                 color: mainTextColor,
                 height: 1.25,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
-            // const SizedBox(height: 8),
-            // Text(
-            //   _d.sectionTitle,
-            //   style: OmiTextStyle.create(
-            //     fontSize: OmiFontSize.t5_14,
-            //     fontWeight: OmiFontWeight.bold,
-            //     color: mainTextColor,
-            //     height: 1.3,
-            //   ),
-            // ),
             const SizedBox(height: 8),
             LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -579,39 +556,13 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     _expanded ? buildMainBodyMarkdown() : buildCollapsedMainBody(),
-                    if (_expanded &&
-                        _d.expandedSectionBody != null &&
-                        _d.expandedSectionBody!.trim().isNotEmpty) ...<Widget>[
-                      const SizedBox(height: 16),
-                      Text(
-                        _d.expandedSectionTitle?.trim().isNotEmpty == true
-                            ? _d.expandedSectionTitle!
-                            : 'Bottom Line',
-                        style: OmiTextStyle.create(
-                          fontSize: OmiFontSize.t5_14,
-                          fontWeight: OmiFontWeight.bold,
-                          color: mainTextColor,
-                          height: 1.3,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      MarkdownBody(
-                        data: _d.expandedSectionBody!,
-                        selectable: true,
-                        shrinkWrap: true,
-                        styleSheet: mdSheet,
-                        onTapLink: (String text, String? href, String title) {
-                          unawaited(_mpResummaryTapMarkdownLink(href));
-                        },
-                      ),
-                    ],
                     if (showToggle) ...<Widget>[
                       const SizedBox(height: 12),
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: InkWell(
+                        child: GestureDetector(
                           onTap: () => _setExpanded(!_expanded),
-                          borderRadius: BorderRadius.circular(8),
+                          behavior: HitTestBehavior.opaque,
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
@@ -624,15 +575,16 @@ class _MPMemoryResummaryCardState extends State<MPMemoryResummaryCard> {
                                     fontWeight: OmiFontWeight.medium,
                                     color: greenTextColor,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                                 const SizedBox(width: 2),
-
                                 OmiImageLoader.localImg(
-                                    _expanded ? Assets.omiArrowUp : Assets.omiArrowDown,
-                                    width: 14,
-                                    height: 14,
-                                    color: greenTextColor
-                                )
+                                  _expanded ? Assets.omiArrowUp : Assets.omiArrowDown,
+                                  width: 14,
+                                  height: 14,
+                                  color: greenTextColor,
+                                ),
                               ],
                             ),
                           ),
