@@ -1,10 +1,96 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../common/mp_voice_text_input.dart';
 import '../../tab/askai/mp_ask_ai_chat_cubit.dart';
 import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';
 import '../../utils/omi_textstyle.dart';
+
+MarkdownStyleSheet _mpAskAIChatMarkdownStyle() {
+  TextStyle base({
+    required double size,
+    FontWeight? weight,
+    Color? color,
+    double height = 1.4,
+    FontStyle? fontStyle,
+    TextDecoration? decoration,
+  }) {
+    return OmiTextStyle.create(
+      fontSize: size,
+      fontWeight: weight ?? OmiFontWeight.regular,
+      color: color ?? mainTextColor,
+      height: height,
+      fontStyle: fontStyle,
+      decoration: decoration,
+    );
+  }
+
+  return MarkdownStyleSheet(
+    p: base(size: OmiFontSize.t8_17),
+    pPadding: EdgeInsets.zero,
+    h1: base(
+      size: OmiFontSize.t11_20,
+      weight: OmiFontWeight.bold,
+      color: mainTextColor,
+    ),
+    h1Padding: const EdgeInsets.only(top: 4, bottom: 8),
+    h2: base(
+      size: OmiFontSize.t8_17,
+      weight: OmiFontWeight.bold,
+      color: mainTextColor,
+    ),
+    h2Padding: const EdgeInsets.only(top: 2, bottom: 6),
+    h3: base(
+      size: OmiFontSize.t6_15,
+      weight: OmiFontWeight.medium,
+      color: mainTextColor,
+    ),
+    h3Padding: const EdgeInsets.only(top: 2, bottom: 4),
+    strong: base(size: OmiFontSize.t8_17, weight: OmiFontWeight.bold),
+    em: base(size: OmiFontSize.t8_17, fontStyle: FontStyle.italic),
+    a: base(
+      size: OmiFontSize.t8_17,
+      color: blueTextColor,
+      decoration: TextDecoration.underline,
+    ),
+    code: base(
+      size: OmiFontSize.t5_14,
+      color: mainTextColor,
+    ).copyWith(backgroundColor: pageColor, fontFamily: 'monospace'),
+    blockquote: base(size: OmiFontSize.t8_17, color: secondTextColor),
+    blockquotePadding: const EdgeInsets.only(left: 10, top: 4, bottom: 4),
+    blockquoteDecoration: BoxDecoration(
+      border: Border(
+        left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3),
+      ),
+    ),
+    blockSpacing: 8,
+    listIndent: 22,
+    listBullet: base(size: OmiFontSize.t8_17),
+    listBulletPadding: const EdgeInsets.only(right: 6),
+    horizontalRuleDecoration: BoxDecoration(
+      border: Border(top: BorderSide(color: lineColor, width: 1)),
+    ),
+    codeblockPadding: const EdgeInsets.all(10),
+    codeblockDecoration: BoxDecoration(
+      color: pageColor,
+      borderRadius: BorderRadius.circular(8),
+    ),
+  );
+}
+
+Future<void> _mpAskAIChatTapMarkdownLink(String? href) async {
+  if (href == null || href.isEmpty) return;
+  final Uri? uri = Uri.tryParse(href);
+  if (uri == null) return;
+  if (!await canLaunchUrl(uri)) return;
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
 
 enum MPAskAIChatType {
   insight,
@@ -562,20 +648,32 @@ class _MessageList extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  message.content,
-                  style: OmiTextStyle.create(
-                    color: mainTextColor,
-                    fontSize: OmiFontSize.t8_17,
-                    fontWeight: OmiFontWeight.regular,
-                    height: 1.4,
-                  ),
-                ),
+                if (message.content.trim().isNotEmpty)
+                  _MPAskAIChatMarkdownContent(content: message.content),
               ],
             ),
           );
         }).toList(growable: false),
       ),
+    );
+  }
+}
+
+class _MPAskAIChatMarkdownContent extends StatelessWidget {
+  const _MPAskAIChatMarkdownContent({required this.content});
+
+  final String content;
+
+  @override
+  Widget build(BuildContext context) {
+    return MarkdownBody(
+      data: content,
+      selectable: true,
+      shrinkWrap: true,
+      styleSheet: _mpAskAIChatMarkdownStyle(),
+      onTapLink: (String text, String? href, String title) {
+        unawaited(_mpAskAIChatTapMarkdownLink(href));
+      },
     );
   }
 }
