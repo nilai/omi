@@ -8,6 +8,7 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MpAndroidAudioMultiPicker.register(this, flutterEngine)
+        MPNativeRecorderPlugin.register(applicationContext, flutterEngine)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

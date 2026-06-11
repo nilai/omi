@@ -12,5 +12,11 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    MPRecordingSessionPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "MPRecordingSessionPlugin")!
+    )
+    MPNativeRecorderPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "MPNativeRecorderPlugin")!
+    )
   }
 }
