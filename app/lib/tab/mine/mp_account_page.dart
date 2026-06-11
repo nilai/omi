@@ -6,6 +6,7 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_image_loader.dart';
+import 'package:memo_pin/utils/platform/platform_manager.dart';
 
 import '../../generated/assets.dart';
 
@@ -72,7 +73,7 @@ class _MPAccountView extends StatelessWidget {
                 _buildHelpSupportCard(context),
                 const SizedBox(height: 18),
                 Text(
-                  'MemoPin v1.0.0',
+                  'MemoPin v${PlatformManager.instance.appVersionName}',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 12, color: secondTextColor.withValues(alpha: 0.85)),
                 ),

@@ -30,6 +30,10 @@ class PlatformManager {
   }
 
   String get platform => Platform.operatingSystem;
+
+  /// 用户可见版本号，对应 [pubspec.yaml] 的 version 名称部分（如 `1.0.1`）。
+  String get appVersionName => _packageInfo.version;
+
   String get appVersion => '${_packageInfo.version}+${_packageInfo.buildNumber}';
 
   bool get isAnalyticsSupported => PlatformService.isAnalyticsSupported;
