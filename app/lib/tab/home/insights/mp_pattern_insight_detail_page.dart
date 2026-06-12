@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
@@ -12,6 +13,50 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
+
+MarkdownStyleSheet _mpPatternDetectedMarkdownStyle() {
+  return MarkdownStyleSheet(
+    blockSpacing: 8,
+    listIndent: 22,
+    h1: OmiTextStyle.create(
+      color: mainTextColor,
+      fontSize: OmiFontSize.t8_17,
+      fontWeight: OmiFontWeight.bold,
+      height: 1.35,
+    ),
+    h1Padding: EdgeInsets.zero,
+    h2: OmiTextStyle.create(
+      color: mainTextColor,
+      fontSize: OmiFontSize.t7_16,
+      fontWeight: OmiFontWeight.bold,
+      height: 1.35,
+    ),
+    h2Padding: EdgeInsets.zero,
+    h3: OmiTextStyle.create(
+      color: mainTextColor,
+      fontSize: OmiFontSize.t7_16,
+      fontWeight: OmiFontWeight.bold,
+      height: 1.35,
+    ),
+    h3Padding: EdgeInsets.zero,
+    p: OmiTextStyle.create(
+      color: mainTextColor,
+      fontSize: OmiFontSize.t6_15,
+      fontWeight: OmiFontWeight.regular,
+      height: 1.6,
+    ),
+    pPadding: EdgeInsets.zero,
+    strong: OmiTextStyle.create(
+      color: mainTextColor,
+      fontSize: OmiFontSize.t6_15,
+      fontWeight: OmiFontWeight.bold,
+      height: 1.6,
+    ),
+    listBullet: OmiTextStyle.create(color: purpleTextColor, fontSize: OmiFontSize.t6_15),
+    listBulletPadding: const EdgeInsets.only(right: 10, top: 6),
+    unorderedListAlign: WrapAlignment.start,
+  );
+}
 
 /// Pattern Insight 详情页（强调“主题 + 相关记忆”）
 class MPPatternInsightDetailPage extends StatelessWidget {
@@ -103,14 +148,39 @@ class _MPPatternInsightBody extends StatelessWidget {
                       children: <Widget>[
                         _PatternDetectedTitle(icon: Icons.handyman),
                         const SizedBox(height: 12),
-                        Text(
-                          topDescription,
-                          style: OmiTextStyle.create(
-                            color: mainTextColor,
-                            fontSize: OmiFontSize.t6_15,
-                            fontWeight: OmiFontWeight.regular,
-                            height: 1.6,
-                          ),
+                        MarkdownBody(
+                          data: topDescription,
+                          shrinkWrap: true,
+                          softLineBreak: true,
+                          styleSheet: _mpPatternDetectedMarkdownStyle(),
+                          listItemCrossAxisAlignment: MarkdownListItemCrossAxisAlignment.start,
+                          bulletBuilder: (MarkdownBulletParameters parameters) {
+                            if (parameters.style == BulletStyle.unorderedList) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 7),
+                                child: Container(
+                                  width: 4,
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    color: purpleTextColor,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                ),
+                              );
+                            }
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                '${parameters.index + 1}.',
+                                style: OmiTextStyle.create(
+                                  color: mainTextColor,
+                                  fontSize: OmiFontSize.t6_15,
+                                  fontWeight: OmiFontWeight.medium,
+                                  height: 1.4,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 16),
                         _AppearedSection(
