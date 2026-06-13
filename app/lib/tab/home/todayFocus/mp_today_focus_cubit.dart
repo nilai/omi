@@ -744,6 +744,10 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       MPToastUtils.showMessage('Task ID cannot be empty.');
       return false;
     }
+    if (slot == null) {
+      MPToastUtils.showMessage('Missing focus slot for this task.');
+      return false;
+    }
     return _runWithBlockingGlobalLoading(() async {
       try {
         final MPReplaceTodayFocusResponse? resp = await replaceTodayFocus(
@@ -884,6 +888,9 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     final String todoId = cur.todoId.trim();
     if (todoId.isEmpty) {
       return false;
+    }
+    if (replaceSlot != null) {
+      return replaceTodayFocusSlot(slot: replaceSlot, todoId: todoId);
     }
     return addTodayFocusSlot(todoId: todoId);
   }

@@ -102,7 +102,8 @@ class _MPTodayFocusFullDialog extends StatelessWidget {
                               ? null
                               : () {
                                   Navigator.of(context).maybePop();
-                                  onSelect?.call(it.slot, it);
+                                  // 与 [MPTodayFocusCubit.removeFocusItemAt] 一致：接口未返回 slot 时用 1-based 列表下标。
+                                  onSelect?.call(it.slot ?? (i + 1), it);
                                 },
                         ),
                       );
