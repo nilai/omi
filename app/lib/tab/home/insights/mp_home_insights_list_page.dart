@@ -379,7 +379,7 @@ class _MPInsightCard extends StatelessWidget {
                                           TextSpan(
                                             children: <InlineSpan>[
                                               TextSpan(
-                                                text: item.periodLabel,
+                                                text: item.title,
                                                 style: OmiTextStyle.create(
                                                   color: const Color(0xFF1F2937),
                                                   fontSize: OmiFontSize.t9_18,
