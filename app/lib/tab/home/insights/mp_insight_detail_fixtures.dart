@@ -326,6 +326,14 @@ class MPInsightDetailFixtures {
               'create_at': 1738366800,
             },
           ],
+          'where_this_appeared': <String, dynamic>{
+            'intro_text': 'Appeared in recent memories:',
+            'items': <String>[
+              'planning · Sprint prep voice note',
+              'demo · Partner demo checklist',
+            ],
+            'summary_text': 'Appeared in 2 conversations',
+          },
           'why_this_matters':
               'Compressing planning into late hours correlates with rushed decisions and weaker recovery the next day.',
           'next_step': <String>[

@@ -4,13 +4,14 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
-import 'package:memo_pin/http/schema/mp_data_model.dart';
-import 'package:memo_pin/utils/mp_toast_utils.dart';
-import 'package:memo_pin/utils/omi_color_utils.dart';
+import '../../../http/schema/mp_data_model.dart';
+import '../../../utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
+import '../../../http/schema/mp_insight.dart';
 import '../../memory/detail/mp_detail_visibility_refresh.dart';
+import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'mp_insight_detail_cubit.dart';
 import 'mp_insights_list_cubit.dart';
 
@@ -127,11 +128,10 @@ class _MPPatternInsightBody extends StatelessWidget {
           ),
         );
       case MPInsightDetailPhase.loaded:
-        final MPInsightListItem item = state.data!.item;
-        final int appearedCount = item.patternMemoryTitles.length;
         final String topDescription = state.data!.paragraphs.isNotEmpty ? state.data!.paragraphs[0] : '';
         final String whyText = state.data!.paragraphs.length > 1 ? state.data!.paragraphs[1] : '';
         final List<MPTodoStruct> nextSteps = state.data!.tips;
+        final MPPatternInsightWhereThisAppearedData? whereAppeared = state.data!.pattern?.whereThisAppeared;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
@@ -182,14 +182,30 @@ class _MPPatternInsightBody extends StatelessWidget {
                             );
                           },
                         ),
-                        const SizedBox(height: 16),
-                        _AppearedSection(
-                          appearedItems: item.patternMemoryTitles,
-                          onItemTap: (String title) {
-                            MPToastUtils.showFeatureComingSoon(message: 'Open memory: $title');
-                          },
-                          appearedCount: appearedCount,
-                        ),
+                        if (whereAppeared != null &&
+                            (whereAppeared.appearedItems.isNotEmpty ||
+                                whereAppeared.introText.isNotEmpty ||
+                                whereAppeared.summaryText.isNotEmpty)) ...<Widget>[
+                          const SizedBox(height: 16),
+                          _AppearedSection(
+                            introText: whereAppeared.introText,
+                            appearedItems: whereAppeared.appearedItems,
+                            summaryText: whereAppeared.summaryText,
+                            onItemTap: (MPPatternInsightAppearedItemStruct item) {
+                              final String memoryId = item.memoryId.trim();
+                              if (memoryId.isEmpty) {
+                                return;
+                              }
+                              MPMemoryDetailPageHelper.navigateToDetailPage(
+                                context,
+                                memoryId,
+                                MPMemoryType.memoryFeed,
+                                createAt: item.createAt > 0 ? item.createAt : null,
+                                title: item.title.trim().isEmpty ? null : item.title.trim(),
+                              );
+                            },
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         _WhyThisMattersSection(whyText: whyText),
                         const SizedBox(height: 16),
@@ -280,11 +296,17 @@ class _PatternDetectedTitle extends StatelessWidget {
 }
 
 class _AppearedSection extends StatelessWidget {
-  const _AppearedSection({required this.appearedItems, required this.onItemTap, required this.appearedCount});
+  const _AppearedSection({
+    required this.introText,
+    required this.appearedItems,
+    required this.summaryText,
+    required this.onItemTap,
+  });
 
-  final List<String> appearedItems;
-  final ValueChanged<String> onItemTap;
-  final int appearedCount;
+  final String introText;
+  final List<MPPatternInsightAppearedItemStruct> appearedItems;
+  final String summaryText;
+  final ValueChanged<MPPatternInsightAppearedItemStruct> onItemTap;
 
   @override
   Widget build(BuildContext context) {
@@ -310,26 +332,28 @@ class _AppearedSection extends StatelessWidget {
         const SizedBox(height: 12),
         Divider(color: const Color(0xFFEDEDED), height: 1),
         const SizedBox(height: 12),
-        Text(
-          'Appeared in recent memories:',
-          style: OmiTextStyle.create(
-            color: secondTextColor,
-            fontSize: OmiFontSize.t5_14,
-            fontWeight: OmiFontWeight.regular,
-            height: 1.4,
+        if (introText.isNotEmpty) ...<Widget>[
+          Text(
+            introText,
+            style: OmiTextStyle.create(
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.4,
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         Column(
-          children: appearedItems.map((String raw) {
-            final (_MemoryTileParts parts) = _parseMemoryTile(raw);
+          children: appearedItems.map((MPPatternInsightAppearedItemStruct item) {
+            final String itemText = _formatAppearedItemLabel(item);
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
-                  onTap: () => onItemTap(parts.title),
+                  onTap: () => onItemTap(item),
                   child: Container(
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                     decoration: BoxDecoration(color: const Color(0xFFF2F2F7), borderRadius: BorderRadius.circular(14)),
@@ -345,7 +369,7 @@ class _AppearedSection extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '${parts.title} — ${parts.date}',
+                            itemText,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmiTextStyle.create(
@@ -364,35 +388,31 @@ class _AppearedSection extends StatelessWidget {
             );
           }).toList(),
         ),
-        Text(
-          'Appeared in $appearedCount conversations.',
-          style: OmiTextStyle.create(
-            color: secondTextColor,
-            fontSize: OmiFontSize.t5_14,
-            fontWeight: OmiFontWeight.regular,
-            height: 1.4,
+        if (summaryText.isNotEmpty)
+          Text(
+            summaryText,
+            style: OmiTextStyle.create(
+              color: secondTextColor,
+              fontSize: OmiFontSize.t5_14,
+              fontWeight: OmiFontWeight.regular,
+              height: 1.4,
+            ),
           ),
-        ),
       ],
     );
   }
 }
 
-class _MemoryTileParts {
-  const _MemoryTileParts({required this.title, required this.date});
-
-  final String title;
-  final String date;
-}
-
-_MemoryTileParts _parseMemoryTile(String raw) {
-  // Example raw: "Team standup — Jan 18"
-  const String sep = '—';
-  final List<String> parts = raw.split(sep);
-  if (parts.length >= 2) {
-    return _MemoryTileParts(title: parts[0].trim(), date: parts[1].trim());
+String _formatAppearedItemLabel(MPPatternInsightAppearedItemStruct item) {
+  final String subTitle = item.subTitle.trim();
+  final String title = item.title.trim();
+  if (subTitle.isNotEmpty && title.isNotEmpty) {
+    return '$subTitle · $title';
   }
-  return _MemoryTileParts(title: raw.trim(), date: '');
+  if (title.isNotEmpty) {
+    return title;
+  }
+  return subTitle;
 }
 
 class _WhyThisMattersSection extends StatelessWidget {

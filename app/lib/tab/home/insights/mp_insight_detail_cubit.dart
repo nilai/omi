@@ -50,6 +50,26 @@ class MPInsightDetailState {
 }
 
 /// 详情页数据（不同类型会在 `paragraphs` / `tips` 等字段中体现差异）
+/// Pattern 详情页「Where This Appeared」展示数据。
+class MPPatternInsightWhereThisAppearedData {
+  const MPPatternInsightWhereThisAppearedData({
+    required this.introText,
+    required this.appearedItems,
+    required this.summaryText,
+  });
+
+  final String introText;
+  final List<MPPatternInsightAppearedItemStruct> appearedItems;
+  final String summaryText;
+}
+
+/// Pattern 详情页结构化数据。
+class MPPatternInsightDetailData {
+  const MPPatternInsightDetailData({required this.whereThisAppeared});
+
+  final MPPatternInsightWhereThisAppearedData whereThisAppeared;
+}
+
 class MPInsightDetailData {
   const MPInsightDetailData({
     required this.item,
@@ -58,6 +78,7 @@ class MPInsightDetailData {
     this.daily,
     this.weekly,
     this.monthly,
+    this.pattern,
     this.memoryId,
   });
 
@@ -76,6 +97,9 @@ class MPInsightDetailData {
   /// Monthly 详情页专用结构化数据（其它类型为 null）
   final MPMonthlyInsightDetailData? monthly;
 
+  /// Pattern 详情页专用结构化数据（其它类型为 null）
+  final MPPatternInsightDetailData? pattern;
+
   /// 关联 memory id（来自详情接口 [MPInsightDetailStruct.memoryId]）。
   final int? memoryId;
 
@@ -87,6 +111,7 @@ class MPInsightDetailData {
     MPDailyInsightDetailData? daily,
     MPWeeklyInsightDetailData? weekly,
     MPMonthlyInsightDetailData? monthly,
+    MPPatternInsightDetailData? pattern,
     int? memoryId,
   }) {
     return MPInsightDetailData(
@@ -96,6 +121,7 @@ class MPInsightDetailData {
       daily: daily ?? this.daily,
       weekly: weekly ?? this.weekly,
       monthly: monthly ?? this.monthly,
+      pattern: pattern ?? this.pattern,
       memoryId: memoryId ?? this.memoryId,
     );
   }
@@ -828,10 +854,18 @@ class MPInsightDetailCubit extends MPInsightDetailBaseCubit {
       throw Exception('pattern_detail is null');
     }
     debugPrint('-----hjj-----pattern_detail: ${detail.toJson()}');
+    final MPPatternInsightWhereThisAppearedStruct whereAppeared = detail.whereThisAppeared;
     return MPInsightDetailData(
       item: item,
       paragraphs: <String>[detail.detected.contentMd, detail.whyThisMatters].where((String e) => e.isNotEmpty).toList(),
       tips: List<MPTodoStruct>.from(detail.nextStep),
+      pattern: MPPatternInsightDetailData(
+        whereThisAppeared: MPPatternInsightWhereThisAppearedData(
+          introText: whereAppeared.introText,
+          appearedItems: List<MPPatternInsightAppearedItemStruct>.from(detail.appearedItems),
+          summaryText: whereAppeared.summaryText,
+        ),
+      ),
       memoryId: memoryId,
     );
   }

@@ -613,6 +613,35 @@ class MPPatternInsightAppearedItemStruct {
       };
 }
 
+/// Pattern Insight「Where This Appeared」展示区块。
+class MPPatternInsightWhereThisAppearedStruct {
+  MPPatternInsightWhereThisAppearedStruct({
+    required this.introText,
+    required this.items,
+    required this.summaryText,
+  });
+
+  final String introText;
+  final List<String> items;
+  final String summaryText;
+
+  /// 从 JSON 解析。
+  factory MPPatternInsightWhereThisAppearedStruct.fromJson(Map<String, dynamic> json) {
+    return MPPatternInsightWhereThisAppearedStruct(
+      introText: _mpAsString(json['intro_text']),
+      items: _mpAsList(json['items']).map((dynamic e) => e.toString()).toList(),
+      summaryText: _mpAsString(json['summary_text']),
+    );
+  }
+
+  /// 序列化为 JSON。
+  Map<String, dynamic> toJson() => <String, dynamic>{
+        'intro_text': introText,
+        'items': items,
+        'summary_text': summaryText,
+      };
+}
+
 /// Pattern Insight「Pattern Detected」区块。
 class MPPatternInsightDetectedStruct {
   MPPatternInsightDetectedStruct({
@@ -644,6 +673,7 @@ class MPPatternInsightDetailStruct {
     required this.bannerTitle,
     required this.detected,
     required this.appearedItems,
+    required this.whereThisAppeared,
     required this.whyThisMatters,
     required this.nextStep,
   });
@@ -651,6 +681,7 @@ class MPPatternInsightDetailStruct {
   final String bannerTitle;
   final MPPatternInsightDetectedStruct detected;
   final List<MPPatternInsightAppearedItemStruct> appearedItems;
+  final MPPatternInsightWhereThisAppearedStruct whereThisAppeared;
   final String whyThisMatters;
   final List<MPTodoStruct> nextStep;
 
@@ -673,6 +704,11 @@ class MPPatternInsightDetailStruct {
         _mpAsMap(json['detected']),
       ),
       appearedItems: appearedItems,
+      whereThisAppeared: json['where_this_appeared'] == null
+          ? MPPatternInsightWhereThisAppearedStruct(introText: '', items: const <String>[], summaryText: '')
+          : MPPatternInsightWhereThisAppearedStruct.fromJson(
+              _mpAsMap(json['where_this_appeared']),
+            ),
       whyThisMatters: _mpAsString(json['why_this_matters']),
       nextStep: nextStep,
     );
@@ -685,6 +721,7 @@ class MPPatternInsightDetailStruct {
         'appeared_items': appearedItems
             .map((MPPatternInsightAppearedItemStruct e) => e.toJson())
             .toList(),
+        'where_this_appeared': whereThisAppeared.toJson(),
         'why_this_matters': whyThisMatters,
         'next_step': nextStep.map((MPTodoStruct e) => e.toJson()).toList(),
       };
