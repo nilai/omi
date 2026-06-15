@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import '../../http/api/mp_memory.dart';
 import '../../http/schema/mp_memory.dart';
 import 'audio_record.dart';
+import 'mp_audio_upload_background_support.dart';
 
 
 /// MP音频上传服务
@@ -212,74 +213,98 @@ class MPAudioUploadService {
     return null;
   }
 
-  /// 带重试的上传到 S3（连续 60s 无网络收发则超时，最多重试 2 次）
+  /// 带重试的上传到 S3（连续 60s 无网络收发则超时；退后台网络中断会等待回前台后继续重试）。
   Future<bool> _uploadToS3WithRetry(
     String uploadUrl,
     File audioFile,
     String contentType,
   ) async {
     final int fileSize = await audioFile.length();
-    for (int i = 0; i <= _s3MaxRetries; i++) {
-      final int attempt = i + 1;
-      final int maxAttempts = _s3MaxRetries + 1;
+    int foregroundAttempts = 0;
+    const int maxForegroundAttempts = _s3MaxRetries + 1;
+    while (foregroundAttempts < maxForegroundAttempts) {
+      final int attempt = foregroundAttempts + 1;
       debugPrint(
-        'MPAudioUploadService: uploadToS3 attempt $attempt/$maxAttempts '
+        'MPAudioUploadService: uploadToS3 attempt $attempt/$maxForegroundAttempts '
         'path=${audioFile.path} size=$fileSize contentType=$contentType',
       );
       try {
-        final result = await uploadAudioToS3(uploadUrl, audioFile, contentType);
+        final bool result = await uploadAudioToS3(uploadUrl, audioFile, contentType);
         if (result) {
           debugPrint('MPAudioUploadService: uploadToS3 success on attempt $attempt');
           return true;
         }
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed (returned false)');
+        if (!MPAudioUploadBackgroundSupport.isAppInForeground) {
+          await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
+          continue;
+        }
       } on TimeoutException catch (e) {
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed: $e');
+        if (MPAudioUploadBackgroundSupport.isLikelyBackgroundNetworkFailure(e)) {
+          await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
+          continue;
+        }
       }
-      if (i == _s3MaxRetries) {
-        debugPrint('MPAudioUploadService: uploadToS3 failed after $maxAttempts attempts');
-        return false;
+      foregroundAttempts++;
+      if (foregroundAttempts >= maxForegroundAttempts) {
+        break;
       }
-      debugPrint('MPAudioUploadService: uploadToS3 retry in 1s (next attempt ${attempt + 1})');
+      debugPrint(
+        'MPAudioUploadService: uploadToS3 retry in 1s (next attempt ${foregroundAttempts + 1})',
+      );
       await Future.delayed(const Duration(seconds: 1));
     }
+    debugPrint('MPAudioUploadService: uploadToS3 failed after $maxForegroundAttempts attempts');
     return false;
   }
 
-  /// 带重试的上传字节到 S3（连续 60s 无网络收发则超时，最多重试 2 次）
+  /// 带重试的上传字节到 S3（连续 60s 无网络收发则超时；退后台网络中断会等待回前台后继续重试）。
   Future<bool> _uploadBytesToS3WithRetry(
     String uploadUrl,
     List<int> audioBytes,
     String contentType,
   ) async {
-    for (int i = 0; i <= _s3MaxRetries; i++) {
-      final int attempt = i + 1;
-      final int maxAttempts = _s3MaxRetries + 1;
+    int foregroundAttempts = 0;
+    const int maxForegroundAttempts = _s3MaxRetries + 1;
+    while (foregroundAttempts < maxForegroundAttempts) {
+      final int attempt = foregroundAttempts + 1;
       debugPrint(
-        'MPAudioUploadService: uploadBytesToS3 attempt $attempt/$maxAttempts '
+        'MPAudioUploadService: uploadBytesToS3 attempt $attempt/$maxForegroundAttempts '
         'size=${audioBytes.length} contentType=$contentType',
       );
       try {
-        final result = await uploadAudioToS3Bytes(uploadUrl, audioBytes, contentType);
+        final bool result = await uploadAudioToS3Bytes(uploadUrl, audioBytes, contentType);
         if (result) {
           debugPrint('MPAudioUploadService: uploadBytesToS3 success on attempt $attempt');
           return true;
         }
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed (returned false)');
+        if (!MPAudioUploadBackgroundSupport.isAppInForeground) {
+          await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
+          continue;
+        }
       } on TimeoutException catch (e) {
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed: $e');
+        if (MPAudioUploadBackgroundSupport.isLikelyBackgroundNetworkFailure(e)) {
+          await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
+          continue;
+        }
       }
-      if (i == _s3MaxRetries) {
-        debugPrint('MPAudioUploadService: uploadBytesToS3 failed after $maxAttempts attempts');
-        return false;
+      foregroundAttempts++;
+      if (foregroundAttempts >= maxForegroundAttempts) {
+        break;
       }
-      debugPrint('MPAudioUploadService: uploadBytesToS3 retry in 1s (next attempt ${attempt + 1})');
+      debugPrint(
+        'MPAudioUploadService: uploadBytesToS3 retry in 1s (next attempt ${foregroundAttempts + 1})',
+      );
       await Future.delayed(const Duration(seconds: 1));
     }
+    debugPrint('MPAudioUploadService: uploadBytesToS3 failed after $maxForegroundAttempts attempts');
     return false;
   }
 

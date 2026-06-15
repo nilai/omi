@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:memo_pin/audio/audio_picker_utils.dart';
 import 'package:memo_pin/audio/record/audio_record.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
@@ -290,6 +291,7 @@ class MPAudioUploadManager {
   }
 
   Future<void> _runWorkerLoop() async {
+    await MPAudioUploadBackgroundSupport.activateForUploadSession();
     try {
       while (_jobQueue.isNotEmpty) {
         final _MPAudioUploadJob job = _jobQueue.removeAt(0);
@@ -306,6 +308,7 @@ class MPAudioUploadManager {
       }
     } finally {
       _workerLoopRunning = false;
+      await MPAudioUploadBackgroundSupport.deactivateAfterUploadSession();
       _signalWorkerIdleIfNeeded();
       if (_jobQueue.isNotEmpty) {
         _ensureWorkerRunning();

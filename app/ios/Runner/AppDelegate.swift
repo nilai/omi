@@ -18,5 +18,8 @@ import UIKit
     MPNativeRecorderPlugin.register(
       with: engineBridge.pluginRegistry.registrar(forPlugin: "MPNativeRecorderPlugin")!
     )
+    MPAudioUploadBackgroundPlugin.register(
+      with: engineBridge.pluginRegistry.registrar(forPlugin: "MPAudioUploadBackgroundPlugin")!
+    )
   }
 }

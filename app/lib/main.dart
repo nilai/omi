@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:memo_pin/audio/record/mp_audio_upload_background_support.dart';
 import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/http/shared.dart';
 import 'app/mp_app_session_bootstrap.dart';
@@ -20,6 +21,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MPDebugPrint.setup();
   FlutterForegroundTask.initCommunicationPort();
+  MPAudioUploadBackgroundSupport.install();
   // 必须先初始化 SharedPreferences，[MPUser.userId] 才能读到正确值；
   // 否则 [OmiServerCache] 会用空 userId 打开错误的 Hive box，且只 initialize 一次，
   // 内存里的 _store 永远是错的，[OmiCacheManager.getMemoryFirstPage] 等读缓存会失效。

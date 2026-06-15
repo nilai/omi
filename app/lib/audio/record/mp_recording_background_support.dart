@@ -60,6 +60,12 @@ class MPRecordingBackgroundSupport {
   /// 当前录音会话退后台是否可靠（与 [activateForRecording] 结果一致）。
   static bool get isBackgroundRecordingReliable => _backgroundRecordingReliable;
 
+  /// 录音后台基础设施（AudioSession / Android 麦克风前台服务）是否已激活。
+  static bool get isRecordingInfrastructureActive => _recordingInfrastructureActive;
+
+  /// [FlutterForegroundTask.init] 是否已由录音模块完成。
+  static bool get isForegroundTaskInitialized => _foregroundTaskInitialized;
+
   /// 当前是否为混音模式（可与系统录音备忘录等并存）。
   static bool get isMixWithOthersEnabled => _mixWithOthersEnabled;
 

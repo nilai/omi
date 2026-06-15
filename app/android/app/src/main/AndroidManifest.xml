@@ -5,6 +5,7 @@
     <!-- 录音进后台 / 锁屏时保持采集（flutter_sound isBGService + flutter_foreground_task 麦克风前台服务） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Android 13+ 前台服务通知 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Gallery / media read (Android 13+) -->
@@ -72,11 +73,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- flutter_foreground_task：退后台录音须绑定麦克风类型前台服务（勿改 service 类名） -->
+        <!-- flutter_foreground_task：录音用 microphone；音频上传用 dataSync（可并存） -->
         <service
             android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
             android:exported="false"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="microphone|dataSync" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
