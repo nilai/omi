@@ -53,6 +53,7 @@ class MPTodayFocusState {
     this.todayItems = const <MPTodayFocusTodoRowData>[],
     this.upcomingItems = const <MPTodayFocusTodoRowData>[],
     this.futureItems = const <MPTodayFocusTodoRowData>[],
+    this.unscheduledItems = const <MPTodayFocusTodoRowData>[],
     this.overdueItems = const <MPTodayFocusTodoRowData>[],
     this.completedItems = const <MPTodayFocusTodoRowData>[],
     this.aiFocusSuggestions = const <MPTodayFocusAISuggestionItem>[],
@@ -67,6 +68,7 @@ class MPTodayFocusState {
   final List<MPTodayFocusTodoRowData> todayItems;
   final List<MPTodayFocusTodoRowData> upcomingItems;
   final List<MPTodayFocusTodoRowData> futureItems;
+  final List<MPTodayFocusTodoRowData> unscheduledItems;
   final List<MPTodayFocusTodoRowData> overdueItems;
   final List<MPTodayFocusTodoRowData> completedItems;
 
@@ -101,6 +103,7 @@ class MPTodayFocusState {
       todayItems.isNotEmpty ||
       upcomingItems.isNotEmpty ||
       futureItems.isNotEmpty ||
+      unscheduledItems.isNotEmpty ||
       overdueItems.isNotEmpty ||
       completedItems.isNotEmpty;
 
@@ -115,6 +118,7 @@ class MPTodayFocusState {
     List<MPTodayFocusTodoRowData>? todayItems,
     List<MPTodayFocusTodoRowData>? upcomingItems,
     List<MPTodayFocusTodoRowData>? futureItems,
+    List<MPTodayFocusTodoRowData>? unscheduledItems,
     List<MPTodayFocusTodoRowData>? overdueItems,
     List<MPTodayFocusTodoRowData>? completedItems,
     List<MPTodayFocusAISuggestionItem>? aiFocusSuggestions,
@@ -130,6 +134,7 @@ class MPTodayFocusState {
       todayItems: todayItems ?? this.todayItems,
       upcomingItems: upcomingItems ?? this.upcomingItems,
       futureItems: futureItems ?? this.futureItems,
+      unscheduledItems: unscheduledItems ?? this.unscheduledItems,
       overdueItems: overdueItems ?? this.overdueItems,
       completedItems: completedItems ?? this.completedItems,
       aiFocusSuggestions: aiFocusSuggestions ?? this.aiFocusSuggestions,
@@ -418,6 +423,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         <MPTodayFocusTodoRowData>[];
     final List<MPTodayFocusTodoRowData> futureItems =
         <MPTodayFocusTodoRowData>[];
+    final List<MPTodayFocusTodoRowData> unscheduledItems =
+        <MPTodayFocusTodoRowData>[];
     final List<MPTodayFocusTodoRowData> overdueItems =
         <MPTodayFocusTodoRowData>[];
     final List<MPTodayFocusTodoRowData> completedItems =
@@ -434,6 +441,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         MPTodayFocusTodoSection.today => todayItems,
         MPTodayFocusTodoSection.upcomingWithinSevenDays => upcomingItems,
         MPTodayFocusTodoSection.futureBeyondSevenDays => futureItems,
+        MPTodayFocusTodoSection.unscheduled => unscheduledItems,
         MPTodayFocusTodoSection.overdue => overdueItems,
         MPTodayFocusTodoSection.completed => completedItems,
       };
@@ -450,6 +458,7 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       todayItems: todayItems,
       upcomingItems: upcomingItems,
       futureItems: futureItems,
+      unscheduledItems: unscheduledItems,
       overdueItems: overdueItems,
       completedItems: completedItems,
     );
@@ -465,6 +474,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         return MPTodayFocusTodoSection.upcomingWithinSevenDays;
       case TodoListSectionType.future:
         return MPTodayFocusTodoSection.futureBeyondSevenDays;
+      case TodoListSectionType.unscheduled:
+        return MPTodayFocusTodoSection.unscheduled;
       case TodoListSectionType.overdue:
         return MPTodayFocusTodoSection.overdue;
       case TodoListSectionType.completed:
@@ -546,6 +557,8 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
         return s.upcomingItems;
       case MPTodayFocusTodoSection.futureBeyondSevenDays:
         return s.futureItems;
+      case MPTodayFocusTodoSection.unscheduled:
+        return s.unscheduledItems;
       case MPTodayFocusTodoSection.overdue:
         return s.overdueItems;
       case MPTodayFocusTodoSection.completed:
@@ -651,6 +664,9 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
       return _silentResyncTodoListsFromServer();
     });
   }
+
+  /// 清空 Unscheduled 模块下全部待办（调用 [clearTodo]）。
+  Future<void> clearUnscheduled() => _clearTodoSection(state.unscheduledItems);
 
   /// 清空 Overdue 模块下全部待办（调用 [clearTodo]）。
   Future<void> clearOverdue() => _clearTodoSection(state.overdueItems);

@@ -166,6 +166,7 @@ const _$TodoListSectionTypeEnumMap = {
   TodoListSectionType.future: 3,
   TodoListSectionType.overdue: 4,
   TodoListSectionType.completed: 5,
+  TodoListSectionType.unscheduled: 6,
   TodoListSectionType.unmapped: -1,
 };
 

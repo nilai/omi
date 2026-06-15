@@ -4,7 +4,7 @@ import 'mp_data_model.dart';
 
 part 'mp_todo.g.dart';
 
-/// 与后端 `TodoListSectionType` 对齐：1 Today，2 近 7 天，3 更远未来，4 逾期，5 已完成，6 预留扩展。
+/// 与后端 `TodoListSectionType` 对齐：1 Today，2 近 7 天，3 更远未来，4 逾期，5 已完成，6 无截止日期且已过期（Unscheduled）。
 ///
 /// 未在枚举中登记的数字会反序列化为 [unmapped]（见 [TodoListSectionStruct.sectionType] 的 [JsonKey.unknownEnumValue]），避免解析崩溃。
 enum TodoListSectionType {
@@ -22,6 +22,9 @@ enum TodoListSectionType {
 
   @JsonValue(5)
   completed,
+
+  @JsonValue(6)
+  unscheduled,
 
   /// 仅 JSON 反序列化兜底：服务端新增 type 且客户端未升级时落到此值，UI 侧应忽略该 section。
   @JsonValue(-1)

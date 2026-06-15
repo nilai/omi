@@ -49,6 +49,7 @@ enum MPTodayFocusTodoSection {
   today,
   upcomingWithinSevenDays,
   futureBeyondSevenDays,
+  unscheduled,
   overdue,
   completed,
 }
@@ -61,11 +62,14 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.todayItems = const <MPTodayFocusTodoRowData>[],
     this.upcomingItems = const <MPTodayFocusTodoRowData>[],
     this.futureItems = const <MPTodayFocusTodoRowData>[],
+    this.unscheduledItems = const <MPTodayFocusTodoRowData>[],
     this.overdueItems = const <MPTodayFocusTodoRowData>[],
     this.completedItems = const <MPTodayFocusTodoRowData>[],
     this.initialFutureExpanded = false,
+    this.initialUnscheduledExpanded = true,
     this.initialOverdueExpanded = true,
     this.initialCompletedExpanded = true,
+    this.onUnscheduledClear,
     this.onOverdueClear,
     this.onCompletedClear,
     this.clearLabel = 'Clear',
@@ -80,13 +84,16 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
   final List<MPTodayFocusTodoRowData> todayItems;
   final List<MPTodayFocusTodoRowData> upcomingItems;
   final List<MPTodayFocusTodoRowData> futureItems;
+  final List<MPTodayFocusTodoRowData> unscheduledItems;
   final List<MPTodayFocusTodoRowData> overdueItems;
   final List<MPTodayFocusTodoRowData> completedItems;
 
   final bool initialFutureExpanded;
+  final bool initialUnscheduledExpanded;
   final bool initialOverdueExpanded;
   final bool initialCompletedExpanded;
 
+  final VoidCallback? onUnscheduledClear;
   final VoidCallback? onOverdueClear;
   final VoidCallback? onCompletedClear;
   final String clearLabel;
@@ -113,6 +120,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
 class _MPTodayFocusTodoGroupedListState
     extends State<MPTodayFocusTodoGroupedList> {
   late bool _futureExpanded;
+  late bool _unscheduledExpanded;
   late bool _overdueExpanded;
   late bool _completedExpanded;
 
@@ -120,6 +128,7 @@ class _MPTodayFocusTodoGroupedListState
   void initState() {
     super.initState();
     _futureExpanded = widget.initialFutureExpanded;
+    _unscheduledExpanded = widget.initialUnscheduledExpanded;
     _overdueExpanded = widget.initialOverdueExpanded;
     _completedExpanded = widget.initialCompletedExpanded;
   }
@@ -129,6 +138,9 @@ class _MPTodayFocusTodoGroupedListState
     super.didUpdateWidget(oldWidget);
     if (widget.futureItems.isEmpty) {
       _futureExpanded = false;
+    }
+    if (widget.unscheduledItems.isEmpty) {
+      _unscheduledExpanded = widget.initialUnscheduledExpanded;
     }
     if (widget.overdueItems.isEmpty) {
       _overdueExpanded = widget.initialOverdueExpanded;
@@ -253,6 +265,15 @@ class _MPTodayFocusTodoGroupedListState
           color: secondTextColor.withValues(alpha: 0.75),
         ),
       ),
+    );
+  }
+
+  Widget _unscheduledHeader() {
+    return _collapsibleMutedHeader(
+      title: 'Unscheduled',
+      expanded: _unscheduledExpanded,
+      onToggle: () => setState(() => _unscheduledExpanded = !_unscheduledExpanded),
+      trailing: _clearTrailingButton(widget.onUnscheduledClear),
     );
   }
 
@@ -381,6 +402,20 @@ class _MPTodayFocusTodoGroupedListState
             section: MPTodayFocusTodoSection.futureBeyondSevenDays,
             items: widget.futureItems,
             tone: MPTodayFocusTodoItemTone.upcoming,
+          ),
+        );
+      }
+    }
+
+    if (widget.unscheduledItems.isNotEmpty) {
+      _addGapIfNeeded(children);
+      children.add(_unscheduledHeader());
+      if (_unscheduledExpanded) {
+        children.addAll(
+          _buildItems(
+            section: MPTodayFocusTodoSection.unscheduled,
+            items: widget.unscheduledItems,
+            tone: MPTodayFocusTodoItemTone.overdue,
           ),
         );
       }

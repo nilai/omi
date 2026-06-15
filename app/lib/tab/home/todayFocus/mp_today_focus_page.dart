@@ -208,6 +208,9 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
       case MPTodayFocusTodoSection.futureBeyondSevenDays:
         rows = state.futureItems;
         break;
+      case MPTodayFocusTodoSection.unscheduled:
+        rows = state.unscheduledItems;
+        break;
       case MPTodayFocusTodoSection.overdue:
         rows = state.overdueItems;
         break;
@@ -366,9 +369,11 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         todayItems: state.todayItems,
                         upcomingItems: state.upcomingItems,
                         futureItems: state.futureItems,
+                        unscheduledItems: state.unscheduledItems,
                         overdueItems: state.overdueItems,
                         completedItems: state.completedItems,
                         initialFutureExpanded: true,
+                        onUnscheduledClear: () => unawaited(_cubit.clearUnscheduled()),
                         onOverdueClear: () => unawaited(_cubit.clearOverdue()),
                         onCompletedClear: () => unawaited(_cubit.clearCompleted()),
                         onItemCheckChanged: _cubit.setTodoChecked,
