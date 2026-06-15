@@ -196,6 +196,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     if (_bleDeviceImportRunning || _pendingLocalAudioUploadRunning) {
       return true;
     }
+    if (MPAudioUploadManager.instance.hasActiveUploads) {
+      return true;
+    }
     final MPHomeAudioStatusType? type = state.audioStatus?.type;
     return type == MPHomeAudioStatusType.syncing || type == MPHomeAudioStatusType.importing;
   }

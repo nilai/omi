@@ -75,15 +75,50 @@ class MPAudioUploadLocalItem {
   final int recordMemoAt;
 }
 
+/// 单次批量上传任务（由全局 Worker 串行消费）。
+class _MPAudioUploadJob {
+  _MPAudioUploadJob({
+    required this.audioRecords,
+    required this.allRecordsForTxt,
+    required this.rightNowTranscribe,
+    required this.sourceOverride,
+    required this.recordMemoAt,
+    required this.templateId,
+    this.onPerFileProgress,
+  });
+
+  final List<MPAudioLocalRecord> audioRecords;
+  final List<MPAudioLocalRecord> allRecordsForTxt;
+  final bool rightNowTranscribe;
+  final String? sourceOverride;
+  final int recordMemoAt;
+  final String? templateId;
+  final MPAudioUploadPerFileProgress? onPerFileProgress;
+  final Completer<MPCreateRecordResponse?> completer = Completer<MPCreateRecordResponse?>();
+}
+
 /// 本地录音落盘后，先 [MPAudioUploadService.uploadMPAudio] 上传，再用返回的 **远端 URI** 调 [createRecord]。
 ///
 /// - [uploadAllRecordingFiles]：查询全部未删除本地记录后上传。
 /// - [uploadRecords]：按调用方传入的 [MPAudioLocalRecord] 上传（已登记、无需再导入）。
 /// - 若 [rightNowTranscribe] 为 true，每条成功后 [summaryRecord]；成功后标记 [MPAudioLocalRecord.isRemoved]。
+/// - 全局单 Worker 队列：同一音频路径在「已入队或上传中」时不会重复入队，避免并发 batch 与重复 [createRecord]。
 class MPAudioUploadManager {
   MPAudioUploadManager._();
 
   static final MPAudioUploadManager instance = MPAudioUploadManager._();
+
+  final List<_MPAudioUploadJob> _jobQueue = <_MPAudioUploadJob>[];
+
+  /// 已入队或正在上传的音频绝对路径（规范化后），用于入队去重。
+  final Set<String> _queuedOrUploadingPaths = <String>{};
+
+  bool _workerLoopRunning = false;
+
+  Completer<void>? _idleCompleter;
+
+  /// 是否有待处理或进行中的上传任务。
+  bool get hasActiveUploads => _workerLoopRunning || _jobQueue.isNotEmpty || _queuedOrUploadingPaths.isNotEmpty;
 
   /// 待上传目录中的音频（与 [audioExtensions] 扩展名一致）。
   static bool _isPendingAudioFilePath(String path) {
@@ -166,21 +201,9 @@ class MPAudioUploadManager {
             p.basename(_audioFilePathForUpload(a)).compareTo(p.basename(_audioFilePathForUpload(b))),
       );
 
-      final Map<String, File> stemToTxt = <String, File>{};
-      final Map<String, MPAudioLocalRecord> stemToTxtRecord = <String, MPAudioLocalRecord>{};
-      for (final MPAudioLocalRecord tr in records) {
-        if (tr.isRemoved || !_isCompanionTxtFilePath(tr.path)) {
-          continue;
-        }
-        final String stem = p.basenameWithoutExtension(tr.path);
-        stemToTxt[stem] = File(tr.path);
-        stemToTxtRecord[stem] = tr;
-      }
-
-      return _uploadAudioRecordBatch(
+      return _enqueueUploadJob(
         audioRecords: audioRecords,
-        stemToTxt: stemToTxt,
-        stemToTxtRecord: stemToTxtRecord,
+        allRecordsForTxt: records,
         rightNowTranscribe: rightNowTranscribe,
         sourceOverride: source,
         recordMemoAt: recordMemoAt,
@@ -209,6 +232,145 @@ class MPAudioUploadManager {
     return record.path;
   }
 
+  static String _uploadKeyForPath(String path) => p.normalize(path);
+
+  static String _uploadKeyForRecord(MPAudioLocalRecord record) =>
+      _uploadKeyForPath(_audioFilePathForUpload(record));
+
+  void _trackUploadPath(String audioPath) {
+    _queuedOrUploadingPaths.add(_uploadKeyForPath(audioPath));
+  }
+
+  void _releaseUploadPath(String audioPath) {
+    _queuedOrUploadingPaths.remove(_uploadKeyForPath(audioPath));
+  }
+
+  /// 构建 txt 伴生文件索引（与 [uploadRecords] 内逻辑一致）。
+  static ({Map<String, File> stemToTxt, Map<String, MPAudioLocalRecord> stemToTxtRecord}) _buildTxtCompanionMaps(
+    List<MPAudioLocalRecord> records,
+  ) {
+    final Map<String, File> stemToTxt = <String, File>{};
+    final Map<String, MPAudioLocalRecord> stemToTxtRecord = <String, MPAudioLocalRecord>{};
+    for (final MPAudioLocalRecord tr in records) {
+      if (tr.isRemoved || !_isCompanionTxtFilePath(tr.path)) {
+        continue;
+      }
+      final String stem = p.basenameWithoutExtension(tr.path);
+      stemToTxt[stem] = File(tr.path);
+      stemToTxtRecord[stem] = tr;
+    }
+    return (stemToTxt: stemToTxt, stemToTxtRecord: stemToTxtRecord);
+  }
+
+  Future<void> _whenWorkerIdle() {
+    if (!_workerLoopRunning && _jobQueue.isEmpty) {
+      return Future<void>.value();
+    }
+    _idleCompleter ??= Completer<void>();
+    return _idleCompleter!.future;
+  }
+
+  void _signalWorkerIdleIfNeeded() {
+    if (_workerLoopRunning || _jobQueue.isNotEmpty) {
+      return;
+    }
+    final Completer<void>? idle = _idleCompleter;
+    if (idle != null && !idle.isCompleted) {
+      idle.complete();
+    }
+    _idleCompleter = null;
+  }
+
+  void _ensureWorkerRunning() {
+    if (_workerLoopRunning) {
+      return;
+    }
+    _workerLoopRunning = true;
+    unawaited(_runWorkerLoop());
+  }
+
+  Future<void> _runWorkerLoop() async {
+    try {
+      while (_jobQueue.isNotEmpty) {
+        final _MPAudioUploadJob job = _jobQueue.removeAt(0);
+        MPCreateRecordResponse? lastCreated;
+        try {
+          lastCreated = await _executeUploadJob(job);
+        } catch (e, st) {
+          debugPrint('MPAudioUploadManager: job failed: $e\n$st');
+        } finally {
+          if (!job.completer.isCompleted) {
+            job.completer.complete(lastCreated);
+          }
+        }
+      }
+    } finally {
+      _workerLoopRunning = false;
+      _signalWorkerIdleIfNeeded();
+      if (_jobQueue.isNotEmpty) {
+        _ensureWorkerRunning();
+      }
+    }
+  }
+
+  Future<MPCreateRecordResponse?> _enqueueUploadJob({
+    required List<MPAudioLocalRecord> audioRecords,
+    required List<MPAudioLocalRecord> allRecordsForTxt,
+    required bool rightNowTranscribe,
+    required String? sourceOverride,
+    required int recordMemoAt,
+    required String? templateId,
+    MPAudioUploadPerFileProgress? onPerFileProgress,
+  }) async {
+    final List<MPAudioLocalRecord> toEnqueue = <MPAudioLocalRecord>[];
+    for (final MPAudioLocalRecord record in audioRecords) {
+      final String key = _uploadKeyForRecord(record);
+      if (_queuedOrUploadingPaths.contains(key)) {
+        debugPrint('MPAudioUploadManager: skip duplicate enqueue path=$key');
+        continue;
+      }
+      _trackUploadPath(_audioFilePathForUpload(record));
+      toEnqueue.add(record);
+    }
+
+    if (toEnqueue.isEmpty) {
+      debugPrint('MPAudioUploadManager: no new records to enqueue (duplicates skipped).');
+      await _whenWorkerIdle();
+      return null;
+    }
+
+    final _MPAudioUploadJob job = _MPAudioUploadJob(
+      audioRecords: toEnqueue,
+      allRecordsForTxt: allRecordsForTxt,
+      rightNowTranscribe: rightNowTranscribe,
+      sourceOverride: sourceOverride,
+      recordMemoAt: recordMemoAt,
+      templateId: templateId,
+      onPerFileProgress: onPerFileProgress,
+    );
+    _jobQueue.add(job);
+    debugPrint(
+      'MPAudioUploadManager: enqueued job with ${toEnqueue.length} file(s), queueDepth=${_jobQueue.length}',
+    );
+    _ensureWorkerRunning();
+    return job.completer.future;
+  }
+
+  Future<MPCreateRecordResponse?> _executeUploadJob(_MPAudioUploadJob job) async {
+    final ({Map<String, File> stemToTxt, Map<String, MPAudioLocalRecord> stemToTxtRecord}) txtMaps =
+        _buildTxtCompanionMaps(job.allRecordsForTxt);
+    return _uploadAudioRecordBatch(
+      audioRecords: job.audioRecords,
+      stemToTxt: txtMaps.stemToTxt,
+      stemToTxtRecord: txtMaps.stemToTxtRecord,
+      rightNowTranscribe: job.rightNowTranscribe,
+      sourceOverride: job.sourceOverride,
+      recordMemoAt: job.recordMemoAt,
+      templateId: job.templateId,
+      onPerFileProgress: job.onPerFileProgress,
+    );
+  }
+
   Future<MPCreateRecordResponse?> _uploadAudioRecordBatch({
     required List<MPAudioLocalRecord> audioRecords,
     required Map<String, File> stemToTxt,
@@ -229,6 +391,7 @@ class MPAudioUploadManager {
       final String audioPath = _audioFilePathForUpload(record);
       final File f = File(audioPath);
       debugPrint('MPAudioUploadManager: batch upload file ${i + 1}/$n path=$audioPath');
+      try {
       if (!await f.exists()) {
         record.isRemoved = true;
         try {
@@ -383,6 +546,9 @@ class MPAudioUploadManager {
       );
 
       lastCreated = created;
+      } finally {
+        _releaseUploadPath(audioPath);
+      }
     }
 
     debugPrint('MPAudioUploadManager: batch upload end, total=$n');
