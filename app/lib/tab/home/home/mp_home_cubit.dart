@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
+import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/blu/mp_ble_file_util.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
 import 'package:memo_pin/blu/mp_ble_transport.dart';
@@ -127,8 +128,7 @@ class MPHomeState {
 /// 首页：Today's Focus / Recent Memory / Insights / 顶部状态条（mock + 定时刷新）
 class MPHomeCubit extends Cubit<MPHomeState> {
   MPHomeCubit() : super(_initialState()) {
-    _recordCreatedSub = MPHomeNotification.listenRecordCreated(_onMemoryRecordCreated);
-    _uploadProgressSub = MPHomeNotification.listenUploadProgress(_onUploadProgress);
+    _audioTaskBarSub = MPHomeNotification.listenAudioTaskBar(_onAudioTaskBar);
     _uploadFailedSub = MPHomeNotification.listenUploadFailed(_onUploadFailed);
     _homeListRefreshSub = MPHomeNotification.listenHomeListRefresh(_onHomeListRefresh);
     _todoDoneSub = MPHomeNotification.listenTodoDone(_onTodoDone);
@@ -140,8 +140,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   Timer? _insightsTimer;
-  StreamSubscription<MPHomeRecordCreatedPayload>? _recordCreatedSub;
-  StreamSubscription<MPHomeUploadProgressPayload>? _uploadProgressSub;
+  StreamSubscription<MPHomeAudioTaskBarPayload>? _audioTaskBarSub;
   StreamSubscription<MPHomeUploadFailedPayload>? _uploadFailedSub;
   StreamSubscription<void>? _homeListRefreshSub;
   StreamSubscription<MPHomeTodoDonePayload>? _todoDoneSub;
@@ -155,12 +154,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 外接 MemoPin 仍在录音时，将本应展示为 importing/syncing 的状态暂存，待停录后再 [emit]（见 [_onBleMemopinRecordingStateChanged]）。
   MPHomeAudioStatus? _pendingPostBleRecordingAudioStatus;
-
-  /// 与 [_pendingPostBleRecordingAudioStatus] 配套：仅在 [_onMemoryRecordCreated] 因设备占录而推迟且为批次最后一条时设置，用于停录后启动 [_syncCompletedClearTimer]。
-  MPHomeRecordCreatedPayload? _deferredRecordCreatedCompletion;
-
-  /// 批量上传最后一条失败时，因设备占录推迟状态条收口的标记。
-  bool _deferredBatchUploadFinished = false;
 
   Timer? _syncCompletedClearTimer;
   bool _bleDeviceImportRunning = false;
@@ -196,6 +189,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     if (_bleDeviceImportRunning || _pendingLocalAudioUploadRunning) {
       return true;
     }
+    if (MPHomeAudioTaskQueue.instance.hasImportTasks || MPHomeAudioTaskQueue.instance.hasUploadSession) {
+      return true;
+    }
     if (MPAudioUploadManager.instance.hasActiveUploads) {
       return true;
     }
@@ -210,12 +206,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       return;
     }
     try {
-      final bool hasPending = await MPAudioUploadManager.instance.hasPendingUploadableRecords();
-      if (!hasPending) {
-        return;
-      }
       _pendingLocalAudioUploadRunning = true;
-      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+      await MPHomeAudioTaskQueue.instance.seedPendingUploadsFromLocal();
     } catch (e, st) {
       debugPrint(
         'MPHomeCubit: upload pending local audio failed (hotStart=$isHotStart): $e\n$st',
@@ -380,8 +372,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void _onBleMemopinRecordingStateChanged(MPBleMemopinRecordingStateChangedPayload payload) {
     if (payload.isRecording) {
       _pendingPostBleRecordingAudioStatus = null;
-      _deferredRecordCreatedCompletion = null;
-      _deferredBatchUploadFinished = false;
       _emitRecordingAudioStatusPrioritized();
       return;
     }
@@ -402,21 +392,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       _pendingPostBleRecordingAudioStatus = null;
       _syncCompletedClearTimer?.cancel();
       emit(state.copyWith(audioStatus: pending));
-      if (_deferredRecordCreatedCompletion != null) {
-        final MPHomeRecordCreatedPayload p = _deferredRecordCreatedCompletion!;
-        _deferredRecordCreatedCompletion = null;
-        final int total = p.batchTotal < 1 ? 1 : p.batchTotal;
-        final int index = p.batchIndex.clamp(1, total);
-        if (index >= total) {
-          _scheduleSyncingStatusBarClear();
-        }
-      } else if (_deferredBatchUploadFinished) {
-        _deferredBatchUploadFinished = false;
-        _scheduleSyncingStatusBarClear();
-      }
       return;
     }
-    _deferredRecordCreatedCompletion = null;
+    _pendingPostBleRecordingAudioStatus = null;
     if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
       return;
     }
@@ -455,97 +433,59 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   /// 演示：设备录音中（对齐 react `setRecording`）；日常由 [_onBleMemopinRecordingStateChanged] 驱动。
   void showRecordingStatus() {
     _pendingPostBleRecordingAudioStatus = null;
-    _deferredRecordCreatedCompletion = null;
     _emitRecordingAudioStatusPrioritized();
   }
 
-  /// 文件同步：`progress` 为**当前条**上传进度 0–100；多文件时换条后从 0 重新计。
-  void showSyncingStatus({required int currentFile, required int totalFiles, required int progress}) {
+  /// [MPHomeAudioTaskQueue] 驱动首页 importing / syncing 顶栏。
+  void _onAudioTaskBar(MPHomeAudioTaskBarPayload payload) {
+    if (_suppressBleUploadStatusAfterDisconnect && payload.kind == MPHomeAudioTaskBarKind.syncing) {
+      return;
+    }
+
+    if (payload.kind == MPHomeAudioTaskBarKind.clear) {
+      _syncCompletedClearTimer?.cancel();
+      if (!isClosed && state.audioStatus != null) {
+        emit(state.copyWith(clearAudioStatus: true));
+        loadData();
+      }
+      return;
+    }
+
+    final MPHomeAudioStatusType type = payload.kind == MPHomeAudioTaskBarKind.importing
+        ? MPHomeAudioStatusType.importing
+        : MPHomeAudioStatusType.syncing;
     final MPHomeAudioStatus next = MPHomeAudioStatus(
-      type: MPHomeAudioStatusType.syncing,
-      progress: progress.clamp(0, 100),
-      currentFile: currentFile,
-      totalFiles: totalFiles,
+      type: type,
+      progress: payload.progress.clamp(0, 100),
+      currentFile: payload.currentFile,
+      totalFiles: payload.totalFiles,
     );
-    // 顶栏仍为 recording 或设备侧仍在录：勿提前展示 syncing（避免停录收尾/后台上传误触）。
+
     if (state.audioStatus?.type == MPHomeAudioStatusType.recording ||
         MPBleConnectionHelper.isMemoPinDeviceRecording) {
       _pendingPostBleRecordingAudioStatus = next;
+      if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
+        _emitRecordingAudioStatusPrioritized();
+      }
       return;
     }
     if (_deferAudioStatusIfMemoPinRecording(next)) {
-      _deferredRecordCreatedCompletion = null;
       return;
     }
+
     _syncCompletedClearTimer?.cancel();
-    _deferredRecordCreatedCompletion = null;
     emit(state.copyWith(audioStatus: next));
-  }
 
-  /// 与 [MPHomeUploadProgressPayload.progress] 一致：单文件 0–100，下一条开始时由上传侧先发 0。
-  void _onUploadProgress(MPHomeUploadProgressPayload payload) {
-    if (_suppressBleUploadStatusAfterDisconnect) {
-      return;
+    if (payload.scheduleClearAfterDisplay) {
+      _scheduleSyncingStatusBarClear();
     }
-    final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
-    final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
-    showSyncingStatus(currentFile: batchIndex, totalFiles: batchTotal, progress: payload.progress.clamp(0, 100));
   }
 
-  /// 批量上传失败：Toast 提示序号；最后一条时状态条切为完成态后延时清除。
+  /// 批量上传失败：Toast 提示序号。
   void _onUploadFailed(MPHomeUploadFailedPayload payload) {
     final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
     MPToastUtils.showMessage('File $batchIndex upload failed.');
-    if (payload.isLastInBatch) {
-      _applySyncingBatchCompleteStatus(
-        batchIndex: batchIndex,
-        batchTotal: batchTotal,
-        onDeferredLastItem: () {
-          _deferredBatchUploadFinished = true;
-        },
-      );
-    }
-  }
-
-  /// [MPHomeNotification]：本地录音上传并创建 record 成功后收口（最后一条完成后延时清除条）。
-  void _onMemoryRecordCreated(MPHomeRecordCreatedPayload payload) {
-    _applySyncingBatchCompleteStatus(
-      batchIndex: payload.batchIndex,
-      batchTotal: payload.batchTotal,
-      onDeferredLastItem: () {
-        _deferredRecordCreatedCompletion = payload;
-      },
-    );
-  }
-
-  /// 本批次单条处理结束（成功或最后一条失败）：顶栏 syncing 100%，最后一条时延时清除。
-  void _applySyncingBatchCompleteStatus({
-    required int batchIndex,
-    required int batchTotal,
-    required void Function() onDeferredLastItem,
-  }) {
-    _syncCompletedClearTimer?.cancel();
-    final int total = batchTotal < 1 ? 1 : batchTotal;
-    final int index = batchIndex.clamp(1, total);
-    final MPHomeAudioStatus next = MPHomeAudioStatus(
-      type: MPHomeAudioStatusType.syncing,
-      progress: 100,
-      currentFile: index,
-      totalFiles: total,
-    );
-    if (_deferAudioStatusIfMemoPinRecording(next)) {
-      if (index >= total) {
-        onDeferredLastItem();
-      }
-      return;
-    }
-    _deferredRecordCreatedCompletion = null;
-    _deferredBatchUploadFinished = false;
-    emit(state.copyWith(audioStatus: next));
-    if (index >= total) {
-      _scheduleSyncingStatusBarClear();
-    }
   }
 
   /// 上传完成态展示约 1.6s 后清除顶栏并刷新列表。
@@ -557,22 +497,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         loadData();
       }
     });
-  }
-
-  /// 导入音频（复制到沙盒阶段）；多选时 [currentFile] / [totalFiles] 为当前第几个文件与总个数。
-  void showImportingStatus(int progress, {int? currentFile, int? totalFiles}) {
-    final MPHomeAudioStatus next = MPHomeAudioStatus(
-      type: MPHomeAudioStatusType.importing,
-      progress: progress.clamp(0, 100),
-      currentFile: currentFile,
-      totalFiles: totalFiles,
-    );
-    if (_deferAudioStatusIfMemoPinRecording(next)) {
-      _deferredRecordCreatedCompletion = null;
-      return;
-    }
-    _deferredRecordCreatedCompletion = null;
-    emit(state.copyWith(audioStatus: next));
   }
 
   void clearAudioStatus() {
@@ -590,8 +514,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void _clearBleTopBarForRecordingDisconnect() {
     _suppressBleUploadStatusAfterDisconnect = true;
     _pendingPostBleRecordingAudioStatus = null;
-    _deferredRecordCreatedCompletion = null;
-    _deferredBatchUploadFinished = false;
     _syncCompletedClearTimer?.cancel();
     if (!isClosed) {
       emit(
@@ -613,7 +535,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
     if (statusType == MPHomeAudioStatusType.syncing) {
       _pendingPostBleRecordingAudioStatus = null;
-      _deferredRecordCreatedCompletion = null;
       if (!isClosed) {
         emit(state.copyWith(isBleConnected: false));
       }
@@ -621,18 +542,15 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
 
     if (statusType == MPHomeAudioStatusType.importing) {
+      MPHomeAudioTaskQueue.instance.cancelAllImportTasks();
       _pendingPostBleRecordingAudioStatus = null;
-      _deferredRecordCreatedCompletion = null;
       _syncCompletedClearTimer?.cancel();
       final List<MPAudioLocalRecord> toUpload = MPBleFileUtil.takePendingUploadAfterAbort();
       if (!isClosed) {
         emit(state.copyWith(isBleConnected: false, clearAudioStatus: true));
       }
       if (toUpload.isNotEmpty) {
-        await MPAudioUploadManager.instance.uploadRecords(
-          toUpload,
-          rightNowTranscribe: false,
-        );
+        await MPHomeAudioTaskQueue.instance.enqueueImportedRecordsForUpload(toUpload);
       }
       return;
     }
@@ -644,7 +562,6 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void _syncBleRecordingTopBarFromSnapshot() {
     if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
       _pendingPostBleRecordingAudioStatus = null;
-      _deferredRecordCreatedCompletion = null;
       _emitRecordingAudioStatusPrioritized();
     }
   }
@@ -674,11 +591,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       debugPrint('MPHomeCubit: Bluetooth connected. Starting device import...');
       await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
-        onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
-          if (!isClosed && !_suppressBleUploadStatusAfterDisconnect) {
-            showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
-          }
-        },
+        onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {},
       );
     } catch (e) {
       debugPrint('MPHomeCubit: device import error: $e');
@@ -732,8 +645,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     _insightsTimer = null;
     _syncCompletedClearTimer?.cancel();
     _syncCompletedClearTimer = null;
-    _recordCreatedSub?.cancel();
-    _uploadProgressSub?.cancel();
+    _audioTaskBarSub?.cancel();
     _uploadFailedSub?.cancel();
     _homeListRefreshSub?.cancel();
     _todoDoneSub?.cancel();

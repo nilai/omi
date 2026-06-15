@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../audio/import/mp_audio_import_utils.dart';
 import '../audio/record/mp_audio_local_records_util.dart';
+import '../audio/record/mp_home_audio_task_queue.dart';
 import '../audio/record/mp_audio_upload_manger.dart';
 import '../audio/record/mp_audio_upload_service.dart';
 import '../common/mp_home_notification.dart';
@@ -298,12 +299,9 @@ class MPBleFileUtil {
     }
     if (runUploadQueue) {
       if (uploadAllPending) {
-        await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+        await MPHomeAudioTaskQueue.instance.seedPendingUploadsFromLocal();
       } else {
-        await MPAudioUploadManager.instance.uploadRecords(
-          <MPAudioLocalRecord>[record],
-          rightNowTranscribe: false,
-        );
+        await MPHomeAudioTaskQueue.instance.enqueueUploadRecord(record, rightNowTranscribe: false);
       }
     }
     debugPrint('------>>>memopin finalizeRealtimeOpus: upload done');
@@ -428,6 +426,21 @@ class MPBleFileUtil {
     return Duration(seconds: capped);
   }
 
+  /// 设备 import 进度同步至回调与 [MPHomeAudioTaskQueue]。
+  static void _reportDeviceImportProgress(
+    MPBleFileUtilCopyProgress onSyncProgress, {
+    required int fileIndex,
+    required int fileTotal,
+    required int progressPercent,
+  }) {
+    onSyncProgress(fileIndex: fileIndex, fileTotal: fileTotal, progressPercent: progressPercent);
+    MPHomeAudioTaskQueue.instance.reportImportProgress(
+      fileIndex: fileIndex,
+      fileTotal: fileTotal,
+      progressPercent: progressPercent,
+    );
+  }
+
   /// 拉取列表 → 按 Opus 逐条导出 `.opus` 与同名 `.txt` 至 [ensureMemoPinDeviceAudioDirectoryPath] → 转 MP3 →
   /// 写入 [MPAudioLocalRecord]（含 [MPAudioLocalRecord.mp3Path]、[MPAudioLocalRecord.txtPath]、转码后主路径）→
   /// 删除设备端对应 `.opus` 与同名 `.txt`（若存在）→ [MPHomeNotification.notifyHomeListRefresh] → 上传队列。
@@ -486,6 +499,7 @@ class MPBleFileUtil {
       debugPrint('------>>>memopin syncDeviceOpusTxt: opus=${opusList.length} txt=${txtList.length} dir=$deviceDir');
 
       final int total = opusList.length;
+      MPHomeAudioTaskQueue.instance.beginImportBatch(total);
       for (int i = 0; i < total; i++) {
         if (_isDeviceSyncAborted() || !await transport.isConnected()) {
           syncAborted = true;
@@ -497,7 +511,7 @@ class MPBleFileUtil {
         session.scratch.clear();
         final NoteFileInfo opusInfo = opusList[i];
         debugPrint('------>>>memopin syncDeviceOpusTxt: processing [$i+1/$total] ${opusInfo.name}');
-        onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
+        _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 0);
 
         final MPNoteBleGattClient opusClient = MPNoteBleGattClient(transport);
         try {
@@ -510,11 +524,12 @@ class MPBleFileUtil {
           if (opusBytes == null || opusBytes.isEmpty) {
             debugPrint('------>>>memopin syncDeviceOpusTxt: export opus empty ${opusInfo.name}');
             debugPrint('MPBleFileUtil: failed to export opus: ${opusInfo.name}');
-            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            MPHomeAudioTaskQueue.instance.skipImportFile();
             continue;
           }
 
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 35);
+          _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 35);
 
           final String? opusPath = await _writeBytesToDir(
             directoryPath: deviceDir,
@@ -525,7 +540,8 @@ class MPBleFileUtil {
           if (opusPath == null) {
             debugPrint('------>>>memopin syncDeviceOpusTxt: write opus failed ${opusInfo.name}');
             debugPrint('MPBleFileUtil: failed to write opus: ${opusInfo.name}');
-            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            MPHomeAudioTaskQueue.instance.skipImportFile();
             continue;
           }
           session.scratch.opusPath = opusPath;
@@ -564,7 +580,7 @@ class MPBleFileUtil {
             break;
           }
 
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 55);
+          _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 55);
 
           final String? mp3Path = await MPOpusToMp3Util.convertMemoPinBleOpusExportToMp3(opusPath);
           session.scratch.mp3Path = mp3Path;
@@ -572,7 +588,8 @@ class MPBleFileUtil {
           if (!await primaryFile.exists()) {
             debugPrint('------>>>memopin syncDeviceOpusTxt: primary missing after convert ${opusInfo.name}');
             debugPrint('MPBleFileUtil: primary audio missing after convert: ${opusInfo.name}');
-            onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+            MPHomeAudioTaskQueue.instance.skipImportFile();
             continue;
           }
 
@@ -581,7 +598,7 @@ class MPBleFileUtil {
             break;
           }
 
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 80);
+          _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 80);
 
           final String audioPathForRecord = primaryFile.path;
           final int? durAudio = await MPAudioImportUtils.readAudioDurationSeconds(audioPathForRecord);
@@ -620,7 +637,8 @@ class MPBleFileUtil {
             debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
           }
 
-          onSyncProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+          _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+          await MPHomeAudioTaskQueue.instance.completeImportFile(record, source: kMemoPinRecordSource);
         } finally {
           if (syncAborted || _isDeviceSyncAborted()) {
             await _cleanupIncompleteDeviceImportScratch(session.scratch);
@@ -635,16 +653,15 @@ class MPBleFileUtil {
       }
 
       if (syncAborted || _isDeviceSyncAborted()) {
-        debugPrint('------>>>memopin syncDeviceOpusTxt: aborted, skip upload');
+        debugPrint('------>>>memopin syncDeviceOpusTxt: aborted');
+        MPHomeAudioTaskQueue.instance.cancelAllImportTasks();
         return;
       }
 
-      debugPrint('------>>>memopin syncDeviceOpusTxt: starting upload queue');
-      debugPrint('MPBleFileUtil: uploading recordings...');
-      await MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
       debugPrint('------>>>memopin syncDeviceOpusTxt: done');
     } catch (e, st) {
       syncAborted = true;
+      MPHomeAudioTaskQueue.instance.cancelAllImportTasks();
       debugPrint('------>>>memopin syncDeviceOpusTxt: FAILED $e\n$st');
       debugPrint('MPBleFileUtil device import failed: $e\n$st');
     } finally {

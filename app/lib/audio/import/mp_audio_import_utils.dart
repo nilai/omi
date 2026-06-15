@@ -12,6 +12,7 @@ import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../record/mp_audio_local_records_util.dart';
+import '../record/mp_home_audio_task_queue.dart';
 
 /// 同步到沙盒时的进度（0–1）、已复制字节、总字节。
 typedef _SyncProgressCallback = void Function(double progress, int copiedBytes, int totalBytes);
@@ -59,33 +60,51 @@ class MPAudioImportUtils {
     String source = 'MobilePhone',
   }) async {
     final int total = picked.length;
+    MPHomeAudioTaskQueue.instance.beginImportBatch(total);
     final List<String> out = <String>[];
     for (int i = 0; i < total; i++) {
       final File file = picked[i];
       onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 0);
+      MPHomeAudioTaskQueue.instance.reportImportProgress(
+        fileIndex: i + 1,
+        fileTotal: total,
+        progressPercent: 0,
+      );
       final String? path = await _syncAudioToSandbox(
         file,
         onProgress: (double p, int copiedBytes, int totalBytes) {
-          onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: (p * 100).round().clamp(0, 100));
+          final int percent = (p * 100).round().clamp(0, 100);
+          onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: percent);
+          MPHomeAudioTaskQueue.instance.reportImportProgress(
+            fileIndex: i + 1,
+            fileTotal: total,
+            progressPercent: percent,
+          );
         },
       );
       if (path == null) {
+        MPHomeAudioTaskQueue.instance.skipImportFile();
         continue;
       }
       final File sandboxFile = File(path);
       final int? dur = await _getAudioDurationSeconds(path);
       final int durationSec = (dur != null && dur > 0) ? dur : 1;
       final int createAt = MPTimeUtils.unixSecondsFromDateTime(await sandboxFile.lastModified());
-      await MPAudioLocalRecordsUtil.instance.add(
-        MPAudioLocalRecord(
-          path: path,
-          fileName: file.path.split('/').last,
-          createAt: createAt,
-          duration: durationSec,
-          source: source,
-        ),
+      final MPAudioLocalRecord record = MPAudioLocalRecord(
+        path: path,
+        fileName: file.path.split('/').last,
+        createAt: createAt,
+        duration: durationSec,
+        source: source,
       );
+      await MPAudioLocalRecordsUtil.instance.add(record);
       onProgress(fileIndex: i + 1, fileTotal: total, progressPercent: 100);
+      MPHomeAudioTaskQueue.instance.reportImportProgress(
+        fileIndex: i + 1,
+        fileTotal: total,
+        progressPercent: 100,
+      );
+      await MPHomeAudioTaskQueue.instance.completeImportFile(record, source: source);
       out.add(path);
     }
     return out;

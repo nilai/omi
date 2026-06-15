@@ -7,7 +7,7 @@ import 'package:memo_pin/audio/record/mp_native_recorder.dart';
 import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
-import 'package:memo_pin/audio/record/mp_audio_upload_manger.dart';
+import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
 import 'package:memo_pin/utils/mp_time_utils.dart';
@@ -880,7 +880,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
     widget.rootNavigator.pop(MPAudioRecordResult(filePath: savedPath, duration: total));
 
-    MPAudioUploadManager.instance.uploadAllRecordingFiles(rightNowTranscribe: false);
+    MPHomeAudioTaskQueue.instance.seedPendingUploadsFromLocal();
 
     if (!mounted) {
       return;

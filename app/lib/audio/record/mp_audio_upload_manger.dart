@@ -7,6 +7,7 @@ import 'package:memo_pin/audio/record/audio_record.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_background_support.dart';
 import 'package:memo_pin/audio/record/mp_audio_upload_service.dart';
+import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -16,40 +17,6 @@ import 'package:path/path.dart' as p;
 /// 单条文件上传进度（0–100，对应当前第 [batchIndex] 条）；由 **调用方页面** 更新进度条，不在本类内做 UI 模拟。
 typedef MPAudioUploadPerFileProgress =
     void Function({required int batchIndex, required int batchTotal, required int progress});
-
-void _emitUploadProgress(
-  MPAudioUploadPerFileProgress? onPerFileProgress, {
-  required int batchIndex,
-  required int batchTotal,
-  required int progress,
-}) {
-  final int p = progress.clamp(0, 100);
-  debugPrint('MPAudioUploadManager: upload progress $batchIndex/$batchTotal → $p%');
-  onPerFileProgress?.call(batchIndex: batchIndex, batchTotal: batchTotal, progress: p);
-  MPHomeNotification.notifyUploadProgress(
-    MPHomeUploadProgressPayload(batchTotal: batchTotal, batchIndex: batchIndex, progress: p),
-  );
-}
-
-/// 单条上传失败：通知首页 Toast；最后一条时由 [isLastInBatch] 触发状态条收口。
-///
-/// 失败路径不再追加 `progress: 100` 进度事件，避免首页 [showSyncingStatus] 取消已安排的清除定时器。
-void _notifyBatchUploadFailure({
-  required int batchIndex,
-  required int batchTotal,
-}) {
-  final bool isLastInBatch = batchIndex >= batchTotal;
-  debugPrint(
-    'MPAudioUploadManager: upload failed file $batchIndex/$batchTotal, isLastInBatch=$isLastInBatch',
-  );
-  MPHomeNotification.notifyUploadFailed(
-    MPHomeUploadFailedPayload(
-      batchTotal: batchTotal,
-      batchIndex: batchIndex,
-      isLastInBatch: isLastInBatch,
-    ),
-  );
-}
 
 /// 多文件上传进度：[totalFiles] 为当前队列中待处理条数 + 正在上传的 1 条；[currentFileIndex] 为本次 Worker 会话内从 1 开始的序号；[progress] 为当前文件 0–100。
 typedef MPAudioUploadMultiProgress =
@@ -120,6 +87,9 @@ class MPAudioUploadManager {
 
   /// 是否有待处理或进行中的上传任务。
   bool get hasActiveUploads => _workerLoopRunning || _jobQueue.isNotEmpty || _queuedOrUploadingPaths.isNotEmpty;
+
+  /// 是否可上传的本地音频记录（供 [MPHomeAudioTaskQueue] 等调用）。
+  static bool isUploadableAudioRecord(MPAudioLocalRecord record) => _isUploadableAudioRecord(record);
 
   /// 待上传目录中的音频（与 [audioExtensions] 扩展名一致）。
   static bool _isPendingAudioFilePath(String path) {
@@ -202,7 +172,7 @@ class MPAudioUploadManager {
             p.basename(_audioFilePathForUpload(a)).compareTo(p.basename(_audioFilePathForUpload(b))),
       );
 
-      return _enqueueUploadJob(
+      return _enqueueUploadJobLegacy(
         audioRecords: audioRecords,
         allRecordsForTxt: records,
         rightNowTranscribe: rightNowTranscribe,
@@ -214,6 +184,44 @@ class MPAudioUploadManager {
     } catch (e) {
       debugPrint('MPAudioUploadManager: uploadRecords failed: $e');
       return null;
+    }
+  }
+
+  /// 入队并返回**本次新入队**的音频条数（0 表示全部被去重跳过或无可传文件）。
+  Future<int> uploadRecordsReturningEnqueuedCount(
+    List<MPAudioLocalRecord> records, {
+    bool rightNowTranscribe = false,
+    String? source,
+    int recordMemoAt = 0,
+    String? templateId,
+    MPAudioUploadPerFileProgress? onPerFileProgress,
+  }) async {
+    try {
+      final List<MPAudioLocalRecord> audioRecords = records
+          .where((MPAudioLocalRecord r) => !r.isRemoved && _isUploadableAudioRecord(r))
+          .toList();
+
+      if (audioRecords.isEmpty) {
+        debugPrint('MPAudioUploadManager: no records to upload.');
+        return 0;
+      }
+      audioRecords.sort(
+        (MPAudioLocalRecord a, MPAudioLocalRecord b) =>
+            p.basename(_audioFilePathForUpload(a)).compareTo(p.basename(_audioFilePathForUpload(b))),
+      );
+
+      return _enqueueUploadJobCount(
+        audioRecords: audioRecords,
+        allRecordsForTxt: records,
+        rightNowTranscribe: rightNowTranscribe,
+        sourceOverride: source,
+        recordMemoAt: recordMemoAt,
+        templateId: templateId,
+        onPerFileProgress: onPerFileProgress,
+      );
+    } catch (e) {
+      debugPrint('MPAudioUploadManager: uploadRecordsReturningEnqueuedCount failed: $e');
+      return 0;
     }
   }
 
@@ -237,6 +245,11 @@ class MPAudioUploadManager {
 
   static String _uploadKeyForRecord(MPAudioLocalRecord record) =>
       _uploadKeyForPath(_audioFilePathForUpload(record));
+
+  /// 该音频路径是否已在 upload manager 入队或上传中。
+  bool isPathQueuedOrUploading(MPAudioLocalRecord record) {
+    return _queuedOrUploadingPaths.contains(_uploadKeyForRecord(record));
+  }
 
   void _trackUploadPath(String audioPath) {
     _queuedOrUploadingPaths.add(_uploadKeyForPath(audioPath));
@@ -280,6 +293,7 @@ class MPAudioUploadManager {
       idle.complete();
     }
     _idleCompleter = null;
+    MPHomeAudioTaskQueue.instance.onUploadManagerBecameIdle();
   }
 
   void _ensureWorkerRunning() {
@@ -316,7 +330,8 @@ class MPAudioUploadManager {
     }
   }
 
-  Future<MPCreateRecordResponse?> _enqueueUploadJob({
+  /// 入队并返回本次新入队的条数。
+  Future<int> _enqueueUploadJobCount({
     required List<MPAudioLocalRecord> audioRecords,
     required List<MPAudioLocalRecord> allRecordsForTxt,
     required bool rightNowTranscribe,
@@ -338,8 +353,7 @@ class MPAudioUploadManager {
 
     if (toEnqueue.isEmpty) {
       debugPrint('MPAudioUploadManager: no new records to enqueue (duplicates skipped).');
-      await _whenWorkerIdle();
-      return null;
+      return 0;
     }
 
     final _MPAudioUploadJob job = _MPAudioUploadJob(
@@ -355,6 +369,43 @@ class MPAudioUploadManager {
     debugPrint(
       'MPAudioUploadManager: enqueued job with ${toEnqueue.length} file(s), queueDepth=${_jobQueue.length}',
     );
+    _ensureWorkerRunning();
+    return toEnqueue.length;
+  }
+
+  /// 兼容旧调用：返回最后一条 [createRecord] 响应的 Future（无新入队时为 `null`）。
+  Future<MPCreateRecordResponse?> _enqueueUploadJobLegacy({
+    required List<MPAudioLocalRecord> audioRecords,
+    required List<MPAudioLocalRecord> allRecordsForTxt,
+    required bool rightNowTranscribe,
+    required String? sourceOverride,
+    required int recordMemoAt,
+    required String? templateId,
+    MPAudioUploadPerFileProgress? onPerFileProgress,
+  }) async {
+    final List<MPAudioLocalRecord> toEnqueue = <MPAudioLocalRecord>[];
+    for (final MPAudioLocalRecord record in audioRecords) {
+      final String key = _uploadKeyForRecord(record);
+      if (_queuedOrUploadingPaths.contains(key)) {
+        continue;
+      }
+      _trackUploadPath(_audioFilePathForUpload(record));
+      toEnqueue.add(record);
+    }
+    if (toEnqueue.isEmpty) {
+      await _whenWorkerIdle();
+      return null;
+    }
+    final _MPAudioUploadJob job = _MPAudioUploadJob(
+      audioRecords: toEnqueue,
+      allRecordsForTxt: allRecordsForTxt,
+      rightNowTranscribe: rightNowTranscribe,
+      sourceOverride: sourceOverride,
+      recordMemoAt: recordMemoAt,
+      templateId: templateId,
+      onPerFileProgress: onPerFileProgress,
+    );
+    _jobQueue.add(job);
     _ensureWorkerRunning();
     return job.completer.future;
   }
@@ -402,7 +453,7 @@ class MPAudioUploadManager {
         } catch (e, st) {
           debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
         }
-        _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
+        _emitUploadProgressForRecord(onPerFileProgress, record: record, progress: 100);
         continue;
       }
 
@@ -417,7 +468,7 @@ class MPAudioUploadManager {
         } catch (e, st) {
           debugPrint('MPAudioLocalRecordsUtil.update(isRemoved) failed: $e\n$st');
         }
-        _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
+        _emitUploadProgressForRecord(onPerFileProgress, record: record, progress: 100);
         continue;
       }
 
@@ -441,7 +492,7 @@ class MPAudioUploadManager {
       }
       final bool hasTxt = txtCompanion != null && await txtCompanion.exists();
 
-      _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 0);
+      _emitUploadProgressForRecord(onPerFileProgress, record: record, progress: 0);
       String? txtUri;
       if (hasTxt) {
         debugPrint('MPAudioUploadManager: uploading txt companion for file ${i + 1}/$n');
@@ -457,10 +508,7 @@ class MPAudioUploadManager {
         );
         if (txtUri == null || txtUri.isEmpty) {
           debugPrint('MPAudioUploadManager: failed to upload txt companion.');
-          _notifyBatchUploadFailure(
-            batchIndex: i + 1,
-            batchTotal: n,
-          );
+          _notifyUploadFailureForRecord(record);
           continue;
         }
       }
@@ -473,10 +521,7 @@ class MPAudioUploadManager {
       );
       if (audioUri == null || audioUri.isEmpty) {
         debugPrint('MPAudioUploadManager: failed to upload audio.');
-        _notifyBatchUploadFailure(
-          batchIndex: i + 1,
-          batchTotal: n,
-        );
+        _notifyUploadFailureForRecord(record);
         continue;
       }
 
@@ -500,10 +545,7 @@ class MPAudioUploadManager {
       );
       if (created == null || created.baseResp.code != 0) {
         debugPrint('MPAudioUploadManager: failed to create record.');
-        _notifyBatchUploadFailure(
-          batchIndex: i + 1,
-          batchTotal: n,
-        );
+        _notifyUploadFailureForRecord(record);
         continue;
       }
 
@@ -525,7 +567,7 @@ class MPAudioUploadManager {
         MPMemoryNotification.notifyMemoryListRefresh();
       }
 
-      _emitUploadProgress(onPerFileProgress, batchIndex: i + 1, batchTotal: n, progress: 100);
+      _emitUploadProgressForRecord(onPerFileProgress, record: record, progress: 100);
 
       try {
         await MPAudioLocalRecordsUtil.instance.update(record);
@@ -542,7 +584,7 @@ class MPAudioUploadManager {
       }
 
       MPHomeNotification.notifyRecordCreated(
-        MPHomeRecordCreatedPayload(memoryId: created.memoryId, batchTotal: n, batchIndex: i + 1),
+        MPHomeRecordCreatedPayload(memoryId: created.memoryId),
       );
       debugPrint(
         'MPAudioUploadManager: upload success file ${i + 1}/$n memoryId=${created.memoryId}',
@@ -551,10 +593,36 @@ class MPAudioUploadManager {
       lastCreated = created;
       } finally {
         _releaseUploadPath(audioPath);
+        MPHomeAudioTaskQueue.instance.notifyUploadFileFinished(record);
       }
     }
 
     debugPrint('MPAudioUploadManager: batch upload end, total=$n');
     return lastCreated;
+  }
+
+  void _emitUploadProgressForRecord(
+    MPAudioUploadPerFileProgress? onPerFileProgress, {
+    required MPAudioLocalRecord record,
+    required int progress,
+  }) {
+    final ({int currentFile, int totalFiles}) snapshot = MPHomeAudioTaskQueue.instance.uploadProgressSnapshot;
+    MPHomeAudioTaskQueue.instance.notifyUploadProgressForRecord(record, progress);
+    onPerFileProgress?.call(
+      batchIndex: snapshot.currentFile,
+      batchTotal: snapshot.totalFiles,
+      progress: progress.clamp(0, 100),
+    );
+  }
+
+  void _notifyUploadFailureForRecord(MPAudioLocalRecord record) {
+    final ({int currentFile, int totalFiles}) snapshot = MPHomeAudioTaskQueue.instance.uploadProgressSnapshot;
+    MPHomeNotification.notifyUploadFailed(
+      MPHomeUploadFailedPayload(
+        batchTotal: snapshot.totalFiles,
+        batchIndex: snapshot.currentFile,
+        isLastInBatch: snapshot.currentFile >= snapshot.totalFiles,
+      ),
+    );
   }
 }

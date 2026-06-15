@@ -1,5 +1,26 @@
 import 'dart:async';
 
+/// 首页 import / upload 双队列驱动的顶栏状态。
+enum MPHomeAudioTaskBarKind { importing, syncing, clear }
+
+class MPHomeAudioTaskBarPayload {
+  const MPHomeAudioTaskBarPayload({
+    required this.kind,
+    this.currentFile = 1,
+    this.totalFiles = 1,
+    this.progress = 0,
+    this.scheduleClearAfterDisplay = false,
+  });
+
+  final MPHomeAudioTaskBarKind kind;
+  final int currentFile;
+  final int totalFiles;
+  final int progress;
+
+  /// syncing 最后一条完成后展示约 1.6s 再清除顶栏。
+  final bool scheduleClearAfterDisplay;
+}
+
 /// 上传过程中广播的进度（供首页状态条订阅）。
 class MPHomeUploadProgressPayload {
   const MPHomeUploadProgressPayload({
@@ -123,6 +144,8 @@ class MPHomeNotification {
       StreamController<void>.broadcast();
   static final StreamController<MPBleMemopinRecordingStateChangedPayload> _bleMemopinRecordingBus =
       StreamController<MPBleMemopinRecordingStateChangedPayload>.broadcast();
+  static final StreamController<MPHomeAudioTaskBarPayload> _audioTaskBarBus =
+      StreamController<MPHomeAudioTaskBarPayload>.broadcast();
 
   static Stream<void> get homeRefreshEvents => _homeRefreshBus.stream;
   static Stream<MPHomeUploadProgressPayload> get uploadProgressEvents =>
@@ -140,6 +163,7 @@ class MPHomeNotification {
   static Stream<void> get bleDisconnectedEvents => _bleDisconnectedBus.stream;
   static Stream<MPBleMemopinRecordingStateChangedPayload> get bleMemopinRecordingStateEvents =>
       _bleMemopinRecordingBus.stream;
+  static Stream<MPHomeAudioTaskBarPayload> get audioTaskBarEvents => _audioTaskBarBus.stream;
 
   static void _emitHomeRefresh() {
     if (!_homeRefreshBus.isClosed) {
@@ -195,6 +219,12 @@ class MPHomeNotification {
     }
   }
 
+  static void _emitAudioTaskBar(MPHomeAudioTaskBarPayload payload) {
+    if (!_audioTaskBarBus.isClosed) {
+      _audioTaskBarBus.add(payload);
+    }
+  }
+
   /// 任意页面主动调用：通知首页刷新列表数据。
   static void notifyHomeListRefresh() => _emitHomeRefresh();
 
@@ -227,6 +257,9 @@ class MPHomeNotification {
 
   /// 用户主动断开、释放背景会话或设备被动掉线后调用：首页收起 BLE 相关顶栏状态。
   static void notifyBleDisconnected() => _emitBleDisconnected();
+
+  /// [MPHomeAudioTaskQueue] 驱动首页 importing / syncing 顶栏。
+  static void notifyAudioTaskBar(MPHomeAudioTaskBarPayload payload) => _emitAudioTaskBar(payload);
 
   /// 首页监听：收到后执行 `loadData` 刷新。
   static StreamSubscription<void> listenHomeListRefresh(
@@ -289,5 +322,12 @@ class MPHomeNotification {
     void Function(MPBleMemopinRecordingStateChangedPayload payload) onState,
   ) {
     return bleMemopinRecordingStateEvents.listen(onState);
+  }
+
+  /// 首页监听 import / upload 双队列驱动的顶栏状态。
+  static StreamSubscription<MPHomeAudioTaskBarPayload> listenAudioTaskBar(
+    void Function(MPHomeAudioTaskBarPayload payload) onTaskBar,
+  ) {
+    return audioTaskBarEvents.listen(onTaskBar);
   }
 }

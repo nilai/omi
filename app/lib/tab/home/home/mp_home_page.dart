@@ -17,7 +17,6 @@ import '../../../audio/import/mp_audio_import_utils.dart';
 import '../../../audio/record/mp_audio_record_popup.dart';
 import '../../../blu/mp_ble_connection_helper.dart';
 import '../../../audio/record/mp_global_recording_coordinator.dart';
-import '../../../audio/record/mp_audio_upload_manger.dart';
 import '../../../common/mp_date_utils.dart';
 import '../../../common/mp_home_notification.dart';
 import '../../../common/mp_todo_context_utile.dart';
@@ -109,24 +108,9 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
   }
 
   Future<void> _importFromFileWithProgress() async {
-    try {
-      // _cubit.showImportingStatus(0, currentFile: 1, totalFiles: 1);
-      final List<String>? paths = await MPAudioImportUtils.pickFromFileWithProgress(
-        onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {
-          _cubit.showImportingStatus(progressPercent, currentFile: fileIndex, totalFiles: fileTotal);
-        },
-      );
-      if (!mounted) {
-        return;
-      }
-      if (paths != null && paths.isNotEmpty) {
-        await MPAudioUploadManager.instance.uploadAllRecordingFiles(source: 'MobilePhone', rightNowTranscribe: false);
-      }
-    } finally {
-      if (mounted) {
-        _cubit.clearAudioStatus();
-      }
-    }
+    await MPAudioImportUtils.pickFromFileWithProgress(
+      onProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {},
+    );
   }
 
   Future<void> _onRefresh() async {
