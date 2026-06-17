@@ -31,7 +31,19 @@
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>MemoPin uses Bluetooth to scan for and connect to your devices.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>MemoPin needs microphone access to record audio.</string>
+	<string>MemoPin needs microphone access so you can record voice notes, meetings, and conversations.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>MemoPin may use your location to help organize memories with relevant context when you choose to enable location-based features.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MemoPin may use your location to help organize memories with relevant context when you choose to enable location-based features.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>MemoPin may access your calendar to help connect memories, meetings, reminders, and follow-up actions when you choose to enable calendar integration.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>MemoPin may access your contacts to help identify people mentioned in conversations and organize memories around relevant people when you choose to enable contact-based features.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>MemoPin may access your photo library when you choose to upload or attach images as part of a memory.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>MemoPin may access motion data to support device-related context or wearable interaction features when you choose to enable them.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
