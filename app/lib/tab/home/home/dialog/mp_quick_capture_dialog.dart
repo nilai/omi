@@ -33,6 +33,8 @@ class MPQuickCaptureDialog extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: false,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
       builder: (BuildContext sheetContext) {
         return MPQuickCaptureDialog(hostContext: context);
