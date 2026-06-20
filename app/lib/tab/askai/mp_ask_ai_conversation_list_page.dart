@@ -19,8 +19,45 @@ class MPAskAIConversationListPage extends StatelessWidget {
   }
 }
 
-class _MPAskAIConversationListView extends StatelessWidget {
+class _MPAskAIConversationListView extends StatefulWidget {
   const _MPAskAIConversationListView();
+
+  @override
+  State<_MPAskAIConversationListView> createState() =>
+      _MPAskAIConversationListViewState();
+}
+
+class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListView> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 距离底部约 200px 触发下一页（与项目其它游标分页一致）
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final ScrollPosition pos = _scrollController.position;
+    if (pos.maxScrollExtent <= 0) return;
+    if (pos.pixels < pos.maxScrollExtent - 200) return;
+
+    final MPAskAIConversationListCubit cubit =
+        context.read<MPAskAIConversationListCubit>();
+    final MPAskAIConversationListState state = cubit.state;
+    if (state.phase != MPAskAIConversationListPhase.loaded) return;
+    if (state.isLoadingMore || !state.hasMore) return;
+
+    cubit.loadMore();
+  }
 
   Future<void> _onPullRefresh(BuildContext context) {
     return context
@@ -192,6 +229,7 @@ class _MPAskAIConversationListView extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => _onPullRefresh(context),
           child: ListView(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
             children: <Widget>[
@@ -217,6 +255,7 @@ class _MPAskAIConversationListView extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: () => _onPullRefresh(context),
             child: ListView(
+              controller: _scrollController,
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
               children: <Widget>[
@@ -240,10 +279,24 @@ class _MPAskAIConversationListView extends StatelessWidget {
         return RefreshIndicator(
           onRefresh: () => _onPullRefresh(context),
           child: ListView.builder(
+            controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: state.items.length,
+            itemCount: state.items.length +
+                (state.hasMore && state.isLoadingMore ? 1 : 0),
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             itemBuilder: (BuildContext context, int index) {
+              if (index == state.items.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
               final MPAskAIConversationItem item = state.items[index];
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16),

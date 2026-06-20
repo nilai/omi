@@ -23,16 +23,22 @@ class MPAskAIConversationListState {
     required this.phase,
     this.items = const <MPAskAIConversationItem>[],
     this.errorMessage,
+    this.isLoadingMore = false,
+    this.hasMore = true,
   });
 
   final MPAskAIConversationListPhase phase;
   final List<MPAskAIConversationItem> items;
   final String? errorMessage;
+  final bool isLoadingMore;
+  final bool hasMore;
 
   MPAskAIConversationListState copyWith({
     MPAskAIConversationListPhase? phase,
     List<MPAskAIConversationItem>? items,
     String? errorMessage,
+    bool? isLoadingMore,
+    bool? hasMore,
     bool clearErrorMessage = false,
   }) {
     return MPAskAIConversationListState(
@@ -40,10 +46,18 @@ class MPAskAIConversationListState {
       items: items ?? this.items,
       errorMessage:
           clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
     );
   }
 }
 
+typedef _ConversationPageResult = ({
+  List<MPAskAIConversationItem> items,
+  bool hasMore,
+});
+
+/// 对话列表：首屏 [refresh]、下拉刷新 [refresh]、上拉更多 [loadMore]（游标）
 class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
   MPAskAIConversationListCubit()
     : super(
@@ -54,6 +68,8 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
 
   static const int _pageSize = 20;
   static const String _kConversationListCacheKey = 'ask_ai_conversation_list';
+
+  String? _cursor;
 
   Future<void> initData() => refresh();
 
@@ -67,11 +83,13 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
       final List<MPAskAIConversationItem> cached = await _loadItemsFromCache();
       if (cached.isNotEmpty) {
         bootstrappedFromCache = true;
+        _cursor = cached.last.id;
         if (!isClosed) {
           emit(
             MPAskAIConversationListState(
               phase: MPAskAIConversationListPhase.loaded,
               items: cached,
+              hasMore: true,
             ),
           );
         }
@@ -84,17 +102,30 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
           );
         }
       }
+    } else if (!isClosed) {
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          clearErrorMessage: true,
+        ),
+      );
     }
 
     try {
-      final List<MPAskAIConversationItem> items =
-          await _fetchFirstPageFromServer();
+      _cursor = null;
+      final _ConversationPageResult result =
+          await _fetchPageFromServer(cursor: null);
+      final List<MPAskAIConversationItem> items = result.items;
+      if (items.isNotEmpty) {
+        _cursor = items.last.id;
+      }
       await _persistItemsToCache(items);
       if (!isClosed) {
         emit(
           MPAskAIConversationListState(
             phase: MPAskAIConversationListPhase.loaded,
             items: items,
+            hasMore: result.hasMore,
           ),
         );
       }
@@ -104,11 +135,13 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
       }
       final List<MPAskAIConversationItem> cached = await _loadItemsFromCache();
       if (cached.isNotEmpty) {
+        _cursor = cached.last.id;
         if (!isClosed) {
           emit(
             MPAskAIConversationListState(
               phase: MPAskAIConversationListPhase.loaded,
               items: cached,
+              hasMore: true,
               errorMessage: e.toString(),
             ),
           );
@@ -120,9 +153,49 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
           MPAskAIConversationListState(
             phase: MPAskAIConversationListPhase.error,
             errorMessage: e.toString(),
+            hasMore: false,
           ),
         );
       }
+    }
+  }
+
+  /// 上拉加载更多
+  Future<void> loadMore() async {
+    if (state.phase != MPAskAIConversationListPhase.loaded) return;
+    if (state.isLoadingMore) return;
+    if (!state.hasMore) return;
+    if (_cursor == null || _cursor!.trim().isEmpty) return;
+
+    final List<MPAskAIConversationItem> current =
+        List<MPAskAIConversationItem>.from(state.items);
+    emit(state.copyWith(isLoadingMore: true));
+
+    try {
+      final _ConversationPageResult result =
+          await _fetchPageFromServer(cursor: _cursor);
+      final List<MPAskAIConversationItem> next = result.items;
+
+      if (next.isEmpty) {
+        emit(
+          state.copyWith(
+            isLoadingMore: false,
+            hasMore: false,
+          ),
+        );
+        return;
+      }
+
+      _cursor = next.last.id;
+      emit(
+        state.copyWith(
+          isLoadingMore: false,
+          hasMore: result.hasMore,
+          items: <MPAskAIConversationItem>[...current, ...next],
+        ),
+      );
+    } catch (_) {
+      emit(state.copyWith(isLoadingMore: false));
     }
   }
 
@@ -163,10 +236,12 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     );
   }
 
-  Future<List<MPAskAIConversationItem>> _fetchFirstPageFromServer() async {
+  Future<_ConversationPageResult> _fetchPageFromServer({
+    required String? cursor,
+  }) async {
     final MPGetConversationListResponse? response =
         await getConversationList(
-      MPGetConversationListRequest(pageSize: _pageSize, cursor: null),
+      MPGetConversationListRequest(pageSize: _pageSize, cursor: cursor),
     );
     if (response == null) {
       throw Exception('Failed to load conversations');
@@ -174,7 +249,7 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     if (response.baseResp.code != 0) {
       throw Exception(response.baseResp.message);
     }
-    return response.conversations
+    final List<MPAskAIConversationItem> items = response.conversations
         .map(
           (MPConversationHeaderStruct e) {
             final String title = e.title.trim().isEmpty
@@ -187,5 +262,6 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
           },
         )
         .toList(growable: false);
+    return (items: items, hasMore: response.hasMore);
   }
 }
