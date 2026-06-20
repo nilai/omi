@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../cache/mp_hive_util.dart';
 import '../../utils/mp_time_utils.dart';
 import '../../http/api/mp_chat.dart';
+import '../../http/mp_chat_stream_utils.dart';
 import '../../http/schema/mp_chat.dart';
 import 'mp_ask_ai_chat_page.dart';
 
@@ -182,7 +183,8 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       );
     }
 
-    String aiText = '';
+    String rawBuffer = '';
+    final String aiMessageId = 'a_${MPTimeUtils.nowUnixMicroseconds()}';
     try {
       final Stream<String> stream = chat(
         MPChatRequest(
@@ -191,23 +193,54 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         ),
       );
       await for (final String chunk in stream) {
-        aiText += chunk;
+        rawBuffer = MPChatStreamUtils.appendToBuffer(rawBuffer, chunk);
         final List<MPAskAIChatMessage> merged = <MPAskAIChatMessage>[
           ...next,
           MPAskAIChatMessage(
-            id: 'a_${MPTimeUtils.nowUnixMicroseconds()}',
+            id: aiMessageId,
             role: MPAskAIMessageRole.ai,
-            content: aiText,
+            content: rawBuffer,
+          ),
+        ];
+        emit(state.copyWith(messages: merged, conversationId: activeConversationId));
+      }
+      print('[MPAskAIChat] stream final result:\n$rawBuffer');
+      if (rawBuffer.trim().isNotEmpty) {
+        final List<MPAskAIChatMessage> merged = <MPAskAIChatMessage>[
+          ...next,
+          MPAskAIChatMessage(
+            id: aiMessageId,
+            role: MPAskAIMessageRole.ai,
+            content: rawBuffer,
           ),
         ];
         emit(state.copyWith(messages: merged, conversationId: activeConversationId));
       }
     } catch (e) {
-      emit(
-      state.copyWith(
-        errorMessage: 'AI reply failed. Please try again later.',
-      ),
-    );
+      if (rawBuffer.trim().isNotEmpty) {
+        print('[MPAskAIChat] stream final result (error):\n$rawBuffer');
+        final List<MPAskAIChatMessage> merged = <MPAskAIChatMessage>[
+          ...next,
+          MPAskAIChatMessage(
+            id: aiMessageId,
+            role: MPAskAIMessageRole.ai,
+            content: rawBuffer,
+          ),
+        ];
+        emit(
+          state.copyWith(
+            messages: merged,
+            conversationId: activeConversationId,
+            errorMessage: 'AI reply failed. Please try again later.',
+          ),
+        );
+      } else {
+        emit(
+          state.copyWith(
+            errorMessage: 'AI reply failed. Please try again later.',
+          ),
+        );
+      }
     } finally {
       emit(state.copyWith(isSending: false));
     }
@@ -232,6 +265,10 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
       }
       if (response.baseResp.code != 0) {
         throw Exception(response.baseResp.message);
+      }
+      print('[MPAskAIChat] server conversation detail (conversationId=$targetConversationId):');
+      for (final MPConversationStruct element in response.contents) {
+        print('[MPAskAIChat] server content: ${element.content}');
       }
       List<MPAskAIChatMessage> messages = [];
       for (final (index, element) in response.contents.indexed) {

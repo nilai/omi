@@ -13,6 +13,7 @@ import '../../env/env.dart';
 import '../login/mp_login_util.dart';
 import '../login/mp_user.dart';
 import 'api/mp_login.dart';
+import 'mp_chat_stream_utils.dart';
 import 'schema/mp_login.dart';
 
 class Logger {
@@ -392,6 +393,55 @@ Future<http.Response> makeMultipartApiCall({
   }
 }
 
+/// 从 SSE event 中提取 data 字段内容及是否为 JSON delta。
+(String payload, bool isJsonDelta)? _extractSseEventPayload(String eventText) {
+  final String trimmed = eventText.trim();
+  if (trimmed.isEmpty || trimmed == '[DONE]') {
+    return null;
+  }
+
+  final List<String> dataLines = <String>[];
+  bool isJsonDelta = false;
+  for (final String line in eventText.split('\n')) {
+    if (!line.startsWith('data:')) {
+      continue;
+    }
+    String value = line.substring(5);
+    if (value.startsWith(' ')) {
+      value = value.substring(1);
+    }
+    if (value.startsWith('{')) {
+      isJsonDelta = true;
+    }
+    dataLines.add(_extractChatStreamDataLine(value));
+  }
+
+  if (dataLines.isNotEmpty) {
+    return (dataLines.join('\n'), isJsonDelta);
+  }
+
+  return (eventText, false);
+}
+
+/// 解析单条 SSE data 行，支持 JSON 与纯文本。
+String _extractChatStreamDataLine(String value) {
+  if (!value.startsWith('{')) {
+    return value;
+  }
+  try {
+    final dynamic decoded = jsonDecode(value);
+    if (decoded is Map<String, dynamic>) {
+      for (final String key in <String>['content', 'delta', 'text', 'message']) {
+        final dynamic field = decoded[key];
+        if (field is String) {
+          return field;
+        }
+      }
+    }
+  } catch (_) {}
+  return value;
+}
+
 Stream<String> makeStreamingApiCall({
   required String url,
   Map<String, String> headers = const {},
@@ -429,36 +479,45 @@ Stream<String> makeStreamingApiCall({
     httpDebugPrint('✅ STREAMING RESPONSE: ${streamedResponse.statusCode} - Started receiving data...');
     int chunkCount = 0;
 
-    var buffers = <String>[];
-    await for (var data in streamedResponse.stream.transform(utf8.decoder)) {
-      var lines = data.split('\n\n');
-      for (var line in lines.where((line) => line.isNotEmpty)) {
-        // Handle package splitting by 1024 bytes in dart
-        if (line.length >= 1024) {
-          buffers.add(line);
-          continue;
+    final StringBuffer eventBuffer = StringBuffer();
+    await for (final String data in streamedResponse.stream.transform(utf8.decoder)) {
+      eventBuffer.write(data);
+      String buffered = eventBuffer.toString();
+      int separatorIndex = buffered.indexOf('\n\n');
+      while (separatorIndex != -1) {
+        final String eventText = buffered.substring(0, separatorIndex);
+        buffered = buffered.substring(separatorIndex + 2);
+        final (String payload, bool isJsonDelta)? extracted = _extractSseEventPayload(eventText);
+        if (extracted != null) {
+          final String normalized = MPChatStreamUtils.normalizeEventChunk(
+            extracted.$1,
+            isJsonDelta: extracted.$2,
+          );
+          chunkCount++;
+          final String chunkText = _truncateResponse(normalized, maxLength: kDebugMode ? null : 200);
+          httpDebugPrint('📦 Chunk #$chunkCount: $chunkText');
+          yield normalized;
         }
-
-        // Merge packages if needed
-        if (buffers.isNotEmpty) {
-          buffers.add(line);
-          line = buffers.join();
-          buffers.clear();
-        }
-
-        chunkCount++;
-        final chunkText = _truncateResponse(line, maxLength: kDebugMode ? null : 200);
-        httpDebugPrint('📦 Chunk #$chunkCount: $chunkText');
-        yield line;
+        separatorIndex = buffered.indexOf('\n\n');
       }
+      eventBuffer
+        ..clear()
+        ..write(buffered);
     }
 
-    // Flush remaining buffers
-    if (buffers.isNotEmpty) {
-      chunkCount++;
-      final finalChunk = _truncateResponse(buffers.join(), maxLength: kDebugMode ? null : 200);
-      httpDebugPrint('📦 Chunk #$chunkCount (final): $finalChunk');
-      yield buffers.join();
+    final String remaining = eventBuffer.toString();
+    if (remaining.isNotEmpty) {
+      final (String payload, bool isJsonDelta)? extracted = _extractSseEventPayload(remaining);
+      if (extracted != null) {
+        final String normalized = MPChatStreamUtils.normalizeEventChunk(
+          extracted.$1,
+          isJsonDelta: extracted.$2,
+        );
+        chunkCount++;
+        final String chunkText = _truncateResponse(normalized, maxLength: kDebugMode ? null : 200);
+        httpDebugPrint('📦 Chunk #$chunkCount (final): $chunkText');
+        yield normalized;
+      }
     }
 
     httpDebugPrint('🏁 STREAMING COMPLETE: Received $chunkCount chunks');

@@ -598,6 +598,7 @@ class _MessageList extends StatelessWidget {
         children: messages.map((MPAskAIChatMessage message) {
           if (message.role == MPAskAIMessageRole.user) {
             return Align(
+              key: ValueKey<String>(message.id),
               alignment: Alignment.centerRight,
               child: Container(
                 margin: const EdgeInsets.only(bottom: 12),
@@ -619,6 +620,7 @@ class _MessageList extends StatelessWidget {
             );
           }
           return Container(
+            key: ValueKey<String>(message.id),
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
             decoration: BoxDecoration(
