@@ -109,6 +109,8 @@ class MPMemoryYouAskedCard extends StatelessWidget {
               ),
               child: Text(
                 data.userMessage,
+                maxLines: 5,
+                overflow: TextOverflow.ellipsis,
                 style: OmiTextStyle.create(
                   fontSize: OmiFontSize.t4_13,
                   fontWeight: OmiFontWeight.regular,
@@ -158,6 +160,8 @@ class MPMemoryYouAskedCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     data.aiReply,
+                    maxLines: 5,
+                    overflow: TextOverflow.ellipsis,
                     style: OmiTextStyle.create(
                       fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.regular,
