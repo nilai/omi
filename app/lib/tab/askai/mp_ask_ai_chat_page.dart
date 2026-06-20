@@ -11,7 +11,13 @@ import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';
 import '../../utils/omi_textstyle.dart';
 
+MarkdownStyleSheet? _mpAskAIChatMarkdownStyleCache;
+
 MarkdownStyleSheet _mpAskAIChatMarkdownStyle() {
+  return _mpAskAIChatMarkdownStyleCache ??= _buildMpAskAIChatMarkdownStyle();
+}
+
+MarkdownStyleSheet _buildMpAskAIChatMarkdownStyle() {
   TextStyle base({
     required double size,
     FontWeight? weight,
@@ -33,31 +39,15 @@ MarkdownStyleSheet _mpAskAIChatMarkdownStyle() {
   return MarkdownStyleSheet(
     p: base(size: OmiFontSize.t8_17),
     pPadding: EdgeInsets.zero,
-    h1: base(
-      size: OmiFontSize.t11_20,
-      weight: OmiFontWeight.bold,
-      color: mainTextColor,
-    ),
+    h1: base(size: OmiFontSize.t11_20, weight: OmiFontWeight.bold, color: mainTextColor),
     h1Padding: const EdgeInsets.only(top: 4, bottom: 8),
-    h2: base(
-      size: OmiFontSize.t8_17,
-      weight: OmiFontWeight.bold,
-      color: mainTextColor,
-    ),
+    h2: base(size: OmiFontSize.t8_17, weight: OmiFontWeight.bold, color: mainTextColor),
     h2Padding: const EdgeInsets.only(top: 2, bottom: 6),
-    h3: base(
-      size: OmiFontSize.t6_15,
-      weight: OmiFontWeight.medium,
-      color: mainTextColor,
-    ),
+    h3: base(size: OmiFontSize.t6_15, weight: OmiFontWeight.medium, color: mainTextColor),
     h3Padding: const EdgeInsets.only(top: 2, bottom: 4),
     strong: base(size: OmiFontSize.t8_17, weight: OmiFontWeight.bold),
     em: base(size: OmiFontSize.t8_17, fontStyle: FontStyle.italic),
-    a: base(
-      size: OmiFontSize.t8_17,
-      color: blueTextColor,
-      decoration: TextDecoration.underline,
-    ),
+    a: base(size: OmiFontSize.t8_17, color: blueTextColor, decoration: TextDecoration.underline),
     code: base(
       size: OmiFontSize.t5_14,
       color: mainTextColor,
@@ -65,9 +55,7 @@ MarkdownStyleSheet _mpAskAIChatMarkdownStyle() {
     blockquote: base(size: OmiFontSize.t8_17, color: secondTextColor),
     blockquotePadding: const EdgeInsets.only(left: 10, top: 4, bottom: 4),
     blockquoteDecoration: BoxDecoration(
-      border: Border(
-        left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3),
-      ),
+      border: Border(left: BorderSide(color: secondTextColor.withValues(alpha: 0.6), width: 3)),
     ),
     blockSpacing: 8,
     listIndent: 22,
@@ -77,10 +65,7 @@ MarkdownStyleSheet _mpAskAIChatMarkdownStyle() {
       border: Border(top: BorderSide(color: lineColor, width: 1)),
     ),
     codeblockPadding: const EdgeInsets.all(10),
-    codeblockDecoration: BoxDecoration(
-      color: pageColor,
-      borderRadius: BorderRadius.circular(8),
-    ),
+    codeblockDecoration: BoxDecoration(color: pageColor, borderRadius: BorderRadius.circular(8)),
   );
 }
 
@@ -92,14 +77,7 @@ Future<void> _mpAskAIChatTapMarkdownLink(String? href) async {
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
-enum MPAskAIChatType {
-  insight,
-  memory,
-  expert,
-  template,
-  speaker,
-  normal,
-}
+enum MPAskAIChatType { insight, memory, expert, template, speaker, normal }
 
 class MPAskAIChatPage extends StatelessWidget {
   const MPAskAIChatPage({
@@ -181,10 +159,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   }
 
   void _maybeAutoScroll(MPAskAIChatState state) {
-    final int contentLen = state.messages.fold<int>(
-      0,
-      (int sum, MPAskAIChatMessage m) => sum + m.content.length,
-    );
+    final int contentLen = state.messages.fold<int>(0, (int sum, MPAskAIChatMessage m) => sum + m.content.length);
     final bool messageCountChanged = state.messages.length != _lastMessageCount;
     final bool sendingChanged = state.isSending != _lastIsSending;
     final bool contentGrowing = contentLen != _lastMessagesContentLength;
@@ -205,9 +180,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
         state.messages.isNotEmpty &&
         state.messages.last.role == MPAskAIMessageRole.user;
     final bool streamJustEnded = sendingChanged && !state.isSending;
-    if (!newUserBubble &&
-        !_isScrollNearBottom() &&
-        (contentGrowing || streamJustEnded)) {
+    if (!newUserBubble && !_isScrollNearBottom() && (contentGrowing || streamJustEnded)) {
       return;
     }
 
@@ -215,7 +188,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
     _scrollToBottom(animated: !state.isSending);
   }
 
-  /// 当前是否在列表底部附近（允许小幅浮动）。
+  /// [reverse: true] 列表底部为最新消息，首屏只构建可见区域。
   bool _isScrollNearBottom() {
     if (!_scrollController.hasClients) {
       return true;
@@ -225,22 +198,21 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
       return true;
     }
     const double threshold = 160;
-    return pos.maxScrollExtent - pos.pixels <= threshold;
+    return pos.pixels <= threshold;
   }
 
   void _scrollToBottom({required bool animated}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      final double max = _scrollController.position.maxScrollExtent;
       if (animated) {
         _scrollController.animateTo(
-          max,
+          0,
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
         );
         return;
       }
-      _scrollController.jumpTo(max);
+      _scrollController.jumpTo(0);
     });
   }
 
@@ -264,11 +236,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                   builder: (BuildContext context, MPAskAIChatState state) {
                     if (state.phase == MPAskAIChatPhase.loading) {
                       return const Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2)),
                       );
                     }
                     if (state.phase == MPAskAIChatPhase.error) {
@@ -283,10 +251,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                         ),
                       );
                     }
-                    return _ChatBody(
-                      state: state,
-                      scrollController: _scrollController,
-                    );
+                    return _ChatBody(state: state, scrollController: _scrollController);
                   },
                 ),
               ),
@@ -298,8 +263,7 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                 ),
                 child: MPVoiceTextInput(
                   hintText: 'Ask about your memories...',
-                  onSubmitted: (MPVoiceTextInputResult result) =>
-                      _onSubmit(context, result),
+                  onSubmitted: (MPVoiceTextInputResult result) => _onSubmit(context, result),
                 ),
               ),
             ],
@@ -326,11 +290,7 @@ class _ChatTopBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             child: const Padding(
               padding: EdgeInsets.all(12),
-              child: Icon(
-                Icons.arrow_back_ios_new_rounded,
-                size: 16,
-                color: blueTextColor,
-              ),
+              child: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: blueTextColor),
             ),
           ),
           Expanded(
@@ -352,73 +312,67 @@ class _ChatTopBar extends StatelessWidget {
 }
 
 class _ChatBody extends StatelessWidget {
-  const _ChatBody({
-    required this.state,
-    required this.scrollController,
-  });
+  const _ChatBody({required this.state, required this.scrollController});
 
   final MPAskAIChatState state;
   final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      controller: scrollController,
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-            color: const Color(0xFFDFEAF5),
-            child: Row(
-              children: <Widget>[
-                const Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 14,
-                  color: blueTextColor,
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'About: ${state.aboutText}',
-                    style: OmiTextStyle.create(
-                      color: mainTextColor,
-                      fontSize: OmiFontSize.t6_15,
-                      fontWeight: OmiFontWeight.regular,
-                    ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+          color: const Color(0xFFDFEAF5),
+          child: Row(
+            children: <Widget>[
+              const Icon(Icons.auto_awesome_outlined, size: 14, color: blueTextColor),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'About: ${state.aboutText}',
+                  style: OmiTextStyle.create(
+                    color: mainTextColor,
+                    fontSize: OmiFontSize.t6_15,
+                    fontWeight: OmiFontWeight.regular,
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: state.hasMessages
+              ? _MessageList(
+                  messages: state.messages,
+                  scrollController: scrollController,
+                )
+              : SingleChildScrollView(
+                  controller: scrollController,
+                  child: _SuggestedQuestions(questions: state.suggestedQuestions),
+                ),
+        ),
+        if (state.isSending)
+          const Padding(
+            padding: EdgeInsets.fromLTRB(14, 0, 14, 12),
+            child: Align(alignment: Alignment.centerLeft, child: _MPChatWaitingIndicator()),
+          ),
+        if (!state.isSending && (state.errorMessage?.trim().isNotEmpty ?? false))
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+            child: Text(
+              state.errorMessage!,
+              style: OmiTextStyle.create(
+                color: redColor,
+                fontSize: OmiFontSize.t5_14,
+                fontWeight: OmiFontWeight.regular,
+              ),
             ),
           ),
-          if (state.hasMessages)
-            _MessageList(messages: state.messages)
-          else
-            _SuggestedQuestions(questions: state.suggestedQuestions),
-          if (state.isSending)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: const Align(
-                alignment: Alignment.centerLeft,
-                child: _MPChatWaitingIndicator(),
-              ),
-            ),
-          if (!state.isSending && (state.errorMessage?.trim().isNotEmpty ?? false))
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
-              child: Text(
-                state.errorMessage!,
-                style: OmiTextStyle.create(
-                  color: redColor,
-                  fontSize: OmiFontSize.t5_14,
-                  fontWeight: OmiFontWeight.regular,
-                ),
-              ),
-            ),
-        ],
-      ),
+        const SizedBox(height: 10),
+      ],
     );
   }
 }
@@ -430,17 +384,13 @@ class _MPChatWaitingIndicator extends StatefulWidget {
   State<_MPChatWaitingIndicator> createState() => _MPChatWaitingIndicatorState();
 }
 
-class _MPChatWaitingIndicatorState extends State<_MPChatWaitingIndicator>
-    with SingleTickerProviderStateMixin {
+class _MPChatWaitingIndicatorState extends State<_MPChatWaitingIndicator> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 900),
-    )..repeat();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
   }
 
   @override
@@ -467,11 +417,7 @@ class _MPChatWaitingIndicatorState extends State<_MPChatWaitingIndicator>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          const Icon(
-            Icons.auto_awesome_outlined,
-            size: 14,
-            color: Color(0xFF87D5A2),
-          ),
+          const Icon(Icons.auto_awesome_outlined, size: 14, color: Color(0xFF87D5A2)),
           const SizedBox(width: 8),
           AnimatedBuilder(
             animation: _controller,
@@ -505,10 +451,7 @@ class _MPWaitingDot extends StatelessWidget {
       child: Container(
         width: 7,
         height: 7,
-        decoration: const BoxDecoration(
-          color: Color(0xFF8F9098),
-          shape: BoxShape.circle,
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF8F9098), shape: BoxShape.circle),
       ),
     );
   }
@@ -529,11 +472,7 @@ class _SuggestedQuestions extends StatelessWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              const Icon(
-                Icons.auto_awesome_outlined,
-                size: 15,
-                color: blueTextColor,
-              ),
+              const Icon(Icons.auto_awesome_outlined, size: 15, color: blueTextColor),
               const SizedBox(width: 6),
               Text(
                 'Suggested Questions',
@@ -585,91 +524,182 @@ class _SuggestedQuestions extends StatelessWidget {
 }
 
 class _MessageList extends StatelessWidget {
-  const _MessageList({required this.messages});
+  const _MessageList({
+    required this.messages,
+    required this.scrollController,
+  });
 
   final List<MPAskAIChatMessage> messages;
+  final ScrollController scrollController;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 16, 14, 0),
+    return ListView.builder(
+      controller: scrollController,
+      reverse: true,
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+      cacheExtent: 360,
+      addAutomaticKeepAlives: false,
+      itemCount: messages.length,
+      itemBuilder: (BuildContext context, int index) {
+        final MPAskAIChatMessage message = messages[messages.length - 1 - index];
+        return RepaintBoundary(
+          child: _ChatMessageBubble(
+            key: ValueKey<String>(message.id),
+            message: message,
+            markdownDelay: Duration(milliseconds: index * 40),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ChatMessageBubble extends StatelessWidget {
+  const _ChatMessageBubble({
+    super.key,
+    required this.message,
+    required this.markdownDelay,
+  });
+
+  final MPAskAIChatMessage message;
+  final Duration markdownDelay;
+
+  @override
+  Widget build(BuildContext context) {
+    if (message.role == MPAskAIMessageRole.user) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          constraints: const BoxConstraints(maxWidth: 280),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3E7BEA),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Text(
+            message.content,
+            style: OmiTextStyle.create(
+              color: Colors.white,
+              fontSize: OmiFontSize.t8_17,
+              fontWeight: OmiFontWeight.medium,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F5F7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: messages.map((MPAskAIChatMessage message) {
-          if (message.role == MPAskAIMessageRole.user) {
-            return Align(
-              key: ValueKey<String>(message.id),
-              alignment: Alignment.centerRight,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                constraints: const BoxConstraints(maxWidth: 280),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3E7BEA),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  message.content,
-                  style: OmiTextStyle.create(
-                    color: Colors.white,
-                    fontSize: OmiFontSize.t8_17,
-                    fontWeight: OmiFontWeight.medium,
-                  ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Icon(Icons.auto_awesome_outlined, size: 14, color: greenTextColor),
+              const SizedBox(width: 4),
+              Text(
+                'AI',
+                style: OmiTextStyle.create(
+                  color: secondTextColor,
+                  fontSize: OmiFontSize.t5_14,
+                  fontWeight: OmiFontWeight.medium,
                 ),
               ),
-            );
-          }
-          return Container(
-            key: ValueKey<String>(message.id),
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F7),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: borderColor),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (message.content.trim().isNotEmpty)
+            _MPAskAIChatMarkdownContent(
+              content: message.content,
+              renderDelay: markdownDelay,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    const Icon(
-                      Icons.auto_awesome_outlined,
-                      size: 14,
-                      color: greenTextColor,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'AI',
-                      style: OmiTextStyle.create(
-                        color: secondTextColor,
-                        fontSize: OmiFontSize.t5_14,
-                        fontWeight: OmiFontWeight.medium,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (message.content.trim().isNotEmpty)
-                  _MPAskAIChatMarkdownContent(content: message.content),
-              ],
-            ),
-          );
-        }).toList(growable: false),
+        ],
       ),
     );
   }
 }
 
-class _MPAskAIChatMarkdownContent extends StatelessWidget {
-  const _MPAskAIChatMarkdownContent({required this.content});
+class _MPAskAIChatMarkdownContent extends StatefulWidget {
+  const _MPAskAIChatMarkdownContent({
+    required this.content,
+    this.renderDelay = Duration.zero,
+  });
 
   final String content;
+  final Duration renderDelay;
+
+  @override
+  State<_MPAskAIChatMarkdownContent> createState() => _MPAskAIChatMarkdownContentState();
+}
+
+class _MPAskAIChatMarkdownContentState extends State<_MPAskAIChatMarkdownContent> {
+  bool _showMarkdown = false;
+  Timer? _renderTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _scheduleMarkdownRender();
+  }
+
+  @override
+  void didUpdateWidget(_MPAskAIChatMarkdownContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_showMarkdown) {
+      return;
+    }
+    if (oldWidget.renderDelay != widget.renderDelay) {
+      _scheduleMarkdownRender();
+    }
+  }
+
+  void _scheduleMarkdownRender() {
+    _renderTimer?.cancel();
+    if (widget.renderDelay == Duration.zero) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() => _showMarkdown = true);
+        }
+      });
+      return;
+    }
+    _renderTimer = Timer(widget.renderDelay, () {
+      if (mounted) {
+        setState(() => _showMarkdown = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _renderTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!_showMarkdown) {
+      return Text(
+        widget.content,
+        style: OmiTextStyle.create(
+          color: mainTextColor,
+          fontSize: OmiFontSize.t8_17,
+          fontWeight: OmiFontWeight.regular,
+          height: 1.4,
+        ),
+      );
+    }
+
     return MarkdownBody(
-      data: content,
+      data: widget.content,
       selectable: true,
       shrinkWrap: true,
       styleSheet: _mpAskAIChatMarkdownStyle(),
