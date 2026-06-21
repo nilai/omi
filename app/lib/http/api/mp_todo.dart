@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 
 import '../../env/env.dart';
+import '../mp_api_response_utils.dart';
 import '../schema/mp_todo.dart';
 import '../shared.dart';
 
@@ -87,19 +88,18 @@ Future<MPDeleteTodoResponse?> deleteTodo(MPDeleteTodoRequest req) async {
 }
 
 // POST /api/v1/todo/update
-Future<MPUpdateTodoResponse?> updateTodo(MPUpdateTodoRequest req) async {
-  var response = await makeApiCall(
+Future<MPUpdateTodoResponse> updateTodo(MPUpdateTodoRequest req) async {
+  final response = await makeApiCall(
     url: '${Env.apiBaseUrl}api/v1/todo/update',
     headers: {},
     method: 'POST',
     body: jsonEncode(req.toJson()),
   );
-  if (response == null) return null;
-  debugPrint('updateTodo response: ${response.body}');
-  if (response.statusCode == 200) {
-    return MPUpdateTodoResponse.fromJson(jsonDecode(response.body));
-  }
-  return null;
+  debugPrint('updateTodo response: ${response?.body}');
+  return parseApiJsonResponse(
+    response: response,
+    fromJson: MPUpdateTodoResponse.fromJson,
+  );
 }
 
 // POST /api/v1/batch/create

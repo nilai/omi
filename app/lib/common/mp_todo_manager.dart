@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:memo_pin/common/mp_todo_notification.dart';
 import 'package:memo_pin/common/mp_todo_utils.dart';
 import 'package:memo_pin/http/api/mp_todo.dart' as MPTodo;
+import 'package:memo_pin/http/mp_api_response_utils.dart';
 import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -289,20 +290,25 @@ class MPTodoManager {
         description: _trimmedNoteOrNull(note),
       );
 
-      final response = await MPTodo.updateTodo(request);
+      final MPUpdateTodoResponse response = await MPTodo.updateTodo(request);
 
-      if (response != null) {
-        if (response.baseResp.code == 0) {
-          MPToastUtils.showMessage('To-do updated.');
-          return true;
-        } else {
-          MPToastUtils.showMessage(response.baseResp.message);
-          return false;
-        }
-      } else {
-        MPToastUtils.showMessage('Couldn\'t update to-do: empty response.');
-        return false;
+      if (response.baseResp.code == 0) {
+        MPToastUtils.showMessage('To-do updated.');
+        return true;
       }
+      MPToastUtils.showMessage(
+        response.baseResp.message.isNotEmpty ? response.baseResp.message : 'Couldn\'t update to-do.',
+      );
+      return false;
+    } on MPApiNetworkException {
+      MPToastUtils.showMessage('Network error. Please try again.');
+      return false;
+    } on MPApiHttpException catch (e) {
+      final String hint = e.statusCode >= 500
+          ? 'Server error (${e.statusCode}). Please try again.'
+          : 'Couldn\'t update to-do (${e.statusCode}).';
+      MPToastUtils.showMessage(hint);
+      return false;
     } catch (e) {
       MPToastUtils.showMessage('Error updating to-do: $e');
       return false;

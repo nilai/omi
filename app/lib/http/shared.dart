@@ -33,7 +33,7 @@ class Logger {
 
 class ApiClient {
   static const Duration requestTimeoutRead = Duration(seconds: 60);
-  static const Duration requestTimeoutWrite = Duration(seconds: 300);
+  static const Duration requestTimeoutWrite = Duration(seconds: 600);
 
   static final _client = _createClient();
   // static final _client = http.Client();
@@ -98,6 +98,8 @@ class ApiTools {
         tokenExpiresTime.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0));
   }
 
+  static Completer<void>? _tokenRefreshCompleter;
+
   static Future<void> refreshToken() async {
     final String refreshToken = MPUser.instance.refreshToken;
     if (refreshToken.isEmpty) {
@@ -110,12 +112,30 @@ class ApiTools {
     await MPUser.instance.setRefreshToken(response.refreshToken);
     await MPUser.instance.setTokenExpiresTime(response.expiresIn);
   }
+
+  /// 并发 401 时只允许一次 refresh，其余调用等待同一结果后再重试原请求。
+  static Future<void> refreshTokenLocked() async {
+    if (_tokenRefreshCompleter != null) {
+      return _tokenRefreshCompleter!.future;
+    }
+    final Completer<void> completer = Completer<void>();
+    _tokenRefreshCompleter = completer;
+    try {
+      await refreshToken();
+      completer.complete();
+    } catch (e, st) {
+      completer.completeError(e, st);
+      rethrow;
+    } finally {
+      _tokenRefreshCompleter = null;
+    }
+  }
 }
 
 Future<String> getAuthHeader() async {
   if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
     // 刷新 token
-    await ApiTools.refreshToken();
+    await ApiTools.refreshTokenLocked();
   }
 
   if (!ApiTools.hasAccessToken()) {
@@ -123,7 +143,7 @@ Future<String> getAuthHeader() async {
     if (refreshToken.isEmpty) {
       return '';
     }
-    await ApiTools.refreshToken();
+    await ApiTools.refreshTokenLocked();
   }
   final String accessToken = ApiTools.accessToken;
   return accessToken.isEmpty ? '' : 'Bearer $accessToken';
@@ -209,36 +229,42 @@ Future<http.StreamedResponse> makeRawApiCall({
   return ApiClient._client.send(request);
 }
 
-Future<http.Response?> makeApiCall({
+const int _kApiMaxAttempts = 3;
+
+const Set<int> _kRetryableHttpStatusCodes = <int>{502, 503, 504};
+
+/// 瞬态传输错误：弱网、超时、连接重置等，可安全重试。
+bool _isTransientTransportError(Object error) {
+  return error is TimeoutException ||
+      error is SocketException ||
+      error is HttpException ||
+      error is HandshakeException ||
+      error is IOException;
+}
+
+bool _isRetryableHttpStatus(int statusCode) {
+  return _kRetryableHttpStatusCodes.contains(statusCode);
+}
+
+/// 单次 API 请求（含 401 token 刷新与重试）。
+Future<http.Response> _makeApiCallOnce({
   required String url,
   required Map<String, String> headers,
   required String body,
   required String method,
 }) async {
-  try {
-    final bool requireAuthCheck = _isRequiredAuthCheck(url);
-    final builtHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
+  final bool requireAuthCheck = _isRequiredAuthCheck(url);
+  final builtHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
 
-    http.Response? response = await _performRequest(url, builtHeaders, body, method);
-    if (requireAuthCheck && response.statusCode == 401) {
-      Logger.log('Token expired on 1st attempt');
-      // 刷新 token
-      await ApiTools.refreshToken();
-      if (ApiTools.hasAccessToken()) {
-        final refreshedHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
-        response = await _performRequest(url, refreshedHeaders, body, method);
-        Logger.log('Token refreshed and request retried');
-        if (response.statusCode == 401) {
-          // 退出登陆 重新登陆
-          await MPLoginUtil.signOut();
-          Logger.handle(
-            Exception('Authentication failed. Please sign in again.'),
-            StackTrace.current,
-            message: 'Authentication failed. Please sign in again.',
-          );
-        }
-      } else {
-        // 退出登陆 重新登陆
+  http.Response response = await _performRequest(url, builtHeaders, body, method);
+  if (requireAuthCheck && response.statusCode == 401) {
+    Logger.log('Token expired on 1st attempt');
+    await ApiTools.refreshTokenLocked();
+    if (ApiTools.hasAccessToken()) {
+      final refreshedHeaders = await buildHeaders(requireAuthCheck: requireAuthCheck, fromHeaders: headers);
+      response = await _performRequest(url, refreshedHeaders, body, method);
+      Logger.log('Token refreshed and request retried');
+      if (response.statusCode == 401) {
         await MPLoginUtil.signOut();
         Logger.handle(
           Exception('Authentication failed. Please sign in again.'),
@@ -246,14 +272,65 @@ Future<http.Response?> makeApiCall({
           message: 'Authentication failed. Please sign in again.',
         );
       }
+    } else {
+      await MPLoginUtil.signOut();
+      Logger.handle(
+        Exception('Authentication failed. Please sign in again.'),
+        StackTrace.current,
+        message: 'Authentication failed. Please sign in again.',
+      );
     }
+  }
 
-    return response;
-  } catch (e, stackTrace) {
-    httpDebugPrint('HTTP request failed: $e, $stackTrace');
-    PlatformManager.instance.crashReporter.reportCrash(e, stackTrace, userAttributes: {'url': url, 'method': method});
-    return null;
-  } finally {}
+  return response;
+}
+
+Future<http.Response?> makeApiCall({
+  required String url,
+  required Map<String, String> headers,
+  required String body,
+  required String method,
+}) async {
+  Object? lastError;
+  StackTrace? lastStackTrace;
+
+  for (int attempt = 0; attempt < _kApiMaxAttempts; attempt++) {
+    if (attempt > 0) {
+      final int delayMs = 500 * attempt;
+      httpDebugPrint('Retrying API call in ${delayMs}ms (${attempt + 1}/$_kApiMaxAttempts): $method $url');
+      await Future<void>.delayed(Duration(milliseconds: delayMs));
+    }
+    try {
+      final http.Response response = await _makeApiCallOnce(
+        url: url,
+        headers: headers,
+        body: body,
+        method: method,
+      );
+      if (_isRetryableHttpStatus(response.statusCode) && attempt < _kApiMaxAttempts - 1) {
+        httpDebugPrint('Retryable HTTP ${response.statusCode}, will retry: $method $url');
+        continue;
+      }
+      return response;
+    } catch (e, stackTrace) {
+      lastError = e;
+      lastStackTrace = stackTrace;
+      if (!_isTransientTransportError(e) || attempt >= _kApiMaxAttempts - 1) {
+        break;
+      }
+      httpDebugPrint('Transient transport error, will retry: $e');
+    }
+  }
+
+  httpDebugPrint('HTTP request failed after $_kApiMaxAttempts attempts: $lastError, $lastStackTrace');
+  if (lastError != null && lastStackTrace != null) {
+    PlatformManager.instance.crashReporter.reportCrash(
+      lastError,
+      lastStackTrace,
+      userAttributes: <String, String>{'url': url, 'method': method},
+    );
+  }
+  return null;
 }
 
 Future<http.Response> _performRequest(String url, Map<String, String> headers, String body, String method) async {
