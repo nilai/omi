@@ -26,10 +26,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 
 import '../../../../common/mp_memory_share_dialog.dart';
 import '../../../../generated/assets.dart';
-import '../../../../http/api/mp_chat.dart';
-import '../../../../http/schema/mp_chat.dart';
-import '../../../../main.dart';
-import '../../../askai/mp_ask_ai_chat_page.dart';
+import '../../../../tab/askai/mp_ask_ai_chat_navigation_helper.dart';
 import '../mp_detail_generate_resummary.dart';
 import '../mp_detail_visibility_refresh.dart';
 
@@ -312,19 +309,20 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
           }
           MPToastUtils.showMessage('Memo created.');
         },
-        onAskAi: () async{
+        onAskAi: () async {
           final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
           if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
             return;
           }
           final String aboutText = s.data!.title.trim().isEmpty ? 'Memo' : s.data!.title;
-          final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 1, paramId: memoryId));
-          final String conversationId = lastConversation?.conversationId ?? '';
-          final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
-          // ignore: use_build_context_synchronously
-          Navigator.of(targetContext!).push(
-            MaterialPageRoute<void>(
-              builder: (_) => MPAskAIChatPage(aboutText: aboutText, suggestedQuestions: const <String>[], conversationId: conversationId, type: MPAskAIChatType.memory, chatTypeId: memoryId),
+          await MPAskAIChatNavigationHelper.open(
+            context,
+            MPAskAIChatOpenParams(
+              aboutText: aboutText,
+              conversationType: 1,
+              paramId: memoryId,
+              type: MPAskAIChatType.memory,
+              chatTypeId: memoryId,
             ),
           );
         },

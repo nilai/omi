@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/common/mp_voice_text_input.dart';
-import 'package:memo_pin/http/api/mp_chat.dart';
-import 'package:memo_pin/http/schema/mp_chat.dart';
-import 'package:memo_pin/tab/askai/mp_ask_ai_chat_page.dart';
+import 'package:memo_pin/tab/askai/mp_ask_ai_chat_navigation_helper.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_cubit.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_list_page.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
-
-import '../../main.dart';
 
 class OmiAskAIPage extends StatelessWidget {
   const OmiAskAIPage({super.key});
@@ -84,22 +80,15 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     final String text = result.text.trim();
     if (text.isEmpty) return;
     _dismissKeyboard();
-    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: ''));
-    final String conversationId = lastConversation?.conversationId ?? '';
-    final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
-    // ignore: use_build_context_synchronously
     context.read<MPAskAICubit>().backToOverview();
-    // ignore: use_build_context_synchronously
-    await Navigator.of(targetContext!).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MPAskAIChatPage(
-          aboutText: 'Ask AI',
-          suggestedQuestions: const <String>[],
-          initialMessage: text,
-          conversationId: conversationId,
-          type: MPAskAIChatType.normal,
-          chatTypeId: '',
-        ),
+    await MPAskAIChatNavigationHelper.open(
+      context,
+      MPAskAIChatOpenParams(
+        aboutText: 'Ask AI',
+        conversationType: 0,
+        initialMessage: text,
+        type: MPAskAIChatType.normal,
+        chatTypeId: '',
       ),
     );
     if (!mounted) return;
@@ -110,24 +99,16 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
     BuildContext context,
     String question,
   ) async {
-    
     _dismissKeyboard();
-    final MPGetLastConversationResponse? lastConversation = await getLastConversation(MPGetLastConversationRequest(conversationType: 0, paramId: ''));
-    final String conversationId = lastConversation?.conversationId ?? '';
-    final BuildContext? targetContext = context.mounted ? context : MyApp.navigatorKey.currentContext;
-    // ignore: use_build_context_synchronously
     context.read<MPAskAICubit>().backToOverview();
-    // ignore: use_build_context_synchronously
-    await Navigator.of(targetContext!).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MPAskAIChatPage(
-          aboutText: 'Ask AI',
-          suggestedQuestions: const <String>[],
-          conversationId: conversationId,
-          initialMessage: question,
-          type: MPAskAIChatType.template,
-          chatTypeId: '',
-        ),
+    await MPAskAIChatNavigationHelper.open(
+      context,
+      MPAskAIChatOpenParams(
+        aboutText: 'Ask AI',
+        conversationType: 0,
+        initialMessage: question,
+        type: MPAskAIChatType.template,
+        chatTypeId: '',
       ),
     );
     if (!mounted) return;
