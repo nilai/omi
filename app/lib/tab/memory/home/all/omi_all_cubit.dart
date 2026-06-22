@@ -90,6 +90,16 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   /// 下一页请求的游标；首屏为空字符串，首屏成功后为当前列表最后一条的 [MPMemoryEntry.id]
   String _cursor = '';
 
+  /// 进行中的首屏刷新（[load] 去重：initData 与 Tab 切回等并发调用共享同一次执行）
+  Future<void>? _loadInFlight;
+
+  /// 进行中的加载更多（[loadMore] 去重）
+  Future<void>? _loadMoreInFlight;
+
+  /// 按 cursor 去重的进行中的列表网络请求（同一游标并发时复用同一 [Future]）
+  final Map<String, Future<_CursorFetchResult>> _fetchMemoryListInFlight =
+      <String, Future<_CursorFetchResult>>{};
+
   /// 每页条数（对接真实接口时传入请求体，如 pageSize: 20）
   static const int pageSize = 20;
 
@@ -136,7 +146,25 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   /// - **当前无列表数据**：先检测网络，离线则 [OmiAllPhase.noNetwork]；在线则全屏 loading 再请求
   /// - **当前已有列表**（含 [OmiAllPage] 的 [RefreshIndicator] 手动下拉与程序化 [RefreshIndicatorState.show]）：不展示三态图，保持列表；失败则仍显示原数据
   /// - [listenMemoryRecordCreated] 等无列表场景仍直接调用本方法
+  ///
+  /// 并发调用时复用同一次 [_loadImpl]，避免重复首屏请求与状态互相覆盖。
   Future<void> load() async {
+    final Future<void>? inFlight = _loadInFlight;
+    if (inFlight != null) {
+      return inFlight;
+    }
+    final Future<void> task = _loadImpl();
+    _loadInFlight = task;
+    try {
+      await task;
+    } finally {
+      if (identical(_loadInFlight, task)) {
+        _loadInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _loadImpl() async {
     final List<MPMemoryEntry> before = List<MPMemoryEntry>.from(state.items);
     bool hasData = before.isNotEmpty;
 
@@ -243,6 +271,27 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     if (state.isLoadingMore) return;
     if (!state.hasMore) return;
 
+    final Future<void>? inFlight = _loadMoreInFlight;
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final Future<void> task = _loadMoreImpl();
+    _loadMoreInFlight = task;
+    try {
+      await task;
+    } finally {
+      if (identical(_loadMoreInFlight, task)) {
+        _loadMoreInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _loadMoreImpl() async {
+    if (state.phase != OmiAllPhase.loaded) return;
+    if (state.isLoadingMore) return;
+    if (!state.hasMore) return;
+
     final List<MPMemoryEntry> current = List<MPMemoryEntry>.from(state.items);
     emit(
       OmiAllState(
@@ -325,7 +374,24 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   }
 
   /// 游标分页：调用 [getMemoryList]，用返回的 `hasMore` 与列表最后一条 [MPMemoryEntry.id] 更新 [_cursor]。
+  ///
+  /// 相同 [cursor] 的并发请求复用同一进行中的 [Future]，避免重复打接口。
   Future<_CursorFetchResult> _fetchMemoryList({required String cursor}) async {
+    final Future<_CursorFetchResult>? inFlight = _fetchMemoryListInFlight[cursor];
+    if (inFlight != null) {
+      return inFlight;
+    }
+
+    final Future<_CursorFetchResult> task = _fetchMemoryListOnce(cursor: cursor);
+    _fetchMemoryListInFlight[cursor] = task;
+    try {
+      return await task;
+    } finally {
+      _fetchMemoryListInFlight.remove(cursor);
+    }
+  }
+
+  Future<_CursorFetchResult> _fetchMemoryListOnce({required String cursor}) async {
     final MPGetMemoryListResponse? resp = await getMemoryList(
       MPGetMemoryV2ListRequest(
         pageSize: pageSize,
