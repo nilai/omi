@@ -342,7 +342,7 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
                     onDelete: () => _onDeleteConversation(context, item),
                     onContentTap: () => _onTapConversationItem(context, item),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 4),
                       child: Text(
                         item.title,
                         maxLines: 1,
