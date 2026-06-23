@@ -136,3 +136,21 @@ Future<MPGetLastConversationResponse?> getLastConversation(
   }
   return null;
 }
+
+// POST /api/v1/chat/delete
+Future<MPDeleteChatResponse?> deleteChat(MPDeleteChatRequest req) async {
+  final response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/chat/delete',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('deleteChat response: ${response.body}');
+  if (response.statusCode == 200) {
+    return MPDeleteChatResponse.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+  }
+  return null;
+}

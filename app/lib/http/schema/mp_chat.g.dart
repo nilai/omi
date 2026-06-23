@@ -247,3 +247,20 @@ Map<String, dynamic> _$MPGetLastConversationResponseToJson(
   'conversation_id': instance.conversationId,
   'base_resp': instance.baseResp,
 };
+
+MPDeleteChatRequest _$MPDeleteChatRequestFromJson(Map<String, dynamic> json) =>
+    MPDeleteChatRequest(conversationId: json['conversation_id'] as String);
+
+Map<String, dynamic> _$MPDeleteChatRequestToJson(
+  MPDeleteChatRequest instance,
+) => <String, dynamic>{'conversation_id': instance.conversationId};
+
+MPDeleteChatResponse _$MPDeleteChatResponseFromJson(
+  Map<String, dynamic> json,
+) => MPDeleteChatResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$MPDeleteChatResponseToJson(
+  MPDeleteChatResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};

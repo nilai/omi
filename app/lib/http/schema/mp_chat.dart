@@ -302,3 +302,27 @@ class MPGetLastConversationResponse {
 
   Map<String, dynamic> toJson() => _$MPGetLastConversationResponseToJson(this);
 }
+
+@JsonSerializable()
+class MPDeleteChatRequest {
+  @JsonKey(name: 'conversation_id')
+  final String conversationId;
+
+  MPDeleteChatRequest({required this.conversationId});
+
+  factory MPDeleteChatRequest.fromJson(Map<String, dynamic> json) => _$MPDeleteChatRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteChatRequestToJson(this);
+}
+
+@JsonSerializable()
+class MPDeleteChatResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  MPDeleteChatResponse({required this.baseResp});
+
+  factory MPDeleteChatResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteChatResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MPDeleteChatResponseToJson(this);
+}
