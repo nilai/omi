@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../http/api/mp_memory.dart';
 import '../../../http/schema/mp_data_model.dart';
@@ -40,8 +41,15 @@ class MPMemoryDetailPageHelper {
         return;
       }
       final MPGetSummaryStatusResponse? summaryStatus = await getSummaryStatus(MPGetSummaryStatusRequest(memoryId: id));
-      final int status = summaryStatus?.status ?? 0;
       if (!context.mounted) {
+        return;
+      }
+      if (summaryStatus == null) {
+        return;
+      }
+      final int status = summaryStatus.status;
+      if (status == 0) {
+        MPToastUtils.showMessage('This memory has been deleted.', context: context);
         return;
       }
       if (status == 1) {
@@ -52,7 +60,7 @@ class MPMemoryDetailPageHelper {
         );
         return;
       }
-      final MPMemoryType newType = MPMemoryType.fromWireValue(summaryStatus?.type ?? 0);
+      final MPMemoryType newType = MPMemoryType.fromWireValue(summaryStatus.type);
       switch (newType) {
         case MPMemoryType.onlyRecord:
           Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => OmiAudioDetailPage(memoryId: id)));
