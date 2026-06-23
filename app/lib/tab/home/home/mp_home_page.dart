@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:memo_pin/common/mp_route_observer.dart';
 import 'package:memo_pin/common/mp_system_ui_region.dart';
 import 'package:memo_pin/tab/home/connect_device/mp_connect_device_page.dart';
@@ -22,6 +23,8 @@ import '../../../common/mp_home_notification.dart';
 import '../../../common/mp_todo_context_utile.dart';
 import '../../../common/mp_dismissible_modal_backdrop.dart';
 import '../../../common/omi_edit_todo_popup.dart';
+import '../../../generated/assets.dart';
+import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
@@ -367,6 +370,13 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                               context,
                             ).push(MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage())),
                           ),
+                          if (state.transcriptionBanner.showBanner) ...<Widget>[
+                            const SizedBox(height: 16),
+                            _TranscriptionUsageCard(
+                              banner: state.transcriptionBanner,
+                              onClose: () => _cubit.closeTranscriptionBanner(),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -993,6 +1003,101 @@ class _InsightsCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _TranscriptionUsageCard extends StatelessWidget {
+  const _TranscriptionUsageCard({required this.banner, required this.onClose});
+
+  final MPTranscriptionBannerStruct banner;
+  final VoidCallback onClose;
+
+  /// 构建转录用量提示文案。
+  String _buildContent() {
+    final NumberFormat formatter = NumberFormat('#,###');
+    final String used = formatter.format(banner.quotaMinutesUsed);
+    final String total = formatter.format(banner.currentMinutes);
+    return "You're halfway through your test transcription credits. $used / $total min used.";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+        boxShadow: <BoxShadow>[
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
+        ],
+      ),
+      child: Stack(
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 40, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Image.asset(Assets.mpClock, width: 8, height: 8),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Text(
+                        'Transcription usage',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t6_15,
+                          fontWeight: OmiFontWeight.bold,
+                          color: omiMainBodyText,
+                          height: 1.25,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _buildContent(),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t4_13,
+                          color: omiAuxiliaryText,
+                          fontWeight: OmiFontWeight.regular,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: onClose,
+              behavior: HitTestBehavior.opaque,
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: Icon(Icons.close, color: Color(0xFFC7C7CC), size: 18),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

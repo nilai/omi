@@ -14,7 +14,7 @@ import 'package:memo_pin/common/mp_home_notification.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 
 import '../../../common/mp_date_utils.dart';
-import '../../../http/api/mp_home.dart';
+import '../../../http/api/mp_home.dart' as mp_home_api;
 import '../../../http/api/mp_insight.dart';
 import '../../../http/schema/mp_data_model.dart';
 import '../../../http/schema/mp_home.dart';
@@ -91,6 +91,7 @@ class MPHomeState {
     required this.upNextTodos,
     required this.recentMemories,
     required this.insightOverview,
+    required this.transcriptionBanner,
     required this.isBleConnected,
     this.audioStatus,
   });
@@ -100,6 +101,9 @@ class MPHomeState {
 
   /// Insights 卡片角标（动态演示）
   final MPHomeInsightOverviewStruct insightOverview;
+
+  /// 转录用量提示卡片（首页 `transcription_banner`）。
+  final MPTranscriptionBannerStruct transcriptionBanner;
 
   /// 是否已连接 BLE 设备。
   final bool isBleConnected;
@@ -111,6 +115,7 @@ class MPHomeState {
     List<MPHomeTodoItem>? upNextTodos,
     List<MPHomeMemoryItem>? recentMemories,
     MPHomeInsightOverviewStruct? insightOverview,
+    MPTranscriptionBannerStruct? transcriptionBanner,
     bool? isBleConnected,
     MPHomeAudioStatus? audioStatus,
     bool clearAudioStatus = false,
@@ -119,6 +124,7 @@ class MPHomeState {
       upNextTodos: upNextTodos ?? this.upNextTodos,
       recentMemories: recentMemories ?? this.recentMemories,
       insightOverview: insightOverview ?? this.insightOverview,
+      transcriptionBanner: transcriptionBanner ?? this.transcriptionBanner,
       isBleConnected: isBleConnected ?? this.isBleConnected,
       audioStatus: clearAudioStatus ? null : (audioStatus ?? this.audioStatus),
     );
@@ -166,6 +172,12 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       upNextTodos: const <MPHomeTodoItem>[],
       recentMemories: const <MPHomeMemoryItem>[],
       insightOverview: MPHomeInsightOverviewStruct(title: '', subTitle: '', newInsightCount: 0, content: ''),
+      transcriptionBanner: MPTranscriptionBannerStruct(
+        bannerId: 0,
+        quotaMinutesUsed: 0,
+        currentMinutes: 0,
+        showBanner: false,
+      ),
       isBleConnected: false,
     );
   }
@@ -281,8 +293,16 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       );
     }
     final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
+    final MPTranscriptionBannerStruct transcriptionBanner = response.transcriptionBanner;
     if (!isClosed) {
-      emit(state.copyWith(upNextTodos: upNextTodos, recentMemories: recentMemories, insightOverview: insightOverview));
+      emit(
+        state.copyWith(
+          upNextTodos: upNextTodos,
+          recentMemories: recentMemories,
+          insightOverview: insightOverview,
+          transcriptionBanner: transcriptionBanner,
+        ),
+      );
     }
   }
 
@@ -316,12 +336,57 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
+  /// 关闭转录用量提示卡片；接口成功后隐藏卡片并同步 Hive 缓存。
+  Future<void> closeTranscriptionBanner() async {
+    final MPTranscriptionBannerStruct banner = state.transcriptionBanner;
+    if (!banner.showBanner || banner.bannerId == 0) {
+      return;
+    }
+    final MPCloseTranscriptionBannerResponse? response = await mp_home_api.closeTranscriptionBanner(
+      MPCloseTranscriptionBannerRequest(bannerId: banner.bannerId),
+    );
+    if (response == null || response.baseResp.code != 0 || isClosed) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        transcriptionBanner: MPTranscriptionBannerStruct(
+          bannerId: banner.bannerId,
+          quotaMinutesUsed: banner.quotaMinutesUsed,
+          currentMinutes: banner.currentMinutes,
+          showBanner: false,
+        ),
+      ),
+    );
+    await _persistTranscriptionBannerDismissed();
+  }
+
+  /// 将 Hive 中缓存的转录提示标记为已关闭。
+  Future<void> _persistTranscriptionBannerDismissed() async {
+    try {
+      final Map<String, dynamic>? cached = await MPHiveUtil.instance.getMap(_kHomeOverviewHiveKey);
+      if (cached == null || cached.isEmpty) {
+        return;
+      }
+      final Map<String, dynamic> next = Map<String, dynamic>.from(cached);
+      final Map<String, dynamic> banner = Map<String, dynamic>.from(
+        next['transcription_banner'] as Map<String, dynamic>? ?? <String, dynamic>{},
+      );
+      banner['show_banner'] = false;
+      next['transcription_banner'] = banner;
+      await MPHiveUtil.instance.putMap(key: _kHomeOverviewHiveKey, value: next);
+    } catch (e, stackTrace) {
+      debugPrint('MPHomeCubit: persist transcription banner dismissed failed — $e\n$stackTrace');
+    }
+  }
+
   /// 拉取首页聚合数据：空列表时先展示 Hive 再请求后台；非空则直接请求后台；成功后更新 Hive。
   Future<void> loadData() async {
     if (_isHomeMainListsEmpty(state)) {
       await _tryEmitCachedOverviewWhenEmpty();
     }
-    final MPGetHomeOverviewResponse? response = await getHomeOverview(MPGetHomeOverviewRequest());
+    final MPGetHomeOverviewResponse? response =
+        await mp_home_api.getHomeOverview(MPGetHomeOverviewRequest());
     if (response != null && response.baseResp.code == 0) {
       _emitFromOverviewResponse(response);
       await _persistHomeOverviewCache(response);
