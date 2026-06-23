@@ -593,42 +593,50 @@ class _ChatMessageBubble extends StatelessWidget {
       );
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F7),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF5F5F7),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: borderColor),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              const Icon(Icons.auto_awesome_outlined, size: 14, color: greenTextColor),
-              const SizedBox(width: 4),
-              Text(
-                'AI',
-                style: OmiTextStyle.create(
-                  color: secondTextColor,
-                  fontSize: OmiFontSize.t5_14,
-                  fontWeight: OmiFontWeight.medium,
-                ),
+              Row(
+                children: <Widget>[
+                  const Icon(Icons.auto_awesome_outlined, size: 14, color: greenTextColor),
+                  const SizedBox(width: 4),
+                  Text(
+                    'AI',
+                    style: OmiTextStyle.create(
+                      color: secondTextColor,
+                      fontSize: OmiFontSize.t5_14,
+                      fontWeight: OmiFontWeight.medium,
+                    ),
+                  ),
+                ],
               ),
+              if (message.content.trim().isNotEmpty) ...<Widget>[
+                const SizedBox(height: 8),
+                _MPAskAIChatMarkdownContent(
+                  content: message.content,
+                  renderDelay: markdownDelay,
+                ),
+              ],
             ],
           ),
+        ),
+        if (message.content.trim().isNotEmpty) ...<Widget>[
           const SizedBox(height: 8),
-          if (message.content.trim().isNotEmpty) ...<Widget>[
-            _MPAskAIChatMarkdownContent(
-              content: message.content,
-              renderDelay: markdownDelay,
-            ),
-            const SizedBox(height: 8),
-            _MPAskAIChatCopyButton(text: message.content),
-          ],
+          _MPAskAIChatCopyButton(text: message.content),
         ],
-      ),
+        const SizedBox(height: 12),
+      ],
     );
   }
 }
@@ -671,11 +679,11 @@ class _MPAskAIChatCopyButtonState extends State<_MPAskAIChatCopyButton> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: _onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(2),
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _onTap,
         child: OmiImageLoader.localImg(
           _copied ? Assets.mpChatCheck : Assets.mpChatCopy,
           width: 16,
