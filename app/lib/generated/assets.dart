@@ -2,6 +2,8 @@
 class Assets {
   Assets._();
 
+  static const String mpChatCheck = 'assets/images/3x/mp_chat_check.png';
+  static const String mpChatCopy = 'assets/images/3x/mp_chat_copy.png';
   static const String mpConnectDevice = 'assets/images/3x/mp_connect_device.png';
   static const String mpFocusTomorrow = 'assets/images/3x/mp_focus_tomorrow.png';
   static const String mpInsightBrain = 'assets/images/3x/mp_insight_brain.png';

@@ -1,14 +1,17 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../common/mp_voice_text_input.dart';
+import '../../generated/assets.dart';
 import '../../tab/askai/mp_ask_ai_chat_cubit.dart';
 import '../../utils/omi_color_utils.dart';
 import '../../utils/omi_font_utils.dart';
+import '../../utils/omi_image_loader.dart';
 import '../../utils/omi_textstyle.dart';
 
 MarkdownStyleSheet? _mpAskAIChatMarkdownStyleCache;
@@ -616,12 +619,70 @@ class _ChatMessageBubble extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          if (message.content.trim().isNotEmpty)
+          if (message.content.trim().isNotEmpty) ...<Widget>[
             _MPAskAIChatMarkdownContent(
               content: message.content,
               renderDelay: markdownDelay,
             ),
+            const SizedBox(height: 8),
+            _MPAskAIChatCopyButton(text: message.content),
+          ],
         ],
+      ),
+    );
+  }
+}
+
+class _MPAskAIChatCopyButton extends StatefulWidget {
+  const _MPAskAIChatCopyButton({required this.text});
+
+  final String text;
+
+  @override
+  State<_MPAskAIChatCopyButton> createState() => _MPAskAIChatCopyButtonState();
+}
+
+class _MPAskAIChatCopyButtonState extends State<_MPAskAIChatCopyButton> {
+  static const Duration _copiedResetDelay = Duration(seconds: 3);
+
+  bool _copied = false;
+  Timer? _resetTimer;
+
+  @override
+  void dispose() {
+    _resetTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _onTap() async {
+    final String text = widget.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
+    await Clipboard.setData(ClipboardData(text: text));
+    _resetTimer?.cancel();
+    setState(() => _copied = true);
+    _resetTimer = Timer(_copiedResetDelay, () {
+      if (mounted) {
+        setState(() => _copied = false);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: OmiImageLoader.localImg(
+          _copied ? Assets.mpChatCheck : Assets.mpChatCopy,
+          width: 16,
+          height: 16,
+          color: secondTextColor,
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }
