@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_chat_page.dart';
 import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_list_cubit.dart';
+import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_swipe_delete_item.dart';
+import 'package:memo_pin/tab/askai/mp_ask_ai_conversation_swipe_reveal_bus.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
@@ -29,6 +31,8 @@ class _MPAskAIConversationListView extends StatefulWidget {
 
 class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListView> {
   final ScrollController _scrollController = ScrollController();
+  final MPAskAIConversationSwipeRevealBus _swipeRevealBus =
+      MPAskAIConversationSwipeRevealBus();
 
   @override
   void initState() {
@@ -40,7 +44,12 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _swipeRevealBus.dispose();
     super.dispose();
+  }
+
+  void _closeExpandedSwipe() {
+    _swipeRevealBus.closeAll();
   }
 
   /// 距离底部约 200px 触发下一页（与项目其它游标分页一致）
@@ -66,6 +75,7 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
   }
 
   void _openNewChatPage(BuildContext context) {
+    _closeExpandedSwipe();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => const MPAskAIChatPage(
@@ -76,6 +86,7 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
   }
 
   void _onTapConversationItem(BuildContext context, MPAskAIConversationItem item) {
+    _closeExpandedSwipe();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => MPAskAIChatPage(
@@ -84,6 +95,15 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
         ),
       ),
     );
+  }
+
+  void _onDeleteConversation(BuildContext context, MPAskAIConversationItem item) {
+    context.read<MPAskAIConversationListCubit>().deleteConversation(item.id);
+  }
+
+  void _onTapDismissOverlay(BuildContext context) {
+    _closeExpandedSwipe();
+    Navigator.of(context).maybePop();
   }
 
   @override
@@ -96,7 +116,7 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context).maybePop(),
+                onTap: () => _onTapDismissOverlay(context),
                 child: Container(),
               ),
             ),
@@ -140,7 +160,10 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: InkWell(
-                                    onTap: () => MPToastUtils.showFeatureComingSoon(context: context),
+                                    onTap: () {
+                                      _closeExpandedSwipe();
+                                      MPToastUtils.showFeatureComingSoon(context: context);
+                                    },
                                     borderRadius: BorderRadius.circular(12),
                                     child: Container(
                                       height: 36,
@@ -174,7 +197,7 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
                                 ),
                                 const SizedBox(width: 10),
                                 InkWell(
-                                  onTap: () => Navigator.of(context).maybePop(),
+                                  onTap: () => _onTapDismissOverlay(context),
                                   child: const Padding(
                                     padding: EdgeInsets.all(4),
                                     child: Icon(
@@ -189,12 +212,16 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
                           ),
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
-                            child: Text(
-                              'RECENT CONVERSATIONS',
-                              style: OmiTextStyle.create(
-                                color: secondTextColor.withValues(alpha: 0.7),
-                                fontSize: OmiFontSize.t3_12,
-                                fontWeight: OmiFontWeight.bold,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: _closeExpandedSwipe,
+                              child: Text(
+                                'RECENT CONVERSATIONS',
+                                style: OmiTextStyle.create(
+                                  color: secondTextColor.withValues(alpha: 0.7),
+                                  fontSize: OmiFontSize.t3_12,
+                                  fontWeight: OmiFontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -278,33 +305,42 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
         }
         return RefreshIndicator(
           onRefresh: () => _onPullRefresh(context),
-          child: ListView.builder(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: state.items.length +
-                (state.hasMore && state.isLoadingMore ? 1 : 0),
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-            itemBuilder: (BuildContext context, int index) {
-              if (index == state.items.length) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Center(
-                    child: SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                );
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification notification) {
+              if (notification is ScrollStartNotification &&
+                  notification.dragDetails != null) {
+                _closeExpandedSwipe();
               }
-              final MPAskAIConversationItem item = state.items[index];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () => _onTapConversationItem(context, item),
+              return false;
+            },
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              itemCount: state.items.length +
+                  (state.hasMore && state.isLoadingMore ? 1 : 0),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+              itemBuilder: (BuildContext context, int index) {
+                if (index == state.items.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+                final MPAskAIConversationItem item = state.items[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: MPAskAIConversationSwipeDeleteItem(
+                    key: ValueKey<String>(item.id),
+                    rowId: item.id,
+                    swipeRevealBus: _swipeRevealBus,
+                    onDelete: () => _onDeleteConversation(context, item),
+                    onContentTap: () => _onTapConversationItem(context, item),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(
@@ -319,9 +355,9 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         );
     }

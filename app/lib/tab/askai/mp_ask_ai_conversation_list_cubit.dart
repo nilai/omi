@@ -236,6 +236,20 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     );
   }
 
+  /// 删除指定 conversation，并从列表与本地缓存中移除。
+  Future<void> deleteConversation(String conversationId) async {
+    if (state.phase != MPAskAIConversationListPhase.loaded) return;
+    if (conversationId.trim().isEmpty) return;
+
+    final List<MPAskAIConversationItem> next = state.items
+        .where((MPAskAIConversationItem e) => e.id != conversationId)
+        .toList(growable: false);
+    if (next.length == state.items.length) return;
+
+    emit(state.copyWith(items: next));
+    await _persistItemsToCache(next);
+  }
+
   Future<_ConversationPageResult> _fetchPageFromServer({
     required String? cursor,
   }) async {
