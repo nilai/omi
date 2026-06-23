@@ -26,6 +26,7 @@ import '../../../common/omi_edit_todo_popup.dart';
 import '../../../generated/assets.dart';
 import '../../../http/schema/mp_home.dart';
 import '../../../http/schema/mp_insight.dart';
+import '../../../utils/omi_image_loader.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'dialog/mp_quick_capture_dialog.dart';
 
@@ -1048,7 +1049,18 @@ class _TranscriptionUsageCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: Image.asset(Assets.mpClock, width: 8, height: 8),
+                  child: SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: OmiImageLoader.localImg(
+                      Assets.mpClock,
+                      width: 16,
+                      height: 16,
+                      scale: 3.0,
+                      fit: BoxFit.cover,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
