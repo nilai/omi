@@ -28,6 +28,7 @@ import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_my_memos_card.d
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_resummary_card.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_todos_created_models.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/mp_memory_you_asked_card.dart';
+import 'package:memo_pin/tab/memory/detail/mp_transcription_limit_sheet.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_action_content.dart';
 import 'package:memo_pin/tab/memory/detail/memory/card/omi_memory_transcript_item.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
@@ -503,6 +504,10 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       final MPSummaryRecordResponse? summary = await summaryRecord(req);
       if (isClosed) return;
       if (summary == null || summary.baseResp.code != 0) {
+        if (summary?.baseResp.code == kMPSummaryRecordTranscriptionLimitCode) {
+          await mpHandleSummaryRecordTranscriptionLimit(summary!.baseResp);
+          return;
+        }
         MPToastUtils.showMessage(summary?.baseResp.message ?? 'Generation failed. Please try again later.');
         return;
       }

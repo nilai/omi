@@ -20,6 +20,7 @@ import 'package:memo_pin/http/schema/mp_memory.dart';
 
 import '../../../../main.dart';
 import '../memory/card/mp_memory_generate_summary_sheet.dart';
+import '../mp_transcription_limit_sheet.dart';
 
 enum MPAudioDetailPhase { loading, error, loaded }
 
@@ -481,6 +482,10 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
       if (isClosed) return;
       if (summary == null || summary.baseResp.code != 0) {
         emit(state.copyWith(isSummaryGenerating: false));
+        if (summary?.baseResp.code == kMPSummaryRecordTranscriptionLimitCode) {
+          await mpHandleSummaryRecordTranscriptionLimit(summary!.baseResp);
+          return;
+        }
         MPToastUtils.showMessage(
           summary?.baseResp.message ?? 'Generation failed. Please try again later.',
         );
