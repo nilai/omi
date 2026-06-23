@@ -42,9 +42,8 @@ class _MPRecordingForegroundTaskHandler extends TaskHandler {
   Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
 }
 
-/// 首页等「应用内录音」退后台时：配置系统音频会话（iOS/Android）、在 Android 上启动麦克风前台服务，
-/// 并订阅 [AudioSession.interruptionEventStream]：其它 App / 来电抢占音频焦点时尝试重新激活会话并
-/// 通知当前持有者维持采集（native 若被系统停掉则由各入口自行恢复）。
+/// 首页等「应用内录音」：配置系统音频会话（iOS/Android）、Android 麦克风前台服务。
+/// 混音模式（首页 Start Recording）不订阅系统打断，暂停/继续由录音弹窗 UI 控制。
 class MPRecordingBackgroundSupport {
   MPRecordingBackgroundSupport._();
 
@@ -212,21 +211,23 @@ class MPRecordingBackgroundSupport {
     final AudioSession session = await AudioSession.instance;
 
     if (!_recordingInfrastructureActive) {
-      await _interruptionSub?.cancel();
-      _interruptionSub = session.interruptionEventStream.listen(
-        (AudioInterruptionEvent event) {
-          if (!event.begin) {
-            if (Platform.isIOS &&
-                _recordingInfrastructureActive &&
-                !_nativeRecorderHandlesInterruptions) {
-              unawaited(prepareIosNativeRecorderResume());
+      if (!_mixWithOthersEnabled) {
+        await _interruptionSub?.cancel();
+        _interruptionSub = session.interruptionEventStream.listen(
+          (AudioInterruptionEvent event) {
+            if (!event.begin) {
+              if (Platform.isIOS &&
+                  _recordingInfrastructureActive &&
+                  !_nativeRecorderHandlesInterruptions) {
+                unawaited(prepareIosNativeRecorderResume());
+              }
+              unawaited(_handleSystemAudioInterruptionEnded());
+              return;
             }
-            unawaited(_handleSystemAudioInterruptionEnded());
-            return;
-          }
-          unawaited(_handleSystemAudioInterruptionBegin());
-        },
-      );
+            unawaited(_handleSystemAudioInterruptionBegin());
+          },
+        );
+      }
       _recordingInfrastructureActive = true;
 
       if (Platform.isAndroid) {

@@ -1,40 +1,19 @@
 import AVFoundation
 import Flutter
-import UIKit
 
-/// 首页长录音：原生 AVAudioRecorder，混音模式 + 系统打断自动续录。
-final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, AVAudioRecorderDelegate {
+/// 首页长录音：原生 AVAudioRecorder 整段写入单文件；混音模式，暂停/继续仅由 App UI 控制。
+final class MPNativeRecorderPlugin: NSObject, FlutterPlugin {
   private static let logTag = "[MemoPin/NativeRecorder]"
   private static let channelName = "mp_native_recorder"
-  private static let eventChannelName = "mp_native_recorder/events"
 
   private var mixWithOthers = false
   private var recorder: AVAudioRecorder?
   private var currentPath: String?
-  private var segmentPaths: [String] = []
-  private var eventSink: FlutterEventSink?
-  private var interruptionObserver: NSObjectProtocol?
-  private var backgroundObserver: NSObjectProtocol?
-  private var foregroundObserver: NSObjectProtocol?
-  private var backgroundTaskId: UIBackgroundTaskIdentifier = .invalid
-  private var backgroundMonitorTimer: DispatchSourceTimer?
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let instance = MPNativeRecorderPlugin()
     let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: channel)
-    let events = FlutterEventChannel(name: eventChannelName, binaryMessenger: registrar.messenger())
-    events.setStreamHandler(instance)
-  }
-
-  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-    eventSink = events
-    return nil
-  }
-
-  func onCancel(withArguments arguments: Any?) -> FlutterError? {
-    eventSink = nil
-    return nil
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -44,16 +23,10 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       mixWithOthers = args?["mixWithOthers"] as? Bool ?? false
       if mixWithOthers {
         _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-        registerInterruptionObserverIfNeeded()
-        registerAppLifecycleObserversIfNeeded()
       }
       result(true)
     case "close":
       closeRecorder(deleteFiles: false)
-      unregisterInterruptionObserver()
-      unregisterAppLifecycleObservers()
-      endBackgroundTaskIfNeeded()
-      stopBackgroundMonitor()
       mixWithOthers = false
       result(nil)
     case "start":
@@ -63,8 +36,10 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         return
       }
       result(startRecording(path: path))
+    case "resumeSegment":
+      result(resumeRecording())
     case "pauseSegment":
-      result(pauseSegment())
+      result(pauseRecording())
     case "finish":
       guard let args = call.arguments as? [String: Any],
             let outputPath = args["outputPath"] as? String else {
@@ -89,179 +64,14 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       }
       result(fileSize(path: path))
     case "segmentPaths":
-      var paths = segmentPaths
-      if let currentPath, !paths.contains(currentPath) {
-        paths.append(currentPath)
+      if let currentPath {
+        result([currentPath])
+      } else {
+        result([String]())
       }
-      result(paths)
     default:
       result(FlutterMethodNotImplemented)
     }
-  }
-
-  private func registerAppLifecycleObserversIfNeeded() {
-    if backgroundObserver != nil {
-      return
-    }
-    backgroundObserver = NotificationCenter.default.addObserver(
-      forName: UIApplication.didEnterBackgroundNotification,
-      object: nil,
-      queue: .main
-    ) { [weak self] _ in
-      self?.handleAppEnteredBackground()
-    }
-    foregroundObserver = NotificationCenter.default.addObserver(
-      forName: UIApplication.willEnterForegroundNotification,
-      object: nil,
-      queue: .main
-    ) { [weak self] _ in
-      self?.handleAppWillEnterForeground()
-    }
-  }
-
-  private func unregisterAppLifecycleObservers() {
-    if let observer = backgroundObserver {
-      NotificationCenter.default.removeObserver(observer)
-      backgroundObserver = nil
-    }
-    if let observer = foregroundObserver {
-      NotificationCenter.default.removeObserver(observer)
-      foregroundObserver = nil
-    }
-  }
-
-  private func handleAppEnteredBackground() {
-    guard mixWithOthers else { return }
-    beginBackgroundTaskIfNeeded()
-    startBackgroundMonitor()
-    _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-  }
-
-  private func handleAppWillEnterForeground() {
-    guard mixWithOthers else { return }
-    _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-    resumeRecordingIfNeeded(reason: "willEnterForeground")
-  }
-
-  private func beginBackgroundTaskIfNeeded() {
-    if backgroundTaskId != .invalid {
-      return
-    }
-    backgroundTaskId = UIApplication.shared.beginBackgroundTask(withName: "MemoPinRecording") { [weak self] in
-      self?.endBackgroundTaskIfNeeded()
-    }
-  }
-
-  private func endBackgroundTaskIfNeeded() {
-    if backgroundTaskId == .invalid {
-      return
-    }
-    UIApplication.shared.endBackgroundTask(backgroundTaskId)
-    backgroundTaskId = .invalid
-  }
-
-  /// 退后台后在原生层低频检查录音是否被系统停掉，避免 Dart 轮询阻塞 UI。
-  private func startBackgroundMonitor() {
-    guard mixWithOthers else { return }
-    stopBackgroundMonitor()
-    let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
-    timer.schedule(deadline: .now() + 3, repeating: 8)
-    timer.setEventHandler { [weak self] in
-      DispatchQueue.main.async {
-        guard let self, self.mixWithOthers else { return }
-        if self.recorder?.isRecording != true {
-          self.resumeRecordingIfNeeded(reason: "backgroundMonitor")
-        }
-      }
-    }
-    timer.resume()
-    backgroundMonitorTimer = timer
-  }
-
-  private func stopBackgroundMonitor() {
-    backgroundMonitorTimer?.cancel()
-    backgroundMonitorTimer = nil
-  }
-
-  private func registerInterruptionObserverIfNeeded() {
-    if interruptionObserver != nil {
-      return
-    }
-    interruptionObserver = NotificationCenter.default.addObserver(
-      forName: AVAudioSession.interruptionNotification,
-      object: AVAudioSession.sharedInstance(),
-      queue: nil
-    ) { [weak self] notification in
-      self?.handleAudioInterruption(notification)
-    }
-  }
-
-  private func unregisterInterruptionObserver() {
-    if let observer = interruptionObserver {
-      NotificationCenter.default.removeObserver(observer)
-      interruptionObserver = nil
-    }
-  }
-
-  private func handleAudioInterruption(_ notification: Notification) {
-    guard mixWithOthers else { return }
-    guard let userInfo = notification.userInfo,
-          let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
-          let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
-      return
-    }
-    switch type {
-    case .began:
-      // 混音模式：不主动 stop；视频播放等软打断不应暂停录音。
-      if recorder?.isRecording != true {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-          self?.resumeRecordingIfNeeded(reason: "interruptionBegan")
-        }
-      }
-    case .ended:
-      _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-      resumeRecordingIfNeeded(reason: "interruptionEnded")
-    @unknown default:
-      break
-    }
-  }
-
-  private func resumeRecordingIfNeeded(reason: String) {
-    guard mixWithOthers else { return }
-    if recorder?.isRecording == true {
-      return
-    }
-    _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-    guard let dir = directoryForAutoSegment() else { return }
-    let path = dir.appendingPathComponent(
-      "omi_focus_\(Int(Date().timeIntervalSince1970 * 1000))_\(segmentPaths.count).m4a"
-    ).path
-    if startRecording(path: path) {
-      NSLog("%@ auto segment (%@) path=%@", Self.logTag, reason, path)
-      DispatchQueue.main.async { [weak self] in
-        self?.eventSink?(["type": "segmentAutoStarted", "path": path])
-      }
-    }
-  }
-
-  func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
-    guard mixWithOthers, !flag else { return }
-    if let path = currentPath, !segmentPaths.contains(path) {
-      segmentPaths.append(path)
-    }
-    currentPath = nil
-    self.recorder = nil
-    resumeRecordingIfNeeded(reason: "recorderFinished")
-  }
-
-  private func directoryForAutoSegment() -> URL? {
-    if let currentPath {
-      return URL(fileURLWithPath: currentPath).deletingLastPathComponent()
-    }
-    if let last = segmentPaths.last {
-      return URL(fileURLWithPath: last).deletingLastPathComponent()
-    }
-    return FileManager.default.temporaryDirectory
   }
 
   private func recorderSettings() -> [String: Any] {
@@ -279,6 +89,9 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     if mixWithOthers {
       _ = MPRecordingSessionPlugin.applyMixRecordingSession()
     }
+    if let existing = recorder, currentPath == path, !existing.isRecording {
+      return resumeRecording()
+    }
     stopRecorderOnly()
     let url = URL(fileURLWithPath: path)
     try? FileManager.default.createDirectory(
@@ -287,7 +100,6 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     )
     do {
       let newRecorder = try AVAudioRecorder(url: url, settings: recorderSettings())
-      newRecorder.delegate = self
       newRecorder.isMeteringEnabled = false
       guard newRecorder.prepareToRecord(), newRecorder.record() else {
         NSLog("%@ start failed prepare/record path=%@", Self.logTag, path)
@@ -295,10 +107,6 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       }
       recorder = newRecorder
       currentPath = path
-      if mixWithOthers {
-        beginBackgroundTaskIfNeeded()
-        startBackgroundMonitor()
-      }
       return true
     } catch {
       NSLog("%@ start error: %@ path=%@", Self.logTag, error.localizedDescription, path)
@@ -306,94 +114,56 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
   }
 
+  /// 暂停整段录音（不 stop，保留同一 AVAudioRecorder 实例）。
+  private func pauseRecording() -> String? {
+    guard let path = currentPath, let rec = recorder else { return nil }
+    if rec.isRecording {
+      rec.pause()
+    }
+    return path
+  }
+
+  /// 在同文件上继续录音（仅响应 App UI 调用）。
+  @discardableResult
+  private func resumeRecording() -> Bool {
+    guard let rec = recorder, currentPath != nil else { return false }
+    if rec.isRecording {
+      return true
+    }
+    if mixWithOthers {
+      _ = MPRecordingSessionPlugin.applyMixRecordingSession()
+    }
+    guard rec.record() else {
+      NSLog("%@ resume record() failed path=%@", Self.logTag, currentPath ?? "")
+      return false
+    }
+    return true
+  }
+
   private func stopRecorderOnly() {
-    recorder?.delegate = nil
     recorder?.stop()
     recorder = nil
   }
 
-  private func pauseSegment() -> String? {
-    guard let path = currentPath else { return nil }
-    stopRecorderOnly()
-    if !segmentPaths.contains(path) {
-      segmentPaths.append(path)
-    }
-    currentPath = nil
-    return path
-  }
-
+  /// 停止整段录音并返回最终文件路径。
   private func finish(outputPath: String) -> String? {
-    if recorder?.isRecording == true, let path = currentPath {
-      stopRecorderOnly()
-      if !segmentPaths.contains(path) {
-        segmentPaths.append(path)
-      }
-      currentPath = nil
+    if recorder?.isRecording == true {
+      recorder?.stop()
     }
-    let inputs = segmentPaths
-    segmentPaths.removeAll()
-    guard !inputs.isEmpty else { return nil }
-    if inputs.count == 1 {
-      let single = inputs[0]
-      if single == outputPath {
-        return single
-      }
-      try? FileManager.default.removeItem(atPath: outputPath)
-      do {
-        try FileManager.default.copyItem(atPath: single, toPath: outputPath)
-        return outputPath
-      } catch {
-        return single
-      }
-    }
-    if mergeM4aFiles(inputPaths: inputs, outputPath: outputPath) {
-      for path in inputs where path != outputPath {
-        try? FileManager.default.removeItem(atPath: path)
-      }
-      return outputPath
-    }
-    return inputs.last
-  }
-
-  private func mergeM4aFiles(inputPaths: [String], outputPath: String) -> Bool {
-    let composition = AVMutableComposition()
-    guard let compositionTrack = composition.addMutableTrack(
-      withMediaType: .audio,
-      preferredTrackID: kCMPersistentTrackID_Invalid
-    ) else {
-      return false
-    }
-    var cursor = CMTime.zero
-    for path in inputPaths {
-      let url = URL(fileURLWithPath: path)
-      let asset = AVURLAsset(url: url)
-      guard let track = asset.tracks(withMediaType: .audio).first else { continue }
-      let duration = asset.duration
-      do {
-        try compositionTrack.insertTimeRange(
-          CMTimeRange(start: .zero, duration: duration),
-          of: track,
-          at: cursor
-        )
-        cursor = CMTimeAdd(cursor, duration)
-      } catch {
-        return false
-      }
+    recorder = nil
+    guard let path = currentPath else { return nil }
+    currentPath = nil
+    if path == outputPath {
+      return path
     }
     try? FileManager.default.removeItem(atPath: outputPath)
-    guard let export = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetAppleM4A) else {
-      return false
+    do {
+      try FileManager.default.copyItem(atPath: path, toPath: outputPath)
+      return outputPath
+    } catch {
+      NSLog("%@ finish copy failed: %@, returning original path=%@", Self.logTag, error.localizedDescription, path)
+      return path
     }
-    export.outputURL = URL(fileURLWithPath: outputPath)
-    export.outputFileType = .m4a
-    let semaphore = DispatchSemaphore(value: 0)
-    var ok = false
-    export.exportAsynchronously {
-      ok = export.status == .completed
-      semaphore.signal()
-    }
-    semaphore.wait()
-    return ok
   }
 
   private func fileSize(path: String) -> Int {
@@ -403,12 +173,9 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
   private func closeRecorder(deleteFiles: Bool) {
     stopRecorderOnly()
-    if deleteFiles {
-      for path in segmentPaths {
-        try? FileManager.default.removeItem(atPath: path)
-      }
+    if deleteFiles, let path = currentPath {
+      try? FileManager.default.removeItem(atPath: path)
     }
-    segmentPaths.removeAll()
     currentPath = nil
   }
 }
