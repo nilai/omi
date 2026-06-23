@@ -97,8 +97,20 @@ class _MPAskAIConversationListViewState extends State<_MPAskAIConversationListVi
     );
   }
 
-  void _onDeleteConversation(BuildContext context, MPAskAIConversationItem item) {
-    context.read<MPAskAIConversationListCubit>().deleteConversation(item.id);
+  Future<void> _onDeleteConversation(
+    BuildContext context,
+    MPAskAIConversationItem item,
+  ) async {
+    final bool ok = await context
+        .read<MPAskAIConversationListCubit>()
+        .deleteConversation(item.id);
+    if (!context.mounted) return;
+    if (!ok) {
+      MPToastUtils.showMessage(
+        'Couldn\'t delete. Please try again later.',
+        context: context,
+      );
+    }
   }
 
   void _onTapDismissOverlay(BuildContext context) {
