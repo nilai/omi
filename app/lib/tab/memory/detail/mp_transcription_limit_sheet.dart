@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:memo_pin/cache/mp_hive_util.dart';
@@ -12,6 +13,7 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../../generated/assets.dart';
+import 'mp_summary_record_fixtures.dart';
 
 /// [summaryRecord] 转录额度已用尽的业务错误码。
 const int kMPSummaryRecordTranscriptionLimitCode = 10004;
@@ -86,6 +88,9 @@ Future<void> mpHandleSummaryRecordTranscriptionLimit(
   if (resolvedUsage.isEmpty) {
     resolvedUsage = (await mpResolveTranscriptionUsageText()).trim();
   }
+  if (resolvedUsage.isEmpty && kDebugMode && MPSummaryRecordFixtures.mockTranscriptionLimitEnabled) {
+    resolvedUsage = MPSummaryRecordFixtures.mockUsageText;
+  }
   final BuildContext? context = MyApp.navigatorKey.currentContext;
   if (context == null || !context.mounted) {
     return;
@@ -108,8 +113,29 @@ class _MPTranscriptionLimitSheet extends StatelessWidget {
   final String message;
   final String usageText;
 
-  static const Color _kWarningBg = Color(0xFFFF9500);
+  static const Color _kWarningIconBg = Color(0xFFFFF1E3);
+  static const Color _kWarningIconColor = Color(0xFFDA8A3F);
   static const Color _kUsageBoxBg = Color(0xFFF2F2F7);
+
+  Widget _buildWarningIcon() {
+    return Container(
+      width: 44,
+      height: 44,
+      decoration: const BoxDecoration(
+        color: _kWarningIconBg,
+        shape: BoxShape.circle,
+      ),
+      alignment: Alignment.center,
+      child: OmiImageLoader.localImg(
+        Assets.mpInsightCircleAlert,
+        width: 22,
+        height: 22,
+        scale: 3.0,
+        fit: BoxFit.contain,
+        color: _kWarningIconColor,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -120,12 +146,13 @@ class _MPTranscriptionLimitSheet extends StatelessWidget {
       child: Material(
         color: Colors.white,
         child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 10, 24, 20 + bottomInset),
+          padding: EdgeInsets.fromLTRB(20, 10, 20, 20 + bottomInset),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              Center(
+              Align(
+                alignment: Alignment.center,
                 child: Container(
                   width: 36,
                   height: 4,
@@ -135,22 +162,12 @@ class _MPTranscriptionLimitSheet extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: _kWarningBg,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.error_outline_rounded,
-                  color: Colors.white,
-                  size: 22,
-                ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _buildWarningIcon(),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 'Test transcription limit reached',
                 maxLines: 2,

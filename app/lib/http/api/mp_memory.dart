@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../env/env.dart';
+import '../../tab/memory/detail/mp_summary_record_fixtures.dart';
 import '../schema/mp_memory.dart';
 import '../schema/mp_todo.dart';
 import '../shared.dart';
@@ -192,6 +194,10 @@ Future<MPCreateRecordResponse?> createRecord(MPCreateRecordRequest req) async {
 
 // POST /api/v1/memory/summary_record
 Future<MPSummaryRecordResponse?> summaryRecord(MPSummaryRecordRequest req) async {
+  if (kDebugMode && MPSummaryRecordFixtures.mockTranscriptionLimitEnabled) {
+    debugPrint('summaryRecord: using mock transcription limit (10004) response');
+    return MPSummaryRecordFixtures.transcriptionLimitResponse();
+  }
   var response = await makeApiCall(
     url: '${Env.apiBaseUrl}api/v1/memory/summary_record',
     headers: {},
