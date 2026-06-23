@@ -258,9 +258,13 @@ Map<String, dynamic> _$MPDeleteChatRequestToJson(
 MPDeleteChatResponse _$MPDeleteChatResponseFromJson(
   Map<String, dynamic> json,
 ) => MPDeleteChatResponse(
+  success: json['success'] as bool,
   baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
 );
 
 Map<String, dynamic> _$MPDeleteChatResponseToJson(
   MPDeleteChatResponse instance,
-) => <String, dynamic>{'base_resp': instance.baseResp};
+) => <String, dynamic>{
+  'success': instance.success,
+  'base_resp': instance.baseResp,
+};

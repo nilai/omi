@@ -249,7 +249,7 @@ class MPAskAIConversationListCubit extends Cubit<MPAskAIConversationListState> {
     final MPDeleteChatResponse? response = await deleteChat(
       MPDeleteChatRequest(conversationId: conversationId),
     );
-    if (response == null || response.baseResp.code != 0) {
+    if (response == null || response.baseResp.code != 0 || !response.success) {
       return false;
     }
 

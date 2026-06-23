@@ -317,10 +317,13 @@ class MPDeleteChatRequest {
 
 @JsonSerializable()
 class MPDeleteChatResponse {
+  @JsonKey(name: 'success')
+  final bool success;
+
   @JsonKey(name: 'base_resp')
   final MPBaseResp baseResp;
 
-  MPDeleteChatResponse({required this.baseResp});
+  MPDeleteChatResponse({required this.success, required this.baseResp});
 
   factory MPDeleteChatResponse.fromJson(Map<String, dynamic> json) => _$MPDeleteChatResponseFromJson(json);
 
