@@ -40,6 +40,7 @@ class MPHomeUploadFailedPayload {
     required this.batchTotal,
     required this.batchIndex,
     required this.isLastInBatch,
+    this.message,
   });
 
   final int batchTotal;
@@ -47,6 +48,9 @@ class MPHomeUploadFailedPayload {
 
   /// 是否为本批次最后一条；`true` 时首页状态条切为完成态后延时清除。
   final bool isLastInBatch;
+
+  /// 上传失败原因（网络、服务端等）；为空时由监听方使用默认文案。
+  final String? message;
 }
 
 /// 本地录音上传并创建 record 成功后的首页通知载荷。

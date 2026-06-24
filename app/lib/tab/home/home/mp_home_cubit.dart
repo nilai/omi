@@ -548,11 +548,15 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
-  /// 批量上传失败：Toast 提示序号。
+  /// 批量上传失败：Toast 展示具体错误（含网络类）。
   void _onUploadFailed(MPHomeUploadFailedPayload payload) {
     final int batchTotal = payload.batchTotal < 1 ? 1 : payload.batchTotal;
     final int batchIndex = payload.batchIndex.clamp(1, batchTotal);
-    MPToastUtils.showMessage('File $batchIndex upload failed.');
+    final String detail = payload.message?.trim().isNotEmpty == true
+        ? payload.message!.trim()
+        : 'Upload failed.';
+    final String toast = batchTotal > 1 ? 'File $batchIndex/$batchTotal: $detail' : detail;
+    MPToastUtils.showMessage(toast);
   }
 
   /// 上传完成态展示约 1.6s 后清除顶栏并刷新列表。

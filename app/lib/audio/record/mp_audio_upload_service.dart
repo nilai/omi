@@ -9,6 +9,19 @@ import '../../http/schema/mp_memory.dart';
 import 'audio_record.dart';
 import 'mp_audio_upload_background_support.dart';
 
+/// 音频/伴生文件上传结果（含用户可读的错误信息）。
+class MPAudioUploadResult {
+  const MPAudioUploadResult._({this.uri, this.errorMessage});
+
+  const MPAudioUploadResult.success(String uri) : this._(uri: uri);
+
+  const MPAudioUploadResult.failure(String errorMessage) : this._(errorMessage: errorMessage);
+
+  final String? uri;
+  final String? errorMessage;
+
+  bool get isSuccess => uri != null && uri!.isNotEmpty;
+}
 
 /// MP音频上传服务
 ///
@@ -27,16 +40,16 @@ class MPAudioUploadService {
   /// [audioFile] 要上传的音频文件
   /// [onProgress] 可选的进度回调，参数为当前步骤 (1-3) 和总步骤数 (3)
   ///
-  /// 返回 上传后的uri, 不同场景保存使用
+  /// 返回上传结果；失败时 [MPAudioUploadResult.errorMessage] 含网络等原因说明。
   ///
   /// 按文件扩展名选择 MIME 类型（如 `.aac` → `audio/aac`）直接上传。
-  Future<String?> uploadMPAudio(
+  Future<MPAudioUploadResult> uploadMPAudio(
     File audioFile, {
     Function(int current, int total)? onProgress,
   }) async {
     final File? resolved = await _resolveAudioFileForUpload(audioFile);
     if (resolved == null) {
-      return null;
+      return const MPAudioUploadResult.failure('Recording file not found.');
     }
     return uploadRecordFile(
       resolved,
@@ -91,7 +104,7 @@ class MPAudioUploadService {
   /// 使用指定 [contentType] 走预签名 URL + S3（与 [uploadMPAudio] 相同步骤）。
   ///
   /// 例如 companion `.txt` 使用 `text/plain; charset=utf-8`。
-  Future<String?> uploadRecordFile(
+  Future<MPAudioUploadResult> uploadRecordFile(
     File file, {
     required String contentType,
     Function(int current, int total)? onProgress,
@@ -102,29 +115,34 @@ class MPAudioUploadService {
       );
 
       _emitUploadStepProgress(onProgress, 1, 3, 'getPresignedUrl');
-      final presignedUrl = await _getPresignedUrlWithRetry(contentType);
-      if (presignedUrl == null) {
+      final ({MPGetUploadRecordUrlResponse? response, Object? lastError}) presigned =
+          await _getPresignedUrlWithRetry(contentType);
+      if (presigned.response == null) {
         debugPrint('MPAudioUploadService: failed to get presigned URL');
-        return null;
+        return MPAudioUploadResult.failure(
+          _formatPresignedUrlFailure(presigned.lastError),
+        );
       }
-      debugPrint('MPAudioUploadService: got presigned URL: ${presignedUrl.uri}');
+      debugPrint('MPAudioUploadService: got presigned URL: ${presigned.response!.uri}');
 
       _emitUploadStepProgress(onProgress, 2, 3, 'uploadToS3');
-      final uploadSuccess = await _uploadToS3WithRetry(
-        presignedUrl.uploadUrl,
+      final ({bool success, Object? lastError}) s3Result = await _uploadToS3WithRetry(
+        presigned.response!.uploadUrl,
         file,
         contentType,
       );
-      if (!uploadSuccess) {
+      if (!s3Result.success) {
         debugPrint('MPAudioUploadService: failed to upload to S3');
-        return null;
+        return MPAudioUploadResult.failure(
+          _formatS3UploadFailure(s3Result.lastError),
+        );
       }
       debugPrint('MPAudioUploadService: uploaded to S3 successfully');
       _emitUploadStepProgress(onProgress, 3, 3, 'done');
-      return presignedUrl.uri;
+      return MPAudioUploadResult.success(presigned.response!.uri);
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during upload: $e');
-      return null;
+      return MPAudioUploadResult.failure(formatUploadError(e));
     }
   }
 
@@ -134,9 +152,8 @@ class MPAudioUploadService {
   /// [contentType] 音频文件的MIME类型
   /// [onProgress] 可选的进度回调，参数为当前步骤 (1-3) 和总步骤数 (3)
   ///
-  /// 返回 上传后的uri, 不同场景保存使用
-  ///
-  Future<String?> uploadMPAudioBytes(
+  /// 返回上传结果；失败时 [MPAudioUploadResult.errorMessage] 含网络等原因说明。
+  Future<MPAudioUploadResult> uploadMPAudioBytes(
     List<int> audioBytes,
     String contentType, {
     Function(int current, int total)? onProgress,
@@ -145,29 +162,34 @@ class MPAudioUploadService {
       debugPrint('MPAudioUploadService: uploading bytes with type $contentType');
 
       _emitUploadStepProgress(onProgress, 1, 3, 'getPresignedUrl');
-      final presignedUrl = await _getPresignedUrlWithRetry(contentType);
-      if (presignedUrl == null) {
+      final ({MPGetUploadRecordUrlResponse? response, Object? lastError}) presigned =
+          await _getPresignedUrlWithRetry(contentType);
+      if (presigned.response == null) {
         debugPrint('MPAudioUploadService: failed to get presigned URL');
-        return null;
+        return MPAudioUploadResult.failure(
+          _formatPresignedUrlFailure(presigned.lastError),
+        );
       }
-      debugPrint('MPAudioUploadService: got presigned URL: ${presignedUrl.uri}');
+      debugPrint('MPAudioUploadService: got presigned URL: ${presigned.response!.uri}');
 
       _emitUploadStepProgress(onProgress, 2, 3, 'uploadToS3');
-      final uploadSuccess = await _uploadBytesToS3WithRetry(
-        presignedUrl.uploadUrl,
+      final ({bool success, Object? lastError}) s3Result = await _uploadBytesToS3WithRetry(
+        presigned.response!.uploadUrl,
         audioBytes,
         contentType,
       );
-      if (!uploadSuccess) {
+      if (!s3Result.success) {
         debugPrint('MPAudioUploadService: failed to upload bytes to S3');
-        return null;
+        return MPAudioUploadResult.failure(
+          _formatS3UploadFailure(s3Result.lastError),
+        );
       }
       debugPrint('MPAudioUploadService: uploaded bytes to S3 successfully');
       _emitUploadStepProgress(onProgress, 3, 3, 'done');
-      return presignedUrl.uri;
+      return MPAudioUploadResult.success(presigned.response!.uri);
     } catch (e) {
       debugPrint('MPAudioUploadService: exception during bytes upload: $e');
-      return null;
+      return MPAudioUploadResult.failure(formatUploadError(e));
     }
   }
 
@@ -181,9 +203,10 @@ class MPAudioUploadService {
     onProgress?.call(current, total);
   }
 
-  Future<MPGetUploadRecordUrlResponse?> _getPresignedUrlWithRetry(
+  Future<({MPGetUploadRecordUrlResponse? response, Object? lastError})> _getPresignedUrlWithRetry(
     String contentType,
   ) async {
+    Object? lastError;
     for (int i = 0; i <= _maxRetries; i++) {
       final int attempt = i + 1;
       final int maxAttempts = _maxRetries + 1;
@@ -197,30 +220,86 @@ class MPAudioUploadService {
         final result = await getUploadRecordUrl(req);
         if (result != null) {
           debugPrint('MPAudioUploadService: getPresignedUrl success on attempt $attempt');
-          return result;
+          return (response: result, lastError: null);
         }
+        lastError ??= StateError('Server did not return an upload URL.');
         debugPrint('MPAudioUploadService: getPresignedUrl attempt $attempt returned null');
       } catch (e) {
+        lastError = e;
         debugPrint('MPAudioUploadService: getPresignedUrl attempt $attempt failed: $e');
       }
       if (i == _maxRetries) {
         debugPrint('MPAudioUploadService: getPresignedUrl failed after $maxAttempts attempts');
-        return null;
+        return (response: null, lastError: lastError);
       }
       debugPrint('MPAudioUploadService: getPresignedUrl retry in 1s (next attempt ${attempt + 1})');
       await Future.delayed(const Duration(seconds: 1));
     }
-    return null;
+    return (response: null, lastError: lastError);
+  }
+
+  /// 将异常格式化为用户可读的上传错误文案（优先识别网络类错误）。
+  static String formatUploadError(Object? error) {
+    if (error == null) {
+      return 'Upload failed. Please try again.';
+    }
+    if (error is TimeoutException) {
+      return 'Network timeout. Please check your connection and try again.';
+    }
+    if (error is SocketException) {
+      return 'No network connection. Please check your network and try again.';
+    }
+    if (error is HandshakeException) {
+      return 'Secure connection failed. Please check your network and try again.';
+    }
+    if (error is HttpException || error is IOException) {
+      return 'Network error. Please check your connection and try again.';
+    }
+    if (MPAudioUploadBackgroundSupport.isLikelyBackgroundNetworkFailure(error)) {
+      return 'Upload interrupted. Please reopen the app and try again.';
+    }
+    final String message = error.toString();
+    if (_looksLikeNetworkMessage(message)) {
+      return 'Network error: $message';
+    }
+    return 'Upload failed: $message';
+  }
+
+  static String _formatPresignedUrlFailure(Object? lastError) {
+    if (lastError == null) {
+      return 'Failed to get upload URL. Please check your network and try again.';
+    }
+    return 'Failed to get upload URL. ${formatUploadError(lastError)}';
+  }
+
+  static String _formatS3UploadFailure(Object? lastError) {
+    if (lastError == null) {
+      return 'Failed to upload file. Please check your network and try again.';
+    }
+    return 'Failed to upload file. ${formatUploadError(lastError)}';
+  }
+
+  static bool _looksLikeNetworkMessage(String message) {
+    final String lower = message.toLowerCase();
+    return lower.contains('network') ||
+        lower.contains('connection') ||
+        lower.contains('timeout') ||
+        lower.contains('timed out') ||
+        lower.contains('host lookup') ||
+        lower.contains('failed host lookup') ||
+        lower.contains('socket') ||
+        lower.contains('offline');
   }
 
   /// 带重试的上传到 S3（连续 60s 无网络收发则超时；退后台网络中断会等待回前台后继续重试）。
-  Future<bool> _uploadToS3WithRetry(
+  Future<({bool success, Object? lastError})> _uploadToS3WithRetry(
     String uploadUrl,
     File audioFile,
     String contentType,
   ) async {
     final int fileSize = await audioFile.length();
     int foregroundAttempts = 0;
+    Object? lastError;
     const int maxForegroundAttempts = _s3MaxRetries + 1;
     while (foregroundAttempts < maxForegroundAttempts) {
       final int attempt = foregroundAttempts + 1;
@@ -232,16 +311,19 @@ class MPAudioUploadService {
         final bool result = await uploadAudioToS3(uploadUrl, audioFile, contentType);
         if (result) {
           debugPrint('MPAudioUploadService: uploadToS3 success on attempt $attempt');
-          return true;
+          return (success: true, lastError: null);
         }
+        lastError ??= StateError('S3 upload returned failure.');
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed (returned false)');
         if (!MPAudioUploadBackgroundSupport.isAppInForeground) {
           await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
           continue;
         }
       } on TimeoutException catch (e) {
+        lastError = e;
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
+        lastError = e;
         debugPrint('MPAudioUploadService: uploadToS3 attempt $attempt failed: $e');
         if (MPAudioUploadBackgroundSupport.isLikelyBackgroundNetworkFailure(e)) {
           await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
@@ -258,16 +340,17 @@ class MPAudioUploadService {
       await Future.delayed(const Duration(seconds: 1));
     }
     debugPrint('MPAudioUploadService: uploadToS3 failed after $maxForegroundAttempts attempts');
-    return false;
+    return (success: false, lastError: lastError);
   }
 
   /// 带重试的上传字节到 S3（连续 60s 无网络收发则超时；退后台网络中断会等待回前台后继续重试）。
-  Future<bool> _uploadBytesToS3WithRetry(
+  Future<({bool success, Object? lastError})> _uploadBytesToS3WithRetry(
     String uploadUrl,
     List<int> audioBytes,
     String contentType,
   ) async {
     int foregroundAttempts = 0;
+    Object? lastError;
     const int maxForegroundAttempts = _s3MaxRetries + 1;
     while (foregroundAttempts < maxForegroundAttempts) {
       final int attempt = foregroundAttempts + 1;
@@ -279,16 +362,19 @@ class MPAudioUploadService {
         final bool result = await uploadAudioToS3Bytes(uploadUrl, audioBytes, contentType);
         if (result) {
           debugPrint('MPAudioUploadService: uploadBytesToS3 success on attempt $attempt');
-          return true;
+          return (success: true, lastError: null);
         }
+        lastError ??= StateError('S3 upload returned failure.');
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed (returned false)');
         if (!MPAudioUploadBackgroundSupport.isAppInForeground) {
           await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
           continue;
         }
       } on TimeoutException catch (e) {
+        lastError = e;
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt idle timeout: $e');
       } catch (e) {
+        lastError = e;
         debugPrint('MPAudioUploadService: uploadBytesToS3 attempt $attempt failed: $e');
         if (MPAudioUploadBackgroundSupport.isLikelyBackgroundNetworkFailure(e)) {
           await MPAudioUploadBackgroundSupport.waitUntilForegroundForRetry();
@@ -305,7 +391,7 @@ class MPAudioUploadService {
       await Future.delayed(const Duration(seconds: 1));
     }
     debugPrint('MPAudioUploadService: uploadBytesToS3 failed after $maxForegroundAttempts attempts');
-    return false;
+    return (success: false, lastError: lastError);
   }
 
   /// 验证音频文件是否有效

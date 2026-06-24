@@ -430,12 +430,12 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       MPToastUtils.showMessage('Recording file not found.');
       return false;
     }
-    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
-    if (recordUri == null || recordUri.isEmpty) {
-      MPToastUtils.showMessage('Failed to upload audio.');
+    final MPAudioUploadResult uploadResult = await MPAudioUploadService().uploadMPAudio(file);
+    if (!uploadResult.isSuccess) {
+      MPToastUtils.showMessage(uploadResult.errorMessage ?? 'Failed to upload audio.');
       return false;
     }
-    _cachedRecordUri = recordUri;
+    _cachedRecordUri = uploadResult.uri;
     return true;
   }
 

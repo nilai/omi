@@ -340,15 +340,15 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       return null;
     }
 
-    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
-    if (recordUri == null || recordUri.isEmpty) {
-      MPToastUtils.showMessage('Failed to upload audio.');
+    final MPAudioUploadResult uploadResult = await MPAudioUploadService().uploadMPAudio(file);
+    if (!uploadResult.isSuccess) {
+      MPToastUtils.showMessage(uploadResult.errorMessage ?? 'Failed to upload audio.');
       await _stopRecorder(deleteFile: true);
       return null;
     }
 
     final MPTranscriptResponse? transcriptResp = await transcript(
-      MPTranscriptRequest(audioUrl: recordUri),
+      MPTranscriptRequest(audioUrl: uploadResult.uri!),
     );
     await _stopRecorder(deleteFile: true);
 

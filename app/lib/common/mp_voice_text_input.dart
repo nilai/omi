@@ -358,7 +358,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       return;
     }
 
-    final String? recordUri = await MPAudioUploadService().uploadMPAudio(file);
+    final MPAudioUploadResult uploadResult = await MPAudioUploadService().uploadMPAudio(file);
 
     if (!mounted) {
       _dotsCtrl.stop();
@@ -366,7 +366,7 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
       return;
     }
 
-    if (recordUri == null || recordUri.isEmpty) {
+    if (!uploadResult.isSuccess) {
       _dotsCtrl.stop();
       setState(() {
         _busy = false;
@@ -374,12 +374,12 @@ class _MPVoiceTextInputState extends State<MPVoiceTextInput>
         _mode = MPVoiceTextInputMode.text;
       });
       await _stopRecorder(deleteFile: true);
-      MPToastUtils.showMessage('Failed to upload audio.');
+      MPToastUtils.showMessage(uploadResult.errorMessage ?? 'Failed to upload audio.');
       return;
     }
 
     final MPTranscriptResponse? transcriptResp = await transcript(
-      MPTranscriptRequest(audioUrl: recordUri),
+      MPTranscriptRequest(audioUrl: uploadResult.uri!),
     );
     _dotsCtrl.stop();
 

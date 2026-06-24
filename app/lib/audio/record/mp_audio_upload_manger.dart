@@ -496,7 +496,7 @@ class MPAudioUploadManager {
       String? txtUri;
       if (hasTxt) {
         debugPrint('MPAudioUploadManager: uploading txt companion for file ${i + 1}/$n');
-        txtUri = await uploadService.uploadRecordFile(
+        final MPAudioUploadResult txtResult = await uploadService.uploadRecordFile(
           txtCompanion,
           contentType: 'text/plain; charset=utf-8',
           onProgress: (int current, int total) {
@@ -506,24 +506,32 @@ class MPAudioUploadManager {
             debugPrint('MPAudioUploadManager: txt file ${i + 1}/$n step $current/$total');
           },
         );
-        if (txtUri == null || txtUri.isEmpty) {
+        if (!txtResult.isSuccess) {
           debugPrint('MPAudioUploadManager: failed to upload txt companion.');
-          _notifyUploadFailureForRecord(record);
+          _notifyUploadFailureForRecord(
+            record,
+            txtResult.errorMessage ?? 'Failed to upload companion text file.',
+          );
           continue;
         }
+        txtUri = txtResult.uri;
       }
 
-      final String? audioUri = await uploadService.uploadMPAudio(
+      final MPAudioUploadResult audioResult = await uploadService.uploadMPAudio(
         f,
         onProgress: (int current, int total) {
           debugPrint('MPAudioUploadManager: audio file ${i + 1}/$n step $current/$total');
         },
       );
-      if (audioUri == null || audioUri.isEmpty) {
+      if (!audioResult.isSuccess) {
         debugPrint('MPAudioUploadManager: failed to upload audio.');
-        _notifyUploadFailureForRecord(record);
+        _notifyUploadFailureForRecord(
+          record,
+          audioResult.errorMessage ?? 'Failed to upload audio.',
+        );
         continue;
       }
+      final String audioUri = audioResult.uri!;
 
       record.fileId = MPAudioLocalRecordsUtil.getFileIdFromRecordFile(audioUri);
 
@@ -545,7 +553,10 @@ class MPAudioUploadManager {
       );
       if (created == null || created.baseResp.code != 0) {
         debugPrint('MPAudioUploadManager: failed to create record.');
-        _notifyUploadFailureForRecord(record);
+        _notifyUploadFailureForRecord(
+          record,
+          _formatCreateRecordFailure(created),
+        );
         continue;
       }
 
@@ -615,14 +626,26 @@ class MPAudioUploadManager {
     );
   }
 
-  void _notifyUploadFailureForRecord(MPAudioLocalRecord record) {
+  void _notifyUploadFailureForRecord(MPAudioLocalRecord record, [String? message]) {
     final ({int currentFile, int totalFiles}) snapshot = MPHomeAudioTaskQueue.instance.uploadProgressSnapshot;
     MPHomeNotification.notifyUploadFailed(
       MPHomeUploadFailedPayload(
         batchTotal: snapshot.totalFiles,
         batchIndex: snapshot.currentFile,
         isLastInBatch: snapshot.currentFile >= snapshot.totalFiles,
+        message: message,
       ),
     );
+  }
+
+  static String _formatCreateRecordFailure(MPCreateRecordResponse? created) {
+    if (created == null) {
+      return 'Failed to register recording. Please check your network and try again.';
+    }
+    final String serverMessage = created.baseResp.message.trim();
+    if (serverMessage.isNotEmpty) {
+      return serverMessage;
+    }
+    return 'Failed to register recording (code ${created.baseResp.code}).';
   }
 }
