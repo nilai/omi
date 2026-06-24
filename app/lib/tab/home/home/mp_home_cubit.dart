@@ -177,6 +177,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
         quotaMinutesUsed: 0,
         currentMinutes: 0,
         showBanner: false,
+        bannerContent: '',
       ),
       isBleConnected: false,
     );
@@ -355,6 +356,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
           quotaMinutesUsed: banner.quotaMinutesUsed,
           currentMinutes: banner.currentMinutes,
           showBanner: false,
+          bannerContent: banner.bannerContent,
         ),
       ),
     );

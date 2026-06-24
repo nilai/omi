@@ -10,12 +10,14 @@ class MPTranscriptionBannerStruct {
     required this.quotaMinutesUsed,
     required this.currentMinutes,
     required this.showBanner,
+    required this.bannerContent,
   });
 
   final int bannerId;
   final int quotaMinutesUsed;
   final int currentMinutes;
   final bool showBanner;
+  final String bannerContent;
 
   /// 从 JSON 解析。
   factory MPTranscriptionBannerStruct.fromJson(Map<String, dynamic> json) {
@@ -24,6 +26,7 @@ class MPTranscriptionBannerStruct {
       quotaMinutesUsed: (json['quota_minutes_used'] as num?)?.toInt() ?? 0,
       currentMinutes: (json['current_minutes'] as num?)?.toInt() ?? 0,
       showBanner: json['show_banner'] as bool? ?? false,
+      bannerContent: json['banner_content'] as String? ?? '',
     );
   }
 
@@ -33,6 +36,7 @@ class MPTranscriptionBannerStruct {
         'quota_minutes_used': quotaMinutesUsed,
         'current_minutes': currentMinutes,
         'show_banner': showBanner,
+        'banner_content': bannerContent,
       };
 }
 
@@ -102,6 +106,7 @@ class MPGetHomeOverviewResponse {
               quotaMinutesUsed: 0,
               currentMinutes: 0,
               showBanner: false,
+              bannerContent: '',
             ),
       baseResp: MPBaseResp.fromJson(
         json['base_resp'] as Map<String, dynamic>,
