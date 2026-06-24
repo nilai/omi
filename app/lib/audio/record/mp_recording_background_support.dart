@@ -43,7 +43,7 @@ class _MPRecordingForegroundTaskHandler extends TaskHandler {
 }
 
 /// 首页等「应用内录音」：配置系统音频会话（iOS/Android）、Android 麦克风前台服务。
-/// 混音模式（首页 Start Recording）不订阅系统打断，暂停/继续由录音弹窗 UI 控制。
+/// 混音模式（首页 Start Recording）监听系统打断并在会议/通话结束后通知 UI 自动续录。
 class MPRecordingBackgroundSupport {
   MPRecordingBackgroundSupport._();
 
@@ -101,7 +101,7 @@ class MPRecordingBackgroundSupport {
           AVAudioSessionCategoryOptions.allowBluetooth |
           AVAudioSessionCategoryOptions.allowBluetoothA2dp |
           AVAudioSessionCategoryOptions.defaultToSpeaker,
-      avAudioSessionMode: AVAudioSessionMode.measurement,
+      avAudioSessionMode: AVAudioSessionMode.defaultMode,
       avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
       androidAudioAttributes: const AndroidAudioAttributes(
         contentType: AndroidAudioContentType.speech,
@@ -211,23 +211,29 @@ class MPRecordingBackgroundSupport {
     final AudioSession session = await AudioSession.instance;
 
     if (!_recordingInfrastructureActive) {
-      if (!_mixWithOthersEnabled) {
-        await _interruptionSub?.cancel();
-        _interruptionSub = session.interruptionEventStream.listen(
-          (AudioInterruptionEvent event) {
-            if (!event.begin) {
-              if (Platform.isIOS &&
-                  _recordingInfrastructureActive &&
-                  !_nativeRecorderHandlesInterruptions) {
-                unawaited(prepareIosNativeRecorderResume());
-              }
-              unawaited(_handleSystemAudioInterruptionEnded());
-              return;
+      await _interruptionSub?.cancel();
+      _interruptionSub = session.interruptionEventStream.listen(
+        (AudioInterruptionEvent event) {
+          if (_mixWithOthersEnabled) {
+            if (event.begin) {
+              unawaited(_handleMixModeSystemInterruptionBegan());
+            } else {
+              unawaited(_handleMixModeSystemInterruptionEnded());
             }
-            unawaited(_handleSystemAudioInterruptionBegin());
-          },
-        );
-      }
+            return;
+          }
+          if (!event.begin) {
+            if (Platform.isIOS &&
+                _recordingInfrastructureActive &&
+                !_nativeRecorderHandlesInterruptions) {
+              unawaited(prepareIosNativeRecorderResume());
+            }
+            unawaited(_handleSystemAudioInterruptionEnded());
+            return;
+          }
+          unawaited(_handleSystemAudioInterruptionBegin());
+        },
+      );
       _recordingInfrastructureActive = true;
 
       if (Platform.isAndroid) {
@@ -292,6 +298,26 @@ class MPRecordingBackgroundSupport {
     } catch (e, st) {
       debugPrint('MPRecordingBackgroundSupport.prepareIosNativeRecorderResume: $e\n$st');
     }
+  }
+
+  /// 混音模式：系统音频打断结束，补 session 并通知 UI 自动续录。
+  static Future<void> _handleMixModeSystemInterruptionEnded() async {
+    if (!_recordingInfrastructureActive || !_mixWithOthersEnabled) {
+      return;
+    }
+    await ensureAudioSessionActiveForRecording();
+    if (Platform.isIOS) {
+      await MPRecordingSessionNative.applyMixRecordingSession();
+    }
+    await MPGlobalRecordingCoordinator.instance.notifyMixModeSystemInterruptionEnded();
+  }
+
+  /// 混音模式：系统音频被打断（如腾讯会议抢占麦克风），通知 UI 暂停计时。
+  static Future<void> _handleMixModeSystemInterruptionBegan() async {
+    if (!_recordingInfrastructureActive || !_mixWithOthersEnabled) {
+      return;
+    }
+    await MPGlobalRecordingCoordinator.instance.notifyMixModeSystemInterruptionBegan();
   }
 
   /// 系统音频焦点被抢占：原生录音模式下仅轻量补 session，不触发 Dart 侧 maintain 风暴。

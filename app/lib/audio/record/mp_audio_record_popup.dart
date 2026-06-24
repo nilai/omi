@@ -115,6 +115,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   DateTime? _activeRecordingSegmentStart;
 
   bool _isPaused = false;
+
+  /// 是否因系统打断（腾讯会议/来电等）而暂停；用于会议结束后自动续录。
+  bool _pausedBySystemInterruption = false;
+
+  StreamSubscription<MPNativeRecorderEvent>? _nativeRecorderEventsSub;
+  int _watchdogTick = 0;
+
   Timer? _tickTimer;
 
   /// 最小化胶囊条位置（首次最小化时根据安全区初始化）。
@@ -145,7 +152,12 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       _recordingOwnerToken,
       _onInterruptedByOtherOwner,
     );
-    // 首页混音录音：暂停/继续仅由弹窗与浮层按钮控制，不监听生命周期或系统打断。
+    MPGlobalRecordingCoordinator.instance.registerMixModeInterruptionHandler(
+      _recordingOwnerToken,
+      onInterruptionBegan: _onMixModeSystemInterruptionBegan,
+      onInterruptionEnded: _onMixModeSystemInterruptionEnded,
+    );
+    _nativeRecorderEventsSub = _nativeRecorder.recordingEvents.listen(_onNativeRecorderEvent);
     MPGlobalRecordingCoordinator.instance.registerBleDeviceRecordingStopHandler(
       _bleDeviceRecordingStopToken,
       _onBleDeviceRecordingStartedPauseLocal,
@@ -158,7 +170,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     _waveController.stop();
     _waveController.dispose();
     _tickTimer?.cancel();
+    unawaited(_nativeRecorderEventsSub?.cancel());
     unawaited(_releaseRecorder(deleteFile: true));
+    MPGlobalRecordingCoordinator.instance.unregisterMixModeInterruptionHandler(_recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance.unregisterBleDeviceRecordingStopHandler(_bleDeviceRecordingStopToken);
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
@@ -340,6 +354,74 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     }
   }
 
+  /// 系统混音打断开始：暂停计时与采集（如腾讯会议抢占麦克风）。
+  Future<void> _onMixModeSystemInterruptionBegan() async {
+    if (!mounted || _step != _MPAudioRecordStep.recording || _isPaused) {
+      return;
+    }
+    _pausedBySystemInterruption = true;
+    await _pauseRecordingDueToExternalInterruption();
+  }
+
+  /// 系统混音打断结束：会议/通话挂断后自动续录（参考 Get 笔记）。
+  Future<void> _onMixModeSystemInterruptionEnded() async {
+    await _attemptAutoResumeAfterSystemInterruption();
+  }
+
+  void _onNativeRecorderEvent(MPNativeRecorderEvent event) {
+    switch (event.type) {
+      case MPNativeRecorderEventType.interruptionBegan:
+        unawaited(_onMixModeSystemInterruptionBegan());
+      case MPNativeRecorderEventType.interruptionEnded:
+        unawaited(_onMixModeSystemInterruptionEnded());
+    }
+  }
+
+  /// 会议/通话结束后尝试自动续录；用户手动暂停时不触发。
+  Future<void> _attemptAutoResumeAfterSystemInterruption() async {
+    if (!mounted ||
+        _step != _MPAudioRecordStep.recording ||
+        !_pausedBySystemInterruption ||
+        !_isPaused ||
+        _busy ||
+        !_nativeRecorderOpen ||
+        _recordPath == null) {
+      return;
+    }
+    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
+    final int sessionId = _recorderSessionId;
+    setState(() => _busy = true);
+    try {
+      await MPGlobalRecordingCoordinator.instance.beforeLocalRecordingStarts(_recordingOwnerToken);
+      if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
+        return;
+      }
+      final bool resumed = await _resumeNativeRecording();
+      if (!mounted || sessionId != _recorderSessionId) {
+        return;
+      }
+      if (resumed) {
+        setState(() {
+          _isPaused = false;
+          _pausedBySystemInterruption = false;
+          _activeRecordingSegmentStart = DateTime.now();
+          _busy = false;
+        });
+        return;
+      }
+      setState(() => _busy = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
   /// 其它入口开始录音：暂停当前采集（与手动暂停一致）。
   Future<void> _onInterruptedByOtherOwner() async {
     await _pauseRecordingDueToExternalInterruption();
@@ -358,12 +440,38 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
 
   void _startElapsedTicker() {
     _tickTimer?.cancel();
+    _watchdogTick = 0;
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted || _isPaused) {
+      if (!mounted) {
+        return;
+      }
+      if (_step == _MPAudioRecordStep.recording && !_isPaused && !_busy) {
+        _watchdogTick++;
+        if (_watchdogTick % 3 == 0) {
+          unawaited(_watchdogCheckNativeRecording());
+        }
+      }
+      if (_isPaused) {
         return;
       }
       setState(() {});
     });
+  }
+
+  /// 检测 native 是否仍在采集；若 UI 显示录音中但已停录，则按系统打断处理。
+  Future<void> _watchdogCheckNativeRecording() async {
+    if (!mounted ||
+        _step != _MPAudioRecordStep.recording ||
+        _isPaused ||
+        _busy ||
+        !_nativeRecorderOpen) {
+      return;
+    }
+    if (await _nativeRecorder.isRecording()) {
+      return;
+    }
+    _pausedBySystemInterruption = true;
+    await _pauseRecordingDueToExternalInterruption();
   }
 
   /// < 60 分钟：MM:SS；>= 60 分钟：HH:MM:SS
@@ -436,6 +544,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         }
         return;
       }
+      MPRecordingBackgroundSupport.setNativeRecorderHandlesInterruptions(true);
       final String path = await _newRecordPath();
       _recorderSessionId++;
       final int sessionId = _recorderSessionId;
@@ -510,6 +619,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         setState(() {
           _activeRecordingSegmentStart = DateTime.now();
           _isPaused = false;
+          _pausedBySystemInterruption = false;
           _busy = false;
         });
       } else {
@@ -528,6 +638,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
             _activeRecordingSegmentStart = null;
           }
           _isPaused = true;
+          _pausedBySystemInterruption = false;
           _busy = false;
         });
       }

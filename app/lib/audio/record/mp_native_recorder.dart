@@ -1,13 +1,50 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-/// 首页长录音：iOS [AVAudioRecorder] / Android [MediaRecorder] 整段单文件；暂停/继续由 App UI 控制。
+/// 原生录音器事件（混音模式下系统打断/恢复）。
+enum MPNativeRecorderEventType {
+  interruptionBegan,
+  interruptionEnded,
+}
+
+class MPNativeRecorderEvent {
+  const MPNativeRecorderEvent({required this.type});
+
+  final MPNativeRecorderEventType type;
+}
+
+/// 首页长录音：iOS [AVAudioRecorder] / Android [MediaRecorder] 整段单文件；混音模式下支持系统打断后自动续录。
 class MPNativeRecorder {
   MPNativeRecorder();
 
   static const MethodChannel _channel = MethodChannel('mp_native_recorder');
+  static const EventChannel _eventChannel = EventChannel('mp_native_recorder/events');
+
+  Stream<MPNativeRecorderEvent>? _eventStream;
+
+  /// 混音模式下原生层打断/恢复事件。
+  Stream<MPNativeRecorderEvent> get recordingEvents {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return const Stream<MPNativeRecorderEvent>.empty();
+    }
+    return _eventStream ??= _eventChannel.receiveBroadcastStream().map((dynamic raw) {
+      if (raw is! Map) {
+        return null;
+      }
+      final String? type = raw['type'] as String?;
+      switch (type) {
+        case 'interruptionBegan':
+          return const MPNativeRecorderEvent(type: MPNativeRecorderEventType.interruptionBegan);
+        case 'interruptionEnded':
+          return const MPNativeRecorderEvent(type: MPNativeRecorderEventType.interruptionEnded);
+        default:
+          return null;
+      }
+    }).where((MPNativeRecorderEvent? event) => event != null).cast<MPNativeRecorderEvent>();
+  }
 
   /// 打开原生录音器；[mixWithOthers] 为 true 时启用混音并自动处理系统打断。
   Future<bool> open({required bool mixWithOthers}) async {

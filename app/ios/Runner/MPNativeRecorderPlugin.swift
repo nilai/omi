@@ -1,19 +1,37 @@
 import AVFoundation
 import Flutter
 
-/// 首页长录音：原生 AVAudioRecorder 整段写入单文件；混音模式，暂停/继续仅由 App UI 控制。
-final class MPNativeRecorderPlugin: NSObject, FlutterPlugin {
+/// 首页长录音：原生 AVAudioRecorder 整段写入单文件；混音模式支持系统打断后自动续录。
+final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
   private static let logTag = "[MemoPin/NativeRecorder]"
   private static let channelName = "mp_native_recorder"
+  private static let eventChannelName = "mp_native_recorder/events"
 
   private var mixWithOthers = false
   private var recorder: AVAudioRecorder?
   private var currentPath: String?
+  private var eventSink: FlutterEventSink?
+  private var interruptionObserver: NSObjectProtocol?
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let instance = MPNativeRecorderPlugin()
     let channel = FlutterMethodChannel(name: channelName, binaryMessenger: registrar.messenger())
     registrar.addMethodCallDelegate(instance, channel: channel)
+    let eventChannel = FlutterEventChannel(
+      name: eventChannelName,
+      binaryMessenger: registrar.messenger()
+    )
+    eventChannel.setStreamHandler(instance)
+  }
+
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    eventSink = events
+    return nil
+  }
+
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    eventSink = nil
+    return nil
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -23,11 +41,15 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin {
       mixWithOthers = args?["mixWithOthers"] as? Bool ?? false
       if mixWithOthers {
         _ = MPRecordingSessionPlugin.applyMixRecordingSession()
+        registerInterruptionObserverIfNeeded()
+      } else {
+        unregisterInterruptionObserver()
       }
       result(true)
     case "close":
       closeRecorder(deleteFiles: false)
       mixWithOthers = false
+      unregisterInterruptionObserver()
       result(nil)
     case "start":
       guard let args = call.arguments as? [String: Any],
@@ -71,6 +93,43 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin {
       }
     default:
       result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private func registerInterruptionObserverIfNeeded() {
+    guard interruptionObserver == nil else { return }
+    interruptionObserver = NotificationCenter.default.addObserver(
+      forName: AVAudioSession.interruptionNotification,
+      object: AVAudioSession.sharedInstance(),
+      queue: .main
+    ) { [weak self] notification in
+      self?.handleAudioSessionInterruption(notification)
+    }
+  }
+
+  private func unregisterInterruptionObserver() {
+    if let observer = interruptionObserver {
+      NotificationCenter.default.removeObserver(observer)
+      interruptionObserver = nil
+    }
+  }
+
+  private func handleAudioSessionInterruption(_ notification: Notification) {
+    guard mixWithOthers else { return }
+    guard let userInfo = notification.userInfo,
+          let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+          let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+      return
+    }
+    switch type {
+    case .began:
+      eventSink?(["type": "interruptionBegan"])
+    case .ended:
+      _ = MPRecordingSessionPlugin.applyMixRecordingSession()
+      _ = resumeRecording()
+      eventSink?(["type": "interruptionEnded"])
+    @unknown default:
+      break
     }
   }
 
@@ -123,7 +182,7 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin {
     return path
   }
 
-  /// 在同文件上继续录音（仅响应 App UI 调用）。
+  /// 在同文件上继续录音（响应 App UI 或系统打断结束）。
   @discardableResult
   private func resumeRecording() -> Bool {
     guard let rec = recorder, currentPath != nil else { return false }

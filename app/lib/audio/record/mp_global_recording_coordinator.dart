@@ -18,6 +18,10 @@ class MPGlobalRecordingCoordinator {
   final Map<Object, Future<void> Function()> _bleDeviceRecordingStopHandlers =
       <Object, Future<void> Function()>{};
 
+  /// 混音录音：系统打断开始/结束（与 [registerMixModeInterruptionHandler] 配对）。
+  final Map<Object, _MPMixModeInterruptionHandler> _mixModeInterruptionHandlers =
+      <Object, _MPMixModeInterruptionHandler>{};
+
   Object? _exclusiveOwner;
 
   /// 注册可被中断的持有者；页面 / 组件 [dispose] 前必须 [unregister]。
@@ -67,10 +71,28 @@ class MPGlobalRecordingCoordinator {
     _systemAudioMaintainHandlers.remove(ownerToken);
   }
 
+  /// 注册混音录音的系统打断回调：会议/通话结束后自动续录（参考 Get 笔记行为）。
+  void registerMixModeInterruptionHandler(
+    Object ownerToken, {
+    required Future<void> Function() onInterruptionBegan,
+    required Future<void> Function() onInterruptionEnded,
+  }) {
+    _mixModeInterruptionHandlers[ownerToken] = _MPMixModeInterruptionHandler(
+      onInterruptionBegan: onInterruptionBegan,
+      onInterruptionEnded: onInterruptionEnded,
+    );
+  }
+
+  /// 解除 [registerMixModeInterruptionHandler]。
+  void unregisterMixModeInterruptionHandler(Object ownerToken) {
+    _mixModeInterruptionHandlers.remove(ownerToken);
+  }
+
   /// 解除注册。
   void unregister(Object ownerToken) {
     _interruptHandlers.remove(ownerToken);
     _systemAudioMaintainHandlers.remove(ownerToken);
+    _mixModeInterruptionHandlers.remove(ownerToken);
     if (_exclusiveOwner == ownerToken) {
       _exclusiveOwner = null;
     }
@@ -114,4 +136,30 @@ class MPGlobalRecordingCoordinator {
     }
     await _safeInterrupt(fn);
   }
+
+  /// 混音录音：系统音频打断开始（如腾讯会议抢占麦克风）。
+  Future<void> notifyMixModeSystemInterruptionBegan() async {
+    for (final _MPMixModeInterruptionHandler handler
+        in _mixModeInterruptionHandlers.values) {
+      await _safeInterrupt(handler.onInterruptionBegan);
+    }
+  }
+
+  /// 混音录音：系统音频打断结束（会议/通话挂断后尝试自动续录）。
+  Future<void> notifyMixModeSystemInterruptionEnded() async {
+    for (final _MPMixModeInterruptionHandler handler
+        in _mixModeInterruptionHandlers.values) {
+      await _safeInterrupt(handler.onInterruptionEnded);
+    }
+  }
+}
+
+class _MPMixModeInterruptionHandler {
+  const _MPMixModeInterruptionHandler({
+    required this.onInterruptionBegan,
+    required this.onInterruptionEnded,
+  });
+
+  final Future<void> Function() onInterruptionBegan;
+  final Future<void> Function() onInterruptionEnded;
 }

@@ -39,7 +39,7 @@ final class MPRecordingSessionPlugin: NSObject, FlutterPlugin {
       if #available(iOS 17.0, *) {
         options.insert(.overrideMutedMicrophoneInterruption)
       }
-      try session.setCategory(.playAndRecord, mode: .measurement, options: options)
+      try session.setCategory(.playAndRecord, mode: .default, options: options)
       try session.setActive(true, options: [])
       NSLog("%@ mix session active category=%@ mode=%@", logTag, session.category.rawValue, session.mode.rawValue)
       return true
