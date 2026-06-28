@@ -141,16 +141,6 @@ class MPAskAIChatCubit extends Cubit<MPAskAIChatState> {
         return;
       }
       activeConversationId = created.conversationId;
-      if (created.greet.trim().isNotEmpty) {
-        next = <MPAskAIChatMessage>[
-          ...next,
-          MPAskAIChatMessage(
-            id: 'a_${MPTimeUtils.nowUnixMicroseconds()}',
-            role: MPAskAIMessageRole.ai,
-            content: created.greet.trim(),
-          ),
-        ];
-      }
       emit(state.copyWith(conversationId: activeConversationId, messages: next));
     }
 
