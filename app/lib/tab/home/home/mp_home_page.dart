@@ -371,7 +371,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                               context,
                             ).push(MaterialPageRoute<void>(builder: (_) => const MPHomeInsightsListPage())),
                           ),
-                          if (state.transcriptionBanner.showBanner) ...<Widget>[
+                          if (state.transcriptionBanner.shouldShowBanner) ...<Widget>[
                             const SizedBox(height: 16),
                             _TranscriptionUsageCard(
                               banner: state.transcriptionBanner,

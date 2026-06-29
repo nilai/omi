@@ -34,8 +34,8 @@ Future<String> mpResolveTranscriptionUsageText() async {
     }
     final MPTranscriptionBannerStruct banner = MPTranscriptionBannerStruct.fromJson(bannerMap);
     return mpFormatTranscriptionUsageText(
-      usedMinutes: banner.quotaMinutesUsed,
-      totalMinutes: banner.currentMinutes,
+      usedMinutes: banner.currentMinutes,
+      totalMinutes: banner.threshold,
     );
   } catch (_) {
     return '';

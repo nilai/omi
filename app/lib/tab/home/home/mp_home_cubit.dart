@@ -174,7 +174,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       insightOverview: MPHomeInsightOverviewStruct(title: '', subTitle: '', newInsightCount: 0, content: ''),
       transcriptionBanner: MPTranscriptionBannerStruct(
         bannerId: 0,
-        quotaMinutesUsed: 0,
+        threshold: 0,
         currentMinutes: 0,
         showBanner: false,
         bannerContent: '',
@@ -353,7 +353,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       state.copyWith(
         transcriptionBanner: MPTranscriptionBannerStruct(
           bannerId: banner.bannerId,
-          quotaMinutesUsed: banner.quotaMinutesUsed,
+          threshold: banner.threshold,
           currentMinutes: banner.currentMinutes,
           showBanner: false,
           bannerContent: banner.bannerContent,

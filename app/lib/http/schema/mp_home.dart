@@ -7,23 +7,26 @@ import 'mp_data_model.dart';
 class MPTranscriptionBannerStruct {
   MPTranscriptionBannerStruct({
     required this.bannerId,
-    required this.quotaMinutesUsed,
+    required this.threshold,
     required this.currentMinutes,
     required this.showBanner,
     required this.bannerContent,
   });
 
   final int bannerId;
-  final int quotaMinutesUsed;
+  final int threshold;
   final int currentMinutes;
   final bool showBanner;
   final String bannerContent;
+
+  /// 是否展示首页转录提示卡片。
+  bool get shouldShowBanner => showBanner && bannerContent.trim().isNotEmpty;
 
   /// 从 JSON 解析。
   factory MPTranscriptionBannerStruct.fromJson(Map<String, dynamic> json) {
     return MPTranscriptionBannerStruct(
       bannerId: (json['banner_id'] as num?)?.toInt() ?? 0,
-      quotaMinutesUsed: (json['quota_minutes_used'] as num?)?.toInt() ?? 0,
+      threshold: (json['threshold'] as num?)?.toInt() ?? 0,
       currentMinutes: (json['current_minutes'] as num?)?.toInt() ?? 0,
       showBanner: json['show_banner'] as bool? ?? false,
       bannerContent: json['banner_content'] as String? ?? '',
@@ -33,7 +36,7 @@ class MPTranscriptionBannerStruct {
   /// 序列化为 JSON。
   Map<String, dynamic> toJson() => <String, dynamic>{
         'banner_id': bannerId,
-        'quota_minutes_used': quotaMinutesUsed,
+        'threshold': threshold,
         'current_minutes': currentMinutes,
         'show_banner': showBanner,
         'banner_content': bannerContent,
@@ -103,7 +106,7 @@ class MPGetHomeOverviewResponse {
           ? MPTranscriptionBannerStruct.fromJson(bannerMap)
           : MPTranscriptionBannerStruct(
               bannerId: 0,
-              quotaMinutesUsed: 0,
+              threshold: 0,
               currentMinutes: 0,
               showBanner: false,
               bannerContent: '',
