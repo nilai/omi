@@ -1015,13 +1015,25 @@ class _TranscriptionUsageCard extends StatelessWidget {
   final MPTranscriptionBannerStruct banner;
   final VoidCallback onClose;
 
-  // /// 构建转录用量提示文案。
-  // String _buildContent() {
-  //   final NumberFormat formatter = NumberFormat('#,###');
-  //   final String used = formatter.format(banner.quotaMinutesUsed);
-  //   final String total = formatter.format(banner.currentMinutes);
-  //   return "You're halfway through your test transcription credits. $used / $total min used.";
-  // }
+  /// 将后端 `banner_content`（如 `504/500 min used`）格式化为设计稿展示文案。
+  String _buildDisplayContent() {
+    final String raw = banner.bannerContent.trim();
+    if (raw.isEmpty) {
+      return '';
+    }
+    final RegExp usagePattern = RegExp(
+      r'^(\d+)/(\d+)\s*min\s*used\.?$',
+      caseSensitive: false,
+    );
+    final RegExpMatch? match = usagePattern.firstMatch(raw);
+    if (match != null) {
+      final NumberFormat formatter = NumberFormat('#,###');
+      final String used = formatter.format(int.tryParse(match.group(1)!) ?? 0);
+      final String total = formatter.format(int.tryParse(match.group(2)!) ?? 0);
+      return "You're halfway through your test transcription credits. $used / $total min used.";
+    }
+    return raw;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1080,7 +1092,7 @@ class _TranscriptionUsageCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        banner.bannerContent,
+                        _buildDisplayContent(),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
