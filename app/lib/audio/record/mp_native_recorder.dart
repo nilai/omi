@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:memo_pin/audio/audio_picker_utils.dart';
 
 /// 原生录音器事件（混音模式下系统打断/恢复）。
 enum MPNativeRecorderEventType {
@@ -142,5 +143,56 @@ class MPNativeRecorder {
     } catch (_) {
       return 0;
     }
+  }
+
+  /// 当前录音文件已写入时长（毫秒）；优先读原生层，失败时为 0。
+  Future<int> currentRecordingDurationMs() async {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return 0;
+    }
+    try {
+      final int? ms = await _channel.invokeMethod<int>('currentDurationMs');
+      return ms ?? 0;
+    } catch (e, st) {
+      debugPrint('MPNativeRecorder.currentRecordingDurationMs: $e\n$st');
+      return 0;
+    }
+  }
+
+  /// 来电或独占麦克风 App 占用时返回 true，不可 start/resume。
+  Future<bool> isMicrophoneCaptureBlocked() async {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return false;
+    }
+    try {
+      final bool? blocked = await _channel.invokeMethod<bool>('isMicrophoneCaptureBlocked');
+      return blocked ?? false;
+    } catch (e, st) {
+      debugPrint('MPNativeRecorder.isMicrophoneCaptureBlocked: $e\n$st');
+      return false;
+    }
+  }
+
+  /// resume 前重新激活 AudioSession / 音频焦点，并刷新麦克风占用状态。
+  Future<bool> prepareForRecordingResume() async {
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      return true;
+    }
+    try {
+      final bool? ok = await _channel.invokeMethod<bool>('prepareForRecordingResume');
+      return ok ?? false;
+    } catch (e, st) {
+      debugPrint('MPNativeRecorder.prepareForRecordingResume: $e\n$st');
+      return false;
+    }
+  }
+
+  /// 读取 [path] 对应音频文件时长；失败时返回 [fallback]。
+  static Future<Duration> resolveFileDuration(String path, {Duration fallback = Duration.zero}) async {
+    final Duration? duration = await AudioPickerUtils.getAudioDuration(File(path));
+    if (duration != null && duration.inSeconds > 0) {
+      return duration;
+    }
+    return fallback;
   }
 }

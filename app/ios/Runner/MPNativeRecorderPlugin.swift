@@ -12,6 +12,8 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
   private var currentPath: String?
   private var eventSink: FlutterEventSink?
   private var interruptionObserver: NSObjectProtocol?
+  /// 系统音频打断（来电、独占麦克风 App 等）进行中。
+  private var interruptionActive = false
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let instance = MPNativeRecorderPlugin()
@@ -91,6 +93,12 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       } else {
         result([String]())
       }
+    case "currentDurationMs":
+      result(currentRecordingDurationMs())
+    case "isMicrophoneCaptureBlocked":
+      result(isMicrophoneCaptureBlocked())
+    case "prepareForRecordingResume":
+      result(prepareForRecordingResume())
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -123,13 +131,54 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
     switch type {
     case .began:
+      interruptionActive = true
       eventSink?(["type": "interruptionBegan"])
     case .ended:
+      interruptionActive = false
       _ = MPRecordingSessionPlugin.applyMixRecordingSession()
-      _ = resumeRecording()
       eventSink?(["type": "interruptionEnded"])
     @unknown default:
       break
+    }
+  }
+
+  /// 当前录音文件已写入时长（毫秒）；无录音时为 0。
+  private func currentRecordingDurationMs() -> Int {
+    guard let rec = recorder else { return 0 }
+    return Int(rec.currentTime * 1000.0)
+  }
+
+  /// 来电或独占麦克风场景下不可 start/resume。
+  private func isMicrophoneCaptureBlocked() -> Bool {
+    refreshMicrophoneCaptureBlockedState()
+    let session = AVAudioSession.sharedInstance()
+    if !session.isInputAvailable {
+      return true
+    }
+    return interruptionActive
+  }
+
+  /// 根据当前 AudioSession 刷新打断标记，避免后台未收到 interruptionEnded 时永久 blocked。
+  private func refreshMicrophoneCaptureBlockedState() {
+    let session = AVAudioSession.sharedInstance()
+    if session.isInputAvailable {
+      interruptionActive = false
+    }
+  }
+
+  /// resume 前重新激活会话并刷新占用状态。
+  @discardableResult
+  private func prepareForRecordingResume() -> Bool {
+    refreshMicrophoneCaptureBlockedState()
+    if mixWithOthers {
+      return MPRecordingSessionPlugin.applyMixRecordingSession()
+    }
+    do {
+      try AVAudioSession.sharedInstance().setActive(true)
+      return true
+    } catch {
+      NSLog("%@ prepareForRecordingResume failed: %@", Self.logTag, error.localizedDescription)
+      return false
     }
   }
 
@@ -189,10 +238,11 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     if rec.isRecording {
       return true
     }
-    if mixWithOthers {
-      _ = MPRecordingSessionPlugin.applyMixRecordingSession()
+    _ = prepareForRecordingResume()
+    if rec.record() {
+      return true
     }
-    guard rec.record() else {
+    guard rec.prepareToRecord(), rec.record() else {
       NSLog("%@ resume record() failed path=%@", Self.logTag, currentPath ?? "")
       return false
     }
@@ -206,8 +256,13 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
   /// 停止整段录音并返回最终文件路径。
   private func finish(outputPath: String) -> String? {
-    if recorder?.isRecording == true {
-      recorder?.stop()
+    if let rec = recorder {
+      if rec.isRecording {
+        rec.stop()
+      } else {
+        // paused 状态也必须 stop 才能正确 finalize 文件。
+        rec.stop()
+      }
     }
     recorder = nil
     guard let path = currentPath else { return nil }

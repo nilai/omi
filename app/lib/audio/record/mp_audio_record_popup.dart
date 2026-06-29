@@ -7,6 +7,7 @@ import 'package:memo_pin/audio/record/mp_native_recorder.dart';
 import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
+import 'package:memo_pin/audio/record/mp_recording_session_native.dart';
 import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -80,7 +81,8 @@ class _MPAudioRecordDialog extends StatefulWidget {
   State<_MPAudioRecordDialog> createState() => _MPAudioRecordDialogState();
 }
 
-class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleTickerProviderStateMixin {
+class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
   final Object _bleDeviceRecordingStopToken = Object();
@@ -89,6 +91,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
   static const Color _kCancelSheetBg = Color(0xFFF2F2F7);
   static const Color _kWaveGreen = Color(0xFF34C759);
+  static const String _kMicBlockedStartMessage =
+      'Cannot start recording while a call or another app is using the microphone.';
+  static const String _kMicBlockedResumeMessage =
+      'Cannot resume recording while a call or another app is using the microphone.';
 
   _MPAudioRecordStep _step = _MPAudioRecordStep.intro;
 
@@ -108,11 +114,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
 
   String? _recordPath;
 
-  /// 已累计的录音时长（不含当前 active 段）。
-  Duration _completedRecordingSegments = Duration.zero;
-
-  /// 当前连续录制段的起点（暂停时为 null）。
-  DateTime? _activeRecordingSegmentStart;
+  /// UI 展示的录音时长（来自原生/文件，非墙钟计时）。
+  Duration _displayDuration = Duration.zero;
+  int _displayDurationSeconds = 0;
 
   bool _isPaused = false;
 
@@ -147,6 +151,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _recordingOwnerToken = Object();
     MPGlobalRecordingCoordinator.instance.register(
       _recordingOwnerToken,
@@ -167,6 +172,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _waveController.stop();
     _waveController.dispose();
     _tickTimer?.cancel();
@@ -204,8 +210,8 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       } catch (_) {}
     }
     _recordPath = null;
-    _completedRecordingSegments = Duration.zero;
-    _activeRecordingSegmentStart = null;
+    _displayDuration = Duration.zero;
+    _displayDurationSeconds = 0;
     if (deleteFile) {
       unawaited(_clearSavePendingAudioFiles());
     } else {
@@ -275,11 +281,62 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
   /// native 是否仍在采集。
   bool _nativeCapturing = false;
 
-  void _commitActiveSegmentElapsedToCompleted() {
-    if (_activeRecordingSegmentStart != null) {
-      _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
-      _activeRecordingSegmentStart = null;
+  Future<bool> _isMicrophoneCaptureBlocked() => _nativeRecorder.isMicrophoneCaptureBlocked();
+
+  /// 会议/通话结束或 App 回到前台后，重新激活会话并刷新麦克风占用状态。
+  Future<void> _prepareBeforeRecordingResume() async {
+    await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording();
+    await _nativeRecorder.prepareForRecordingResume();
+    if (Platform.isIOS) {
+      await MPRecordingSessionNative.applyMixRecordingSession();
     }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      return;
+    }
+    unawaited(_onAppResumedDuringRecording());
+  }
+
+  Future<void> _onAppResumedDuringRecording() async {
+    if (!mounted || _step != _MPAudioRecordStep.recording || !_nativeRecorderOpen) {
+      return;
+    }
+    await _prepareBeforeRecordingResume();
+    if (!mounted) {
+      return;
+    }
+    unawaited(_syncDisplayDurationFromFile());
+  }
+
+  void _showMicrophoneBlockedMessage({required bool forResume}) {
+    MPToastUtils.showMessage(
+      forResume ? _kMicBlockedResumeMessage : _kMicBlockedStartMessage,
+      context: context,
+    );
+  }
+
+  /// 从原生/文件同步已写入时长；仅秒数变化时触发 rebuild。
+  Future<void> _syncDisplayDurationFromFile() async {
+    final int ms = await _nativeRecorder.currentRecordingDurationMs();
+    if (!mounted) {
+      return;
+    }
+    final int seconds = ms ~/ 1000;
+    if (seconds == _displayDurationSeconds) {
+      return;
+    }
+    setState(() {
+      _displayDurationSeconds = seconds;
+      _displayDuration = Duration(seconds: seconds);
+    });
+  }
+
+  /// 保存前解析最终文件时长。
+  Future<Duration> _resolveDurationForSave(String filePath) async {
+    return MPNativeRecorder.resolveFileDuration(filePath, fallback: _displayDuration);
   }
 
   /// 同文件 [resumeSegment] 继续录音（仅由 UI 按钮触发）。
@@ -291,7 +348,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       _nativeCapturing = true;
       return true;
     }
-    await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording();
+    await _prepareBeforeRecordingResume();
     try {
       final bool resumed = await _nativeRecorder.resumeSegment();
       if (!resumed) {
@@ -341,10 +398,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         return false;
       }
       setState(() {
-        _commitActiveSegmentElapsedToCompleted();
         _isPaused = true;
         _busy = false;
       });
+      unawaited(_syncDisplayDurationFromFile());
       return true;
     } catch (_) {
       if (mounted) {
@@ -377,7 +434,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     }
   }
 
-  /// 会议/通话结束后尝试自动续录；用户手动暂停时不触发。
+  /// 会议/通话结束后尝试自动续录；麦克风仍被占用时不触发。
   Future<void> _attemptAutoResumeAfterSystemInterruption() async {
     if (!mounted ||
         _step != _MPAudioRecordStep.recording ||
@@ -389,6 +446,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       return;
     }
     if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      return;
+    }
+    await _prepareBeforeRecordingResume();
+    if (!mounted) {
+      return;
+    }
+    if (await _isMicrophoneCaptureBlocked()) {
       return;
     }
     if (!mounted) {
@@ -409,9 +473,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         setState(() {
           _isPaused = false;
           _pausedBySystemInterruption = false;
-          _activeRecordingSegmentStart = DateTime.now();
           _busy = false;
         });
+        unawaited(_syncDisplayDurationFromFile());
         return;
       }
       setState(() => _busy = false);
@@ -427,35 +491,28 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     await _pauseRecordingDueToExternalInterruption();
   }
 
-  /// 基于墙钟的录音时长。
-  Duration get _recordingElapsed {
-    if (_step != _MPAudioRecordStep.recording || _recordPath == null) {
-      return Duration.zero;
-    }
-    if (_isPaused || _activeRecordingSegmentStart == null) {
-      return _completedRecordingSegments;
-    }
-    return _completedRecordingSegments + DateTime.now().difference(_activeRecordingSegmentStart!);
-  }
-
-  void _startElapsedTicker() {
+  void _startDurationPoll() {
     _tickTimer?.cancel();
     _watchdogTick = 0;
     _tickTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) {
         return;
       }
-      if (_step == _MPAudioRecordStep.recording && !_isPaused && !_busy) {
-        _watchdogTick++;
-        if (_watchdogTick % 3 == 0) {
-          unawaited(_watchdogCheckNativeRecording());
-        }
-      }
-      if (_isPaused) {
-        return;
-      }
-      setState(() {});
+      unawaited(_pollRecordingState());
     });
+  }
+
+  Future<void> _pollRecordingState() async {
+    if (!mounted || _step != _MPAudioRecordStep.recording || _recordPath == null) {
+      return;
+    }
+    await _syncDisplayDurationFromFile();
+    if (_step == _MPAudioRecordStep.recording && !_isPaused && !_busy && _nativeRecorderOpen) {
+      _watchdogTick++;
+      if (_watchdogTick % 3 == 0) {
+        await _watchdogCheckNativeRecording();
+      }
+    }
   }
 
   /// 检测 native 是否仍在采集；若 UI 显示录音中但已停录，则按系统打断处理。
@@ -527,6 +584,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         }
         return;
       }
+      if (await _isMicrophoneCaptureBlocked()) {
+        if (mounted) {
+          _showMicrophoneBlockedMessage(forResume: false);
+          setState(() => _busy = false);
+        }
+        return;
+      }
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       final MPRecordingBackgroundActivationResult activation =
@@ -557,12 +621,13 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
       setState(() {
         _recordPath = path;
         _step = _MPAudioRecordStep.recording;
-        _completedRecordingSegments = Duration.zero;
-        _activeRecordingSegmentStart = DateTime.now();
+        _displayDuration = Duration.zero;
+        _displayDurationSeconds = 0;
         _isPaused = false;
         _busy = false;
       });
-      _startElapsedTicker();
+      _startDurationPoll();
+      unawaited(_syncDisplayDurationFromFile());
     } catch (e) {
       if (mounted) {
         MPToastUtils.showMessage('Couldn\'t start recording: $e');
@@ -588,6 +653,17 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
           }
           return;
         }
+        await _prepareBeforeRecordingResume();
+        if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
+          return;
+        }
+        if (await _isMicrophoneCaptureBlocked()) {
+          if (mounted) {
+            _showMicrophoneBlockedMessage(forResume: true);
+            setState(() => _busy = false);
+          }
+          return;
+        }
         if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
           return;
         }
@@ -605,7 +681,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
             _busy = false;
             if (_nativeRecorderOpen && _nativeCapturing) {
               _isPaused = false;
-              _activeRecordingSegmentStart = DateTime.now();
             } else {
               _isPaused = true;
             }
@@ -617,11 +692,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
           return;
         }
         setState(() {
-          _activeRecordingSegmentStart = DateTime.now();
           _isPaused = false;
           _pausedBySystemInterruption = false;
           _busy = false;
         });
+        unawaited(_syncDisplayDurationFromFile());
       } else {
         final bool paused = await _pauseNativeRecording();
         if (!mounted) {
@@ -633,14 +708,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
           return;
         }
         setState(() {
-          if (_activeRecordingSegmentStart != null) {
-            _completedRecordingSegments += DateTime.now().difference(_activeRecordingSegmentStart!);
-            _activeRecordingSegmentStart = null;
-          }
           _isPaused = true;
           _pausedBySystemInterruption = false;
           _busy = false;
         });
+        unawaited(_syncDisplayDurationFromFile());
       }
     } catch (e) {
       if (mounted) {
@@ -699,11 +771,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
     _recorderSessionId++;
     _tickTimer?.cancel();
     _tickTimer = null;
-    final Duration total = _recordingElapsed;
+    Duration total = _displayDuration;
     try {
       if (!_saveRecorderFinalized) {
         // 须在 close 之前 finalize：先 stop/合并全部分段，再关会话（勿提前置 _nativeRecorderOpen=false）。
         final String? outPath = await _finalizeRecordingFilePath();
+        if (outPath != null && outPath.isNotEmpty) {
+          total = await _resolveDurationForSave(outPath);
+        }
         if (_nativeRecorderOpen) {
           try {
             await _nativeRecorder.close();
@@ -913,7 +988,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
             ),
             const SizedBox(width: 12),
             Text(
-              _formatElapsed(_recordingElapsed),
+              _formatElapsed(_displayDuration),
               style: OmiTextStyle.create(
                 color: mainTextColor,
                 fontSize: OmiFontSize.t7_16,
@@ -1028,7 +1103,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog> with SingleT
         ),
         const SizedBox(height: 20),
         Text(
-          _formatElapsed(_recordingElapsed),
+          _formatElapsed(_displayDuration),
           style: OmiTextStyle.create(
             color: mainTextColor,
             fontSize: OmiFontSize.t33_42,

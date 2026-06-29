@@ -6,6 +6,7 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaRecorder
 import android.os.Build
+import android.os.SystemClock
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
@@ -26,6 +27,14 @@ object MPNativeRecorderPlugin {
     private var recorder: MediaRecorder? = null
     private var currentPath: String? = null
     private var isPaused = false
+    /** 系统音频焦点被抢占（来电、独占麦克风 App 等）。 */
+    private var microphoneCaptureBlocked = false
+
+    /** 已完成分段累计时长（毫秒）；录制中未 finalize 的 m4a 无法从文件读出时长。 */
+    private var accumulatedDurationMs: Long = 0
+
+    /** 当前连续录制段起点（[SystemClock.elapsedRealtime]）。 */
+    private var activeSegmentStartedAtMs: Long? = null
 
     private var audioManager: AudioManager? = null
     private var audioFocusRequest: AudioFocusRequest? = null
@@ -39,10 +48,14 @@ object MPNativeRecorderPlugin {
             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK,
             AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_EXCLUSIVE -> {
+                microphoneCaptureBlocked = false
                 eventSink?.success(mapOf("type" to "interruptionEnded"))
-                if (isPaused) {
-                    resumeRecordingInternal()
-                }
+            }
+            AudioManager.AUDIOFOCUS_LOSS,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+                microphoneCaptureBlocked = true
+                eventSink?.success(mapOf("type" to "interruptionBegan"))
             }
         }
     }
@@ -70,10 +83,13 @@ object MPNativeRecorderPlugin {
                         result.success(true)
                     }
                     "close" -> {
+                        commitActiveSegment()
                         releaseRecorderOnly()
                         abandonAudioFocus()
                         mixWithOthers = false
                         isPaused = false
+                        microphoneCaptureBlocked = false
+                        resetDurationTracking()
                         result.success(null)
                     }
                     "start" -> {
@@ -95,6 +111,9 @@ object MPNativeRecorderPlugin {
                     "segmentPaths" -> {
                         result.success(if (currentPath != null) listOf(currentPath) else emptyList<String>())
                     }
+                    "currentDurationMs" -> result.success(currentRecordingDurationMs())
+                    "isMicrophoneCaptureBlocked" -> result.success(isMicrophoneCaptureBlocked())
+                    "prepareForRecordingResume" -> result.success(prepareForRecordingResume())
                     else -> result.notImplemented()
                 }
             }
@@ -159,7 +178,9 @@ object MPNativeRecorderPlugin {
         if (recorder != null && currentPath == path && isPaused) {
             return resumeRecordingInternal()
         }
+        commitActiveSegment()
         releaseRecorderOnly()
+        resetDurationTracking()
         return try {
             val file = File(path)
             file.parentFile?.mkdirs()
@@ -181,6 +202,7 @@ object MPNativeRecorderPlugin {
             recorder = mediaRecorder
             currentPath = path
             isPaused = false
+            markActiveSegmentStarted()
             true
         } catch (_: Exception) {
             releaseRecorderOnly()
@@ -189,6 +211,7 @@ object MPNativeRecorderPlugin {
     }
 
     private fun releaseRecorderOnly() {
+        commitActiveSegment()
         try {
             recorder?.stop()
         } catch (_: Exception) {
@@ -207,6 +230,7 @@ object MPNativeRecorderPlugin {
         val rec = recorder ?: return null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
+                commitActiveSegment()
                 rec.pause()
                 isPaused = true
                 return path
@@ -225,10 +249,15 @@ object MPNativeRecorderPlugin {
         if (!isPaused) {
             return true
         }
+        prepareForRecordingResume()
+        if (microphoneCaptureBlocked) {
+            return false
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return try {
                 rec.resume()
                 isPaused = false
+                markActiveSegmentStarted()
                 true
             } catch (_: Exception) {
                 false
@@ -264,5 +293,85 @@ object MPNativeRecorderPlugin {
 
     private fun fileSize(path: String): Int {
         return File(path).length().toInt()
+    }
+
+    private fun resetDurationTracking() {
+        accumulatedDurationMs = 0
+        activeSegmentStartedAtMs = null
+    }
+
+    private fun markActiveSegmentStarted() {
+        activeSegmentStartedAtMs = SystemClock.elapsedRealtime()
+    }
+
+    /** 将当前连续录制段时长累加到 [accumulatedDurationMs]。 */
+    private fun commitActiveSegment() {
+        val startedAt = activeSegmentStartedAtMs ?: return
+        if (recorder != null && !isPaused) {
+            accumulatedDurationMs += (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(0)
+        }
+        activeSegmentStartedAtMs = null
+    }
+
+    /** 从已 finalize 文件读取时长；录制中通常返回 0。 */
+    private fun readFileDurationMs(path: String): Long {
+        val file = File(path)
+        if (!file.exists() || file.length() <= 0L) {
+            return 0L
+        }
+        return try {
+            val retriever = android.media.MediaMetadataRetriever()
+            retriever.setDataSource(path)
+            val durationMs = retriever.extractMetadata(
+                android.media.MediaMetadataRetriever.METADATA_KEY_DURATION,
+            )?.toLongOrNull() ?: 0L
+            retriever.release()
+            durationMs.coerceAtLeast(0L)
+        } catch (_: Exception) {
+            0L
+        }
+    }
+
+    /** 当前录音时长（毫秒）：录制中用 native 分段计时，有文件 metadata 时取较大值。 */
+    private fun currentRecordingDurationMs(): Int {
+        var tracked = accumulatedDurationMs
+        if (recorder != null && !isPaused) {
+            activeSegmentStartedAtMs?.let { startedAt ->
+                tracked += (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(0)
+            }
+        }
+        val path = currentPath
+        if (path != null) {
+            val fileDuration = readFileDurationMs(path)
+            if (fileDuration > tracked) {
+                tracked = fileDuration
+            }
+        }
+        return tracked.toInt().coerceAtLeast(0)
+    }
+
+    /** 来电或独占麦克风场景下不可 start/resume。 */
+    private fun isMicrophoneCaptureBlocked(): Boolean {
+        refreshMicrophoneCaptureBlockedState()
+        return microphoneCaptureBlocked
+    }
+
+    /** 根据当前 AudioManager 状态刷新占用标记，避免后台未收到 focus gain 时永久 blocked。 */
+    private fun refreshMicrophoneCaptureBlockedState() {
+        val manager = audioManager ?: return
+        when (manager.mode) {
+            AudioManager.MODE_IN_CALL, AudioManager.MODE_IN_COMMUNICATION -> {
+                microphoneCaptureBlocked = true
+            }
+            else -> microphoneCaptureBlocked = false
+        }
+    }
+
+    /** resume 前重新申请焦点并刷新占用状态。 */
+    private fun prepareForRecordingResume(): Boolean {
+        refreshMicrophoneCaptureBlockedState()
+        requestAudioFocus()
+        refreshMicrophoneCaptureBlockedState()
+        return !microphoneCaptureBlocked
     }
 }
