@@ -96,6 +96,9 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   /// 进行中的加载更多（[loadMore] 去重）
   Future<void>? _loadMoreInFlight;
 
+  /// 每次 [load] 递增；[loadMore] 完成后若代数不一致则丢弃结果，避免刷新与加载更多竞态。
+  int _loadGeneration = 0;
+
   /// 按 cursor 去重的进行中的列表网络请求（同一游标并发时复用同一 [Future]）
   final Map<String, Future<_CursorFetchResult>> _fetchMemoryListInFlight =
       <String, Future<_CursorFetchResult>>{};
@@ -147,11 +150,10 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   /// - **当前已有列表**（含 [OmiAllPage] 的 [RefreshIndicator] 手动下拉与程序化 [RefreshIndicatorState.show]）：不展示三态图，保持列表；失败则仍显示原数据
   /// - [listenMemoryRecordCreated] 等无列表场景仍直接调用本方法
   ///
-  /// 并发调用时复用同一次 [_loadImpl]，避免重复首屏请求与状态互相覆盖。
+  /// 并发调用时若已有进行中的刷新则直接 return，避免重复首屏请求。
   Future<void> load() async {
-    final Future<void>? inFlight = _loadInFlight;
-    if (inFlight != null) {
-      return inFlight;
+    if (_loadInFlight != null) {
+      return;
     }
     final Future<void> task = _loadImpl();
     _loadInFlight = task;
@@ -165,8 +167,20 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   }
 
   Future<void> _loadImpl() async {
+    final int generation = ++_loadGeneration;
     final List<MPMemoryEntry> before = List<MPMemoryEntry>.from(state.items);
     bool hasData = before.isNotEmpty;
+
+    if (hasData && state.isLoadingMore) {
+      emit(
+        OmiAllState(
+          phase: OmiAllPhase.loaded,
+          items: before,
+          hasMore: state.hasMore,
+          isLoadingMore: false,
+        ),
+      );
+    }
 
     // 首屏无数据时，优先用缓存兜底展示（离线也能看到上次列表）。
     if (!hasData) {
@@ -201,6 +215,9 @@ class OmiAllCubit extends Cubit<OmiAllState> {
     try {
       _cursor = '';
       final _CursorFetchResult result = await _fetchMemoryList(cursor: _cursor);
+      if (generation != _loadGeneration) {
+        return;
+      }
       final List<MPMemoryEntry> list = result.items;
 
       if (list.isEmpty) {
@@ -267,13 +284,13 @@ class OmiAllCubit extends Cubit<OmiAllState> {
 
   /// 加载更多：使用当前 [_cursor] 请求（对齐 [MemoryProvider.loadMoreMemories]）
   Future<void> loadMore() async {
+    if (_loadInFlight != null) return;
     if (state.phase != OmiAllPhase.loaded) return;
     if (state.isLoadingMore) return;
     if (!state.hasMore) return;
 
-    final Future<void>? inFlight = _loadMoreInFlight;
-    if (inFlight != null) {
-      return inFlight;
+    if (_loadMoreInFlight != null) {
+      return;
     }
 
     final Future<void> task = _loadMoreImpl();
@@ -288,10 +305,13 @@ class OmiAllCubit extends Cubit<OmiAllState> {
   }
 
   Future<void> _loadMoreImpl() async {
+    if (_loadInFlight != null) return;
     if (state.phase != OmiAllPhase.loaded) return;
     if (state.isLoadingMore) return;
     if (!state.hasMore) return;
 
+    final int generation = _loadGeneration;
+    final String cursor = _cursor;
     final List<MPMemoryEntry> current = List<MPMemoryEntry>.from(state.items);
     emit(
       OmiAllState(
@@ -304,7 +324,10 @@ class OmiAllCubit extends Cubit<OmiAllState> {
 
     try {
       final _CursorFetchResult result =
-      await _fetchMemoryList(cursor: _cursor);
+      await _fetchMemoryList(cursor: cursor);
+      if (generation != _loadGeneration) {
+        return;
+      }
       final List<MPMemoryEntry> next = result.items;
 
       if (next.isEmpty) {
@@ -329,6 +352,9 @@ class OmiAllCubit extends Cubit<OmiAllState> {
         ),
       );
     } on SocketException catch (_) {
+      if (generation != _loadGeneration) {
+        return;
+      }
       emit(
         OmiAllState(
           phase: OmiAllPhase.loaded,
@@ -338,6 +364,9 @@ class OmiAllCubit extends Cubit<OmiAllState> {
         ),
       );
     } on TimeoutException catch (_) {
+      if (generation != _loadGeneration) {
+        return;
+      }
       emit(
         OmiAllState(
           phase: OmiAllPhase.loaded,
@@ -347,6 +376,9 @@ class OmiAllCubit extends Cubit<OmiAllState> {
         ),
       );
     } catch (_) {
+      if (generation != _loadGeneration) {
+        return;
+      }
       emit(
         OmiAllState(
           phase: OmiAllPhase.loaded,
