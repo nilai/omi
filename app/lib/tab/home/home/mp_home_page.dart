@@ -118,7 +118,7 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
   }
 
   Future<void> _onRefresh() async {
-    _cubit.loadData();
+    await _cubit.loadData();
   }
 
   Future<void> _onTapHomeTodo(MPHomeTodoItem item) async {
