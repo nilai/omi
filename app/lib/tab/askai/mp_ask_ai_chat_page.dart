@@ -129,6 +129,11 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   late final ScrollController _scrollController;
   int _lastMessageCount = 0;
   bool _lastIsSending = false;
+  bool _isUserDragging = false;
+
+  /// 加载更早消息前记录滚动位置，用于 prepend 后恢复视口。
+  double? _loadMoreAnchorPixels;
+  double? _loadMoreAnchorMaxExtent;
 
   /// 用于检测流式回复：仅 [messages.length] / [isSending] 不变时正文仍在变长。
   int _lastMessagesContentLength = 0;
@@ -137,12 +142,46 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
   void initState() {
     super.initState();
     _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// [reverse: true] 时接近 [maxScrollExtent] 表示滑到最早消息一侧，触发加载更多。
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final ScrollPosition pos = _scrollController.position;
+    if (pos.maxScrollExtent <= 0) return;
+    if (pos.pixels < pos.maxScrollExtent - 200) return;
+
+    final MPAskAIChatCubit cubit = context.read<MPAskAIChatCubit>();
+    final MPAskAIChatState state = cubit.state;
+    if (state.phase != MPAskAIChatPhase.loaded) return;
+    if (state.isLoadingMore || !state.hasMore) return;
+
+    _loadMoreAnchorPixels = pos.pixels;
+    _loadMoreAnchorMaxExtent = pos.maxScrollExtent;
+    cubit.loadMore();
+  }
+
+  void _restoreScrollAfterLoadMore() {
+    final double? oldPixels = _loadMoreAnchorPixels;
+    final double? oldMaxExtent = _loadMoreAnchorMaxExtent;
+    if (oldPixels == null || oldMaxExtent == null) return;
+    _loadMoreAnchorPixels = null;
+    _loadMoreAnchorMaxExtent = null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      final ScrollPosition pos = _scrollController.position;
+      final double delta = pos.maxScrollExtent - oldMaxExtent;
+      _scrollController.jumpTo(oldPixels + delta);
+    });
   }
 
   void _onSubmit(BuildContext context, MPVoiceTextInputResult result) {
@@ -182,8 +221,13 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
         state.messages.length > prevCount &&
         state.messages.isNotEmpty &&
         state.messages.last.role == MPAskAIMessageRole.user;
-    final bool streamJustEnded = sendingChanged && !state.isSending;
-    if (!newUserBubble && !_isScrollNearBottom() && (contentGrowing || streamJustEnded)) {
+
+    /// 用户上滑阅读历史时，除非刚发出一条消息，否则不拉回底部。
+    if (!newUserBubble && !_isScrollNearBottom()) {
+      return;
+    }
+
+    if (_isUserDragging && !newUserBubble) {
       return;
     }
 
@@ -234,6 +278,9 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                 child: BlocConsumer<MPAskAIChatCubit, MPAskAIChatState>(
                   listener: (BuildContext context, MPAskAIChatState state) {
                     _tryAutoSendInitialMessage(state);
+                    if (_loadMoreAnchorPixels != null && !state.isLoadingMore) {
+                      _restoreScrollAfterLoadMore();
+                    }
                     _maybeAutoScroll(state);
                   },
                   builder: (BuildContext context, MPAskAIChatState state) {
@@ -254,7 +301,12 @@ class _MPAskAIChatViewState extends State<_MPAskAIChatView> {
                         ),
                       );
                     }
-                    return _ChatBody(state: state, scrollController: _scrollController);
+                    return _ChatBody(
+                      state: state,
+                      scrollController: _scrollController,
+                      onScrollDragStart: () => _isUserDragging = true,
+                      onScrollDragEnd: () => _isUserDragging = false,
+                    );
                   },
                 ),
               ),
@@ -315,10 +367,17 @@ class _ChatTopBar extends StatelessWidget {
 }
 
 class _ChatBody extends StatelessWidget {
-  const _ChatBody({required this.state, required this.scrollController});
+  const _ChatBody({
+    required this.state,
+    required this.scrollController,
+    required this.onScrollDragStart,
+    required this.onScrollDragEnd,
+  });
 
   final MPAskAIChatState state;
   final ScrollController scrollController;
+  final VoidCallback onScrollDragStart;
+  final VoidCallback onScrollDragEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -351,6 +410,9 @@ class _ChatBody extends StatelessWidget {
               ? _MessageList(
                   messages: state.messages,
                   scrollController: scrollController,
+                  isLoadingMore: state.isLoadingMore,
+                  onScrollDragStart: onScrollDragStart,
+                  onScrollDragEnd: onScrollDragEnd,
                 )
               : SingleChildScrollView(
                   controller: scrollController,
@@ -530,30 +592,53 @@ class _MessageList extends StatelessWidget {
   const _MessageList({
     required this.messages,
     required this.scrollController,
+    required this.isLoadingMore,
+    required this.onScrollDragStart,
+    required this.onScrollDragEnd,
   });
 
   final List<MPAskAIChatMessage> messages;
   final ScrollController scrollController;
+  final bool isLoadingMore;
+  final VoidCallback onScrollDragStart;
+  final VoidCallback onScrollDragEnd;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: scrollController,
-      reverse: true,
-      padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
-      cacheExtent: 360,
-      addAutomaticKeepAlives: false,
-      itemCount: messages.length,
-      itemBuilder: (BuildContext context, int index) {
-        final MPAskAIChatMessage message = messages[messages.length - 1 - index];
-        return RepaintBoundary(
-          child: _ChatMessageBubble(
-            key: ValueKey<String>(message.id),
-            message: message,
-            markdownDelay: Duration(milliseconds: index * 40),
-          ),
-        );
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification notification) {
+        if (notification is ScrollStartNotification && notification.dragDetails != null) {
+          onScrollDragStart();
+        } else if (notification is ScrollEndNotification) {
+          onScrollDragEnd();
+        }
+        return false;
       },
+      child: ListView.builder(
+        controller: scrollController,
+        reverse: true,
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 16),
+        cacheExtent: 360,
+        addAutomaticKeepAlives: true,
+        itemCount: messages.length + (isLoadingMore ? 1 : 0),
+        itemBuilder: (BuildContext context, int index) {
+          if (isLoadingMore && index == messages.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(
+                child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+            );
+          }
+          final MPAskAIChatMessage message = messages[messages.length - 1 - index];
+          return RepaintBoundary(
+            child: _ChatMessageBubble(
+              key: ValueKey<String>(message.id),
+              message: message,
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -562,11 +647,9 @@ class _ChatMessageBubble extends StatelessWidget {
   const _ChatMessageBubble({
     super.key,
     required this.message,
-    required this.markdownDelay,
   });
 
   final MPAskAIChatMessage message;
-  final Duration markdownDelay;
 
   @override
   Widget build(BuildContext context) {
@@ -623,10 +706,7 @@ class _ChatMessageBubble extends StatelessWidget {
               ),
               if (message.content.trim().isNotEmpty) ...<Widget>[
                 const SizedBox(height: 8),
-                _MPAskAIChatMarkdownContent(
-                  content: message.content,
-                  renderDelay: markdownDelay,
-                ),
+                _MPAskAIChatMarkdownContent(content: message.content),
               ],
             ],
           ),
@@ -696,79 +776,15 @@ class _MPAskAIChatCopyButtonState extends State<_MPAskAIChatCopyButton> {
   }
 }
 
-class _MPAskAIChatMarkdownContent extends StatefulWidget {
-  const _MPAskAIChatMarkdownContent({
-    required this.content,
-    this.renderDelay = Duration.zero,
-  });
+class _MPAskAIChatMarkdownContent extends StatelessWidget {
+  const _MPAskAIChatMarkdownContent({required this.content});
 
   final String content;
-  final Duration renderDelay;
-
-  @override
-  State<_MPAskAIChatMarkdownContent> createState() => _MPAskAIChatMarkdownContentState();
-}
-
-class _MPAskAIChatMarkdownContentState extends State<_MPAskAIChatMarkdownContent> {
-  bool _showMarkdown = false;
-  Timer? _renderTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _scheduleMarkdownRender();
-  }
-
-  @override
-  void didUpdateWidget(_MPAskAIChatMarkdownContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (_showMarkdown) {
-      return;
-    }
-    if (oldWidget.renderDelay != widget.renderDelay) {
-      _scheduleMarkdownRender();
-    }
-  }
-
-  void _scheduleMarkdownRender() {
-    _renderTimer?.cancel();
-    if (widget.renderDelay == Duration.zero) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() => _showMarkdown = true);
-        }
-      });
-      return;
-    }
-    _renderTimer = Timer(widget.renderDelay, () {
-      if (mounted) {
-        setState(() => _showMarkdown = true);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _renderTimer?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
-    if (!_showMarkdown) {
-      return Text(
-        widget.content,
-        style: OmiTextStyle.create(
-          color: mainTextColor,
-          fontSize: OmiFontSize.t8_17,
-          fontWeight: OmiFontWeight.regular,
-          height: 1.4,
-        ),
-      );
-    }
-
     return MarkdownBody(
-      data: widget.content,
+      data: content,
       selectable: true,
       shrinkWrap: true,
       styleSheet: _mpAskAIChatMarkdownStyle(),
