@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_date_utils.dart';
@@ -633,6 +634,11 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     emit(state.copyWith(data: state.data!.copyWith(title: t, navTitle: t)));
   }
 
+  /// 开始播放前暂停首页长录音等（须在占用 AudioSession 的 bind/play 之前调用）。
+  Future<void> _pauseActiveLocalRecordingBeforePlayback() async {
+    await MPGlobalRecordingCoordinator.instance.notifyExternalPlaybackStarted();
+  }
+
   /// 应用进入后台（[AppLifecycleState.paused]）时暂停当前播放，与点击暂停行为一致。
   void pauseAudioOnAppBackground() {
     if (isClosed) {
@@ -664,6 +670,10 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
       _syncAudioPlayingFlag();
       _lastPlaybackEmitBucket = -1;
       return true;
+    }
+    await _pauseActiveLocalRecordingBeforePlayback();
+    if (isClosed) {
+      return false;
     }
     final String? localPath = await _ensurePlayableLocalPath(cur.data!);
     if (localPath == null || localPath.isEmpty) {
@@ -718,6 +728,10 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     }
     final bool rebound = _playingLocalPath != localPath;
     if (rebound) {
+      await _pauseActiveLocalRecordingBeforePlayback();
+      if (isClosed) {
+        return false;
+      }
       _armSuppressPlaybackCompleted();
       await MPAudioLocalRecordsUtil.bindLocalAudioForPlayback(_audioPlayer, localPath);
       _playingLocalPath = localPath;
@@ -759,6 +773,10 @@ class OmiMemoryDetailCubit extends Cubit<OmiMemoryDetailState> {
     _lastPlaybackEmitBucket = -1;
 
     if (!_audioPlayer.playing) {
+      await _pauseActiveLocalRecordingBeforePlayback();
+      if (isClosed) {
+        return false;
+      }
       unawaited(
         _audioPlayer.play().catchError((Object e, StackTrace st) {
           if (isClosed) {

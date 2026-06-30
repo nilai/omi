@@ -1,3 +1,5 @@
+import 'package:memo_pin/audio/record/mp_native_recorder.dart';
+
 /// 全局麦克风录音仲裁：任意入口即将「独占」录音前，先暂停其它持有者；
 /// 被暂停的一侧仅能通过用户在本场景的后续手势恢复，不会自动抢回麦克风。
 class MPGlobalRecordingCoordinator {
@@ -16,6 +18,10 @@ class MPGlobalRecordingCoordinator {
 
   /// 外接 BLE 设备进入「录音中」时：暂停本机采集等（与 [registerBleDeviceRecordingStopHandler] 配对）。
   final Map<Object, Future<void> Function()> _bleDeviceRecordingStopHandlers =
+      <Object, Future<void> Function()>{};
+
+  /// 应用内开始播放音频时：暂停本机长录音等（与 [registerPlaybackPauseHandler] 配对）。
+  final Map<Object, Future<void> Function()> _playbackPauseHandlers =
       <Object, Future<void> Function()>{};
 
   /// 混音录音：系统打断开始/结束（与 [registerMixModeInterruptionHandler] 配对）。
@@ -53,6 +59,28 @@ class MPGlobalRecordingCoordinator {
   Future<void> notifyBleDeviceRecordingStarted() async {
     for (final MapEntry<Object, Future<void> Function()> e
         in _bleDeviceRecordingStopHandlers.entries) {
+      await _safeInterrupt(e.value);
+    }
+  }
+
+  /// 注册：应用内开始播放音频 [notifyExternalPlaybackStarted] 时回调（须 [unregisterPlaybackPauseHandler]）。
+  void registerPlaybackPauseHandler(
+    Object token,
+    Future<void> Function() onExternalPlaybackStarted,
+  ) {
+    _playbackPauseHandlers[token] = onExternalPlaybackStarted;
+  }
+
+  /// 解除 [registerPlaybackPauseHandler]。
+  void unregisterPlaybackPauseHandler(Object token) {
+    _playbackPauseHandlers.remove(token);
+  }
+
+  /// 应用内开始播放音频：先暂停原生采集，再同步 Dart 侧录音 UI（不更改 [_exclusiveOwner]）。
+  Future<void> notifyExternalPlaybackStarted() async {
+    await MPNativeRecorder.pauseActiveCaptureIfNeeded();
+    for (final MapEntry<Object, Future<void> Function()> e
+        in _playbackPauseHandlers.entries) {
       await _safeInterrupt(e.value);
     }
   }

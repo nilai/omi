@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:http/http.dart' as http;
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
+import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/cache/omi_cache_manager.dart';
 import 'package:memo_pin/cache/omi_server_cache.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
@@ -209,7 +210,15 @@ class MPAudioDetailCubit extends Cubit<MPAudioDetailState> {
     _tickPlaybackUiFromPlayer();
   }
 
+  Future<void> _pauseActiveLocalRecordingBeforePlayback() async {
+    await MPGlobalRecordingCoordinator.instance.notifyExternalPlaybackStarted();
+  }
+
   Future<bool> _ensureBoundLocalPath() async {
+    await _pauseActiveLocalRecordingBeforePlayback();
+    if (isClosed) {
+      return false;
+    }
     final String? localPath = await _ensurePlayableLocalPath();
     if (localPath == null || localPath.isEmpty) {
       MPToastUtils.showMessage('Failed to download audio. Please try again later.');

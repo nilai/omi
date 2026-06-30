@@ -86,6 +86,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   /// 全局录音仲裁持有者标识。
   late final Object _recordingOwnerToken;
   final Object _bleDeviceRecordingStopToken = Object();
+  final Object _playbackPauseToken = Object();
 
   static const Color _kBlue = Color(0xFF007AFF);
   static const Color _kGreyCircleBg = Color(0xFFE8E8E8);
@@ -167,6 +168,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       _bleDeviceRecordingStopToken,
       _onBleDeviceRecordingStartedPauseLocal,
     );
+    MPGlobalRecordingCoordinator.instance.registerPlaybackPauseHandler(
+      _playbackPauseToken,
+      _onExternalPlaybackStartedPauseLocal,
+    );
     _waveController = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..repeat();
   }
 
@@ -180,6 +185,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     unawaited(_releaseRecorder(deleteFile: true));
     MPGlobalRecordingCoordinator.instance.unregisterMixModeInterruptionHandler(_recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance.unregisterBleDeviceRecordingStopHandler(_bleDeviceRecordingStopToken);
+    MPGlobalRecordingCoordinator.instance.unregisterPlaybackPauseHandler(_playbackPauseToken);
     MPGlobalRecordingCoordinator.instance.unregister(_recordingOwnerToken);
     super.dispose();
   }
@@ -220,6 +226,41 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     await MPRecordingBackgroundSupport.deactivateAfterRecording();
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
+  }
+
+  /// 详情页等开始播放音频：同步暂停 UI（原生层已由 [MPGlobalRecordingCoordinator.notifyExternalPlaybackStarted] 先暂停）。
+  Future<void> _onExternalPlaybackStartedPauseLocal() async {
+    if (!mounted) {
+      return;
+    }
+    await _applyPausedUiAfterExternalPlayback();
+  }
+
+  /// 外部播放触发暂停：不检查 [_busy]，确保 UI 与原生采集状态一致。
+  Future<void> _applyPausedUiAfterExternalPlayback() async {
+    if (_step != _MPAudioRecordStep.recording || _recordPath == null || !_nativeRecorderOpen) {
+      return;
+    }
+    if (_isPaused) {
+      return;
+    }
+    if (await _nativeRecorder.isRecording()) {
+      final bool paused = await _pauseNativeRecording();
+      if (!mounted) {
+        return;
+      }
+      if (!paused && _nativeCapturing) {
+        return;
+      }
+    }
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _isPaused = true;
+      _nativeCapturing = false;
+    });
+    unawaited(_syncDisplayDurationFromFile());
   }
 
   /// 外接 MemoPin 开始录音：引导态仅提示；录音态则暂停本机采集（须用户手动点播放恢复，不自动续录）。

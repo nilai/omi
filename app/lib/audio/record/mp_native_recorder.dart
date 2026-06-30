@@ -126,6 +126,22 @@ class MPNativeRecorder {
     }
   }
 
+  static final MPNativeRecorder _shared = MPNativeRecorder();
+
+  /// 原生单例录音器若在采集中则暂停（不依赖 Dart 弹窗回调；供播放等场景释放麦克风）。
+  static Future<bool> pauseActiveCaptureIfNeeded() async {
+    try {
+      if (!await _shared.isRecording()) {
+        return false;
+      }
+      await _shared.pauseSegment();
+      return true;
+    } catch (e, st) {
+      debugPrint('MPNativeRecorder.pauseActiveCaptureIfNeeded: $e\n$st');
+      return false;
+    }
+  }
+
   Future<String?> currentPath() async {
     try {
       return await _channel.invokeMethod<String>('currentPath');
