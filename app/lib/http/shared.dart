@@ -89,16 +89,19 @@ class ApiTools {
 
   /// 判断 token 是否过期
   static bool tokenIsExpired() {
-    return false;
     final DateTime? tokenExpiresTime = MPUser.instance.tokenExpiresTime;
     if (tokenExpiresTime == null) {
       return false;
     }
-    return DateTime.now().isAfter(tokenExpiresTime) ||
+    final bool isExpired = DateTime.now().isAfter(tokenExpiresTime) ||
         tokenExpiresTime.isAtSameMomentAs(DateTime.fromMillisecondsSinceEpoch(0));
+    return isExpired;
   }
 
   static Completer<void>? _tokenRefreshCompleter;
+
+  /// 是否正在执行 token refresh，供 getAuthHeader 避免递归触发 refresh。
+  static bool get isRefreshingToken => _tokenRefreshCompleter != null;
 
   static Future<void> refreshToken() async {
     final String refreshToken = MPUser.instance.refreshToken;
@@ -133,17 +136,19 @@ class ApiTools {
 }
 
 Future<String> getAuthHeader() async {
-  if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
-    // 刷新 token
-    await ApiTools.refreshTokenLocked();
-  }
-
-  if (!ApiTools.hasAccessToken()) {
-    final String refreshToken = MPUser.instance.refreshToken;
-    if (refreshToken.isEmpty) {
-      return '';
+  // refresh 流程中不再触发 refresh，避免与 refreshTokenLocked 互相等待导致死锁。
+  if (!ApiTools.isRefreshingToken) {
+    if (ApiTools.hasAccessToken() && ApiTools.tokenIsExpired()) {
+      await ApiTools.refreshTokenLocked();
     }
-    await ApiTools.refreshTokenLocked();
+
+    if (!ApiTools.hasAccessToken()) {
+      final String refreshToken = MPUser.instance.refreshToken;
+      if (refreshToken.isEmpty) {
+        return '';
+      }
+      await ApiTools.refreshTokenLocked();
+    }
   }
   final String accessToken = ApiTools.accessToken;
   return accessToken.isEmpty ? '' : 'Bearer $accessToken';
@@ -211,11 +216,26 @@ Future<Map<String, String>> buildHeaders({
   return headers;
 }
 
+/// 无需携带 Authorization、也不应触发 token refresh 的公开 auth 接口。
+const Set<String> _kPublicAuthApiPaths = <String>{
+  'api/v2/auth/send-code',
+  'api/v2/auth/register',
+  'api/v2/auth/login',
+  'api/v2/auth/refresh',
+  'api/v2/auth/reset/send-code',
+  'api/v2/auth/reset/confirm',
+};
+
 bool _isRequiredAuthCheck(String url) {
-  if (url.contains(Env.apiBaseUrl!)) {
-    return true;
+  if (!url.contains(Env.apiBaseUrl!)) {
+    return false;
   }
-  return false;
+  for (final String path in _kPublicAuthApiPaths) {
+    if (url.contains(path)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 Future<http.StreamedResponse> makeRawApiCall({

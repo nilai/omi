@@ -30,7 +30,7 @@ Future<void> main() async {
   await MPTimeUtils.refreshTimeZone();
   await OmiServerCache().initialize();
   Env.init();
-  PlatformManager.initializeServices();
+  await PlatformManager.initializeServices();
   await MPUuidUtil.instance.uuid;
   if (ApiTools.hasAccessToken()) {
     await MPAppSessionBootstrap.run(fromLoginSuccess: false);
