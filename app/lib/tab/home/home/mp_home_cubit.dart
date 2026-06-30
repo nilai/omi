@@ -167,6 +167,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   /// 本地待传音频批量上传任务是否仍在执行（含冷/热启动触发的队列上传）。
   bool _pendingLocalAudioUploadRunning = false;
 
+  /// 是否正在拉取首页聚合数据，避免并发重复请求。
+  bool _isLoadingData = false;
+
   static MPHomeState _initialState() {
     return MPHomeState(
       upNextTodos: const <MPHomeTodoItem>[],
@@ -384,14 +387,22 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   /// 拉取首页聚合数据：空列表时先展示 Hive 再请求后台；非空则直接请求后台；成功后更新 Hive。
   Future<void> loadData() async {
-    if (_isHomeMainListsEmpty(state)) {
-      await _tryEmitCachedOverviewWhenEmpty();
+    if (_isLoadingData) {
+      return;
     }
-    final MPGetHomeOverviewResponse? response =
-        await mp_home_api.getHomeOverview(MPGetHomeOverviewRequest());
-    if (response != null && response.baseResp.code == 0) {
-      _emitFromOverviewResponse(response);
-      await _persistHomeOverviewCache(response);
+    _isLoadingData = true;
+    try {
+      if (_isHomeMainListsEmpty(state)) {
+        await _tryEmitCachedOverviewWhenEmpty();
+      }
+      final MPGetHomeOverviewResponse? response =
+          await mp_home_api.getHomeOverview(MPGetHomeOverviewRequest());
+      if (response != null && response.baseResp.code == 0) {
+        _emitFromOverviewResponse(response);
+        await _persistHomeOverviewCache(response);
+      }
+    } finally {
+      _isLoadingData = false;
     }
   }
 
