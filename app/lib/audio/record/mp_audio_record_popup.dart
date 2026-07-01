@@ -121,7 +121,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
   bool _isPaused = false;
 
-  /// 是否因系统打断（腾讯会议/来电等）而暂停；用于会议结束后自动续录。
+  /// 是否因系统打断（腾讯会议/来电等）而暂停。
   bool _pausedBySystemInterruption = false;
 
   StreamSubscription<MPNativeRecorderEvent>? _nativeRecorderEventsSub;
@@ -199,7 +199,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     _isPaused = false;
     if (wasOpen) {
       try {
-        if (await _nativeRecorder.isRecording()) {
+        if (_recordPath != null) {
           await _nativeRecorder.pauseSegment();
         }
       } catch (_) {}
@@ -244,16 +244,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (_isPaused) {
       return;
     }
-    if (await _nativeRecorder.isRecording()) {
-      final bool paused = await _pauseNativeRecording();
-      if (!mounted) {
-        return;
-      }
-      if (!paused && _nativeCapturing) {
-        return;
-      }
-    }
+    final bool paused = await _pauseNativeRecording();
     if (!mounted) {
+      return;
+    }
+    if (!paused && _nativeCapturing) {
       return;
     }
     setState(() {
@@ -301,9 +296,11 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   }
 
   /// 整段暂停（iOS [AVAudioRecorder.pause] / Android [MediaRecorder.pause]）。
+  ///
+  /// 来电等系统打断时 native 可能已停止采集，仍须调用 [pauseSegment] 以同步时长并标记暂停态。
   Future<bool> _pauseNativeRecording() async {
-    if (!await _nativeRecorder.isRecording()) {
-      return true;
+    if (!_nativeRecorderOpen || _recordPath == null) {
+      return false;
     }
     try {
       final String? pausedPath = await _nativeRecorder.pauseSegment();
@@ -312,7 +309,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       }
       await Future<void>.delayed(const Duration(milliseconds: 80));
       _nativeCapturing = false;
-      return true;
+      return pausedPath != null;
     } catch (e, st) {
       debugPrint('_pauseNativeRecording: $e\n$st');
       return false;
@@ -365,7 +362,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (!mounted) {
       return;
     }
-    final int seconds = ms ~/ 1000;
+    final int seconds = math.max(ms ~/ 1000, _displayDurationSeconds);
     if (seconds == _displayDurationSeconds) {
       return;
     }
@@ -461,9 +458,17 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     await _pauseRecordingDueToExternalInterruption();
   }
 
-  /// 系统混音打断结束：会议/通话挂断后自动续录（参考 Get 笔记）。
+  /// 系统混音打断结束：刷新会话与计时，保持暂停，须用户手动点继续。
   Future<void> _onMixModeSystemInterruptionEnded() async {
-    await _attemptAutoResumeAfterSystemInterruption();
+    if (!mounted || _step != _MPAudioRecordStep.recording || !_nativeRecorderOpen) {
+      return;
+    }
+    _pausedBySystemInterruption = false;
+    await _prepareBeforeRecordingResume();
+    if (!mounted) {
+      return;
+    }
+    unawaited(_syncDisplayDurationFromFile());
   }
 
   void _onNativeRecorderEvent(MPNativeRecorderEvent event) {
@@ -472,58 +477,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         unawaited(_onMixModeSystemInterruptionBegan());
       case MPNativeRecorderEventType.interruptionEnded:
         unawaited(_onMixModeSystemInterruptionEnded());
-    }
-  }
-
-  /// 会议/通话结束后尝试自动续录；麦克风仍被占用时不触发。
-  Future<void> _attemptAutoResumeAfterSystemInterruption() async {
-    if (!mounted ||
-        _step != _MPAudioRecordStep.recording ||
-        !_pausedBySystemInterruption ||
-        !_isPaused ||
-        _busy ||
-        !_nativeRecorderOpen ||
-        _recordPath == null) {
-      return;
-    }
-    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
-      return;
-    }
-    await _prepareBeforeRecordingResume();
-    if (!mounted) {
-      return;
-    }
-    if (await _isMicrophoneCaptureBlocked()) {
-      return;
-    }
-    if (!mounted) {
-      return;
-    }
-    final int sessionId = _recorderSessionId;
-    setState(() => _busy = true);
-    try {
-      await MPGlobalRecordingCoordinator.instance.beforeLocalRecordingStarts(_recordingOwnerToken);
-      if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
-        return;
-      }
-      final bool resumed = await _resumeNativeRecording();
-      if (!mounted || sessionId != _recorderSessionId) {
-        return;
-      }
-      if (resumed) {
-        setState(() {
-          _isPaused = false;
-          _pausedBySystemInterruption = false;
-          _busy = false;
-        });
-        unawaited(_syncDisplayDurationFromFile());
-        return;
-      }
-      setState(() => _busy = false);
-    } catch (_) {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
     }
   }
 

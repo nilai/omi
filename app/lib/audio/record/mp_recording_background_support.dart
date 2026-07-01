@@ -300,7 +300,7 @@ class MPRecordingBackgroundSupport {
     }
   }
 
-  /// 混音模式：系统音频打断结束，补 session 并通知 UI 自动续录。
+  /// 混音模式：系统音频打断结束，补 session 并通知 UI 刷新（不自动续录）。
   static Future<void> _handleMixModeSystemInterruptionEnded() async {
     if (!_recordingInfrastructureActive || !_mixWithOthersEnabled) {
       return;

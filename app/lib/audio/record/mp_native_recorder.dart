@@ -131,11 +131,12 @@ class MPNativeRecorder {
   /// 原生单例录音器若在采集中则暂停（不依赖 Dart 弹窗回调；供播放等场景释放麦克风）。
   static Future<bool> pauseActiveCaptureIfNeeded() async {
     try {
-      if (!await _shared.isRecording()) {
+      final String? path = await _shared.currentPath();
+      if (path == null || path.isEmpty) {
         return false;
       }
-      await _shared.pauseSegment();
-      return true;
+      final String? pausedPath = await _shared.pauseSegment();
+      return pausedPath != null && pausedPath.isNotEmpty;
     } catch (e, st) {
       debugPrint('MPNativeRecorder.pauseActiveCaptureIfNeeded: $e\n$st');
       return false;

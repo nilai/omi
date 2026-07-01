@@ -14,6 +14,10 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
   private var interruptionObserver: NSObjectProtocol?
   /// 系统音频打断（来电、独占麦克风 App 等）进行中。
   private var interruptionActive = false
+  /// 用户或系统打断后处于暂停态（与 [AVAudioRecorder.isRecording] 解耦）。
+  private var isPaused = false
+  /// 已写入时长（毫秒）；暂停/中断时从 [AVAudioRecorder.currentTime] 同步，避免 UI 回退。
+  private var trackedDurationMs: Double = 0
 
   static func register(with registrar: FlutterPluginRegistrar) {
     let instance = MPNativeRecorderPlugin()
@@ -77,7 +81,7 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
         }
       }
     case "isRecording":
-      result(recorder?.isRecording ?? false)
+      result(isActivelyCapturing())
     case "currentPath":
       result(currentPath)
     case "fileSize":
@@ -132,6 +136,7 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     switch type {
     case .began:
       interruptionActive = true
+      _ = pauseRecording()
       eventSink?(["type": "interruptionBegan"])
     case .ended:
       interruptionActive = false
@@ -142,10 +147,42 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     }
   }
 
+  /// 是否正在向文件写入（非暂停态）。
+  private func isActivelyCapturing() -> Bool {
+    guard let rec = recorder, !isPaused else { return false }
+    return rec.isRecording
+  }
+
+  /// 将 [AVAudioRecorder.currentTime] 合并进 [trackedDurationMs]。
+  private func syncDurationFromRecorder() {
+    guard let rec = recorder else { return }
+    trackedDurationMs = max(trackedDurationMs, rec.currentTime * 1000.0)
+  }
+
+  private func resetDurationTracking() {
+    trackedDurationMs = 0
+    isPaused = false
+  }
+
   /// 当前录音文件已写入时长（毫秒）；无录音时为 0。
   private func currentRecordingDurationMs() -> Int {
-    guard let rec = recorder else { return 0 }
-    return Int(rec.currentTime * 1000.0)
+    var tracked = trackedDurationMs
+    if let rec = recorder, rec.isRecording {
+      tracked = max(tracked, rec.currentTime * 1000.0)
+    }
+    if let path = currentPath {
+      tracked = max(tracked, Double(readFileDurationMs(path: path)))
+    }
+    return max(0, Int(tracked))
+  }
+
+  private func readFileDurationMs(path: String) -> Int {
+    let url = URL(fileURLWithPath: path)
+    guard FileManager.default.fileExists(atPath: path) else { return 0 }
+    let asset = AVURLAsset(url: url)
+    let seconds = CMTimeGetSeconds(asset.duration)
+    guard seconds.isFinite, seconds > 0 else { return 0 }
+    return Int(seconds * 1000.0)
   }
 
   /// 来电或独占麦克风场景下不可 start/resume。
@@ -197,11 +234,18 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
     if mixWithOthers {
       _ = MPRecordingSessionPlugin.applyMixRecordingSession()
     }
-    if let existing = recorder, currentPath == path, !existing.isRecording {
+    if currentPath == path, recorder != nil {
       return resumeRecording()
     }
-    stopRecorderOnly()
+    if currentPath != nil {
+      stopRecorderOnly()
+      resetDurationTracking()
+    }
     let url = URL(fileURLWithPath: path)
+    if FileManager.default.fileExists(atPath: path) {
+      NSLog("%@ start refused: file already exists path=%@", Self.logTag, path)
+      return false
+    }
     try? FileManager.default.createDirectory(
       at: url.deletingLastPathComponent(),
       withIntermediateDirectories: true
@@ -215,6 +259,8 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       }
       recorder = newRecorder
       currentPath = path
+      isPaused = false
+      trackedDurationMs = 0
       return true
     } catch {
       NSLog("%@ start error: %@ path=%@", Self.logTag, error.localizedDescription, path)
@@ -224,47 +270,57 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
 
   /// 暂停整段录音（不 stop，保留同一 AVAudioRecorder 实例）。
   private func pauseRecording() -> String? {
-    guard let path = currentPath, let rec = recorder else { return nil }
-    if rec.isRecording {
-      rec.pause()
+    guard let path = currentPath else { return nil }
+    if let rec = recorder {
+      syncDurationFromRecorder()
+      if rec.isRecording {
+        rec.pause()
+      }
     }
+    isPaused = true
     return path
   }
 
-  /// 在同文件上继续录音（响应 App UI 或系统打断结束）。
+  /// 在同文件上继续录音（仅 [record]，禁止 [prepareToRecord] 以免覆盖已有内容）。
   @discardableResult
   private func resumeRecording() -> Bool {
     guard let rec = recorder, currentPath != nil else { return false }
-    if rec.isRecording {
+    if rec.isRecording, !isPaused {
       return true
     }
-    _ = prepareForRecordingResume()
-    if rec.record() {
-      return true
-    }
-    guard rec.prepareToRecord(), rec.record() else {
-      NSLog("%@ resume record() failed path=%@", Self.logTag, currentPath ?? "")
+    if isMicrophoneCaptureBlocked() {
       return false
     }
+    guard prepareForRecordingResume() else { return false }
+    if isMicrophoneCaptureBlocked() {
+      return false
+    }
+    guard rec.record() else {
+      NSLog("%@ resume record() failed path=%@ trackedMs=%.0f", Self.logTag, currentPath ?? "", trackedDurationMs)
+      return false
+    }
+    isPaused = false
     return true
   }
 
   private func stopRecorderOnly() {
+    syncDurationFromRecorder()
     recorder?.stop()
     recorder = nil
   }
 
   /// 停止整段录音并返回最终文件路径。
   private func finish(outputPath: String) -> String? {
+    syncDurationFromRecorder()
     if let rec = recorder {
       if rec.isRecording {
         rec.stop()
       } else {
-        // paused 状态也必须 stop 才能正确 finalize 文件。
         rec.stop()
       }
     }
     recorder = nil
+    isPaused = false
     guard let path = currentPath else { return nil }
     currentPath = nil
     if path == outputPath {
@@ -291,5 +347,6 @@ final class MPNativeRecorderPlugin: NSObject, FlutterPlugin, FlutterStreamHandle
       try? FileManager.default.removeItem(atPath: path)
     }
     currentPath = nil
+    resetDurationTracking()
   }
 }

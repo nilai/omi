@@ -55,6 +55,7 @@ object MPNativeRecorderPlugin {
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT,
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
                 microphoneCaptureBlocked = true
+                pauseRecordingInternal()
                 eventSink?.success(mapOf("type" to "interruptionBegan"))
             }
         }
@@ -102,7 +103,7 @@ object MPNativeRecorderPlugin {
                         val outputPath = call.argument<String>("outputPath")
                         result.success(if (outputPath.isNullOrBlank()) null else finish(outputPath))
                     }
-                    "isRecording" -> result.success(recorder != null && !isPaused)
+                    "isRecording" -> result.success(isActivelyCapturing())
                     "currentPath" -> result.success(currentPath)
                     "fileSize" -> {
                         val path = call.argument<String>("path")
@@ -120,7 +121,7 @@ object MPNativeRecorderPlugin {
         }
     }
 
-    /** 混音模式申请焦点并监听恢复；不在失去焦点时自动 pause，避免锁屏误触。 */
+    /** 混音模式申请焦点并监听恢复；来电/独占麦克风时 native 层同步 pause。 */
     private fun requestAudioFocus() {
         val manager = audioManager ?: return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -174,9 +175,20 @@ object MPNativeRecorderPlugin {
         audioFocusRequest = null
     }
 
+    private fun isActivelyCapturing(): Boolean {
+        return recorder != null && !isPaused
+    }
+
     private fun startRecording(path: String): Boolean {
-        if (recorder != null && currentPath == path && isPaused) {
-            return resumeRecordingInternal()
+        if (currentPath == path && (recorder != null || accumulatedDurationMs > 0L)) {
+            return if (isPaused) {
+                resumeRecordingInternal()
+            } else {
+                false
+            }
+        }
+        if (File(path).exists() && File(path).length() > 0L) {
+            return false
         }
         commitActiveSegment()
         releaseRecorderOnly()
@@ -227,16 +239,23 @@ object MPNativeRecorderPlugin {
     /** 暂停整段录音；API 24+ 使用 [MediaRecorder.pause]，低版本 stop 后无法续录。 */
     private fun pauseRecordingInternal(): String? {
         val path = currentPath ?: return null
-        val rec = recorder ?: return null
+        commitActiveSegment()
+        val rec = recorder
+        if (rec == null) {
+            isPaused = true
+            return path
+        }
+        if (isPaused) {
+            return path
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             try {
-                commitActiveSegment()
                 rec.pause()
-                isPaused = true
-                return path
             } catch (_: Exception) {
-                return null
+                // 系统可能已停止采集；保留 accumulatedDurationMs，仅标记暂停。
             }
+            isPaused = true
+            return path
         }
         releaseRecorderOnly()
         isPaused = true
@@ -247,7 +266,7 @@ object MPNativeRecorderPlugin {
     private fun resumeRecordingInternal(): Boolean {
         val rec = recorder ?: return false
         if (!isPaused) {
-            return true
+            return isActivelyCapturing()
         }
         prepareForRecordingResume()
         if (microphoneCaptureBlocked) {
