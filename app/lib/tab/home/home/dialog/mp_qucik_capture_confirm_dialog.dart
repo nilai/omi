@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../common/mp_dismissible_modal_backdrop.dart';
 import '../../../../http/schema/mp_todo.dart';
 import '../../../../utils/mp_time_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
@@ -83,7 +82,8 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
     return showModalBottomSheet<MPQuickCaptureConfirmResult>(
       context: context,
       isScrollControlled: true,
-      isDismissible: true,
+      isDismissible: false,
+      enableDrag: false,
       useSafeArea: false,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
@@ -648,52 +648,50 @@ class _MPQucikCaptureConfirmDialogState
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: keyboardInset),
-      child: MPDismissibleModalBackdrop(
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: SafeArea(
-            top: false,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxHeight: maxHeight),
-              child: Padding(
-                padding: EdgeInsets.only(bottom: safeBottom),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    _buildHeader(),
-                    Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            _buildSectionTitle('ORIGINAL TEXT'),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: maxHeight),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: safeBottom),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  _buildHeader(),
+                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          _buildSectionTitle('ORIGINAL TEXT'),
+                          const SizedBox(height: 10),
+                          _buildOriginalTextCard(),
+                          if (_rows.isNotEmpty) ...<Widget>[
+                            const SizedBox(height: 16),
+                            Container(
+                              height: 1,
+                              color: lineColor.withValues(alpha: 0.8),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildSectionTitle('STRUCTURED SUGGESTIONS'),
                             const SizedBox(height: 10),
-                            _buildOriginalTextCard(),
-                            if (_rows.isNotEmpty) ...<Widget>[
-                              const SizedBox(height: 16),
-                              Container(
-                                height: 1,
-                                color: lineColor.withValues(alpha: 0.8),
-                              ),
-                              const SizedBox(height: 16),
-                              _buildSectionTitle('STRUCTURED SUGGESTIONS'),
-                              const SizedBox(height: 10),
-                              _buildIssuesCard(),
-                            ],
+                            _buildIssuesCard(),
                           ],
-                        ),
+                        ],
                       ),
                     ),
-                    Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
-                    _buildBottomButtons(),
-                  ],
-                ),
+                  ),
+                  Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                  _buildBottomButtons(),
+                ],
               ),
             ),
           ),
