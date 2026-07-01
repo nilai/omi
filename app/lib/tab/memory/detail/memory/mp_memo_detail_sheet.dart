@@ -15,6 +15,11 @@ import '../../../../utils/omi_image_loader.dart';
 
 const Color _kMPMemoHighlightAccent = Color(0xFFFFB340);
 
+/// Memo 正文展示，与 Execution Insight 一致使用 [SelectableText.rich]。
+Widget _mpMemoSelectableBody(String text, TextStyle style) {
+  return SelectableText.rich(TextSpan(text: text, style: style));
+}
+
 /// Memo 详情弹窗样式：Manual / Voice / Highlight（与设计稿一致）。
 enum MPMemoDetailSheetVariant {
   /// 灰色铅笔 +「Manual Memo」，分段分隔线，可选「Linked memory (optional)」（正文加粗）。
@@ -291,9 +296,9 @@ Future<void> showMPMemoDetailSheet(
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
+                    child: _mpMemoSelectableBody(
                       manualMemoText,
-                      style: OmiTextStyle.create(
+                      OmiTextStyle.create(
                         fontSize: OmiFontSize.t6_15,
                         fontWeight: OmiFontWeight.regular,
                         color: mainTextColor,
@@ -319,9 +324,9 @@ Future<void> showMPMemoDetailSheet(
                     const SizedBox(height: 8),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
+                      child: _mpMemoSelectableBody(
                         linkedMemoryText,
-                        style: OmiTextStyle.create(
+                        OmiTextStyle.create(
                           fontSize: OmiFontSize.t6_15,
                           fontWeight: OmiFontWeight.bold,
                           color: mainTextColor,
@@ -361,9 +366,9 @@ Future<void> showMPMemoDetailSheet(
                   const SizedBox(height: 12),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
+                    child: _mpMemoSelectableBody(
                       voiceTitle,
-                      style: OmiTextStyle.create(
+                      OmiTextStyle.create(
                         fontSize: OmiFontSize.t8_17,
                         fontWeight: OmiFontWeight.bold,
                         color: mainTextColor,
@@ -375,9 +380,9 @@ Future<void> showMPMemoDetailSheet(
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
+                      child: _mpMemoSelectableBody(
                         voiceBody,
-                        style: OmiTextStyle.create(
+                        OmiTextStyle.create(
                           fontSize: OmiFontSize.t6_15,
                           fontWeight: OmiFontWeight.regular,
                           color: mainTextColor,
@@ -441,9 +446,9 @@ Future<void> showMPMemoDetailSheet(
                           const SizedBox(height: 16),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text(
+                            child: _mpMemoSelectableBody(
                               highlightMemoText,
-                              style: OmiTextStyle.create(
+                              OmiTextStyle.create(
                                 fontSize: OmiFontSize.t6_15,
                                 fontWeight: OmiFontWeight.regular,
                                 color: mainTextColor,

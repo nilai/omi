@@ -292,8 +292,8 @@ class _MPQucikCaptureConfirmDialogState
     });
   }
 
-  /// 保存当前编辑内容并返回普通列表态。
-  void _saveEdit() {
+  /// 将编辑框中的内容同步到数据源（不改变编辑态 UI）。
+  void _commitPendingEdit() {
     final int? index = _editingIndex;
     if (index == null || _editingController == null) {
       return;
@@ -307,13 +307,24 @@ class _MPQucikCaptureConfirmDialogState
       if (next.isNotEmpty) {
         _rows[index].text = next;
       }
-    } else {
+    }
+  }
+
+  /// 保存当前编辑内容并返回普通列表态。
+  void _saveEdit() {
+    if (_editingIndex == null || _editingController == null) {
       return;
     }
+    _commitPendingEdit();
     _editingController?.dispose();
     _editingController = null;
     _editingFocusNode.unfocus();
     setState(() => _editingIndex = null);
+  }
+
+  void _onConfirm() {
+    _commitPendingEdit();
+    Navigator.of(context).pop(_buildPopResult(confirmed: true));
   }
 
   /// 编辑态输入框（ORIGINAL TEXT 与 item 行共用样式）。
@@ -613,7 +624,7 @@ class _MPQucikCaptureConfirmDialogState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: true)),
+                onPressed: _onConfirm,
                 style: TextButton.styleFrom(
                   backgroundColor: _kBlue,
                   foregroundColor: Colors.white,
