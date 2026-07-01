@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../http/schema/mp_todo.dart';
 import '../../../../utils/mp_time_utils.dart';
+import '../../../../utils/mp_toast_utils.dart';
 import '../../../../utils/omi_color_utils.dart';
 import '../../../../utils/omi_font_utils.dart';
 
@@ -52,11 +53,13 @@ class MPQuickCaptureConfirmResult {
   final List<MPBatchCreateMemoItem> memos;
 }
 
+/// 点击 Confirm 后提交；返回 `true` 时弹窗关闭，失败则保持弹窗并允许重试。
+typedef MPQuickCaptureConfirmSubmit = Future<bool> Function(
+  MPQuickCaptureConfirmResult result,
+);
+
 /// 互斥选中区域：原始文案 / 结构化建议列表。
-enum _MPConfirmSelectionRegion {
-  originalText,
-  items,
-}
+enum _MPConfirmSelectionRegion { originalText, items }
 
 /// Quick Capture 结构化确认弹窗。
 class MPQucikCaptureConfirmDialog extends StatefulWidget {
@@ -65,6 +68,7 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
     super.key,
     required this.originalText,
     required this.items,
+    required this.onConfirmSubmit,
   });
 
   /// 原始文本（支持多行）。
@@ -73,11 +77,15 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
   /// 结构化建议行（顺序与展示一致）。
   final List<MPQuickCaptureConfirmItem> items;
 
+  /// Confirm 提交回调；仅在其返回 `true` 时关闭弹窗。
+  final MPQuickCaptureConfirmSubmit onConfirmSubmit;
+
   /// 展示弹窗，最大高度为屏幕的 3/4。
   static Future<MPQuickCaptureConfirmResult?> show(
     BuildContext context, {
     required String originalText,
     required List<MPQuickCaptureConfirmItem> items,
+    required MPQuickCaptureConfirmSubmit onConfirmSubmit,
   }) {
     return showModalBottomSheet<MPQuickCaptureConfirmResult>(
       context: context,
@@ -91,14 +99,14 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
         return MPQucikCaptureConfirmDialog(
           originalText: originalText,
           items: items,
+          onConfirmSubmit: onConfirmSubmit,
         );
       },
     );
   }
 
   @override
-  State<MPQucikCaptureConfirmDialog> createState() =>
-      _MPQucikCaptureConfirmDialogState();
+  State<MPQucikCaptureConfirmDialog> createState() => _MPQucikCaptureConfirmDialogState();
 }
 
 class _ConfirmRow {
@@ -115,23 +123,15 @@ class _ConfirmRow {
   final int type;
 }
 
-class _MPQucikCaptureConfirmDialogState
-    extends State<MPQucikCaptureConfirmDialog> {
+class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialog> {
   static const Color _kBlue = Color(0xFF2F7BFF);
-
-  /// [_editingIndex] 为 -1 时表示正在编辑 ORIGINAL TEXT。
-  static const int _kOriginalTextEditKey = -1;
 
   late String _originalText = widget.originalText;
 
   late final List<_ConfirmRow> _rows = widget.items
       .map(
-        (MPQuickCaptureConfirmItem e) => _ConfirmRow(
-          isTodo: e.isTodo,
-          text: e.text.trim(),
-          deadline: e.deadline,
-          type: e.type,
-        ),
+        (MPQuickCaptureConfirmItem e) =>
+            _ConfirmRow(isTodo: e.isTodo, text: e.text.trim(), deadline: e.deadline, type: e.type),
       )
       .where((_ConfirmRow r) => r.text.isNotEmpty)
       .toList(growable: true);
@@ -139,12 +139,21 @@ class _MPQucikCaptureConfirmDialogState
   /// 默认选中 items 区域且全部 item 已勾选（见 [_ConfirmRow.selected]）。
   _MPConfirmSelectionRegion _activeRegion = _MPConfirmSelectionRegion.items;
 
-  int? _editingIndex;
-  TextEditingController? _editingController;
-  final FocusNode _editingFocusNode = FocusNode();
+  /// ORIGINAL TEXT 编辑态。
+  bool _isOriginalTextEditing = false;
+  TextEditingController? _originalTextController;
+  final FocusNode _originalTextFocusNode = FocusNode();
+  String? _originalTextSnapshot;
 
-  bool get _isOriginalTextRegionActive =>
-      _activeRegion == _MPConfirmSelectionRegion.originalText;
+  /// STRUCTURED SUGGESTIONS 中当前编辑的 item 下标（同模块内互斥）。
+  int? _editingItemIndex;
+  TextEditingController? _itemEditingController;
+  final FocusNode _itemEditingFocusNode = FocusNode();
+  String? _itemEditingSnapshot;
+
+  bool _submitting = false;
+
+  bool get _isOriginalTextRegionActive => _activeRegion == _MPConfirmSelectionRegion.originalText;
 
   bool get _isItemsRegionActive => _activeRegion == _MPConfirmSelectionRegion.items;
 
@@ -152,18 +161,9 @@ class _MPQucikCaptureConfirmDialogState
     return BoxDecoration(
       color: isActive ? Colors.white : const Color(0xFFFAFAFC),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: isActive ? _kBlue : lineColor.withValues(alpha: 0.9),
-        width: isActive ? 2 : 1,
-      ),
+      border: Border.all(color: isActive ? _kBlue : lineColor.withValues(alpha: 0.9), width: isActive ? 2 : 1),
       boxShadow: isActive
-          ? <BoxShadow>[
-              BoxShadow(
-                color: _kBlue.withValues(alpha: 0.18),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ]
+          ? <BoxShadow>[BoxShadow(color: _kBlue.withValues(alpha: 0.18), blurRadius: 12, offset: const Offset(0, 4))]
           : null,
     );
   }
@@ -174,10 +174,6 @@ class _MPQucikCaptureConfirmDialogState
       for (final _ConfirmRow r in _rows) {
         r.selected = false;
       }
-      _editingIndex = null;
-      _editingController?.dispose();
-      _editingController = null;
-      _editingFocusNode.unfocus();
     });
   }
 
@@ -185,10 +181,6 @@ class _MPQucikCaptureConfirmDialogState
   void _selectItemsRegion() {
     setState(() {
       _activeRegion = _MPConfirmSelectionRegion.items;
-      _editingIndex = null;
-      _editingController?.dispose();
-      _editingController = null;
-      _editingFocusNode.unfocus();
     });
   }
 
@@ -219,8 +211,12 @@ class _MPQucikCaptureConfirmDialogState
 
   @override
   void dispose() {
-    _editingController?.dispose();
-    _editingFocusNode.dispose();
+    _originalTextController?.dispose();
+    _originalTextController = null;
+    _originalTextFocusNode.dispose();
+    _itemEditingController?.dispose();
+    _itemEditingController = null;
+    _itemEditingFocusNode.dispose();
     super.dispose();
   }
 
@@ -250,88 +246,186 @@ class _MPQucikCaptureConfirmDialogState
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateMemoItem(
-        content: t,
-        createAt: memoCreateAt,
-        source: r.type == 1 ? 'record' : 'text',
-      ));
+      out.add(MPBatchCreateMemoItem(content: t, createAt: memoCreateAt, source: r.type == 1 ? 'record' : 'text'));
     }
     return out;
   }
 
-  /// 开始编辑 ORIGINAL TEXT。
+  /// 延迟释放 [controller]，避免当前帧 [TextField] 仍在使用时触发 disposed 断言。
+  void _releaseController(TextEditingController? controller) {
+    if (controller == null) {
+      return;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.dispose();
+    });
+  }
+
+  /// 将 ORIGINAL TEXT 编辑框内容同步到数据源。
+  void _commitOriginalTextEdit() {
+    if (!_isOriginalTextEditing || _originalTextController == null) {
+      return;
+    }
+    final String next = _originalTextController!.text.trim();
+    if (next.isNotEmpty) {
+      _originalText = next;
+    }
+  }
+
+  /// 将当前 item 编辑框内容同步到数据源。
+  void _commitItemEdit() {
+    final int? index = _editingItemIndex;
+    if (index == null || _itemEditingController == null) {
+      return;
+    }
+    final String next = _itemEditingController!.text.trim();
+    if (next.isNotEmpty && index >= 0 && index < _rows.length) {
+      _rows[index].text = next;
+    }
+  }
+
+  /// 退出 ORIGINAL TEXT 编辑态；[applyChanges] 为 false 时恢复进入编辑前的文本。
+  void _cancelOriginalTextEditing({bool applyChanges = false}) {
+    if (!_isOriginalTextEditing) {
+      return;
+    }
+    if (applyChanges) {
+      _commitOriginalTextEdit();
+    } else if (_originalTextSnapshot != null) {
+      _originalText = _originalTextSnapshot!;
+    }
+    final TextEditingController? oldController = _originalTextController;
+    _originalTextController = null;
+    _originalTextFocusNode.unfocus();
+    _isOriginalTextEditing = false;
+    _originalTextSnapshot = null;
+    _releaseController(oldController);
+  }
+
+  /// 退出 item 编辑态；[applyChanges] 为 false 时恢复进入编辑前的文本。
+  void _cancelItemEditing({bool applyChanges = false}) {
+    if (_editingItemIndex == null) {
+      return;
+    }
+    if (applyChanges) {
+      _commitItemEdit();
+    } else {
+      final int index = _editingItemIndex!;
+      final String? snapshot = _itemEditingSnapshot;
+      if (snapshot != null && index >= 0 && index < _rows.length) {
+        _rows[index].text = snapshot;
+      }
+    }
+    final TextEditingController? oldController = _itemEditingController;
+    _itemEditingController = null;
+    _itemEditingFocusNode.unfocus();
+    _editingItemIndex = null;
+    _itemEditingSnapshot = null;
+    _releaseController(oldController);
+  }
+
+  /// 开始编辑 ORIGINAL TEXT（不影响 STRUCTURED SUGGESTIONS 的编辑态）。
   void _startEditOriginalText() {
-    _editingController?.dispose();
-    _editingController = TextEditingController(text: _originalText);
     setState(() {
       _activeRegion = _MPConfirmSelectionRegion.originalText;
       for (final _ConfirmRow r in _rows) {
         r.selected = false;
       }
-      _editingIndex = _kOriginalTextEditKey;
+      _originalTextSnapshot = _originalText;
+      _isOriginalTextEditing = true;
+      _originalTextController = TextEditingController(text: _originalText);
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _editingFocusNode.requestFocus();
+        _originalTextFocusNode.requestFocus();
       }
     });
   }
 
-  /// 开始编辑指定问题。
+  /// 开始编辑指定 item（仅取消同模块内其它 item 的编辑态）。
   void _startEdit(int index) {
     if (index < 0 || index >= _rows.length) {
       return;
     }
-    _editingController?.dispose();
-    _editingController = TextEditingController(text: _rows[index].text);
-    setState(() => _editingIndex = index);
+    setState(() {
+      _cancelItemEditing();
+      _activeRegion = _MPConfirmSelectionRegion.items;
+      _itemEditingSnapshot = _rows[index].text;
+      _editingItemIndex = index;
+      _itemEditingController = TextEditingController(text: _rows[index].text);
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _editingFocusNode.requestFocus();
+        _itemEditingFocusNode.requestFocus();
       }
     });
   }
 
-  /// 将编辑框中的内容同步到数据源（不改变编辑态 UI）。
-  void _commitPendingEdit() {
-    final int? index = _editingIndex;
-    if (index == null || _editingController == null) {
+  /// 保存 ORIGINAL TEXT 编辑内容。
+  void _saveOriginalTextEdit() {
+    if (!_isOriginalTextEditing) {
       return;
     }
-    final String next = _editingController!.text.trim();
-    if (index == _kOriginalTextEditKey) {
-      if (next.isNotEmpty) {
-        _originalText = next;
-      }
-    } else if (index >= 0 && index < _rows.length) {
-      if (next.isNotEmpty) {
-        _rows[index].text = next;
-      }
-    }
+    setState(() => _cancelOriginalTextEditing(applyChanges: true));
   }
 
-  /// 保存当前编辑内容并返回普通列表态。
-  void _saveEdit() {
-    if (_editingIndex == null || _editingController == null) {
+  /// 保存当前 item 编辑内容。
+  void _saveItemEdit() {
+    if (_editingItemIndex == null) {
       return;
     }
-    _commitPendingEdit();
-    _editingController?.dispose();
-    _editingController = null;
-    _editingFocusNode.unfocus();
-    setState(() => _editingIndex = null);
+    setState(() => _cancelItemEditing(applyChanges: true));
   }
 
   void _onConfirm() {
-    _commitPendingEdit();
-    Navigator.of(context).pop(_buildPopResult(confirmed: true));
+    if (_submitting) {
+      return;
+    }
+    _cancelOriginalTextEditing(applyChanges: true);
+    _cancelItemEditing(applyChanges: true);
+    final MPQuickCaptureConfirmResult result = _buildPopResult(confirmed: true);
+    if (!_canSubmitResult(result)) {
+      MPToastUtils.showMessage('No suggestions selected.');
+      return;
+    }
+    _submitConfirm(result);
+  }
+
+  /// 本地校验：至少选中 original text 或一条 suggestion。
+  bool _canSubmitResult(MPQuickCaptureConfirmResult result) {
+    final String? chosenOriginal = result.originalText?.trim();
+    final bool useOriginalText =
+        chosenOriginal != null && chosenOriginal.isNotEmpty;
+    if (useOriginalText) {
+      return true;
+    }
+    return result.todos.isNotEmpty || result.memos.isNotEmpty;
+  }
+
+  Future<void> _submitConfirm(MPQuickCaptureConfirmResult result) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => _submitting = true);
+    final bool success = await widget.onConfirmSubmit(result);
+    if (!mounted) {
+      return;
+    }
+    if (success) {
+      Navigator.of(context).pop(result);
+      return;
+    }
+    setState(() => _submitting = false);
   }
 
   /// 编辑态输入框（ORIGINAL TEXT 与 item 行共用样式）。
-  Widget _buildEditTextField() {
+  Widget _buildEditTextField({
+    required Key fieldKey,
+    required TextEditingController controller,
+    required FocusNode focusNode,
+  }) {
     return TextField(
-      controller: _editingController,
-      focusNode: _editingFocusNode,
+      key: fieldKey,
+      controller: controller,
+      focusNode: focusNode,
       minLines: 1,
       maxLines: 4,
       style: TextStyle(
@@ -342,10 +436,7 @@ class _MPQucikCaptureConfirmDialogState
       ),
       decoration: InputDecoration(
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 10,
-          vertical: 8,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: _kBlue, width: 1.5),
@@ -405,15 +496,13 @@ class _MPQucikCaptureConfirmDialogState
         children: <Widget>[
           Text(
             'AI understood this',
-            style: TextStyle(
-              fontSize: OmiFontSize.t9_18,
-              fontWeight: OmiFontWeight.bold,
-              color: mainTextColor,
-            ),
+            style: TextStyle(fontSize: OmiFontSize.t9_18, fontWeight: OmiFontWeight.bold, color: mainTextColor),
           ),
           const Spacer(),
           IconButton(
-            onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
+            onPressed: _submitting
+                ? null
+                : () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
             icon: const Icon(Icons.close_rounded),
             color: secondTextColor,
           ),
@@ -435,7 +524,7 @@ class _MPQucikCaptureConfirmDialogState
   }
 
   Widget _buildOriginalTextCard() {
-    final bool editing = _editingIndex == _kOriginalTextEditKey;
+    final bool editing = _isOriginalTextEditing;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -450,15 +539,17 @@ class _MPQucikCaptureConfirmDialogState
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
-          decoration: _buildRegionCardDecoration(
-            isActive: _isOriginalTextRegionActive,
-          ),
+          decoration: _buildRegionCardDecoration(isActive: _isOriginalTextRegionActive),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Expanded(
-                child: editing
-                    ? _buildEditTextField()
+                child: editing && _originalTextController != null
+                    ? _buildEditTextField(
+                        fieldKey: const ValueKey<String>('confirm_original_text_edit'),
+                        controller: _originalTextController!,
+                        focusNode: _originalTextFocusNode,
+                      )
                     : Text(
                         _originalText,
                         style: TextStyle(
@@ -470,10 +561,7 @@ class _MPQucikCaptureConfirmDialogState
                       ),
               ),
               const SizedBox(width: 8),
-              _buildEditActionButton(
-                editing: editing,
-                onTap: editing ? _saveEdit : _startEditOriginalText,
-              ),
+              _buildEditActionButton(editing: editing, onTap: editing ? _saveOriginalTextEdit : _startEditOriginalText),
             ],
           ),
         ),
@@ -490,30 +578,19 @@ class _MPQucikCaptureConfirmDialogState
       decoration: BoxDecoration(
         color: selected ? _kBlue : Colors.transparent,
         shape: BoxShape.circle,
-        border: Border.all(
-          color: selected ? _kBlue : lineColor.withValues(alpha: 0.95),
-          width: 2,
-        ),
+        border: Border.all(color: selected ? _kBlue : lineColor.withValues(alpha: 0.95), width: 2),
       ),
-      child: selected
-          ? const Icon(Icons.check, color: Colors.white, size: 14)
-          : null,
+      child: selected ? const Icon(Icons.check, color: Colors.white, size: 14) : null,
     );
   }
 
   Widget _buildIssueTile(int index) {
-    final bool editing = _editingIndex == index;
+    final bool editing = _editingItemIndex == index;
     final _ConfirmRow row = _rows[index];
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: index == _rows.length - 1
-            ? null
-            : Border(
-                bottom: BorderSide(
-                  color: lineColor.withValues(alpha: 0.9),
-                ),
-              ),
+        border: index == _rows.length - 1 ? null : Border(bottom: BorderSide(color: lineColor.withValues(alpha: 0.9))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -532,14 +609,15 @@ class _MPQucikCaptureConfirmDialogState
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: _buildSelectionLeading(row.selected),
-                    ),
+                    Padding(padding: const EdgeInsets.only(top: 2), child: _buildSelectionLeading(row.selected)),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: editing
-                          ? _buildEditTextField()
+                      child: editing && _itemEditingController != null
+                          ? _buildEditTextField(
+                              fieldKey: ValueKey<String>('confirm_item_edit_$index'),
+                              controller: _itemEditingController!,
+                              focusNode: _itemEditingFocusNode,
+                            )
                           : Text(
                               _displayLine(row),
                               maxLines: 8,
@@ -560,7 +638,7 @@ class _MPQucikCaptureConfirmDialogState
           const SizedBox(width: 8),
           _buildEditActionButton(
             editing: editing,
-            onTap: editing ? _saveEdit : () => _startEdit(index),
+            onTap: editing ? _saveItemEdit : () => _startEdit(index),
             padding: const EdgeInsets.only(top: 2),
           ),
         ],
@@ -583,9 +661,7 @@ class _MPQucikCaptureConfirmDialogState
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: _buildRegionCardDecoration(isActive: _isItemsRegionActive),
-          child: Column(
-            children: List<Widget>.generate(_rows.length, _buildIssueTile),
-          ),
+          child: Column(children: List<Widget>.generate(_rows.length, _buildIssueTile)),
         ),
       ),
     );
@@ -600,21 +676,17 @@ class _MPQucikCaptureConfirmDialogState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
+                onPressed: _submitting
+                    ? null
+                    : () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFFF5F5F9),
                   foregroundColor: mainTextColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: Text(
                   'Cancel',
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: mainTextColor,
-                  ),
+                  style: TextStyle(fontSize: OmiFontSize.t7_16, fontWeight: OmiFontWeight.medium, color: mainTextColor),
                 ),
               ),
             ),
@@ -624,22 +696,26 @@ class _MPQucikCaptureConfirmDialogState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed: _onConfirm,
+                onPressed: _submitting ? null : _onConfirm,
                 style: TextButton.styleFrom(
                   backgroundColor: _kBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text(
-                  'Confirm',
-                  style: TextStyle(
-                    fontSize: OmiFontSize.t7_16,
-                    fontWeight: OmiFontWeight.medium,
-                    color: Colors.white,
-                  ),
-                ),
+                child: _submitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        'Confirm',
+                        style: TextStyle(
+                          fontSize: OmiFontSize.t7_16,
+                          fontWeight: OmiFontWeight.medium,
+                          color: Colors.white,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -674,29 +750,32 @@ class _MPQucikCaptureConfirmDialogState
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  _buildHeader(),
+                  AbsorbPointer(
+                    absorbing: _submitting,
+                    child: _buildHeader(),
+                  ),
                   Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
                   Flexible(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          _buildSectionTitle('ORIGINAL TEXT'),
-                          const SizedBox(height: 10),
-                          _buildOriginalTextCard(),
-                          if (_rows.isNotEmpty) ...<Widget>[
-                            const SizedBox(height: 16),
-                            Container(
-                              height: 1,
-                              color: lineColor.withValues(alpha: 0.8),
-                            ),
-                            const SizedBox(height: 16),
-                            _buildSectionTitle('STRUCTURED SUGGESTIONS'),
+                    child: AbsorbPointer(
+                      absorbing: _submitting,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            _buildSectionTitle('ORIGINAL TEXT'),
                             const SizedBox(height: 10),
-                            _buildIssuesCard(),
+                            _buildOriginalTextCard(),
+                            if (_rows.isNotEmpty) ...<Widget>[
+                              const SizedBox(height: 16),
+                              Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                              const SizedBox(height: 16),
+                              _buildSectionTitle('STRUCTURED SUGGESTIONS'),
+                              const SizedBox(height: 10),
+                              _buildIssuesCard(),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),

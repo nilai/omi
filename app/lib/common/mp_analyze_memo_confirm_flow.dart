@@ -39,17 +39,20 @@ class MPAnalyzeMemoConfirmFlow {
       context,
       originalText: fallbackText,
       items: items,
+      onConfirmSubmit: (MPQuickCaptureConfirmResult confirmResult) {
+        return _batchCreateFromResult(confirmResult);
+      },
     );
-    if (result == null || !result.confirmed) {
-      return false;
-    }
+    return result != null && result.confirmed;
+  }
+
+  /// 根据确认弹窗结果调用 [batchCreate]；成功返回 `true`。
+  static Future<bool> _batchCreateFromResult(
+    MPQuickCaptureConfirmResult result,
+  ) async {
     final String? chosenOriginal = result.originalText?.trim();
     final bool useOriginalText =
         chosenOriginal != null && chosenOriginal.isNotEmpty;
-    if (!useOriginalText && result.todos.isEmpty && result.memos.isEmpty) {
-      MPToastUtils.showMessage('No suggestions selected.');
-      return false;
-    }
     final int memoCreateAt = MPTimeUtils.nowUnixSeconds();
     final MPBatchCreateRequest request;
     if (useOriginalText) {
