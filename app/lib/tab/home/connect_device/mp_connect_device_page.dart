@@ -483,16 +483,18 @@ class _MPDeviceCardHeader extends StatelessWidget {
             children: <Widget>[
               Text(
                 item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: OmiTextStyle.create(
                   color: mainTextColor,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                 ),
               ),
-              const SizedBox(height: 7),
-              _MPSignalBar(
-                value: item.isConnected ? item.batteryPercent : 0,
-              ),
+              if (item.isConnected) ...<Widget>[
+                const SizedBox(height: 7),
+                _MPBatteryBar(value: item.batteryPercent),
+              ],
             ],
           ),
         ),
@@ -501,8 +503,8 @@ class _MPDeviceCardHeader extends StatelessWidget {
   }
 }
 
-class _MPSignalBar extends StatelessWidget {
-  const _MPSignalBar({required this.value});
+class _MPBatteryBar extends StatelessWidget {
+  const _MPBatteryBar({required this.value});
 
   final int value;
 
