@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../common/mp_memory_top_tabs.dart';
 import '../../../common/mp_navigation_bar.dart';
 import '../../../utils/omi_color_utils.dart';
-import '../search/mp_memory_search_page.dart';
 import 'all/omi_all_page.dart';
 import 'people/omi_people_page.dart';
 import 'projects/omi_projects_page.dart';
@@ -58,16 +57,10 @@ class _OmiMemoryPageState extends State<OmiMemoryPage> {
       backgroundColor: pageColor,
       appBar: PreferredSize(
         preferredSize: MPNavigationBar.preferredSizeOf(context),
-        child: MPNavigationBar(
+        child: const MPNavigationBar(
           variant: MPNavigationBarVariant.memory,
           backgroundColor: Colors.white,
-          onPrimaryActionTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => const MPMemorySearchPage(),
-              ),
-            );
-          },
+          showPrimaryAction: false,
         ),
       ),
       body: Column(

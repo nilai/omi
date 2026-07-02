@@ -40,6 +40,7 @@ class MPNavigationBar extends StatelessWidget {
     this.onPrimaryActionTap,
     this.onSecondaryActionTap,
     this.backgroundColor = Colors.transparent,
+    this.showPrimaryAction = true,
   });
 
   /// 状态栏以下内容区最小高度（与 [preferredSizeOf] 一致）
@@ -72,6 +73,9 @@ class MPNavigationBar extends StatelessWidget {
 
   /// 背景色
   final Color backgroundColor;
+
+  /// 是否展示右侧第一个操作按钮（如 Memory 搜索）
+  final bool showPrimaryAction;
 
   @override
   Widget build(BuildContext context) {
@@ -192,6 +196,9 @@ class MPNavigationBar extends StatelessWidget {
   List<Widget> _buildActions() {
     switch (variant) {
       case MPNavigationBarVariant.memory:
+        if (!showPrimaryAction) {
+          return const <Widget>[];
+        }
         return <Widget>[
           _buildIconAction(
             icon: Assets.omiSearch,

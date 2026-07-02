@@ -312,11 +312,6 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
                             ),
                           ),
                           const Spacer(),
-                          IconButton(
-                            onPressed: () => MPToastUtils.showFeatureComingSoon(message: 'Calendar'),
-                            icon: Icon(Icons.calendar_today_outlined, color: blueTextColor),
-                          ),
-                          const SizedBox(width: 4),
                           Material(
                             color: blueTextColor,
                             borderRadius: BorderRadius.circular(999),

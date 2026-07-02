@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
-import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_share_options_manager.dart';
@@ -121,28 +120,30 @@ class _OmiMemoryDetailViewState extends State<_OmiMemoryDetailView> with Widgets
                   );
 
                   if (!context.mounted) return;
-                  final MPShareSheetResult? result = await showMPShareSheet(
-                    context,
-                    params: params,
-                    onShare: ({required String summaryOptionId, required Set<String> optionalOptionIds}) {
-                      showMPShareExportSheet(context).then((MPShareExportKind? kind) async {
-                        if (kind == null) return;
-                        final List<int> optionIds =
-                            <int>[int.parse(summaryOptionId)] +
-                            optionalOptionIds.map((String id) => int.parse(id)).toList();
-                        final MPShareMemoryV2Response? resp = await shareMemoryV2(
-                          MPShareMemoryV2Request(memoryId: memoryId, optionIds: optionIds),
-                        );
-                        if (!context.mounted) return;
-                        if (resp == null || resp.baseResp.code != 0) {
-                          MPToastUtils.showMessage(resp?.baseResp.message ?? '');
-                          return;
-                        }
-                        MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
-                      });
-                    },
+
+                  final List<MPShareSummaryOption> allOptions = <MPShareSummaryOption>[
+                    ...params.requiredSummaryOptions,
+                    ...params.optionalSummaryOptions,
+                  ];
+                  String? summaryOptionId = params.initialSummaryOptionId;
+                  if (summaryOptionId == null && allOptions.isNotEmpty) {
+                    summaryOptionId = allOptions.first.id;
+                  }
+                  if (summaryOptionId == null) {
+                    MPToastUtils.showMessage('Unable to share. Please try again later.');
+                    return;
+                  }
+
+                  final List<int> optionIds = <int>[int.parse(summaryOptionId)];
+                  final MPShareMemoryV2Response? resp = await shareMemoryV2(
+                    MPShareMemoryV2Request(memoryId: memoryId, optionIds: optionIds),
                   );
-                  if (result == null) return;
+                  if (!context.mounted) return;
+                  if (resp == null || resp.baseResp.code != 0) {
+                    MPToastUtils.showMessage(resp?.baseResp.message ?? '');
+                    return;
+                  }
+                  MPShareMemoryDialog.show(context: context, url: resp.shareUrl);
                 },
                 child: Container(
                   child: OmiImageLoader.localImg(Assets.omiShare, width: 20, height: 20, color: blueTextColor),
