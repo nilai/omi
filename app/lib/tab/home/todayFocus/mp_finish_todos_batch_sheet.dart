@@ -25,11 +25,11 @@ class MPFinishTodosBatchSheetParams {
   }
 }
 
-/// 返回 `true` 表示用户确认 Finish 且 [onFinish] 已成功。
+/// 返回 `true` 表示用户点击了 Finish。
 Future<bool?> showMPFinishTodosBatchSheet(
   BuildContext context, {
   required MPFinishTodosBatchSheetParams params,
-  Future<bool> Function()? onFinish,
+  VoidCallback? onFinish,
 }) {
   FocusManager.instance.primaryFocus?.unfocus();
   return showModalBottomSheet<bool>(
@@ -58,7 +58,7 @@ class _MPFinishTodosBatchSheet extends StatefulWidget {
   });
 
   final MPFinishTodosBatchSheetParams params;
-  final Future<bool> Function()? onFinish;
+  final VoidCallback? onFinish;
 
   @override
   State<_MPFinishTodosBatchSheet> createState() =>
@@ -66,26 +66,9 @@ class _MPFinishTodosBatchSheet extends StatefulWidget {
 }
 
 class _MPFinishTodosBatchSheetState extends State<_MPFinishTodosBatchSheet> {
-  bool _finishing = false;
-
-  Future<void> _onTapFinish() async {
-    if (_finishing) {
-      return;
-    }
-    if (widget.onFinish == null) {
-      Navigator.of(context).pop();
-      return;
-    }
-    setState(() => _finishing = true);
-    final bool ok = await widget.onFinish!.call();
-    if (!mounted) {
-      return;
-    }
-    if (ok) {
-      Navigator.of(context).pop(true);
-      return;
-    }
-    setState(() => _finishing = false);
+  void _onTapFinish() {
+    Navigator.of(context).pop(true);
+    widget.onFinish?.call();
   }
 
   @override
@@ -141,9 +124,7 @@ class _MPFinishTodosBatchSheetState extends State<_MPFinishTodosBatchSheet> {
                     child: SizedBox(
                       height: 50,
                       child: TextButton(
-                        onPressed: _finishing
-                            ? null
-                            : () => Navigator.of(context).pop(),
+                        onPressed: () => Navigator.of(context).pop(),
                         style: TextButton.styleFrom(
                           backgroundColor: const Color(0xFFF2F2F7),
                           foregroundColor: omiMainBodyText,
@@ -168,7 +149,7 @@ class _MPFinishTodosBatchSheetState extends State<_MPFinishTodosBatchSheet> {
                     child: SizedBox(
                       height: 50,
                       child: TextButton(
-                        onPressed: _finishing ? null : _onTapFinish,
+                        onPressed: _onTapFinish,
                         style: TextButton.styleFrom(
                           backgroundColor: blueTextColor,
                           foregroundColor: omiWhiteText,
@@ -177,23 +158,14 @@ class _MPFinishTodosBatchSheetState extends State<_MPFinishTodosBatchSheet> {
                           ),
                           splashFactory: NoSplash.splashFactory,
                         ),
-                        child: _finishing
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'Finish',
-                                style: OmiTextStyle.create(
-                                  fontSize: OmiFontSize.t8_17,
-                                  fontWeight: FontWeight.w600,
-                                  color: omiWhiteText,
-                                ),
-                              ),
+                        child: Text(
+                          'Finish',
+                          style: OmiTextStyle.create(
+                            fontSize: OmiFontSize.t8_17,
+                            fontWeight: FontWeight.w600,
+                            color: omiWhiteText,
+                          ),
+                        ),
                       ),
                     ),
                   ),

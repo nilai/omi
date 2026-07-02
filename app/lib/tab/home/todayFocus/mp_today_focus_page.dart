@@ -269,12 +269,12 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     await showMPFinishTodosBatchSheet(
       context,
       params: MPFinishTodosBatchSheetParams(kind: kind),
-      onFinish: () async {
+      onFinish: () {
         switch (kind) {
           case MPFinishTodosBatchKind.unscheduled:
-            return _cubit.finishUnscheduled();
+            unawaited(_cubit.finishUnscheduled());
           case MPFinishTodosBatchKind.overdue:
-            return _cubit.finishOverdue();
+            unawaited(_cubit.finishOverdue());
         }
       },
     );
