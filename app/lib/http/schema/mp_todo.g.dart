@@ -49,6 +49,16 @@ MPDoneTodoRequest _$MPDoneTodoRequestFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$MPDoneTodoRequestToJson(MPDoneTodoRequest instance) =>
     <String, dynamic>{'todo_id': instance.todoId};
 
+DoneTodoBatchRequest _$DoneTodoBatchRequestFromJson(
+  Map<String, dynamic> json,
+) => DoneTodoBatchRequest(
+  todoIds: (json['todo_ids'] as List<dynamic>).map((e) => e as String).toList(),
+);
+
+Map<String, dynamic> _$DoneTodoBatchRequestToJson(
+  DoneTodoBatchRequest instance,
+) => <String, dynamic>{'todo_ids': instance.todoIds};
+
 MPClearTodoRequest _$MPClearTodoRequestFromJson(Map<String, dynamic> json) =>
     MPClearTodoRequest(
       todoIds: (json['todo_ids'] as List<dynamic>)
@@ -187,6 +197,16 @@ MPDoneTodoResponse _$MPDoneTodoResponseFromJson(Map<String, dynamic> json) =>
 
 Map<String, dynamic> _$MPDoneTodoResponseToJson(MPDoneTodoResponse instance) =>
     <String, dynamic>{'base_resp': instance.baseResp};
+
+DoneTodoBatchResponse _$DoneTodoBatchResponseFromJson(
+  Map<String, dynamic> json,
+) => DoneTodoBatchResponse(
+  baseResp: MPBaseResp.fromJson(json['base_resp'] as Map<String, dynamic>),
+);
+
+Map<String, dynamic> _$DoneTodoBatchResponseToJson(
+  DoneTodoBatchResponse instance,
+) => <String, dynamic>{'base_resp': instance.baseResp};
 
 MPClearTodoResponse _$MPClearTodoResponseFromJson(Map<String, dynamic> json) =>
     MPClearTodoResponse(

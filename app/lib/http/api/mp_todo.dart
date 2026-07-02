@@ -55,6 +55,22 @@ Future<MPDoneTodoResponse?> doneTodo(MPDoneTodoRequest req) async {
   return null;
 }
 
+// POST /api/v1/todo/done_batch
+Future<DoneTodoBatchResponse?> doneTodoBatch(DoneTodoBatchRequest req) async {
+  var response = await makeApiCall(
+    url: '${Env.apiBaseUrl}api/v1/todo/done_batch',
+    headers: {},
+    method: 'POST',
+    body: jsonEncode(req.toJson()),
+  );
+  if (response == null) return null;
+  debugPrint('doneTodoBatch response: ${response.body}');
+  if (response.statusCode == 200) {
+    return DoneTodoBatchResponse.fromJson(jsonDecode(response.body));
+  }
+  return null;
+}
+
 // POST /api/v1/todo/clear
 Future<MPClearTodoResponse?> clearTodo(MPClearTodoRequest req) async {
   var response = await makeApiCall(

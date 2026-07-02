@@ -99,6 +99,20 @@ class MPDoneTodoRequest {
   Map<String, dynamic> toJson() => _$MPDoneTodoRequestToJson(this);
 }
 
+// Done Todo Batch Request
+@JsonSerializable()
+class DoneTodoBatchRequest {
+  @JsonKey(name: 'todo_ids')
+  final List<String> todoIds;
+
+  DoneTodoBatchRequest({required this.todoIds});
+
+  factory DoneTodoBatchRequest.fromJson(Map<String, dynamic> json) =>
+      _$DoneTodoBatchRequestFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DoneTodoBatchRequestToJson(this);
+}
+
 // Clear Todo Request
 @JsonSerializable()
 class MPClearTodoRequest {
@@ -275,6 +289,20 @@ class MPDoneTodoResponse {
   factory MPDoneTodoResponse.fromJson(Map<String, dynamic> json) => _$MPDoneTodoResponseFromJson(json);
 
   Map<String, dynamic> toJson() => _$MPDoneTodoResponseToJson(this);
+}
+
+// Done Todo Batch Response
+@JsonSerializable()
+class DoneTodoBatchResponse {
+  @JsonKey(name: 'base_resp')
+  final MPBaseResp baseResp;
+
+  DoneTodoBatchResponse({required this.baseResp});
+
+  factory DoneTodoBatchResponse.fromJson(Map<String, dynamic> json) =>
+      _$DoneTodoBatchResponseFromJson(json);
+
+  Map<String, dynamic> toJson() => _$DoneTodoBatchResponseToJson(this);
 }
 
 // Clear Todo Response

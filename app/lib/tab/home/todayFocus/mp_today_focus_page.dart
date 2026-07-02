@@ -20,6 +20,7 @@ import 'cards/mp_all_todos_input_card.dart';
 import 'cards/mp_today_focus_add_card.dart';
 import 'cards/mp_today_focus_card.dart';
 import 'cards/mp_today_focus_todo_grouped_list.dart';
+import 'mp_finish_todos_batch_sheet.dart';
 import 'mp_today_focus_cubit.dart';
 import 'mp_today_focus_full_sheet.dart';
 import 'mp_today_focus_swipe_reveal_bus.dart';
@@ -260,6 +261,25 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
     }
   }
 
+  Future<void> _onTapFinishTodosBatch(MPFinishTodosBatchKind kind) async {
+    if (!mounted) {
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    await showMPFinishTodosBatchSheet(
+      context,
+      params: MPFinishTodosBatchSheetParams(kind: kind),
+      onFinish: () async {
+        switch (kind) {
+          case MPFinishTodosBatchKind.unscheduled:
+            return _cubit.finishUnscheduled();
+          case MPFinishTodosBatchKind.overdue:
+            return _cubit.finishOverdue();
+        }
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPTodayFocusCubit>.value(
@@ -373,8 +393,12 @@ class _MPTodayFocusPageState extends State<MPTodayFocusPage> {
                         overdueItems: state.overdueItems,
                         completedItems: state.completedItems,
                         initialFutureExpanded: true,
-                        onUnscheduledClear: () => unawaited(_cubit.clearUnscheduled()),
-                        onOverdueClear: () => unawaited(_cubit.clearOverdue()),
+                        onUnscheduledClear: () => unawaited(
+                          _onTapFinishTodosBatch(MPFinishTodosBatchKind.unscheduled),
+                        ),
+                        onOverdueClear: () => unawaited(
+                          _onTapFinishTodosBatch(MPFinishTodosBatchKind.overdue),
+                        ),
                         onCompletedClear: () => unawaited(_cubit.clearCompleted()),
                         onItemCheckChanged: _cubit.setTodoChecked,
                         onItemAddToFocus:

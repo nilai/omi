@@ -665,14 +665,51 @@ class MPTodayFocusCubit extends Cubit<MPTodayFocusState> {
     });
   }
 
-  /// 清空 Unscheduled 模块下全部待办（调用 [clearTodo]）。
-  Future<void> clearUnscheduled() => _clearTodoSection(state.unscheduledItems);
+  /// 批量完成 Unscheduled 模块下全部待办（调用 [doneTodoBatch]）。
+  Future<bool> finishUnscheduled() => _finishTodoSection(state.unscheduledItems);
 
-  /// 清空 Overdue 模块下全部待办（调用 [clearTodo]）。
-  Future<void> clearOverdue() => _clearTodoSection(state.overdueItems);
+  /// 批量完成 Overdue 模块下全部待办（调用 [doneTodoBatch]）。
+  Future<bool> finishOverdue() => _finishTodoSection(state.overdueItems);
 
   /// 清空 Completed 模块下全部待办（调用 [clearTodo]）。
   Future<void> clearCompleted() => _clearTodoSection(state.completedItems);
+
+  /// 将 [items] 中全部 [MPTodayFocusTodoRowData.todoId] 作为 [DoneTodoBatchRequest.todoIds] 发起批量完成。
+  Future<bool> _finishTodoSection(List<MPTodayFocusTodoRowData> items) async {
+    if (!_isInteractive || items.isEmpty) {
+      return false;
+    }
+    final List<String> todoIds = items
+        .map((MPTodayFocusTodoRowData row) => row.todoId.trim())
+        .where((String id) => id.isNotEmpty)
+        .toList(growable: false);
+    if (todoIds.isEmpty) {
+      return false;
+    }
+    return _runWithBlockingGlobalLoading(() async {
+      try {
+        final DoneTodoBatchResponse? resp = await doneTodoBatch(
+          DoneTodoBatchRequest(todoIds: todoIds),
+        );
+        if (resp == null) {
+          MPToastUtils.showMessage('Couldn\'t finish to-dos. Please try again later.');
+          return false;
+        }
+        if (resp.baseResp.code != 0) {
+          MPToastUtils.showMessage(
+            resp.baseResp.message.isEmpty
+                ? 'Couldn\'t finish to-dos.'
+                : resp.baseResp.message,
+          );
+          return false;
+        }
+        return _silentResyncTodoListsFromServer();
+      } catch (_) {
+        MPToastUtils.showMessage('Couldn\'t finish to-dos. Please try again later.');
+        return false;
+      }
+    });
+  }
 
   /// 将 [items] 中全部 [MPTodayFocusTodoRowData.todoId] 作为 [MPClearTodoRequest.todoIds] 发起清除。
   Future<void> _clearTodoSection(List<MPTodayFocusTodoRowData> items) async {

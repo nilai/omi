@@ -72,6 +72,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
     this.onUnscheduledClear,
     this.onOverdueClear,
     this.onCompletedClear,
+    this.finishLabel = 'Finish',
     this.clearLabel = 'Clear',
     this.onItemCheckChanged,
     this.onItemTap,
@@ -96,6 +97,7 @@ class MPTodayFocusTodoGroupedList extends StatefulWidget {
   final VoidCallback? onUnscheduledClear;
   final VoidCallback? onOverdueClear;
   final VoidCallback? onCompletedClear;
+  final String finishLabel;
   final String clearLabel;
 
   final void Function(
@@ -245,20 +247,24 @@ class _MPTodayFocusTodoGroupedListState
     );
   }
 
-  Widget _clearTrailingButton(VoidCallback? onClear) {
-    if (onClear == null) {
+  Widget _trailingActionButton({
+    required String label,
+    VoidCallback? onTap,
+  }) {
+    if (onTap == null) {
       return const SizedBox.shrink();
     }
     return TextButton(
-      onPressed: onClear,
+      onPressed: onTap,
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         minimumSize: Size.zero,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         foregroundColor: secondTextColor.withValues(alpha: 0.75),
+        splashFactory: NoSplash.splashFactory,
       ),
       child: Text(
-        widget.clearLabel,
+        label,
         style: OmiTextStyle.create(
           fontSize: OmiFontSize.t3_12,
           fontWeight: OmiFontWeight.regular,
@@ -273,7 +279,10 @@ class _MPTodayFocusTodoGroupedListState
       title: 'Unscheduled',
       expanded: _unscheduledExpanded,
       onToggle: () => setState(() => _unscheduledExpanded = !_unscheduledExpanded),
-      trailing: _clearTrailingButton(widget.onUnscheduledClear),
+      trailing: _trailingActionButton(
+        label: widget.finishLabel,
+        onTap: widget.onUnscheduledClear,
+      ),
     );
   }
 
@@ -282,7 +291,10 @@ class _MPTodayFocusTodoGroupedListState
       title: 'Overdue',
       expanded: _overdueExpanded,
       onToggle: () => setState(() => _overdueExpanded = !_overdueExpanded),
-      trailing: _clearTrailingButton(widget.onOverdueClear),
+      trailing: _trailingActionButton(
+        label: widget.finishLabel,
+        onTap: widget.onOverdueClear,
+      ),
     );
   }
 
@@ -291,7 +303,10 @@ class _MPTodayFocusTodoGroupedListState
       title: 'Completed',
       expanded: _completedExpanded,
       onToggle: () => setState(() => _completedExpanded = !_completedExpanded),
-      trailing: _clearTrailingButton(widget.onCompletedClear),
+      trailing: _trailingActionButton(
+        label: widget.clearLabel,
+        onTap: widget.onCompletedClear,
+      ),
     );
   }
 
