@@ -346,7 +346,6 @@ class _AppearedSection extends StatelessWidget {
         ],
         Column(
           children: appearedItems.map((MPPatternInsightAppearedItemStruct item) {
-            final String itemText = _formatAppearedItemLabel(item);
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Material(
@@ -369,7 +368,7 @@ class _AppearedSection extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            itemText,
+                            item.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: OmiTextStyle.create(
@@ -401,18 +400,6 @@ class _AppearedSection extends StatelessWidget {
       ],
     );
   }
-}
-
-String _formatAppearedItemLabel(MPPatternInsightAppearedItemStruct item) {
-  final String subTitle = item.subTitle.trim();
-  final String title = item.title.trim();
-  if (subTitle.isNotEmpty && title.isNotEmpty) {
-    return '$subTitle · $title';
-  }
-  if (title.isNotEmpty) {
-    return title;
-  }
-  return subTitle;
 }
 
 class _WhyThisMattersSection extends StatelessWidget {
