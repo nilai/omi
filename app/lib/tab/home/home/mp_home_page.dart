@@ -1075,7 +1075,7 @@ class _TranscriptionUsageCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Transcription usage',
+                        'Credit usage',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
