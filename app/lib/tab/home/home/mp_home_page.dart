@@ -1025,7 +1025,7 @@ class _TranscriptionUsageCard extends StatelessWidget {
       final NumberFormat formatter = NumberFormat('#,###');
       final String used = formatter.format(int.tryParse(match.group(1)!) ?? 0);
       final String total = formatter.format(int.tryParse(match.group(2)!) ?? 0);
-      return "You're halfway through your test transcription credits. $used / $total min used.";
+      return "You're halfway through your test credit credits. $used / $total credits used.";
     }
     return raw;
   }
