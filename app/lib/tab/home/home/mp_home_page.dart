@@ -1104,15 +1104,15 @@ class _TranscriptionUsageCard extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 12,
-            right: 12,
+            top: 6,
+            right: 6,
             child: GestureDetector(
               onTap: onClose,
               behavior: HitTestBehavior.opaque,
               child: const SizedBox(
-                width: 24,
-                height: 24,
-                child: Icon(Icons.close, color: Color(0xFFC7C7CC), size: 18),
+                width: 36,
+                height: 36,
+                child: Center(child: Icon(Icons.close, color: Color(0xFFC7C7CC), size: 18)),
               ),
             ),
           ),
