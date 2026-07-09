@@ -88,7 +88,7 @@ Future<void> mpHandleSummaryRecordTranscriptionLimit(
   }
   await showMPTranscriptionLimitSheet(
     context,
-    message: 'You\'ve used all of your test transcription credits. This recording is saved, but AI transcription and summaries are paused.',
+    message: 'You\'ve used all of your test credits.This recording is saved, but AI transcription and summaries are paused.',
     usageText: trimmedMessage,
   );
 }
