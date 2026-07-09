@@ -80,27 +80,16 @@ Future<void> showMPTranscriptionLimitSheet(
 
 /// [summaryRecord] 返回 [kMPSummaryRecordTranscriptionLimitCode] 时展示额度弹窗。
 Future<void> mpHandleSummaryRecordTranscriptionLimit(
-  MPBaseResp baseResp, {
-  String? usageText,
-}) async {
+  MPBaseResp baseResp) async {
   final String trimmedMessage = baseResp.message.trim();
-  String resolvedUsage = (usageText ?? '').trim();
-  if (resolvedUsage.isEmpty) {
-    resolvedUsage = (await mpResolveTranscriptionUsageText()).trim();
-  }
-  if (resolvedUsage.isEmpty && kDebugMode && MPSummaryRecordFixtures.mockTranscriptionLimitEnabled) {
-    resolvedUsage = MPSummaryRecordFixtures.mockUsageText;
-  }
   final BuildContext? context = MyApp.navigatorKey.currentContext;
   if (context == null || !context.mounted) {
     return;
   }
   await showMPTranscriptionLimitSheet(
     context,
-    message: trimmedMessage.isNotEmpty
-        ? trimmedMessage
-        : 'You\'ve used all of your test transcription minutes. This recording is saved, but AI transcription and summaries are paused.',
-    usageText: resolvedUsage,
+    message: 'You\'ve used all of your test transcription credits. This recording is saved, but AI transcription and summaries are paused.',
+    usageText: trimmedMessage,
   );
 }
 
