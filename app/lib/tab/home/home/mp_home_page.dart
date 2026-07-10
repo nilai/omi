@@ -1016,18 +1016,11 @@ class _TranscriptionUsageCard extends StatelessWidget {
     if (raw.isEmpty) {
       return '';
     }
-    final RegExp usagePattern = RegExp(
-      r'^(\d+)/(\d+)\s*min\s*used\.?$',
-      caseSensitive: false,
-    );
-    final RegExpMatch? match = usagePattern.firstMatch(raw);
-    if (match != null) {
-      final NumberFormat formatter = NumberFormat('#,###');
-      final String used = formatter.format(int.tryParse(match.group(1)!) ?? 0);
-      final String total = formatter.format(int.tryParse(match.group(2)!) ?? 0);
-      return "You're halfway through your test credit credits. $used / $total credits used.";
+    final String pre = 'You\'re halfway through your test credit credits.';
+    if (raw.contains(pre)) {
+      return raw;
     }
-    return raw;
+    return '$pre$raw';
   }
 
   @override
