@@ -8,7 +8,6 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
 import '../audio/record/mp_audio_local_records_util.dart';
-import '../audio/record/mp_audio_upload_manger.dart';
 import '../common/mp_home_notification.dart';
 import 'mp_ble_preferences.dart';
 import 'mp_ble_connection_helper.dart';
@@ -25,7 +24,8 @@ import 'note_device.dart';
 /// 按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
 /// 在「开始录音成功」、BLE 断开、[detach] 时立即更新 [lastEmitted] 并
 /// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]；
-/// 「结束录音成功」在收到 303 停录成功时立即通知（顶栏切 importing）；转 MP3 / 上传在后台继续。
+/// 「结束录音成功」：先转 MP3 / 删设备文件 / 登记本地 record，**完成后再**通知停录；
+/// Home 收到后跑批量 sync，sync 全部结束后再统一上传。
 ///
 /// **实时音频落盘**（对齐 [MPBleLiveRecordingSession] / [NoteBleTransport] 边录边传）：
 /// - 订阅 **301 原始 notify** + [MPBleRtOpusBuffer] 组 480B 帧；Seq 间隙发 `0x20` 补传；
@@ -36,8 +36,10 @@ import 'note_device.dart';
 /// - 续传前 [MPBleFileUtil.trimRawOpusToLastCompletedSeq] 裁剪本地裸 Opus 再 append；
 /// - 链路丢失时 checkpoint + App 通知 `bleDisconnected`；重连后恢复落盘并再发 `deviceRecordingStarted`。
 ///
-/// **设备停止录音（303 停止成功）**：转 MP3 → 导入同名 txt（与 MP3 同目录）→ 登记 record →
-/// [onAfterMp3Converted] 停录通知 → [uploadRecords]；删设备文件在 [completeRealtimeDeviceFileCleanup] 后台执行。
+/// **设备停止录音（303 停止成功）**：
+/// 1. 转 MP3 → 导 txt → 删设备文件 → 登记本地 record（**不** [uploadRecords]）
+/// 2. emit 停录 → Home 开始 [syncDeviceOpusTxtToSandboxRegisterAndUpload]
+/// 3. sync 完成后统一上传（含本条实时 record + 批量新导入）
 class MPBleRecordingWatcher {
   static const int _kCheckpointEveryNFrames = 10;
 
@@ -697,7 +699,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功：先通知停录（顶栏切 importing）→ 关流 → 转 MP3 / 导 txt → 上传。
+  /// 303 停止成功：先 finalize（转 MP3 / 删设备 / 本地 record）→ 再通知停录，由 Home 跑 sync → 上传。
   Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
     if (_finalizeAfterStopInProgress) {
       debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
@@ -720,33 +722,38 @@ class MPBleRecordingWatcher {
     final String? deviceFileName = stopFileName ?? _lastEmitted.activeFileName;
     final String? opusPath = _savedAudioPath;
 
-    // 立刻对外通知停录，避免等转码期间顶栏一直空白 / 仍显示 recording。
-    if (_lastEmitted.isRecording) {
-      _emitRecordingStopped(
-        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
-        activeFileName: stopFileName,
-      );
-    }
-
     try {
       await _closeAudioSavingSink();
       _activeFileNameForRetransmit = null;
       _rtBuffer.reset();
       await MPBlePreferences.instance.clearInterruptedRecording();
+
       if (opusPath != null && opusPath.isNotEmpty) {
+        MPBleFileUtil.claimRealtimeDeviceOpus(deviceFileName);
         await _finalizeStoppedRealtimeCapture(
           opusPath: opusPath,
           deviceFileName: deviceFileName,
         );
       }
+
+      // 1 完成后再通知停录：Home 切 importing 并开始 syncDeviceOpusTxt。
+      _emitRecordingStopped(
+        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
+        activeFileName: stopFileName,
+      );
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher stop finalize pipeline failed: $e\n$st');
+      MPBleFileUtil.releaseRealtimeDeviceOpusClaim(deviceFileName);
+      _emitRecordingStopped(
+        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
+        activeFileName: stopFileName,
+      );
     } finally {
       _finalizeAfterStopInProgress = false;
     }
   }
 
-  /// 303 停止成功后：转 MP3 → 导入 txt → 登记 → [uploadRecords]；删设备文件后台执行。
+  /// 303 停止成功后：转 MP3 → 导入 txt → 删设备文件 → 登记 record；**不上传**（交由 sync 结束后统一上传）。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
@@ -757,29 +764,15 @@ class MPBleRecordingWatcher {
         opusPath: opusPath,
         deviceFileName: deviceFileName,
         transport: transport,
-        deferDeviceFileCleanup: true,
+        deferDeviceFileCleanup: false,
       );
       if (record == null) {
+        MPBleFileUtil.releaseRealtimeDeviceOpusClaim(deviceFileName);
         return;
       }
-      await MPAudioUploadManager.instance.uploadRecords(
-        <MPAudioLocalRecord>[record],
-        rightNowTranscribe: false,
-      );
-      if (transport != null) {
-        final String? deviceTxtOnDevice = record.txtPath != null && record.txtPath!.trim().isNotEmpty
-            ? p.basename(record.txtPath!.trim())
-            : null;
-        unawaited(
-          MPBleFileUtil.completeRealtimeDeviceFileCleanup(
-            transport: transport,
-            deviceFileName: deviceFileName,
-            opusPath: opusPath,
-            importedDeviceTxtFileName: deviceTxtOnDevice,
-          ),
-        );
-      }
+      MPBleFileUtil.deferUploadUntilAfterDeviceSync(record);
     } catch (e, st) {
+      MPBleFileUtil.releaseRealtimeDeviceOpusClaim(deviceFileName);
       debugPrint('------>>>memopin recording watcher finalize after stop failed: $e\n$st');
     }
   }

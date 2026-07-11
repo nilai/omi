@@ -61,6 +61,60 @@ class MPBleFileUtil {
   static _DeviceSyncSession? _activeDeviceSync;
   static List<MPAudioLocalRecord> _pendingUploadAfterAbort = <MPAudioLocalRecord>[];
 
+  /// 实时停录已登记、待「批量 sync 完成后再上传」的本地记录。
+  static final List<MPAudioLocalRecord> _deferredUploadsAfterDeviceSync = <MPAudioLocalRecord>[];
+
+  /// 实时停录路径已认领、批量导入须跳过的设备 Opus 文件名（小写）。
+  static final Set<String> _realtimeClaimedDeviceOpusNames = <String>{};
+
+  /// 将记录推迟到设备批量 sync 结束后再上传（实时停录路径使用）。
+  static void deferUploadUntilAfterDeviceSync(MPAudioLocalRecord record) {
+    _deferredUploadsAfterDeviceSync.add(record);
+    debugPrint(
+      '------>>>memopin deferUploadUntilAfterDeviceSync: ${record.fileName} '
+      'pending=${_deferredUploadsAfterDeviceSync.length}',
+    );
+  }
+
+  /// 取出并清空 [deferUploadUntilAfterDeviceSync] 队列。
+  static List<MPAudioLocalRecord> takeDeferredUploadsAfterDeviceSync() {
+    final List<MPAudioLocalRecord> pending =
+        List<MPAudioLocalRecord>.from(_deferredUploadsAfterDeviceSync);
+    _deferredUploadsAfterDeviceSync.clear();
+    return pending;
+  }
+
+  /// 实时停录 finalize 开始前认领设备文件名（须在通知 Home 停录 / 触发批量导入之前调用）。
+  static void claimRealtimeDeviceOpus(String? deviceOpusFileName) {
+    final String name = deviceOpusFileName?.trim() ?? '';
+    if (name.isEmpty) {
+      return;
+    }
+    final String key = name.toLowerCase();
+    _realtimeClaimedDeviceOpusNames.add(key);
+    debugPrint('------>>>memopin claimRealtimeDeviceOpus: $name');
+  }
+
+  /// 实时 finalize 失败时释放认领，允许后续批量导入兜底。
+  static void releaseRealtimeDeviceOpusClaim(String? deviceOpusFileName) {
+    final String name = deviceOpusFileName?.trim() ?? '';
+    if (name.isEmpty) {
+      return;
+    }
+    if (_realtimeClaimedDeviceOpusNames.remove(name.toLowerCase())) {
+      debugPrint('------>>>memopin releaseRealtimeDeviceOpusClaim: $name');
+    }
+  }
+
+  /// 是否已被实时路径认领（批量导入应跳过）。
+  static bool isRealtimeClaimedDeviceOpus(String? deviceOpusFileName) {
+    final String name = deviceOpusFileName?.trim() ?? '';
+    if (name.isEmpty) {
+      return false;
+    }
+    return _realtimeClaimedDeviceOpusNames.contains(name.toLowerCase());
+  }
+
   /// 中止进行中的设备文件导入，清理未完成文件；已成功登记项可通过 [takePendingUploadAfterAbort] 取出。
   static Future<void> cancelActiveDeviceSync() async {
     final _DeviceSyncSession? session = _activeDeviceSync;
@@ -193,10 +247,12 @@ class MPBleFileUtil {
     }
   }
 
-  /// 实时边录边传 `.opus` 结束后：转 MP3 → 从设备导入同名 `.txt`（与 MP3 同目录）→ 写入 [MPAudioLocalRecord] →
-  /// （可选）[onAfterMp3Converted]（宜在停录 notification 前调用，使导入耗时仍计为 recording）→ 删除设备端文件。
+  /// 实时边录边传 `.opus` 结束后：转 MP3 → 从设备导入同名 `.txt` → 写入 [MPAudioLocalRecord] →
+  /// （可选）[onAfterMp3Converted] → 删除设备端文件。
   ///
-  /// 不上传；调用方使用 [MPAudioUploadManager.uploadRecords] 按返回的记录上传。
+  /// **不上传**；调用方应 [deferUploadUntilAfterDeviceSync] 或在批量 sync 结束后再入上传队列。
+  ///
+  /// [deferDeviceFileCleanup] 为 true 时跳过拉 txt / 删设备（仅特殊路径）；停录主路径应传 false。
   static Future<MPAudioLocalRecord?> finalizeRealtimeOpusToLocalRecord({
     required String opusPath,
     String? deviceFileName,
@@ -471,17 +527,18 @@ class MPBleFileUtil {
     );
   }
 
-  /// 拉取列表 → 按 Opus 逐条导出 `.opus` 与同名 `.txt` 至 [ensureMemoPinDeviceAudioDirectoryPath] → 转 MP3 →
-  /// 写入 [MPAudioLocalRecord]（含 [MPAudioLocalRecord.mp3Path]、[MPAudioLocalRecord.txtPath]、转码后主路径）→
-  /// 删除设备端对应 `.opus` 与同名 `.txt`（若存在）→ [MPHomeNotification.notifyHomeListRefresh] → 上传队列。
-  static Future<void> syncDeviceOpusTxtToSandboxRegisterAndUpload({
+  /// 拉取列表 → 导出 Opus/Txt → 转 MP3 → 登记本地 record → 删设备文件。
+  ///
+  /// **不在此处上传**；返回本批新登记的记录，由调用方在 sync 全部结束后再入上传队列
+  ///（并与 [takeDeferredUploadsAfterDeviceSync] 合并）。
+  static Future<List<MPAudioLocalRecord>> syncDeviceOpusTxtToSandboxRegisterAndUpload({
     required BleTransport transport,
     required MPBleFileUtilCopyProgress onSyncProgress,
   }) async {
     debugPrint('------>>>memopin syncDeviceOpusTxt: begin deviceId=${transport.deviceId}');
     if (_activeDeviceSync != null) {
       debugPrint('MPBleFileUtil: device import already in progress.');
-      return;
+      return const <MPAudioLocalRecord>[];
     }
 
     final _DeviceSyncSession session = _DeviceSyncSession(transport);
@@ -499,23 +556,24 @@ class MPBleFileUtil {
       if (!await transport.isConnected()) {
         debugPrint('------>>>memopin syncDeviceOpusTxt: not connected, abort');
         debugPrint('MPBleFileUtil: Bluetooth is not connected.');
-        return;
+        return const <MPAudioLocalRecord>[];
       }
 
       debugPrint('MPBleFileUtil: fetching file list from device...');
       final List<NoteFileInfo> allFiles = await MPBleConnectionHelper.fetchMemoPinFileList(transport);
       if (_isDeviceSyncAborted()) {
         syncAborted = true;
-        return;
+        return List<MPAudioLocalRecord>.from(session.completedRecords);
       }
       debugPrint('------>>>memopin syncDeviceOpusTxt: file list total=${allFiles.length}');
       if (allFiles.isEmpty) {
         debugPrint('MPBleFileUtil: no files on the device.');
-        return;
+        return const <MPAudioLocalRecord>[];
       }
 
       final List<NoteFileInfo> zeroDurationOpusList = _zeroDurationOpusList(allFiles);
-      final List<NoteFileInfo> opusList = _filterOpusListForDeviceSync(allFiles);
+      final List<NoteFileInfo> opusListRaw = _filterOpusListForDeviceSync(allFiles);
+      final List<NoteFileInfo> opusList = await _excludeAlreadyHandledDeviceOpus(opusListRaw);
       final Set<String> zeroDurationOpusStems = zeroDurationOpusList
           .map((NoteFileInfo e) => p.basenameWithoutExtension(e.name).toLowerCase())
           .toSet();
@@ -544,7 +602,7 @@ class MPBleFileUtil {
             zeroDurationOpusList: zeroDurationOpusList,
           );
         }
-        return;
+        return const <MPAudioLocalRecord>[];
       }
 
       final String deviceDir = await ensureMemoPinDeviceAudioDirectoryPath();
@@ -703,7 +761,8 @@ class MPBleFileUtil {
           }
 
           _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
-          await MPHomeAudioTaskQueue.instance.completeImportFile(record, source: kMemoPinRecordSource);
+          // 仅结束 import 计数；上传统一在 sync 全部完成后由 Home 触发。
+          MPHomeAudioTaskQueue.instance.acknowledgeImportFileDone();
         } finally {
           if (syncAborted || _isDeviceSyncAborted()) {
             await _cleanupIncompleteDeviceImportScratch(session.scratch);
@@ -720,7 +779,7 @@ class MPBleFileUtil {
       if (syncAborted || _isDeviceSyncAborted()) {
         debugPrint('------>>>memopin syncDeviceOpusTxt: aborted');
         MPHomeAudioTaskQueue.instance.cancelAllImportTasks();
-        return;
+        return List<MPAudioLocalRecord>.from(session.completedRecords);
       }
 
       if (zeroDurationOpusList.isNotEmpty) {
@@ -731,12 +790,14 @@ class MPBleFileUtil {
         );
       }
 
-      debugPrint('------>>>memopin syncDeviceOpusTxt: done');
+      debugPrint('------>>>memopin syncDeviceOpusTxt: done count=${session.completedRecords.length}');
+      return List<MPAudioLocalRecord>.from(session.completedRecords);
     } catch (e, st) {
       syncAborted = true;
       MPHomeAudioTaskQueue.instance.cancelAllImportTasks();
       debugPrint('------>>>memopin syncDeviceOpusTxt: FAILED $e\n$st');
       debugPrint('MPBleFileUtil device import failed: $e\n$st');
+      return List<MPAudioLocalRecord>.from(session.completedRecords);
     } finally {
       if (syncAborted || _isDeviceSyncAborted()) {
         await _cleanupIncompleteDeviceImportScratch(session.scratch);
@@ -896,6 +957,54 @@ class MPBleFileUtil {
       );
     }
     return result;
+  }
+
+  /// 跳过：实时停录已认领、或本地已有同名 MemoPin 记录（含已上传 isRemoved）。
+  static Future<List<NoteFileInfo>> _excludeAlreadyHandledDeviceOpus(List<NoteFileInfo> opusList) async {
+    if (opusList.isEmpty) {
+      return opusList;
+    }
+    final Set<String> localNames = <String>{};
+    try {
+      final List<MPAudioLocalRecord> locals =
+          await MPAudioLocalRecordsUtil.instance.queryAll(includeRemoved: true);
+      for (final MPAudioLocalRecord r in locals) {
+        if (r.source != kMemoPinRecordSource) {
+          continue;
+        }
+        final String n = r.fileName.trim();
+        if (n.isNotEmpty) {
+          localNames.add(n.toLowerCase());
+        }
+      }
+    } catch (e, st) {
+      debugPrint('------>>>memopin excludeAlreadyHandledDeviceOpus: local query failed $e\n$st');
+    }
+
+    final List<NoteFileInfo> kept = <NoteFileInfo>[];
+    var skippedRealtime = 0;
+    var skippedLocal = 0;
+    for (final NoteFileInfo info in opusList) {
+      final String key = info.name.toLowerCase();
+      if (_realtimeClaimedDeviceOpusNames.contains(key)) {
+        skippedRealtime++;
+        debugPrint('------>>>memopin syncDeviceOpusTxt: skip realtime-claimed ${info.name}');
+        continue;
+      }
+      if (localNames.contains(key)) {
+        skippedLocal++;
+        debugPrint('------>>>memopin syncDeviceOpusTxt: skip already-local ${info.name}');
+        continue;
+      }
+      kept.add(info);
+    }
+    if (skippedRealtime > 0 || skippedLocal > 0) {
+      debugPrint(
+        '------>>>memopin syncDeviceOpusTxt: dedupe skip realtime=$skippedRealtime '
+        'local=$skippedLocal remain=${kept.length}',
+      );
+    }
+    return kept;
   }
 
   static NoteFileInfo? _findTxtForOpus(List<NoteFileInfo> txtList, String opusFileName) {

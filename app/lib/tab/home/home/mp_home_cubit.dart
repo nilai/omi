@@ -495,7 +495,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       return;
     }
 
-    // 设备停录：立刻切到 importing，再拉文件列表。
+    // 设备停录（Watcher 已完成转 MP3 / 删设备 / 本地 record）：切 importing → sync → 再上传。
     final MPHomeAudioStatus? pending = _pendingPostBleRecordingAudioStatus;
     _pendingPostBleRecordingAudioStatus = null;
     _syncCompletedClearTimer?.cancel();
@@ -782,15 +782,37 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     if (!isClosed && state.audioStatus?.type != MPHomeAudioStatusType.importing) {
       emit(state.copyWith(audioStatus: _kImportingPlaceholderStatus));
     }
+    List<MPAudioLocalRecord> imported = <MPAudioLocalRecord>[];
     try {
       debugPrint('MPHomeCubit: Starting device import ($reason)...');
-      await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
+      imported = await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
         onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {},
       );
     } catch (e) {
       debugPrint('MPHomeCubit: device import error ($reason): $e');
     } finally {
+      // sync 完成后统一上传：实时停录推迟的 record + 本批新导入（按 path 去重）。
+      final List<MPAudioLocalRecord> deferred = MPBleFileUtil.takeDeferredUploadsAfterDeviceSync();
+      final List<MPAudioLocalRecord> abortedPending = MPBleFileUtil.takePendingUploadAfterAbort();
+      final Map<String, MPAudioLocalRecord> byPath = <String, MPAudioLocalRecord>{};
+      for (final MPAudioLocalRecord r in <MPAudioLocalRecord>[...deferred, ...imported, ...abortedPending]) {
+        final String key = (r.mp3Path?.trim().isNotEmpty == true) ? r.mp3Path!.trim() : r.path.trim();
+        if (key.isEmpty) {
+          continue;
+        }
+        byPath[key] = r;
+      }
+      final List<MPAudioLocalRecord> toUpload = byPath.values.toList(growable: false);
+      if (toUpload.isNotEmpty) {
+        debugPrint(
+          'MPHomeCubit: post-sync upload deferred=${deferred.length} '
+          'imported=${imported.length} abortedPending=${abortedPending.length} '
+          'deduped=${toUpload.length}',
+        );
+        await MPHomeAudioTaskQueue.instance.enqueueImportedRecordsForUpload(toUpload);
+      }
+
       _bleDeviceImportRunning = false;
       // 设备无文件可导入时，收起占位 importing，避免顶栏一直挂着。
       if (!isClosed &&

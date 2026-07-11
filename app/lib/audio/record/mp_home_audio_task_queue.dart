@@ -89,6 +89,17 @@ class MPHomeAudioTaskQueue {
     _publishTaskBarState();
   }
 
+  /// 单条 import 完成且暂不入 upload 队列（设备批量 sync 整批结束后再上传）。
+  void acknowledgeImportFileDone() {
+    if (_importRemaining > 0) {
+      _importRemaining--;
+    }
+    debugPrint(
+      'MPHomeAudioTaskQueue: acknowledgeImportFileDone, importRemaining=$_importRemaining',
+    );
+    _publishTaskBarState();
+  }
+
   /// 单条 import 完成：移出 import 队列，upload 队列 +1 并触发上传。
   Future<void> completeImportFile(
     MPAudioLocalRecord record, {
