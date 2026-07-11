@@ -650,17 +650,16 @@ class MPBleFileUtil {
 
           MPHomeNotification.notifyHomeListRefresh();
 
-          // 暂不在导入完成后删除蓝牙设备端文件（保留设备侧 Opus/Txt）。
-          // if (await transport.isConnected()) {
-          //   await _deleteDeviceOpusAndPairedTxt(
-          //     transport: transport,
-          //     gattClient: opusClient,
-          //     opusFileName: opusInfo.name,
-          //     pairedTxtFileName: txtMatch?.name,
-          //   );
-          // } else {
-          //   debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
-          // }
+          if (await transport.isConnected()) {
+            await _deleteDeviceOpusAndPairedTxt(
+              transport: transport,
+              gattClient: opusClient,
+              opusFileName: opusInfo.name,
+              pairedTxtFileName: txtMatch?.name,
+            );
+          } else {
+            debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
+          }
 
           _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
           await MPHomeAudioTaskQueue.instance.completeImportFile(record, source: kMemoPinRecordSource);

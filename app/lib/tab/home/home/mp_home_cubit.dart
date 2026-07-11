@@ -722,8 +722,8 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   /// [MPHomeNotification.notifyBleConnectedSuccess]：录音探测结束后，若未在录音则按
-  /// [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传
-  ///（设备端文件删除已暂停）。
+  /// [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传，
+  /// 并在单文件导入成功后删除设备端对应 Opus/Txt。
   Future<void> _onBleConnectedSuccess() async {
     final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
     if (transport == null) {
