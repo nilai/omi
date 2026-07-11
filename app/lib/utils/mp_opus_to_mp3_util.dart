@@ -13,8 +13,17 @@ import '../audio/record/mp_audio_local_records_util.dart';
 ///
 /// - **Ogg Opus**：走 [convertOpusFileToMp3]。
 /// - **MemoPin BLE 导出**：连续 480B 裸包走 [convertMemoPinBleOpusExportToMp3]。
+///
+/// MemoPin 每个 BLE 帧 480B = **12 × 40B** Opus 包（约 16kbps / 20ms CBR）。
+/// 若把整帧当单个包喂给解码器，只会解出约 1/12 时长且内容失真。
 class MPOpusToMp3Util {
   MPOpusToMp3Util._();
+
+  /// BLE 重组后的 Opus 帧长（与 [MPNoteBleFileTransferConstants.opusFrameBytes] 一致）。
+  static const int kBleOpusFrameBytes = 480;
+
+  /// 480B 帧内单个 Opus 包长度（`480 / 12`）。
+  static const int kBleOpusSubPacketBytes = 40;
 
   static Future<void>? _opusLoadFuture;
 
@@ -154,7 +163,7 @@ class MPOpusToMp3Util {
   }
 
   /// MemoPin / Note BLE 导出的 `.opus`：先尝试 [convertOpusFileToMp3]（Ogg 封装）；
-  /// 否则按 **480B/帧** 裸 Opus 包解码（对齐 [MPNoteBleFilePayloadAssembler]，16kHz 单声道）。
+  /// 否则按 **480B 帧内 12×40B Opus 包** 解码（对齐 [MPNoteBleFilePayloadAssembler]，16kHz 单声道）。
   ///
   /// [opusPath] 为沙盒内 `.opus` 绝对路径；成功时返回 `.mp3` 绝对路径。
   static Future<String?> convertMemoPinBleOpusExportToMp3(String opusPath) async {
@@ -165,7 +174,7 @@ class MPOpusToMp3Util {
     return _convertRawOpus480FramesFileToMp3(opusPath);
   }
 
-  /// 裸 Opus 帧（480 字节）拼接文件 → MP3。
+  /// 裸 Opus：连续 480B BLE 帧，每帧拆成 12 个 40B 包再解码 → MP3。
   static Future<String?> _convertRawOpus480FramesFileToMp3(String opusPath) async {
     if (kIsWeb) {
       return null;
@@ -191,9 +200,17 @@ class MPOpusToMp3Util {
         return null;
       }
 
-      const int frameBytes = 480;
+      const int frameBytes = kBleOpusFrameBytes;
+      const int subPacketBytes = kBleOpusSubPacketBytes;
       const int sampleRate = 16000;
       const int channels = 1;
+
+      final int bleFrameCount = (raw.length / frameBytes).floor();
+      final int expectedSubPackets = bleFrameCount * (frameBytes ~/ subPacketBytes);
+      debugPrint(
+        '------>>>memopin opus→mp3 raw: bytes=${raw.length} bleFrames=$bleFrameCount '
+        'subPackets≈$expectedSubPackets (~${(expectedSubPackets * 20 / 1000).toStringAsFixed(1)}s @20ms)',
+      );
 
       final SimpleOpusDecoder decoder = SimpleOpusDecoder(
         sampleRate: sampleRate,
@@ -208,22 +225,38 @@ class MPOpusToMp3Util {
       final IOSink sink = File(mp3Path).openWrite();
       final List<double> leftAcc = <double>[];
       const int chunkSamples = 48000;
+      var decodedPackets = 0;
+      var skippedPackets = 0;
 
       try {
         for (int offset = 0; offset < raw.length; offset += frameBytes) {
           final int end = offset + frameBytes <= raw.length ? offset + frameBytes : raw.length;
-          final Uint8List pkt = Uint8List.sublistView(raw, offset, end);
-          if (pkt.isEmpty) {
+          final Uint8List frame = Uint8List.sublistView(raw, offset, end);
+          if (frame.isEmpty) {
             continue;
           }
-          try {
-            final Float32List pcm = decoder.decodeFloat(input: pkt);
-            for (int j = 0; j < pcm.length; j++) {
-              leftAcc.add(pcm[j]);
+
+          // 每 480B 帧按 40B 切分；末尾不足一包的残字节忽略（多为填充）。
+          for (int s = 0; s + subPacketBytes <= frame.length; s += subPacketBytes) {
+            final Uint8List pkt = Uint8List.sublistView(frame, s, s + subPacketBytes);
+            if (_isAllZeroOpusPacket(pkt)) {
+              skippedPackets++;
+              continue;
             }
-          } catch (e) {
-            debugPrint('MPOpusToMp3Util: skip opus frame @ $offset: $e');
+            try {
+              final Float32List pcm = decoder.decodeFloat(input: pkt);
+              for (int j = 0; j < pcm.length; j++) {
+                leftAcc.add(pcm[j]);
+              }
+              decodedPackets++;
+            } catch (e) {
+              skippedPackets++;
+              if (skippedPackets <= 8) {
+                debugPrint('MPOpusToMp3Util: skip opus sub-packet @ ${offset + s}: $e');
+              }
+            }
           }
+
           await _encodePcmChunksFromBuffers(
             encoder: encoder,
             sink: sink,
@@ -252,6 +285,11 @@ class MPOpusToMp3Util {
         await sink.close();
       }
 
+      debugPrint(
+        '------>>>memopin opus→mp3 raw done: decodedPackets=$decodedPackets '
+        'skipped=$skippedPackets pcmSec≈${(decodedPackets * 20 / 1000).toStringAsFixed(1)}',
+      );
+
       final String? verified =
           await MPAudioLocalRecordsUtil.adjustAudioFileIfWrongExtension(mp3Path);
       return verified ?? mp3Path;
@@ -265,6 +303,15 @@ class MPOpusToMp3Util {
       } catch (_) {}
       return null;
     }
+  }
+
+  static bool _isAllZeroOpusPacket(Uint8List pkt) {
+    for (int i = 0; i < pkt.length; i++) {
+      if (pkt[i] != 0) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// Opus 解码器允许的采样率；头里为 0 或未列出时用 48000。

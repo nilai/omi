@@ -130,6 +130,34 @@ class MPBleFileUtil {
     }
   }
 
+  /// 诊断用：打印本地音频 name / 大小 / 可读时长（及可选设备侧时长、导出字节数）。
+  static Future<void> _debugPrintLocalAudioMeta(
+    String stage,
+    String filePath, {
+    int? deviceDurationSec,
+    int? exportedBytes,
+  }) async {
+    final String name = p.basename(filePath);
+    int? sizeBytes;
+    try {
+      final File f = File(filePath);
+      if (await f.exists()) {
+        sizeBytes = await f.length();
+      }
+    } catch (_) {}
+    final int? durationSec = await MPAudioImportUtils.readAudioDurationSeconds(filePath);
+    final StringBuffer buf = StringBuffer(
+      '------hjj>>>memopin syncDeviceOpusTxt: $stage name=$name sizeBytes=$sizeBytes durationSec=$durationSec',
+    );
+    if (deviceDurationSec != null) {
+      buf.write(' deviceDurationSec=$deviceDurationSec');
+    }
+    if (exportedBytes != null) {
+      buf.write(' exportedBytes=$exportedBytes');
+    }
+    debugPrint(buf.toString());
+  }
+
   /// 应用 Documents 下 MemoPin 设备音频目录（导出 `.opus` / `.txt` / `.mp3`）。
   static Future<String> ensureMemoPinDeviceAudioDirectoryPath() async {
     debugPrint('------>>>memopin ensureMemoPinDeviceAudioDirectoryPath');
@@ -569,6 +597,12 @@ class MPBleFileUtil {
             continue;
           }
           session.scratch.opusPath = opusPath;
+          await _debugPrintLocalAudioMeta(
+            'opus imported',
+            opusPath,
+            deviceDurationSec: opusInfo.durationSeconds,
+            exportedBytes: opusBytes.length,
+          );
 
           if (_isDeviceSyncAborted()) {
             syncAborted = true;
@@ -615,6 +649,13 @@ class MPBleFileUtil {
             _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
             MPHomeAudioTaskQueue.instance.skipImportFile();
             continue;
+          }
+          if (mp3Path != null && mp3Path.isNotEmpty) {
+            await _debugPrintLocalAudioMeta('opus→mp3', mp3Path);
+          } else {
+            debugPrint(
+              '------>>>memopin syncDeviceOpusTxt: opus→mp3 failed, fallback primary=${p.basename(opusPath)}',
+            );
           }
 
           if (_isDeviceSyncAborted()) {

@@ -542,6 +542,16 @@ class MPAudioUploadManager {
         effectiveDurSec = duration.inSeconds;
       }
 
+      int? uploadSizeBytes;
+      try {
+        uploadSizeBytes = await f.length();
+      } catch (_) {}
+      debugPrint(
+        '------>>>memopin createRecord: name=${p.basename(f.path)} '
+        'sizeBytes=$uploadSizeBytes durationSec=$effectiveDurSec '
+        'recordDuration=${record.duration} audioUri=$audioUri',
+      );
+
       final MPCreateRecordResponse? created = await createRecord(
         MPCreateRecordRequest(
           recordFile: audioUri,
