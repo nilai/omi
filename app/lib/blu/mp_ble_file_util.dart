@@ -203,7 +203,9 @@ class MPBleFileUtil {
     String? txtPathOnPhone;
     String? deviceTxtFileName;
     final String? deviceOpusFileName = _deviceOpusFileNameForBleCleanup(deviceFileName, opusPath);
-    if (ble != null &&
+    // deferDeviceFileCleanup：停录后 Home 会立刻批量导入，此处不再占 GATT 拉 txt。
+    if (!deferDeviceFileCleanup &&
+        ble != null &&
         deviceOpusFileName != null &&
         deviceOpusFileName.isNotEmpty &&
         await _isTransportConnectedSafe(ble)) {
@@ -484,14 +486,36 @@ class MPBleFileUtil {
         return;
       }
 
+      final List<NoteFileInfo> zeroDurationOpusList = _zeroDurationOpusList(allFiles);
       final List<NoteFileInfo> opusList = _filterOpusListForDeviceSync(allFiles);
+      final Set<String> zeroDurationOpusStems = zeroDurationOpusList
+          .map((NoteFileInfo e) => p.basenameWithoutExtension(e.name).toLowerCase())
+          .toSet();
       final List<NoteFileInfo> txtList = allFiles
           .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.txt'))
+          .where(
+            (NoteFileInfo e) =>
+                !zeroDurationOpusStems.contains(p.basenameWithoutExtension(e.name).toLowerCase()),
+          )
           .toList(growable: false);
+
+      if (zeroDurationOpusList.isNotEmpty) {
+        debugPrint(
+          '------>>>memopin syncDeviceOpusTxt: excluded zeroDurationOpus=${zeroDurationOpusList.length} '
+          'from import total',
+        );
+      }
 
       if (opusList.isEmpty) {
         debugPrint('------>>>memopin syncDeviceOpusTxt: no opus files');
         debugPrint('MPBleFileUtil: no opus files on the device.');
+        if (!_isDeviceSyncAborted() && zeroDurationOpusList.isNotEmpty) {
+          await _deleteZeroDurationDeviceFiles(
+            transport: transport,
+            allFiles: allFiles,
+            zeroDurationOpusList: zeroDurationOpusList,
+          );
+        }
         return;
       }
 
@@ -626,16 +650,17 @@ class MPBleFileUtil {
 
           MPHomeNotification.notifyHomeListRefresh();
 
-          if (await transport.isConnected()) {
-            await _deleteDeviceOpusAndPairedTxt(
-              transport: transport,
-              gattClient: opusClient,
-              opusFileName: opusInfo.name,
-              pairedTxtFileName: txtMatch?.name,
-            );
-          } else {
-            debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
-          }
+          // 暂不在导入完成后删除蓝牙设备端文件（保留设备侧 Opus/Txt）。
+          // if (await transport.isConnected()) {
+          //   await _deleteDeviceOpusAndPairedTxt(
+          //     transport: transport,
+          //     gattClient: opusClient,
+          //     opusFileName: opusInfo.name,
+          //     pairedTxtFileName: txtMatch?.name,
+          //   );
+          // } else {
+          //   debugPrint('MPBleFileUtil: Bluetooth disconnected; skipped device delete for ${opusInfo.name}.');
+          // }
 
           _reportDeviceImportProgress(onSyncProgress, fileIndex: i + 1, fileTotal: total, progressPercent: 100);
           await MPHomeAudioTaskQueue.instance.completeImportFile(record, source: kMemoPinRecordSource);
@@ -658,6 +683,14 @@ class MPBleFileUtil {
         return;
       }
 
+      if (zeroDurationOpusList.isNotEmpty) {
+        await _deleteZeroDurationDeviceFiles(
+          transport: transport,
+          allFiles: allFiles,
+          zeroDurationOpusList: zeroDurationOpusList,
+        );
+      }
+
       debugPrint('------>>>memopin syncDeviceOpusTxt: done');
     } catch (e, st) {
       syncAborted = true;
@@ -673,7 +706,8 @@ class MPBleFileUtil {
     }
   }
 
-  /// 设备文件列表中正在录音的 Opus（`durationSeconds == 0`）；取 index 最大者。
+  /// 已确认在录音时，从文件列表解析「进行中」Opus（`durationSeconds == 0`）；取 index 最大者。
+  /// 不可单独用本结果判定是否在录音。
   static NoteFileInfo? findInProgressRecordingOpus(List<NoteFileInfo> allFiles) {
     NoteFileInfo? best;
     for (final NoteFileInfo info in allFiles) {
@@ -742,6 +776,47 @@ class MPBleFileUtil {
         await client.dispose();
       }
     });
+  }
+
+  /// 设备文件列表中 `durationSeconds == 0` 的 Opus（不参与导入总数，导出完成后从设备删除）。
+  static List<NoteFileInfo> _zeroDurationOpusList(List<NoteFileInfo> allFiles) {
+    return allFiles
+        .where(
+          (NoteFileInfo e) =>
+              e.name.toLowerCase().endsWith('.opus') && e.durationSeconds <= 0,
+        )
+        .toList(growable: false);
+  }
+
+  /// 导出完成后删除设备端零时长 Opus 及列表中同名 stem 的 `.txt`。
+  static Future<void> _deleteZeroDurationDeviceFiles({
+    required BleTransport transport,
+    required List<NoteFileInfo> allFiles,
+    required List<NoteFileInfo> zeroDurationOpusList,
+  }) async {
+    if (zeroDurationOpusList.isEmpty) {
+      return;
+    }
+    if (!await transport.isConnected()) {
+      debugPrint('MPBleFileUtil: skip zero-duration delete — Bluetooth disconnected.');
+      return;
+    }
+
+    final List<NoteFileInfo> txtList = allFiles
+        .where((NoteFileInfo e) => e.name.toLowerCase().endsWith('.txt'))
+        .toList(growable: false);
+
+    debugPrint(
+      '------>>>memopin syncDeviceOpusTxt: delete zeroDurationOpus count=${zeroDurationOpusList.length}',
+    );
+    for (final NoteFileInfo opusInfo in zeroDurationOpusList) {
+      final NoteFileInfo? txtMatch = _findTxtForOpus(txtList, opusInfo.name);
+      await _deleteDeviceOpusAndPairedTxt(
+        transport: transport,
+        opusFileName: opusInfo.name,
+        pairedTxtFileName: txtMatch?.name,
+      );
+    }
   }
 
   /// 设备批量导入用 Opus 列表：仅 `.opus`、时长 > 0、按文件名（忽略大小写）去重（保留时长更长者，相同时保留 index 更大者）。

@@ -25,7 +25,7 @@ import 'note_device.dart';
 /// 按 `ble/doc/ble-api-documentation.md` 解析 **Cmd / Op / Result**，
 /// 在「开始录音成功」、BLE 断开、[detach] 时立即更新 [lastEmitted] 并
 /// [MPHomeNotification.notifyBleMemopinRecordingStateChanged]；
-/// 「结束录音成功」在转 MP3 完成后、导入上传前通知（见 [_handleDeviceRecordingStoppedOk]）。
+/// 「结束录音成功」在收到 303 停录成功时立即通知（顶栏切 importing）；转 MP3 / 上传在后台继续。
 ///
 /// **实时音频落盘**（对齐 [MPBleLiveRecordingSession] / [NoteBleTransport] 边录边传）：
 /// - 订阅 **301 原始 notify** + [MPBleRtOpusBuffer] 组 480B 帧；Seq 间隙发 `0x20` 补传；
@@ -433,7 +433,12 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 连接后探测录音态（等待 303 重放 / 301 实时流）并导入连接前已有 Opus 数据。
+  /// 连接后探测是否正在录音：先开边录边传，再依据 303 / 301 判定。
+  ///
+  /// - 正在录音 → emit `recording=true` 并 join 续传；停录后由 Home 再拉文件列表导入。
+  /// - 未录音 → 不 emit、不拉文件列表（`0x03` 由 Home 批量导入发起，与录音判定无关）。
+  ///
+  /// 禁止仅凭文件列表（如 `duration==0`）判定录音，否则「有文件但未录音」会误显示 is recording。
   Future<void> _probeAndJoinActiveDeviceRecordingOnConnect(BleTransport transport) async {
     final String? recordingName = _lastEmitted.activeFileName?.trim();
     if (_lastEmitted.isRecording &&
@@ -460,35 +465,40 @@ class MPBleRecordingWatcher {
       debugPrint('------>>>memopin recording watcher: set recordAndStream failed: $e');
     }
 
+    // 等待 303 开始录音重放 / 301 实时流；未出现则视为未在录音。
     await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!_lastEmitted.isRecording) {
+    if (!_lastEmitted.isRecording && !_probe301AudioSeen) {
       await Future<void>.delayed(const Duration(milliseconds: 500));
     }
 
+    final bool isActivelyRecording = _lastEmitted.isRecording || _probe301AudioSeen;
+    if (!isActivelyRecording) {
+      debugPrint(
+        '------>>>memopin recording watcher: no active recording on connect '
+        'probe301=$_probe301AudioSeen (file list left to Home import)',
+      );
+      return;
+    }
+
+    // 已确认在录音：再拉文件列表仅用于解析续传文件名并 join，不作为录音判定依据。
     try {
       final List<NoteFileInfo> allFiles =
           await MPBleConnectionHelper.fetchMemoPinFileListForRecordingProbe(transport);
-      final NoteFileInfo? zeroDur = MPBleFileUtil.findInProgressRecordingOpus(allFiles);
-      final NoteFileInfo? latestOpus = MPBleFileUtil.findLatestOpusFile(allFiles);
 
       NoteFileInfo? active;
-      if (_lastEmitted.isRecording) {
-        final String? name = _lastEmitted.activeFileName;
-        if (name != null && name.isNotEmpty) {
-          active = MPBleFileUtil.resolveOpusFileInfo(allFiles, name);
-        }
+      final String? name = _lastEmitted.activeFileName;
+      if (name != null && name.isNotEmpty) {
+        active = MPBleFileUtil.resolveOpusFileInfo(allFiles, name);
       }
-      active ??= zeroDur;
-      if (active == null && (_probe301AudioSeen || _lastEmitted.isRecording)) {
-        active = latestOpus;
-      }
+      active ??= MPBleFileUtil.findInProgressRecordingOpus(allFiles);
+      active ??= MPBleFileUtil.findLatestOpusFile(allFiles);
       if (active == null && _probe301AudioSeen) {
         active = NoteFileInfo(index: 0, name: 'session.opus', durationSeconds: 0);
       }
 
       if (active == null) {
         debugPrint(
-          '------>>>memopin recording watcher: no active recording on connect '
+          '------>>>memopin recording watcher: recording but no opus to join '
           'files=${allFiles.length} probe301=$_probe301AudioSeen',
         );
         return;
@@ -650,6 +660,7 @@ class MPBleRecordingWatcher {
             sessionModeByte: _lastSessionModeByte,
             changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
           ),
+          forceEmit: true,
         );
       } catch (_) {
         fileLabel = null;
@@ -659,6 +670,7 @@ class MPBleRecordingWatcher {
             sessionModeByte: _lastSessionModeByte,
             changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
           ),
+          forceEmit: true,
         );
       }
       final String fn = (fileLabel != null && fileLabel.isNotEmpty) ? fileLabel : 'session.opus';
@@ -685,7 +697,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功：关流 → 转 MP3 → 导入 txt → 登记 → 通知停录 → [uploadRecords]。
+  /// 303 停止成功：先通知停录（顶栏切 importing）→ 关流 → 转 MP3 / 导 txt → 上传。
   Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
     if (_finalizeAfterStopInProgress) {
       debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
@@ -707,13 +719,9 @@ class MPBleRecordingWatcher {
     }
     final String? deviceFileName = stopFileName ?? _lastEmitted.activeFileName;
     final String? opusPath = _savedAudioPath;
-    var stopNotified = false;
 
-    Future<void> notifyDeviceRecordingStoppedOnce() async {
-      if (stopNotified || !_lastEmitted.isRecording) {
-        return;
-      }
-      stopNotified = true;
+    // 立刻对外通知停录，避免等转码期间顶栏一直空白 / 仍显示 recording。
+    if (_lastEmitted.isRecording) {
       _emitRecordingStopped(
         changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
         activeFileName: stopFileName,
@@ -729,27 +737,19 @@ class MPBleRecordingWatcher {
         await _finalizeStoppedRealtimeCapture(
           opusPath: opusPath,
           deviceFileName: deviceFileName,
-          onAfterMp3Converted: notifyDeviceRecordingStoppedOnce,
         );
-      }
-      if (!stopNotified) {
-        await notifyDeviceRecordingStoppedOnce();
       }
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher stop finalize pipeline failed: $e\n$st');
-      if (!stopNotified) {
-        await notifyDeviceRecordingStoppedOnce();
-      }
     } finally {
       _finalizeAfterStopInProgress = false;
     }
   }
 
-  /// 303 停止成功后：转 MP3 → 导入 txt → 登记 → 停录通知 → [uploadRecords]；删设备文件后台执行。
+  /// 303 停止成功后：转 MP3 → 导入 txt → 登记 → [uploadRecords]；删设备文件后台执行。
   Future<void> _finalizeStoppedRealtimeCapture({
     required String opusPath,
     String? deviceFileName,
-    Future<void> Function()? onAfterMp3Converted,
   }) async {
     final BleTransport? transport = _boundTransport;
     try {
@@ -757,7 +757,6 @@ class MPBleRecordingWatcher {
         opusPath: opusPath,
         deviceFileName: deviceFileName,
         transport: transport,
-        onAfterMp3Converted: onAfterMp3Converted,
         deferDeviceFileCleanup: true,
       );
       if (record == null) {

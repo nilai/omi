@@ -164,6 +164,9 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   Timer? _syncCompletedClearTimer;
   bool _bleDeviceImportRunning = false;
 
+  /// 因设备正在录音而推迟的批量导入；停录后自动补跑。
+  bool _pendingDeviceImportAfterRecordingStop = false;
+
   /// 本地待传音频批量上传任务是否仍在执行（含冷/热启动触发的队列上传）。
   bool _pendingLocalAudioUploadRunning = false;
 
@@ -440,72 +443,108 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
   static const MPHomeAudioStatus _kRecordingAudioStatus = MPHomeAudioStatus(type: MPHomeAudioStatusType.recording);
 
+  static const MPHomeAudioStatus _kImportingPlaceholderStatus = MPHomeAudioStatus(
+    type: MPHomeAudioStatusType.importing,
+    progress: 0,
+    currentFile: 1,
+    totalFiles: 1,
+  );
+
   /// 任意状态 → recording 时立即展示（优先于 importing / syncing）。
   void _emitRecordingAudioStatusPrioritized() {
     _syncCompletedClearTimer?.cancel();
-    emit(state.copyWith(audioStatus: _kRecordingAudioStatus));
+    if (!isClosed) {
+      emit(state.copyWith(audioStatus: _kRecordingAudioStatus));
+    }
   }
 
-  /// [MPHomeNotification.listenBleMemopinRecordingState]：设备开始录音 → 顶栏 recording；停录 → 若有推迟的 import/sync 则应用，否则仅当当前为 recording 时隐藏条。
+  /// 开录时暂停批量导入，并在 cancel 的 clear 之后再次钉住 recording 顶栏。
+  Future<void> _pauseImportForDeviceRecording() async {
+    await MPBleFileUtil.cancelActiveDeviceSync();
+    if (!isClosed && MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      _emitRecordingAudioStatusPrioritized();
+    }
+  }
+
+  /// [MPHomeNotification.listenBleMemopinRecordingState]
   void _onBleMemopinRecordingStateChanged(MPBleMemopinRecordingStateChangedPayload payload) {
     if (payload.isRecording) {
-      _pendingPostBleRecordingAudioStatus = null;
       _emitRecordingAudioStatusPrioritized();
-      return;
-    }
-    _flushPendingAfterBleRecordingStopped(payload);
-  }
-
-  /// 蓝牙已停录：应用推迟的 importing/syncing，或更新顶栏（仅 [deviceRecordingStopped] 切 syncing）。
-  void _flushPendingAfterBleRecordingStopped(MPBleMemopinRecordingStateChangedPayload payload) {
-    if (payload.changeReason == MPBleMemopinRecordingChangeReason.bleDisconnected ||
-        payload.changeReason == MPBleMemopinRecordingChangeReason.watcherDetached) {
-      if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
-        _clearBleTopBarForRecordingDisconnect();
+      if (_bleDeviceImportRunning) {
+        _pendingDeviceImportAfterRecordingStop = true;
+        debugPrint('MPHomeCubit: device recording started, pause batch import');
+        unawaited(_pauseImportForDeviceRecording());
       }
       return;
     }
-    if (_pendingPostBleRecordingAudioStatus != null) {
-      final MPHomeAudioStatus pending = _pendingPostBleRecordingAudioStatus!;
-      _pendingPostBleRecordingAudioStatus = null;
-      _syncCompletedClearTimer?.cancel();
-      emit(state.copyWith(audioStatus: pending));
+
+    if (payload.changeReason == MPBleMemopinRecordingChangeReason.bleDisconnected) {
+      unawaited(_onRecordingBusBleDisconnected());
       return;
     }
+
+    if (payload.changeReason == MPBleMemopinRecordingChangeReason.watcherDetached) {
+      // re-attach 可能触发；仅在设备已非录音时收起 recording 条。
+      if (!MPBleConnectionHelper.isMemoPinDeviceRecording &&
+          state.audioStatus?.type == MPHomeAudioStatusType.recording &&
+          !isClosed) {
+        _pendingPostBleRecordingAudioStatus = null;
+        _syncCompletedClearTimer?.cancel();
+        emit(state.copyWith(clearAudioStatus: true));
+      }
+      return;
+    }
+
+    // 设备停录：立刻切到 importing，再拉文件列表。
+    final MPHomeAudioStatus? pending = _pendingPostBleRecordingAudioStatus;
     _pendingPostBleRecordingAudioStatus = null;
-    if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
-      return;
-    }
+    _syncCompletedClearTimer?.cancel();
+
     if (payload.changeReason == MPBleMemopinRecordingChangeReason.deviceRecordingStopped) {
-      // 仅设备 303 停录成功：切 syncing，由后续 uploadRecords 更新进度。
-      _syncCompletedClearTimer?.cancel();
-      emit(
-        state.copyWith(
-          audioStatus: const MPHomeAudioStatus(
-            type: MPHomeAudioStatusType.syncing,
-            progress: 0,
-            currentFile: 1,
-            totalFiles: 1,
+      _pendingDeviceImportAfterRecordingStop = true;
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            audioStatus: pending?.type == MPHomeAudioStatusType.importing
+                ? pending
+                : _kImportingPlaceholderStatus,
           ),
-        ),
-      );
+        );
+      }
+      unawaited(_runDeviceFileImport(reason: 'after device recording stopped'));
       return;
     }
-    emit(state.copyWith(clearAudioStatus: true));
+
+    if (pending != null) {
+      if (!isClosed) {
+        emit(state.copyWith(audioStatus: pending));
+      }
+      return;
+    }
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording && !isClosed) {
+      emit(state.copyWith(clearAudioStatus: true));
+    }
   }
 
-  /// 若外接 MemoPin 正在录音，则暂存 [next]；顶栏 **立即** 切为 recording（覆盖 importing / syncing），直至停录再应用暂存态。
-  ///
-  /// @returns {bool} `true` 表示已推迟，调用方不应再写入 [next]。
-  bool _deferAudioStatusIfMemoPinRecording(MPHomeAudioStatus next) {
-    if (!MPBleConnectionHelper.isMemoPinDeviceRecording) {
-      return false;
+  /// 录音总线上报的 bleDisconnected：先确认链路真的断了，避免 GATT 繁忙误清 recording。
+  Future<void> _onRecordingBusBleDisconnected() async {
+    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
+    if (transport != null) {
+      try {
+        if (await transport.isConnected()) {
+          debugPrint('MPHomeCubit: ignore recording-bus disconnect — BLE still connected');
+          if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+            _emitRecordingAudioStatusPrioritized();
+          }
+          return;
+        }
+      } catch (_) {
+        // treat as disconnected
+      }
     }
-    _pendingPostBleRecordingAudioStatus = next;
-    if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
-      _emitRecordingAudioStatusPrioritized();
+    if (state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+      _clearBleTopBarForRecordingDisconnect();
     }
-    return true;
   }
 
   /// 演示：设备录音中（对齐 react `setRecording`）；日常由 [_onBleMemopinRecordingStateChanged] 驱动。
@@ -522,6 +561,19 @@ class MPHomeCubit extends Cubit<MPHomeState> {
 
     if (payload.kind == MPHomeAudioTaskBarKind.clear) {
       _syncCompletedClearTimer?.cancel();
+      // 设备录音中 / 顶栏 recording：忽略 cancel 导入带来的 clear。
+      if (MPBleConnectionHelper.isMemoPinDeviceRecording ||
+          state.audioStatus?.type == MPHomeAudioStatusType.recording) {
+        debugPrint('MPHomeCubit: ignore task-bar clear while recording');
+        return;
+      }
+      // 导入进行中或队列仍有任务：忽略迟到 clear。
+      if (_bleDeviceImportRunning ||
+          MPHomeAudioTaskQueue.instance.hasImportTasks ||
+          MPHomeAudioTaskQueue.instance.hasUploadSession) {
+        debugPrint('MPHomeCubit: ignore stale task-bar clear while import/upload active');
+        return;
+      }
       if (!isClosed && state.audioStatus != null) {
         emit(state.copyWith(clearAudioStatus: true));
         loadData();
@@ -539,20 +591,16 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       totalFiles: payload.totalFiles,
     );
 
-    if (state.audioStatus?.type == MPHomeAudioStatusType.recording ||
-        MPBleConnectionHelper.isMemoPinDeviceRecording) {
+    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
       _pendingPostBleRecordingAudioStatus = next;
-      if (state.audioStatus?.type != MPHomeAudioStatusType.recording) {
-        _emitRecordingAudioStatusPrioritized();
-      }
-      return;
-    }
-    if (_deferAudioStatusIfMemoPinRecording(next)) {
+      _emitRecordingAudioStatusPrioritized();
       return;
     }
 
     _syncCompletedClearTimer?.cancel();
-    emit(state.copyWith(audioStatus: next));
+    if (!isClosed) {
+      emit(state.copyWith(audioStatus: next));
+    }
 
     if (payload.scheduleClearAfterDisplay) {
       _scheduleSyncingStatusBarClear();
@@ -574,10 +622,20 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   void _scheduleSyncingStatusBarClear() {
     _syncCompletedClearTimer?.cancel();
     _syncCompletedClearTimer = Timer(const Duration(milliseconds: 1600), () {
-      if (!isClosed) {
-        emit(state.copyWith(clearAudioStatus: true));
-        loadData();
+      if (isClosed) {
+        return;
       }
+      if (state.audioStatus?.type == MPHomeAudioStatusType.recording ||
+          MPBleConnectionHelper.isMemoPinDeviceRecording) {
+        return;
+      }
+      if (_bleDeviceImportRunning ||
+          MPHomeAudioTaskQueue.instance.hasImportTasks ||
+          MPHomeAudioTaskQueue.instance.hasUploadSession) {
+        return;
+      }
+      emit(state.copyWith(clearAudioStatus: true));
+      loadData();
     });
   }
 
@@ -613,6 +671,21 @@ class MPHomeCubit extends Cubit<MPHomeState> {
   }
 
   Future<void> _handleBleDisconnected() async {
+    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
+    if (transport != null) {
+      try {
+        if (await transport.isConnected()) {
+          debugPrint('MPHomeCubit: ignore bleDisconnected notify — BLE still connected');
+          if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+            _emitRecordingAudioStatusPrioritized();
+          }
+          return;
+        }
+      } catch (_) {
+        // treat as disconnected
+      }
+    }
+
     final MPHomeAudioStatusType? statusType = state.audioStatus?.type;
 
     if (statusType == MPHomeAudioStatusType.syncing) {
@@ -648,11 +721,10 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     }
   }
 
-  /// [MPHomeNotification.notifyBleConnectedSuccess]：后台 BLE 就绪后按 [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传并删设备端 Opus/同名 Txt。
+  /// [MPHomeNotification.notifyBleConnectedSuccess]：录音探测结束后，若未在录音则按
+  /// [MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload] 拉设备 Opus/同名 Txt → 转 MP3 → 上传
+  ///（设备端文件删除已暂停）。
   Future<void> _onBleConnectedSuccess() async {
-    if (_bleDeviceImportRunning || isClosed) {
-      return;
-    }
     final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
     if (transport == null) {
       debugPrint('MPHomeCubit: Bluetooth session unavailable.');
@@ -665,22 +737,75 @@ class MPHomeCubit extends Cubit<MPHomeState> {
     await MPBleConnectionHelper.waitForRecordingConnectProbe();
     _syncBleRecordingTopBarFromSnapshot();
     if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      _pendingDeviceImportAfterRecordingStop = true;
       debugPrint('MPHomeCubit: device is recording, skip batch import until stop');
       return;
     }
-    _bleDeviceImportRunning = true;
+    await _runDeviceFileImport(reason: 'ble connected');
+  }
+
+  /// 批量导入设备 Opus/Txt；录音中则推迟到停录后再跑。
+  Future<void> _runDeviceFileImport({required String reason}) async {
+    if (isClosed) {
+      return;
+    }
+    if (MPBleConnectionHelper.isMemoPinDeviceRecording) {
+      _pendingDeviceImportAfterRecordingStop = true;
+      debugPrint('MPHomeCubit: defer device import ($reason) — still recording');
+      return;
+    }
+    // 上一轮导入尚未退出时只挂起，待 finally 再跑，避免直接吞掉停录后的导入。
+    if (_bleDeviceImportRunning) {
+      _pendingDeviceImportAfterRecordingStop = true;
+      debugPrint('MPHomeCubit: defer device import ($reason) — prior import still running');
+      return;
+    }
+    final BleTransport? transport = MPBleConnectionHelper.backgroundBleTransport;
+    if (transport == null) {
+      debugPrint('MPHomeCubit: device import skipped ($reason) — no transport');
+      return;
+    }
     try {
-      debugPrint('MPHomeCubit: Bluetooth connected. Starting device import...');
+      if (!await transport.isConnected()) {
+        debugPrint('MPHomeCubit: device import skipped ($reason) — not connected');
+        return;
+      }
+    } catch (_) {
+      debugPrint('MPHomeCubit: device import skipped ($reason) — isConnected check failed');
+      return;
+    }
+
+    _bleDeviceImportRunning = true;
+    _pendingDeviceImportAfterRecordingStop = false;
+    _syncCompletedClearTimer?.cancel();
+    // 拉列表前先占住 importing 顶栏，避免中间被 clear 成空白。
+    if (!isClosed && state.audioStatus?.type != MPHomeAudioStatusType.importing) {
+      emit(state.copyWith(audioStatus: _kImportingPlaceholderStatus));
+    }
+    try {
+      debugPrint('MPHomeCubit: Starting device import ($reason)...');
       await MPBleFileUtil.syncDeviceOpusTxtToSandboxRegisterAndUpload(
         transport: transport,
         onSyncProgress: ({required int fileIndex, required int fileTotal, required int progressPercent}) {},
       );
     } catch (e) {
-      debugPrint('MPHomeCubit: device import error: $e');
+      debugPrint('MPHomeCubit: device import error ($reason): $e');
     } finally {
       _bleDeviceImportRunning = false;
+      // 设备无文件可导入时，收起占位 importing，避免顶栏一直挂着。
+      if (!isClosed &&
+          state.audioStatus?.type == MPHomeAudioStatusType.importing &&
+          !MPHomeAudioTaskQueue.instance.hasImportTasks &&
+          !MPHomeAudioTaskQueue.instance.hasUploadSession) {
+        emit(state.copyWith(clearAudioStatus: true));
+      }
       if (!isClosed) {
         await refreshBleConnectionState();
+      }
+      if (_pendingDeviceImportAfterRecordingStop &&
+          !isClosed &&
+          !MPBleConnectionHelper.isMemoPinDeviceRecording) {
+        unawaited(_runDeviceFileImport(reason: 'pending after prior import'));
       }
     }
   }

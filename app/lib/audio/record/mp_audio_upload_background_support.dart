@@ -5,10 +5,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
+import '../../blu/mp_ble_connection_helper.dart';
 import 'mp_audio_upload_background_native.dart';
 import 'mp_recording_background_support.dart';
 
-/// Task isolate 入口（Android 上传前台服务）；须为顶层函数以便引擎注册。
+/// Task isolate 入口（Android 上传前台服务）；保留供无 BLE 时可选启用。
 @pragma('vm:entry-point')
 void mpAudioUploadForegroundTaskCallback() {
   FlutterForegroundTask.setTaskHandler(_MPAudioUploadForegroundTaskHandler());
@@ -28,6 +29,9 @@ class _MPAudioUploadForegroundTaskHandler extends TaskHandler {
 
 /// 音频上传队列活跃期间：Android 启动 dataSync 前台服务；iOS 申请后台执行窗口；
 /// 并在退后台遇到网络中断时阻塞重试直至回到前台（避免无意义失败重试）。
+///
+/// **MemoPin BLE 已连接时不启停 FGS**：`flutter_foreground_task` 无论是否传 callback
+/// 都会 `FlutterEngine()`，销毁时 `flutter_reactive_ble` 静态连接表会被 `disconnectAll`。
 class MPAudioUploadBackgroundSupport with WidgetsBindingObserver {
   MPAudioUploadBackgroundSupport._();
 
@@ -54,6 +58,9 @@ class MPAudioUploadBackgroundSupport with WidgetsBindingObserver {
 
   static bool get isAppInForeground => _lifecycleState == AppLifecycleState.resumed;
 
+  /// 后台持有 MemoPin 传输时，禁止创建会注册插件的副 FlutterEngine。
+  static bool get _memoPinBleSessionHeld => MPBleConnectionHelper.backgroundBleTransport != null;
+
   /// 上传 Worker 开始时调用（可嵌套，内部引用计数）。
   static Future<void> activateForUploadSession() async {
     install();
@@ -66,6 +73,11 @@ class MPAudioUploadBackgroundSupport with WidgetsBindingObserver {
       await _ensureForegroundTaskInitialized();
       if (MPRecordingBackgroundSupport.isRecordingInfrastructureActive) {
         debugPrint('MPAudioUploadBackgroundSupport: recording FGS active, reuse process keep-alive');
+        return;
+      }
+      if (_memoPinBleSessionHeld) {
+        debugPrint('MPAudioUploadBackgroundSupport: skip upload FGS — MemoPin BLE session held');
+        _uploadForegroundServiceStarted = false;
         return;
       }
       final NotificationPermission notificationPermission =
@@ -114,6 +126,11 @@ class MPAudioUploadBackgroundSupport with WidgetsBindingObserver {
       if (_uploadForegroundServiceStarted &&
           !MPRecordingBackgroundSupport.isRecordingInfrastructureActive &&
           await FlutterForegroundTask.isRunningService) {
+        if (_memoPinBleSessionHeld) {
+          // 有 BLE 时不得 stopService（会 destroy FlutterEngine → 断 BLE）；留给后续无 BLE 时再停。
+          debugPrint('MPAudioUploadBackgroundSupport: defer stop upload FGS — MemoPin BLE session held');
+          return;
+        }
         try {
           await FlutterForegroundTask.stopService();
         } catch (e, st) {

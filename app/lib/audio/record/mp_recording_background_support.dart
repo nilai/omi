@@ -7,6 +7,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 
+import '../../blu/mp_ble_connection_helper.dart';
 import 'mp_global_recording_coordinator.dart';
 import 'mp_recording_session_native.dart';
 
@@ -24,7 +25,7 @@ class MPRecordingBackgroundActivationResult {
   final bool backgroundRecordingReliable;
 }
 
-/// Task isolate 入口（Android 麦克风前台服务）；须为顶层函数以便引擎注册。
+/// Task isolate 入口（Android 麦克风前台服务）；保留供需要 callback 的场景，默认 startService 不传以免副 Engine 误断 BLE。
 @pragma('vm:entry-point')
 void mpRecordingForegroundTaskCallback() {
   FlutterForegroundTask.setTaskHandler(_MPRecordingForegroundTaskHandler());
@@ -243,7 +244,11 @@ class MPRecordingBackgroundSupport {
         if (notificationPermission != NotificationPermission.granted) {
           await FlutterForegroundTask.requestNotificationPermission();
         }
-        if (await FlutterForegroundTask.isRunningService) {
+        if (MPBleConnectionHelper.backgroundBleTransport != null) {
+          // flutter_foreground_task 会创建 FlutterEngine，销毁时误断 reactive_ble。
+          debugPrint('MPRecordingBackgroundSupport: skip mic FGS — MemoPin BLE session held');
+          backgroundRecordingReliable = audioSessionActive;
+        } else if (await FlutterForegroundTask.isRunningService) {
           backgroundRecordingReliable = audioSessionActive;
         } else {
           final ServiceRequestResult started = await FlutterForegroundTask.startService(
@@ -356,8 +361,12 @@ class MPRecordingBackgroundSupport {
     await _interruptionSub?.cancel();
     _interruptionSub = null;
     try {
-      if (Platform.isAndroid && await FlutterForegroundTask.isRunningService) {
+      if (Platform.isAndroid &&
+          MPBleConnectionHelper.backgroundBleTransport == null &&
+          await FlutterForegroundTask.isRunningService) {
         await FlutterForegroundTask.stopService();
+      } else if (Platform.isAndroid && MPBleConnectionHelper.backgroundBleTransport != null) {
+        debugPrint('MPRecordingBackgroundSupport: skip stop FGS — MemoPin BLE session held');
       }
     } catch (_) {}
     try {
