@@ -37,7 +37,6 @@ class MPInsightListItem {
     required this.subtitle,
     required this.content,
     this.unreadCount = 0,
-    this.showPatternDeepLine = false,
     this.decisionsCount,
     this.followUpsCount,
     this.risksCount,
@@ -63,12 +62,8 @@ class MPInsightListItem {
   /// 列表卡片内容（点击进入详情页）
   final String content;
 
-  /// 列表卡片右上角角标（模拟动态数）
+  /// 未读数量；大于 0 时列表卡片左侧显示未读竖线
   final int unreadCount;
-
-
-  /// pattern 卡片左侧深色竖线开关（用于区分两种状态）
-  final bool showPatternDeepLine;
 
   /// Daily counts
   final int? decisionsCount;
@@ -85,6 +80,45 @@ class MPInsightListItem {
 
   /// Pattern 相关记忆（展示用）
   final List<String> patternMemoryTitles;
+
+  /// 是否显示左侧未读竖线
+  bool get showUnreadLine => unreadCount > 0;
+
+  MPInsightListItem copyWith({
+    String? id,
+    MPInsightCardType? type,
+    String? periodLabel,
+    String? title,
+    String? subtitle,
+    String? content,
+    int? unreadCount,
+    int? decisionsCount,
+    int? followUpsCount,
+    int? risksCount,
+    int? completedCount,
+    int? pendingCount,
+    int? recommendationsCount,
+    List<String>? recurringThemes,
+    List<String>? patternMemoryTitles,
+  }) {
+    return MPInsightListItem(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      periodLabel: periodLabel ?? this.periodLabel,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      content: content ?? this.content,
+      unreadCount: unreadCount ?? this.unreadCount,
+      decisionsCount: decisionsCount ?? this.decisionsCount,
+      followUpsCount: followUpsCount ?? this.followUpsCount,
+      risksCount: risksCount ?? this.risksCount,
+      completedCount: completedCount ?? this.completedCount,
+      pendingCount: pendingCount ?? this.pendingCount,
+      recommendationsCount: recommendationsCount ?? this.recommendationsCount,
+      recurringThemes: recurringThemes ?? this.recurringThemes,
+      patternMemoryTitles: patternMemoryTitles ?? this.patternMemoryTitles,
+    );
+  }
 }
 
 /// Insights 列表阶段
@@ -203,6 +237,19 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
     }
   }
 
+  /// 点击卡片后本地标记已读：`unread_count` 置 0，隐藏左侧竖线
+  void markAsRead(String id) {
+    if (state.phase != MPInsightsListPhase.loaded) return;
+    final List<MPInsightListItem> items = state.items;
+    final int index = items.indexWhere((MPInsightListItem e) => e.id == id);
+    if (index < 0) return;
+    if (items[index].unreadCount <= 0) return;
+
+    final List<MPInsightListItem> next = List<MPInsightListItem>.from(items);
+    next[index] = items[index].copyWith(unreadCount: 0);
+    emit(state.copyWith(items: next));
+  }
+
   /// 上拉更多
   Future<void> loadMore() async {
     if (state.phase != MPInsightsListPhase.loaded) return;
@@ -283,8 +330,7 @@ class MPInsightsListCubit extends Cubit<MPInsightsListState> {
           title: card.title,
           subtitle: card.subTitle,
           content: card.content,
-          unreadCount: 0,
-          showPatternDeepLine: false,
+          unreadCount: card.unreadCount,
           decisionsCount: 0,
           followUpsCount: 0,
           risksCount: 0,

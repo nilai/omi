@@ -80,6 +80,7 @@ class _MPHomeInsightsListViewState extends State<_MPHomeInsightsListView> {
   Future<void> _onRefresh() => context.read<MPInsightsListCubit>().load();
 
   void _onCardTap(MPInsightListItem item) {
+    context.read<MPInsightsListCubit>().markAsRead(item.id);
     switch (item.type) {
       case MPInsightCardType.daily:
         Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MPDailyInsightDetailPage(item: item)));
@@ -240,6 +241,19 @@ class _MPInsightCard extends StatelessWidget {
     }
   }
 
+  Color _unreadLineColor() {
+    switch (item.type) {
+      case MPInsightCardType.daily:
+        return const Color(0xFF7C3AED);
+      case MPInsightCardType.weekly:
+        return const Color(0xFFEA580C);
+      case MPInsightCardType.monthly:
+        return const Color(0xFF03A9F4);
+      case MPInsightCardType.pattern:
+        return orangeTextColor;
+    }
+  }
+
   IconData _iconData() {
     switch (item.type) {
       case MPInsightCardType.daily:
@@ -273,134 +287,131 @@ class _MPInsightCard extends StatelessWidget {
     final LinearGradient cardGradient = _cardGradient();
     final Color borderColor = _cardBorderColor();
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: cardGradient,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: 1.2),
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: <Widget>[
-              if (item.type == MPInsightCardType.pattern && item.showPatternDeepLine)
-                Positioned(
-                  left: -16,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 4,
-                    color: orangeTextColor,
-                  ),
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: cardGradient,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: borderColor, width: 1.2),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: <Widget>[
+            if (item.showUnreadLine)
+              Positioned(
+                left: -16,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 4,
+                  color: _unreadLineColor(),
                 ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            color: accent,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Icon(icon, color: Colors.white, size: 18),
+              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: accent,
+                          borderRadius: BorderRadius.circular(999),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: <Widget>[
-                              SizedBox(
-                                width: double.infinity,
-                                child: Stack(
-                                  children: <Widget>[
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.only(right: 44),
-                                      child: Align(
-                                        alignment: Alignment.topLeft,
-                                        child: Text.rich(
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          softWrap: false,
-                                          TextSpan(
-                                            children: <InlineSpan>[
-                                              TextSpan(
-                                                text: item.title,
-                                                style: OmiTextStyle.create(
-                                                  color: const Color(0xFF1F2937),
-                                                  fontSize: OmiFontSize.t9_18,
-                                                  fontWeight: OmiFontWeight.bold,
-                                                  height: 1.2,
-                                                ),
+                        child: Icon(icon, color: Colors.white, size: 18),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            SizedBox(
+                              width: double.infinity,
+                              child: Stack(
+                                children: <Widget>[
+                                  Padding(
+                                    padding:
+                                        const EdgeInsets.only(right: 44),
+                                    child: Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Text.rich(
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false,
+                                        TextSpan(
+                                          children: <InlineSpan>[
+                                            TextSpan(
+                                              text: item.title,
+                                              style: OmiTextStyle.create(
+                                                color: const Color(0xFF1F2937),
+                                                fontSize: OmiFontSize.t9_18,
+                                                fontWeight: OmiFontWeight.bold,
+                                                height: 1.2,
                                               ),
-                                              TextSpan(
-                                                text: '  ·  ${_typeLabel()}',
-                                                style: OmiTextStyle.create(
-                                                  color: const Color(0xFF8A8A93),
-                                                  fontSize: OmiFontSize.t4_13,
-                                                  fontWeight: OmiFontWeight.medium,
-                                                  height: 1.2,
-                                                ),
+                                            ),
+                                            TextSpan(
+                                              text: '  ·  ${_typeLabel()}',
+                                              style: OmiTextStyle.create(
+                                                color: const Color(0xFF8A8A93),
+                                                fontSize: OmiFontSize.t4_13,
+                                                fontWeight: OmiFontWeight.medium,
+                                                height: 1.2,
                                               ),
-                                            ],
-                                          ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
-                                    Align(
-                                      alignment: Alignment.topRight,
-                                      child: Icon(
-                                        Icons.chevron_right_rounded,
-                                        size: 24,
-                                        color: accent,
-                                      ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.topRight,
+                                    child: Icon(
+                                      Icons.chevron_right_rounded,
+                                      size: 24,
+                                      color: accent,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                item.subtitle,
-                                style: OmiTextStyle.create(
-                                  color: const Color(0xFF7B7E86),
-                                  fontSize: OmiFontSize.t4_13,
-                                  fontWeight: OmiFontWeight.medium,
-                                  height: 1.25,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              item.subtitle,
+                              style: OmiTextStyle.create(
+                                color: const Color(0xFF7B7E86),
+                                fontSize: OmiFontSize.t4_13,
+                                fontWeight: OmiFontWeight.medium,
+                                height: 1.25,
                               ),
-                            ],
-                          ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-                    Text(
-                      item.content,
-                      style: OmiTextStyle.create(
-                        color: const Color(0xFF2F3542),
-                        fontSize: OmiFontSize.t6_15,
-                        fontWeight: OmiFontWeight.regular,
-                        height: 1.4,
                       ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
+                    ],
+                  ),
+
+                  const SizedBox(height: 10),
+                  Text(
+                    item.content,
+                    style: OmiTextStyle.create(
+                      color: const Color(0xFF2F3542),
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.regular,
+                      height: 1.4,
                     ),
-                  ],
-                ),
-            ],
-          ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+          ],
         ),
       ),
     );

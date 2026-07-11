@@ -145,6 +145,7 @@ class MPInsightCardStruct {
     required this.subTitle,
     required this.createAt,
     required this.content,
+    this.unreadCount = 0,
   });
 
   final String id;
@@ -159,6 +160,9 @@ class MPInsightCardStruct {
   /// Markdown 正文。
   final String content;
 
+  /// 未读数量；大于 0 时列表卡片左侧显示未读竖线。
+  final int unreadCount;
+
   /// 从 JSON 解析。
   factory MPInsightCardStruct.fromJson(Map<String, dynamic> json) {
     return MPInsightCardStruct(
@@ -171,6 +175,7 @@ class MPInsightCardStruct {
       subTitle: _mpAsString(json['sub_title']),
       createAt: _mpAsInt(json['create_at']),
       content: _mpAsString(json['content']),
+      unreadCount: _mpAsInt(json['unread_count']),
     );
   }
 
@@ -182,6 +187,7 @@ class MPInsightCardStruct {
         'sub_title': subTitle,
         'create_at': createAt,
         'content': content,
+        'unread_count': unreadCount,
       };
 }
 
