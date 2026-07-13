@@ -62,8 +62,7 @@ class _MPChooseSummaryStyleSheet extends StatefulWidget {
   static const Color _kRecommendedBadgeBg = Color(0xFFE8F4FF);
 
   @override
-  State<_MPChooseSummaryStyleSheet> createState() =>
-      _MPChooseSummaryStyleSheetState();
+  State<_MPChooseSummaryStyleSheet> createState() => _MPChooseSummaryStyleSheetState();
 }
 
 class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> {
@@ -72,11 +71,10 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
   @override
   void initState() {
     super.initState();
-    _selected = widget.initialSelected ??
+    _selected =
+        widget.initialSelected ??
         widget.recentTemplate ??
-        (widget.recommendTemplates.isNotEmpty
-            ? widget.recommendTemplates.first
-            : null);
+        (widget.recommendTemplates.isNotEmpty ? widget.recommendTemplates.first : null);
   }
 
   void _pop() {
@@ -87,10 +85,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     if (a == null || b == null) return false;
     final String? idA = a.id;
     final String? idB = b.id;
-    if (idA != null &&
-        idB != null &&
-        idA.isNotEmpty &&
-        idB.isNotEmpty) {
+    if (idA != null && idB != null && idA.isNotEmpty && idB.isNotEmpty) {
       return idA == idB;
     }
     return identical(a, b);
@@ -125,38 +120,20 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     );
   }
 
-  Widget _iconForIndex(int idx) {
-    final List<Widget> icons = <Widget>[
-      OmiImageLoader.localImg(
-        Assets.omiUsers,
-        width: 12,
-        height: 12,
-        color: blueTextColor,
-        fit: BoxFit.contain,
-      ),
-      OmiImageLoader.localImg(
-        Assets.omiDetailPhone,
-        width: 12,
-        height: 12,
-        color: blueTextColor,
-        fit: BoxFit.contain,
-      ),
-      OmiImageLoader.localImg(
-        Assets.omiBookText,
-        width: 12,
-        height: 12,
-        color: blueTextColor,
-        fit: BoxFit.contain,
-      ),
-      OmiImageLoader.localImg(
-        Assets.omiBrain,
-        width: 12,
-        height: 12,
-        color: blueTextColor,
-        fit: BoxFit.contain,
-      ),
-    ];
-    return icons[idx % icons.length];
+  Widget _iconForTemplateId(String? id) {
+    final Map<String, String> iconMap = <String, String>{
+      '16': Assets.omiUsers,
+      '17': Assets.omiDetailPhone,
+      '18': Assets.mpClipboard,
+      '19': Assets.tabBook,
+      '20': Assets.omiBrain,
+      '21': Assets.mpLightbulb,
+      '22': Assets.omiAudio,
+      '23': Assets.mpCompass,
+    };
+
+    final String icon = iconMap[id] ?? Assets.omiSparkles;
+    return OmiImageLoader.localImg(icon, width: 12, height: 12, color: blueTextColor, fit: BoxFit.contain);
   }
 
   @override
@@ -230,24 +207,13 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                             ),
                           )
                         else
-                          ...List<Widget>.generate(
-                            widget.recommendTemplates.length,
-                            (int i) {
-                              final MPTemplateStruct t =
-                                  widget.recommendTemplates[i];
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  bottom: i == widget.recommendTemplates.length - 1
-                                      ? 0
-                                      : 10,
-                                ),
-                                child: _buildTemplateTile(
-                                  tpl: t,
-                                  icon: _iconForIndex(i),
-                                ),
-                              );
-                            },
-                          ),
+                          ...List<Widget>.generate(widget.recommendTemplates.length, (int i) {
+                            final MPTemplateStruct t = widget.recommendTemplates[i];
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: i == widget.recommendTemplates.length - 1 ? 0 : 10),
+                              child: _buildTemplateTile(tpl: t, icon: _iconForTemplateId(t.id)),
+                            );
+                          }),
                         const SizedBox(height: 12),
                         Text(
                           'Looking for a specific role or style?',
@@ -265,10 +231,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                             widget.onBrowseAllStyles?.call();
                           },
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 0,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: <Widget>[
@@ -331,12 +294,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        8,
-        8 + MediaQuery.paddingOf(context).top,
-        8,
-        8,
-      ),
+      padding: EdgeInsets.fromLTRB(8, 8 + MediaQuery.paddingOf(context).top, 8, 8),
       child: Stack(
         alignment: Alignment.center,
         children: <Widget>[
@@ -346,17 +304,11 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
               onTap: _pop,
               borderRadius: BorderRadius.circular(8),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
-                    OmiImageLoader.localImg(
-                      Assets.omiLeftBack,
-                      width: 20,
-                      height: 20,
-                      color: blueTextColor,
-                    ),
+                    OmiImageLoader.localImg(Assets.omiLeftBack, width: 20, height: 20, color: blueTextColor),
                     const SizedBox(width: 4),
                     Text(
                       'Back',
@@ -410,10 +362,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: sel ? blueTextColor : borderColor,
-              width: sel ? 2 : 1,
-            ),
+            border: Border.all(color: sel ? blueTextColor : borderColor, width: sel ? 2 : 1),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -440,10 +389,9 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                               fontWeight: OmiFontWeight.medium,
                               color: mainTextColor,
                             ),
-                            
                           ),
                         ),
-                         const SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         _buildTitleTag('Recommended'),
                       ],
                     ),
@@ -459,7 +407,6 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
                         ),
                       ),
                     ],
-
                   ],
                 ),
               ),
@@ -473,9 +420,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
   Widget _buildRecommendedDivider() {
     return Row(
       children: <Widget>[
-        Expanded(
-          child: Container(height: 0.5, color: lineColor),
-        ),
+        Expanded(child: Container(height: 0.5, color: lineColor)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
@@ -487,17 +432,12 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
             ),
           ),
         ),
-        Expanded(
-          child: Container(height: 0.5, color: lineColor),
-        ),
+        Expanded(child: Container(height: 0.5, color: lineColor)),
       ],
     );
   }
 
-  Widget _buildTemplateTile({
-    required MPTemplateStruct tpl,
-    required Widget icon,
-  }) {
+  Widget _buildTemplateTile({required MPTemplateStruct tpl, required Widget icon}) {
     final bool sel = _isSameTemplate(_selected, tpl);
     final String sub = _tplSubtitle(tpl);
     final bool hasSub = sub.isNotEmpty;
@@ -511,20 +451,13 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
           decoration: BoxDecoration(
             color: _MPChooseSummaryStyleSheet._kCardBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: sel ? blueTextColor : Colors.transparent,
-              width: sel ? 2 : 0,
-            ),
+            border: Border.all(color: sel ? blueTextColor : Colors.transparent, width: sel ? 2 : 0),
           ),
           child: Row(
-            crossAxisAlignment:
-                hasSub ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+            crossAxisAlignment: hasSub ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: <Widget>[
               Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                ),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
                 width: 30,
                 height: 30,
                 child: Center(child: icon),

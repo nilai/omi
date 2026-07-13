@@ -4,7 +4,9 @@ class Assets {
 
   static const String mpChatCheck = 'assets/images/3x/mp_chat_check.png';
   static const String mpChatCopy = 'assets/images/3x/mp_chat_copy.png';
+  static const String mpClipboard = 'assets/images/3x/mp_clipboard.png';
   static const String mpClock = 'assets/images/3x/mp_clock.png';
+  static const String mpCompass = 'assets/images/3x/mp_compass.png';
   static const String mpConnectDevice = 'assets/images/3x/mp_connect_device.png';
   static const String mpFocusTomorrow = 'assets/images/3x/mp_focus_tomorrow.png';
   static const String mpInsightBrain = 'assets/images/3x/mp_insight_brain.png';
@@ -14,6 +16,7 @@ class Assets {
   static const String mpInsightRotate = 'assets/images/3x/mp_insight_rotate.png';
   static const String mpInsightSquareCheck = 'assets/images/3x/mp_insight_square_check.png';
   static const String mpInsightTarget = 'assets/images/3x/mp_insight_target.png';
+  static const String mpLightbulb = 'assets/images/3x/mp_lightbulb.png';
   static const String mpMineBook = 'assets/images/3x/mp_mine_book.png';
   static const String mpMineCircleUser = 'assets/images/3x/mp_mine_circle_user.png';
   static const String mpMineCrown = 'assets/images/3x/mp_mine_crown.png';
@@ -72,5 +75,8 @@ class Assets {
   static const String tabBook = 'assets/images/3x/tab_book.png';
   static const String tabHome = 'assets/images/3x/tab_home.png';
   static const String tabSetting = 'assets/images/3x/tab_setting.png';
+  static const String tabUser = 'assets/images/3x/tab_user.png';
+  static const String tabAi = 'assets/images/3x/tab_ai.png';
+  
 
 }
