@@ -133,7 +133,7 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
     };
 
     final String icon = iconMap[id] ?? Assets.omiSparkles;
-    return OmiImageLoader.localImg(icon, width: 12, height: 12, color: blueTextColor, fit: BoxFit.contain);
+    return OmiImageLoader.localImg(icon, width: 20, height: 20, color: Color(0xFF007aff), fit: BoxFit.contain);
   }
 
   @override
@@ -457,9 +457,9 @@ class _MPChooseSummaryStyleSheetState extends State<_MPChooseSummaryStyleSheet> 
             crossAxisAlignment: hasSub ? CrossAxisAlignment.start : CrossAxisAlignment.center,
             children: <Widget>[
               Container(
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                width: 30,
-                height: 30,
+                decoration: BoxDecoration(color: Color(0xFFf0f9ff), borderRadius: BorderRadius.circular(14)),
+                width: 28,
+                height: 28,
                 child: Center(child: icon),
               ),
               const SizedBox(width: 8),
