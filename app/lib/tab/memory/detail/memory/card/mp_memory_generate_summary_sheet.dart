@@ -201,6 +201,9 @@ class _MPGenerateSummarySheetState extends State<_MPGenerateSummarySheet> {
         _cacheSelectedTemplate(tpl);
         widget.onChangeMode?.call();
       },
+      onBrowseAllStyles: () {
+        MPToastUtils.showFeatureComingSoon();
+      },
     );
   }
 
