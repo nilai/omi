@@ -48,6 +48,7 @@ class MPConnectDeviceState {
     required this.isScanning,
     this.devices = const <MPConnectDeviceItem>[],
     this.connectingDeviceId,
+    this.showBlePermissionGuide = false,
   });
 
   final bool isScanning;
@@ -55,6 +56,9 @@ class MPConnectDeviceState {
 
   /// 正在 BLE 连接中的设备 [MPConnectDeviceItem.id]；未在连接时为 `null`。
   final String? connectingDeviceId;
+
+  /// 为 `true` 时页面应弹出蓝牙权限引导（去系统设置）；展示后由 [MPConnectDeviceCubit.clearBlePermissionGuide] 复位。
+  final bool showBlePermissionGuide;
 
   MPConnectDeviceItem? get connectedDevice {
     for (final MPConnectDeviceItem item in devices) {
@@ -74,11 +78,13 @@ class MPConnectDeviceState {
     List<MPConnectDeviceItem>? devices,
     String? connectingDeviceId,
     bool clearConnectingDeviceId = false,
+    bool? showBlePermissionGuide,
   }) {
     return MPConnectDeviceState(
       isScanning: isScanning ?? this.isScanning,
       devices: devices ?? this.devices,
       connectingDeviceId: clearConnectingDeviceId ? null : (connectingDeviceId ?? this.connectingDeviceId),
+      showBlePermissionGuide: showBlePermissionGuide ?? this.showBlePermissionGuide,
     );
   }
 }
@@ -256,6 +262,22 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     return out;
   }
 
+  /// 清除 [MPConnectDeviceState.showBlePermissionGuide]，避免重复弹窗。
+  void clearBlePermissionGuide() {
+    if (isClosed || !state.showBlePermissionGuide) {
+      return;
+    }
+    emit(state.copyWith(showBlePermissionGuide: false));
+  }
+
+  /// 权限被拒绝时停止扫描并通知 UI 引导用户去系统设置。
+  void _emitBlePermissionDenied() {
+    if (isClosed) {
+      return;
+    }
+    emit(state.copyWith(isScanning: false, showBlePermissionGuide: true));
+  }
+
   /// 申请权限并开始扫描；结束后展示 MemoPin 类设备
   Future<void> startScan() async {
     final int generation = ++_scanGeneration;
@@ -272,9 +294,7 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
 
     final bool permitted = await MPBleConnectionHelper.ensureBlePermissions();
     if (!permitted) {
-      if (!isClosed) {
-        emit(state.copyWith(isScanning: false));
-      }
+      _emitBlePermissionDenied();
       return;
     }
 
@@ -398,6 +418,12 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     }
 
     if (state.connectingDeviceId != null) {
+      return;
+    }
+
+    final bool permitted = await MPBleConnectionHelper.ensureBlePermissions();
+    if (!permitted) {
+      _emitBlePermissionDenied();
       return;
     }
 

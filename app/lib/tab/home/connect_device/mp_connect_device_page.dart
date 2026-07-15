@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -8,9 +9,11 @@ import 'package:memo_pin/utils/omi_image_loader.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
 import 'package:memo_pin/utils/omi_font_utils.dart';
 import 'package:memo_pin/utils/omi_textstyle.dart';
+import 'package:permission_manager/permission_manager.dart';
 
 import '../../../utils/mp_toast_utils.dart';
 import 'mp_ble_debug_page.dart';
+import 'mp_ble_permission_dialog.dart';
 import 'mp_connect_device_cubit.dart';
 
 class MPConnectDevicePage extends StatefulWidget {
@@ -27,6 +30,7 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
     vsync: this,
     duration: const Duration(milliseconds: 1800),
   )..repeat();
+  bool _showingBlePermissionDialog = false;
 
   @override
   void initState() {
@@ -43,136 +47,167 @@ class _MPConnectDevicePageState extends State<MPConnectDevicePage>
     super.dispose();
   }
 
+  Future<void> _onBlePermissionGuide() async {
+    if (!mounted || _showingBlePermissionDialog) {
+      return;
+    }
+    _showingBlePermissionDialog = true;
+    _cubit.clearBlePermissionGuide();
+    try {
+      final bool? openSettings = await showMPBlePermissionDialog(context);
+      if (!mounted) {
+        return;
+      }
+      if (openSettings == true) {
+        await PermissionManager.openAppSettings();
+      } else {
+        // Cancel / dismiss：退出连接页
+        await Navigator.of(context, rootNavigator: true).maybePop();
+      }
+    } finally {
+      _showingBlePermissionDialog = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<MPConnectDeviceCubit>.value(
       value: _cubit,
-      child: Scaffold(
-        backgroundColor: pageColor,
-        appBar: PreferredSize(
-          preferredSize: MPCustomNavBar.preferredSizeOf(context),
-          child: MPCustomNavBar(
-            title: 'Connect Device',
-            backgroundColor: pageColor,
-            onBack: () => Navigator.of(context, rootNavigator: true).maybePop(),
-            actions: <Widget>[
-              TextButton.icon(
-                onPressed: _cubit.startScan,
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                  minimumSize: const Size(0, 0),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                icon: const Icon(Icons.sync, size: 19, color: blueTextColor),
-                label: Text(
-                  'Scan',
-                  style: OmiTextStyle.create(
-                    color: blueTextColor,
-                    fontSize: OmiFontSize.t6_15,
-                    fontWeight: OmiFontWeight.medium,
+      child: BlocListener<MPConnectDeviceCubit, MPConnectDeviceState>(
+        listenWhen: (MPConnectDeviceState previous, MPConnectDeviceState current) {
+          return !previous.showBlePermissionGuide && current.showBlePermissionGuide;
+        },
+        listener: (BuildContext context, MPConnectDeviceState state) {
+          unawaited(_onBlePermissionGuide());
+        },
+        child: Scaffold(
+          backgroundColor: pageColor,
+          appBar: PreferredSize(
+            preferredSize: MPCustomNavBar.preferredSizeOf(context),
+            child: MPCustomNavBar(
+              title: 'Connect Device',
+              backgroundColor: pageColor,
+              onBack: () => Navigator.of(context, rootNavigator: true).maybePop(),
+              actions: <Widget>[
+                TextButton.icon(
+                  onPressed: _cubit.startScan,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    minimumSize: const Size(0, 0),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    splashFactory: NoSplash.splashFactory,
+                  ),
+                  icon: const Icon(Icons.sync, size: 19, color: blueTextColor),
+                  label: Text(
+                    'Scan',
+                    style: OmiTextStyle.create(
+                      color: blueTextColor,
+                      fontSize: OmiFontSize.t6_15,
+                      fontWeight: OmiFontWeight.medium,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-        bottomNavigationBar: kDebugMode
-            ? SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => const MPBleDebugPage(),
+          bottomNavigationBar: kDebugMode
+              ? SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const MPBleDebugPage(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: const Color(0xFF1C1C1E),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: const Color(0xFF1C1C1E),
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          splashFactory: NoSplash.splashFactory,
                         ),
-                        splashFactory: NoSplash.splashFactory,
-                      ),
-                      child: Text(
-                        'debug_ble',
-                        style: OmiTextStyle.create(
-                          color: Colors.white,
-                          fontSize: OmiFontSize.t6_15,
-                          fontWeight: OmiFontWeight.medium,
+                        child: Text(
+                          'debug_ble',
+                          style: OmiTextStyle.create(
+                            color: Colors.white,
+                            fontSize: OmiFontSize.t6_15,
+                            fontWeight: OmiFontWeight.medium,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              )
-            : null,
-        body: BlocBuilder<MPConnectDeviceCubit, MPConnectDeviceState>(
-          builder: (BuildContext context, MPConnectDeviceState state) {
-            final MPConnectDeviceItem? connected = state.connectedDevice;
-            final List<MPConnectDeviceItem> others = state.otherDevices;
-            final bool showResultList = !state.isScanning;
+                )
+              : null,
+          body: BlocBuilder<MPConnectDeviceCubit, MPConnectDeviceState>(
+            builder: (BuildContext context, MPConnectDeviceState state) {
+              final MPConnectDeviceItem? connected = state.connectedDevice;
+              final List<MPConnectDeviceItem> others = state.otherDevices;
+              final bool showResultList = !state.isScanning;
 
-            return SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(12, 8, 12, kDebugMode ? 12 : 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    if (state.isScanning) ...<Widget>[
-                      const SizedBox(height: 6),
-                      _MPScanHeader(radarController: _radarController),
-                      const SizedBox(height: 14),
-                    ],
-                    if (connected != null) ...<Widget>[
-                      _MPSectionTitle(text: 'CONNECTED DEVICE'),
-                      const SizedBox(height: 10),
-                      _MPDeviceCard(
-                        item: connected,
-                        showConnectedBadge: true,
-                        actionText: 'Disconnect',
-                        actionTextColor: const Color(0xFFF44336),
-                        actionBackground: const Color(0xFFF2F2F6),
-                        actionBorderColor: const Color(0xFFF2F2F6),
-                        onActionPressed: () => _cubit.toggleConnection(connected.id),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    if (showResultList) ...<Widget>[
-                      _MPSectionTitle(text: connected == null ? 'AVAILABLE DEVICES' : 'OTHER DEVICES'),
-                      const SizedBox(height: 10),
-                      if (others.isNotEmpty)
-                        _MPDeviceListCard(
-                          items: others,
-                          connectingDeviceId: state.connectingDeviceId,
-                          onConnectTap: (String id) => _cubit.toggleConnection(id),
+              return SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(12, 8, 12, kDebugMode ? 12 : 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      if (state.isScanning) ...<Widget>[
+                        const SizedBox(height: 6),
+                        _MPScanHeader(radarController: _radarController),
+                        const SizedBox(height: 14),
+                      ],
+                      if (connected != null) ...<Widget>[
+                        _MPSectionTitle(text: 'CONNECTED DEVICE'),
+                        const SizedBox(height: 10),
+                        _MPDeviceCard(
+                          item: connected,
+                          showConnectedBadge: true,
+                          actionText: 'Disconnect',
+                          actionTextColor: const Color(0xFFF44336),
+                          actionBackground: const Color(0xFFF2F2F6),
+                          actionBorderColor: const Color(0xFFF2F2F6),
+                          onActionPressed: () => _cubit.toggleConnection(connected.id),
                         ),
-                    ] else if (connected != null) ...<Widget>[
-                      _MPSectionTitle(text: 'OTHER DEVICES'),
-                      const SizedBox(height: 10),
-                      const Divider(height: 1, color: lineColor),
-                      const SizedBox(height: 6),
-                    ],
-                    if (showResultList) ...<Widget>[
+                        const SizedBox(height: 16),
+                      ],
+                      if (showResultList) ...<Widget>[
+                        _MPSectionTitle(text: connected == null ? 'AVAILABLE DEVICES' : 'OTHER DEVICES'),
+                        const SizedBox(height: 10),
+                        if (others.isNotEmpty)
+                          _MPDeviceListCard(
+                            items: others,
+                            connectingDeviceId: state.connectingDeviceId,
+                            onConnectTap: (String id) => _cubit.toggleConnection(id),
+                          ),
+                      ] else if (connected != null) ...<Widget>[
+                        _MPSectionTitle(text: 'OTHER DEVICES'),
+                        const SizedBox(height: 10),
+                        const Divider(height: 1, color: lineColor),
+                        const SizedBox(height: 6),
+                      ],
+                      if (showResultList) ...<Widget>[
+                        const SizedBox(height: 20),
+                        _MPSectionTitle(text: 'CONNECTION TIPS'),
+                        const SizedBox(height: 10),
+                        const _MPTips(),
+                      ],
                       const SizedBox(height: 20),
-                      _MPSectionTitle(text: 'CONNECTION TIPS'),
-                      const SizedBox(height: 10),
-                      const _MPTips(),
+                      const _MPHelpCard(),
                     ],
-                    const SizedBox(height: 20),
-                    const _MPHelpCard(),
-                  ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
