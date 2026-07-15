@@ -1004,32 +1004,148 @@ class _InsightsCard extends StatelessWidget {
   }
 }
 
+/// 首页转录额度提示卡片样式（按 [currentMinutes] 分段）。
+enum _MPTranscriptionBannerTier {
+  /// `[500, 700)`
+  halfway,
+
+  /// `[700, 900)`
+  gettingCloser,
+
+  /// `[900, 1000)`
+  almostOut,
+
+  /// `>= 1000`
+  limitReached,
+}
+
 class _TranscriptionUsageCard extends StatelessWidget {
   const _TranscriptionUsageCard({required this.banner, required this.onClose});
 
   final MPTranscriptionBannerStruct banner;
   final VoidCallback onClose;
 
-  /// 将后端 `banner_content`（如 `504/500 min used`）格式化为设计稿展示文案。
-  String _buildDisplayContent() {
-    final String raw = banner.bannerContent.trim();
-    if (raw.isEmpty) {
-      return '';
+  static final NumberFormat _creditFormatter = NumberFormat('#,###');
+
+  _MPTranscriptionBannerTier get _tier {
+    final int minutes = banner.currentMinutes;
+    if (minutes >= 1000) {
+      return _MPTranscriptionBannerTier.limitReached;
     }
-    final String pre = 'You\'re halfway through your test credit credits.';
-    if (raw.contains(pre)) {
-      return raw;
+    if (minutes >= 900) {
+      return _MPTranscriptionBannerTier.almostOut;
     }
-    return '$pre$raw';
+    if (minutes >= 700) {
+      return _MPTranscriptionBannerTier.gettingCloser;
+    }
+    return _MPTranscriptionBannerTier.halfway;
+  }
+
+  int get _totalCredits {
+    final int threshold = banner.threshold;
+    return threshold > 0 ? threshold : 1000;
+  }
+
+  String get _title {
+    switch (_tier) {
+      case _MPTranscriptionBannerTier.halfway:
+      case _MPTranscriptionBannerTier.gettingCloser:
+        return 'Credit usage';
+      case _MPTranscriptionBannerTier.almostOut:
+        return 'Almost out of credits';
+      case _MPTranscriptionBannerTier.limitReached:
+        return 'Test credit limit reached';
+    }
+  }
+
+  String get _body {
+    final String used = _creditFormatter.format(banner.currentMinutes);
+    final String total = _creditFormatter.format(_totalCredits);
+    switch (_tier) {
+      case _MPTranscriptionBannerTier.halfway:
+        return 'You\'re halfway through your test credit credits. $used / $total credits used.';
+      case _MPTranscriptionBannerTier.gettingCloser:
+        return 'You\'re getting closer to your test credit limit. $used / $total credits used.';
+      case _MPTranscriptionBannerTier.almostOut:
+        final int remaining = (_totalCredits - banner.currentMinutes).clamp(0, _totalCredits);
+        return '$used / $total credits used. You have about ${_creditFormatter.format(remaining)} credits left.';
+      case _MPTranscriptionBannerTier.limitReached:
+        return 'Recordings are still saved, but new AI transcription and summaries are paused.';
+    }
+  }
+
+  Color get _cardBg {
+    switch (_tier) {
+      case _MPTranscriptionBannerTier.halfway:
+      case _MPTranscriptionBannerTier.gettingCloser:
+        return Colors.white;
+      case _MPTranscriptionBannerTier.almostOut:
+        return const Color(0xFFFFF8F0);
+      case _MPTranscriptionBannerTier.limitReached:
+        return const Color(0xFFFFF9E6);
+    }
+  }
+
+  Color get _cardBorder {
+    switch (_tier) {
+      case _MPTranscriptionBannerTier.halfway:
+      case _MPTranscriptionBannerTier.gettingCloser:
+        return Colors.black.withValues(alpha: 0.03);
+      case _MPTranscriptionBannerTier.almostOut:
+        return const Color(0xFFFFE4C4);
+      case _MPTranscriptionBannerTier.limitReached:
+        return const Color(0xFFFFE08A);
+    }
+  }
+
+  Decoration get _iconDecoration {
+    switch (_tier) {
+      case _MPTranscriptionBannerTier.halfway:
+        return const BoxDecoration(
+          gradient: LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
+          shape: BoxShape.circle,
+        );
+      case _MPTranscriptionBannerTier.gettingCloser:
+        return const BoxDecoration(color: Color(0xFFA78BFA), shape: BoxShape.circle);
+      case _MPTranscriptionBannerTier.almostOut:
+        return const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle);
+      case _MPTranscriptionBannerTier.limitReached:
+        return const BoxDecoration(color: Color(0xFFFFCC00), shape: BoxShape.circle);
+    }
+  }
+
+  Widget _buildIcon() {
+    final bool useClock =
+        _tier == _MPTranscriptionBannerTier.halfway || _tier == _MPTranscriptionBannerTier.gettingCloser;
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: _iconDecoration,
+      alignment: Alignment.center,
+      child: useClock
+          ? SizedBox(
+              width: 16,
+              height: 16,
+              child: OmiImageLoader.localImg(
+                Assets.mpClock,
+                width: 16,
+                height: 16,
+                scale: 3.0,
+                fit: BoxFit.cover,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.warning_rounded, color: Colors.white, size: 18),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _cardBg,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.03)),
+        border: Border.all(color: _cardBorder),
         boxShadow: <BoxShadow>[
           BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 3)),
         ],
@@ -1041,34 +1157,14 @@ class _TranscriptionUsageCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
-                    shape: BoxShape.circle,
-                  ),
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: OmiImageLoader.localImg(
-                      Assets.mpClock,
-                      width: 16,
-                      height: 16,
-                      scale: 3.0,
-                      fit: BoxFit.cover,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                _buildIcon(),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        'Credit usage',
+                        _title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -1080,7 +1176,7 @@ class _TranscriptionUsageCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _buildDisplayContent(),
+                        _body,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
