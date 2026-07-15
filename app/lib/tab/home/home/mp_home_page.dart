@@ -54,18 +54,18 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _bleRecordingStateSub = MPHomeNotification.listenBleMemopinRecordingState(
-      (MPBleMemopinRecordingStateChangedPayload payload) {
-        if (!mounted) {
-          return;
-        }
-        final bool now = payload.isRecording;
-        if (now && _lastBleDeviceRecording != true) {
-          unawaited(MPGlobalRecordingCoordinator.instance.notifyBleDeviceRecordingStarted());
-        }
-        _lastBleDeviceRecording = now;
-      },
-    );
+    _bleRecordingStateSub = MPHomeNotification.listenBleMemopinRecordingState((
+      MPBleMemopinRecordingStateChangedPayload payload,
+    ) {
+      if (!mounted) {
+        return;
+      }
+      final bool now = payload.isRecording;
+      if (now && _lastBleDeviceRecording != true) {
+        unawaited(MPGlobalRecordingCoordinator.instance.notifyBleDeviceRecordingStarted());
+      }
+      _lastBleDeviceRecording = now;
+    });
   }
 
   @override
@@ -167,91 +167,95 @@ class _MPHomePageState extends State<MPHomePage> with WidgetsBindingObserver, Ro
       builder: (BuildContext ctx) {
         return MPDismissibleModalBackdrop(
           child: Padding(
-          padding: EdgeInsets.only(left: 20, right: 20, bottom: MediaQuery.paddingOf(ctx).bottom + 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: <BoxShadow>[
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 24, offset: const Offset(0, 8)),
-                  ],
-                ),
-                child: Column(
-                  children: <Widget>[
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: <Widget>[
-                        _OptionTile(
-                          icon: Icons.mic_none_outlined,
-                          iconGradient: const LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
-                          title: 'Start Recording',
-                          subtitle: 'Record a new audio memory',
-                          onTap: () async {
-                            Navigator.pop(ctx);
-                            if (!context.mounted) {
-                              return;
-                            }
-                            if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(
-                              context: context,
-                            )) {
-                              return;
-                            }
-                            if (!context.mounted) {
-                              return;
-                            }
-                            await showMPAudioRecordPopup(context);
-                          },
-                        ),
-                        Positioned(
-                          top: 10,
-                          right: 10,
-                          child: Material(
-                            color: const Color(0xFFF2F2F7),
-                            shape: const CircleBorder(),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () => Navigator.pop(ctx),
-                              customBorder: const CircleBorder(),
-                              child: const SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: Icon(Icons.close, color: Color(0xFF3C3C43), size: 18),
+            padding: EdgeInsets.only(left: 20, right: 20, bottom: MediaQuery.paddingOf(ctx).bottom + 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: <BoxShadow>[
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: <Widget>[
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: <Widget>[
+                          _OptionTile(
+                            icon: Icons.mic_none_outlined,
+                            iconGradient: const LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
+                            title: 'Start Recording',
+                            subtitle: 'Record a new audio memory',
+                            onTap: () async {
+                              Navigator.pop(ctx);
+                              if (!context.mounted) {
+                                return;
+                              }
+                              if (await MPBleConnectionHelper.showBlockMessageIfMemoPinDeviceIsRecording(
+                                context: context,
+                              )) {
+                                return;
+                              }
+                              if (!context.mounted) {
+                                return;
+                              }
+                              await showMPAudioRecordPopup(context);
+                            },
+                          ),
+                          Positioned(
+                            top: 10,
+                            right: 10,
+                            child: Material(
+                              color: const Color(0xFFF2F2F7),
+                              shape: const CircleBorder(),
+                              clipBehavior: Clip.antiAlias,
+                              child: InkWell(
+                                onTap: () => Navigator.pop(ctx),
+                                customBorder: const CircleBorder(),
+                                child: const SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: Icon(Icons.close, color: Color(0xFF3C3C43), size: 18),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 1),
-                    _OptionTile(
-                      icon: Icons.edit_note_outlined,
-                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF9F40), Color(0xFFFF8C00)]),
-                      title: 'Quick Capture',
-                      subtitle: 'Type or speak a quick note',
-                      onTap: () async {
-                        Navigator.pop(ctx);
-                        await MPQuickCaptureDialog.show(context);
-                      },
-                    ),
-                    const Divider(height: 1),
-                    _OptionTile(
-                      icon: Icons.upload_file_outlined,
-                      iconGradient: const LinearGradient(colors: <Color>[Color(0xFF34C759), Color(0xFF28A745)]),
-                      title: 'Import Audio',
-                      subtitle: 'Choose an audio file from your device',
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        _importFromFileWithProgress();
-                      },
-                    ),
-                  ],
+                        ],
+                      ),
+                      const Divider(height: 1),
+                      _OptionTile(
+                        icon: Icons.edit_note_outlined,
+                        iconGradient: const LinearGradient(colors: <Color>[Color(0xFFFF9F40), Color(0xFFFF8C00)]),
+                        title: 'Quick Capture',
+                        subtitle: 'Type or speak a quick note',
+                        onTap: () async {
+                          Navigator.pop(ctx);
+                          await MPQuickCaptureDialog.show(context);
+                        },
+                      ),
+                      const Divider(height: 1),
+                      _OptionTile(
+                        icon: Icons.upload_file_outlined,
+                        iconGradient: const LinearGradient(colors: <Color>[Color(0xFF34C759), Color(0xFF28A745)]),
+                        title: 'Import Audio',
+                        subtitle: 'Choose an audio file from your device',
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          _importFromFileWithProgress();
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         );
       },
@@ -1102,40 +1106,48 @@ class _TranscriptionUsageCard extends StatelessWidget {
     switch (_tier) {
       case _MPTranscriptionBannerTier.halfway:
         return const BoxDecoration(
-          gradient: LinearGradient(colors: <Color>[Color(0xFF007AFF), Color(0xFF0051D5)]),
+          gradient: LinearGradient(colors: <Color>[Color(0xFF60A5FA), Color(0xFF3B82F6)]),
           shape: BoxShape.circle,
         );
       case _MPTranscriptionBannerTier.gettingCloser:
-        return const BoxDecoration(color: Color(0xFFA78BFA), shape: BoxShape.circle);
+        return const BoxDecoration(
+          gradient: LinearGradient(colors: <Color>[Color(0xFF818CF8), Color(0xFF6366F1)]),
+          shape: BoxShape.circle,
+        );
       case _MPTranscriptionBannerTier.almostOut:
-        return const BoxDecoration(color: Color(0xFFFF9500), shape: BoxShape.circle);
+        return const BoxDecoration(
+          gradient: LinearGradient(colors: <Color>[Color(0xFFFB923C), Color(0xFFF97316)]),
+          shape: BoxShape.circle,
+        );
       case _MPTranscriptionBannerTier.limitReached:
-        return const BoxDecoration(color: Color(0xFFFFCC00), shape: BoxShape.circle);
+        return const BoxDecoration(
+          gradient: LinearGradient(colors: <Color>[Color(0xFFFBBF24), Color(0xFFF59E0B)]),
+          shape: BoxShape.circle,
+        );
     }
   }
 
   Widget _buildIcon() {
     final bool useClock =
         _tier == _MPTranscriptionBannerTier.halfway || _tier == _MPTranscriptionBannerTier.gettingCloser;
+    final String iconAsset = useClock ? Assets.mpClock : Assets.omiWarning;
     return Container(
       width: 32,
       height: 32,
       decoration: _iconDecoration,
       alignment: Alignment.center,
-      child: useClock
-          ? SizedBox(
-              width: 16,
-              height: 16,
-              child: OmiImageLoader.localImg(
-                Assets.mpClock,
-                width: 16,
-                height: 16,
-                scale: 3.0,
-                fit: BoxFit.cover,
-                color: Colors.white,
-              ),
-            )
-          : const Icon(Icons.warning_rounded, color: Colors.white, size: 18),
+      child: SizedBox(
+        width: 16,
+        height: 16,
+        child: OmiImageLoader.localImg(
+          iconAsset,
+          width: 16,
+          height: 16,
+          scale: 3.0,
+          fit: BoxFit.cover,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 

@@ -300,7 +300,7 @@ class MPHomeCubit extends Cubit<MPHomeState> {
       );
     }
     final MPHomeInsightOverviewStruct insightOverview = response.insightOverview;
-    final MPTranscriptionBannerStruct transcriptionBanner = response.transcriptionBanner;
+    MPTranscriptionBannerStruct transcriptionBanner = response.transcriptionBanner;
     if (!isClosed) {
       emit(
         state.copyWith(
