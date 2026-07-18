@@ -283,38 +283,42 @@ class _OmiAskAIViewState extends State<_OmiAskAIView> {
           child: Scaffold(
             backgroundColor: pageColor,
             body: SafeArea(
-              child: Column(
-                children: <Widget>[
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          _buildTopBar(context, state),
-                          if (selected == null)
-                            _buildOverviewState(context, state)
-                          else
-                            _buildQuestionState(context, selected),
-                        ],
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _dismissKeyboard,
+                child: Column(
+                  children: <Widget>[
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            _buildTopBar(context, state),
+                            if (selected == null)
+                              _buildOverviewState(context, state)
+                            else
+                              _buildQuestionState(context, selected),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
-                    decoration: const BoxDecoration(
-                      color: pageColor,
-                      border: Border(top: BorderSide(color: Color(0xFFEAEAEA))),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                      decoration: const BoxDecoration(
+                        color: pageColor,
+                        border: Border(top: BorderSide(color: Color(0xFFEAEAEA))),
+                      ),
+                      child: MPVoiceTextInput(
+                        hintText: 'Ask about your memories...',
+                        focusNode: _inputFocusNode,
+                        autofocus: false,
+                        onSubmitted: (MPVoiceTextInputResult result) =>
+                            _onSubmitInput(context, result),
+                      ),
                     ),
-                    child: MPVoiceTextInput(
-                      hintText: 'Ask about your memories...',
-                      focusNode: _inputFocusNode,
-                      autofocus: false,
-                      onSubmitted: (MPVoiceTextInputResult result) =>
-                          _onSubmitInput(context, result),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
