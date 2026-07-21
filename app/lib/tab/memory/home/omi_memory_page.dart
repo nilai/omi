@@ -9,10 +9,17 @@ import 'projects/omi_projects_page.dart';
 
 /// Memory 根页：顶部导航 + All / People / Projects 分段内容
 class OmiMemoryPage extends StatefulWidget {
-  const OmiMemoryPage({super.key, this.isMemoryTabActive = true});
+  const OmiMemoryPage({
+    super.key,
+    this.isMemoryTabActive = true,
+    this.onStartRecording,
+  });
 
   /// 底部导航是否选中 Memory（与 [MainTabPage] 中 Memory 项下标一致，当前为 `1`）。
   final bool isMemoryTabActive;
+
+  /// 从 Memory 空态发起录音时，由底部导航容器先切换到 Home，再执行录音流程。
+  final Future<void> Function()? onStartRecording;
 
   @override
   State<OmiMemoryPage> createState() => _OmiMemoryPageState();
@@ -82,7 +89,10 @@ class _OmiMemoryPageState extends State<OmiMemoryPage> {
               index: _tabIndex,
               sizing: StackFit.expand,
               children: <Widget>[
-                OmiAllPage(refreshListenable: _allListRefreshNonce),
+                OmiAllPage(
+                  refreshListenable: _allListRefreshNonce,
+                  onStartRecording: widget.onStartRecording,
+                ),
                 const OmiPeoplePage(),
                 const OmiProjectsPage(),
               ],

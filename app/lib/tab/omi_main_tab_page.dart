@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../audio/record/mp_audio_record_popup.dart';
 import 'home/home/mp_home_page.dart';
 
 import '../generated/assets.dart';
@@ -27,10 +28,22 @@ class _MainTabPageState extends State<MainTabPage> {
             setState(() => _currentIndex = 1);
           },
         ),
-        OmiMemoryPage(isMemoryTabActive: _currentIndex == 1),
+        OmiMemoryPage(
+          isMemoryTabActive: _currentIndex == 1,
+          onStartRecording: _switchToHomeAndStartRecording,
+        ),
         OmiAskAIPage(),
         OmiMinePage(),
       ];
+
+  Future<void> _switchToHomeAndStartRecording() async {
+    setState(() => _currentIndex = 0);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) {
+      return;
+    }
+    await showMPAudioRecordPopup(context);
+  }
 
   @override
   void initState() {

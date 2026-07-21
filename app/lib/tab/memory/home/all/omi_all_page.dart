@@ -21,24 +21,38 @@ import 'omi_all_cubit.dart';
 
 /// Memory「All」列表页（卡片列表 + 游标分页）
 class OmiAllPage extends StatelessWidget {
-  const OmiAllPage({super.key, this.refreshListenable});
+  const OmiAllPage({
+    super.key,
+    this.refreshListenable,
+    this.onStartRecording,
+  });
 
   /// 父级在「列表应从隐藏变为可见」或「底部切回 Memory 且仍为 All」时递增计数；此处触发与下拉刷新相同的 [RefreshIndicator] 流程。
   final ValueNotifier<int>? refreshListenable;
+
+  final Future<void> Function()? onStartRecording;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => OmiAllCubit()..initData(),
-      child: _OmiAllView(refreshListenable: refreshListenable),
+      child: _OmiAllView(
+        refreshListenable: refreshListenable,
+        onStartRecording: onStartRecording,
+      ),
     );
   }
 }
 
 class _OmiAllView extends StatefulWidget {
-  const _OmiAllView({this.refreshListenable});
+  const _OmiAllView({
+    this.refreshListenable,
+    this.onStartRecording,
+  });
 
   final ValueNotifier<int>? refreshListenable;
+
+  final Future<void> Function()? onStartRecording;
 
   @override
   State<_OmiAllView> createState() => _OmiAllViewState();
@@ -185,6 +199,15 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
     _jumpListToTopSilently();
   }
 
+  Future<void> _startRecording() async {
+    final Future<void> Function()? onStartRecording = widget.onStartRecording;
+    if (onStartRecording != null) {
+      await onStartRecording();
+      return;
+    }
+    await showMPAudioRecordPopup(context);
+  }
+
   /// 按 [MPMemoryEntry.kind] 区分跳转或埋点（示例：`[entry.id]` + `kind`）
   void _onMemoryEntryTap(BuildContext context, MPMemoryEntry entry) {
     switch (entry.type) {
@@ -245,9 +268,7 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
                 title: 'No memories yet',
                 description: 'Start recording to capture your first ideas and conversations.',
                 buttonText: 'Start Recording',
-                onButtonPressed: () async {
-                  await showMPAudioRecordPopup(context);
-                },
+                onButtonPressed: _startRecording,
               ),
             );
           case OmiAllPhase.noNetwork:
@@ -286,9 +307,7 @@ class _OmiAllViewState extends State<_OmiAllView> with RouteAware {
                   title: 'No memories yet',
                   description: 'Start recording to capture your first ideas and conversations.',
                   buttonText: 'Start Recording',
-                  onButtonPressed: () async {
-                    await showMPAudioRecordPopup(context);
-                  },
+                  onButtonPressed: _startRecording,
                 ),
               );
             }
