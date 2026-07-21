@@ -190,9 +190,7 @@ class _MPMemoGroupCardState extends State<MPMemoGroupCard> {
                 text: memo.title.trim().isNotEmpty
                     ? memo.title.trim()
                     : memo.content.trim(),
-                maxLines: widget.variant == MPMemoGroupCardVariant.single
-                    ? 1
-                    : null,
+                maxLines: 1,
                 muted: muted,
                 onTap: () => _openMemoDetailSheet(context, memo),
               ),
