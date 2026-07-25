@@ -484,6 +484,17 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
     setState(() => _rows[index].selected = !_rows[index].selected);
   }
 
+  /// Checkbox 始终可独立切换，包括当前 item 正在编辑时。
+  void _onItemCheckboxTap(int index) {
+    if (index < 0 || index >= _rows.length) {
+      return;
+    }
+    setState(() {
+      _activeRegion = _MPConfirmSelectionRegion.items;
+      _rows[index].selected = !_rows[index].selected;
+    });
+  }
+
   String _displayLine(_ConfirmRow row) {
     final String prefix = row.isTodo ? 'Todo: ' : 'Memo: ';
     return '$prefix${row.text}';
@@ -609,7 +620,14 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
-                    Padding(padding: const EdgeInsets.only(top: 2), child: _buildSelectionLeading(row.selected)),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => _onItemCheckboxTap(index),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(0, 2, 4, 6),
+                        child: _buildSelectionLeading(row.selected),
+                      ),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: editing && _itemEditingController != null
