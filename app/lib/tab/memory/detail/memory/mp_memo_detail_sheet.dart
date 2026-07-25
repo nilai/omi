@@ -137,6 +137,7 @@ Future<void> showMPMemoDetailSheet(
                                 (s) => MPAnalyzeMemoSuggestionStruct(
                                   type: s.type,
                                   content: s.content.trim(),
+                                  deadline: s.deadline,
                                 ),
                               )
                               .where((s) => s.content.isNotEmpty)
