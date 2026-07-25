@@ -114,6 +114,7 @@ Future<void> showMPMemoDetailSheet(
                     showMPAnalyzeSuggestedTasksSheet(
                       sheetContext,
                       memoText: content,
+                      dismissContextOnCreateSuccess: sheetContext,
                       onAnalyzeStructured: (String memoText) async {
                         try {
                           final MPAnalyzeMemoTextResponse? resp =

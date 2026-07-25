@@ -37,6 +37,7 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
   Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
       onAnalyzeStructured,
   Future<List<String>> Function(String memoText)? onAnalyze,
+  BuildContext? dismissContextOnCreateSuccess,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -56,6 +57,7 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
         initialStructuredSuggestions: initialStructuredSuggestions,
         onAnalyze: onAnalyze,
         initialSuggestions: initialSuggestions,
+        dismissContextOnCreateSuccess: dismissContextOnCreateSuccess,
       );
     },
   );
@@ -68,6 +70,7 @@ class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
     required this.initialStructuredSuggestions,
     required this.onAnalyze,
     required this.initialSuggestions,
+    required this.dismissContextOnCreateSuccess,
   });
 
   final String memoText;
@@ -76,6 +79,7 @@ class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
   final List<MPAnalyzeMemoSuggestionStruct>? initialStructuredSuggestions;
   final Future<List<String>> Function(String memoText)? onAnalyze;
   final List<String>? initialSuggestions;
+  final BuildContext? dismissContextOnCreateSuccess;
 
   @override
   State<_MPAnalyzeSuggestedTasksSheet> createState() =>
@@ -318,7 +322,16 @@ class _MPAnalyzeSuggestedTasksSheetState
     if (!mounted) return;
     setState(() => _creating = false);
     if (ok) {
-      Navigator.of(context).pop();
+      _dismissSheetsAfterCreateSuccess();
+    }
+  }
+
+  void _dismissSheetsAfterCreateSuccess() {
+    Navigator.of(context).pop();
+    final BuildContext? underlyingContext =
+        widget.dismissContextOnCreateSuccess;
+    if (underlyingContext != null && underlyingContext.mounted) {
+      Navigator.of(underlyingContext).pop();
     }
   }
 
