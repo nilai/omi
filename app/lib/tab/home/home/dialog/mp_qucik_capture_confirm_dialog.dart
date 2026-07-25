@@ -495,7 +495,7 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
       child: Row(
         children: <Widget>[
           Text(
-            'AI understood this',
+            'Review AI suggestions',
             style: TextStyle(fontSize: OmiFontSize.t9_18, fontWeight: OmiFontWeight.bold, color: mainTextColor),
           ),
           const Spacer(),
@@ -763,17 +763,17 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: <Widget>[
-                            _buildSectionTitle('ORIGINAL TEXT'),
-                            const SizedBox(height: 10),
-                            _buildOriginalTextCard(),
                             if (_rows.isNotEmpty) ...<Widget>[
+                              _buildSectionTitle('Suggested items'),
+                              const SizedBox(height: 10),
+                              _buildIssuesCard(),
                               const SizedBox(height: 16),
                               Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
                               const SizedBox(height: 16),
-                              _buildSectionTitle('STRUCTURED SUGGESTIONS'),
-                              const SizedBox(height: 10),
-                              _buildIssuesCard(),
                             ],
+                            _buildSectionTitle('What you said'),
+                            const SizedBox(height: 10),
+                            _buildOriginalTextCard(),
                           ],
                         ),
                       ),
