@@ -550,28 +550,27 @@ class MPBleConnectionHelper {
 
     final MPBlePlatform platform = MPBlePlatform.instance;
     try {
+      // 单轮、无 Service UUID 过滤。
+      //
+      // 此前是两轮：先带 `MPBleScanFilterUuids.scanFilterUuids` 过滤扫满 perPhase，扫不到
+      // 再无过滤扫第二轮。那一轮**结构性地永远落空**：
+      //   · `withServices` 是 OS 级过滤，结果 ⊆ {广播里带该 UUID 的设备}；
+      //   · 而 MemoPin 的广播包不带该 UUID——[isMemoPinLikeDiscoveredDevice] 实际是靠
+      //     [_isAiNoteLikeDeviceName] 的名称分支认出设备的；
+      //   · 两者 UUID 同源（都来自 memoPinRecognizedServiceUuidStrings），所以凡过滤轮
+      //     能扫到的，无过滤轮必然也能扫到——后者恒为前者的超集。
+      // 净效果只是白等一个 perPhase 窗口。实测（2026-07-26, SM S9310 / Android 16）：
+      // `phase1 filtered count=0` 紧跟 16 行 `matchesMemoPinAdvertisedService: false`，
+      // 冷启动重连因此多花 5 秒。v1.0_ble 已于 3e8fd9f39 做过同一处修正。
+      //
+      // 识别能力不受影响：UUID 判据仍留在 [isMemoPinLikeDiscoveredDevice] 里，固件将来若
+      // 改为广播 UUID，登记到 additionalMemoPinAdvertisementServices 即可，无需恢复过滤轮。
       debugPrint(
-        '------>>>memopin scanMemoPinLikeEntriesPhased: phase1 withServices count=${MPBleScanFilterUuids.scanFilterUuids.length} timeout=${perPhase.inSeconds}s',
+        '------>>>memopin scanMemoPinLikeEntriesPhased: single pass no service filter timeout=${perPhase.inSeconds}s',
       );
-      await platform.runScan(
-        duration: perPhase,
-        withServices: MPBleScanFilterUuids.scanFilterUuids,
-        onDevice: bufferDevice,
-      );
-
-      List<MPBleScanEntry> entries = finishFromBuffer();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 filtered count=${entries.length}');
-
-      if (entries.isNotEmpty) {
-        debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 has results → return');
-        return entries;
-      }
-
-      bestById.clear();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 no service filter');
       await platform.runScan(duration: perPhase, onDevice: bufferDevice);
-      entries = finishFromBuffer();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 filtered count=${entries.length}');
+      final List<MPBleScanEntry> entries = finishFromBuffer();
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: filtered count=${entries.length}');
       return entries;
     } finally {
       await platform.stopScan();
