@@ -144,6 +144,11 @@ class MPBleConnectionHelper {
   static void _attachBackgroundConnectionMonitor(BleTransport transport) {
     unawaited(_backgroundConnSub?.cancel());
     _backgroundConnSub = transport.connectionStateStream.listen((MPDeviceTransportState s) {
+      if (s == MPDeviceTransportState.connected) {
+        // 待连已兑现（或用户手动连回）。清掉标记，下一次掉线才能重新挂上。
+        _persistentReconnectArmedFor = null;
+        return;
+      }
       if (s == MPDeviceTransportState.disconnected || s == MPDeviceTransportState.disconnecting) {
         unawaited(_onBackgroundTransportLinkLost());
       }
@@ -153,6 +158,8 @@ class MPBleConnectionHelper {
   static void _detachBackgroundConnectionMonitor() {
     unawaited(_backgroundConnSub?.cancel());
     _backgroundConnSub = null;
+    // 背景会话已交出或释放，待连不再归本 helper 管。
+    _persistentReconnectArmedFor = null;
   }
 
   /// 被动掉线：二次确认后通知首页（忽略 GATT 瞬时 disconnected）。
@@ -174,6 +181,37 @@ class MPBleConnectionHelper {
     }
     debugPrint('------>>>memopin background BLE link lost deviceId=${t.deviceId}');
     MPHomeNotification.notifyBleDisconnected();
+    await _armPersistentReconnect(t);
+  }
+
+  /// 已挂上待连的设备（`null` 表示未挂）。防的是掉线风暴：待连失败会再发一次
+  /// disconnected，若不加判据就会在这里无限重挂。
+  static String? _persistentReconnectArmedFor;
+
+  /// 掉线后挂上系统级待连，设备重新广播时由蓝牙栈自动接回。
+  ///
+  /// 在此之前，掉线处理器只调 [MPHomeNotification.notifyBleDisconnected] 改首页图标，
+  /// 而 `autoConnect` 恒为 false、BLE 路径无轮询、`onAppResumed` 不碰 BLE——实测（2026-07-26,
+  /// SM S9310 / Android 16）设备重新开机后 60s、切前后台后 30s 均零重连动作，只有冷启动
+  /// 走 [tryConnectLastRecordedBleDevice] 才能恢复（耗时约 15s）。
+  ///
+  /// 用户主动断开走 [disconnectBackgroundBleTransportUserInitiated]，那条路 dispose 掉
+  /// transport，待连随订阅一并取消，不会把用户断开的设备又连回来。
+  static Future<void> _armPersistentReconnect(BleTransport t) async {
+    if (!identical(_backgroundBleTransport, t)) {
+      return;
+    }
+    if (_persistentReconnectArmedFor == t.deviceId) {
+      return;
+    }
+    _persistentReconnectArmedFor = t.deviceId;
+    try {
+      await t.connect(persistentAutoConnect: true);
+      debugPrint('------>>>memopin persistent auto-connect armed deviceId=${t.deviceId}');
+    } catch (e) {
+      _persistentReconnectArmedFor = null;
+      debugPrint('------>>>memopin arm persistent auto-connect failed: $e');
+    }
   }
 
   /// 释放背景会话并断开 BLE（**仅**用户主动断开、切换设备前清理、登出）。

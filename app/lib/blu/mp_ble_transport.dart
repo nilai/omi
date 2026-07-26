@@ -149,8 +149,20 @@ class MPBleTransport extends MPDeviceTransport {
     _reassembler.restoreLastCompletedSeq(seq);
   }
 
+  /// [persistentAutoConnect] 为 `true` 时进入「后台待连」：省略 `connectionTimeout`，
+  /// reactive_ble 据此把 connectGatt 的 autoConnect 置位（DeviceConnector.kt:95 →
+  /// establishConnection(shouldNotTimeout)），由系统蓝牙栈在设备重新广播时自动接回，
+  /// 不需要 app 轮询、也不需要 app 在前台。
+  ///
+  /// 该模式下三处行为与直连不同，缺一不可：
+  /// 1. 不做广播验证——设备本就可能缺席，待连等的正是它回来；
+  /// 2. 不传 `connectionTimeout`——传了 autoConnect 就被清掉（两者在库里绑死）；
+  /// 3. 不等待 `_connectionCompleter`——待连可悬挂任意长时间，15 秒超时会抹掉该模式的意义。
+  ///
+  /// 因此调用方拿到的语义是「已挂上待连」，而非「已连上」。真正连上时仍走下面 listen 里
+  /// 的 connected 分支（MTU → 服务发现 → 订阅特征 → `_updateState(connected)`）。
   @override
-  Future<void> connect({bool skipAdvertisementVerify = false}) async {
+  Future<void> connect({bool skipAdvertisementVerify = false, bool persistentAutoConnect = false}) async {
     if (_currentState == MPDeviceTransportState.connected) {
       return;
     }
@@ -178,7 +190,7 @@ class MPBleTransport extends MPDeviceTransport {
     _connectionCompleter = Completer<void>();
     _gattSubscriptionsCompleter = Completer<void>();
 
-    final bool advertising = skipAdvertisementVerify || await _verifyDeviceAdvertisement();
+    final bool advertising = persistentAutoConnect || skipAdvertisementVerify || await _verifyDeviceAdvertisement();
     if (!advertising) {
       _updateState(MPDeviceTransportState.disconnected);
       if (!_gattSubscriptionsCompleter!.isCompleted) {
@@ -198,7 +210,12 @@ class MPBleTransport extends MPDeviceTransport {
     }
 
     _connectionSubscription = _ble
-        .connectToDevice(id: _deviceId, connectionTimeout: const Duration(seconds: 10))
+        .connectToDevice(
+          id: _deviceId,
+          // null ⇒ autoConnect=true（后台待连）；传值 ⇒ autoConnect=false + 超时（直连）。
+          // 库把这两者绑死，四种组合只能取到这两种；好在直连与待连要的正是这两种。
+          connectionTimeout: persistentAutoConnect ? null : const Duration(seconds: 10),
+        )
         .listen(
           (ConnectionStateUpdate state) async {
             debugPrint('MPBleTransport 连接状态: ${state.connectionState} device=${state.deviceId}');
@@ -238,6 +255,11 @@ class MPBleTransport extends MPDeviceTransport {
             }
           },
         );
+
+    if (persistentAutoConnect) {
+      // 待连已挂上，就此返回。设备何时回来由蓝牙栈决定，不能在这里等。
+      return;
+    }
 
     await _connectionCompleter!.future.timeout(
       const Duration(seconds: 15),
