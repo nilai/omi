@@ -223,7 +223,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     } else {
       _resetSavePendingState();
     }
-    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
@@ -322,12 +322,25 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   Future<bool> _isMicrophoneCaptureBlocked() => _nativeRecorder.isMicrophoneCaptureBlocked();
 
   /// 会议/通话结束或 App 回到前台后，重新激活会话并刷新麦克风占用状态。
-  Future<void> _prepareBeforeRecordingResume() async {
-    await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording();
+  Future<bool> _prepareBeforeRecordingResume({bool reacquire = false}) async {
+    final bool sessionActive;
+    if (reacquire) {
+      final MPRecordingBackgroundActivationResult activation =
+          await MPRecordingBackgroundSupport.activateForHomeRecording(owner: _recordingOwnerToken);
+      sessionActive = activation.audioSessionActive;
+    } else {
+      sessionActive = await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording(
+        owner: _recordingOwnerToken,
+      );
+    }
+    if (!sessionActive) {
+      return false;
+    }
     await _nativeRecorder.prepareForRecordingResume();
     if (Platform.isIOS) {
       await MPRecordingSessionNative.applyMixRecordingSession();
     }
+    return true;
   }
 
   @override
@@ -342,7 +355,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (!mounted || _step != _MPAudioRecordStep.recording || !_nativeRecorderOpen) {
       return;
     }
-    await _prepareBeforeRecordingResume();
+    if (!await _prepareBeforeRecordingResume()) {
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -386,7 +401,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       _nativeCapturing = true;
       return true;
     }
-    await _prepareBeforeRecordingResume();
+    if (!await _prepareBeforeRecordingResume()) {
+      return false;
+    }
     try {
       final bool resumed = await _nativeRecorder.resumeSegment();
       if (!resumed) {
@@ -464,7 +481,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
     _pausedBySystemInterruption = false;
-    await _prepareBeforeRecordingResume();
+    if (!await _prepareBeforeRecordingResume()) {
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -588,7 +607,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       final MPRecordingBackgroundActivationResult activation =
-          await MPRecordingBackgroundSupport.activateForHomeRecording();
+          await MPRecordingBackgroundSupport.activateForHomeRecording(owner: _recordingOwnerToken);
       if (!activation.audioSessionActive) {
         if (mounted) {
           setState(() => _busy = false);
@@ -602,7 +621,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
-      MPRecordingBackgroundSupport.setNativeRecorderHandlesInterruptions(true);
+      MPRecordingBackgroundSupport.setNativeRecorderHandlesInterruptions(
+        owner: _recordingOwnerToken,
+        enabled: true,
+      );
       final String path = await _newRecordPath();
       _recorderSessionId++;
       final int sessionId = _recorderSessionId;
@@ -647,7 +669,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           }
           return;
         }
-        await _prepareBeforeRecordingResume();
+        await MPGlobalRecordingCoordinator.instance
+            .beforeLocalRecordingStarts(_recordingOwnerToken);
+        if (!await _prepareBeforeRecordingResume(reacquire: true)) {
+          if (mounted) {
+            setState(() => _busy = false);
+          }
+          return;
+        }
         if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
           return;
         }
@@ -658,11 +687,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           }
           return;
         }
-        if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
-          return;
-        }
-        await MPGlobalRecordingCoordinator.instance
-            .beforeLocalRecordingStarts(_recordingOwnerToken);
         if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
           return;
         }
@@ -780,7 +804,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           _nativeRecorderOpen = false;
         }
         _isPaused = false;
-        await MPRecordingBackgroundSupport.deactivateAfterRecording();
+        await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
         MPGlobalRecordingCoordinator.instance
             .notifyRecordingSessionEnded(_recordingOwnerToken);
         if (outPath == null || outPath.isEmpty) {

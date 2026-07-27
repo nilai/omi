@@ -155,7 +155,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
-    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
@@ -241,7 +241,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
       }
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await MPRecordingBackgroundSupport.activateForRecording();
+      await MPRecordingBackgroundSupport.activateForRecording(owner: _recordingOwnerToken);
       final String dir = await _ensureRecordDirectory();
       final String path = p.join(
         dir,
@@ -322,7 +322,7 @@ class _OmiQuickAddTodoSheetState extends State<_OmiQuickAddTodoSheet> {
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
-      await MPRecordingBackgroundSupport.deactivateAfterRecording();
+      await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     } catch (e) {
       MPToastUtils.showMessage('Failed to stop recording: $e');
       await _stopRecorder(deleteFile: true);

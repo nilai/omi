@@ -186,7 +186,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
-    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
@@ -319,7 +319,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       }
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await MPRecordingBackgroundSupport.activateForRecording();
+      await MPRecordingBackgroundSupport.activateForRecording(owner: _recordingOwnerToken);
       final String dir = await _ensureQuickCaptureDirectory();
       final String path = p.join(dir, 'omi_quick_capture_${MPTimeUtils.nowUnixMilliseconds()}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
@@ -529,7 +529,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
-      await MPRecordingBackgroundSupport.deactivateAfterRecording();
+      await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
       MPGlobalRecordingCoordinator.instance
           .notifyRecordingSessionEnded(_recordingOwnerToken);
     } catch (e) {
