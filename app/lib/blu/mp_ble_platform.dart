@@ -101,4 +101,44 @@ class MPBlePlatform {
       await stopScan();
     }
   }
+
+  /// 扫描直到 [matches] 命中或 [duration] 到期。
+  ///
+  /// 用于冷启动自动重连：一旦发现历史设备便立即停止扫描并返回该广播，
+  /// 避免先收集完整列表再发起连接。
+  Future<DiscoveredDevice?> runScanUntil({
+    required Duration duration,
+    List<Uuid> withServices = const <Uuid>[],
+    required bool Function(DiscoveredDevice device) matches,
+  }) async {
+    await stopScan();
+    _isScanning = true;
+    final Completer<DiscoveredDevice?> result = Completer<DiscoveredDevice?>();
+    _activeScanSub = ble
+        .scanForDevices(withServices: withServices, scanMode: ScanMode.lowLatency)
+        .listen(
+          (DiscoveredDevice device) {
+            if (!result.isCompleted && matches(device)) {
+              result.complete(device);
+            }
+          },
+          onError: (Object e) {
+            debugPrint('------>>>memopin MPBlePlatform.runScanUntil error: $e');
+            if (!result.isCompleted) {
+              result.complete(null);
+            }
+          },
+          onDone: () {
+            if (!result.isCompleted) {
+              result.complete(null);
+            }
+          },
+          cancelOnError: false,
+        );
+    try {
+      return await result.future.timeout(duration, onTimeout: () => null);
+    } finally {
+      await stopScan();
+    }
+  }
 }
