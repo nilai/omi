@@ -7,7 +7,6 @@ import 'package:memo_pin/audio/record/mp_native_recorder.dart';
 import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
-import 'package:memo_pin/audio/record/mp_recording_session_native.dart';
 import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -321,26 +320,18 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
   Future<bool> _isMicrophoneCaptureBlocked() => _nativeRecorder.isMicrophoneCaptureBlocked();
 
-  /// 会议/通话结束或 App 回到前台后，重新激活会话并刷新麦克风占用状态。
+  /// 确认当前 owner 的 AudioSession 仍可用；仅在被其它录音场景抢占后由用户手势重新取得会话。
+  /// 真正 resume 时的 iOS 原生 prepare 统一由 [MPNativeRecorder.resumeSegment] 执行，避免重复配置。
   Future<bool> _prepareBeforeRecordingResume({bool reacquire = false}) async {
-    final bool sessionActive;
-    if (reacquire) {
+    bool sessionActive = await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording(
+      owner: _recordingOwnerToken,
+    );
+    if (!sessionActive && reacquire) {
       final MPRecordingBackgroundActivationResult activation =
           await MPRecordingBackgroundSupport.activateForHomeRecording(owner: _recordingOwnerToken);
       sessionActive = activation.audioSessionActive;
-    } else {
-      sessionActive = await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording(
-        owner: _recordingOwnerToken,
-      );
     }
-    if (!sessionActive) {
-      return false;
-    }
-    await _nativeRecorder.prepareForRecordingResume();
-    if (Platform.isIOS) {
-      await MPRecordingSessionNative.applyMixRecordingSession();
-    }
-    return true;
+    return sessionActive;
   }
 
   @override
@@ -395,13 +386,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
   /// 同文件 [resumeSegment] 继续录音（仅由 UI 按钮触发）。
   Future<bool> _resumeNativeRecording() async {
     if (!_nativeRecorderOpen || _recordPath == null) {
-      return false;
-    }
-    if (await _nativeRecorder.isRecording()) {
-      _nativeCapturing = true;
-      return true;
-    }
-    if (!await _prepareBeforeRecordingResume()) {
       return false;
     }
     try {
