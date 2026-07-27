@@ -28,6 +28,15 @@ class _MPSuggestedItem {
   String content;
   int? deadline;
   String? description;
+
+  String get displayContent {
+    switch (type) {
+      case MPAnalyzeMemoSuggestionType.todo:
+        return 'Todo: $content';
+      case MPAnalyzeMemoSuggestionType.memo:
+        return 'Memo: $content';
+    }
+  }
 }
 
 /// 展示「Suggested tasks」分析结果底部弹窗（高度上限为屏高的 60%，中间区域可滚动）。
@@ -470,7 +479,7 @@ class _MPAnalyzeSuggestedTasksSheetState
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _suggestions[i].content,
+                  _suggestions[i].displayContent,
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t5_14,
                     fontWeight: OmiFontWeight.medium,
