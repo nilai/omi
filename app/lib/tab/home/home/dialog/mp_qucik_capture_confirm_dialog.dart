@@ -9,16 +9,42 @@ import '../../../../utils/omi_font_utils.dart';
 /// Quick Capture 确认列表一行（由分析结果组装，不含选中状态）。
 class MPQuickCaptureConfirmItem {
   /// Todo 行。
-  factory MPQuickCaptureConfirmItem.todo(String title, int? deadline) {
-    return MPQuickCaptureConfirmItem._(isTodo: true, text: title, deadline: deadline, type: 0);
+  factory MPQuickCaptureConfirmItem.todo(
+    String title,
+    int? deadline,
+    String? description,
+  ) {
+    return MPQuickCaptureConfirmItem._(
+      isTodo: true,
+      text: title,
+      deadline: deadline,
+      type: 0,
+      description: description,
+    );
   }
 
   /// Memo 行。
-  factory MPQuickCaptureConfirmItem.memo(String content, int type) {
-    return MPQuickCaptureConfirmItem._(isTodo: false, text: content, deadline: null, type: type);
+  factory MPQuickCaptureConfirmItem.memo(
+    String content,
+    int type,
+    String? description,
+  ) {
+    return MPQuickCaptureConfirmItem._(
+      isTodo: false,
+      text: content,
+      deadline: null,
+      type: type,
+      description: description,
+    );
   }
 
-  MPQuickCaptureConfirmItem._({required this.isTodo, required this.text, required this.deadline, required this.type});
+  MPQuickCaptureConfirmItem._({
+    required this.isTodo,
+    required this.text,
+    required this.deadline,
+    required this.type,
+    this.description,
+  });
 
   final bool isTodo;
 
@@ -28,6 +54,8 @@ class MPQuickCaptureConfirmItem {
   final int? deadline;
 
   final int type;
+
+  final String? description;
 }
 
 /// Quick Capture 确认弹窗返回结果。
@@ -54,9 +82,8 @@ class MPQuickCaptureConfirmResult {
 }
 
 /// 点击 Confirm 后提交；返回 `true` 时弹窗关闭，失败则保持弹窗并允许重试。
-typedef MPQuickCaptureConfirmSubmit = Future<bool> Function(
-  MPQuickCaptureConfirmResult result,
-);
+typedef MPQuickCaptureConfirmSubmit =
+    Future<bool> Function(MPQuickCaptureConfirmResult result);
 
 /// 互斥选中区域：原始文案 / 结构化建议列表。
 enum _MPConfirmSelectionRegion { originalText, items }
@@ -106,11 +133,18 @@ class MPQucikCaptureConfirmDialog extends StatefulWidget {
   }
 
   @override
-  State<MPQucikCaptureConfirmDialog> createState() => _MPQucikCaptureConfirmDialogState();
+  State<MPQucikCaptureConfirmDialog> createState() =>
+      _MPQucikCaptureConfirmDialogState();
 }
 
 class _ConfirmRow {
-  _ConfirmRow({required this.isTodo, required this.text, required this.deadline, required this.type});
+  _ConfirmRow({
+    required this.isTodo,
+    required this.text,
+    required this.deadline,
+    required this.type,
+    this.description,
+  });
 
   final bool isTodo;
   String text;
@@ -121,17 +155,25 @@ class _ConfirmRow {
   bool selected = true;
 
   final int type;
+
+  final String? description;
 }
 
-class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialog> {
+class _MPQucikCaptureConfirmDialogState
+    extends State<MPQucikCaptureConfirmDialog> {
   static const Color _kBlue = Color(0xFF2F7BFF);
 
   late String _originalText = widget.originalText;
 
   late final List<_ConfirmRow> _rows = widget.items
       .map(
-        (MPQuickCaptureConfirmItem e) =>
-            _ConfirmRow(isTodo: e.isTodo, text: e.text.trim(), deadline: e.deadline, type: e.type),
+        (MPQuickCaptureConfirmItem e) => _ConfirmRow(
+          isTodo: e.isTodo,
+          text: e.text.trim(),
+          deadline: e.deadline,
+          type: e.type,
+          description: e.description,
+        ),
       )
       .where((_ConfirmRow r) => r.text.isNotEmpty)
       .toList(growable: true);
@@ -153,17 +195,28 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
 
   bool _submitting = false;
 
-  bool get _isOriginalTextRegionActive => _activeRegion == _MPConfirmSelectionRegion.originalText;
+  bool get _isOriginalTextRegionActive =>
+      _activeRegion == _MPConfirmSelectionRegion.originalText;
 
-  bool get _isItemsRegionActive => _activeRegion == _MPConfirmSelectionRegion.items;
+  bool get _isItemsRegionActive =>
+      _activeRegion == _MPConfirmSelectionRegion.items;
 
   BoxDecoration _buildRegionCardDecoration({required bool isActive}) {
     return BoxDecoration(
       color: isActive ? Colors.white : const Color(0xFFFAFAFC),
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: isActive ? _kBlue : lineColor.withValues(alpha: 0.9), width: isActive ? 2 : 1),
+      border: Border.all(
+        color: isActive ? _kBlue : lineColor.withValues(alpha: 0.9),
+        width: isActive ? 2 : 1,
+      ),
       boxShadow: isActive
-          ? <BoxShadow>[BoxShadow(color: _kBlue.withValues(alpha: 0.18), blurRadius: 12, offset: const Offset(0, 4))]
+          ? <BoxShadow>[
+              BoxShadow(
+                color: _kBlue.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ]
           : null,
     );
   }
@@ -230,7 +283,14 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateTodoItem(title: t, priority: '', deadline: r.deadline));
+      out.add(
+        MPBatchCreateTodoItem(
+          title: t,
+          priority: '',
+          deadline: r.deadline,
+          description: r.description,
+        ),
+      );
     }
     return out;
   }
@@ -246,7 +306,14 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
       if (t.isEmpty) {
         continue;
       }
-      out.add(MPBatchCreateMemoItem(content: t, createAt: memoCreateAt, source: r.type == 1 ? 'record' : 'text'));
+      out.add(
+        MPBatchCreateMemoItem(
+          content: t,
+          createAt: memoCreateAt,
+          source: r.type == 1 ? 'record' : 'text',
+          description: r.description,
+        ),
+      );
     }
     return out;
   }
@@ -507,13 +574,19 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
         children: <Widget>[
           Text(
             'Review AI suggestions',
-            style: TextStyle(fontSize: OmiFontSize.t9_18, fontWeight: OmiFontWeight.bold, color: mainTextColor),
+            style: TextStyle(
+              fontSize: OmiFontSize.t9_18,
+              fontWeight: OmiFontWeight.bold,
+              color: mainTextColor,
+            ),
           ),
           const Spacer(),
           IconButton(
             onPressed: _submitting
                 ? null
-                : () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
+                : () => Navigator.of(
+                    context,
+                  ).pop(_buildPopResult(confirmed: false)),
             icon: const Icon(Icons.close_rounded),
             color: secondTextColor,
           ),
@@ -550,14 +623,18 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(16),
-          decoration: _buildRegionCardDecoration(isActive: _isOriginalTextRegionActive),
+          decoration: _buildRegionCardDecoration(
+            isActive: _isOriginalTextRegionActive,
+          ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: <Widget>[
               Expanded(
                 child: editing && _originalTextController != null
                     ? _buildEditTextField(
-                        fieldKey: const ValueKey<String>('confirm_original_text_edit'),
+                        fieldKey: const ValueKey<String>(
+                          'confirm_original_text_edit',
+                        ),
                         controller: _originalTextController!,
                         focusNode: _originalTextFocusNode,
                       )
@@ -572,7 +649,10 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                       ),
               ),
               const SizedBox(width: 8),
-              _buildEditActionButton(editing: editing, onTap: editing ? _saveOriginalTextEdit : _startEditOriginalText),
+              _buildEditActionButton(
+                editing: editing,
+                onTap: editing ? _saveOriginalTextEdit : _startEditOriginalText,
+              ),
             ],
           ),
         ),
@@ -589,9 +669,14 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
       decoration: BoxDecoration(
         color: selected ? _kBlue : Colors.transparent,
         shape: BoxShape.circle,
-        border: Border.all(color: selected ? _kBlue : lineColor.withValues(alpha: 0.95), width: 2),
+        border: Border.all(
+          color: selected ? _kBlue : lineColor.withValues(alpha: 0.95),
+          width: 2,
+        ),
       ),
-      child: selected ? const Icon(Icons.check, color: Colors.white, size: 14) : null,
+      child: selected
+          ? const Icon(Icons.check, color: Colors.white, size: 14)
+          : null,
     );
   }
 
@@ -601,7 +686,11 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        border: index == _rows.length - 1 ? null : Border(bottom: BorderSide(color: lineColor.withValues(alpha: 0.9))),
+        border: index == _rows.length - 1
+            ? null
+            : Border(
+                bottom: BorderSide(color: lineColor.withValues(alpha: 0.9)),
+              ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +705,9 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                 highlightColor: Colors.transparent,
                 hoverColor: Colors.transparent,
                 focusColor: Colors.transparent,
-                overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
+                overlayColor: const WidgetStatePropertyAll<Color>(
+                  Colors.transparent,
+                ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: <Widget>[
@@ -632,7 +723,9 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                     Expanded(
                       child: editing && _itemEditingController != null
                           ? _buildEditTextField(
-                              fieldKey: ValueKey<String>('confirm_item_edit_$index'),
+                              fieldKey: ValueKey<String>(
+                                'confirm_item_edit_$index',
+                              ),
                               controller: _itemEditingController!,
                               focusNode: _itemEditingFocusNode,
                             )
@@ -678,8 +771,12 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
         overlayColor: const WidgetStatePropertyAll<Color>(Colors.transparent),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: _buildRegionCardDecoration(isActive: _isItemsRegionActive),
-          child: Column(children: List<Widget>.generate(_rows.length, _buildIssueTile)),
+          decoration: _buildRegionCardDecoration(
+            isActive: _isItemsRegionActive,
+          ),
+          child: Column(
+            children: List<Widget>.generate(_rows.length, _buildIssueTile),
+          ),
         ),
       ),
     );
@@ -696,15 +793,23 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
               child: TextButton(
                 onPressed: _submitting
                     ? null
-                    : () => Navigator.of(context).pop(_buildPopResult(confirmed: false)),
+                    : () => Navigator.of(
+                        context,
+                      ).pop(_buildPopResult(confirmed: false)),
                 style: TextButton.styleFrom(
                   backgroundColor: const Color(0xFFF5F5F9),
                   foregroundColor: mainTextColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: Text(
                   'Cancel',
-                  style: TextStyle(fontSize: OmiFontSize.t7_16, fontWeight: OmiFontWeight.medium, color: mainTextColor),
+                  style: TextStyle(
+                    fontSize: OmiFontSize.t7_16,
+                    fontWeight: OmiFontWeight.medium,
+                    color: mainTextColor,
+                  ),
                 ),
               ),
             ),
@@ -718,13 +823,18 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                 style: TextButton.styleFrom(
                   backgroundColor: _kBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 child: _submitting
                     ? const SizedBox(
                         width: 22,
                         height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : Text(
                         'Confirm',
@@ -768,10 +878,7 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  AbsorbPointer(
-                    absorbing: _submitting,
-                    child: _buildHeader(),
-                  ),
+                  AbsorbPointer(absorbing: _submitting, child: _buildHeader()),
                   Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
                   Flexible(
                     child: AbsorbPointer(
@@ -786,7 +893,10 @@ class _MPQucikCaptureConfirmDialogState extends State<MPQucikCaptureConfirmDialo
                               const SizedBox(height: 10),
                               _buildIssuesCard(),
                               const SizedBox(height: 16),
-                              Container(height: 1, color: lineColor.withValues(alpha: 0.8)),
+                              Container(
+                                height: 1,
+                                color: lineColor.withValues(alpha: 0.8),
+                              ),
                               const SizedBox(height: 16),
                             ],
                             _buildSectionTitle('What you said'),

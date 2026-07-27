@@ -21,11 +21,13 @@ class _MPSuggestedItem {
     required this.type,
     required this.content,
     this.deadline,
+    this.description,
   });
 
   MPAnalyzeMemoSuggestionType type;
   String content;
   int? deadline;
+  String? description;
 }
 
 /// 展示「Suggested tasks」分析结果底部弹窗（高度上限为屏高的 60%，中间区域可滚动）。
@@ -35,7 +37,7 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
   List<String>? initialSuggestions,
   String memoText = '',
   Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
-      onAnalyzeStructured,
+  onAnalyzeStructured,
   Future<List<String>> Function(String memoText)? onAnalyze,
   BuildContext? dismissContextOnCreateSuccess,
 }) {
@@ -75,7 +77,7 @@ class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
 
   final String memoText;
   final Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
-      onAnalyzeStructured;
+  onAnalyzeStructured;
   final List<MPAnalyzeMemoSuggestionStruct>? initialStructuredSuggestions;
   final Future<List<String>> Function(String memoText)? onAnalyze;
   final List<String>? initialSuggestions;
@@ -122,6 +124,7 @@ class _MPAnalyzeSuggestedTasksSheetState
               type: s.type,
               content: s.content,
               deadline: s.deadline,
+              description: s.description,
             ),
           )
           .toList();
@@ -166,6 +169,7 @@ class _MPAnalyzeSuggestedTasksSheetState
                 type: s.type,
                 content: s.content,
                 deadline: s.deadline,
+                description: s.description,
               ),
             )
             .toList();
@@ -223,8 +227,9 @@ class _MPAnalyzeSuggestedTasksSheetState
     }
     setState(() {
       _editingIndex = index;
-      _editController =
-          TextEditingController(text: _suggestions[index].content);
+      _editController = TextEditingController(
+        text: _suggestions[index].content,
+      );
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -279,6 +284,7 @@ class _MPAnalyzeSuggestedTasksSheetState
             title: content,
             priority: '',
             deadline: item.deadline,
+            description: item.description,
           ),
         );
       } else {
@@ -287,6 +293,7 @@ class _MPAnalyzeSuggestedTasksSheetState
             content: content,
             createAt: memoCreateAt,
             source: 'text',
+            description: item.description,
           ),
         );
       }
@@ -305,9 +312,7 @@ class _MPAnalyzeSuggestedTasksSheetState
       );
       ok = resp != null && resp.baseResp.code == 0;
       if (!ok) {
-        MPToastUtils.showMessage(
-          resp?.baseResp.message ?? 'Creation failed.',
-        );
+        MPToastUtils.showMessage(resp?.baseResp.message ?? 'Creation failed.');
       } else {
         if (todos.isNotEmpty) {
           MPTodoNotification.notifyTodoCreated();
