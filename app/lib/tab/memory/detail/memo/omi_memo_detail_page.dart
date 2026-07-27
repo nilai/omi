@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
 import 'package:memo_pin/common/mp_memory_update_name_dialog.dart';
-import 'package:memo_pin/common/mp_share_export_sheet.dart';
-import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/mp_custom_nav_bar.dart';
+import 'package:memo_pin/common/mp_share_options_manager.dart';
+import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
 import 'package:memo_pin/common/omi_quick_add_todo_popup.dart';
 import 'package:memo_pin/common/mp_todo_manager.dart';
-import 'package:memo_pin/common/mp_share_options_manager.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memo.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
@@ -59,7 +58,8 @@ class _OmiMemoDetailView extends StatefulWidget {
   State<_OmiMemoDetailView> createState() => _OmiMemoDetailViewState();
 }
 
-class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBindingObserver {
+class _OmiMemoDetailViewState extends State<_OmiMemoDetailView>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -91,242 +91,270 @@ class _OmiMemoDetailViewState extends State<_OmiMemoDetailView> with WidgetsBind
         builder: (BuildContext context, OmiMemoryDetailState pageState) {
           final bool hideBottomBar =
               pageState.phase == OmiMemoryDetailPhase.loaded &&
-                  pageState.isSummaryGenerating;
+              pageState.isSummaryGenerating;
           return Scaffold(
-      backgroundColor: pageColor,
-      appBar: PreferredSize(
-        preferredSize: MPCustomNavBar.preferredSizeOf(context),
-        child: MPCustomNavBar(
-          title: 'Memory',
-          actions: <Widget>[
-            GestureDetector(
-              onTap: () async {
-                final MPShareSheetParams params =
-                    await MPShareOptionsManager.instance.getShareSheetParams(
-                  memoryId: memoryId,
-                );
+            backgroundColor: pageColor,
+            appBar: PreferredSize(
+              preferredSize: MPCustomNavBar.preferredSizeOf(context),
+              child: MPCustomNavBar(
+                title: 'Memory',
+                actions: <Widget>[
+                  GestureDetector(
+                    onTap: () async {
+                      final MPShareSheetParams params =
+                          await MPShareOptionsManager.instance
+                              .getShareSheetParams(memoryId: memoryId);
 
-                if (!context.mounted) return;
-                final MPShareSheetResult? result = await showMPShareSheet(
-                  context,
-                  params: params,
-                  onShare: ({
-                    required String summaryOptionId,
-                    required Set<String> optionalOptionIds,
-                  }) {
-                    showMPShareExportSheet(context).then((MPShareExportKind? kind) async{
+                      if (!context.mounted) return;
+
+                      final List<MPShareSummaryOption> allOptions =
+                          <MPShareSummaryOption>[
+                            ...params.requiredSummaryOptions,
+                            ...params.optionalSummaryOptions,
+                          ];
+                      String? summaryOptionId = params.initialSummaryOptionId;
+                      if (summaryOptionId == null && allOptions.isNotEmpty) {
+                        summaryOptionId = allOptions.first.id;
+                      }
+                      if (summaryOptionId == null) {
+                        MPToastUtils.showMessage(
+                          'Unable to share. Please try again later.',
+                        );
+                        return;
+                      }
+
+                      final List<int> optionIds = <int>[
+                        int.parse(summaryOptionId),
+                      ];
+                      final MPShareMemoryV2Response? resp = await shareMemoryV2(
+                        MPShareMemoryV2Request(
+                          memoryId: memoryId,
+                          optionIds: optionIds,
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      if (resp == null || resp.baseResp.code != 0) {
+                        MPToastUtils.showMessage(resp?.baseResp.message ?? '');
+                        return;
+                      }
+                      MPShareMemoryDialog.show(
+                        context: context,
+                        url: resp.shareUrl,
+                      );
+                    },
+                    child: OmiImageLoader.localImg(
+                      Assets.omiShare,
+                      width: 20,
+                      height: 20,
+                      color: blueTextColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () async {
+                      final MPMemoryOptionKind? kind =
+                          await showMPMemoryOptionsSheet(
+                            context,
+                            params: MPMemoryOptionsSheetParams(
+                              memoryId: memoryId,
+                              showGenerateResummary: true,
+                            ),
+                          );
                       if (kind == null) return;
                       if (!context.mounted) return;
-                      if (kind == MPShareExportKind.link) {
-                        final MPShareMemoryResponse? resp = await shareMemory(MPShareMemoryRequest(memoryId: memoryId));
-                        if (!context.mounted) return;
-                        MPShareMemoryDialog.show(context: context, url: resp?.shareUrl ?? '');
-                      } else {
-                        MPToastUtils.showFeatureComingSoon();
+                      switch (kind) {
+                        case MPMemoryOptionKind.manageProjects:
+                          // TODO: Manage projects
+                          break;
+                        case MPMemoryOptionKind.editTitle:
+                          final OmiMemoryDetailCubit cubit = context
+                              .read<OmiMemoryDetailCubit>();
+                          final OmiMemoryDetailState s = cubit.state;
+                          if (s.phase != OmiMemoryDetailPhase.loaded ||
+                              s.data == null) {
+                            MPToastUtils.showMessage(
+                              'Please wait until loading finishes.',
+                            );
+                            break;
+                          }
+                          MPMemoryUpdateNameDialog.show(
+                            context: context,
+                            memoryId: memoryId,
+                            currentTitle: s.data!.title,
+                            onSuccess: (String t) {
+                              cubit.updateTitle(t);
+                              MPMemoryNotification.notifyMemoryTitleUpdated(
+                                memoryId: memoryId,
+                                title: t,
+                              );
+                            },
+                          );
+                          break;
+                        case MPMemoryOptionKind.modifyDate:
+                          // TODO: Modify date
+                          break;
+                        case MPMemoryOptionKind.generateResummary:
+                          await openMPDetailGenerateResummary(context);
+                          break;
+                        case MPMemoryOptionKind.delete:
+                          // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
+                          MPMemoryNotification.notifyMemoryDeleted(memoryId);
+                          Navigator.of(context).pop();
+                          break;
                       }
-                    });
-                  },
-                );
-                if (result == null) return;
-              },
-              child: OmiImageLoader.localImg(
-                Assets.omiShare,
-                width: 20,
-                height: 20,
-                color: blueTextColor,
+                    },
+                    child: OmiImageLoader.localImg(
+                      Assets.omiMemoryDetialMore,
+                      width: 20,
+                      height: 20,
+                      color: blueTextColor,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () async {
-                final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
-                  context,
-                  params: MPMemoryOptionsSheetParams(
-                    memoryId: memoryId,
-                    showGenerateResummary: true,
-                  ),
-                );
-                if (kind == null) return;
-                if (!context.mounted) return;
-                switch (kind) {
-                  case MPMemoryOptionKind.manageProjects:
-                    // TODO: Manage projects
-                    break;
-                  case MPMemoryOptionKind.editTitle:
-                    final OmiMemoryDetailCubit cubit =
-                        context.read<OmiMemoryDetailCubit>();
-                    final OmiMemoryDetailState s = cubit.state;
-                    if (s.phase != OmiMemoryDetailPhase.loaded ||
-                        s.data == null) {
-                      MPToastUtils.showMessage('Please wait until loading finishes.');
-                      break;
-                    }
-                    MPMemoryUpdateNameDialog.show(
-                      context: context,
-                      memoryId: memoryId,
-                      currentTitle: s.data!.title,
-                      onSuccess: (String t) {
-                        cubit.updateTitle(t);
-                        MPMemoryNotification.notifyMemoryTitleUpdated(
-                          memoryId: memoryId,
-                          title: t,
-                        );
-                      },
+            body: Builder(
+              builder: (BuildContext context) {
+                final OmiMemoryDetailState state = pageState;
+                switch (state.phase) {
+                  case OmiMemoryDetailPhase.loading:
+                    return const MPTristatePage(type: MPTristateType.loading);
+                  case OmiMemoryDetailPhase.error:
+                    return MPTristatePage(
+                      type: MPTristateType.error,
+                      data: MPTristatePageData(
+                        title: 'Unable to load memo detail',
+                        description: 'Please try again later.',
+                        onButtonPressed: () {
+                          context.read<OmiMemoryDetailCubit>().retry();
+                        },
+                      ),
                     );
-                    break;
-                  case MPMemoryOptionKind.modifyDate:
-                    // TODO: Modify date
-                    break;
-                  case MPMemoryOptionKind.generateResummary:
-                    await openMPDetailGenerateResummary(context);
-                    break;
-                  case MPMemoryOptionKind.delete:
-                    // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
-                    MPMemoryNotification.notifyMemoryDeleted(memoryId);
-                    Navigator.of(context).pop();
-                    break;
+                  case OmiMemoryDetailPhase.loaded:
+                    final MPMemoryDetailCardData data = state.data!;
+                    if (state.isSummaryGenerating) {
+                      return SafeArea(
+                        top: false,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
+                          child: MPSummaryGeneratingPanel(
+                            headline: data.title.trim().isNotEmpty
+                                ? data.title
+                                : 'Memory',
+                            metaLine: data.metaLine,
+                          ),
+                        ),
+                      );
+                    }
+                    return SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: MPMemoryDetailContentCard(
+                              data: data,
+                              showBackground: false,
+                              segmentBodyScrollWithParent: true,
+                              cardType: MPMemoryDetailCardType.memo,
+                              useExternalPlaybackProgress: true,
+                              onSegmentChanged: (MPMemoryDetailSegment s) {},
+                              onPlayTap: () => context
+                                  .read<OmiMemoryDetailCubit>()
+                                  .onPlayTap(),
+                              onSeekPlay: (Duration p) => context
+                                  .read<OmiMemoryDetailCubit>()
+                                  .onSeekPlay(p),
+                              onSeekWaveFraction: (double f) => context
+                                  .read<OmiMemoryDetailCubit>()
+                                  .onSeekByWaveFraction(f),
+                              isAudioPlaying: state.isAudioPlaying,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                 }
               },
-              child: OmiImageLoader.localImg(
-                Assets.omiMemoryDetialMore,
-                width: 20,
-                height: 20,
-                color: blueTextColor,
-              ),
             ),
-          ],
-        ),
-      ),
-      body: Builder(
-        builder: (BuildContext context) {
-          final OmiMemoryDetailState state = pageState;
-          switch (state.phase) {
-            case OmiMemoryDetailPhase.loading:
-              return const MPTristatePage(type: MPTristateType.loading);
-            case OmiMemoryDetailPhase.error:
-              return MPTristatePage(
-                type: MPTristateType.error,
-                data: MPTristatePageData(
-                  title: 'Unable to load memo detail',
-                  description: 'Please try again later.',
-                  onButtonPressed: () {
-                    context.read<OmiMemoryDetailCubit>().retry();
-                  },
-                ),
-              );
-            case OmiMemoryDetailPhase.loaded:
-              final MPMemoryDetailCardData data = state.data!;
-              if (state.isSummaryGenerating) {
-                return SafeArea(
-                  top: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 18, 24),
-                    child: MPSummaryGeneratingPanel(
-                      headline: data.title.trim().isNotEmpty
-                          ? data.title
-                          : 'Memory',
-                      metaLine: data.metaLine,
-                    ),
+            bottomNavigationBar: hideBottomBar
+                ? null
+                : MPMemoryDetailBottomBar(
+                    onAddTodo: () async {
+                      final OmiQuickAddTodoResult? result =
+                          await showOmiQuickAddTodoPopup(context);
+                      if (result == null) return;
+                      if (!context.mounted) return;
+                      final String line = result.text.trim();
+                      if (line.isEmpty) return;
+                      final bool ok = await MPTodoManager().createTodo(
+                        title: line,
+                        memoryId: memoryId,
+                      );
+                      if (!context.mounted) return;
+                      if (!ok) {
+                        MPToastUtils.showMessage(
+                          'Couldn\'t create to-do. Please try again later.',
+                        );
+                        return;
+                      }
+                      MPToastUtils.showMessage('To-do created.');
+                    },
+                    onAddMemo: () async {
+                      final OmiQuickAddTodoResult? result =
+                          await showOmiQuickAddTodoPopup(
+                            context,
+                            params: const OmiQuickInputPopupParams(
+                              headerTitle: 'ADD MEMO',
+                              hintText: 'What would you like to remember?',
+                            ),
+                          );
+                      if (result == null) return;
+                      final String line = result.text.trim();
+                      if (line.isEmpty) return;
+                      if (!context.mounted) return;
+                      final MPCreateMemoWithTextResponse? resp =
+                          await createMemoWithText(
+                            MPCreateMemoWithTextRequest(
+                              content: line,
+                              memoryId: memoryId,
+                              createAt: MPTimeUtils.nowUnixSeconds(),
+                            ),
+                          );
+                      if (!context.mounted) return;
+                      if (resp == null || resp.baseResp.code != 0) {
+                        MPToastUtils.showMessage(
+                          resp?.baseResp.message ??
+                              'Couldn\'t create memo. Please try again later.',
+                        );
+                        return;
+                      }
+                      MPToastUtils.showMessage('Memo created.');
+                    },
+                    onAskAi: () async {
+                      final OmiMemoryDetailState s = context
+                          .read<OmiMemoryDetailCubit>()
+                          .state;
+                      if (s.phase != OmiMemoryDetailPhase.loaded ||
+                          s.data == null) {
+                        return;
+                      }
+                      final String aboutText = s.data!.title.trim().isEmpty
+                          ? 'Memo'
+                          : s.data!.title;
+                      await MPAskAIChatNavigationHelper.open(
+                        context,
+                        MPAskAIChatOpenParams(
+                          aboutText: aboutText,
+                          conversationType: 1,
+                          paramId: memoryId,
+                          type: MPAskAIChatType.memory,
+                          chatTypeId: memoryId,
+                        ),
+                      );
+                    },
                   ),
-                );
-              }
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: MPMemoryDetailContentCard(
-                        data: data,
-                        showBackground: false,
-                        segmentBodyScrollWithParent: true,
-                        cardType: MPMemoryDetailCardType.memo,
-                        useExternalPlaybackProgress: true,
-                        onSegmentChanged: (MPMemoryDetailSegment s) {},
-                        onPlayTap: () =>
-                            context.read<OmiMemoryDetailCubit>().onPlayTap(),
-                        onSeekPlay: (Duration p) =>
-                            context.read<OmiMemoryDetailCubit>().onSeekPlay(p),
-                        onSeekWaveFraction: (double f) =>
-                            context.read<OmiMemoryDetailCubit>().onSeekByWaveFraction(f),
-                        isAudioPlaying: state.isAudioPlaying,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-          }
-        },
-      ),
-      bottomNavigationBar: hideBottomBar
-          ? null
-          : MPMemoryDetailBottomBar(
-        onAddTodo: () async {
-          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
-            context,
-          );
-          if (result == null) return;
-          if (!context.mounted) return;
-          final String line = result.text.trim();
-          if (line.isEmpty) return;
-          final bool ok = await MPTodoManager().createTodo(
-            title: line,
-            memoryId: memoryId,
-          );
-          if (!context.mounted) return;
-          if (!ok) {
-            MPToastUtils.showMessage('Couldn\'t create to-do. Please try again later.');
-            return;
-          }
-          MPToastUtils.showMessage('To-do created.');
-        },
-        onAddMemo: () async {
-          final OmiQuickAddTodoResult? result = await showOmiQuickAddTodoPopup(
-            context,
-            params: const OmiQuickInputPopupParams(
-              headerTitle: 'ADD MEMO',
-              hintText: 'What would you like to remember?',
-            ),
-          );
-          if (result == null) return;
-          final String line = result.text.trim();
-          if (line.isEmpty) return;
-          if (!context.mounted) return;
-          final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
-            MPCreateMemoWithTextRequest(
-              content: line,
-              memoryId: memoryId,
-              createAt: MPTimeUtils.nowUnixSeconds(),
-            ),
-          );
-          if (!context.mounted) return;
-          if (resp == null || resp.baseResp.code != 0) {
-            MPToastUtils.showMessage(
-              resp?.baseResp.message ?? 'Couldn\'t create memo. Please try again later.',
-            );
-            return;
-          }
-          MPToastUtils.showMessage('Memo created.');
-        },
-        onAskAi: () async {
-          final OmiMemoryDetailState s = context.read<OmiMemoryDetailCubit>().state;
-          if (s.phase != OmiMemoryDetailPhase.loaded || s.data == null) {
-            return;
-          }
-          final String aboutText = s.data!.title.trim().isEmpty ? 'Memo' : s.data!.title;
-          await MPAskAIChatNavigationHelper.open(
-            context,
-            MPAskAIChatOpenParams(
-              aboutText: aboutText,
-              conversationType: 1,
-              paramId: memoryId,
-              type: MPAskAIChatType.memory,
-              chatTypeId: memoryId,
-            ),
-          );
-        },
-      ),
           );
         },
       ),
