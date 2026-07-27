@@ -971,9 +971,24 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: <Widget>[
-                      SizedBox(
-                        height: 28,
-                        child: _MPMinimizedWaveform(animation: _waveController, active: !_isPaused, color: _kWaveGreen),
+                      Expanded(
+                        child: SizedBox(
+                          height: 28,
+                          child: _MPMinimizedWaveform(
+                            animation: _waveController,
+                            active: !_isPaused,
+                            color: _kWaveGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _formatElapsed(_displayDuration),
+                        style: OmiTextStyle.create(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t7_16,
+                          fontWeight: OmiFontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -981,16 +996,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              _formatElapsed(_displayDuration),
-              style: OmiTextStyle.create(
-                color: mainTextColor,
-                fontSize: OmiFontSize.t7_16,
-                fontWeight: OmiFontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 12),
-
             GestureDetector(
               onTap: _busy ? null : _togglePauseResume,
               child: Container(
