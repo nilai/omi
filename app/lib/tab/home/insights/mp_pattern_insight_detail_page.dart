@@ -13,6 +13,7 @@ import '../../../http/schema/mp_insight.dart';
 import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import '../../memory/detail/mp_memory_detail_helper.dart';
 import 'mp_insight_detail_cubit.dart';
+import 'mp_insight_markdown_body.dart';
 import 'mp_insights_list_cubit.dart';
 
 MarkdownStyleSheet _mpPatternDetectedMarkdownStyle() {
@@ -333,8 +334,8 @@ class _AppearedSection extends StatelessWidget {
         Divider(color: const Color(0xFFEDEDED), height: 1),
         const SizedBox(height: 12),
         if (introText.isNotEmpty) ...<Widget>[
-          Text(
-            introText,
+          MPInsightMarkdownBody(
+            data: introText,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -367,10 +368,8 @@ class _AppearedSection extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            item.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: MPInsightMarkdownBody(
+                            data: item.title,
                             style: OmiTextStyle.create(
                               color: mainTextColor,
                               fontSize: OmiFontSize.t6_15,
@@ -388,8 +387,8 @@ class _AppearedSection extends StatelessWidget {
           }).toList(),
         ),
         if (summaryText.isNotEmpty)
-          Text(
-            summaryText,
+          MPInsightMarkdownBody(
+            data: summaryText,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -431,8 +430,8 @@ class _WhyThisMattersSection extends StatelessWidget {
         const SizedBox(height: 12),
         Divider(color: const Color(0xFFEDEDED), height: 1),
         const SizedBox(height: 14),
-        Text(
-          whyText,
+        MPInsightMarkdownBody(
+          data: whyText,
           style: OmiTextStyle.create(
             color: secondTextColor,
             fontSize: OmiFontSize.t6_15,
@@ -493,10 +492,8 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Expanded(
-                  child: Text(
-                    text,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
+                  child: MPInsightMarkdownBody(
+                    data: text,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
                       fontSize: OmiFontSize.t6_15,

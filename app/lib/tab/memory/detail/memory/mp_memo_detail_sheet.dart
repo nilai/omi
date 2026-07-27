@@ -139,6 +139,7 @@ Future<void> showMPMemoDetailSheet(
                                   type: s.type,
                                   content: s.content.trim(),
                                   deadline: s.deadline,
+                                  description: s.description,
                                 ),
                               )
                               .where((s) => s.content.isNotEmpty)

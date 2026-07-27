@@ -9,6 +9,7 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 
 import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
+import 'mp_insight_markdown_body.dart';
 import 'mp_insights_list_cubit.dart';
 
 import '../../../generated/assets.dart';
@@ -260,8 +261,8 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
           const SizedBox(height: 12),
           Divider(color: const Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -320,8 +321,8 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
                   children: <Widget>[
                     SizedBox(
                       width: 112,
-                      child: Text(
-                        i.label,
+                      child: MPInsightMarkdownBody(
+                        data: i.label,
                         style: OmiTextStyle.create(
                           color: secondTextColor,
                           fontSize: OmiFontSize.t5_14,
@@ -347,8 +348,8 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
             }).toList(),
           ),
           const SizedBox(height: 4),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -414,8 +415,8 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
                   children: <Widget>[
                     Expanded(
                       flex: 2,
-                      child: Text(
-                        p.name,
+                      child: MPInsightMarkdownBody(
+                        data: p.name,
                         style: OmiTextStyle.create(
                           color: mainTextColor,
                           fontSize: OmiFontSize.t5_14,
@@ -437,8 +438,8 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Text(
-                      '${p.count} memories',
+                    MPInsightMarkdownBody(
+                      data: '${p.count} memories',
                       style: OmiTextStyle.create(
                         color: secondTextColor,
                         fontSize: OmiFontSize.t5_14,
@@ -451,8 +452,8 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
               );
             }).toList(),
           ),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -517,8 +518,8 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
                   children: <Widget>[
                     SizedBox(
                       width: 112,
-                      child: Text(
-                        t.label,
+                      child: MPInsightMarkdownBody(
+                        data: t.label,
                         style: OmiTextStyle.create(
                           color: secondTextColor,
                           fontSize: OmiFontSize.t5_14,
@@ -543,8 +544,8 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
               );
             }).toList(),
           ),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -606,8 +607,8 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      t,
+                    child: MPInsightMarkdownBody(
+                      data: t,
                       style: OmiTextStyle.create(
                         color: secondTextColor,
                         fontSize: OmiFontSize.t6_15,
@@ -621,8 +622,8 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
             );
           }),
           const SizedBox(height: 6),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -674,8 +675,8 @@ class _MPMonthlyTrendCard extends StatelessWidget {
           ...paragraphs.map((String p) {
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: Text(
-                p,
+              child: MPInsightMarkdownBody(
+                data: p,
                 style: OmiTextStyle.create(
                   color: secondTextColor,
                   fontSize: OmiFontSize.t6_15,
@@ -729,8 +730,8 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
           const SizedBox(height: 12),
           const Divider(color: Color(0xFFE6E6E6), height: 1),
           const SizedBox(height: 12),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: secondTextColor,
               fontSize: OmiFontSize.t5_14,
@@ -757,8 +758,8 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Text(
-                      d.text,
+                    child: MPInsightMarkdownBody(
+                      data: d.text,
                       style: OmiTextStyle.create(
                         color: mainTextColor,
                         fontSize: OmiFontSize.t5_14,
@@ -853,10 +854,8 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      (f.title ?? '').trim(),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    child: MPInsightMarkdownBody(
+                      data: (f.title ?? '').trim(),
                       style: OmiTextStyle.create(
                         color: mainTextColor,
                         fontSize: OmiFontSize.t6_15,

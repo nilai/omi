@@ -10,6 +10,7 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 import '../../../generated/assets.dart';
 import '../../memory/detail/mp_detail_visibility_refresh.dart';
 import 'mp_insight_detail_cubit.dart';
+import 'mp_insight_markdown_body.dart';
 import 'mp_insights_list_cubit.dart';
 
 const Color _kWeeklyPageBgColor = Color(0xFFF2F2F7);
@@ -256,8 +257,8 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
               const Text('📊', style: TextStyle(fontSize: 18, height: 1)),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  title,
+                child: MPInsightMarkdownBody(
+                  data: title,
                   style: OmiTextStyle.create(
                     color: mainTextColor,
                     fontSize: OmiFontSize.t11_20,
@@ -271,8 +272,8 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
           const SizedBox(height: 6),
           Padding(
             padding: const EdgeInsets.only(left: 30),
-            child: Text(
-              subLabel,
+            child: MPInsightMarkdownBody(
+              data: subLabel,
               style: OmiTextStyle.create(
                 color: const Color(0xFF8B919A),
                 fontSize: OmiFontSize.t5_14,
@@ -282,8 +283,8 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: const Color(0xFF3E464F),
               fontSize: OmiFontSize.t6_15,
@@ -333,8 +334,8 @@ class _MPWeeklySummaryCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            summary,
+          MPInsightMarkdownBody(
+            data: summary,
             style: OmiTextStyle.create(
               color: const Color(0xFF3F4750),
               fontSize: OmiFontSize.t6_15,
@@ -363,8 +364,8 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     child: Column(
                       children: <Widget>[
-                        Text(
-                          m.value,
+                        MPInsightMarkdownBody(
+                          data: m.value,
                           style: OmiTextStyle.create(
                             color: const Color(0xFF3A8FBB),
                             fontSize: OmiFontSize.t14_24,
@@ -372,8 +373,8 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          m.label,
+                        MPInsightMarkdownBody(
+                          data: m.label,
                           style: OmiTextStyle.create(
                             color: secondTextColor,
                             fontSize: OmiFontSize.t3_12,
@@ -434,8 +435,8 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          item.title,
+                        MPInsightMarkdownBody(
+                          data: item.title,
                           style: OmiTextStyle.create(
                             color: mainTextColor,
                             fontSize: OmiFontSize.t6_15,
@@ -444,8 +445,8 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          item.description,
+                        MPInsightMarkdownBody(
+                          data: item.description,
                           style: OmiTextStyle.create(
                             color: secondTextColor,
                             fontSize: OmiFontSize.t5_14,
@@ -499,8 +500,8 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text(
-                    item.title,
+                  MPInsightMarkdownBody(
+                    data: item.title,
                     style: OmiTextStyle.create(
                       color: mainTextColor,
                       fontSize: OmiFontSize.t5_14,
@@ -508,8 +509,8 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    item.description,
+                  MPInsightMarkdownBody(
+                    data: item.description,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
                       fontSize: OmiFontSize.t4_13,
@@ -568,8 +569,8 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: Text(
-                            item.text,
+                          child: MPInsightMarkdownBody(
+                            data: item.text,
                             style: OmiTextStyle.create(
                               color: secondTextColor,
                               fontSize: OmiFontSize.t5_14,
@@ -650,10 +651,8 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(
-                          (item.todo.title ?? '').trim(),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        MPInsightMarkdownBody(
+                          data: (item.todo.title ?? '').trim(),
                           style: OmiTextStyle.create(
                             color: mainTextColor,
                             fontSize: OmiFontSize.t6_15,
@@ -663,8 +662,8 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                         ),
                         if ((item.todo.reason ?? '').trim().isNotEmpty) ...<Widget>[
                           const SizedBox(height: 2),
-                          Text(
-                            (item.todo.reason ?? '').trim(),
+                          MPInsightMarkdownBody(
+                            data: (item.todo.reason ?? '').trim(),
                             style: OmiTextStyle.create(
                               color: secondTextColor,
                               fontSize: OmiFontSize.t5_14,
@@ -786,8 +785,8 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                     children: <Widget>[
                       Icon(_iconDataOf(item.iconKey), size: 15, color: Color(item.iconColorValue)),
                       const SizedBox(width: 8),
-                      Text(
-                        item.title,
+                      MPInsightMarkdownBody(
+                        data: item.title,
                         style: OmiTextStyle.create(
                           color: mainTextColor,
                           fontSize: OmiFontSize.t6_15,
@@ -797,8 +796,8 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    item.content,
+                  MPInsightMarkdownBody(
+                    data: item.content,
                     style: OmiTextStyle.create(
                       color: secondTextColor,
                       fontSize: OmiFontSize.t5_14,

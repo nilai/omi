@@ -10,6 +10,7 @@ import 'package:memo_pin/utils/omi_textstyle.dart';
 import '../../../generated/assets.dart';
 import '../../../utils/omi_image_loader.dart';
 import 'mp_insight_detail_cubit.dart';
+import 'mp_insight_markdown_body.dart';
 import 'mp_insights_list_cubit.dart';
 
 const Color _kDailyPageBgColor = Color(0xFFF2F2F7);
@@ -183,8 +184,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                 iconColor: const Color(0xFF3C7BEE),
                 iconBgColor: const Color(0xFFEAF0FE),
                 contentDecoration: DailyInsightCardStyles.narrativeContent,
-                child: Text(
-                  daily.narrativeBody,
+                child: MPInsightMarkdownBody(
+                  data: daily.narrativeBody,
                   style: OmiTextStyle.create(
                     color: secondTextColor,
                     fontSize: OmiFontSize.t5_14,
@@ -221,8 +222,8 @@ class _MPDailyInsightBody extends StatelessWidget {
                 iconColor: const Color(0xFF9C5CE4),
                 iconBgColor: const Color(0xFFF2EAFE),
                 contentDecoration: DailyInsightCardStyles.patternsContent,
-                child: Text(
-                  daily.patternsEmerging,
+                child: MPInsightMarkdownBody(
+                  data: daily.patternsEmerging,
                   style: OmiTextStyle.create(
                     color: secondTextColor,
                     fontSize: OmiFontSize.t5_14,
@@ -351,33 +352,15 @@ class _MPDotTextList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: items.map((String text) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(top: 7),
-                child: Icon(Icons.circle, size: 5, color: dotColor),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  text,
-                  style: OmiTextStyle.create(
-                    color: secondTextColor,
-                    fontSize: OmiFontSize.t5_14,
-                    fontWeight: OmiFontWeight.regular,
-                    height: 1.45,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+    return MPInsightMarkdownBody(
+      data: items.map((String item) => '- $item').join('\n'),
+      bulletColor: dotColor,
+      style: OmiTextStyle.create(
+        color: secondTextColor,
+        fontSize: OmiFontSize.t5_14,
+        fontWeight: OmiFontWeight.regular,
+        height: 1.45,
+      ),
     );
   }
 }
@@ -450,10 +433,8 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          (focus.title ?? '').trim(),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                        child: MPInsightMarkdownBody(
+                          data: (focus.title ?? '').trim(),
                           style: OmiTextStyle.create(
                             color: omiSecondaryBodyText,
                             fontSize: OmiFontSize.t5_14,
