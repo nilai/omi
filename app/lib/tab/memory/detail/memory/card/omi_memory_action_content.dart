@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:memo_pin/common/omi_add_todo_popup.dart';
 import 'package:memo_pin/http/schema/mp_data_model.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -217,6 +218,14 @@ class _MPMemoryActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextStyle contentStyle = OmiTextStyle.create(
+      fontSize: OmiFontSize.t4_13,
+      fontWeight: OmiFontWeight.medium,
+      color: useMemoStyle
+          ? mainTextColor
+          : Colors.white.withValues(alpha: 0.92),
+      height: 1.45,
+    );
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -232,13 +241,27 @@ class _MPMemoryActionCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Text(
-            data.title ?? '',
-            style: OmiTextStyle.create(
-              fontSize: OmiFontSize.t4_13,
-              fontWeight: OmiFontWeight.medium,
-              color: useMemoStyle ? mainTextColor : Colors.white.withValues(alpha: 0.92),
-              height: 1.45,
+          MarkdownBody(
+            data: data.title ?? '',
+            shrinkWrap: true,
+            softLineBreak: true,
+            styleSheet: MarkdownStyleSheet(
+              blockSpacing: 6,
+              listIndent: 20,
+              p: contentStyle,
+              pPadding: EdgeInsets.zero,
+              strong: contentStyle.copyWith(fontWeight: FontWeight.w700),
+              em: contentStyle.copyWith(fontStyle: FontStyle.italic),
+              h1: contentStyle.copyWith(
+                fontSize: OmiFontSize.t6_15,
+                fontWeight: FontWeight.w700,
+              ),
+              h1Padding: EdgeInsets.zero,
+              h2: contentStyle.copyWith(fontWeight: FontWeight.w700),
+              h2Padding: EdgeInsets.zero,
+              h3: contentStyle.copyWith(fontWeight: FontWeight.w700),
+              h3Padding: EdgeInsets.zero,
+              listBullet: contentStyle,
             ),
           ),
           const SizedBox(height: 12),
