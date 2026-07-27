@@ -143,6 +143,11 @@ class MPBleConnectionHelper {
   static void _attachBackgroundConnectionMonitor(BleTransport transport) {
     unawaited(_backgroundConnSub?.cancel());
     _backgroundConnSub = transport.connectionStateStream.listen((MPDeviceTransportState s) {
+      if (s == MPDeviceTransportState.connected) {
+        // 待连已兑现（或用户手动连回）。清掉标记，下一次掉线才能重新挂上。
+        _persistentReconnectArmedFor = null;
+        return;
+      }
       if (s == MPDeviceTransportState.disconnected || s == MPDeviceTransportState.disconnecting) {
         unawaited(_onBackgroundTransportLinkLost());
       }
@@ -152,6 +157,8 @@ class MPBleConnectionHelper {
   static void _detachBackgroundConnectionMonitor() {
     unawaited(_backgroundConnSub?.cancel());
     _backgroundConnSub = null;
+    // 背景会话已交出或释放，待连不再归本 helper 管。
+    _persistentReconnectArmedFor = null;
   }
 
   /// 被动掉线：二次确认后通知首页（忽略 GATT 瞬时 disconnected）。
@@ -173,6 +180,37 @@ class MPBleConnectionHelper {
     }
     debugPrint('------>>>memopin background BLE link lost deviceId=${t.deviceId}');
     MPHomeNotification.notifyBleDisconnected();
+    await _armPersistentReconnect(t);
+  }
+
+  /// 已挂上待连的设备（`null` 表示未挂）。防的是掉线风暴：待连失败会再发一次
+  /// disconnected，若不加判据就会在这里无限重挂。
+  static String? _persistentReconnectArmedFor;
+
+  /// 掉线后挂上系统级待连，设备重新广播时由蓝牙栈自动接回。
+  ///
+  /// 在此之前，掉线处理器只调 [MPHomeNotification.notifyBleDisconnected] 改首页图标，
+  /// 而 `autoConnect` 恒为 false、BLE 路径无轮询、`onAppResumed` 不碰 BLE——实测（2026-07-26,
+  /// SM S9310 / Android 16）设备重新开机后 60s、切前后台后 30s 均零重连动作，只有冷启动
+  /// 走 [tryConnectLastRecordedBleDevice] 才能恢复（耗时约 15s）。
+  ///
+  /// 用户主动断开走 [disconnectBackgroundBleTransportUserInitiated]，那条路 dispose 掉
+  /// transport，待连随订阅一并取消，不会把用户断开的设备又连回来。
+  static Future<void> _armPersistentReconnect(BleTransport t) async {
+    if (!identical(_backgroundBleTransport, t)) {
+      return;
+    }
+    if (_persistentReconnectArmedFor == t.deviceId) {
+      return;
+    }
+    _persistentReconnectArmedFor = t.deviceId;
+    try {
+      await t.connect(persistentAutoConnect: true);
+      debugPrint('------>>>memopin persistent auto-connect armed deviceId=${t.deviceId}');
+    } catch (e) {
+      _persistentReconnectArmedFor = null;
+      debugPrint('------>>>memopin arm persistent auto-connect failed: $e');
+    }
   }
 
   /// 释放背景会话并断开 BLE（**仅**用户主动断开、切换设备前清理、登出）。
@@ -540,28 +578,27 @@ class MPBleConnectionHelper {
 
     final MPBlePlatform platform = MPBlePlatform.instance;
     try {
+      // 单轮、无 Service UUID 过滤。
+      //
+      // 此前是两轮：先带 `MPBleScanFilterUuids.scanFilterUuids` 过滤扫满 perPhase，扫不到
+      // 再无过滤扫第二轮。那一轮**结构性地永远落空**：
+      //   · `withServices` 是 OS 级过滤，结果 ⊆ {广播里带该 UUID 的设备}；
+      //   · 而 MemoPin 的广播包不带该 UUID——[isMemoPinLikeDiscoveredDevice] 实际是靠
+      //     [_isAiNoteLikeDeviceName] 的名称分支认出设备的；
+      //   · 两者 UUID 同源（都来自 memoPinRecognizedServiceUuidStrings），所以凡过滤轮
+      //     能扫到的，无过滤轮必然也能扫到——后者恒为前者的超集。
+      // 净效果只是白等一个 perPhase 窗口。实测（2026-07-26, SM S9310 / Android 16）：
+      // `phase1 filtered count=0` 紧跟 16 行 `matchesMemoPinAdvertisedService: false`，
+      // 冷启动重连因此多花 5 秒。v1.0_ble 已于 3e8fd9f39 做过同一处修正。
+      //
+      // 识别能力不受影响：UUID 判据仍留在 [isMemoPinLikeDiscoveredDevice] 里，固件将来若
+      // 改为广播 UUID，登记到 additionalMemoPinAdvertisementServices 即可，无需恢复过滤轮。
       debugPrint(
-        '------>>>memopin scanMemoPinLikeEntriesPhased: phase1 withServices count=${MPBleScanFilterUuids.scanFilterUuids.length} timeout=${perPhase.inSeconds}s',
+        '------>>>memopin scanMemoPinLikeEntriesPhased: single pass no service filter timeout=${perPhase.inSeconds}s',
       );
-      await platform.runScan(
-        duration: perPhase,
-        withServices: MPBleScanFilterUuids.scanFilterUuids,
-        onDevice: bufferDevice,
-      );
-
-      List<MPBleScanEntry> entries = finishFromBuffer();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 filtered count=${entries.length}');
-
-      if (entries.isNotEmpty) {
-        debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase1 has results → return');
-        return entries;
-      }
-
-      bestById.clear();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 no service filter');
       await platform.runScan(duration: perPhase, onDevice: bufferDevice);
-      entries = finishFromBuffer();
-      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: phase2 filtered count=${entries.length}');
+      final List<MPBleScanEntry> entries = finishFromBuffer();
+      debugPrint('------>>>memopin scanMemoPinLikeEntriesPhased: filtered count=${entries.length}');
       return entries;
     } finally {
       await platform.stopScan();
