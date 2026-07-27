@@ -4,8 +4,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:memo_pin/common/mp_memory_options_sheet.dart';
+import 'package:memo_pin/common/mp_share_options_manager.dart';
+import 'package:memo_pin/common/mp_share_sheet.dart';
 import 'package:memo_pin/common/mp_tristate_page.dart';
-import 'package:memo_pin/common/mp_share_export_sheet.dart';
 import 'package:memo_pin/common/mp_memory_notification.dart';
 import 'package:memo_pin/http/api/mp_memory.dart';
 import 'package:memo_pin/http/schema/mp_memory.dart';
@@ -47,7 +48,8 @@ class _OmiAudioDetailView extends StatefulWidget {
   State<_OmiAudioDetailView> createState() => _OmiAudioDetailViewState();
 }
 
-class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBindingObserver {
+class _OmiAudioDetailViewState extends State<_OmiAudioDetailView>
+    with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
@@ -77,72 +79,103 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
       onRefresh: () => context.read<MPAudioDetailCubit>().load(),
       child: BlocBuilder<MPAudioDetailCubit, MPAudioDetailState>(
         builder: (BuildContext context, MPAudioDetailState pageState) {
-          final String navTitle = pageState.phase == MPAudioDetailPhase.loaded &&
+          final String navTitle =
+              pageState.phase == MPAudioDetailPhase.loaded &&
                   pageState.data != null &&
                   pageState.data!.title.trim().isNotEmpty
               ? pageState.data!.title
               : 'Memo';
           return Scaffold(
-      backgroundColor: pageColor,
-      appBar: PreferredSize(
-        preferredSize: MPCustomNavBar.preferredSizeOf(context),
-        child: MPCustomNavBar(
-          title: navTitle,
-          actions: <Widget>[
-            GestureDetector(
-              onTap: () async {
-                final MPShareExportKind? kind =
-                    await showMPShareExportSheet(context);
-                if (kind == null) return;
-                if (!context.mounted) return;
-                if (kind == MPShareExportKind.link) {
-                  final MPShareMemoryResponse? resp = await shareMemory(MPShareMemoryRequest(memoryId: memoryId));
-                  if (!context.mounted) return;
-                  MPShareMemoryDialog.show(context: context, url: resp?.shareUrl ?? '');
-                } else {
-                  MPToastUtils.showFeatureComingSoon();
-                }
-              },
-              child: OmiImageLoader.localImg(
-                Assets.omiShare,
-                width: 20,
-                height: 20,
-                color: blueTextColor,
-              ),
-            ),
-            const SizedBox(width: 16),
-            GestureDetector(
-              onTap: () async {
-                final MPMemoryOptionKind? kind = await showMPMemoryOptionsSheet(
-                  context,
-                  params: MPMemoryOptionsSheetParams(
-                    showManageProjects: false,
-                    showEditTitle: false,
-                    showModifyDate: false,
-                    showDelete: true,
-                    memoryId: memoryId,
-                  ),
-                );
-                if (kind == null) return;
-                if (!context.mounted) return;
+            backgroundColor: pageColor,
+            appBar: PreferredSize(
+              preferredSize: MPCustomNavBar.preferredSizeOf(context),
+              child: MPCustomNavBar(
+                title: navTitle,
+                actions: <Widget>[
+                  GestureDetector(
+                    onTap: () async {
+                      final MPShareSheetParams params =
+                          await MPShareOptionsManager.instance
+                              .getShareSheetParams(memoryId: memoryId);
 
-                if (kind == MPMemoryOptionKind.delete) {
-                  // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
-                  MPMemoryNotification.notifyMemoryDeleted(memoryId);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: OmiImageLoader.localImg(
-                Assets.omiMemoryDetialMore,
-                width: 20,
-                height: 20,
-                color: blueTextColor,
+                      if (!context.mounted) return;
+
+                      final List<MPShareSummaryOption> allOptions =
+                          <MPShareSummaryOption>[
+                            ...params.requiredSummaryOptions,
+                            ...params.optionalSummaryOptions,
+                          ];
+                      String? summaryOptionId = params.initialSummaryOptionId;
+                      if (summaryOptionId == null && allOptions.isNotEmpty) {
+                        summaryOptionId = allOptions.first.id;
+                      }
+                      if (summaryOptionId == null) {
+                        MPToastUtils.showMessage(
+                          'Unable to share. Please try again later.',
+                        );
+                        return;
+                      }
+
+                      final List<int> optionIds = <int>[
+                        int.parse(summaryOptionId),
+                      ];
+                      final MPShareMemoryV2Response? resp = await shareMemoryV2(
+                        MPShareMemoryV2Request(
+                          memoryId: memoryId,
+                          optionIds: optionIds,
+                        ),
+                      );
+                      if (!context.mounted) return;
+                      if (resp == null || resp.baseResp.code != 0) {
+                        MPToastUtils.showMessage(resp?.baseResp.message ?? '');
+                        return;
+                      }
+                      MPShareMemoryDialog.show(
+                        context: context,
+                        url: resp.shareUrl,
+                      );
+                    },
+                    child: OmiImageLoader.localImg(
+                      Assets.omiShare,
+                      width: 20,
+                      height: 20,
+                      color: blueTextColor,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () async {
+                      final MPMemoryOptionKind? kind =
+                          await showMPMemoryOptionsSheet(
+                            context,
+                            params: MPMemoryOptionsSheetParams(
+                              showManageProjects: false,
+                              showEditTitle: false,
+                              showModifyDate: false,
+                              showDelete: true,
+                              memoryId: memoryId,
+                            ),
+                          );
+                      if (kind == null) return;
+                      if (!context.mounted) return;
+
+                      if (kind == MPMemoryOptionKind.delete) {
+                        // [MPMemoryOptionsSheetParams.memoryId] 非空时，确认与 deleteMemory 已在 Sheet 内完成。
+                        MPMemoryNotification.notifyMemoryDeleted(memoryId);
+                        Navigator.of(context).pop();
+                      }
+                    },
+                    child: OmiImageLoader.localImg(
+                      Assets.omiMemoryDetialMore,
+                      width: 20,
+                      height: 20,
+                      color: blueTextColor,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-      body: _buildBody(context, pageState),
+            body: _buildBody(context, pageState),
           );
         },
       ),
@@ -245,15 +278,13 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                               if (w <= 0) {
                                 return;
                               }
-                              final double frac =
-                                  (details.localPosition.dx / w).clamp(0.0, 1.0);
+                              final double frac = (details.localPosition.dx / w)
+                                  .clamp(0.0, 1.0);
                               context
                                   .read<MPAudioDetailCubit>()
                                   .onSeekByWaveFraction(frac);
                             },
-                            child: _AudioWaveform(
-                              progress: state.progress,
-                            ),
+                            child: _AudioWaveform(progress: state.progress),
                           );
                         },
                       ),
@@ -332,10 +363,7 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                       gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        colors: <Color>[
-                          Color(0xFFE8F5FF),
-                          Color(0xFFDBEAFE),
-                        ],
+                        colors: <Color>[Color(0xFFE8F5FF), Color(0xFFDBEAFE)],
                       ),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: const Color(0x1A007AFF)),
@@ -346,8 +374,8 @@ class _OmiAudioDetailViewState extends State<_OmiAudioDetailView> with WidgetsBi
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
                         onTap: () async {
-                          final MPAudioDetailCubit cubit =
-                              context.read<MPAudioDetailCubit>();
+                          final MPAudioDetailCubit cubit = context
+                              .read<MPAudioDetailCubit>();
                           await cubit.pauseIfPlaying();
                           if (!context.mounted) return;
                           await cubit.onSummarizeTap(context);
@@ -437,7 +465,8 @@ class _AudioWaveform extends StatelessWidget {
         (_hash01((i * 1000 * (u + 0.11)).round(), 97) - 0.5) * 14;
 
     // 非对称包络：前段缓升、中段起伏、后段偏高。
-    final double envelope = 0.65 +
+    final double envelope =
+        0.65 +
         0.24 * math.sin(u * 5.9 + 0.4) +
         0.20 * math.sin(u * 13.1 + 2.1) +
         0.14 * u;
@@ -522,19 +551,15 @@ class _PlayButton extends StatelessWidget {
                   ),
                 )
               : isPlaying
-                  ? Icon(
-                      Icons.pause_rounded,
-                      size: _iconSize,
-                      color: _iconColor,
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.only(left: 2),
-                      child: Icon(
-                        Icons.play_arrow_rounded,
-                        size: _iconSize,
-                        color: _iconColor,
-                      ),
-                    ),
+              ? Icon(Icons.pause_rounded, size: _iconSize, color: _iconColor)
+              : Padding(
+                  padding: const EdgeInsets.only(left: 2),
+                  child: Icon(
+                    Icons.play_arrow_rounded,
+                    size: _iconSize,
+                    color: _iconColor,
+                  ),
+                ),
         ),
       ),
     );
