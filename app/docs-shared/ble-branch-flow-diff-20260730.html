@@ -63,8 +63,10 @@ svg.dg text{font-family:inherit}
 
 .verdictrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
 .vd{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;border:1.5px solid}
-.vd.win-old{background:var(--purplebg);border-color:var(--purple);color:var(--purple)}
-.vd.win-new{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.vd.gap{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.vd.reg{background:var(--badbg);border-color:var(--bad);color:var(--bad)}
+.vd.minor{background:var(--warnbg);border-color:var(--warn);color:var(--warn)}
+.vd.done{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
 .vd.tie{background:var(--greybg);border-color:var(--grey);color:var(--muted)}
 
 .callout{border-left:3px solid var(--bad);background:var(--badbg);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
@@ -76,7 +78,7 @@ svg.dg text{font-family:inherit}
 .tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
 .tbl td:first-child{font-weight:650;white-space:nowrap}
-.w-old{color:var(--purple);font-weight:700}.w-new{color:var(--ok);font-weight:700}.w-tie{color:var(--muted)}
+.w-gap{color:var(--bad);font-weight:700}.w-minor{color:var(--warn);font-weight:700}.w-done{color:var(--ok);font-weight:700}.w-tie{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -84,10 +86,24 @@ svg.dg text{font-family:inherit}
 
 <p class="sub">2026-07-30 · 逐功能流程对比 · 每张图左 = <code>v1.0_ble</code>，右 = <code>dev_2.0</code></p>
 <h1>八条链路，一条一条摆开看</h1>
-<p style="color:var(--muted);font-size:16px;max-width:70ch">不是所有差异都是退步 —— <b style="color:var(--ok)">两条链新分支明显更强</b>，标出来了。其余六条是移植时掉的。</p>
+<p style="color:var(--muted);font-size:16px;max-width:70ch">八条链路里，<b style="color:var(--ok)">两条现状优于旧实现</b>，六条存在能力缺失或实现不足。每条按性质分类，不作优劣评判。</p>
+
+<div class="fig" style="padding:16px 20px">
+  <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px">分类口径</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px 20px;font-size:13px">
+    <div><span class="vd gap" style="font-size:11px;padding:2px 9px">能力缺失</span>　旧实现有、现实现没有的协议能力，需要补</div>
+    <div><span class="vd reg" style="font-size:11px;padding:2px 9px">功能回归</span>　原本正确、在重写中被改变行为，需要改回</div>
+    <div><span class="vd minor" style="font-size:11px;padding:2px 9px">实现不足</span>　能跑但不健壮，影响可诊断性或语义完整</div>
+    <div><span class="vd tie" style="font-size:11px;padding:2px 9px">可接受</span>　差异存在，但当前业务形态下不构成问题</div>
+    <div><span class="vd done" style="font-size:11px;padding:2px 9px">已改进</span>　现实现优于旧实现，改动时不要覆盖</div>
+  </div>
+  <div style="font-size:12px;color:var(--muted);margin-top:12px;padding-top:11px;border-top:1px dashed var(--line)">
+    分类只描述<b>代码现状与差异性质</b>，不含对实现者的评价。左右两栏都是同一套代码的不同版本，列出旧实现是因为它是最直接的参考答案。
+  </div>
+</div>
 
 <div class="legend">
-  <span class="lg-ok"><i></i>正确 / 更优</span>
+  <span class="lg-ok"><i></i>现状正确</span>
   <span class="lg-info"><i></i>主动动作</span>
   <span class="lg-warn"><i></i>有隐患</span>
   <span class="lg-bad"><i></i>缺失 / 故障路径</span>
@@ -143,12 +159,12 @@ svg.dg text{font-family:inherit}
   <rect class="bx-ok" x="24" y="412" width="420" height="34" rx="9"/>
   <text class="vt" x="234" y="434" text-anchor="middle" fill="var(--ok)">时间已校准 · 已绑定 · 状态确定</text>
   <rect class="bx-bad" x="516" y="412" width="420" height="34" rx="9"/>
-  <text class="vt" x="726" y="434" text-anchor="middle" fill="var(--bad)">时间从不校准 · 从不绑定 · 状态靠猜</text>
+  <text class="vt" x="726" y="434" text-anchor="middle" fill="var(--bad)">时间未校准 · 未绑定 · 状态靠推断</text>
 </svg>
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:466-495（_initialize）· 579-599（syncRTC）· 933-958（bindDevice）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:444-476</span></figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-old">旧分支胜 · 三步初始化全丢</span></div>
+<div class="verdictrow"><span class="vd gap">能力缺失 · 三步初始化未移植</span></div>
 
 <!-- ================= 2 ================= -->
 <h2>链路 2 / 8</h2>
@@ -159,7 +175,7 @@ svg.dg text{font-family:inherit}
   <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
   <line x1="480" y1="0" x2="480" y2="450" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
   <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 确定性</text>
-  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 时间窗赌博</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 观察窗推断</text>
 
   <rect class="bx-n" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">BLE 重连成功</text>
   <rect class="bx-n" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">BLE 重连成功</text>
@@ -195,19 +211,19 @@ svg.dg text{font-family:inherit}
   <text class="ts" x="538" y="364">压在设备正在录音的时候</text>
 
   <rect class="bx-ok" x="24" y="396" width="420" height="34" rx="9"/>
-  <text class="vt" x="234" y="418" text-anchor="middle" fill="var(--ok)">0 次猜测 · 0 条误判路径</text>
+  <text class="vt" x="234" y="418" text-anchor="middle" fill="var(--ok)">判据确定 · 无误判路径</text>
   <rect class="bx-bad" x="516" y="396" width="420" height="34" rx="9"/>
-  <text class="vt" x="726" y="418" text-anchor="middle" fill="var(--bad)">1.4 s 赌博 · 帧间静默 = 误判</text>
+  <text class="vt" x="726" y="418" text-anchor="middle" fill="var(--bad)">1.4 s 观察窗 · 帧间静默会误判</text>
 </svg>
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:360-418 / 1041-1070</span>　右：<span class="ref">mp_ble_recording_watcher.dart:444-483</span></figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-old">旧分支胜 · 三分支退化成二选一</span></div>
+<div class="verdictrow"><span class="vd gap">能力缺失 · 判据由读取退化为观察窗</span></div>
 
 <!-- ================= 3 ================= -->
 <h2>链路 3 / 8</h2>
 <div class="h2s">设备停录 → 状态广播的时机</div>
-<p class="h2n">这条是 memo→normal 那个现场故障的<b>直接成因</b>，而且是<b>移植时新引入的</b>：旧分支收到停录帧当场就广播，转码下载交给上层异步做；新分支把广播挪到了整条 finalize 链的末端。</p>
+<p class="h2n">这条是 memo→normal 那个现场故障的<b>直接成因</b>，性质上属于<b>重写过程中引入的功能回归</b>：旧分支收到停录帧当场就广播，转码下载交给上层异步做；新分支把广播挪到了整条 finalize 链的末端。</p>
 <figure class="fig"><div class="scroll">
 <svg class="dg" viewBox="0 0 960 462" role="img" aria-label="停录广播时机对比">
   <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
@@ -259,7 +275,7 @@ svg.dg text{font-family:inherit}
 <figcaption>左：<span class="ref">note_connection.dart:205-224（unsolicited 0x02 分支）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:703-754</span></figcaption>
 </figure>
 <div class="callout"><p style="margin:0"><b>这条最值得先修。</b>把广播提到 finalize 之前，就回到旧分支的行为 —— 不需要动设备侧，也不需要加间隔。</p></div>
-<div class="verdictrow"><span class="vd win-old">旧分支胜 · 移植时新引入的回归</span></div>
+<div class="verdictrow"><span class="vd reg">功能回归 · 状态广播时序改变</span></div>
 
 <!-- ================= 4 ================= -->
 <h2>链路 4 / 8</h2>
@@ -271,7 +287,7 @@ svg.dg text{font-family:inherit}
   <marker id="a4b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--bad)"/></marker></defs>
   <line x1="480" y1="0" x2="480" y2="344" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
   <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 双向对等</text>
-  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 只能观察</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 单向</text>
 
   <rect class="bx-info" x="24" y="46" width="200" height="58" rx="9"/>
   <text class="t" x="124" y="70" text-anchor="middle" fill="var(--info)">App 主动</text>
@@ -314,7 +330,7 @@ svg.dg text{font-family:inherit}
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:184-204 / 646-703</span>　右：<span class="ref">mp_ble_recording_watcher.dart:643-692</span></figcaption>
 </figure>
-<div class="verdictrow"><span class="vd tie">影响有限 · 录音本就该由按键驱动</span></div>
+<div class="verdictrow"><span class="vd tie">可接受 · 录音本就由按键驱动</span></div>
 
 <!-- ================= 5 ================= -->
 <h2>链路 5 / 8</h2>
@@ -368,7 +384,7 @@ svg.dg text{font-family:inherit}
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:234-277</span>　右：<span class="ref">mp_note_ble_gatt_client.dart:413-415</span>（<code>packet[0] == 0x21 || packet[0] == 0x22 → return</code>）</figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-old">旧分支胜 · 静默吞错</span></div>
+<div class="verdictrow"><span class="vd minor">实现不足 · 错误码被静默丢弃</span></div>
 
 <!-- ================= 6 ================= -->
 <h2>链路 6 / 8</h2>
@@ -420,18 +436,18 @@ svg.dg text{font-family:inherit}
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:687-702（_applyRecordingStarted）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:653 + mp_ble_preferences.dart:69-80</span></figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-old">旧分支胜 · 语义被降级成裸字节</span></div>
+<div class="verdictrow"><span class="vd minor">实现不足 · 语义降级为裸字节</span></div>
 
 <!-- ================= 7 ================= -->
 <h2>链路 7 / 8</h2>
-<div class="h2s">断连续传的持久化　<span style="color:var(--ok);font-size:15px">← 新分支更强</span></div>
+<div class="h2s">断连续传的持久化　<span style="color:var(--ok);font-size:15px">← 现状优于旧实现</span></div>
 <p class="h2n">这条是移植时<b>做加法</b>的地方。旧分支只在断连事件里存一次，进程被强杀就全丢；新分支做了周期 checkpoint、sidecar 和残帧裁剪。</p>
 <figure class="fig"><div class="scroll">
 <svg class="dg" viewBox="0 0 960 394" role="img" aria-label="续传持久化对比">
   <defs><marker id="a7" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
   <line x1="480" y1="0" x2="480" y2="394" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
-  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--warn)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 只挡正常断连</text>
-  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--ok)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 更强</text>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--warn)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 仅断连时快照</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--ok)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 周期 checkpoint</text>
 
   <rect class="bx-g" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">录音进行中，301 帧持续落盘</text>
   <rect class="bx-g" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">录音进行中，301 帧持续落盘</text>
@@ -461,18 +477,18 @@ svg.dg text{font-family:inherit}
   <text class="ts" x="726" y="303" text-anchor="middle">restoreLastCompletedSeq + 续写</text>
 
   <rect class="bx-warn" x="24" y="336" width="420" height="34" rx="9"/>
-  <text class="vt" x="234" y="358" text-anchor="middle" fill="var(--warn)">只挡得住「正常断连」</text>
+  <text class="vt" x="234" y="358" text-anchor="middle" fill="var(--warn)">仅覆盖正常断连场景</text>
   <rect class="bx-ok" x="516" y="336" width="420" height="34" rx="9"/>
   <text class="vt" x="726" y="358" text-anchor="middle" fill="var(--ok)">强杀 / 冷启动也能接着录</text>
 </svg>
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:133-141</span>　右：<span class="ref">mp_ble_recording_watcher.dart:352-374 / 381-436 · mp_ble_file_util.dart:225-249</span></figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-new">新分支胜 · 别在补回旧逻辑时覆盖掉这套</span></div>
+<div class="verdictrow"><span class="vd done">已改进 · 补回旧逻辑时勿覆盖</span></div>
 
 <!-- ================= 8 ================= -->
 <h2>链路 8 / 8</h2>
-<div class="h2s">掉线后怎么回来　<span style="color:var(--ok);font-size:15px">← 新分支更强</span></div>
+<div class="h2s">掉线后怎么回来　<span style="color:var(--ok);font-size:15px">← 现状优于旧实现</span></div>
 <p class="h2n">另一处做加法的地方。旧分支靠 App 自己轮询，而且有两套机制并存；新分支把重连交给系统蓝牙栈。</p>
 <figure class="fig"><div class="scroll">
 <svg class="dg" viewBox="0 0 960 394" role="img" aria-label="自动重连对比">
@@ -516,23 +532,23 @@ svg.dg text{font-family:inherit}
 </div>
 <figcaption>左：<span class="ref">note_connection.dart:419-456 · docs/note-reconnection-handling.md:21,56</span>　右：<span class="ref">mp_ble_connection_helper.dart:200-215 · mp_ble_transport.dart:152-217</span>（commit f036c0f1d5 / 79536326e4）</figcaption>
 </figure>
-<div class="verdictrow"><span class="vd win-new">新分支胜 · 这是移植时的真实改进</span></div>
+<div class="verdictrow"><span class="vd done">已改进 · 现状保持不动</span></div>
 
 <!-- ================= 汇总 ================= -->
 <h2>汇总</h2>
 <div class="h2s">八条链路的账</div>
 <div class="fig scroll">
 <table class="tbl">
-<thead><tr><th>链路</th><th>v1.0_ble</th><th>dev_2.0</th><th>结论</th></tr></thead>
+<thead><tr><th>链路</th><th>v1.0_ble</th><th>dev_2.0</th><th>性质</th></tr></thead>
 <tbody>
-<tr><td>1 · 连接握手</td><td>RTC 同步 + 绑定 + 读状态</td><td>只发 <code>0D 10</code></td><td class="w-old">旧胜 · 三步全丢</td></tr>
-<tr><td>2 · 重连恢复</td><td>读 <code>e2c1a310</code> → A/B/C</td><td>1.4 s 观察窗二选一</td><td class="w-old">旧胜 · 退化成猜</td></tr>
-<tr><td>3 · 停录广播</td><td>收到即广播（≈0 ms）</td><td>finalize 跑完才广播（秒级）</td><td class="w-old">旧胜 · <b>新引入的回归</b></td></tr>
-<tr><td>4 · 录音控制权</td><td>App + 按键双入口</td><td>只有按键</td><td class="w-tie">影响有限</td></tr>
-<tr><td>5 · 补传响应</td><td>四分支，失败可见</td><td>两分支，失败静默</td><td class="w-old">旧胜 · 吞错</td></tr>
-<tr><td>6 · memo/normal</td><td>枚举 + 落盘索引</td><td>内存裸字节，无消费者</td><td class="w-old">旧胜 · 语义降级</td></tr>
-<tr><td>7 · 续传持久化</td><td>断连时存一次</td><td>周期 checkpoint + 裁剪</td><td class="w-new">新胜 · 真实改进</td></tr>
-<tr><td>8 · 自动重连</td><td>5 s 轮询 ×2 套</td><td>系统级待连</td><td class="w-new">新胜 · 真实改进</td></tr>
+<tr><td>1 · 连接握手</td><td>RTC 同步 + 绑定 + 读状态</td><td>只发 <code>0D 10</code></td><td class="w-gap">能力缺失 · 三步未移植</td></tr>
+<tr><td>2 · 重连恢复</td><td>读 <code>e2c1a310</code> → A/B/C</td><td>1.4 s 观察窗二选一</td><td class="w-gap">能力缺失 · 判据退化</td></tr>
+<tr><td>3 · 停录广播</td><td>收到即广播（≈0 ms）</td><td>finalize 跑完才广播（秒级）</td><td class="w-gap"><b>功能回归</b> · 时序改变</td></tr>
+<tr><td>4 · 录音控制权</td><td>App + 按键双入口</td><td>只有按键</td><td class="w-tie">可接受</td></tr>
+<tr><td>5 · 补传响应</td><td>四分支，失败可见</td><td>两分支，失败静默</td><td class="w-minor">实现不足 · 错误静默</td></tr>
+<tr><td>6 · memo/normal</td><td>枚举 + 落盘索引</td><td>内存裸字节，无消费者</td><td class="w-minor">实现不足 · 语义降级</td></tr>
+<tr><td>7 · 续传持久化</td><td>断连时存一次</td><td>周期 checkpoint + 裁剪</td><td class="w-done">已改进 · 保持现状</td></tr>
+<tr><td>8 · 自动重连</td><td>5 s 轮询 ×2 套</td><td>系统级待连</td><td class="w-done">已改进 · 保持现状</td></tr>
 </tbody>
 </table>
 </div>
