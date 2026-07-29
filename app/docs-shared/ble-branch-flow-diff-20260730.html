@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>逐功能流程对比 — v1.0_ble vs dev_2.0</title>
+<style>
+:root{
+  --bg:#fcfcfb; --fg:#16181a; --muted:#6b7076; --line:#e3e3e0; --card:#fff;
+  --ok:#16a34a; --bad:#dc2626; --warn:#d97706; --info:#2563eb; --purple:#7c3aed; --grey:#9ca3af;
+  --okbg:#e9f8ee; --badbg:#fdeced; --warnbg:#fdf3e3; --infobg:#eaf1fe; --purplebg:#f3edff; --greybg:#f2f3f5;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#131415; --fg:#eaeae8; --muted:#969ba1; --line:#2b2d30; --card:#1a1b1d;
+    --ok:#4ade80; --bad:#f87171; --warn:#fbbf24; --info:#60a5fa; --purple:#a78bfa; --grey:#6b7280;
+    --okbg:#10251a; --badbg:#2a1416; --warnbg:#2a2012; --infobg:#111f38; --purplebg:#1e1733; --greybg:#1f2123;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Segoe UI,sans-serif}
+.wrap{max-width:1010px;margin:0 auto;padding:44px 20px 100px}
+h1{font-size:32px;line-height:1.2;margin:0 0 10px;letter-spacing:-.025em}
+h2{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--muted);margin:60px 0 5px}
+.h2s{font-size:23px;font-weight:700;letter-spacing:-.02em;margin:0 0 4px}
+.h2n{font-size:14px;color:var(--muted);margin:0 0 16px;max-width:74ch}
+p{margin:10px 0;max-width:76ch}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 6px}
+code{font-family:var(--mono);font-size:.87em;background:rgba(127,127,127,.14);padding:1px 5px;border-radius:4px}
+.fig{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
+.fig figcaption{font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:11px;border-top:1px dashed var(--line)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+svg.dg{display:block;width:100%;height:auto;min-width:700px}
+svg.dg text{font-family:inherit}
+.dg .t{font-size:12.5px;font-weight:650;fill:var(--fg)}
+.dg .ts{font-size:11px;fill:var(--muted)}
+.dg .m{font-family:var(--mono);font-size:12px;font-weight:700;fill:var(--fg)}
+.dg .ms{font-family:var(--mono);font-size:10.5px;fill:var(--muted)}
+.dg rect,.dg polygon{stroke-width:1.6}
+.bx-ok{fill:var(--okbg);stroke:var(--ok)}
+.bx-bad{fill:var(--badbg);stroke:var(--bad)}
+.bx-warn{fill:var(--warnbg);stroke:var(--warn)}
+.bx-info{fill:var(--infobg);stroke:var(--info)}
+.bx-n{fill:var(--card);stroke:var(--line)}
+.bx-g{fill:var(--greybg);stroke:var(--grey)}
+.hi{stroke-width:2.8}
+.dash{stroke-dasharray:6 4}
+.ln{stroke:var(--muted);stroke-width:1.5;fill:none}
+.ln-bad{stroke:var(--bad);stroke-width:1.7;fill:none}
+.ln-ok{stroke:var(--ok);stroke-width:1.7;fill:none}
+.pill-t{font-size:11px;font-weight:700;fill:#fff}
+.vt{font-size:12.5px;font-weight:700}
+
+.legend{display:flex;flex-wrap:wrap;gap:15px;font-size:12px;color:var(--muted);margin:14px 0 4px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px;border:1.5px solid}
+.lg-ok i{background:var(--okbg);border-color:var(--ok)}
+.lg-bad i{background:var(--badbg);border-color:var(--bad)}
+.lg-warn i{background:var(--warnbg);border-color:var(--warn)}
+.lg-info i{background:var(--infobg);border-color:var(--info)}
+.lg-grey i{background:var(--greybg);border-color:var(--grey)}
+
+.verdictrow{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 0}
+.vd{font-size:12px;font-weight:700;padding:5px 12px;border-radius:999px;border:1.5px solid}
+.vd.win-old{background:var(--purplebg);border-color:var(--purple);color:var(--purple)}
+.vd.win-new{background:var(--okbg);border-color:var(--ok);color:var(--ok)}
+.vd.tie{background:var(--greybg);border-color:var(--grey);color:var(--muted)}
+
+.callout{border-left:3px solid var(--bad);background:var(--badbg);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+.callout.ok{border-color:var(--ok);background:var(--okbg)}
+.callout.info{border-color:var(--info);background:var(--infobg)}
+.callout p:first-child{margin-top:0}.callout p:last-child{margin-bottom:0}
+.ref{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+.tbl th,.tbl td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+.tbl td:first-child{font-weight:650;white-space:nowrap}
+.w-old{color:var(--purple);font-weight:700}.w-new{color:var(--ok);font-weight:700}.w-tie{color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="sub">2026-07-30 · 逐功能流程对比 · 每张图左 = <code>v1.0_ble</code>，右 = <code>dev_2.0</code></p>
+<h1>八条链路，一条一条摆开看</h1>
+<p style="color:var(--muted);font-size:16px;max-width:70ch">不是所有差异都是退步 —— <b style="color:var(--ok)">两条链新分支明显更强</b>，标出来了。其余六条是移植时掉的。</p>
+
+<div class="legend">
+  <span class="lg-ok"><i></i>正确 / 更优</span>
+  <span class="lg-info"><i></i>主动动作</span>
+  <span class="lg-warn"><i></i>有隐患</span>
+  <span class="lg-bad"><i></i>缺失 / 故障路径</span>
+  <span class="lg-grey"><i></i>两边相同</span>
+</div>
+
+<!-- ================= 1 ================= -->
+<h2>链路 1 / 8</h2>
+<div class="h2s">连接握手序列</div>
+<p class="h2n">连上之后，App 到底对设备做了什么。这张图直接回答「设备为什么收不到 <code>E5</code>」—— 旧分支把 RTC 同步放在 <code>_initialize()</code> 的第一步，是<b>每次首连必发</b>的，不是调试按钮。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 462" role="img" aria-label="连接握手序列对比">
+  <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="462" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--info)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0</text>
+
+  <rect class="bx-g" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">BLE 建链 · MTU 517 · 订阅特征</text>
+  <rect class="bx-g" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">BLE 建链 · MTU 517 · 订阅特征</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a1)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a1)"/>
+
+  <rect class="bx-info" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle" fill="var(--info)">① 0xE5 RTC 时间同步</text>
+  <text class="ts" x="234" y="151" text-anchor="middle">4 字节大端 Unix 秒 · 每次首连必发</text>
+  <rect class="bx-bad dash" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--bad)">✗ 无 RTC 同步</text>
+  <text class="ts" x="726" y="151" text-anchor="middle">0xE5 全仓 0 命中 —— 设备时间永不校准</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="182" marker-end="url(#a1)"/><line class="ln" x1="726" y1="166" x2="726" y2="182" marker-end="url(#a1)"/>
+
+  <rect class="bx-info" x="24" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="208" text-anchor="middle" fill="var(--info)">② 查绑定状态 → 未绑定发 0x0B 01</text>
+  <text class="ts" x="234" y="227" text-anchor="middle">6 字节 ID 由设备 MAC 派生</text>
+  <rect class="bx-bad dash" x="516" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="208" text-anchor="middle" fill="var(--bad)">✗ 无绑定流程</text>
+  <text class="ts" x="726" y="227" text-anchor="middle">0x0B 未实现 —— 设备始终处于未绑定态</text>
+  <line class="ln" x1="234" y1="242" x2="234" y2="258" marker-end="url(#a1)"/><line class="ln" x1="726" y1="242" x2="726" y2="258" marker-end="url(#a1)"/>
+
+  <rect class="bx-info" x="24" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="284" text-anchor="middle" fill="var(--info)">③ 读 e2c1a310 恢复录音状态</text>
+  <text class="ts" x="234" y="303" text-anchor="middle">拿到确定的 Status + FileName</text>
+  <rect class="bx-info" x="516" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="284" text-anchor="middle" fill="var(--info)">① 0x0D 0x10 切边录边传</text>
+  <text class="ts" x="726" y="303" text-anchor="middle">连接后<tspan font-weight="700">唯一一条</tspan>主动命令</text>
+  <line class="ln" x1="234" y1="318" x2="234" y2="334" marker-end="url(#a1)"/><line class="ln" x1="726" y1="318" x2="726" y2="334" marker-end="url(#a1)"/>
+
+  <rect class="bx-ok" x="24" y="336" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="360" text-anchor="middle" fill="var(--ok)">④ 启用自动重连</text>
+  <text class="ts" x="234" y="379" text-anchor="middle">5 s Timer.periodic 轮询（见链路 8）</text>
+  <rect class="bx-warn" x="516" y="336" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="360" text-anchor="middle" fill="var(--warn)">② 干等 900 ms（+500 ms）观察窗</text>
+  <text class="ts" x="726" y="379" text-anchor="middle">有信号=录音中，无=空闲　—— 猜</text>
+
+  <rect class="bx-ok" x="24" y="412" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="434" text-anchor="middle" fill="var(--ok)">时间已校准 · 已绑定 · 状态确定</text>
+  <rect class="bx-bad" x="516" y="412" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="434" text-anchor="middle" fill="var(--bad)">时间从不校准 · 从不绑定 · 状态靠猜</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:466-495（_initialize）· 579-599（syncRTC）· 933-958（bindDevice）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:444-476</span></figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-old">旧分支胜 · 三步初始化全丢</span></div>
+
+<!-- ================= 2 ================= -->
+<h2>链路 2 / 8</h2>
+<div class="h2s">重连后的状态恢复</div>
+<p class="h2n">链路 1 里那个「读 <code>e2c1a310</code>」拿到的东西，用在这里。有它就是精确路由，没它就只能二选一地猜。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 450" role="img" aria-label="重连状态恢复对比">
+  <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="450" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 确定性</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 时间窗赌博</text>
+
+  <rect class="bx-n" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">BLE 重连成功</text>
+  <rect class="bx-n" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">BLE 重连成功</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a2)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a2)"/>
+
+  <rect class="bx-info" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle" fill="var(--info)">读 e2c1a310 → Status + FileName</text>
+  <text class="ms" x="234" y="151" text-anchor="middle">一次读，答案唯一</text>
+  <rect class="bx-warn" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--warn)">发 0D 10 → 干等 900 ms（+500 ms）</text>
+  <text class="ms" x="726" y="151" text-anchor="middle">被动观察 303 重放 / 301 来流</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="184" marker-end="url(#a2)"/><line class="ln" x1="726" y1="166" x2="726" y2="184" marker-end="url(#a2)"/>
+
+  <rect class="bx-ok" x="24" y="186" width="420" height="52" rx="9"/>
+  <circle cx="46" cy="212" r="11" fill="var(--ok)"/><text class="pill-t" x="46" y="216" text-anchor="middle">A</text>
+  <text class="t" x="66" y="207">还在录同一文件</text><text class="ts" x="66" y="224">恢复 lastSeq → 追加写 → 补传间隙</text>
+  <rect class="bx-ok" x="516" y="186" width="420" height="52" rx="9"/>
+  <text class="t" x="538" y="207" fill="var(--ok)">✓ 窗内有信号 → 判定录音中</text><text class="ts" x="538" y="224">join 续传（唯一一条正确路径）</text>
+  <line class="ln" x1="234" y1="238" x2="234" y2="254" marker-end="url(#a2)"/><line class="ln" x1="726" y1="238" x2="726" y2="254" marker-end="url(#a2)"/>
+
+  <rect class="bx-ok" x="24" y="256" width="420" height="52" rx="9"/>
+  <circle cx="46" cy="282" r="11" fill="var(--ok)"/><text class="pill-t" x="46" y="286" text-anchor="middle">B</text>
+  <text class="t" x="66" y="277">在录新文件</text><text class="ts" x="66" y="294">旧文件排进待下载队列，新文件正常收</text>
+  <rect class="bx-bad" x="516" y="256" width="420" height="52" rx="9"/>
+  <text class="t" x="538" y="277" fill="var(--bad)">✗ 窗内静默 → 判定空闲</text><text class="ts" x="538" y="294">设备正处在两帧之间就会走这条</text>
+  <line class="ln" x1="234" y1="308" x2="234" y2="324" marker-end="url(#a2)"/><line class="ln-bad" x1="726" y1="308" x2="726" y2="324" marker-end="url(#a2)"/>
+
+  <rect class="bx-ok" x="24" y="326" width="420" height="52" rx="9"/>
+  <circle cx="46" cy="352" r="11" fill="var(--ok)"/><text class="pill-t" x="46" y="356" text-anchor="middle">C</text>
+  <text class="t" x="66" y="347">设备空闲</text><text class="ts" x="66" y="364">旧文件排进待下载队列</text>
+  <rect class="bx-bad hi" x="516" y="326" width="420" height="52" rx="9"/>
+  <text class="t" x="538" y="347" fill="var(--bad)">→ 立即发起批量导入 03 / 04 / 05</text>
+  <text class="ts" x="538" y="364">压在设备正在录音的时候</text>
+
+  <rect class="bx-ok" x="24" y="396" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="418" text-anchor="middle" fill="var(--ok)">0 次猜测 · 0 条误判路径</text>
+  <rect class="bx-bad" x="516" y="396" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="418" text-anchor="middle" fill="var(--bad)">1.4 s 赌博 · 帧间静默 = 误判</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:360-418 / 1041-1070</span>　右：<span class="ref">mp_ble_recording_watcher.dart:444-483</span></figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-old">旧分支胜 · 三分支退化成二选一</span></div>
+
+<!-- ================= 3 ================= -->
+<h2>链路 3 / 8</h2>
+<div class="h2s">设备停录 → 状态广播的时机</div>
+<p class="h2n">这条是 memo→normal 那个现场故障的<b>直接成因</b>，而且是<b>移植时新引入的</b>：旧分支收到停录帧当场就广播，转码下载交给上层异步做；新分支把广播挪到了整条 finalize 链的末端。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 462" role="img" aria-label="停录广播时机对比">
+  <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="462" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--info)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0</text>
+
+  <rect class="bx-n" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">303 ← 02 00 01（设备主动停止）</text>
+  <rect class="bx-n" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">303 ← 02 00 01（设备主动停止）</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a3)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a3)"/>
+
+  <rect class="bx-n" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle">解析停止响应</text>
+  <text class="ms" x="234" y="151" text-anchor="middle">_parseStopRecordingResponse</text>
+  <rect class="bx-warn" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--warn)">置 _finalizeAfterStopInProgress = true</text>
+  <text class="ts" x="726" y="151" text-anchor="middle">期间到达的任何停录帧被直接丢弃</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="182" marker-end="url(#a3)"/><line class="ln" x1="726" y1="166" x2="726" y2="182" marker-end="url(#a3)"/>
+
+  <rect class="bx-ok" x="24" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="208" text-anchor="middle" fill="var(--ok)">关 writer · 清 fileName · 清补传状态</text>
+  <text class="ts" x="234" y="227" text-anchor="middle">同步执行，瞬间完成</text>
+  <rect class="bx-warn" x="516" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="208" text-anchor="middle" fill="var(--warn)">关 sink → Opus → MP3 转码</text>
+  <text class="ts" x="726" y="227" text-anchor="middle">CPU 密集，秒级</text>
+  <line class="ln" x1="234" y1="242" x2="234" y2="258" marker-end="url(#a3)"/><line class="ln" x1="726" y1="242" x2="726" y2="258" marker-end="url(#a3)"/>
+
+  <rect class="bx-ok hi" x="24" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="284" text-anchor="middle" fill="var(--ok)">★ 立即广播 onRecordingStopped</text>
+  <text class="ts" x="234" y="303" text-anchor="middle">从收到帧到广播 ≈ 0 ms</text>
+  <rect class="bx-warn" x="516" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="284" text-anchor="middle" fill="var(--warn)">0x03 找 txt → 0x04 导出 → 0x05 ×2 删</text>
+  <text class="ts" x="726" y="303" text-anchor="middle">占用 GATT，与新会话的实时流争用</text>
+  <line class="ln" x1="234" y1="318" x2="234" y2="334" marker-end="url(#a3)"/><line class="ln-bad" x1="726" y1="318" x2="726" y2="334" marker-end="url(#a3)"/>
+
+  <rect class="bx-g" x="24" y="336" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="360" text-anchor="middle" fill="var(--grey)">转码 / 下载交给上层 provider 异步做</text>
+  <text class="ts" x="234" y="379" text-anchor="middle">不阻塞状态事件</text>
+  <rect class="bx-bad hi" x="516" y="336" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="360" text-anchor="middle" fill="var(--bad)">★ 全部跑完，才广播「已停止」</text>
+  <text class="ts" x="726" y="379" text-anchor="middle">延迟数秒 —— 覆盖掉这期间的新会话状态</text>
+
+  <rect class="bx-ok" x="24" y="412" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="434" text-anchor="middle" fill="var(--ok)">新会话的「录音中」永不会被覆盖</text>
+  <rect class="bx-bad" x="516" y="412" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="434" text-anchor="middle" fill="var(--bad)">memo → normal 背靠背 = 状态错乱</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:205-224（unsolicited 0x02 分支）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:703-754</span></figcaption>
+</figure>
+<div class="callout"><p style="margin:0"><b>这条最值得先修。</b>把广播提到 finalize 之前，就回到旧分支的行为 —— 不需要动设备侧，也不需要加间隔。</p></div>
+<div class="verdictrow"><span class="vd win-old">旧分支胜 · 移植时新引入的回归</span></div>
+
+<!-- ================= 4 ================= -->
+<h2>链路 4 / 8</h2>
+<div class="h2s">录音控制权：双向 vs 单向</div>
+<p class="h2n">旧分支 App 可以主动开停录，和设备按键两条入口<b>汇合到同一套状态应用逻辑</b>；新分支只剩设备按键一条入口。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 344" role="img" aria-label="录音控制权对比">
+  <defs><marker id="a4" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker>
+  <marker id="a4b" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--bad)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="344" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 双向对等</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 只能观察</text>
+
+  <rect class="bx-info" x="24" y="46" width="200" height="58" rx="9"/>
+  <text class="t" x="124" y="70" text-anchor="middle" fill="var(--info)">App 主动</text>
+  <text class="ms" x="124" y="89" text-anchor="middle">startRecording() → 01 00 00</text>
+  <rect class="bx-ok" x="244" y="46" width="200" height="58" rx="9"/>
+  <text class="t" x="344" y="70" text-anchor="middle" fill="var(--ok)">设备按键 / split 续录</text>
+  <text class="ms" x="344" y="89" text-anchor="middle">unsolicited 01 …</text>
+  <path class="ln" d="M124,104 L124,120 L234,120 L234,134" marker-end="url(#a4)"/>
+  <path class="ln" d="M344,104 L344,120 L234,120"/>
+
+  <rect class="bx-bad dash" x="516" y="46" width="200" height="58" rx="9"/>
+  <text class="t" x="616" y="70" text-anchor="middle" fill="var(--bad)">✗ App 无发送路径</text>
+  <text class="ts" x="616" y="89" text-anchor="middle">01 / 02 常量仅用于解析</text>
+  <rect class="bx-ok" x="736" y="46" width="200" height="58" rx="9"/>
+  <text class="t" x="836" y="70" text-anchor="middle" fill="var(--ok)">设备按键</text>
+  <text class="ms" x="836" y="89" text-anchor="middle">unsolicited 01 …</text>
+  <path class="ln" d="M836,104 L836,120 L726,120 L726,134" marker-end="url(#a4)"/>
+  <path class="ln-bad dash" d="M616,104 L616,120 L700,120" marker-end="url(#a4b)"/>
+
+  <rect class="bx-n" x="24" y="136" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="160" text-anchor="middle">_applyRecordingStarted(fileName, type)</text>
+  <text class="ts" x="234" y="179" text-anchor="middle">两条入口共用同一套状态应用逻辑</text>
+  <rect class="bx-n" x="516" y="136" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="160" text-anchor="middle">_onResponsePacket 直接解析</text>
+  <text class="ts" x="726" y="179" text-anchor="middle">只有一条入口</text>
+  <line class="ln" x1="234" y1="194" x2="234" y2="210" marker-end="url(#a4)"/><line class="ln" x1="726" y1="194" x2="726" y2="210" marker-end="url(#a4)"/>
+
+  <rect class="bx-ok" x="24" y="212" width="420" height="52" rx="9"/>
+  <text class="t" x="234" y="234" text-anchor="middle" fill="var(--ok)">启动 writer · 落 mode 索引 · 广播事件</text>
+  <text class="ts" x="234" y="252" text-anchor="middle">见链路 6</text>
+  <rect class="bx-warn" x="516" y="212" width="420" height="52" rx="9"/>
+  <text class="t" x="726" y="234" text-anchor="middle" fill="var(--warn)">开 sink · 存 mode 字节 · emit 事件</text>
+  <text class="ts" x="726" y="252" text-anchor="middle">mode 字节无人消费，见链路 6</text>
+
+  <rect class="bx-ok" x="24" y="282" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="304" text-anchor="middle" fill="var(--ok)">App 与设备双向对等</text>
+  <rect class="bx-warn" x="516" y="282" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="304" text-anchor="middle" fill="var(--warn)">单向 —— 业务上够用，但没有兜底手段</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:184-204 / 646-703</span>　右：<span class="ref">mp_ble_recording_watcher.dart:643-692</span></figcaption>
+</figure>
+<div class="verdictrow"><span class="vd tie">影响有限 · 录音本就该由按键驱动</span></div>
+
+<!-- ================= 5 ================= -->
+<h2>链路 5 / 8</h2>
+<div class="h2s">补传响应的分流</div>
+<p class="h2n">同一条 <code>303</code> 上会回来四种东西。旧分支四种都认，新分支认两种、丢两种 —— 丢的正好是<b>两种失败</b>。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 370" role="img" aria-label="补传响应分流对比">
+  <defs><marker id="a5" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="370" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 四分支</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--bad)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 两分支</text>
+
+  <rect class="bx-n" x="24" y="46" width="420" height="42" rx="9"/><text class="t" x="234" y="72" text-anchor="middle">303 ← 收到包，按首字节分流</text>
+  <rect class="bx-n" x="516" y="46" width="420" height="42" rx="9"/><text class="t" x="726" y="72" text-anchor="middle">303 ← 收到包，按首字节分流</text>
+  <path class="ln" d="M234,88 L234,102 M124,102 L344,102 M124,102 L124,116 M344,102 L344,116" marker-end="url(#a5)"/>
+  <path class="ln" d="M726,88 L726,102 M616,102 L836,102 M616,102 L616,116 M836,102 L836,116" marker-end="url(#a5)"/>
+
+  <rect class="bx-ok" x="24" y="118" width="200" height="62" rx="9"/>
+  <text class="m" x="124" y="140" text-anchor="middle" fill="var(--ok)">0x20 完成通知</text>
+  <text class="ts" x="124" y="158" text-anchor="middle">校验 nameLen + 文件名</text>
+  <text class="ts" x="124" y="172" text-anchor="middle">可打印性 → 打印 range</text>
+  <rect class="bx-ok" x="244" y="118" width="200" height="62" rx="9"/>
+  <text class="m" x="344" y="140" text-anchor="middle" fill="var(--ok)">0x20 数据包</text>
+  <text class="ts" x="344" y="158" text-anchor="middle">剥 Cmd 字节</text>
+  <text class="ts" x="344" y="172" text-anchor="middle">→ 交重组器</text>
+
+  <rect class="bx-ok" x="516" y="118" width="200" height="62" rx="9"/>
+  <text class="m" x="616" y="140" text-anchor="middle" fill="var(--ok)">0x20 完成包</text>
+  <text class="ts" x="616" y="158" text-anchor="middle">isRetransmitCompletion</text>
+  <text class="ts" x="616" y="172" text-anchor="middle">Packet() → return</text>
+  <rect class="bx-ok" x="736" y="118" width="200" height="62" rx="9"/>
+  <text class="m" x="836" y="140" text-anchor="middle" fill="var(--ok)">0x20 数据包</text>
+  <text class="ts" x="836" y="158" text-anchor="middle">→ 交重组器</text>
+
+  <rect class="bx-ok" x="24" y="196" width="200" height="52" rx="9"/>
+  <text class="m" x="124" y="218" text-anchor="middle" fill="var(--ok)">0x21</text>
+  <text class="ts" x="124" y="236" text-anchor="middle">❌ 打印「文件不存在」</text>
+  <rect class="bx-ok" x="244" y="196" width="200" height="52" rx="9"/>
+  <text class="m" x="344" y="218" text-anchor="middle" fill="var(--ok)">0x22</text>
+  <text class="ts" x="344" y="236" text-anchor="middle">❌ 打印「序号范围无效」</text>
+
+  <rect class="bx-bad hi" x="516" y="196" width="420" height="52" rx="9"/>
+  <text class="m" x="726" y="218" text-anchor="middle" fill="var(--bad)">0x21 / 0x22  →  直接 return</text>
+  <text class="ts" x="726" y="236" text-anchor="middle">用裸数字过滤掉，无常量、无日志、无上报</text>
+
+  <rect class="bx-ok" x="24" y="290" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="312" text-anchor="middle" fill="var(--ok)">补传失败可见</text>
+  <rect class="bx-bad" x="516" y="290" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="312" text-anchor="middle" fill="var(--bad)">补传失败完全静默 · 缺帧永久留在文件里</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:234-277</span>　右：<span class="ref">mp_note_ble_gatt_client.dart:413-415</span>（<code>packet[0] == 0x21 || packet[0] == 0x22 → return</code>）</figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-old">旧分支胜 · 静默吞错</span></div>
+
+<!-- ================= 6 ================= -->
+<h2>链路 6 / 8</h2>
+<div class="h2s">memo / normal 这个字节的去向</div>
+<p class="h2n">协议上两种录音只差 <code>303</code> 起始帧偏移 3 的一个字节。旧分支把它变成枚举并落盘成 <code>fileName → mode</code> 索引；新分支只在内存里存了个 <code>int?</code>。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 394" role="img" aria-label="mode 字节处理对比">
+  <defs><marker id="a6" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="394" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--purple)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--info)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0</text>
+
+  <rect class="bx-g" x="24" y="46" width="420" height="44" rx="9"/>
+  <text class="t" x="234" y="65" text-anchor="middle">303 起始帧 offset 3 = mode 字节</text>
+  <text class="ms" x="234" y="82" text-anchor="middle">0x00 normal　/　0x01 memo</text>
+  <rect class="bx-g" x="516" y="46" width="420" height="44" rx="9"/>
+  <text class="t" x="726" y="65" text-anchor="middle">303 起始帧 offset 3 = mode 字节</text>
+  <text class="ms" x="726" y="82" text-anchor="middle">0x00 normal　/　0x01 memo</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a6)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a6)"/>
+
+  <rect class="bx-ok" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle" fill="var(--ok)">NoteRecordingType.fromValue(byte)</text>
+  <text class="ts" x="234" y="151" text-anchor="middle">解析成带语义的枚举</text>
+  <rect class="bx-warn" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--warn)">_lastSessionModeByte = byte</text>
+  <text class="ts" x="726" y="151" text-anchor="middle">一个裸 int?，只在内存</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="182" marker-end="url(#a6)"/><line class="ln" x1="726" y1="166" x2="726" y2="182" marker-end="url(#a6)"/>
+
+  <rect class="bx-ok" x="24" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="208" text-anchor="middle" fill="var(--ok)">appendRecordingMode(fileName → mode)</text>
+  <text class="ts" x="234" y="227" text-anchor="middle">持久化索引，落盘保存</text>
+  <rect class="bx-warn" x="516" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="208" text-anchor="middle" fill="var(--warn)">塞进事件 payload + 中断续传记录</text>
+  <text class="ts" x="726" y="227" text-anchor="middle">一路跟着走，但没人读</text>
+  <line class="ln" x1="234" y1="242" x2="234" y2="258" marker-end="url(#a6)"/><line class="ln-bad" x1="726" y1="242" x2="726" y2="258" marker-end="url(#a6)"/>
+
+  <rect class="bx-ok" x="24" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="284" text-anchor="middle" fill="var(--ok)">下游可按 mode 分类 / 上传归类</text>
+  <text class="ts" x="234" y="303" text-anchor="middle">文件与业务类型的对应关系不丢</text>
+  <rect class="bx-bad hi" x="516" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="284" text-anchor="middle" fill="var(--bad)">全仓 0 处 if (mode == memo)</text>
+  <text class="ts" x="726" y="303" text-anchor="middle">唯一分流的 startLiveOpusRecording 无调用方</text>
+
+  <rect class="bx-ok" x="24" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="358" text-anchor="middle" fill="var(--ok)">memo 与 normal 可区分</text>
+  <rect class="bx-bad" x="516" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="358" text-anchor="middle" fill="var(--bad)">两种录音下游完全同路，服务端也分不出</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:687-702（_applyRecordingStarted）</span>　右：<span class="ref">mp_ble_recording_watcher.dart:653 + mp_ble_preferences.dart:69-80</span></figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-old">旧分支胜 · 语义被降级成裸字节</span></div>
+
+<!-- ================= 7 ================= -->
+<h2>链路 7 / 8</h2>
+<div class="h2s">断连续传的持久化　<span style="color:var(--ok);font-size:15px">← 新分支更强</span></div>
+<p class="h2n">这条是移植时<b>做加法</b>的地方。旧分支只在断连事件里存一次，进程被强杀就全丢；新分支做了周期 checkpoint、sidecar 和残帧裁剪。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 394" role="img" aria-label="续传持久化对比">
+  <defs><marker id="a7" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="394" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--warn)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · 只挡正常断连</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--ok)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 更强</text>
+
+  <rect class="bx-g" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">录音进行中，301 帧持续落盘</text>
+  <rect class="bx-g" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">录音进行中，301 帧持续落盘</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a7)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a7)"/>
+
+  <rect class="bx-warn" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle" fill="var(--warn)">录音期间不做任何 checkpoint</text>
+  <text class="ts" x="234" y="151" text-anchor="middle">只在 disconnected 事件里存一次</text>
+  <rect class="bx-ok" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--ok)">每 10 帧 checkpoint 一次</text>
+  <text class="ts" x="726" y="151" text-anchor="middle">.seq sidecar + Preferences 双写</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="182" marker-end="url(#a7)"/><line class="ln" x1="726" y1="166" x2="726" y2="182" marker-end="url(#a7)"/>
+
+  <rect class="bx-n" x="24" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="208" text-anchor="middle">saveRetransmitState(fileName, lastSeq)</text>
+  <text class="ts" x="234" y="227" text-anchor="middle">断连那一刻的快照</text>
+  <rect class="bx-ok" x="516" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="208" text-anchor="middle" fill="var(--ok)">重连先 trimRawOpusToLastCompletedSeq</text>
+  <text class="ts" x="726" y="227" text-anchor="middle">裁掉崩溃时多写的半截帧，再 append</text>
+  <line class="ln-bad" x1="234" y1="242" x2="234" y2="258" marker-end="url(#a7)"/><line class="ln" x1="726" y1="242" x2="726" y2="258" marker-end="url(#a7)"/>
+
+  <rect class="bx-bad" x="24" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="284" text-anchor="middle" fill="var(--bad)">进程被强杀 → 状态全丢</text>
+  <text class="ts" x="234" y="303" text-anchor="middle">且无裁剪，残帧留在文件里</text>
+  <rect class="bx-ok" x="516" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="284" text-anchor="middle" fill="var(--ok)">冷启动 attach 时从磁盘恢复会话</text>
+  <text class="ts" x="726" y="303" text-anchor="middle">restoreLastCompletedSeq + 续写</text>
+
+  <rect class="bx-warn" x="24" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="358" text-anchor="middle" fill="var(--warn)">只挡得住「正常断连」</text>
+  <rect class="bx-ok" x="516" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="358" text-anchor="middle" fill="var(--ok)">强杀 / 冷启动也能接着录</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:133-141</span>　右：<span class="ref">mp_ble_recording_watcher.dart:352-374 / 381-436 · mp_ble_file_util.dart:225-249</span></figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-new">新分支胜 · 别在补回旧逻辑时覆盖掉这套</span></div>
+
+<!-- ================= 8 ================= -->
+<h2>链路 8 / 8</h2>
+<div class="h2s">掉线后怎么回来　<span style="color:var(--ok);font-size:15px">← 新分支更强</span></div>
+<p class="h2n">另一处做加法的地方。旧分支靠 App 自己轮询，而且有两套机制并存；新分支把重连交给系统蓝牙栈。</p>
+<figure class="fig"><div class="scroll">
+<svg class="dg" viewBox="0 0 960 394" role="img" aria-label="自动重连对比">
+  <defs><marker id="a8" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="var(--muted)"/></marker></defs>
+  <line x1="480" y1="0" x2="480" y2="394" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="5 5"/>
+  <rect x="24" y="6" width="216" height="26" rx="13" fill="var(--warn)"/><text class="pill-t" x="132" y="24" text-anchor="middle">v1.0_ble · App 轮询</text>
+  <rect x="516" y="6" width="216" height="26" rx="13" fill="var(--ok)"/><text class="pill-t" x="624" y="24" text-anchor="middle">dev_2.0 · 系统待连</text>
+
+  <rect class="bx-g" x="24" y="46" width="420" height="44" rx="9"/><text class="t" x="234" y="73" text-anchor="middle">链路断开（设备关机 / 超出范围）</text>
+  <rect class="bx-g" x="516" y="46" width="420" height="44" rx="9"/><text class="t" x="726" y="73" text-anchor="middle">链路断开（设备关机 / 超出范围）</text>
+  <line class="ln" x1="234" y1="90" x2="234" y2="106" marker-end="url(#a8)"/><line class="ln" x1="726" y1="90" x2="726" y2="106" marker-end="url(#a8)"/>
+
+  <rect class="bx-warn" x="24" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="132" text-anchor="middle" fill="var(--warn)">5 s Timer.periodic 反复 connect()</text>
+  <text class="ts" x="234" y="151" text-anchor="middle">App 必须活着、必须在跑</text>
+  <rect class="bx-ok" x="516" y="108" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="132" text-anchor="middle" fill="var(--ok)">connect(persistentAutoConnect: true)</text>
+  <text class="ts" x="726" y="151" text-anchor="middle">省掉 connectionTimeout → 库置位 autoConnect</text>
+  <line class="ln" x1="234" y1="166" x2="234" y2="182" marker-end="url(#a8)"/><line class="ln" x1="726" y1="166" x2="726" y2="182" marker-end="url(#a8)"/>
+
+  <rect class="bx-warn" x="24" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="208" text-anchor="middle" fill="var(--warn)">另有 DeviceProvider 扫描重连并存</text>
+  <text class="ts" x="234" y="227" text-anchor="middle">两套机制取决于哪个 provider 管这台设备</text>
+  <rect class="bx-ok" x="516" y="184" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="208" text-anchor="middle" fill="var(--ok)">交给系统蓝牙栈挂待连</text>
+  <text class="ts" x="726" y="227" text-anchor="middle">设备重新广播即自动接回</text>
+  <line class="ln-bad" x1="234" y1="242" x2="234" y2="258" marker-end="url(#a8)"/><line class="ln" x1="726" y1="242" x2="726" y2="258" marker-end="url(#a8)"/>
+
+  <rect class="bx-warn" x="24" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="234" y="284" text-anchor="middle" fill="var(--warn)">耗电 · 可能互相打架</text>
+  <text class="ts" x="234" y="303" text-anchor="middle">进后台被系统限流后基本失效</text>
+  <rect class="bx-ok" x="516" y="260" width="420" height="58" rx="9"/>
+  <text class="t" x="726" y="284" text-anchor="middle" fill="var(--ok)">无轮询 · 不需 App 在前台</text>
+  <text class="ts" x="726" y="303" text-anchor="middle">另有 armedFor 标记防掉线风暴重挂</text>
+
+  <rect class="bx-warn" x="24" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="234" y="358" text-anchor="middle" fill="var(--warn)">App 在前台才可靠</text>
+  <rect class="bx-ok" x="516" y="336" width="420" height="34" rx="9"/>
+  <text class="vt" x="726" y="358" text-anchor="middle" fill="var(--ok)">系统级兜底 · 冷启动重连 15.4s → 9.5s</text>
+</svg>
+</div>
+<figcaption>左：<span class="ref">note_connection.dart:419-456 · docs/note-reconnection-handling.md:21,56</span>　右：<span class="ref">mp_ble_connection_helper.dart:200-215 · mp_ble_transport.dart:152-217</span>（commit f036c0f1d5 / 79536326e4）</figcaption>
+</figure>
+<div class="verdictrow"><span class="vd win-new">新分支胜 · 这是移植时的真实改进</span></div>
+
+<!-- ================= 汇总 ================= -->
+<h2>汇总</h2>
+<div class="h2s">八条链路的账</div>
+<div class="fig scroll">
+<table class="tbl">
+<thead><tr><th>链路</th><th>v1.0_ble</th><th>dev_2.0</th><th>结论</th></tr></thead>
+<tbody>
+<tr><td>1 · 连接握手</td><td>RTC 同步 + 绑定 + 读状态</td><td>只发 <code>0D 10</code></td><td class="w-old">旧胜 · 三步全丢</td></tr>
+<tr><td>2 · 重连恢复</td><td>读 <code>e2c1a310</code> → A/B/C</td><td>1.4 s 观察窗二选一</td><td class="w-old">旧胜 · 退化成猜</td></tr>
+<tr><td>3 · 停录广播</td><td>收到即广播（≈0 ms）</td><td>finalize 跑完才广播（秒级）</td><td class="w-old">旧胜 · <b>新引入的回归</b></td></tr>
+<tr><td>4 · 录音控制权</td><td>App + 按键双入口</td><td>只有按键</td><td class="w-tie">影响有限</td></tr>
+<tr><td>5 · 补传响应</td><td>四分支，失败可见</td><td>两分支，失败静默</td><td class="w-old">旧胜 · 吞错</td></tr>
+<tr><td>6 · memo/normal</td><td>枚举 + 落盘索引</td><td>内存裸字节，无消费者</td><td class="w-old">旧胜 · 语义降级</td></tr>
+<tr><td>7 · 续传持久化</td><td>断连时存一次</td><td>周期 checkpoint + 裁剪</td><td class="w-new">新胜 · 真实改进</td></tr>
+<tr><td>8 · 自动重连</td><td>5 s 轮询 ×2 套</td><td>系统级待连</td><td class="w-new">新胜 · 真实改进</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="callout info">
+<p><b>合起来看是一件事：</b>移植时把「连接生命周期管理」这一层<b>整体重写</b>了 —— 重连和续传这两块重写得更好，但握手初始化、状态查询、事件时序这三块在重写中丢了原有语义。</p>
+<p style="margin-bottom:0">所以补回的时候要注意方向：<b>链路 1/2/3/5/6 按旧分支补</b>，<b>链路 7/8 保持新分支不动</b>。尤其别在把 <code>e2c1a310</code> 塞回 <code>_probeAndJoinActiveDeviceRecordingOnConnect</code> 时，顺手把周期 checkpoint 那套换回旧的一次性快照。</p>
+</div>
+
+</div>
+</body>
+</html>

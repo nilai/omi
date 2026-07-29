@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MemoPin BLE 协议交互图 — 基于真实代码（2026-07-30）</title>
+<style>
+:root{
+  --bg:#fbfbfa; --fg:#1c1d1f; --muted:#6b6f76; --line:#e2e2df; --card:#ffffff;
+  --dev:#c2410c; --app:#1d4ed8; --ok:#15803d; --warn:#b45309; --bad:#be123c;
+  --devbg:#fff3ec; --appbg:#eef3ff; --okbg:#eefaf1; --warnbg:#fff8ea; --badbg:#fff0f3;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#141516; --fg:#e8e8e6; --muted:#9aa0a6; --line:#2c2e31; --card:#1b1c1e;
+    --dev:#fb923c; --app:#7aa2ff; --ok:#4ade80; --warn:#fbbf24; --bad:#fb7185;
+    --devbg:#2a1a12; --appbg:#151d33; --okbg:#12241a; --warnbg:#2a2113; --badbg:#2b1319;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:15px/1.7 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",Segoe UI,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:48px 24px 96px}
+h1{font-size:30px;line-height:1.25;margin:0 0 8px;letter-spacing:-.02em}
+h2{font-size:21px;margin:56px 0 14px;padding-top:18px;border-top:1px solid var(--line);letter-spacing:-.01em}
+h3{font-size:16px;margin:30px 0 10px}
+p{margin:10px 0}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 4px}
+code{font-family:var(--mono);font-size:.88em;background:rgba(127,127,127,.13);padding:1px 5px;border-radius:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin:18px 0}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td code{white-space:nowrap}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-ok{background:var(--okbg);color:var(--ok)} .t-no{background:var(--badbg);color:var(--bad)}
+.t-warn{background:var(--warnbg);color:var(--warn)} .t-dev{background:var(--devbg);color:var(--dev)}
+.t-app{background:var(--appbg);color:var(--app)}
+
+/* ---- 序列图 ---- */
+.seq{position:relative;margin:22px 0 8px;padding:0 0 10px;min-width:520px}
+.actors{display:flex;justify-content:space-between;margin-bottom:14px}
+.actors div{font-weight:650;font-size:13.5px;padding:6px 14px;border-radius:8px;border:1px solid var(--line)}
+.actors .dev{background:var(--devbg);color:var(--dev)}
+.actors .app{background:var(--appbg);color:var(--app)}
+.lane{position:relative;padding:0 0 0 0}
+.lane::before,.lane::after{content:"";position:absolute;top:0;bottom:0;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 6px,transparent 6px 12px)}
+.lane::before{left:9%} .lane::after{right:9%}
+.step{position:relative;margin:0 9%;height:52px}
+.step .ln{position:absolute;top:34px;left:0;right:0;height:2px;background:currentColor;opacity:.85}
+.step .hd{position:absolute;top:28px;width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent}
+.step.r .hd{right:-1px;border-left:11px solid currentColor}
+.step.l .hd{left:-1px;border-right:11px solid currentColor}
+.step .lbl{position:absolute;top:2px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:12.5px;font-family:var(--mono);background:var(--bg);padding:0 10px;font-weight:600}
+.step .note{position:absolute;top:36px;left:50%;transform:translateX(-50%);white-space:nowrap;
+  font-size:11.5px;color:var(--muted);background:var(--bg);padding:0 10px}
+.step.r{color:var(--app)}   /* App → 设备 */
+.step.l{color:var(--dev)}   /* 设备 → App */
+.step.bad{color:var(--bad)}
+.step.dash .ln{background:repeating-linear-gradient(to right,currentColor 0 7px,transparent 7px 13px)}
+.selfnote{margin:6px 9% 14px auto;max-width:52%;font-size:12px;color:var(--muted);
+  border-left:2px solid var(--line);padding:4px 12px}
+.selfnote.left{margin:6px auto 14px 9%}
+.block{margin:14px 9%;padding:8px 14px;border:1px dashed var(--line);border-radius:8px;
+  font-size:12px;color:var(--muted);background:rgba(127,127,127,.05)}
+
+.callout{border-left:3px solid var(--warn);background:var(--warnbg);padding:14px 18px;border-radius:0 10px 10px 0;margin:18px 0}
+.callout.bad{border-color:var(--bad);background:var(--badbg)}
+.callout.ok{border-color:var(--ok);background:var(--okbg)}
+.callout p:first-child{margin-top:0} .callout p:last-child{margin-bottom:0}
+.q{font-weight:650;font-size:16px;margin:0 0 6px}
+.ref{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+ul,ol{padding-left:22px;margin:10px 0} li{margin:5px 0}
+.chan{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:16px 0}
+.chan div{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card)}
+.chan b{display:block;font-family:var(--mono);font-size:12.5px;margin-bottom:4px}
+.chan span{font-size:12.5px;color:var(--muted)}
+hr{border:0;border-top:1px solid var(--line);margin:36px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p class="sub">2026-07-30 · 依据 <code>lib/blu/</code> + <code>lib/tab/home/home/mp_home_cubit.dart</code> 当前 HEAD 实现</p>
+<h1>MemoPin BLE 协议交互全景</h1>
+<p style="color:var(--muted);max-width:70ch">下面所有内容都从仓库里现在跑的代码反推，不是从协议文档抄的。凡是文档里写了但代码里没有的，单独标成「未实现」。</p>
+
+<h2>0. 通道与角色</h2>
+<p>Service <code>e2c1a300-7f4b-5e9d-bc23-1a2f3e4d5c6b</code>，六个特征。连接成功后 App 一次性订阅其中四个 notify（<span class="ref">mp_ble_transport.dart:338-426</span>），MTU 请求 517（<span class="ref">:320</span>），命令一律 <b>Write Without Response</b>（<span class="ref">:584-595</span>）。</p>
+
+<div class="chan">
+  <div><b>e2c1a301 · audioData</b><span>设备→App。实时 Opus 流。<code>[Seq 4B]</code> 或 <code>[Seq 4B][Flag 1B]</code> + 分片，App 侧重组成 480B 帧</span></div>
+  <div><b>e2c1a302 · command</b><span>App→设备。所有命令下行，唯一写通道</span></div>
+  <div><b>e2c1a303 · response</b><span>设备→App。命令应答 + <b>主动上报</b>（开始/停止录音）+ <code>0x20</code> 补传载荷</span></div>
+  <div><b>e2c1a304 · otaFile</b><span>App→设备。<b>代码中未使用</b></span></div>
+  <div><b>e2c1a305 · recordFile</b><span>设备→App。文件导出流，<code>[Seq 4B][Opus 480B]</code>=484B/块；<code>.txt</code> 走透传</span></div>
+  <div><b>e2c1a306 · logFile</b><span>设备→App。已订阅但<b>无消费者</b></span></div>
+</div>
+
+<h3>代码里真实存在的命令集</h3>
+<div class="card scroll">
+<table>
+<thead><tr><th>Cmd</th><th>含义</th><th>App 何时发</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td><code>0x0D</code></td><td>推流策略：<code>0x01</code>仅录音 / <code>0x10</code>边录边传</td><td>每次连接/重连成功后立即发 <code>0D 10</code></td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0xE1</code></td><td>查电量</td><td>ping、连接健康探测、电量刷新</td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0x03</code></td><td>文件列表</td><td>连接后批量导入；停录后导入；探测到录音时解析文件名</td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0x04</code></td><td>导出文件 + UTF-8 文件名</td><td>批量导入每个文件；停录后拉配对 <code>.txt</code></td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0x05</code></td><td>删除文件 + UTF-8 文件名</td><td>单文件导入成功后立刻删；最多重试 3 次</td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0x20</code></td><td>音频补传，Seq <b>大端</b></td><td>实时流检测到 Seq 间隙时自动发</td><td><span class="tag t-ok">在用</span></td></tr>
+<tr><td><code>0x01</code></td><td>开始录音</td><td><b>从不发</b>。只解析设备主动上报的 <code>01</code> 帧</td><td><span class="tag t-warn">只收不发</span></td></tr>
+<tr><td><code>0x02</code></td><td>停止录音</td><td><b>从不发</b>。只解析设备主动上报的 <code>02</code> 帧</td><td><span class="tag t-warn">只收不发</span></td></tr>
+<tr><td><code>0xE5</code></td><td>RTC 时间同步</td><td colspan="1"><b>代码里完全不存在</b></td><td><span class="tag t-no">未实现</span></td></tr>
+<tr><td><code>0xE3/0xE8/0xE4/0xE6/0xE9/0x09/0x0B</code></td><td>版本 / 存储 / U盘 / OTA / 恢复出厂 / 重启 / 绑定</td><td>同上</td><td><span class="tag t-no">未实现</span></td></tr>
+</tbody>
+</table>
+</div>
+<p class="ref">来源：mp_note_ble_protocol.dart:69-100（常量全集）· mp_note_ble_gatt_client.dart:144/165/184/227/258/284 · 全仓 grep <code>0xE5</code> = 0 命中</p>
+
+<h2>1. 连接建立</h2>
+<div class="scroll"><div class="seq">
+  <div class="actors"><div class="dev">设备 MemoPin</div><div class="app">App</div></div>
+  <div class="lane">
+    <div class="step l"><span class="lbl">BLE 广播（不带 Service UUID）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="selfnote">App 靠<b>广播名</b>识别：MEMOPIN / AI_NOTE / NOTE… 单轮扫描无 UUID 过滤<span class="ref"> mp_ble_connection_helper.dart:432-462, 552-574</span></div>
+    <div class="step r"><span class="lbl">connectToDevice</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r"><span class="lbl">requestMtu(517)</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r"><span class="lbl">discoverAllServices</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r"><span class="lbl">subscribe 301 / 303 / 305 / 306</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="block">↓ 此后 Watcher attach，开始监听 303 + 301 原始流 <span class="ref">mp_ble_recording_watcher.dart:200-279</span></div>
+    <div class="step r"><span class="lbl">0D 10 &nbsp;（切边录边传）</span><span class="ln"></span><span class="hd"></span><span class="note">这是连接后 App 主动发的<b>第一条也是唯一一条</b>初始化命令</span></div>
+    <div class="step l"><span class="lbl">0D 10 01 &nbsp;（成功）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="block">↓ 等待 900ms（+500ms）观察 303 是否重放「开始录音」、301 是否有流<span class="ref"> :471-476</span></div>
+    <div class="step l dash"><span class="lbl">若在录音：01 01 01 [mode] [文件名]</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r dash"><span class="lbl">若在录音：03（拉列表定位文件名）→ 04 导出已录部分 → 续接 301</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r dash"><span class="lbl">若未在录音：03 → 04 → 05 批量导入全部历史文件</span><span class="ln"></span><span class="hd"></span></div>
+  </div>
+</div></div>
+<div class="callout"><p><b>注意这里没有 <code>0xE5</code>。</b>连接握手序列固定为：MTU → 服务发现 → 订阅四个特征 → <code>0D 10</code>。之后就是 <code>0x03/0x04/0x05</code> 的导入循环。整条链路没有任何时间戳下发。</p></div>
+
+<h2>2. normal 长录音（边录边传，主路径）</h2>
+<p>录音<b>完全由设备按键触发</b>——长按 2.5s。App 不参与决策，只是被通知。</p>
+<div class="scroll"><div class="seq">
+  <div class="actors"><div class="dev">设备（用户长按 2.5s）</div><div class="app">App</div></div>
+  <div class="lane">
+    <div class="step l"><span class="lbl">303 ← 01 01 01 <b>00</b> "20260730_101530.opus"</span><span class="ln"></span><span class="hd"></span>
+      <span class="note">Cmd=01 / Op=01 / RecordState=01 / <b>Mode=00=normal</b> / 文件名</span></div>
+    <div class="selfnote">App：记 mode → emit「录音中」→ 重置 Seq → 在沙盒开一个 <code>.opus</code> sink<span class="ref"> mp_ble_recording_watcher.dart:643-692</span></div>
+    <div class="step l"><span class="lbl">301 ← [Seq=0][480B Opus]</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">301 ← [Seq=1][480B Opus]</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">301 ← [Seq=2] …持续</span><span class="ln"></span><span class="hd"></span><span class="note">每 10 帧 checkpoint 一次 Seq/路径，供强杀后续传</span></div>
+    <div class="step r"><span class="lbl">20 [len][name][startSeq BE][endSeq BE]</span><span class="ln"></span><span class="hd"></span><span class="note">仅当检测到 Seq 跳号才发</span></div>
+    <div class="step l"><span class="lbl">303 ← 20 + 补传帧载荷</span><span class="ln"></span><span class="hd"></span><span class="note">补传走 303 而不是 301</span></div>
+    <div class="block">…… 用户再次长按停止 ……</div>
+    <div class="step l"><span class="lbl">303 ← 02 00 01 xx "20260730_101530.opus"</span><span class="ln"></span><span class="hd"></span>
+      <span class="note">Cmd=02 / Op=00 / Result=01 成功</span></div>
+    <div class="selfnote">App 停录后处理链（<b>全程数秒</b>）：关 sink → Opus→MP3 转码 → <code>03</code> 找同名 <code>.txt</code> → <code>04</code> 导出 txt → 写本地 record → <code>05</code> 删设备 opus+txt<span class="ref"> mp_ble_file_util.dart:256-340</span></div>
+    <div class="step r"><span class="lbl">03 → 04 "xxx.txt" → 05 ×2</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="block">↑ 以上全部完成后，才向 App 内部广播「已停录」→ 首页切 importing → 再跑一轮批量导入 → 最后统一上传服务器</div>
+  </div>
+</div></div>
+
+<h2>3. memo 短录音</h2>
+<div class="callout"><p><b>协议上 memo 和 normal 只差 303 起始帧偏移 3 的一个字节</b>：<code>0x00</code>=normal，<code>0x01</code>=memo（<span class="ref">mp_note_ble_protocol.dart:93-100</span>）。</p>
+<p><b>而 App 当前对这个字节除了存起来什么都没做。</b><code>sessionModeByte</code> 被记录、被持久化进断点续传记录、被塞进状态事件——但全仓没有任何一处 <code>if (mode == memo)</code> 分支。memo 和 normal 走的是<b>完全同一条</b>处理链：同样边录边传、同样落盘、同样转 MP3、同样上传。</p></div>
+<p>唯一一处按 memo/normal 分流的代码是 <code>MPBleFileUtil.startLiveOpusRecording()</code>（memo→<code>0D 01</code> 仅录音，normal→<code>0D 10</code> 边录边传，<span class="ref">mp_ble_file_util.dart:1258-1310</span>）——但这个 API <b>没有任何调用方</b>，是死代码。实际生效的永远是连接时那条无条件的 <code>0D 10</code>。</p>
+<div class="scroll"><div class="seq">
+  <div class="actors"><div class="dev">设备（未录音时短按）</div><div class="app">App</div></div>
+  <div class="lane">
+    <div class="step l"><span class="lbl">303 ← 01 01 01 <b>01</b> "…_1.opus"</span><span class="ln"></span><span class="hd"></span><span class="note">Mode=01=memo，App 只是把 01 存进 _lastSessionModeByte</span></div>
+    <div class="step l"><span class="lbl">301 ← Opus 流（同 normal，不区分）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">303 ← 02 00 01 …（≤60s 后或用户短按提前结束）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="selfnote">走的是和 normal 一模一样的 finalize 链，产物在服务器侧也无法区分</div>
+  </div>
+</div></div>
+
+<h2>4. 问题现场：memo 停止 → normal 开始 背靠背</h2>
+<p>这是你观察到「后一条像被忽略了」的那一幕。<b>App 其实两条都收到、都解析了</b>，问题出在停录处理是个耗时数秒的异步链，而它在<b>最后一步</b>才广播「已停止」——这条迟到的广播把中间那条「已开始」覆盖掉了。</p>
+<div class="scroll"><div class="seq">
+  <div class="actors"><div class="dev">设备</div><div class="app">App 内部状态</div></div>
+  <div class="lane">
+    <div class="step l"><span class="lbl">t=0ms &nbsp; 303 ← 02 00 01（memo 停止）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="selfnote">进入 <code>_handleDeviceRecordingStoppedOk</code>，<b>置 _finalizeAfterStopInProgress=true</b>，随后 <code>await</code> 一串耗时操作<span class="ref"> mp_ble_recording_watcher.dart:703-754</span></div>
+    <div class="step l"><span class="lbl">t≈20ms &nbsp; 303 ← 01 01 01 00（normal 开始）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="selfnote">这条<b>被正常解析</b>：emit「录音中」、开新 sink、重置 Seq。<b>并没有被忽略</b><span class="ref"> :643-692</span></div>
+    <div class="block">↓ 与此同时，上一条的 finalize 还在跑：MP3 转码 + <code>03</code> + <code>04</code> + <code>05</code>×2，占用同一条 GATT 通道，耗时数秒</div>
+    <div class="step r"><span class="lbl">03 / 04 / 05 &nbsp;（为已停的 memo 文件收尾）</span><span class="ln"></span><span class="hd"></span><span class="note">此刻设备正在录 normal 并推 301 流，通道争用</span></div>
+    <div class="step l bad"><span class="lbl">t≈3~10s &nbsp; finalize 结束 → 广播「已停止录音」</span><span class="ln"></span><span class="hd"></span>
+      <span class="note">✗ 这条晚到的状态覆盖了 t=20ms 那条「录音中」</span></div>
+    <div class="selfnote">后果：isRecording 变 false（设备实际在录）→ 顶栏收起 → 本机录音守卫解除 → 首页误判「停录了」，立刻发起<b>整轮批量导入</b>（03/04/05）——正踩在 normal 录音进行中</div>
+  </div>
+</div></div>
+
+<h3>次生问题（同一处）</h3>
+<ul>
+<li><code>_activeFileNameForRetransmit = null</code> 和 <code>_rtBuffer.reset()</code> 在 finalize 中被无条件清空（<span class="ref">:727-728</span>）。若它们晚于新会话的赋值执行，新 normal 会话的 <code>0x20</code> 补传就<b>永远发不出去</b>（名字为 null 直接 return，<span class="ref">:313-318</span>）。</li>
+<li><code>sameSessionAsResume</code> 的判据是 <code>_lastEmitted.activeFileName == fn</code>（<span class="ref">:680-681</span>），而 <code>_lastEmitted</code> 就在几行之上刚被赋成 <code>fn</code>——这个条件<b>恒为真</b>，实际退化成「只要 <code>_savedAudioPath</code> 非空就当续传」。时序稍变就会把 normal 的音频 <b>append 进 memo 的旧文件</b>。</li>
+<li><code>_finalizeAfterStopInProgress</code> 是个全局互斥（<span class="ref">:704-708</span>）：finalize 期间到达的<b>任何</b>停录帧都被直接丢弃。memo 极短、normal 紧跟着又极快停止时，第二次停录会真的丢。</li>
+</ul>
+
+<h2>5. 离线批量导入（App 不在场时录的文件）</h2>
+<div class="scroll"><div class="seq">
+  <div class="actors"><div class="dev">设备</div><div class="app">App</div></div>
+  <div class="lane">
+    <div class="step r"><span class="lbl">03（文件列表）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">03 [count] [idx][dur_h][dur_l][nameLen][name] × N（可多包）</span><span class="ln"></span><span class="hd"></span>
+      <span class="note">多包靠 500ms 静默或 <code>03 00 / 03 FF</code> 收尾</span></div>
+    <div class="block">逐个文件循环：时长&gt;0 的 <code>.opus</code> 才进导入队列；时长=0 的直接删</div>
+    <div class="step r"><span class="lbl">04 [len]"20260730_101530.opus"</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">303 ← 04 01（接受）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">305 ← [Seq 4B][Opus 480B] × N &nbsp;(484B/块)</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step l"><span class="lbl">303 ← 04 02（传输结束）</span><span class="ln"></span><span class="hd"></span>
+      <span class="note">App 同时有 2s 静默兜底，收不到 04 02 也能收尾</span></div>
+    <div class="step r"><span class="lbl">04 "同名.txt" → 305 透传（不分帧）</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="step r"><span class="lbl">05 "xxx.opus" / 05 "xxx.txt"</span><span class="ln"></span><span class="hd"></span><span class="note">失败重试 3 次，间隔 200ms</span></div>
+    <div class="step l"><span class="lbl">303 ← 05 01</span><span class="ln"></span><span class="hd"></span></div>
+    <div class="block">全部文件跑完 → 合并「实时停录推迟的记录 + 本批导入」→ 按路径去重 → 统一上传服务器</div>
+  </div>
+</div></div>
+
+<hr>
+<h2>你的五个问题</h2>
+
+<div class="card">
+<p class="q">① 设备没收到 App 的时间校准指令</p>
+<p><b>确认：App 根本没有这个功能。</b>全仓搜 <code>0xE5</code> / RTC / 时间同步，命中 0 处代码。命令常量表（<span class="ref">mp_note_ble_protocol.dart:69-85</span>）里只有 <code>0x01 0x02 0x03 0x04 0x05 0x0D 0x20 0xE1</code> 八条，没有 <code>0xE5</code>。</p>
+<p><code>docs/BLE_DEBUG_TEST_GUIDE.md:88</code> 和 <code>MemoPin_PDF_Debug_Verification.md:112</code> 里写的 Sync RTC 是<b>另一个给方案商用的调试测试包</b>的能力，不在这个业务 App 里。当前仓库的调试页（<code>mp_ble_debug_cubit.dart</code>，182 行）只有文件列表和删除。</p>
+<p>不是发丢了、不是时序问题，是没写。要设备端 RTC 准，得 App 侧补一条：连接成功、<code>0D 10</code> 之后追发 <code>E5 + 4 字节时间戳</code>。<b>请确认时间戳的字节序（大端/小端）和基准（Unix 秒 / 本地时区偏移后的秒）</b>，这两点文档没写死，我按你给的口径实现。</p>
+</div>
+
+<div class="card">
+<p class="q">② 连接后设备没收到 e5 开头的数据包</p>
+<p>同上，就是同一件事——<code>0xE5</code> 就是 Sync RTC。连接后 App 发出的<b>唯一一条</b>主动命令是 <code>0D 10</code>（切边录边传，<span class="ref">mp_ble_recording_watcher.dart:458-465</span>）。之后才可能有 <code>0x03 / 0x04 / 0x05 / 0xE1</code>。设备侧抓不到 <code>E5</code> 是预期行为，不用继续查固件。</p>
+</div>
+
+<div class="card">
+<p class="q">③ 停 memo 和开 normal 几乎同时发过去，App 是不是把后一条忽略了？</p>
+<p><b>没有忽略——两条都收到、都解析了。</b>303 的监听是同步回调，停录处理用的是 <code>unawaited(...)</code> 异步跑，不会阻塞后一条帧的解析。</p>
+<p><b>真正的问题是停录处理链太长，而且把「已停止」的对外广播放在了链条最末端。</b>它要做：关文件 → Opus 转 MP3（CPU 密集，秒级）→ 发 <code>0x03</code> 找配对 txt → 发 <code>0x04</code> 导出 txt → 写本地记录 → 发 <code>0x05</code> 删设备上的 opus 和 txt。全跑完才广播「已停录」（<span class="ref">mp_ble_recording_watcher.dart:725-743</span>）。这条广播晚了几秒钟落地，把中间那条「normal 已开始」的状态盖掉了，App 于是认为设备不在录音，顺手又发起一整轮批量导入——正好压在 normal 录音进行中。</p>
+<p><b>所以：这个不用你在设备侧加间隔。</b>间隔多久都没用——App 这条链本身就要几秒，你没法靠延时绕开。而且从产品上讲 memo 结束立刻转 normal 是合理操作，不该要求固件迁就。<b>修在 App 侧</b>，三处：</p>
+<ol>
+<li>停录 finalize <b>先</b>广播「已停止」，再去做转码/拉 txt/删文件——状态广播不该等 I/O。</li>
+<li>finalize 前把 <code>opusPath</code>/<code>fileName</code> 快照进局部变量，全程不再碰 <code>_savedAudioPath</code>、<code>_activeFileNameForRetransmit</code>、<code>_rtBuffer</code> 这些属于「当前会话」的字段。</li>
+<li>广播前比对会话身份：若此刻已有新会话在跑（新文件名 ≠ 本次 finalize 的文件名），就不发这条「已停止」。</li>
+</ol>
+<p>顺带修掉 <code>sameSessionAsResume</code> 那个恒真判据（<span class="ref">:680-681</span>），否则时序一变就会把 normal 的音频写进 memo 的文件里。</p>
+<p style="margin-bottom:0"><b>如果设备侧愿意配合、成本很低的话</b>，有一条能显著降低风险：<b>在停止帧和开始帧之间留 ≥200ms</b>。这不能修好上面的根因，但能避开「finalize 刚起步、字段还没快照」这段最脆弱的窗口。要不要做由你定，App 侧的修复我这边照做不误。</p>
+</div>
+
+<div class="card">
+<p class="q">④ App 是实时传输，还是录完再传文件？</p>
+<p><b>两段要分开看，答案不一样。</b></p>
+<p><b>设备 → 手机：实时。</b>连接后 App 无条件发 <code>0D 10</code>（边录边传），设备录音时通过 <code>e2c1a301</code> 逐帧推 Opus，App 一帧一帧直接落盘，丢帧就发 <code>0x20</code> 补传。录到哪传到哪，不等结束。</p>
+<p><b>手机 → 服务器：录完再传。</b>录音期间不上传任何东西。<code>02 00 01</code> 到达后才 Opus→MP3、拉 txt、写本地记录，然后跑完批量导入，<b>最后</b>才把这一批（实时那条 + 批量导入的）合并去重、统一上传（<span class="ref">mp_home_cubit.dart:794-814</span>）。</p>
+<p style="margin-bottom:0">还有一条兜底：即使实时流那一路出了问题（App 没连上、sink 没开成、中途断连），停录后的批量导入会通过 <code>0x03 → 0x04 → 0x05</code> 把设备上的完整文件重新拉一遍。所以实时流是「省时间」，不是「唯一的数据来源」。</p>
+</div>
+
+<div class="card">
+<p class="q">⑤ 「这个应该在设备这里，因为无论 App 是否接收到、当前是否在录音都不影响设备」</p>
+<p><b>关于设备自主性，你说得对，代码完全支持这个判断。</b>App <b>从不发送</b> <code>0x01</code>/<code>0x02</code>——全仓没有任何一处调用（<code>MPNoteBleCommands.startRecording/stopRecording</code> 两个常量只被用来<b>解析</b>收到的帧）。录音的起停 100% 由设备按键决定，App 是纯观察者。设备离线照录不误，文件留在设备上，下次连上批量导入。</p>
+<p><b>但有一点要说清楚：设备不受影响 ≠ 这件事该由设备解决。</b>③ 里那个问题的失败面完全在 App 的状态机内部（迟到的广播覆盖了新状态），设备无论怎么发都不会让 App 自愈。所以责任划分是：<b>设备继续按现在的方式发，不用改；修复在 App 侧。</b>唯一可选的设备侧配合就是那个 ≥200ms 间隔，属于降风险，不是必需。</p>
+<p style="margin-bottom:0">反过来有一条<b>确实</b>依赖设备：303 的主动上报（<code>01 …</code> / <code>02 …</code>）是 App 感知录音状态的<b>唯一</b>来源。App 没有轮询状态的命令——文档里的 <code>0x00</code> 状态查询在代码里没实现。所以设备必须保证这两条帧一定发出、且带完整的 mode 和文件名字段，否则 App 会漏状态。</p>
+</div>
+
+<hr>
+<h2>附：已知实现缺口清单</h2>
+<div class="card scroll">
+<table>
+<thead><tr><th>缺口</th><th>影响</th><th>位置</th></tr></thead>
+<tbody>
+<tr><td><code>0xE5</code> RTC 同步未实现</td><td>设备时间无人校准，文件名时间戳可能漂移</td><td>—</td></tr>
+<tr><td>停录广播晚于 finalize 数秒</td><td>memo→normal 背靠背时状态被覆盖；录音中误触发批量导入</td><td class="ref">recording_watcher:725-743</td></tr>
+<tr><td><code>sameSessionAsResume</code> 判据恒真</td><td>可能把新会话音频 append 进上一个文件</td><td class="ref">recording_watcher:680-681</td></tr>
+<tr><td>finalize 清空当前会话字段</td><td>新会话补传 <code>0x20</code> 发不出去</td><td class="ref">recording_watcher:727-728</td></tr>
+<tr><td>memo/normal mode 字节无消费者</td><td>两种录音下游完全不可区分</td><td>全仓无分支</td></tr>
+<tr><td><code>startLiveOpusRecording</code> 无调用方</td><td>唯一按 mode 分流 <code>0x0D</code> 的逻辑是死代码</td><td class="ref">file_util:1216</td></tr>
+<tr><td><code>0x00</code> 录音状态查询未实现</td><td>重连只能靠 900ms 观察窗猜是否在录音</td><td class="ref">recording_watcher:471-476</td></tr>
+<tr><td><code>e2c1a306</code> 日志流已订阅无消费者</td><td>设备日志拿不到</td><td class="ref">transport:412-425</td></tr>
+<tr><td><code>e2c1a304</code> OTA 通道未使用</td><td>无固件升级能力</td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+</div>
+</body>
+</html>
