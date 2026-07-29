@@ -228,8 +228,12 @@ hr{border:0;border-top:1px solid var(--line);margin:36px 0}
 <div class="card">
 <p class="q">① 设备没收到 App 的时间校准指令</p>
 <p><b>确认：App 根本没有这个功能。</b>全仓搜 <code>0xE5</code> / RTC / 时间同步，命中 0 处代码。命令常量表（<span class="ref">mp_note_ble_protocol.dart:69-85</span>）里只有 <code>0x01 0x02 0x03 0x04 0x05 0x0D 0x20 0xE1</code> 八条，没有 <code>0xE5</code>。</p>
-<p><code>docs/BLE_DEBUG_TEST_GUIDE.md:88</code> 和 <code>MemoPin_PDF_Debug_Verification.md:112</code> 里写的 Sync RTC 是<b>另一个给方案商用的调试测试包</b>的能力，不在这个业务 App 里。当前仓库的调试页（<code>mp_ble_debug_cubit.dart</code>，182 行）只有文件列表和删除。</p>
-<p>不是发丢了、不是时序问题，是没写。要设备端 RTC 准，得 App 侧补一条：连接成功、<code>0D 10</code> 之后追发 <code>E5 + 4 字节时间戳</code>。<b>请确认时间戳的字节序（大端/小端）和基准（Unix 秒 / 本地时区偏移后的秒）</b>，这两点文档没写死，我按你给的口径实现。</p>
+<p>但这条命令<b>不只是调试功能</b>。上一版 App（<code>v1.0_ble</code> 分支）把它放在连接初始化 <code>_initialize()</code> 的<b>第一步</b>，每次首连必发，顺序是 RTC 同步 → 检查绑定状态 → 读录音状态（<span class="ref">note_connection.dart:466-495 / 579-599</span>）。这一版重写连接流程时，整个初始化序列都没有搬过来，只剩下 <code>0D 10</code>。</p>
+<p>所以不是发丢了、不是时序问题，是这一版没写。<b>报文格式不需要你们再确认</b> —— 上一版代码里就是现成的：</p>
+<div style="background:rgba(127,127,127,.09);border-radius:9px;padding:12px 16px;margin:12px 0;font-family:var(--mono);font-size:13px">
+<code style="background:none;padding:0">E5</code> + 4 字节 <b>大端</b> Unix <b>秒</b>　<span style="color:var(--muted)">（<code style="background:none;padding:0">DateTime.now().millisecondsSinceEpoch ~/ 1000</code>，UTC 不带时区偏移）</span>
+</div>
+<p style="margin-bottom:0">我们照这个补回去，插在 <code>0D 10</code> 之前。<b>只有一点想跟你们对一下</b>：上一版发的是 UTC 秒，而设备生成的文件名形如 <code>20260730_101530</code> —— 这个时间是本地时间还是 UTC？如果是本地时间，设备侧的时区是从哪来的？这决定我们是发 UTC 秒、还是发本地化之后的秒数。</p>
 </div>
 
 <div class="card">
@@ -263,7 +267,30 @@ hr{border:0;border-top:1px solid var(--line);margin:36px 0}
 <p class="q">⑤ 「这个应该在设备这里，因为无论 App 是否接收到、当前是否在录音都不影响设备」</p>
 <p><b>关于设备自主性，你说得对，代码完全支持这个判断。</b>App <b>从不发送</b> <code>0x01</code>/<code>0x02</code>——全仓没有任何一处调用（<code>MPNoteBleCommands.startRecording/stopRecording</code> 两个常量只被用来<b>解析</b>收到的帧）。录音的起停 100% 由设备按键决定，App 是纯观察者。设备离线照录不误，文件留在设备上，下次连上批量导入。</p>
 <p><b>但有一点要说清楚：设备不受影响 ≠ 这件事该由设备解决。</b>③ 里那个问题的失败面完全在 App 的状态机内部（迟到的广播覆盖了新状态），设备无论怎么发都不会让 App 自愈。所以责任划分是：<b>设备继续按现在的方式发，不用改；修复在 App 侧。</b>唯一可选的设备侧配合就是那个 ≥200ms 间隔，属于降风险，不是必需。</p>
-<p style="margin-bottom:0">反过来有一条<b>确实</b>依赖设备：303 的主动上报（<code>01 …</code> / <code>02 …</code>）是 App 感知录音状态的<b>唯一</b>来源。App 没有轮询状态的命令——文档里的 <code>0x00</code> 状态查询在代码里没实现。所以设备必须保证这两条帧一定发出、且带完整的 mode 和文件名字段，否则 App 会漏状态。</p>
+<p style="margin-bottom:0">反过来有一条<b>确实</b>依赖设备：在这一版里，<code>303</code> 的主动上报（<code>01 …</code> / <code>02 …</code>）是 App 感知录音状态的<b>唯一</b>来源 —— 上一版还会读 <code>e2c1a310</code> 录音状态特征做交叉确认，这一版没搬过来（见下节第 1 条）。所以目前设备必须保证这两条帧一定发出、且带完整的 mode 和文件名字段，否则 App 会漏状态。</p>
+</div>
+
+<hr>
+<h2>需要固件侧确认或配合的三件事</h2>
+<p style="color:var(--muted);max-width:74ch">除下面三条之外，本次分析涉及的问题都在 App 侧，设备不需要改动。</p>
+
+<div class="card">
+<p class="q">1 · <code>e2c1a310</code> 录音状态特征，当前固件还在吗？</p>
+<p>我们准备把「读这条特征」补回连接流程，用它替代现在那个 900 ms 观察窗（问题③ 里提到的误判风险，根子在这）。上一版 App 是这么用的：</p>
+<p style="margin:10px 0"><span class="ref">只读特征 <code>e2c1a310-7f4b-5e9d-bc23-1a2f3e4d5c6b</code>，返回 <code>[Status 1B][FileNameLen 1B][FileName 变长]</code></span></p>
+<p style="margin-bottom:0"><b>要确认两点</b>：① 当前固件版本是否仍实现这条特征；② 返回格式是否仍是上面这个。如果固件已经改了或去掉了，请给新的读法 —— 这条是我们修重连误判最直接的依据，没有它只能继续靠时间窗猜。</p>
+</div>
+
+<div class="card">
+<p class="q">2 · <code>0xE5</code> 的时间基准：UTC 还是本地时间？</p>
+<p>报文格式我们已经从上一版代码里确认了（<code>E5</code> + 4 字节大端 Unix 秒），不需要你们再出方案。唯一想对齐的是<b>基准</b>：</p>
+<p style="margin-bottom:0">上一版发的是 <b>UTC</b> 秒。而设备生成的文件名形如 <code>20260730_101530</code> —— 这个时间是本地时间还是 UTC？如果是本地时间，设备侧的时区是从哪来的（固件固定 UTC+8？还是另有下发通道）？这决定我们补回去时是发 UTC 秒、还是发本地化之后的秒数。答错了文件名时间会整体偏 8 小时。</p>
+</div>
+
+<div class="card">
+<p class="q">3 · 停止帧与开始帧之间能否留 ≥ 200 ms？<span class="tag t-warn" style="margin-left:8px">可选</span></p>
+<p>这条<b>不是必须的</b>，问题③ 的根因在 App 状态机，我们会自己修。</p>
+<p style="margin-bottom:0">但如果固件侧加这个间隔成本很低，可以顺手做：它能避开 App 停录处理刚起步、还没把会话字段快照下来的那一小段脆弱窗口，属于降风险。我们不依赖它，你们评估后告诉我们做不做即可。</p>
 </div>
 
 <hr>
@@ -272,13 +299,14 @@ hr{border:0;border-top:1px solid var(--line);margin:36px 0}
 <table>
 <thead><tr><th>缺口</th><th>影响</th><th>位置</th></tr></thead>
 <tbody>
-<tr><td><code>0xE5</code> RTC 同步未实现</td><td>设备时间无人校准，文件名时间戳可能漂移</td><td>—</td></tr>
+<tr><td><code>0xE5</code> RTC 同步未实现</td><td>设备时间无人校准，文件名时间戳可能漂移。上一版每次首连必发</td><td class="ref">旧：note_connection:579-599</td></tr>
+<tr><td><code>e2c1a310</code> 录音状态特征未接入</td><td>重连只能靠 1.4s 观察窗推断是否在录音，静默期会误判空闲</td><td class="ref">旧：note_connection:1044-1070</td></tr>
 <tr><td>停录广播晚于 finalize 数秒</td><td>memo→normal 背靠背时状态被覆盖；录音中误触发批量导入</td><td class="ref">recording_watcher:725-743</td></tr>
 <tr><td><code>sameSessionAsResume</code> 判据恒真</td><td>可能把新会话音频 append 进上一个文件</td><td class="ref">recording_watcher:680-681</td></tr>
 <tr><td>finalize 清空当前会话字段</td><td>新会话补传 <code>0x20</code> 发不出去</td><td class="ref">recording_watcher:727-728</td></tr>
 <tr><td>memo/normal mode 字节无消费者</td><td>两种录音下游完全不可区分</td><td>全仓无分支</td></tr>
 <tr><td><code>startLiveOpusRecording</code> 无调用方</td><td>唯一按 mode 分流 <code>0x0D</code> 的逻辑是死代码</td><td class="ref">file_util:1216</td></tr>
-<tr><td><code>0x00</code> 录音状态查询未实现</td><td>重连只能靠 900ms 观察窗猜是否在录音</td><td class="ref">recording_watcher:471-476</td></tr>
+<tr><td>连接初始化序列未移植</td><td>上一版为 RTC 同步 → 检查绑定 → 读录音状态，这一版只剩 <code>0D 10</code></td><td class="ref">旧：note_connection:466-495</td></tr>
 <tr><td><code>e2c1a306</code> 日志流已订阅无消费者</td><td>设备日志拿不到</td><td class="ref">transport:412-425</td></tr>
 <tr><td><code>e2c1a304</code> OTA 通道未使用</td><td>无固件升级能力</td><td>—</td></tr>
 </tbody>
