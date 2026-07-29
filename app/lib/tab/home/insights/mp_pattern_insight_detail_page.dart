@@ -21,35 +21,35 @@ MarkdownStyleSheet _mpPatternDetectedMarkdownStyle() {
     blockSpacing: 8,
     listIndent: 22,
     h1: OmiTextStyle.create(
-      color: mainTextColor,
+      color: omiMainBodyText,
       fontSize: OmiFontSize.t8_17,
       fontWeight: OmiFontWeight.bold,
       height: 1.35,
     ),
     h1Padding: EdgeInsets.zero,
     h2: OmiTextStyle.create(
-      color: mainTextColor,
+      color: omiMainBodyText,
       fontSize: OmiFontSize.t7_16,
       fontWeight: OmiFontWeight.bold,
       height: 1.35,
     ),
     h2Padding: EdgeInsets.zero,
     h3: OmiTextStyle.create(
-      color: mainTextColor,
+      color: omiMainBodyText,
       fontSize: OmiFontSize.t7_16,
       fontWeight: OmiFontWeight.bold,
       height: 1.35,
     ),
     h3Padding: EdgeInsets.zero,
     p: OmiTextStyle.create(
-      color: mainTextColor,
+      color: omiMainBodyText,
       fontSize: OmiFontSize.t6_15,
       fontWeight: OmiFontWeight.regular,
       height: 1.6,
     ),
     pPadding: EdgeInsets.zero,
     strong: OmiTextStyle.create(
-      color: mainTextColor,
+      color: omiMainBodyText,
       fontSize: OmiFontSize.t6_15,
       fontWeight: OmiFontWeight.bold,
       height: 1.6,
@@ -174,7 +174,7 @@ class _MPPatternInsightBody extends StatelessWidget {
                               child: Text(
                                 '${parameters.index + 1}.',
                                 style: OmiTextStyle.create(
-                                  color: mainTextColor,
+                                  color: omiMainBodyText,
                                   fontSize: OmiFontSize.t6_15,
                                   fontWeight: OmiFontWeight.medium,
                                   height: 1.4,
@@ -285,7 +285,7 @@ class _PatternDetectedTitle extends StatelessWidget {
         Text(
           'Pattern Detected',
           style: OmiTextStyle.create(
-            color: mainTextColor,
+            color: omiMainBodyText,
             fontSize: OmiFontSize.t8_17,
             fontWeight: OmiFontWeight.bold,
             height: 1.2,
@@ -322,7 +322,7 @@ class _AppearedSection extends StatelessWidget {
             Text(
               'Where This Appeared',
               style: OmiTextStyle.create(
-                color: mainTextColor,
+                color: omiMainBodyText,
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.bold,
                 height: 1.2,
@@ -337,7 +337,7 @@ class _AppearedSection extends StatelessWidget {
           MPInsightMarkdownBody(
             data: introText,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.4,
@@ -371,7 +371,7 @@ class _AppearedSection extends StatelessWidget {
                           child: MPInsightMarkdownBody(
                             data: item.title,
                             style: OmiTextStyle.create(
-                              color: mainTextColor,
+                              color: omiMainBodyText,
                               fontSize: OmiFontSize.t6_15,
                               fontWeight: OmiFontWeight.regular,
                               height: 1.4,
@@ -390,7 +390,7 @@ class _AppearedSection extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summaryText,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.4,
@@ -419,7 +419,7 @@ class _WhyThisMattersSection extends StatelessWidget {
             Text(
               'Why This Matters',
               style: OmiTextStyle.create(
-                color: mainTextColor,
+                color: omiMainBodyText,
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.bold,
                 height: 1.2,
@@ -433,7 +433,7 @@ class _WhyThisMattersSection extends StatelessWidget {
         MPInsightMarkdownBody(
           data: whyText,
           style: OmiTextStyle.create(
-            color: secondTextColor,
+            color: omiMainBodyText,
             fontSize: OmiFontSize.t6_15,
             fontWeight: OmiFontWeight.regular,
             height: 1.6,
@@ -468,7 +468,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
             Text(
               'Suggested Next Step',
               style: OmiTextStyle.create(
-                color: mainTextColor,
+                color: omiMainBodyText,
                 fontSize: OmiFontSize.t6_15,
                 fontWeight: OmiFontWeight.bold,
                 height: 1.2,
@@ -495,7 +495,7 @@ class _SuggestedNextStepSectionState extends State<_SuggestedNextStepSection> {
                   child: MPInsightMarkdownBody(
                     data: text,
                     style: OmiTextStyle.create(
-                      color: secondTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t6_15,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.6,

@@ -87,7 +87,7 @@ class _MPMonthlyAppBar extends StatelessWidget {
                   Text(
                     'Monthly Insight',
                     style: OmiTextStyle.create(
-                      color: mainTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t8_17,
                       fontWeight: OmiFontWeight.medium,
                       height: 1.1,
@@ -99,7 +99,7 @@ class _MPMonthlyAppBar extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: OmiTextStyle.create(
-                      color: secondTextColor,
+                      color: omiSupplementaryText,
                       fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.1,
@@ -250,7 +250,7 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
               Text(
                 'Month Overview',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -264,7 +264,7 @@ class _MPMonthlyMonthOverviewCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiMainBodyText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
@@ -301,7 +301,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
               Text(
                 'Attention Distribution',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -324,7 +324,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
                       child: MPInsightMarkdownBody(
                         data: i.label,
                         style: OmiTextStyle.create(
-                          color: secondTextColor,
+                          color: omiMainBodyText,
                           fontSize: OmiFontSize.t5_14,
                           fontWeight: OmiFontWeight.regular,
                           height: 1.1,
@@ -351,7 +351,7 @@ class _MPMonthlyAttentionDistributionCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
@@ -394,7 +394,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
               Text(
                 'Key People This Month',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -418,7 +418,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
                       child: MPInsightMarkdownBody(
                         data: p.name,
                         style: OmiTextStyle.create(
-                          color: mainTextColor,
+                          color: omiMainBodyText,
                           fontSize: OmiFontSize.t5_14,
                           fontWeight: OmiFontWeight.regular,
                           height: 1.1,
@@ -441,7 +441,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
                     MPInsightMarkdownBody(
                       data: '${p.count} memories',
                       style: OmiTextStyle.create(
-                        color: secondTextColor,
+                        color: omiSupplementaryText,
                         fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.regular,
                         height: 1.1,
@@ -455,7 +455,7 @@ class _MPMonthlyKeyPeopleCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
@@ -498,7 +498,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
               Text(
                 'Topics Resurfacing',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -521,7 +521,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
                       child: MPInsightMarkdownBody(
                         data: t.label,
                         style: OmiTextStyle.create(
-                          color: secondTextColor,
+                          color: omiMainBodyText,
                           fontSize: OmiFontSize.t5_14,
                           fontWeight: OmiFontWeight.regular,
                           height: 1.1,
@@ -547,7 +547,7 @@ class _MPMonthlyTopicsSurfacingCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
@@ -584,7 +584,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
               Text(
                 'Long-running Open Threads',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -610,7 +610,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
                     child: MPInsightMarkdownBody(
                       data: t,
                       style: OmiTextStyle.create(
-                        color: secondTextColor,
+                        color: omiMainBodyText,
                         fontSize: OmiFontSize.t6_15,
                         fontWeight: OmiFontWeight.regular,
                         height: 1.35,
@@ -625,7 +625,7 @@ class _MPMonthlyOpenThreadsCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.55,
@@ -661,7 +661,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
               Text(
                 'Month-to-Month Trend',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -678,7 +678,7 @@ class _MPMonthlyTrendCard extends StatelessWidget {
               child: MPInsightMarkdownBody(
                 data: p,
                 style: OmiTextStyle.create(
-                  color: secondTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t6_15,
                   fontWeight: OmiFontWeight.regular,
                   height: 1.35,
@@ -719,7 +719,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
               Text(
                 'Decisions That Cannot Slip Again',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -733,7 +733,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t5_14,
               fontWeight: OmiFontWeight.regular,
               height: 1.5,
@@ -761,7 +761,7 @@ class _MPMonthlyCannotSlipDecisionsCard extends StatelessWidget {
                     child: MPInsightMarkdownBody(
                       data: d.text,
                       style: OmiTextStyle.create(
-                        color: mainTextColor,
+                        color: omiMainBodyText,
                         fontSize: OmiFontSize.t5_14,
                         fontWeight: OmiFontWeight.regular,
                         height: 1.4,
@@ -817,7 +817,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
               Text(
                 'Suggested Focus Next Month',
                 style: OmiTextStyle.create(
-                  color: mainTextColor,
+                  color: omiMainBodyText,
                   fontSize: OmiFontSize.t7_16,
                   fontWeight: OmiFontWeight.medium,
                   height: 1.2,
@@ -857,7 +857,7 @@ class _MPMonthlySuggestedFocusCardState extends State<_MPMonthlySuggestedFocusCa
                     child: MPInsightMarkdownBody(
                       data: (f.title ?? '').trim(),
                       style: OmiTextStyle.create(
-                        color: mainTextColor,
+                        color: omiMainBodyText,
                         fontSize: OmiFontSize.t6_15,
                         fontWeight: OmiFontWeight.regular,
                         height: 1.35,

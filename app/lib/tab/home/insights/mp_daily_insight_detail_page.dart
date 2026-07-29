@@ -170,7 +170,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 child: Text(
                   daily.dateLabel,
                   style: OmiTextStyle.create(
-                    color: mainTextColor,
+                    color: omiMainBodyText,
                     fontSize: OmiFontSize.t11_20,
                     fontWeight: OmiFontWeight.bold,
                     height: 1.2,
@@ -187,7 +187,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 child: MPInsightMarkdownBody(
                   data: daily.narrativeBody,
                   style: OmiTextStyle.create(
-                    color: secondTextColor,
+                    color: omiMainBodyText,
                     fontSize: OmiFontSize.t5_14,
                     fontWeight: OmiFontWeight.regular,
                     height: 1.52,
@@ -225,7 +225,7 @@ class _MPDailyInsightBody extends StatelessWidget {
                 child: MPInsightMarkdownBody(
                   data: daily.patternsEmerging,
                   style: OmiTextStyle.create(
-                    color: secondTextColor,
+                    color: omiMainBodyText,
                     fontSize: OmiFontSize.t5_14,
                     fontWeight: OmiFontWeight.regular,
                     height: 1.52,
@@ -321,7 +321,7 @@ class _MPDailyCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OmiTextStyle.create(
-                    color: mainTextColor,
+                    color: omiMainBodyText,
                     fontSize: OmiFontSize.t6_15,
                     fontWeight: OmiFontWeight.medium,
                     height: 1.2,
@@ -356,7 +356,7 @@ class _MPDotTextList extends StatelessWidget {
       data: items.map((String item) => '- $item').join('\n'),
       bulletColor: dotColor,
       style: OmiTextStyle.create(
-        color: secondTextColor,
+        color: omiMainBodyText,
         fontSize: OmiFontSize.t5_14,
         fontWeight: OmiFontWeight.regular,
         height: 1.45,
@@ -399,7 +399,7 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: OmiTextStyle.create(
-                    color: mainTextColor,
+                    color: omiMainBodyText,
                     fontSize: OmiFontSize.t6_15,
                     fontWeight: OmiFontWeight.medium,
                     height: 1.2,
@@ -429,14 +429,14 @@ class _MPDailyTomorrowFocusCardState extends State<_MPDailyTomorrowFocusCard> {
                     children: <Widget>[
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
-                        child: Icon(Icons.circle, size: 5, color: omiSecondaryBodyText),
+                        child: Icon(Icons.circle, size: 5, color: omiSupplementaryText),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: MPInsightMarkdownBody(
                           data: (focus.title ?? '').trim(),
                           style: OmiTextStyle.create(
-                            color: omiSecondaryBodyText,
+                            color: omiMainBodyText,
                             fontSize: OmiFontSize.t5_14,
                             fontWeight: OmiFontWeight.regular,
                             height: 1.4,

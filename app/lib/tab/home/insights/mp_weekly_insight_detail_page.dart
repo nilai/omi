@@ -87,7 +87,7 @@ class _MPWeeklyAppBar extends StatelessWidget {
                   Text(
                     'Weekly Insights',
                     style: OmiTextStyle.create(
-                      color: mainTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t8_17,
                       fontWeight: OmiFontWeight.bold,
                     ),
@@ -96,7 +96,7 @@ class _MPWeeklyAppBar extends StatelessWidget {
                   Text(
                     subtitle,
                     style: OmiTextStyle.create(
-                      color: secondTextColor,
+                      color: omiSupplementaryText,
                       fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.regular,
                     ),
@@ -260,7 +260,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
                 child: MPInsightMarkdownBody(
                   data: title,
                   style: OmiTextStyle.create(
-                    color: mainTextColor,
+                      color: omiMainBodyText,
                     fontSize: OmiFontSize.t11_20,
                     fontWeight: OmiFontWeight.bold,
                     height: 1.15,
@@ -275,7 +275,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
             child: MPInsightMarkdownBody(
               data: subLabel,
               style: OmiTextStyle.create(
-                color: const Color(0xFF8B919A),
+                color: omiSupplementaryText,
                 fontSize: OmiFontSize.t5_14,
                 fontWeight: OmiFontWeight.regular,
                 height: 1.2,
@@ -286,7 +286,7 @@ class _MPWeeklyHeaderCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: const Color(0xFF3E464F),
+              color: omiMainBodyText,
               fontSize: OmiFontSize.t6_15,
               fontWeight: OmiFontWeight.regular,
               height: 1.45,
@@ -319,7 +319,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
           Text(
             'Week Summary',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
             ),
@@ -328,7 +328,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
           Text(
             'Focus Areas',
             style: OmiTextStyle.create(
-              color: secondTextColor,
+              color: omiSupplementaryText,
               fontSize: OmiFontSize.t4_13,
               fontWeight: OmiFontWeight.regular,
             ),
@@ -337,7 +337,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
           MPInsightMarkdownBody(
             data: summary,
             style: OmiTextStyle.create(
-              color: const Color(0xFF3F4750),
+              color: omiMainBodyText,
               fontSize: OmiFontSize.t6_15,
               fontWeight: OmiFontWeight.regular,
               height: 1.45,
@@ -348,7 +348,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
             Text(
               'Key Metrics',
               style: OmiTextStyle.create(
-                color: secondTextColor,
+                color: omiSupplementaryText,
                 fontSize: OmiFontSize.t4_13,
                 fontWeight: OmiFontWeight.regular,
               ),
@@ -376,7 +376,7 @@ class _MPWeeklySummaryCard extends StatelessWidget {
                         MPInsightMarkdownBody(
                           data: m.label,
                           style: OmiTextStyle.create(
-                            color: secondTextColor,
+                            color: omiSupplementaryText,
                             fontSize: OmiFontSize.t3_12,
                             fontWeight: OmiFontWeight.regular,
                           ),
@@ -408,7 +408,7 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
           Text(
             'Accomplishments',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
               height: 1.15,
@@ -438,7 +438,7 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
                         MPInsightMarkdownBody(
                           data: item.title,
                           style: OmiTextStyle.create(
-                            color: mainTextColor,
+                            color: omiMainBodyText,
                             fontSize: OmiFontSize.t6_15,
                             fontWeight: OmiFontWeight.medium,
                             height: 1.2,
@@ -448,7 +448,7 @@ class _MPWeeklyAccomplishmentsCard extends StatelessWidget {
                         MPInsightMarkdownBody(
                           data: item.description,
                           style: OmiTextStyle.create(
-                            color: secondTextColor,
+                            color: omiMainBodyText,
                             fontSize: OmiFontSize.t5_14,
                             fontWeight: OmiFontWeight.regular,
                             height: 1.4,
@@ -481,7 +481,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
           Text(
             'Challenges & Learnings',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
             ),
@@ -503,7 +503,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
                   MPInsightMarkdownBody(
                     data: item.title,
                     style: OmiTextStyle.create(
-                      color: mainTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.medium,
                     ),
@@ -512,7 +512,7 @@ class _MPWeeklyChallengesLearningsCard extends StatelessWidget {
                   MPInsightMarkdownBody(
                     data: item.description,
                     style: OmiTextStyle.create(
-                      color: secondTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t4_13,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.45,
@@ -542,7 +542,7 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
           Text(
             'Pending Items',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
             ),
@@ -572,7 +572,7 @@ class _MPWeeklyPendingItemsCard extends StatelessWidget {
                           child: MPInsightMarkdownBody(
                             data: item.text,
                             style: OmiTextStyle.create(
-                              color: secondTextColor,
+                              color: omiMainBodyText,
                               fontSize: OmiFontSize.t5_14,
                               fontWeight: OmiFontWeight.regular,
                               height: 1.4,
@@ -613,7 +613,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
           Text(
             'Next Week Priorities',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
             ),
@@ -654,7 +654,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                         MPInsightMarkdownBody(
                           data: (item.todo.title ?? '').trim(),
                           style: OmiTextStyle.create(
-                            color: mainTextColor,
+                            color: omiMainBodyText,
                             fontSize: OmiFontSize.t6_15,
                             fontWeight: OmiFontWeight.medium,
                             height: 1.35,
@@ -665,7 +665,7 @@ class _MPWeeklyPrioritiesCardState extends State<_MPWeeklyPrioritiesCard> {
                           MPInsightMarkdownBody(
                             data: (item.todo.reason ?? '').trim(),
                             style: OmiTextStyle.create(
-                              color: secondTextColor,
+                              color: omiSupplementaryText,
                               fontSize: OmiFontSize.t5_14,
                               fontWeight: OmiFontWeight.regular,
                               height: 1.35,
@@ -766,7 +766,7 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
           Text(
             'Expert Weekly Feedback',
             style: OmiTextStyle.create(
-              color: mainTextColor,
+                      color: omiMainBodyText,
               fontSize: OmiFontSize.t8_17,
               fontWeight: OmiFontWeight.bold,
             ),
@@ -788,7 +788,7 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                       MPInsightMarkdownBody(
                         data: item.title,
                         style: OmiTextStyle.create(
-                          color: mainTextColor,
+                          color: omiMainBodyText,
                           fontSize: OmiFontSize.t6_15,
                           fontWeight: OmiFontWeight.bold,
                         ),
@@ -799,7 +799,7 @@ class _MPWeeklyExpertFeedbackCard extends StatelessWidget {
                   MPInsightMarkdownBody(
                     data: item.content,
                     style: OmiTextStyle.create(
-                      color: secondTextColor,
+                      color: omiMainBodyText,
                       fontSize: OmiFontSize.t5_14,
                       fontWeight: OmiFontWeight.regular,
                       height: 1.4,

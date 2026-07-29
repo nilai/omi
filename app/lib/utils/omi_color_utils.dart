@@ -10,6 +10,9 @@ const Color omiMainBodyText = Color(0xFF1C1C1E);
 /// 次要文本色（中灰） `#3c3c43`
 const Color omiSecondaryBodyText = Color(0xFF3C3C43);
 
+/// 补充说明文本色 `#6c6c70`
+const Color omiSupplementaryText = Color(0xFF6C6C70);
+
 /// 辅助文本色（浅灰） `#8e8e93`
 const Color omiAuxiliaryText = Color(0xFF8E8E93);
 
