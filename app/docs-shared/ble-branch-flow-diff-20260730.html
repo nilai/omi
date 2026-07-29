@@ -542,6 +542,202 @@ svg.dg text{font-family:inherit}
 <p style="margin-bottom:0">所以补回的时候要注意方向：<b>链路 1/2/3/5/6 按旧分支补</b>，<b>链路 7/8 保持新分支不动</b>。尤其别在把 <code>e2c1a310</code> 塞回 <code>_probeAndJoinActiveDeviceRecordingOnConnect</code> 时，顺手把周期 checkpoint 那套换回旧的一次性快照。</p>
 </div>
 
+<!-- ================= 落地 checklist ================= -->
+<style>
+.ck{border:1px solid var(--line);border-radius:14px;background:var(--card);margin:16px 0;overflow:hidden}
+.ck>header{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ck>header .no{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--muted)}
+.ck>header h4{margin:0;font-size:16px;flex:1;min-width:200px;letter-spacing:-.01em}
+.ck.p0>header{background:var(--badbg)} .ck.p0>header h4{color:var(--bad)}
+.ck.p1>header{background:var(--warnbg)} .ck.p1>header h4{color:var(--warn)}
+.ck.p2>header{background:var(--greybg)} .ck.p2>header h4{color:var(--muted)}
+.ck.keep>header{background:var(--okbg)} .ck.keep>header h4{color:var(--ok)}
+.pri{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;color:#fff;white-space:nowrap}
+.pri.p0{background:var(--bad)}.pri.p1{background:var(--warn)}.pri.p2{background:var(--grey)}.pri.keep{background:var(--ok)}
+.ck .body{display:grid;grid-template-columns:1fr;gap:0}
+.ck .row{display:grid;grid-template-columns:104px 1fr;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line);font-size:13.5px}
+.ck .row:last-child{border-bottom:0}
+.ck .row>b{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.ck .row ul{margin:0;padding-left:17px}
+.ck .row li{margin:4px 0}
+.ck .row.acc{background:rgba(22,163,74,.05)}
+@media (prefers-color-scheme:dark){.ck .row.acc{background:rgba(74,222,128,.06)}}
+.ck .row.acc>b{color:var(--ok)}
+.fp{font-family:var(--mono);font-size:12px;background:rgba(127,127,127,.13);padding:1px 5px;border-radius:4px;white-space:nowrap}
+.old{color:var(--purple);font-weight:600}
+@media(max-width:620px){.ck .row{grid-template-columns:1fr;gap:5px}}
+</style>
+
+<h2>落地</h2>
+<div class="h2s">八条链路的 checklist</div>
+<p class="h2n">上面讲的是<b>为什么</b>，这一节是<b>做什么</b>。每条给三样：改哪个文件哪个方法、参考旧实现的哪几行、改完怎么验。<span class="old">紫色</span>为旧分支 <code>v1.0_ble</code> 的路径，其余为当前分支。</p>
+
+<div class="ck p0">
+  <header><span class="no">CK-1</span><h4>补 0xE5 RTC 时间同步</h4><span class="pri p0">P0 · 链路 1</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li><span class="fp">mp_note_ble_protocol.dart</span> → <code>MPNoteBleCommands</code> 加 <code>static const int syncRtc = 0xE5;</code></li>
+      <li><span class="fp">mp_note_ble_gatt_client.dart</span> → 新增 <code>syncRtc()</code>，照 <code>setRecordingTransportMode()</code>（<span class="fp">:165-181</span>）的写法</li>
+      <li><span class="fp">mp_ble_recording_watcher.dart:457-465</span> → 在 <code>setRecordingTransportMode</code> <b>之前</b>插一条</li>
+    </ul></div>
+    <div class="row"><b>报文</b><ul>
+      <li><code>E5</code> + 4 字节<b>大端</b> Unix <b>秒</b>：<code>DateTime.now().millisecondsSinceEpoch ~/ 1000</code>，UTC 不带时区偏移</li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:579-599（发送）</li>
+      <li class="old">note_connection.dart:466-495（在 <code>_initialize()</code> 里的位置与顺序）</li>
+    </ul></div>
+    <div class="row"><b>决策点</b><ul>
+      <li>旧实现有 <code>_isInitialized</code> 守卫，<b>只在首连发一次</b>。建议改成<b>每次连接都发</b> —— 成本 5 字节，换来重连后设备时间也是对的</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>固件侧抓到 <code>E5 xx xx xx xx</code></li>
+      <li>把手机时间改掉 10 分钟 → 重连 → 设备 RTC 应跟随</li>
+      <li>之后新录的文件名时间戳与手机时间一致</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p0">
+  <header><span class="no">CK-2</span><h4>补 e2c1a310 读取，替换 1.4 s 观察窗</h4><span class="pri p0">P0 · 链路 2</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li><span class="fp">mp_note_ble_protocol.dart</span> → <code>MPNoteBleUUIDs</code> 加 <code>recordStatus = Uuid.parse("e2c1a310-7f4b-5e9d-bc23-1a2f3e4d5c6b")</code>。<b>注意不要复用 <code>uuidPre</code> 拼接</b>，这条是 <code>310</code> 不是 <code>30x</code></li>
+      <li>读取直接用现成的 <span class="fp">mp_ble_transport.dart:563-576</span> <code>readCharacteristic()</code>，<b>不需要新增传输层能力</b></li>
+      <li><span class="fp">mp_ble_recording_watcher.dart:444-483</span> → 用读取结果替换 <span class="fp">:471-476</span> 的两段 <code>Future.delayed</code>，按 A/B/C 三分支路由</li>
+    </ul></div>
+    <div class="row"><b>报文</b><ul>
+      <li>只读特征，返回 <code>[Status 1B][FileNameLen 1B][FileName 变长]</code></li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:1044-1070（读取 + 解析 + 异常兜底按 idle 处理）</li>
+      <li class="old">note_connection.dart:366-418（A/B/C 三分支路由）</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>设备录音中重连 → 日志出现读到的 status + fileName，且<b>不再有 1.4 s 等待</b></li>
+      <li>设备空闲重连 → 立即判定空闲并进批量导入</li>
+      <li>录音中重连 → <b>不应</b>触发 <code>syncDeviceOpusTxtToSandboxRegisterAndUpload</code></li>
+      <li>回归：设备在录<b>新</b>文件（与本地续传记录不同名）时重连，旧文件应进待下载队列而非被丢弃</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p0">
+  <header><span class="no">CK-3</span><h4>停录广播提到 finalize 之前</h4><span class="pri p0">P0 · 链路 3</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li><span class="fp">mp_ble_recording_watcher.dart:703-754</span> <code>_handleDeviceRecordingStoppedOk</code>：把 <code>_emitRecordingStopped()</code>（<span class="fp">:740-743</span>）移到 <code>_closeAudioSavingSink()</code> 之后、<code>_finalizeStoppedRealtimeCapture()</code>（<span class="fp">:731-737</span>）<b>之前</b></li>
+      <li>finalize 全程只用局部快照（<span class="fp">:722-723</span> 已取好 <code>opusPath</code> / <code>deviceFileName</code>），<b>不再写</b> <code>_savedAudioPath</code>、<code>_activeFileNameForRetransmit</code>、<code>_rtBuffer</code> 这些属于「当前会话」的字段</li>
+      <li>广播前比对会话身份：若此刻已有新会话在跑（文件名 ≠ 本次 finalize 的），这条「已停止」就别发</li>
+      <li>顺手修 <span class="fp">:680-681</span> 的 <code>sameSessionAsResume</code> —— <code>_lastEmitted.activeFileName</code> 就在几行之上被赋成 <code>fn</code>，条件<b>恒为真</b>，实际退化成「只要 <code>_savedAudioPath</code> 非空就当续传」，时序一变会把新会话音频 append 进上一个文件</li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:205-224（unsolicited <code>0x02</code> 分支：解析 → 关 writer → 清状态 → <b>当场</b>广播）</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li><b>主用例</b>：memo 停止后 200 ms 内长按开 normal → 首页顶栏应<b>保持 recording</b>，不闪回未录音态</li>
+      <li>日志里不应出现 <code>recording=true</code> 之后又冒出 <code>recording=false</code></li>
+      <li>该场景下<b>不应</b>触发 <code>_runDeviceFileImport</code>（<span class="fp">mp_home_cubit.dart:748</span>）</li>
+      <li>normal 结束后，其音频应落在自己的文件里，不与 memo 的混在一起</li>
+      <li>回归：单条 normal 正常起停，MP3 转码、txt 导入、设备文件删除全部照旧完成</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p1">
+  <header><span class="no">CK-4</span><h4>0x21 / 0x22 补传错误不再静默</h4><span class="pri p1">P1 · 链路 5</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li><span class="fp">mp_note_ble_protocol.dart</span> → 加 <code>retransmitErrorNoFile = 0x21</code>、<code>retransmitErrorBadRange = 0x22</code></li>
+      <li><span class="fp">mp_note_ble_gatt_client.dart:413-415</span> → 现在是裸数字 <code>packet[0] == 0x21 || packet[0] == 0x22 → return</code>，换成分支日志；并考虑回传给 watcher，让它知道这段 Seq 补不回来了</li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:270-276</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>用一个不存在的文件名发一次 <code>0x20</code> → 日志出现「补传错误: 文件不存在」</li>
+      <li>发一个非法 Seq 区间（<code>end &lt; start</code>）→ 日志出现「序号范围无效」</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p1">
+  <header><span class="no">CK-5</span><h4>memo / normal 的 mode 字节落地</h4><span class="pri p1">P1 · 链路 6</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li>把 <code>MPNoteBleRecordingSessionModes</code> 的两个裸常量升成带语义的枚举</li>
+      <li><span class="fp">mp_ble_recording_watcher.dart:653</span> 之后，把 <code>fileName → mode</code> 落盘（<span class="fp">mp_ble_preferences.dart</span> 已有 <code>sessionModeByte</code> 存取，扩成按文件名索引即可）</li>
+      <li>下游消费：本地 record 带上 mode，上传时一并带给服务端</li>
+      <li>注意 <span class="fp">mp_ble_file_util.dart:1216</span> <code>startLiveOpusRecording()</code> 是唯一按 mode 分流 <code>0x0D</code> 的地方，但<b>无调用方</b>，是死代码 —— 要么接上，要么删掉，别留着误导</li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:687-702（<code>_applyRecordingStarted</code> + <code>appendRecordingMode</code> 落索引）</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>录一条 memo、一条 normal → 本地记录能分别查出各自的 mode</li>
+      <li>App 冷启动后，中断续传恢复的会话 mode 不丢</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p1">
+  <header><span class="no">CK-6</span><h4>Hex Log 抽屉 + Custom Command</h4><span class="pri p1">P1 · 调试能力</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li><span class="fp">mp_ble_transport.dart:338-426</span> 四个 notify 订阅点 + <span class="fp">:584-595</span> 写入口，各挂一个环形缓冲（上限 500 条）</li>
+      <li><span class="fp">mp_ble_debug_page.dart</span> → 加抽屉 UI + hex 输入框，解析后走 <code>writeCharacteristicWithoutResponse</code></li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">models/ble_log_entry.dart（39 行）+ widgets/ble_log_drawer.dart（213 行）—— 可整体搬</li>
+      <li class="old">note_ble_debug_provider.dart:590-612（hex 解析，兼容 <code>E1</code> 与 <code>0xE1 0x00</code> 两种写法）</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>连接后抽屉里能看到 <code>0D 10</code> 发出、<code>0D 10 01</code> 收回</li>
+      <li>手输 <code>E1</code> 能收到电量应答</li>
+      <li>做完 CK-1 后，抽屉里应能直接看到 <code>E5</code> 那一条 —— 这也是 CK-1 最省事的验收手段</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck p2">
+  <header><span class="no">CK-7</span><h4>Device Info：0xE3 版本 / 0xE8 存储</h4><span class="pri p2">P2 · 按需</span></header>
+  <div class="body">
+    <div class="row"><b>改哪里</b><ul>
+      <li>加两条命令常量 + <code>MPNoteBleGattClient</code> 两个查询方法，调试页各一个按钮</li>
+      <li><b>固件版本值得优先做</b>：没有它，现场问题无法按固件版本分层归因</li>
+    </ul></div>
+    <div class="row"><b>参考旧实现</b><ul>
+      <li class="old">note_connection.dart:520-540（<code>0xE3</code>，返回 9 字节版本号）· :542-578（<code>0xE8</code> + <code>NoteStorageInfo</code>）</li>
+    </ul></div>
+    <div class="row acc"><b>验收</b><ul>
+      <li>查询返回值与设备实际固件版本 / 剩余空间一致</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="ck keep">
+  <header><span class="no">CK-8</span><h4>这两处不要动 —— 改上面几条时的回归防护</h4><span class="pri keep">链路 7 / 8</span></header>
+  <div class="body">
+    <div class="row"><b>保护范围</b><ul>
+      <li><b>续传持久化</b>：<span class="fp">mp_ble_recording_watcher.dart:352-374</span>（每 10 帧 checkpoint）+ <span class="fp">:381-436</span>（续传恢复）+ <span class="fp">mp_ble_file_util.dart:225-249</span>（残帧裁剪）</li>
+      <li><b>系统级待连</b>：<span class="fp">mp_ble_connection_helper.dart:200-215</span>（<code>_armPersistentReconnect</code>）+ <span class="fp">mp_ble_transport.dart:152-217</span>（<code>persistentAutoConnect</code> 三条约束，注释里写清了为什么不能传 <code>connectionTimeout</code>）</li>
+    </ul></div>
+    <div class="row"><b>风险</b><ul>
+      <li>CK-2 要改的 <code>_probeAndJoinActiveDeviceRecordingOnConnect</code> 就在续传恢复代码旁边，<b>最容易在补回旧三分支时顺手把周期 checkpoint 换成旧的一次性快照</b></li>
+    </ul></div>
+    <div class="row acc"><b>回归验收（每次改完都跑）</b><ul>
+      <li>录音中强杀 App → 重启 → 应从 <code>.seq</code> 记录的位置<b>续写</b>，不是从头重录，且文件尾部无半截残帧</li>
+      <li>录音中把设备关机再开机 → <b>不碰 App</b>，应自动接回并继续收流</li>
+      <li>冷启动重连耗时应仍在 ~9.5 s 量级，没退回 15 s</li>
+    </ul></div>
+  </div>
+</div>
+
+<div class="callout">
+<p><b>建议顺序：</b>CK-6 → CK-1 → CK-2 → CK-3 → 其余。</p>
+<p style="margin-bottom:0">先做 Hex Log（CK-6）不是因为它最重要，而是因为它<b>是后面几条的验收工具</b> —— 没有它，CK-1 的「设备到底收没收到 <code>E5</code>」只能靠固件那边抓包回传，一来一回半天。它本身也是这次问题暴露得这么晚的原因之一。</p>
+</div>
+
 </div>
 </body>
 </html>
