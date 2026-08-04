@@ -1,15 +1,31 @@
 {
+  "version": "0.2.0",
   "configurations": [
     {
       "name": "Flutter (dev)",
       "type": "dart",
       "request": "launch",
-      "args": [
-        "--flavor",
-        "dev"
-      ],
       "program": "lib/main.dart",
-      "flutterMode": "debug"
+      "flutterMode": "debug",
+      "deviceId": "00008140-000469900A6A801C",
+      "toolArgs": [
+        "--flavor",
+        "dev",
+        "--device-timeout",
+        "200"
+      ]
+    },
+    {
+      "name": "Flutter (iOS wireless)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "flutterMode": "debug",
+      "deviceId": "00008140-000469900A6A801C",
+      "toolArgs": [
+        "--device-timeout",
+        "200"
+      ]
     }
   ]
 }

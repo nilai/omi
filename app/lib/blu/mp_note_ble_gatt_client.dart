@@ -161,6 +161,51 @@ class MPNoteBleGattClient {
     return null;
   }
 
+  /// 每次连接时同步设备 RTC：`E5` + 4 字节大端 Unix 秒。
+  Future<void> syncRtc({DateTime? now}) async {
+    final int seconds = (now ?? DateTime.now()).millisecondsSinceEpoch ~/ 1000;
+    final List<int> command = <int>[
+      MPNoteBleCommands.syncRtc,
+      (seconds >> 24) & 0xff,
+      (seconds >> 16) & 0xff,
+      (seconds >> 8) & 0xff,
+      seconds & 0xff,
+    ];
+    await _transport.writeCharacteristicWithoutResponse(
+      MPNoteBleUUIDs.service.toString(),
+      MPNoteBleUUIDs.command.toString(),
+      command,
+    );
+    debugPrint('------>>>memopin MPNoteBleGattClient.syncRtc seconds=$seconds');
+  }
+
+  /// 读取 `e2c1a310`：`[status][fileNameLength][fileName...]`。
+  ///
+  /// 设备没有有效响应时按空闲处理，避免把无法确认的状态误判为录音中。
+  Future<MPNoteBleRecordStatus> readRecordingStatus() async {
+    try {
+      final List<int> data = await _transport.readCharacteristic(
+        MPNoteBleUUIDs.service.toString(),
+        MPNoteBleUUIDs.recordStatus.toString(),
+      );
+      if (data.length < 2) {
+        return MPNoteBleRecordStatus.idle;
+      }
+      final int nameLength = data[1] & 0xff;
+      if (data.length < 2 + nameLength) {
+        debugPrint('------>>>memopin MPNoteBleGattClient.readRecordingStatus: truncated name');
+        return MPNoteBleRecordStatus.idle;
+      }
+      final String fileName = nameLength == 0 ? '' : utf8.decode(data.sublist(2, 2 + nameLength));
+      final MPNoteBleRecordStatus result = MPNoteBleRecordStatus(status: data[0] & 0xff, fileName: fileName);
+      debugPrint('------>>>memopin MPNoteBleGattClient.readRecordingStatus: status=${result.status} file=$fileName');
+      return result;
+    } catch (error) {
+      debugPrint('------>>>memopin MPNoteBleGattClient.readRecordingStatus failed: $error');
+      return MPNoteBleRecordStatus.idle;
+    }
+  }
+
   /// 设置 `0x0D` 推流策略（仅录音 / 边录边传）；成功返回 `true`。
   Future<bool> setRecordingTransportMode(
     int modeByte, {
@@ -410,9 +455,15 @@ class MPNoteBleGattClient {
           packet[0] == MPNoteBleCommands.deleteFile) {
         return;
       }
-      if (packet[0] == MPNoteBleCommands.retransmitAudio ||
-          packet[0] == 0x21 ||
-          packet[0] == 0x22) {
+      if (packet[0] == MPNoteBleCommands.retransmitAudio) {
+        return;
+      }
+      if (packet[0] == MPNoteBleCommands.retransmitErrorNoFile) {
+        debugPrint('------>>>memopin MPNoteBleGattClient retransmit failed: file not found');
+        return;
+      }
+      if (packet[0] == MPNoteBleCommands.retransmitErrorBadRange) {
+        debugPrint('------>>>memopin MPNoteBleGattClient retransmit failed: invalid sequence range');
         return;
       }
       _responseCompleter!.complete(packet);

@@ -28,6 +28,9 @@ abstract class MPNoteBleUUIDs {
 
   /// 日志文件/数据流特征 (设备→APP)
   static final logFile = Uuid.parse("${uuidPre}6-7f4b-5e9d-bc23-1a2f3e4d5c6b");
+
+  /// 当前录音状态（只读；注意该 UUID 是 `310`，不是 `30x`）。
+  static final recordStatus = Uuid.parse('e2c1a310-7f4b-5e9d-bc23-1a2f3e4d5c6b');
 }
 
 /// `e2c1a305` 文件流分帧常量（与 `ble/note_ble_transport.dart` 及 [MPNoteBleFilePayloadAssembler] 一致）。
@@ -81,7 +84,10 @@ abstract class MPNoteBleCommands {
 
   /// 音频帧补传（Seq 为 **大端**）。
   static const int retransmitAudio = 0x20;
+  static const int retransmitErrorNoFile = 0x21;
+  static const int retransmitErrorBadRange = 0x22;
   static const int queryBattery = 0xE1;
+  static const int syncRtc = 0xE5;
 }
 
 /// `0x0D` 录音上行模式（与 `ble-api-documentation.md` 一致）。
@@ -91,12 +97,43 @@ abstract class MPNoteBleRecordingTransportModes {
 }
 
 /// 303 **开始录音成功**帧中偏移 3 的 **Mode**（与 `NoteRecordingType` 一致；勿与 Cmd/Op 混淆）。
-abstract class MPNoteBleRecordingSessionModes {
+enum MPNoteBleRecordingSessionMode {
   /// 普通 / memory 长录音（文档称 Normal）。
-  static const int memory = 0x00;
+  memory(0x00),
 
   /// 备忘录短录音（Memo）。
+  memo(0x01);
+
+  const MPNoteBleRecordingSessionMode(this.wireValue);
+
+  final int wireValue;
+
+  static MPNoteBleRecordingSessionMode? fromWireValue(int value) {
+    for (final MPNoteBleRecordingSessionMode mode in values) {
+      if (mode.wireValue == value) {
+        return mode;
+      }
+    }
+    return null;
+  }
+}
+
+/// 兼容仍以协议字节为入参的调用方；新代码请使用 [MPNoteBleRecordingSessionMode]。
+abstract class MPNoteBleRecordingSessionModes {
+  static const int memory = 0x00;
   static const int memo = 0x01;
+}
+
+/// `recordStatus` 特征的读取结果。
+class MPNoteBleRecordStatus {
+  const MPNoteBleRecordStatus({required this.status, required this.fileName});
+
+  final int status;
+  final String fileName;
+
+  bool get isRecording => status == 0x01;
+
+  static const MPNoteBleRecordStatus idle = MPNoteBleRecordStatus(status: 0x00, fileName: '');
 }
 
 /// 通过 `0xE1` 读取电量时的解析结果。

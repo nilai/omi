@@ -45,7 +45,6 @@ class MPBleRecordingWatcher {
 
   /// 303 停录后正在转 MP3 / 登记 / 上传，尚未对外通知停录。
   bool _finalizeAfterStopInProgress = false;
-  bool _probe301AudioSeen = false;
   StreamSubscription<List<int>>? _responseSub;
   StreamSubscription<List<int>>? _rawAudioSub;
   StreamSubscription<MPDeviceTransportState>? _connSub;
@@ -182,7 +181,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// BLE 重新 connected（同一 [BleTransport] 实例）：重新订阅 301/303 并续传落盘。
+  /// BLE 重新 connected（同一 [BleTransport] 实例）：重新订阅后重新读取设备录音状态。
   Future<void> _onBleLinkRestored(BleTransport transport) async {
     debugPrint('------>>>memopin recording watcher: BLE link restored deviceId=${transport.deviceId}');
     try {
@@ -191,7 +190,7 @@ class MPBleRecordingWatcher {
       }
       await transport.ensureGattSubscriptionsReady();
       await _subscribeStreams(transport);
-      await _tryResumeInterruptedCapture(transport);
+      await _probeAndJoinActiveDeviceRecordingOnConnect(transport);
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher link restored failed: $e\n$st');
     }
@@ -234,7 +233,6 @@ class MPBleRecordingWatcher {
         );
 
         await _subscribeStreams(transport);
-        await _tryResumeInterruptedCapture(transport);
         await _probeAndJoinActiveDeviceRecordingOnConnect(transport);
       } catch (e, st) {
         debugPrint('------>>>memopin recording watcher _start: subscribe failed: $e\n$st');
@@ -280,7 +278,6 @@ class MPBleRecordingWatcher {
 
   void _onRawAudio301(List<int> packet) {
     if (_audioFileSink == null) {
-      _probe301AudioSeen = true;
       return;
     }
     _rtBuffer.feed(
@@ -337,15 +334,6 @@ class MPBleRecordingWatcher {
     _lastSessionModeByte = record.sessionModeByte;
     _savedAudioPath = record.localOpusPath;
     _activeFileNameForRetransmit = record.activeFileName;
-    _emitIfChanged(
-      MPBleMemopinRecordingStateChangedPayload(
-        isRecording: true,
-        activeFileName: record.activeFileName,
-        sessionModeByte: record.sessionModeByte,
-        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
-      ),
-      forceEmit: true,
-    );
   }
 
   /// 录制中/断连前：落盘 `.seq` sidecar 并写入 [MPBlePreferences]（供强杀后冷启动续传）。
@@ -435,98 +423,69 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 连接后探测是否正在录音：先开边录边传，再依据 303 / 301 判定。
-  ///
-  /// - 正在录音 → emit `recording=true` 并 join 续传；停录后由 Home 再拉文件列表导入。
-  /// - 未录音 → 不 emit、不拉文件列表（`0x03` 由 Home 批量导入发起，与录音判定无关）。
-  ///
-  /// 禁止仅凭文件列表（如 `duration==0`）判定录音，否则「有文件但未录音」会误显示 is recording。
+  /// 连接后以 `e2c1a310` 的状态读取判定录音，不依赖 301 帧间隔的观察窗。
   Future<void> _probeAndJoinActiveDeviceRecordingOnConnect(BleTransport transport) async {
-    final String? recordingName = _lastEmitted.activeFileName?.trim();
-    if (_lastEmitted.isRecording &&
-        _audioFileSink != null &&
-        recordingName != null &&
-        recordingName.isNotEmpty &&
-        _savedAudioPath != null &&
-        p.basename(_savedAudioPath!).toLowerCase() == recordingName.toLowerCase()) {
-      return;
-    }
-
-    _probe301AudioSeen = false;
+    MPNoteBleRecordStatus status = MPNoteBleRecordStatus.idle;
 
     try {
       await MPBleConnectionHelper.runMemoPinGattExclusive(() async {
         final MPNoteBleGattClient client = MPNoteBleGattClient(transport);
         try {
+          await client.syncRtc();
           await client.setRecordingTransportMode(MPNoteBleRecordingTransportModes.recordAndStream);
+          status = await client.readRecordingStatus();
         } finally {
           await client.dispose();
         }
       });
     } catch (e) {
-      debugPrint('------>>>memopin recording watcher: set recordAndStream failed: $e');
+      debugPrint('------>>>memopin recording watcher: connection handshake failed: $e');
     }
 
-    // 等待 303 开始录音重放 / 301 实时流；未出现则视为未在录音。
-    await Future<void>.delayed(const Duration(milliseconds: 900));
-    if (!_lastEmitted.isRecording && !_probe301AudioSeen) {
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-    }
-
-    final bool isActivelyRecording = _lastEmitted.isRecording || _probe301AudioSeen;
-    if (!isActivelyRecording) {
-      debugPrint(
-        '------>>>memopin recording watcher: no active recording on connect '
-        'probe301=$_probe301AudioSeen (file list left to Home import)',
-      );
+    if (!status.isRecording || status.fileName.trim().isEmpty) {
+      debugPrint('------>>>memopin recording watcher: device idle on connect');
+      await _discardInterruptedRecordingState();
       return;
     }
 
-    // 已确认在录音：再拉文件列表仅用于解析续传文件名并 join，不作为录音判定依据。
-    try {
-      final List<NoteFileInfo> allFiles =
-          await MPBleConnectionHelper.fetchMemoPinFileListForRecordingProbe(transport);
+    final String activeFileName = status.fileName.trim();
+    final MPBleInterruptedRecordingRecord? interrupted = MPBlePreferences.instance.readInterruptedRecording();
+    final bool resumeSameFile = interrupted != null &&
+        interrupted.remoteId == transport.deviceId &&
+        interrupted.activeFileName.toLowerCase() == activeFileName.toLowerCase();
+    _emitIfChanged(
+      MPBleMemopinRecordingStateChangedPayload(
+        isRecording: true,
+        activeFileName: activeFileName,
+        sessionModeByte: resumeSameFile ? interrupted.sessionModeByte : _lastSessionModeByte,
+        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
+      ),
+      forceEmit: true,
+    );
 
-      NoteFileInfo? active;
-      final String? name = _lastEmitted.activeFileName;
-      if (name != null && name.isNotEmpty) {
-        active = MPBleFileUtil.resolveOpusFileInfo(allFiles, name);
-      }
-      active ??= MPBleFileUtil.findInProgressRecordingOpus(allFiles);
-      active ??= MPBleFileUtil.findLatestOpusFile(allFiles);
-      if (active == null && _probe301AudioSeen) {
-        active = NoteFileInfo(index: 0, name: 'session.opus', durationSeconds: 0);
-      }
-
-      if (active == null) {
-        debugPrint(
-          '------>>>memopin recording watcher: recording but no opus to join '
-          'files=${allFiles.length} probe301=$_probe301AudioSeen',
-        );
-        return;
-      }
-
-      debugPrint(
-        '------>>>memopin recording watcher: probe join ${active.name} '
-        'recording=${_lastEmitted.isRecording} probe301=$_probe301AudioSeen files=${allFiles.length}',
-      );
-
-      if (!_lastEmitted.isRecording) {
-        _emitIfChanged(
-          MPBleMemopinRecordingStateChangedPayload(
-            isRecording: true,
-            activeFileName: active.name,
-            sessionModeByte: _lastSessionModeByte,
-            changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStarted,
-          ),
-          forceEmit: true,
-        );
-      }
-
-      unawaited(_joinActiveRecordingSession(transport, active));
-    } catch (e, st) {
-      debugPrint('------>>>memopin recording watcher probe join failed: $e\n$st');
+    if (resumeSameFile) {
+      await _tryResumeInterruptedCapture(transport);
+      return;
     }
+
+    // 新文件不允许 append 到旧会话；旧文件保留给停录后的批量导入。
+    if (interrupted != null) {
+      await MPBlePreferences.instance.clearInterruptedRecording();
+    }
+    await _joinActiveRecordingSession(
+      transport,
+      NoteFileInfo(index: 0, name: activeFileName, durationSeconds: 0),
+    );
+  }
+
+  Future<void> _discardInterruptedRecordingState() async {
+    if (_audioFileSink != null) {
+      await _closeAudioSavingSink(persistSeqSidecar: true);
+    }
+    _savedAudioPath = null;
+    _activeFileNameForRetransmit = null;
+    _rtBuffer.reset();
+    await MPBlePreferences.instance.clearInterruptedRecording();
   }
 
   /// 导出设备端正在录的 Opus、续接 301 实时落盘。
@@ -650,6 +609,7 @@ class MPBleRecordingWatcher {
       debugPrint(
         '------>>>memopin recording watcher 303: start-ok Cmd/Op/State=${p[0]} ${p[1]} ${p[2]} mode=${p[3] & 0xff}',
       );
+      final String? previousActiveFileName = _activeFileNameForRetransmit ?? _lastEmitted.activeFileName;
       _lastSessionModeByte = p[3] & 0xff;
       _lastRealtimeAudioLocalPath = null;
       String? fileLabel;
@@ -676,9 +636,12 @@ class MPBleRecordingWatcher {
         );
       }
       final String fn = (fileLabel != null && fileLabel.isNotEmpty) ? fileLabel : 'session.opus';
+      if (MPNoteBleRecordingSessionMode.fromWireValue(_lastSessionModeByte!) != null) {
+        unawaited(MPBlePreferences.instance.saveRecordingSessionMode(fileName: fn, modeByte: _lastSessionModeByte!));
+      }
       _activeFileNameForRetransmit = fn;
       final bool sameSessionAsResume =
-          _savedAudioPath != null && _lastEmitted.activeFileName?.toLowerCase() == fn.toLowerCase();
+          _savedAudioPath != null && previousActiveFileName?.toLowerCase() == fn.toLowerCase();
       _boundTransport?.resetRealtimeAudioReassembly(fileName: fn);
       if (!sameSessionAsResume) {
         _rtBuffer.reset();
@@ -699,7 +662,7 @@ class MPBleRecordingWatcher {
     }
   }
 
-  /// 303 停止成功：先 finalize（转 MP3 / 删设备 / 本地 record）→ 再通知停录，由 Home 跑 sync → 上传。
+  /// 303 停止成功：先关闭落盘并同步通知停录，耗时 finalize 在其后使用快照执行。
   Future<void> _handleDeviceRecordingStoppedOk(List<int> p) async {
     if (_finalizeAfterStopInProgress) {
       debugPrint('------>>>memopin recording watcher 303: stop-ok ignored (finalize in progress)');
@@ -724,9 +687,19 @@ class MPBleRecordingWatcher {
 
     try {
       await _closeAudioSavingSink();
-      _activeFileNameForRetransmit = null;
-      _rtBuffer.reset();
-      await MPBlePreferences.instance.clearInterruptedRecording();
+      final bool isCurrentSession = _lastEmitted.isRecording &&
+          (deviceFileName == null ||
+              _lastEmitted.activeFileName == null ||
+              _lastEmitted.activeFileName!.toLowerCase() == deviceFileName.toLowerCase());
+      if (isCurrentSession) {
+        _activeFileNameForRetransmit = null;
+        _rtBuffer.reset();
+        await MPBlePreferences.instance.clearInterruptedRecording();
+        _emitRecordingStopped(
+          changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
+          activeFileName: stopFileName,
+        );
+      }
 
       if (opusPath != null && opusPath.isNotEmpty) {
         MPBleFileUtil.claimRealtimeDeviceOpus(deviceFileName);
@@ -736,18 +709,15 @@ class MPBleRecordingWatcher {
         );
       }
 
-      // 1 完成后再通知停录：Home 切 importing 并开始 syncDeviceOpusTxt。
-      _emitRecordingStopped(
-        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
-        activeFileName: stopFileName,
-      );
     } catch (e, st) {
       debugPrint('------>>>memopin recording watcher stop finalize pipeline failed: $e\n$st');
       MPBleFileUtil.releaseRealtimeDeviceOpusClaim(deviceFileName);
-      _emitRecordingStopped(
-        changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
-        activeFileName: stopFileName,
-      );
+      if (_lastEmitted.isRecording) {
+        _emitRecordingStopped(
+          changeReason: MPBleMemopinRecordingChangeReason.deviceRecordingStopped,
+          activeFileName: stopFileName,
+        );
+      }
     } finally {
       _finalizeAfterStopInProgress = false;
     }
