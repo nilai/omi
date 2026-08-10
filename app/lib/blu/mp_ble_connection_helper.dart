@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_reactive_ble/flutter_reactive_ble.dart';
 import 'package:memo_pin/common/mp_home_notification.dart';
@@ -346,14 +345,25 @@ class MPBleConnectionHelper {
       return false;
     }
 
-    // 两阶段短扫（带 Service UUID → 全量），再按记录的 remoteId 直接建链。
-    debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: discoverMemoPinLikeDevices');
-    await discoverMemoPinLikeDevices(perPhase: const Duration(seconds: 5));
+    // 两阶段扫描历史设备：第一阶段按 Service UUID，未命中则继续全量扫描。
+    // 不能使用普通设备列表扫描的“发现任意 MemoPin 即返回”语义，否则附近另一台设备
+    // 会让扫描提前结束，历史设备没有机会在全量扫描阶段被发现。
+    debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: scan saved remoteId=${r.remoteId}');
+    final DiscoveredDevice? discovered = await _scanForRecordedDevice(r.remoteId, perPhase: const Duration(seconds: 5));
+    if (discovered == null) {
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: saved device not discovered');
+      return false;
+    }
 
-    final BleTransport transport = createBleTransport(r.remoteId);
+    final String advertisedName = discovered.name.trim();
+    final BleTransport transport = createBleTransport(
+      discovered.id,
+      displayName: advertisedName.isEmpty ? r.displayName : advertisedName,
+    );
     try {
-      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connecting remoteId=${r.remoteId}');
-      await transport.connect();
+      debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connecting discovered remoteId=${discovered.id}');
+      // 此设备刚由本轮扫描确认正在广播，无需在 connect 内再次扫描验证。
+      await transport.connect(skipAdvertisementVerify: true);
       await MPBleConnectionHelper.parkBackgroundBleTransport(transport);
       MPHomeNotification.notifyBleConnectedSuccess();
       debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connected OK');
@@ -367,6 +377,24 @@ class MPBleConnectionHelper {
       }
       return false;
     }
+  }
+
+  /// 两阶段扫描并精确匹配历史设备 ID；第一阶段未命中时始终执行无过滤扫描。
+  static Future<DiscoveredDevice?> _scanForRecordedDevice(String remoteId, {required Duration perPhase}) async {
+    final String normalizedId = remoteId.toLowerCase();
+    bool matches(DiscoveredDevice device) => device.id.toLowerCase() == normalizedId;
+
+    final MPBlePlatform platform = MPBlePlatform.instance;
+    final DiscoveredDevice? serviceMatch = await platform.runScanUntil(
+      duration: perPhase,
+      withServices: MPBleScanFilterUuids.scanFilterUuids,
+      matches: matches,
+    );
+    if (serviceMatch != null) {
+      return serviceMatch;
+    }
+
+    return platform.runScanUntil(duration: perPhase, matches: matches);
   }
 
   /// 是否支持 BLE（硬件/系统能力）。

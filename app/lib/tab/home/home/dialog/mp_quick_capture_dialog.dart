@@ -186,7 +186,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       await MPAudioUploadService.deleteLocalRecordingArtifacts(_recordPath);
     }
     _recordPath = null;
-    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
@@ -319,7 +319,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
       }
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
-      await MPRecordingBackgroundSupport.activateForRecording();
+      await MPRecordingBackgroundSupport.activateForRecording(owner: _recordingOwnerToken);
       final String dir = await _ensureQuickCaptureDirectory();
       final String path = p.join(dir, 'omi_quick_capture_${MPTimeUtils.nowUnixMilliseconds()}.aac');
       await MPRecordingBackgroundSupport.openRecorderSafely(_recorder);
@@ -529,7 +529,7 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
         await _recorder.closeRecorder();
         _recorderOpened = false;
       }
-      await MPRecordingBackgroundSupport.deactivateAfterRecording();
+      await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
       MPGlobalRecordingCoordinator.instance
           .notifyRecordingSessionEnded(_recordingOwnerToken);
     } catch (e) {
@@ -626,6 +626,19 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     );
   }
 
+  Widget _buildMicHint() {
+    return Text(
+      'Tap the mic to record up to 60 seconds',
+      maxLines: 1,
+      textAlign: TextAlign.right,
+      style: TextStyle(
+        fontSize: OmiFontSize.t5_14,
+        color: secondTextColor.withValues(alpha: 0.65),
+        fontWeight: OmiFontWeight.regular,
+      ),
+    );
+  }
+
   /// 底部操作区：Retry 与录音/提交按钮同一行（Retry 在左）。
   Widget _buildBottomBar() {
     if (_state == _MPQuickCaptureState.recording) {
@@ -635,14 +648,22 @@ class _MPQuickCaptureDialogState extends State<MPQuickCaptureDialog> with Single
     final bool showRetry = _showVoiceRetry &&
         (_state == _MPQuickCaptureState.idle ||
             _state == _MPQuickCaptureState.textReady);
-    if (!showRetry) {
+    final bool showMicHint = _state == _MPQuickCaptureState.idle;
+    if (!showRetry && !showMicHint) {
       return Align(alignment: Alignment.centerRight, child: action);
     }
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
-        _buildRetryTextButton(),
-        const Spacer(),
+        if (showRetry) ...<Widget>[
+          _buildRetryTextButton(),
+          const SizedBox(width: 12),
+        ],
+        if (showMicHint) ...<Widget>[
+          Expanded(child: _buildMicHint()),
+          const SizedBox(width: 12),
+        ] else
+          const Spacer(),
         action,
       ],
     );

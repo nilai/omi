@@ -108,10 +108,14 @@ class MPAnalyzeMemoSuggestionStruct {
   @JsonKey(name: 'deadline')
   final int? deadline;
 
+  @JsonKey(name: 'description')
+  final String? description;
+
   MPAnalyzeMemoSuggestionStruct({
     required this.type,
     required this.content,
     this.deadline,
+    this.description,
   });
 
   factory MPAnalyzeMemoSuggestionStruct.fromJson(Map<String, dynamic> json) =>

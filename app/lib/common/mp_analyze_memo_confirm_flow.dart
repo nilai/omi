@@ -30,19 +30,24 @@ class MPAnalyzeMemoConfirmFlow {
         continue;
       }
       if (e.type == MPAnalyzeMemoSuggestionType.todo) {
-        items.add(MPQuickCaptureConfirmItem.todo(content, e.deadline));
+        items.add(
+          MPQuickCaptureConfirmItem.todo(content, e.deadline, e.description),
+        );
       } else {
-        items.add(MPQuickCaptureConfirmItem.memo(content, memoType));
+        items.add(
+          MPQuickCaptureConfirmItem.memo(content, memoType, e.description),
+        );
       }
     }
-    final MPQuickCaptureConfirmResult? result = await MPQucikCaptureConfirmDialog.show(
-      context,
-      originalText: fallbackText,
-      items: items,
-      onConfirmSubmit: (MPQuickCaptureConfirmResult confirmResult) {
-        return _batchCreateFromResult(confirmResult);
-      },
-    );
+    final MPQuickCaptureConfirmResult? result =
+        await MPQucikCaptureConfirmDialog.show(
+          context,
+          originalText: fallbackText,
+          items: items,
+          onConfirmSubmit: (MPQuickCaptureConfirmResult confirmResult) {
+            return _batchCreateFromResult(confirmResult);
+          },
+        );
     return result != null && result.confirmed;
   }
 
@@ -58,7 +63,10 @@ class MPAnalyzeMemoConfirmFlow {
     if (useOriginalText) {
       request = MPBatchCreateRequest(
         memos: <MPBatchCreateMemoItem>[
-          MPBatchCreateMemoItem(content: chosenOriginal, createAt: memoCreateAt),
+          MPBatchCreateMemoItem(
+            content: chosenOriginal,
+            createAt: memoCreateAt,
+          ),
         ],
       );
     } else {

@@ -244,6 +244,7 @@ MPBatchCreateTodoItem _$MPBatchCreateTodoItemFromJson(
   priority: json['priority'] as String,
   deadline: (json['deadline'] as num?)?.toInt(),
   memoryId: json['memory_id'] as String?,
+  description: json['description'] as String?,
 );
 
 Map<String, dynamic> _$MPBatchCreateTodoItemToJson(
@@ -253,6 +254,7 @@ Map<String, dynamic> _$MPBatchCreateTodoItemToJson(
   'priority': instance.priority,
   'deadline': instance.deadline,
   'memory_id': instance.memoryId,
+  'description': instance.description,
 };
 
 MPBatchCreateMemoItem _$MPBatchCreateMemoItemFromJson(
@@ -262,6 +264,7 @@ MPBatchCreateMemoItem _$MPBatchCreateMemoItemFromJson(
   createAt: (json['create_at'] as num).toInt(),
   memoryId: json['memory_id'] as String?,
   source: json['source'] as String? ?? 'text',
+  description: json['description'] as String?,
 );
 
 Map<String, dynamic> _$MPBatchCreateMemoItemToJson(
@@ -271,6 +274,7 @@ Map<String, dynamic> _$MPBatchCreateMemoItemToJson(
   'create_at': instance.createAt,
   'memory_id': instance.memoryId,
   'source': instance.source,
+  'description': instance.description,
 };
 
 MPBatchCreateRequest _$MPBatchCreateRequestFromJson(

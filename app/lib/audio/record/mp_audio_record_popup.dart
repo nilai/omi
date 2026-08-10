@@ -7,7 +7,6 @@ import 'package:memo_pin/audio/record/mp_native_recorder.dart';
 import 'package:memo_pin/audio/record/mp_global_recording_coordinator.dart';
 import 'package:memo_pin/audio/record/mp_audio_local_records_util.dart';
 import 'package:memo_pin/audio/record/mp_recording_background_support.dart';
-import 'package:memo_pin/audio/record/mp_recording_session_native.dart';
 import 'package:memo_pin/audio/record/mp_home_audio_task_queue.dart';
 import 'package:memo_pin/blu/mp_ble_connection_helper.dart';
 import 'package:memo_pin/permission/omi_microphone_manager.dart';
@@ -223,7 +222,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     } else {
       _resetSavePendingState();
     }
-    await MPRecordingBackgroundSupport.deactivateAfterRecording();
+    await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
     MPGlobalRecordingCoordinator.instance
         .notifyRecordingSessionEnded(_recordingOwnerToken);
   }
@@ -321,13 +320,18 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
 
   Future<bool> _isMicrophoneCaptureBlocked() => _nativeRecorder.isMicrophoneCaptureBlocked();
 
-  /// 会议/通话结束或 App 回到前台后，重新激活会话并刷新麦克风占用状态。
-  Future<void> _prepareBeforeRecordingResume() async {
-    await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording();
-    await _nativeRecorder.prepareForRecordingResume();
-    if (Platform.isIOS) {
-      await MPRecordingSessionNative.applyMixRecordingSession();
+  /// 确认当前 owner 的 AudioSession 仍可用；仅在被其它录音场景抢占后由用户手势重新取得会话。
+  /// 真正 resume 时的 iOS 原生 prepare 统一由 [MPNativeRecorder.resumeSegment] 执行，避免重复配置。
+  Future<bool> _prepareBeforeRecordingResume({bool reacquire = false}) async {
+    bool sessionActive = await MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording(
+      owner: _recordingOwnerToken,
+    );
+    if (!sessionActive && reacquire) {
+      final MPRecordingBackgroundActivationResult activation =
+          await MPRecordingBackgroundSupport.activateForHomeRecording(owner: _recordingOwnerToken);
+      sessionActive = activation.audioSessionActive;
     }
+    return sessionActive;
   }
 
   @override
@@ -342,7 +346,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (!mounted || _step != _MPAudioRecordStep.recording || !_nativeRecorderOpen) {
       return;
     }
-    await _prepareBeforeRecordingResume();
+    if (!await _prepareBeforeRecordingResume()) {
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -382,11 +388,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
     if (!_nativeRecorderOpen || _recordPath == null) {
       return false;
     }
-    if (await _nativeRecorder.isRecording()) {
-      _nativeCapturing = true;
-      return true;
-    }
-    await _prepareBeforeRecordingResume();
     try {
       final bool resumed = await _nativeRecorder.resumeSegment();
       if (!resumed) {
@@ -464,7 +465,9 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       return;
     }
     _pausedBySystemInterruption = false;
-    await _prepareBeforeRecordingResume();
+    if (!await _prepareBeforeRecordingResume()) {
+      return;
+    }
     if (!mounted) {
       return;
     }
@@ -588,7 +591,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
       await MPGlobalRecordingCoordinator.instance
           .beforeLocalRecordingStarts(_recordingOwnerToken);
       final MPRecordingBackgroundActivationResult activation =
-          await MPRecordingBackgroundSupport.activateForHomeRecording();
+          await MPRecordingBackgroundSupport.activateForHomeRecording(owner: _recordingOwnerToken);
       if (!activation.audioSessionActive) {
         if (mounted) {
           setState(() => _busy = false);
@@ -602,7 +605,10 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
         }
         return;
       }
-      MPRecordingBackgroundSupport.setNativeRecorderHandlesInterruptions(true);
+      MPRecordingBackgroundSupport.setNativeRecorderHandlesInterruptions(
+        owner: _recordingOwnerToken,
+        enabled: true,
+      );
       final String path = await _newRecordPath();
       _recorderSessionId++;
       final int sessionId = _recorderSessionId;
@@ -647,7 +653,14 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           }
           return;
         }
-        await _prepareBeforeRecordingResume();
+        await MPGlobalRecordingCoordinator.instance
+            .beforeLocalRecordingStarts(_recordingOwnerToken);
+        if (!await _prepareBeforeRecordingResume(reacquire: true)) {
+          if (mounted) {
+            setState(() => _busy = false);
+          }
+          return;
+        }
         if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
           return;
         }
@@ -658,11 +671,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           }
           return;
         }
-        if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
-          return;
-        }
-        await MPGlobalRecordingCoordinator.instance
-            .beforeLocalRecordingStarts(_recordingOwnerToken);
         if (!mounted || sessionId != _recorderSessionId || !_nativeRecorderOpen) {
           return;
         }
@@ -780,7 +788,7 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
           _nativeRecorderOpen = false;
         }
         _isPaused = false;
-        await MPRecordingBackgroundSupport.deactivateAfterRecording();
+        await MPRecordingBackgroundSupport.deactivateAfterRecording(owner: _recordingOwnerToken);
         MPGlobalRecordingCoordinator.instance
             .notifyRecordingSessionEnded(_recordingOwnerToken);
         if (outPath == null || outPath.isEmpty) {
@@ -971,9 +979,24 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: <Widget>[
-                      SizedBox(
-                        height: 28,
-                        child: _MPMinimizedWaveform(animation: _waveController, active: !_isPaused, color: _kWaveGreen),
+                      Expanded(
+                        child: SizedBox(
+                          height: 28,
+                          child: _MPMinimizedWaveform(
+                            animation: _waveController,
+                            active: !_isPaused,
+                            color: _kWaveGreen,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _formatElapsed(_displayDuration),
+                        style: OmiTextStyle.create(
+                          color: mainTextColor,
+                          fontSize: OmiFontSize.t7_16,
+                          fontWeight: OmiFontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -981,16 +1004,6 @@ class _MPAudioRecordDialogState extends State<_MPAudioRecordDialog>
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              _formatElapsed(_displayDuration),
-              style: OmiTextStyle.create(
-                color: mainTextColor,
-                fontSize: OmiFontSize.t7_16,
-                fontWeight: OmiFontWeight.bold,
-              ),
-            ),
-            const SizedBox(width: 12),
-
             GestureDetector(
               onTap: _busy ? null : _togglePauseResume,
               child: Container(

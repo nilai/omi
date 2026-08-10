@@ -410,7 +410,6 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
       _scanGeneration++;
       await _stopScanSafe();
       await _disconnectActive();
-      await MPBlePreferences.instance.clearLastConnectedBleDevice();
       if (!isClosed) {
         _emitAllDevicesDisconnected();
       }

@@ -359,7 +359,10 @@ class MPBatchCreateTodoItem {
   @JsonKey(name: 'memory_id')
   final String? memoryId;
 
-  MPBatchCreateTodoItem({required this.title, required this.priority, required this.deadline, this.memoryId});
+  @JsonKey(name: 'description')
+  final String? description;
+
+  MPBatchCreateTodoItem({required this.title, required this.priority, required this.deadline, this.memoryId, this.description});
 
   factory MPBatchCreateTodoItem.fromJson(Map<String, dynamic> json) => _$MPBatchCreateTodoItemFromJson(json);
 
@@ -381,7 +384,10 @@ class MPBatchCreateMemoItem {
   @JsonKey(name: 'source')
   final String source;
 
-  MPBatchCreateMemoItem({required this.content, required this.createAt, this.memoryId, this.source = 'text'});
+  @JsonKey(name: 'description')
+  final String? description;
+
+  MPBatchCreateMemoItem({required this.content, required this.createAt, this.memoryId, this.source = 'text', this.description});
 
   factory MPBatchCreateMemoItem.fromJson(Map<String, dynamic> json) => _$MPBatchCreateMemoItemFromJson(json);
 

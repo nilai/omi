@@ -114,6 +114,7 @@ Future<void> showMPMemoDetailSheet(
                     showMPAnalyzeSuggestedTasksSheet(
                       sheetContext,
                       memoText: content,
+                      dismissContextOnCreateSuccess: sheetContext,
                       onAnalyzeStructured: (String memoText) async {
                         try {
                           final MPAnalyzeMemoTextResponse? resp =
@@ -137,6 +138,8 @@ Future<void> showMPMemoDetailSheet(
                                 (s) => MPAnalyzeMemoSuggestionStruct(
                                   type: s.type,
                                   content: s.content.trim(),
+                                  deadline: s.deadline,
+                                  description: s.description,
                                 ),
                               )
                               .where((s) => s.content.isNotEmpty)

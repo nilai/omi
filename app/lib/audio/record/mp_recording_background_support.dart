@@ -53,6 +53,8 @@ class MPRecordingBackgroundSupport {
   static bool _backgroundRecordingReliable = true;
   static bool _mixWithOthersEnabled = false;
   static StreamSubscription<AudioInterruptionEvent>? _interruptionSub;
+  static Object? _activeOwner;
+  static Future<void> _sessionOperationTail = Future<void>.value();
 
   /// 混音 + 原生录音时由 iOS/Android 原生层处理打断，Dart 侧不再轮询 maintain。
   static bool _nativeRecorderHandlesInterruptions = false;
@@ -69,9 +71,24 @@ class MPRecordingBackgroundSupport {
   /// 当前是否为混音模式（可与系统录音备忘录等并存）。
   static bool get isMixWithOthersEnabled => _mixWithOthersEnabled;
 
+  /// 串行化 AudioSession 变更，避免旧 owner 的延迟清理关闭新 owner 的会话。
+  static Future<T> _runSessionOperation<T>(Future<T> Function() operation) async {
+    final Future<void> previous = _sessionOperationTail;
+    final Completer<void> completed = Completer<void>();
+    _sessionOperationTail = completed.future;
+    await previous;
+    try {
+      return await operation();
+    } finally {
+      completed.complete();
+    }
+  }
+
   /// 首页原生录音：打断续录由原生插件负责，避免 Dart 重复处理。
-  static void setNativeRecorderHandlesInterruptions(bool enabled) {
-    _nativeRecorderHandlesInterruptions = enabled;
+  static void setNativeRecorderHandlesInterruptions({required Object owner, required bool enabled}) {
+    if (identical(_activeOwner, owner)) {
+      _nativeRecorderHandlesInterruptions = enabled;
+    }
   }
 
   /// 独占录音：与其它 App 互抢麦克风（语音输入、快速捕获等）。
@@ -190,15 +207,23 @@ class MPRecordingBackgroundSupport {
   }
 
   /// 首页 Start Recording：混音模式，可与系统录音备忘录同时录制。
-  static Future<MPRecordingBackgroundActivationResult> activateForHomeRecording() async {
-    _mixWithOthersEnabled = true;
-    return _activateRecordingInternal();
+  static Future<MPRecordingBackgroundActivationResult> activateForHomeRecording({required Object owner}) {
+    return _runSessionOperation(() async {
+      _activeOwner = owner;
+      _mixWithOthersEnabled = true;
+      _nativeRecorderHandlesInterruptions = false;
+      return _activateRecordingInternal();
+    });
   }
 
   /// 其它入口：独占模式，在打开录音器之前调用。
-  static Future<MPRecordingBackgroundActivationResult> activateForRecording() async {
-    _mixWithOthersEnabled = false;
-    return _activateRecordingInternal();
+  static Future<MPRecordingBackgroundActivationResult> activateForRecording({required Object owner}) {
+    return _runSessionOperation(() async {
+      _activeOwner = owner;
+      _mixWithOthersEnabled = false;
+      _nativeRecorderHandlesInterruptions = false;
+      return _activateRecordingInternal();
+    });
   }
 
   static Future<MPRecordingBackgroundActivationResult> _activateRecordingInternal() async {
@@ -227,7 +252,10 @@ class MPRecordingBackgroundSupport {
             if (Platform.isIOS &&
                 _recordingInfrastructureActive &&
                 !_nativeRecorderHandlesInterruptions) {
-              unawaited(prepareIosNativeRecorderResume());
+              final Object? owner = _activeOwner;
+              if (owner != null) {
+                unawaited(prepareIosNativeRecorderResume(owner: owner));
+              }
             }
             unawaited(_handleSystemAudioInterruptionEnded());
             return;
@@ -278,31 +306,43 @@ class MPRecordingBackgroundSupport {
   }
 
   /// 录音进行中补激活 AudioSession（轻量：混音模式不重复 configure）。
-  static Future<bool> ensureAudioSessionActiveForRecording() async {
-    if (!_recordingInfrastructureActive) {
-      return false;
-    }
-    try {
-      return await _applyActiveRecordingSession(activate: true, reconfigure: false);
-    } catch (e, st) {
-      debugPrint('MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording: $e\n$st');
-      return false;
-    }
+  static Future<bool> ensureAudioSessionActiveForRecording({required Object owner}) {
+    return _runSessionOperation(() async {
+      if (!_recordingInfrastructureActive || !identical(_activeOwner, owner)) {
+        return false;
+      }
+      try {
+        return await _applyActiveRecordingSession(activate: true, reconfigure: false);
+      } catch (e, st) {
+        debugPrint('MPRecordingBackgroundSupport.ensureAudioSessionActiveForRecording: $e\n$st');
+        return false;
+      }
+    });
   }
 
   /// iOS：在调用 [FlutterSoundRecorder.resumeRecorder] 之前执行。
   ///
   /// 系统音频打断后 [AudioSession] 可能已被置为非 active，而 Dart 侧仍可能为 `isPaused`，
   /// 此时 native `FlautoRecorder` 内 `audioRec` 为空，直接 resume 会 EXC_BAD_ACCESS。
-  static Future<void> prepareIosNativeRecorderResume() async {
-    if (!Platform.isIOS || !_recordingInfrastructureActive) {
-      return;
+  static Future<void> prepareIosNativeRecorderResume({required Object owner}) {
+    return _runSessionOperation(() async {
+      if (!Platform.isIOS || !_recordingInfrastructureActive || !identical(_activeOwner, owner)) {
+        return;
+      }
+      try {
+        await _applyActiveRecordingSession(activate: true);
+      } catch (e, st) {
+        debugPrint('MPRecordingBackgroundSupport.prepareIosNativeRecorderResume: $e\n$st');
+      }
+    });
+  }
+
+  static Future<bool> _ensureActiveOwnerSession() async {
+    final Object? owner = _activeOwner;
+    if (owner == null) {
+      return false;
     }
-    try {
-      await _applyActiveRecordingSession(activate: true);
-    } catch (e, st) {
-      debugPrint('MPRecordingBackgroundSupport.prepareIosNativeRecorderResume: $e\n$st');
-    }
+    return ensureAudioSessionActiveForRecording(owner: owner);
   }
 
   /// 混音模式：系统音频打断结束，补 session 并通知 UI 刷新（不自动续录）。
@@ -310,7 +350,7 @@ class MPRecordingBackgroundSupport {
     if (!_recordingInfrastructureActive || !_mixWithOthersEnabled) {
       return;
     }
-    await ensureAudioSessionActiveForRecording();
+    await _ensureActiveOwnerSession();
     if (Platform.isIOS) {
       await MPRecordingSessionNative.applyMixRecordingSession();
     }
@@ -333,7 +373,7 @@ class MPRecordingBackgroundSupport {
     if (_nativeRecorderHandlesInterruptions) {
       return;
     }
-    await ensureAudioSessionActiveForRecording();
+    await _ensureActiveOwnerSession();
     await MPGlobalRecordingCoordinator.instance.notifySystemAudioFocusAttemptMaintainRecording();
   }
 
@@ -345,45 +385,48 @@ class MPRecordingBackgroundSupport {
     if (_nativeRecorderHandlesInterruptions) {
       return;
     }
-    await ensureAudioSessionActiveForRecording();
+    await _ensureActiveOwnerSession();
     await MPGlobalRecordingCoordinator.instance.notifySystemAudioFocusAttemptMaintainRecording();
   }
 
   /// 录音结束或取消时调用，释放会话并停止前台服务。
-  static Future<void> deactivateAfterRecording() async {
-    if (!_recordingInfrastructureActive) {
-      return;
-    }
-    _recordingInfrastructureActive = false;
-    _backgroundRecordingReliable = true;
-    _mixWithOthersEnabled = false;
-    _nativeRecorderHandlesInterruptions = false;
-    await _interruptionSub?.cancel();
-    _interruptionSub = null;
-    try {
-      if (Platform.isAndroid &&
-          MPBleConnectionHelper.backgroundBleTransport == null &&
-          await FlutterForegroundTask.isRunningService) {
-        await FlutterForegroundTask.stopService();
-      } else if (Platform.isAndroid && MPBleConnectionHelper.backgroundBleTransport != null) {
-        debugPrint('MPRecordingBackgroundSupport: skip stop FGS — MemoPin BLE session held');
+  static Future<void> deactivateAfterRecording({required Object owner}) {
+    return _runSessionOperation(() async {
+      if (!identical(_activeOwner, owner)) {
+        return;
       }
-    } catch (_) {}
-    try {
-      final AudioSession session = await AudioSession.instance;
-      await session.setActive(
-        false,
-        avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.notifyOthersOnDeactivation,
-      );
-    } catch (_) {}
+      _activeOwner = null;
+      if (!_recordingInfrastructureActive) {
+        return;
+      }
+      _recordingInfrastructureActive = false;
+      _backgroundRecordingReliable = true;
+      _mixWithOthersEnabled = false;
+      _nativeRecorderHandlesInterruptions = false;
+      await _interruptionSub?.cancel();
+      _interruptionSub = null;
+      try {
+        if (Platform.isAndroid &&
+            MPBleConnectionHelper.backgroundBleTransport == null &&
+            await FlutterForegroundTask.isRunningService) {
+          await FlutterForegroundTask.stopService();
+        } else if (Platform.isAndroid && MPBleConnectionHelper.backgroundBleTransport != null) {
+          debugPrint('MPRecordingBackgroundSupport: skip stop FGS — MemoPin BLE session held');
+        }
+      } catch (_) {}
+      try {
+        final AudioSession session = await AudioSession.instance;
+        await session.setActive(
+          false,
+          avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.notifyOthersOnDeactivation,
+        );
+      } catch (_) {}
+    });
   }
 
   /// 退后台时主动补激活 AudioSession，降低 iOS 静默停录概率。
-  static Future<void> onAppEnteredBackgroundDuringRecording() async {
-    if (!_recordingInfrastructureActive) {
-      return;
-    }
-    await ensureAudioSessionActiveForRecording();
+  static Future<void> onAppEnteredBackgroundDuringRecording({required Object owner}) async {
+    await ensureAudioSessionActiveForRecording(owner: owner);
   }
 
   /// flutter_sound 的 BGService 依赖在部分平台/运行态（尤其 iOS）可能未注册，直接调用会抛 [MissingPluginException]。

@@ -1,8 +1,13 @@
 {
     "dart.lineLength": 120,
+    "dart.deviceTimeout": 200,
+    "dart.flutterRunAdditionalArgs": [
+        "--device-timeout",
+        "200"
+    ],
     "[dart]": {
         "editor.rulers": [
             120
-        ],
+        ]
     }
 }

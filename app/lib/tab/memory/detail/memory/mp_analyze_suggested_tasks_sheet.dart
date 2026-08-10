@@ -2,9 +2,11 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:memo_pin/common/mp_dismissible_modal_backdrop.dart';
-import 'package:memo_pin/common/mp_todo_manager.dart';
-import 'package:memo_pin/http/api/mp_memo.dart';
+import 'package:memo_pin/common/mp_home_notification.dart';
+import 'package:memo_pin/common/mp_todo_notification.dart';
+import 'package:memo_pin/http/api/mp_todo.dart';
 import 'package:memo_pin/http/schema/mp_memo.dart';
+import 'package:memo_pin/http/schema/mp_todo.dart';
 import 'package:memo_pin/utils/mp_time_utils.dart';
 import 'package:memo_pin/utils/mp_toast_utils.dart';
 import 'package:memo_pin/utils/omi_color_utils.dart';
@@ -15,10 +17,26 @@ import '../../../../generated/assets.dart';
 import '../../../../utils/omi_image_loader.dart';
 
 class _MPSuggestedItem {
-  _MPSuggestedItem({required this.type, required this.content});
+  _MPSuggestedItem({
+    required this.type,
+    required this.content,
+    this.deadline,
+    this.description,
+  });
 
   MPAnalyzeMemoSuggestionType type;
   String content;
+  int? deadline;
+  String? description;
+
+  String get displayContent {
+    switch (type) {
+      case MPAnalyzeMemoSuggestionType.todo:
+        return 'Todo: $content';
+      case MPAnalyzeMemoSuggestionType.memo:
+        return 'Memo: $content';
+    }
+  }
 }
 
 /// 展示「Suggested tasks」分析结果底部弹窗（高度上限为屏高的 60%，中间区域可滚动）。
@@ -28,8 +46,9 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
   List<String>? initialSuggestions,
   String memoText = '',
   Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
-      onAnalyzeStructured,
+  onAnalyzeStructured,
   Future<List<String>> Function(String memoText)? onAnalyze,
+  BuildContext? dismissContextOnCreateSuccess,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -49,6 +68,7 @@ Future<void> showMPAnalyzeSuggestedTasksSheet(
         initialStructuredSuggestions: initialStructuredSuggestions,
         onAnalyze: onAnalyze,
         initialSuggestions: initialSuggestions,
+        dismissContextOnCreateSuccess: dismissContextOnCreateSuccess,
       );
     },
   );
@@ -61,14 +81,16 @@ class _MPAnalyzeSuggestedTasksSheet extends StatefulWidget {
     required this.initialStructuredSuggestions,
     required this.onAnalyze,
     required this.initialSuggestions,
+    required this.dismissContextOnCreateSuccess,
   });
 
   final String memoText;
   final Future<List<MPAnalyzeMemoSuggestionStruct>> Function(String memoText)?
-      onAnalyzeStructured;
+  onAnalyzeStructured;
   final List<MPAnalyzeMemoSuggestionStruct>? initialStructuredSuggestions;
   final Future<List<String>> Function(String memoText)? onAnalyze;
   final List<String>? initialSuggestions;
+  final BuildContext? dismissContextOnCreateSuccess;
 
   @override
   State<_MPAnalyzeSuggestedTasksSheet> createState() =>
@@ -79,7 +101,7 @@ class _MPAnalyzeSuggestedTasksSheetState
     extends State<_MPAnalyzeSuggestedTasksSheet> {
   bool _loading = true;
   List<_MPSuggestedItem> _suggestions = <_MPSuggestedItem>[];
-  int? _selectedIndex = 0;
+  final Set<int> _selectedIndices = <int>{};
   bool _creating = false;
 
   /// 当前处于行内编辑的建议下标；非空时展示输入框与确认勾。
@@ -87,6 +109,16 @@ class _MPAnalyzeSuggestedTasksSheetState
 
   TextEditingController? _editController;
   final FocusNode _editFocusNode = FocusNode();
+
+  Set<int> _allSuggestionIndices() {
+    return <int>{for (int i = 0; i < _suggestions.length; i++) i};
+  }
+
+  void _resetSelectedIndices() {
+    _selectedIndices
+      ..clear()
+      ..addAll(_allSuggestionIndices());
+  }
 
   @override
   void initState() {
@@ -97,10 +129,15 @@ class _MPAnalyzeSuggestedTasksSheetState
       _loading = false;
       _suggestions = initStructured
           .map(
-            (s) => _MPSuggestedItem(type: s.type, content: s.content),
+            (s) => _MPSuggestedItem(
+              type: s.type,
+              content: s.content,
+              deadline: s.deadline,
+              description: s.description,
+            ),
           )
           .toList();
-      _selectedIndex = _suggestions.isEmpty ? null : 0;
+      _resetSelectedIndices();
       return;
     }
     final List<String>? init = widget.initialSuggestions;
@@ -114,7 +151,7 @@ class _MPAnalyzeSuggestedTasksSheetState
             ),
           )
           .toList();
-      _selectedIndex = _suggestions.isEmpty ? null : 0;
+      _resetSelectedIndices();
       return;
     }
     _load();
@@ -137,10 +174,15 @@ class _MPAnalyzeSuggestedTasksSheetState
         _loading = false;
         _suggestions = result
             .map(
-              (s) => _MPSuggestedItem(type: s.type, content: s.content),
+              (s) => _MPSuggestedItem(
+                type: s.type,
+                content: s.content,
+                deadline: s.deadline,
+                description: s.description,
+              ),
             )
             .toList();
-        _selectedIndex = _suggestions.isEmpty ? null : 0;
+        _resetSelectedIndices();
         _editingIndex = null;
         _editController?.dispose();
         _editController = null;
@@ -153,7 +195,7 @@ class _MPAnalyzeSuggestedTasksSheetState
       setState(() {
         _loading = false;
         _suggestions = <_MPSuggestedItem>[];
-        _selectedIndex = null;
+        _selectedIndices.clear();
       });
       return;
     }
@@ -169,7 +211,7 @@ class _MPAnalyzeSuggestedTasksSheetState
             ),
           )
           .toList();
-      _selectedIndex = result.isEmpty ? null : 0;
+      _resetSelectedIndices();
       _editingIndex = null;
       _editController?.dispose();
       _editController = null;
@@ -194,8 +236,9 @@ class _MPAnalyzeSuggestedTasksSheetState
     }
     setState(() {
       _editingIndex = index;
-      _editController =
-          TextEditingController(text: _suggestions[index].content);
+      _editController = TextEditingController(
+        text: _suggestions[index].content,
+      );
     });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -219,13 +262,53 @@ class _MPAnalyzeSuggestedTasksSheetState
     _editController = null;
   }
 
-  Future<void> _createSelectedSuggestion() async {
-    if (_creating) return;
-    final int? i = _selectedIndex;
-    if (i == null || i < 0 || i >= _suggestions.length) return;
-    final _MPSuggestedItem item = _suggestions[i];
-    final String content = item.content.trim();
-    if (content.isEmpty) {
+  void _toggleSelection(int index) {
+    setState(() {
+      if (_selectedIndices.contains(index)) {
+        _selectedIndices.remove(index);
+      } else {
+        _selectedIndices.add(index);
+      }
+    });
+  }
+
+  Future<void> _createSelectedSuggestions() async {
+    if (_creating || _selectedIndices.isEmpty) return;
+
+    final int memoCreateAt = MPTimeUtils.nowUnixSeconds();
+    final List<MPBatchCreateTodoItem> todos = <MPBatchCreateTodoItem>[];
+    final List<MPBatchCreateMemoItem> memos = <MPBatchCreateMemoItem>[];
+    for (final int i in _selectedIndices) {
+      if (i < 0 || i >= _suggestions.length) {
+        continue;
+      }
+      final _MPSuggestedItem item = _suggestions[i];
+      final String content = item.content.trim();
+      if (content.isEmpty) {
+        continue;
+      }
+      if (item.type == MPAnalyzeMemoSuggestionType.todo) {
+        todos.add(
+          MPBatchCreateTodoItem(
+            title: content,
+            priority: '',
+            deadline: item.deadline,
+            description: item.description,
+          ),
+        );
+      } else {
+        memos.add(
+          MPBatchCreateMemoItem(
+            content: content,
+            createAt: memoCreateAt,
+            source: 'text',
+            description: item.description,
+          ),
+        );
+      }
+    }
+
+    if (todos.isEmpty && memos.isEmpty) {
       MPToastUtils.showMessage('Content is empty.');
       return;
     }
@@ -233,21 +316,17 @@ class _MPAnalyzeSuggestedTasksSheetState
     setState(() => _creating = true);
     bool ok = false;
     try {
-      if (item.type == MPAnalyzeMemoSuggestionType.todo) {
-        ok = await MPTodoManager().createTodo(title: content);
+      final MPBatchCreateResponse? resp = await batchCreate(
+        MPBatchCreateRequest(todos: todos, memos: memos),
+      );
+      ok = resp != null && resp.baseResp.code == 0;
+      if (!ok) {
+        MPToastUtils.showMessage(resp?.baseResp.message ?? 'Creation failed.');
       } else {
-        final MPCreateMemoWithTextResponse? resp = await createMemoWithText(
-          MPCreateMemoWithTextRequest(
-            content: content,
-            createAt: MPTimeUtils.nowUnixSeconds(),
-          ),
-        );
-        ok = resp != null && resp.baseResp.code == 0;
-        if (!ok) {
-          MPToastUtils.showMessage(
-            resp?.baseResp.message ?? 'Couldn\'t create memo. Please try again later.',
-          );
+        if (todos.isNotEmpty) {
+          MPTodoNotification.notifyTodoCreated();
         }
+        MPHomeNotification.notifyHomeListRefresh();
       }
     } catch (_) {
       ok = false;
@@ -257,7 +336,16 @@ class _MPAnalyzeSuggestedTasksSheetState
     if (!mounted) return;
     setState(() => _creating = false);
     if (ok) {
-      Navigator.of(context).pop();
+      _dismissSheetsAfterCreateSuccess();
+    }
+  }
+
+  void _dismissSheetsAfterCreateSuccess() {
+    Navigator.of(context).pop();
+    final BuildContext? underlyingContext =
+        widget.dismissContextOnCreateSuccess;
+    if (underlyingContext != null && underlyingContext.mounted) {
+      Navigator.of(underlyingContext).pop();
     }
   }
 
@@ -265,7 +353,7 @@ class _MPAnalyzeSuggestedTasksSheetState
 
   /// 单条 suggestion：只读行（点选 + 铅笔）或行内编辑（输入框 + 确认勾）。
   Widget _buildSuggestionTile(int i) {
-    final bool isSelected = i == _selectedIndex;
+    final bool isSelected = _selectedIndices.contains(i);
     final bool isEditing = i == _editingIndex;
 
     Widget inner;
@@ -282,11 +370,7 @@ class _MPAnalyzeSuggestedTasksSheetState
           children: <Widget>[
             GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () {
-                setState(() {
-                  _selectedIndex = isSelected ? null : i;
-                });
-              },
+              onTap: () => _toggleSelection(i),
               child: Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Container(
@@ -362,11 +446,7 @@ class _MPAnalyzeSuggestedTasksSheetState
       );
     } else {
       inner = InkWell(
-        onTap: () {
-          setState(() {
-            _selectedIndex = isSelected ? null : i;
-          });
-        },
+        onTap: () => _toggleSelection(i),
         borderRadius: BorderRadius.circular(12),
         splashColor: Colors.transparent,
         highlightColor: Colors.transparent,
@@ -399,7 +479,7 @@ class _MPAnalyzeSuggestedTasksSheetState
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _suggestions[i].content,
+                  _suggestions[i].displayContent,
                   style: OmiTextStyle.create(
                     fontSize: OmiFontSize.t5_14,
                     fontWeight: OmiFontWeight.medium,
@@ -569,8 +649,9 @@ class _MPAnalyzeSuggestedTasksSheetState
             child: SizedBox(
               height: 50,
               child: TextButton(
-                onPressed:
-                    (_selectedIndex == null || _creating) ? null : _createSelectedSuggestion,
+                onPressed: (_selectedIndices.isEmpty || _creating)
+                    ? null
+                    : _createSelectedSuggestions,
                 style: TextButton.styleFrom(
                   backgroundColor: blueTextColor,
                   foregroundColor: Colors.white,

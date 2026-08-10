@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../utils/mp_preferences.dart';
 
 /// 上次成功连接并持久化到本地的 BLE 设备（仅 [remoteId] + [displayName]）。
@@ -26,6 +28,7 @@ class MPBlePreferences {
   static const String _interruptedRecordingLocalPathKey = 'mp_ble_interrupted_recording_local_path';
   static const String _interruptedRecordingModeKey = 'mp_ble_interrupted_recording_mode';
   static const String _interruptedRecordingLastSeqKey = 'mp_ble_interrupted_recording_last_seq';
+  static const String _recordingSessionModesKey = 'mp_ble_recording_session_modes';
 
   /// 读取上次连接成功的 BLE 设备；未记录时返回 `null`。
   MPLastBleDeviceRecord? readLastConnectedBleDevice() {
@@ -96,6 +99,31 @@ class MPBlePreferences {
     await MPPreferences().remove(_interruptedRecordingModeKey);
     await MPPreferences().remove(_interruptedRecordingLastSeqKey);
   }
+
+  /// 按设备文件名持久化 303 开录帧中的 mode，供冷启动后的导入/上传链路保留语义。
+  Future<void> saveRecordingSessionMode({required String fileName, required int modeByte}) async {
+    final String normalized = fileName.trim().toLowerCase();
+    if (normalized.isEmpty) {
+      return;
+    }
+    final Map<String, dynamic> modes = _readRecordingSessionModes();
+    modes[normalized] = modeByte & 0xff;
+    await MPPreferences().saveString(_recordingSessionModesKey, jsonEncode(modes));
+  }
+
+  int? readRecordingSessionMode(String fileName) {
+    final Object? value = _readRecordingSessionModes()[fileName.trim().toLowerCase()];
+    return value is int ? value : null;
+  }
+
+  Map<String, dynamic> _readRecordingSessionModes() {
+    try {
+      final Object? decoded = jsonDecode(MPPreferences().getString(_recordingSessionModesKey));
+      return decoded is Map<String, dynamic> ? Map<String, dynamic>.from(decoded) : <String, dynamic>{};
+    } catch (_) {
+      return <String, dynamic>{};
+    }
+  }
 }
 
 /// 断连 / 冷启动后待恢复的 MemoPin 实时录音会话。
@@ -124,4 +152,3 @@ class MPBleInterruptedRecordingRecord {
   /// 已确认落盘的最后一帧 Seq（裸 Opus 每帧 480B）；未知为 `null`。
   final int? lastCompletedSeq;
 }
-
