@@ -13,7 +13,8 @@ import 'mp_note_audio_packet_reassembler.dart';
 import 'mp_note_ble_protocol.dart';
 
 const int _kNoteMtuSize = 517;
-const int _kConnectionStabilizeDelayMs = 200;
+// 固件要求：物理连接建立后等 1.5s 再发起任何 GATT 数据交互（MTU/服务发现/订阅/命令）。
+const int _kConnectionStabilizeDelayMs = 1500;
 const int _kServiceDiscoveryTimeoutSec = 10;
 const int _kAdvertisementVerifyTimeoutSec = 5;
 const int _kBleRadioSettleDelayMs = 300;
@@ -115,6 +116,9 @@ class MPBleTransport extends MPDeviceTransport {
 
   @override
   String get deviceId => _deviceId;
+
+  /// 构造时传入的展示名（来自本轮扫描的广播名，可能为空）。
+  String get displayName => _displayName;
 
   @override
   Stream<MPDeviceTransportState> get connectionStateStream => _connectionStateController.stream;

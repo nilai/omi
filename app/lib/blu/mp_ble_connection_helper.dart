@@ -364,6 +364,13 @@ class MPBleConnectionHelper {
       debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connecting discovered remoteId=${discovered.id}');
       // 此设备刚由本轮扫描确认正在广播，无需在 connect 内再次扫描验证。
       await transport.connect(skipAdvertisementVerify: true);
+      // 固件改名（如 AIP_xxx → MemoPin）后本地缓存会残留旧名；以本轮广播名为准写回。
+      if (advertisedName.isNotEmpty && advertisedName != r.displayName) {
+        await MPBlePreferences.instance.setLastConnectedBleDevice(
+          remoteId: discovered.id,
+          displayName: advertisedName,
+        );
+      }
       await MPBleConnectionHelper.parkBackgroundBleTransport(transport);
       MPHomeNotification.notifyBleConnectedSuccess();
       debugPrint('------>>>memopin tryConnectLastRecordedBleDevice: connected OK');

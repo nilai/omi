@@ -157,7 +157,14 @@ class MPConnectDeviceCubit extends Cubit<MPConnectDeviceState> {
     final String id = _transport!.deviceId;
     MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     String displayName;
-    if (r != null && r.remoteId == id) {
+    // 优先取本轮扫描广播名（固件改名如 AIP_xxx → MemoPin 时缓存名已过期），其次本地记录。
+    final String freshName = _transport!.displayName.trim();
+    if (freshName.isNotEmpty) {
+      displayName = freshName;
+      if (r == null || r.remoteId != id || r.displayName != freshName) {
+        await MPBlePreferences.instance.setLastConnectedBleDevice(remoteId: id, displayName: freshName);
+      }
+    } else if (r != null && r.remoteId == id) {
       displayName = r.displayName;
     } else {
       displayName = await _displayNameForBleRemoteId(id);
