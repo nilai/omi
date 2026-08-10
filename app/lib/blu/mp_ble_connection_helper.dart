@@ -518,7 +518,7 @@ class MPBleConnectionHelper {
       ..sort((DiscoveredDevice a, DiscoveredDevice b) => b.rssi.compareTo(a.rssi));
     final List<MPBleScanEntry> entries = sorted.map((DiscoveredDevice d) {
       final String rawName = d.name.trim();
-      final String display = rawName.isEmpty ? 'MemoPin (${d.id})' : rawName;
+      final String display = rawName.isEmpty ? 'MemoPin' : rawName;
       return MPBleScanEntry(
         remoteId: d.id,
         displayName: display,
@@ -612,13 +612,13 @@ class MPBleConnectionHelper {
     }
   }
 
-  /// 解析展示名：优先本地持久化记录，否则返回 `MemoPin ($remoteId)`。
+  /// 解析展示名：优先本地持久化记录，否则返回默认名 `MemoPin`。
   static Future<String> resolveMemoPinDisplayName(String remoteId) async {
     final MPLastBleDeviceRecord? r = MPBlePreferences.instance.readLastConnectedBleDevice();
     if (r != null && r.remoteId == remoteId && r.displayName.trim().isNotEmpty) {
       return r.displayName;
     }
-    return 'MemoPin ($remoteId)';
+    return 'MemoPin';
   }
 
   /// 构造 Note 协议 GATT 客户端；导出文件期间须持续持有直至传输结束，再调用 [MPNoteBleGattClient.dispose]。
