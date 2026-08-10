@@ -355,7 +355,7 @@ class MPBleConnectionHelper {
       return false;
     }
 
-    final String advertisedName = discovered.name.trim();
+    final String advertisedName = displayNameForAdvertisedName(discovered.name);
     final BleTransport transport = createBleTransport(
       discovered.id,
       displayName: advertisedName.isEmpty ? r.displayName : advertisedName,
@@ -517,8 +517,7 @@ class MPBleConnectionHelper {
     final List<DiscoveredDevice> sorted = bestById.values.toList()
       ..sort((DiscoveredDevice a, DiscoveredDevice b) => b.rssi.compareTo(a.rssi));
     final List<MPBleScanEntry> entries = sorted.map((DiscoveredDevice d) {
-      final String rawName = d.name.trim();
-      final String display = rawName.isEmpty ? 'MemoPin' : rawName;
+      final String display = displayNameForAdvertisedName(d.name);
       return MPBleScanEntry(
         remoteId: d.id,
         displayName: display,
@@ -610,6 +609,22 @@ class MPBleConnectionHelper {
     } finally {
       await platform.stopScan();
     }
+  }
+
+  /// 展示名规范化：固件旧广播名（Ai_Pin / AI_NOTE 家族）统一显示为产品名 `MemoPin`；
+  /// 广播名已含 MemoPin 则原样展示；空名兜底 `MemoPin`；其余名字原样透传。
+  static String displayNameForAdvertisedName(String rawName) {
+    final String name = rawName.trim();
+    if (name.isEmpty) {
+      return 'MemoPin';
+    }
+    if (name.toUpperCase().contains('MEMOPIN')) {
+      return name;
+    }
+    if (_isAiNoteLikeDeviceName(name)) {
+      return 'MemoPin';
+    }
+    return name;
   }
 
   /// 解析展示名：优先本地持久化记录，否则返回默认名 `MemoPin`。
